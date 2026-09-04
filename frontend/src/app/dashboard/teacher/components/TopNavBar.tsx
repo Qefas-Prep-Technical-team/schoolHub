@@ -129,7 +129,7 @@ export default function TopNavBar() {
 
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/5 transition-all duration-500 px-4 md:px-6">
+    <header className="sticky top-0 z-30 h-16 flex items-center bg-white/90 dark:bg-neutral-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/5 transition-all duration-500 px-4 md:px-6">
       <div className="flex items-center justify-between w-full max-w-[1800px] mx-auto gap-3">
 
         {/* ── LEFT: Sidebar toggle + Identity block ────────────────────── */}

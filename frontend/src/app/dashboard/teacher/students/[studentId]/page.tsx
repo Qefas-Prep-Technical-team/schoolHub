@@ -63,11 +63,11 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
         <div className="flex items-start gap-4">
             <div className="size-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
                 style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
-                <Icon size={16} />
+                <Icon size={18} strokeWidth={2.5} />
             </div>
-            <div className="space-y-0.5 min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</p>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300 break-words">{value || '—'}</p>
+            <div className="space-y-1 min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                <p className="text-[15px] font-semibold text-slate-900 dark:text-white break-words">{value || '—'}</p>
             </div>
         </div>
     )
@@ -75,10 +75,10 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
 
 function SectionCard({ title, children, className = '', headerAction }: { title: string; children: React.ReactNode; className?: string; headerAction?: React.ReactNode }) {
     return (
-        <div className={cn("bg-white dark:bg-slate-900 border-y md:border border-slate-200 dark:border-slate-800 rounded-none md:rounded-[2rem] overflow-hidden", className)}>
+        <div className={cn("bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 rounded-2xl shadow-sm overflow-hidden", className)}>
             <div className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 pb-4">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
                     {headerAction}
                 </div>
                 {children}
@@ -89,20 +89,20 @@ function SectionCard({ title, children, className = '', headerAction }: { title:
 
 function StatBadge({ label, value, icon: Icon, themeColor, trend }: { label: string; value: string | number; icon: React.ElementType; themeColor: string; trend?: string }) {
     return (
-        <div className="p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-4">
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 shadow-sm space-y-4 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-                <div className="size-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
-                    <Icon size={18} />
+                <div className="size-12 rounded-[14px] flex items-center justify-center" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
+                    <Icon size={22} strokeWidth={2.5} />
                 </div>
                 {trend && (
-                    <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg uppercase tracking-widest">
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</p>
+                <p className="text-[12px] font-medium text-slate-500 mb-1">{label}</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
             </div>
         </div>
     )
@@ -650,89 +650,89 @@ export default function StudentProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
+        <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-500 pb-20">
 
-            {/* ── Banner ──────────────────────────────────────────────────── */}
-            <section className="relative h-40 md:h-64 w-full overflow-hidden">
-                <div className="absolute inset-0" style={{
-                    background: `linear-gradient(135deg, ${primaryColor}CC 0%, ${primaryColor}66 50%, ${primaryColor}22 100%)`
-                }} />
-                <div className="absolute inset-0 opacity-10"
-                    style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 40px)' }} />
-                
+            {/* ── Top Actions ──────────────────────────────────────────────────── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pt-6 flex justify-between items-center">
                 <button
                     onClick={() => router.back()}
-                    className="absolute top-4 left-4 md:top-6 md:left-6 flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white font-black text-[9px] uppercase tracking-widest hover:bg-white/30 transition-all border border-white/10"
+                    className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                    <ArrowLeft size={14} strokeWidth={3} />
-                    <span className="hidden sm:inline">Back to List</span>
+                    <ArrowLeft size={16} /> Back to List
                 </button>
-            </section>
+            </div>
 
-            {/* ── Profile Header ───────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative">
-                <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20">
-
-                    {/* Avatar */}
-                    <div className="size-28 md:size-44 rounded-3xl md:rounded-[2rem] bg-white dark:bg-slate-900 p-1.5 shadow-3xl border-[4px] border-slate-100 dark:border-slate-950 flex items-center justify-center shrink-0 overflow-hidden group">
-                        <img src={avatar} alt={name} className="w-full h-full rounded-2xl md:rounded-[1.5rem] object-cover group-hover:scale-110 transition-transform duration-700" />
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 pt-2 md:pt-20 space-y-4">
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                            <div className="space-y-1">
-                                <h1 className="text-2xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.85]">
-                                    {name}<span style={{ color: primaryColor }}>.</span>
-                                </h1>
-                                <p className="text-sm md:text-lg font-bold text-slate-500 dark:text-slate-400 mt-2">
-                                    {classNameLabel} · {department}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-2">
-                                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                        <Hash size={14} style={{ color: primaryColor }} />
-                                        {studentCode}
-                                    </span>
-                                    <span className={cn(
-                                        "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
-                                        isVerified
-                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                                            : 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
-                                    )}>
-                                        <ShieldCheck size={12} />
-                                        {isVerified ? 'Verified' : 'Pending'}
-                                    </span>
-                                </div>
+            {/* ── Profile Header (Skillery Style Hero) ─────────────────────── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6">
+                <div className="rounded-[2rem] overflow-hidden relative p-8 md:p-12 shadow-sm border border-slate-100 dark:border-white/5" style={{
+                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}DD 100%)`
+                }}>
+                    <div className="absolute inset-0 opacity-20"
+                        style={{ backgroundImage: 'radial-gradient(circle at 100% 0%, white 0%, transparent 50%)' }} />
+                    
+                    <div className="relative z-20 flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
+                        {/* Avatar */}
+                        <div className="size-24 md:size-32 rounded-full bg-white p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow-lg border border-white/20">
+                            <div className="w-full h-full rounded-full overflow-hidden border-2 border-white/50 relative">
+                                <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 rounded-full border-2 border-transparent" style={{ borderColor: `${primaryColor}40` }} />
                             </div>
+                        </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3">
+                        {/* Info */}
+                        <div className="flex-1 text-white space-y-3">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="space-y-2">
+                                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                                        {name}
+                                    </h1>
+                                    <p className="text-sm md:text-base font-medium text-white/80">
+                                        {classNameLabel} · {department}
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-4 pt-1">
+                                        <span className="flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-black/10 px-3 py-1 rounded-lg backdrop-blur-sm">
+                                            <Hash size={14} />
+                                            {studentCode}
+                                        </span>
+                                        <span className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm",
+                                            isVerified ? 'bg-emerald-500/20 text-emerald-50' : 'bg-amber-500/20 text-amber-50'
+                                        )}>
+                                            <ShieldCheck size={14} />
+                                            {isVerified ? 'Verified' : 'Pending'}
+                                        </span>
+                                    </div>
+                                </div>
 
-                                <a
-                                    href={`mailto:${email}`}
-                                    className="h-12 w-full sm:w-auto px-8 rounded-2xl border-2 border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 font-black uppercase tracking-widest text-[10px] text-slate-700 dark:text-slate-300 flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-all shadow-xl"
-                                >
-                                    <Mail size={16} /> Send Email
-                                </a>
+                                <div className="flex gap-3">
+                                    <a
+                                        href={`mailto:${email}`}
+                                        className="px-6 py-2.5 rounded-xl bg-white text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2"
+                                        style={{ color: primaryColor }}
+                                    >
+                                        <Mail size={16} /> Contact
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── Tabs ────────────────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-10 md:mt-12">
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide bg-white dark:bg-slate-900 rounded-none md:rounded-[2rem] border-y md:border border-slate-100 dark:border-white/5 p-2 shadow-2xl">
+            {/* ── Tabs (Verlof Style) ─────────────────────────────────────── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-8">
+                <div className="flex gap-6 overflow-x-auto scrollbar-hide border-b border-slate-200 dark:border-slate-800">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex-shrink-0 px-6 md:px-10 py-3.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                                "pb-4 text-[13px] font-bold transition-all whitespace-nowrap border-b-2",
                                 activeTab === tab.id
-                                    ? "text-white shadow-xl scale-105"
-                                    : "text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
+                                    ? "text-slate-900 dark:text-white"
+                                    : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
                             )}
-                            style={activeTab === tab.id ? { backgroundColor: primaryColor } : {}}
+                            style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
                         >
                             {tab.label}
                         </button>
@@ -853,7 +853,58 @@ export default function StudentProfilePage() {
 
             {/* ── History Tab ─────────────────────────────────────────────── */}
             {activeTab === 'history' && (
-                <main className="max-w-4xl mx-auto px-4 md:px-12 mt-10 pb-20">
+                <main className="max-w-4xl mx-auto px-4 md:px-12 mt-10 pb-20 space-y-10">
+                    
+                    {/* Connected Schools Section */}
+                    <SectionCard title="Connected Schools">
+                        {isHistoryLoading || isStudentLoading ? (
+                            <div className="py-20 flex flex-col items-center justify-center space-y-4">
+                                <div className="size-10 rounded-full border-2 border-slate-200 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Schools...</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(() => {
+                                    const schoolMap = new Map();
+                                    historyData?.forEach(event => {
+                                        if (event.school?.id && !schoolMap.has(event.school.id)) {
+                                            schoolMap.set(event.school.id, { id: event.school.id, name: event.school.name, logo: event.school.logoUrl || event.school.logo });
+                                        }
+                                    });
+                                    if (student?.school?.id && !schoolMap.has(student.school.id)) {
+                                        schoolMap.set(student.school.id, { id: student.school.id, name: student.school.name });
+                                    }
+                                    const schools = Array.from(schoolMap.values());
+                                    
+                                    if (schools.length === 0) {
+                                        return (
+                                            <div className="col-span-full py-10 text-center space-y-3 border border-dashed border-slate-200 dark:border-slate-800 rounded-[1.5rem]">
+                                                <Building2 size={32} className="text-slate-200 dark:text-slate-700 mx-auto" />
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No Connected Schools Found</p>
+                                            </div>
+                                        );
+                                    }
+
+                                    return schools.map((sch: any) => (
+                                        <div key={sch.id} className="flex items-center gap-4 p-4 rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                                            <div className="size-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                                {sch.logo ? (
+                                                    <img src={sch.logo} alt={sch.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Building2 className="text-slate-400" size={24} />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{sch.name}</h4>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">School Affiliation</p>
+                                            </div>
+                                        </div>
+                                    ));
+                                })()}
+                            </div>
+                        )}
+                    </SectionCard>
+
                     <SectionCard title="Student Timeline">
                         {isHistoryLoading ? (
                             <div className="py-20 flex flex-col items-center justify-center space-y-4">

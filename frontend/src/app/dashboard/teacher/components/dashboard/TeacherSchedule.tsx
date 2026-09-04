@@ -64,7 +64,7 @@ const TeacherSchedule: React.FC<TeacherScheduleProps> = ({ schedule = [] }) => {
     : processedSchedule.slice(-4);
 
   return (
-    <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
+    <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-neutral-900 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Timeline</h3>
@@ -75,7 +75,7 @@ const TeacherSchedule: React.FC<TeacherScheduleProps> = ({ schedule = [] }) => {
         </button>
       </div>
 
-      <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800/50">
+      <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-neutral-800">
         {displaySchedule.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No schedule found for today</p>
@@ -89,9 +89,9 @@ const TeacherSchedule: React.FC<TeacherScheduleProps> = ({ schedule = [] }) => {
             className="relative flex gap-6"
           >
             {/* Timeline Dot */}
-            <div className={`mt-2 h-8 w-8 rounded-full border-4 border-white dark:border-slate-900 z-10 flex items-center justify-center shrink-0 shadow-lg ${
-              item.status === 'current' ? 'bg-emerald-600 ring-4 ring-emerald-500/20 scale-110' : 
-              item.status === 'past' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800'
+            <div className={`mt-2 h-8 w-8 rounded-full border-4 z-10 flex items-center justify-center shrink-0 shadow-lg ${
+              item.status === 'current' ? 'border-emerald-600 bg-emerald-600 ring-4 ring-emerald-500/30 scale-110' : 
+              item.status === 'past' ? 'border-white dark:border-neutral-900 bg-slate-200 dark:bg-neutral-800' : 'border-slate-100 dark:border-neutral-800 bg-white dark:bg-neutral-800'
             }`}>
                {item.status === 'current' && <div className="size-2 bg-white rounded-full animate-pulse" />}
             </div>

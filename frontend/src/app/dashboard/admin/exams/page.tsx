@@ -92,8 +92,46 @@ export default function Dashboard() {
     };
 
     const renderLoading = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-[250px] rounded-xl" />)}
+        <div className="flex flex-col gap-6">
+            {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 space-y-4 shadow-sm">
+                            <div className="flex items-start justify-between gap-4">
+                                <Skeleton className="h-12 w-12 rounded-2xl" />
+                                <Skeleton className="h-6 w-24 rounded-full" />
+                            </div>
+                            <div className="space-y-3">
+                                <Skeleton className="h-5 w-3/4 rounded-md" />
+                                <Skeleton className="h-4 w-1/2 rounded-md" />
+                            </div>
+                            <div className="pt-6 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <Skeleton className="h-4 w-1/3 rounded-md" />
+                                <Skeleton className="h-8 w-24 rounded-xl" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-sm divide-y-2 divide-slate-100 dark:divide-slate-800">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-6 gap-6">
+                            <div className="flex items-center gap-5 min-w-0">
+                                <Skeleton className="h-14 w-14 rounded-2xl flex-shrink-0" />
+                                <div className="space-y-2 w-full max-w-sm">
+                                    <Skeleton className="h-5 w-64 rounded-md" />
+                                    <Skeleton className="h-4 w-40 rounded-md" />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <Skeleton className="h-6 w-20 rounded-full hidden md:block" />
+                                <Skeleton className="h-4 w-24 rounded-md hidden lg:block" />
+                                <Skeleton className="h-10 w-28 rounded-xl flex-shrink-0" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 

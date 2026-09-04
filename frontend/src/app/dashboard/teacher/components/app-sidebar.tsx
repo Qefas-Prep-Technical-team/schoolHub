@@ -143,7 +143,7 @@ export function AppSidebar() {
     return (
         <Sidebar
             collapsible="icon"
-            className="border-r border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out"
+            className="border-r border-slate-200 dark:border-white/5 bg-white dark:bg-neutral-950 transition-all duration-300 ease-in-out"
         >
             {/* Header */}
             <SidebarHeader className="h-20 flex flex-row items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 relative text-inherit">

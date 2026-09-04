@@ -48,7 +48,7 @@ const RecentPersonalActivity: React.FC<RecentPersonalActivityProps> = ({ activit
   };
 
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm h-full transition-all duration-300">
+    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-6 shadow-sm h-full transition-all duration-300">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Activity</h3>

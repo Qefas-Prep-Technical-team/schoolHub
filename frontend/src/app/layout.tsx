@@ -132,8 +132,6 @@ export default function RootLayout({
               <Footer />
               <AIChatWidget />
             </AppInitializer>
-
-
           </ThemeClientProvider>
         </Providers>
       </body>

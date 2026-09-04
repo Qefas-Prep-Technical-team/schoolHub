@@ -48,7 +48,7 @@ export default function InsightsGrid({ stats }: InsightsGridProps) {
       sub: 'vs last month'
     },
     {
-      label: 'Upcoming Lessons',
+      label: 'Upcoming Classes',
       value: stats.upcomingLessons,
       icon: Calendar,
       trend: '-2',
@@ -82,7 +82,7 @@ function InsightCard({ card, index }: { card: any, index: number }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
+      className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between"
     >
       <div className="flex items-start justify-between mb-4">
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>

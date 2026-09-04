@@ -83,64 +83,50 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     };
   }
 
-  // 2. Parallelize independent queries
-  const [
-    enrollmentCount,
-    recentExams,
-    gradeStats,
-    studentGradeAverages,
-    distributionStats,
-    attendanceToday
-  ] = await Promise.all([
-    // Unique student count across assigned classes
-    prisma.classEnrollment.groupBy({
-      by: ['studentId'],
-      where: { classId: { in: assignedClassIds } },
-    }).then(groups => groups.length),
+  // 2. Execute queries sequentially to prevent connection pool exhaustion
+  // (Prisma default pool size is 10; Promise.all with 6 queries easily starves it under load)
+  const enrollmentCount = await prisma.classEnrollment.groupBy({
+    by: ['studentId'],
+    where: { classId: { in: assignedClassIds } },
+  }).then(groups => groups.length);
 
-    // Recent exams
-    prisma.exam.findMany({
-      where: {
-        classId: { in: assignedClassIds },
-        ...(schoolId ? { schoolId } : {}),
-      },
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { class: { select: { name: true } }, subject: { select: { name: true } } },
-    }),
+  const recentExams = await prisma.exam.findMany({
+    where: {
+      classId: { in: assignedClassIds },
+      ...(schoolId ? { schoolId } : {}),
+    },
+    take: 5,
+    orderBy: { createdAt: "desc" },
+    include: { class: { select: { name: true } }, subject: { select: { name: true } } },
+  });
 
-    // Global performance average (Summing scores and max marks for accurate percentage)
-    prisma.grade.aggregate({
-      where: { classId: { in: assignedClassIds } },
-      _sum: { score: true, maxMarks: true },
-    }),
+  const gradeStats = await prisma.grade.aggregate({
+    where: { classId: { in: assignedClassIds } },
+    _sum: { score: true, maxMarks: true },
+  });
 
-    // Top performers (Grouped by student)
-    prisma.grade.groupBy({
-      by: ['studentId'],
-      where: { classId: { in: assignedClassIds } },
-      _sum: { score: true, maxMarks: true },
-      orderBy: { _sum: { score: 'desc' } }, // Note: This doesn't sort by average, but it's a good proxy for finding candidates
-      take: 10,
-    }),
+  const studentGradeAverages = await prisma.grade.groupBy({
+    by: ['studentId'],
+    where: { classId: { in: assignedClassIds } },
+    _sum: { score: true, maxMarks: true },
+    orderBy: { _sum: { score: 'desc' } }, // Note: This doesn't sort by average, but it's a good proxy for finding candidates
+    take: 10,
+  });
 
-    // Distribution (using raw data but limited for summary speed)
-    prisma.grade.findMany({
-      where: { classId: { in: assignedClassIds } },
-      select: { score: true, maxMarks: true },
-      take: 200,
-      orderBy: { createdAt: 'desc' }
-    }),
+  const distributionStats = await prisma.grade.findMany({
+    where: { classId: { in: assignedClassIds } },
+    select: { score: true, maxMarks: true },
+    take: 200,
+    orderBy: { createdAt: 'desc' }
+  });
 
-    // Attendance rate for today
-    prisma.attendance.aggregate({
-      where: {
-        classId: { in: assignedClassIds },
-        date: { gte: new Date(new Date().setHours(0,0,0,0)) },
-      },
-      _count: { status: true },
-    })
-  ]);
+  const attendanceToday = await prisma.attendance.aggregate({
+    where: {
+      classId: { in: assignedClassIds },
+      date: { gte: new Date(new Date().setHours(0,0,0,0)) },
+    },
+    _count: { status: true },
+  });
 
   // 3. Process Attendance (Separate query for "present" to be efficient)
   const presentCount = await prisma.attendance.count({
@@ -173,21 +159,23 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
   });
 
   // 6. Process Top Students (Fetch minimal info for top candidates)
-  const topStudentsWithInfo = await Promise.all(
-    studentGradeAverages.map(async (s) => {
-      const student = await prisma.student.findUnique({
-        where: { id: s.studentId },
-        select: { name: true, profileImage: true, studentCode: true },
-      });
-      return {
-        id: s.studentId,
-        name: student?.name || "Unknown",
-        studentCode: student?.studentCode || "N/A",
-        image: student?.profileImage,
-        average: s._sum.maxMarks && s._sum.maxMarks > 0 ? Math.round((s._sum.score || 0) / s._sum.maxMarks * 100) : 0,
-      };
-    })
-  );
+  const topStudentIds = studentGradeAverages.map(s => s.studentId);
+  const topStudents = await prisma.student.findMany({
+    where: { id: { in: topStudentIds } },
+    select: { id: true, name: true, profileImage: true, studentCode: true },
+  });
+  const studentMap = new Map(topStudents.map(s => [s.id, s]));
+
+  const topStudentsWithInfo = studentGradeAverages.map((s) => {
+    const student = studentMap.get(s.studentId);
+    return {
+      id: s.studentId,
+      name: student?.name || "Unknown",
+      studentCode: student?.studentCode || "N/A",
+      image: student?.profileImage,
+      average: s._sum.maxMarks && s._sum.maxMarks > 0 ? Math.round((s._sum.score || 0) / s._sum.maxMarks * 100) : 0,
+    };
+  });
 
   // Calculate Today's Schedule
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

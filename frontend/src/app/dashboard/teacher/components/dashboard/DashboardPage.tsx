@@ -77,9 +77,26 @@ export default function DashboardPage() {
     }
   };
 
+  const [hasHydrated, setHasHydrated] = useState(false);
+
   useEffect(() => {
+    // Check if store is already hydrated
+    if (useDashboardStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+    } else {
+      const unsubFinishHydration = useDashboardStore.persist.onFinishHydration(() => {
+        setHasHydrated(true);
+      });
+      return () => {
+        unsubFinishHydration();
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return; // Wait for Zustand to hydrate before fetching
     loadInitialData();
-  }, [selectedSchoolId, isPersonal]);
+  }, [selectedSchoolId, isPersonal, hasHydrated]);
 
 
   const dashboardAssignments = recentExams.map(exam => ({
@@ -135,20 +152,20 @@ export default function DashboardPage() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl max-w-md text-center space-y-6"
+          className="bg-white dark:bg-black p-10 rounded-[2.5rem] border border-slate-100 dark:border-zinc-900 shadow-2xl dark:shadow-none max-w-md text-center space-y-6"
         >
-          <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
+          <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500 dark:text-rose-400">
             <LayoutGrid size={32} className="animate-pulse" />
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Sync Stalled</h2>
-            <p className="text-sm text-slate-500 leading-relaxed font-medium">
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
               {error}
             </p>
           </div>
           <Button 
             onClick={() => loadInitialData()} 
-            className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
+            className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-slate-800 text-white font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 dark:shadow-none hover:scale-[1.02] transition-transform"
           >
             Reconnect Dashboard
           </Button>

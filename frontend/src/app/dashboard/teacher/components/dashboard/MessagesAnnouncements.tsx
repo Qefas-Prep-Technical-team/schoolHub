@@ -21,7 +21,7 @@ export default function MessagesAnnouncements({ messages, onViewAll }: MessagesA
   const router = useRouter();
 
   return (
-    <div className="p-8 bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full flex flex-col transition-all duration-500 hover:border-emerald-500/20">
+    <div className="p-8 bg-white dark:bg-neutral-900 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full flex flex-col transition-all duration-500 hover:border-emerald-500/20">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">

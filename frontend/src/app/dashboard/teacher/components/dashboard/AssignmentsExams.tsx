@@ -55,7 +55,7 @@ export default function AssignmentsExams({ assignments, onViewAll }: Assignments
   };
 
   return (
-    <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
+    <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-neutral-900 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
       <div className="flex items-center justify-between mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">

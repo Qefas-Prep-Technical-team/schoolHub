@@ -19,6 +19,23 @@ if (process.env.NODE_ENV === "development") global.prisma = prisma;
 
 // Track whether we know the connection is healthy
 let connectionHealthy = true;
+let reconnectPromise: Promise<void> | null = null;
+
+async function performReconnect(): Promise<void> {
+  if (reconnectPromise) return reconnectPromise;
+  
+  reconnectPromise = (async () => {
+    try {
+      await prisma.$disconnect();
+      await prisma.$connect();
+      connectionHealthy = true;
+    } finally {
+      reconnectPromise = null;
+    }
+  })();
+  
+  return reconnectPromise;
+}
 
 // Listen to Prisma's query events to detect connection failures
 prisma.$on("error" as never, () => {
@@ -40,9 +57,7 @@ export async function withRetry<T>(
   if (!connectionHealthy) {
     console.warn(`[DB] Proactive reconnect before "${label}" (connection was unhealthy)...`);
     try {
-      await prisma.$disconnect();
-      await prisma.$connect();
-      connectionHealthy = true;
+      await performReconnect();
       console.log(`[DB] Proactive reconnect succeeded.`);
     } catch (reconnectErr) {
       console.error(`[DB] Proactive reconnect failed:`, reconnectErr);
@@ -88,9 +103,7 @@ export async function withRetry<T>(
       await new Promise(res => setTimeout(res, backoffMs));
 
       try {
-        await prisma.$disconnect();
-        await prisma.$connect();
-        connectionHealthy = true;
+        await performReconnect();
         console.log(`[DB] Reconnected. Retrying "${label}" (attempt ${attempt + 1})...`);
       } catch (reconnectErr) {
         console.error(`[DB] Reconnect failed on attempt ${attempt}:`, reconnectErr);

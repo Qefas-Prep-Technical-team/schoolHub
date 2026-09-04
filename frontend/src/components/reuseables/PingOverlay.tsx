@@ -33,14 +33,14 @@ export default function PingOverlay() {
         };
       case "TEACHER":
         return {
-          textColor: "text-purple-600",
-          textLight: "text-purple-600/70",
-          orb1: "bg-purple-600/20",
-          orb2: "bg-indigo-500/20",
-          ring: "border-purple-600/50",
-          gradientCore: "from-purple-600/20 to-indigo-500/20",
-          loaderGradient: "from-transparent via-purple-600 to-transparent",
-          lockColor: "text-indigo-500"
+          textColor: "text-emerald-600",
+          textLight: "text-emerald-600/70",
+          orb1: "bg-emerald-600/20",
+          orb2: "bg-emerald-500/20",
+          ring: "border-emerald-600/50",
+          gradientCore: "from-emerald-600/20 to-emerald-500/20",
+          loaderGradient: "from-transparent via-emerald-600 to-transparent",
+          lockColor: "text-emerald-500"
         };
       case "ADMIN":
       default:

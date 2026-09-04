@@ -63,7 +63,7 @@ export default function PerformanceAnalytics() {
   };
 
   return (
-    <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-full flex flex-col">
+    <div className="p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-4">
           <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700">

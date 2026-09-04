@@ -307,8 +307,8 @@ export default function QuestionManager({
         )}
 
         {activeTab === "add" && (
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
                <ManualAddForm 
                  assignmentId={assignmentId} 
                  onCancel={() => setActiveTab("list")} 
@@ -318,8 +318,8 @@ export default function QuestionManager({
         )}
 
         {activeTab === "edit" && editingQuestion && (
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
                <ManualAddForm 
                  assignmentId={assignmentId} 
                  initialData={editingQuestion}

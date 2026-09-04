@@ -15,6 +15,7 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import AddExistingPaperModal from "../../components/AddExistingPaperModal";
+import PaperPreviewModal from "./[paperId]/components/PaperPreviewModal";
 import {
   Dialog,
   DialogContent,
@@ -158,6 +159,13 @@ export default function ExamPapersPage() {
       isOpen: true,
     });
   };
+
+  const [previewPaperId, setPreviewPaperId] = useState<string | null>(null);
+  const { data: previewPaper, isLoading: isLoadingPreviewPaper } = useQuery({
+    queryKey: ["paper", previewPaperId],
+    queryFn: () => examService.getPaperById(examId, previewPaperId!),
+    enabled: !!previewPaperId,
+  });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [examSettings, setExamSettings] = useState({
@@ -959,7 +967,7 @@ export default function ExamPapersPage() {
                     }}
                     className={`group relative bg-white dark:bg-slate-900 border rounded-3xl p-6 transition-all ${
                       canAccess
-                        ? "border-slate-200 dark:border-slate-800 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 cursor-pointer"
+                        ? "border-slate-200 dark:border-slate-800 hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                         : "border-slate-200 dark:border-slate-800 opacity-70 cursor-not-allowed"
                     }`}
                   >
@@ -968,8 +976,12 @@ export default function ExamPapersPage() {
 
                     <div className="flex items-start gap-4 pl-3">
                       {/* Icon */}
-                      <div className={`h-12 w-12 rounded-2xl flex-shrink-0 flex items-center justify-center transition-colors ${canAccess ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
-                        <FileText size={22} />
+                      <div className={`h-12 w-12 rounded-2xl flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
+                        canAccess 
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-500/25" 
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                      }`}>
+                        <FileText size={22} className={canAccess ? "group-hover:scale-110 transition-transform" : ""} />
                       </div>
 
                       {/* Info */}
@@ -992,6 +1004,12 @@ export default function ExamPapersPage() {
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-1 flex-shrink-0">
+                            {canAccess && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl"
+                                onClick={(e) => { e.stopPropagation(); setPreviewPaperId(paper.id); }}>
+                                <Eye size={16} />
+                              </Button>
+                            )}
                             {canAccess && isPublishedPaper && (
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl"
                                 onClick={(e) => { e.stopPropagation(); openConfirmDialog({ title: "Unpublish Paper", description: `Unpublish "${paper.title}"? It will move back to draft.`, variant: "warning", confirmText: "Unpublish", onConfirm: () => unpublishPaperMutation.mutate(paper.id) }); }}>
@@ -1185,6 +1203,19 @@ export default function ExamPapersPage() {
           updateExamMutation.isPending
         }
       />
+
+      {previewPaperId && previewPaper && (
+        <PaperPreviewModal
+          isOpen={!!previewPaperId}
+          onClose={() => setPreviewPaperId(null)}
+          paper={previewPaper as any}
+        />
+      )}
+      {previewPaperId && isLoadingPreviewPaper && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+          <Loader2 className="animate-spin text-white" size={32} />
+        </div>
+      )}
     </div>
   );
 }
