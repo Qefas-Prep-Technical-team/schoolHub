@@ -60,10 +60,10 @@ export const startCronJobs = () => {
         });
 
         // Send email to the school email (if exists)
-        if (school.email) {
+        if (school.schoolEmail) {
           try {
             const { sendSubscriptionExpiredEmail } = require('../modules/auth/auth.service');
-            await sendSubscriptionExpiredEmail(school.email, school.plan || 'Premium');
+            await sendSubscriptionExpiredEmail(school.schoolEmail, school.plan || 'Premium');
           } catch (e) {
             console.error(`[CRON] Failed to send expiration email to school ${school.id}:`, e);
           }

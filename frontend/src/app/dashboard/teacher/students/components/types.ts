@@ -5,6 +5,8 @@ export interface Student {
   id: string | number;
   name: string;
   grade: string;
+  studentCode?: string;
+  email?: string;
   avatarUrl?: string;
   performance: PerformanceLevel;
   attendance: number;

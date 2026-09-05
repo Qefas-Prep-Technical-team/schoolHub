@@ -205,10 +205,10 @@ export const assignTeacherToSubject = async (req: Request, res: Response) => {
       where: { id: subjectId },
     });
 
-    if (!subject) {
+    if (!subject || !subject.schoolId) {
       return res.status(404).json({
         success: false,
-        message: "Subject not found",
+        message: "Subject not found or has no school associated",
       });
     }
 
@@ -262,10 +262,10 @@ export const removeTeacherFromSubject = async (req: Request, res: Response) => {
       where: { id: subjectId },
     });
 
-    if (!subject) {
+    if (!subject || !subject.schoolId) {
       return res.status(404).json({
         success: false,
-        message: "Subject not found",
+        message: "Subject not found or has no school associated",
       });
     }
 

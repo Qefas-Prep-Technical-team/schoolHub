@@ -16,7 +16,10 @@ import {
   RefreshCw,
   AlertCircle,
   Gavel,
-  X
+  X,
+  Globe,
+  Users,
+  ShieldCheck
 } from "lucide-react";
 import { AuthHeaderControls } from "./AuthHeaderControls";
 

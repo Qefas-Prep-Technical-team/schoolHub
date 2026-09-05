@@ -30,7 +30,7 @@ export function TeacherHero() {
 
   const slides: SlideItem[] = [
     { type: 'summary' },
-    ...classNames.map(name => ({ type: 'class' as const, name })),
+    ...classNames.map((name: string) => ({ type: 'class' as const, name })),
     ...(subjectNames.length > 0 ? [{ type: 'subjects' as const, subjects: subjectNames }] : [])
   ];
 
