@@ -32,7 +32,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ onQuickAttendance, onExpo
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-slate-200 dark:border-slate-800 text-center relative">
+          <div className="bg-white dark:bg-emerald-950/60 rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-slate-200 dark:border-emerald-800/50 text-center relative">
             <button 
               onClick={() => setShowModal(false)}
               className="absolute top-6 right-6 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -51,7 +51,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ onQuickAttendance, onExpo
             
             <button 
               onClick={() => setShowModal(false)}
-              className="w-full px-6 py-3 rounded-xl bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-200 text-xs font-black uppercase tracking-widest hover:bg-emerald-600 dark:hover:bg-emerald-600 transition-colors shadow-lg"
+              className="w-full px-6 py-3 rounded-xl bg-slate-900 dark:bg-emerald-900/40 text-white dark:text-slate-200 text-xs font-black uppercase tracking-widest hover:bg-emerald-600 dark:hover:bg-emerald-600 transition-colors shadow-lg"
             >
               Got it
             </button>

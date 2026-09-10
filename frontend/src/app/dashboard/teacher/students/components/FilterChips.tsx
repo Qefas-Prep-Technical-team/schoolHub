@@ -31,7 +31,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ selectedClassId, onClassChang
           <select
             value={selectedClassId}
             onChange={(e) => onClassChange(e.target.value)}
-            className="flex h-10 appearance-none items-center justify-center gap-x-2 rounded-xl bg-white dark:bg-slate-800/80 pl-4 pr-10 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-primary/30 transition-all duration-300 shadow-sm text-xs font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+            className="flex h-10 appearance-none items-center justify-center gap-x-2 rounded-xl bg-white dark:bg-emerald-900/60 pl-4 pr-10 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-emerald-700/50/60 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-emerald-500/30 transition-all duration-300 shadow-sm text-xs font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
           >
             <option value="">ALL CLASSES</option>
             {classesList.map((c: any) => (
@@ -40,7 +40,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ selectedClassId, onClassChang
               </option>
             ))}
           </select>
-          <ChevronDown size={14} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-primary transition-colors" />
+          <ChevronDown size={14} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-emerald-500 transition-colors" />
         </div>
       </div>
     </div>

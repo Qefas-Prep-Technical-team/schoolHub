@@ -87,6 +87,15 @@ export const getExams = async (req: Request, res: Response) => {
 
 export const getExamById = async (req: Request, res: Response) => {
   try {
+    // Only teachers and admins connected to a school may fetch exam details
+    const userType = req.user?.userType?.toUpperCase();
+    if (!req.user || !['TEACHER', 'ADMIN'].includes(userType as string)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: insufficient role' });
+    }
+    if (userType === 'TEACHER' && !req.user.schoolId) {
+      return res.status(403).json({ success: false, message: 'You are not connected to a school.' });
+    }
+
     const data = await getExamByIdService(
       req.params.id as string, 
       req.user?.userType === UserRole.STUDENT
@@ -110,9 +119,19 @@ export const getExamById = async (req: Request, res: Response) => {
 
 export const getExamPapers = async (req: Request, res: Response) => {
   try {
+    // Only teachers and admins connected to a school may list papers
+    const userType = req.user?.userType?.toUpperCase();
+    if (!req.user || !['TEACHER', 'ADMIN'].includes(userType as string)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: insufficient role' });
+    }
+    if (userType === 'TEACHER' && !req.user.schoolId) {
+      return res.status(403).json({ success: false, message: 'You are not connected to a school.' });
+    }
+
     const data = await getExamPapersService(
       req.params.id as string,
-      req.user?.schoolId
+      req.user?.schoolId,
+      req.user
     );
 
     return res.status(200).json({
@@ -126,7 +145,19 @@ export const getExamPapers = async (req: Request, res: Response) => {
 
 export const getSubjectPaperById = async (req: Request, res: Response) => {
   try {
-    const data = await getSubjectPaperByIdService(req.params.paperId as string);
+    // Only teachers and admins connected to a school may fetch a paper
+    const userType = req.user?.userType?.toUpperCase();
+    if (!req.user || !['TEACHER', 'ADMIN'].includes(userType as string)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: insufficient role' });
+    }
+    if (userType === 'TEACHER' && !req.user.schoolId) {
+      return res.status(403).json({ success: false, message: 'You are not connected to a school.' });
+    }
+
+    const data = await getSubjectPaperByIdService(
+      req.params.paperId as string,
+      req.user
+    );
 
     if (!data) {
       return res.status(404).json({
@@ -140,6 +171,18 @@ export const getSubjectPaperById = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
+    if (error.message === "FORBIDDEN_PREVIEW") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to preview this paper until the exam ends.",
+      });
+    }
+    if (error.message === "FORBIDDEN_TENANT") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to access this paper.",
+      });
+    }
     return handleError(res, error, "exam.getSubjectPaperById");
   }
 };

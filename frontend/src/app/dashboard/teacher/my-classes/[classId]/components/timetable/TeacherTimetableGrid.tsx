@@ -17,7 +17,7 @@ const TeacherSubjectCard = ({ subject }: { subject: any }) => {
     <div className={`group relative h-full min-h-[90px] p-3 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:shadow-lg ${
       isOwn
         ? 'bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-500 dark:border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-        : 'bg-white dark:bg-[#2a3650] border border-slate-200 dark:border-slate-700'
+        : 'bg-white dark:bg-[#2a3650] border border-slate-200 dark:border-emerald-700/50'
     }`}>
       {/* "You" badge for own subjects */}
       {isOwn && (
@@ -32,7 +32,7 @@ const TeacherSubjectCard = ({ subject }: { subject: any }) => {
           className={`absolute inset-0 rounded-2xl z-10 flex items-center justify-center transition-all duration-300 cursor-pointer ${
             previewing
               ? 'backdrop-blur-none bg-transparent'
-              : 'backdrop-blur-[3px] bg-white/40 dark:bg-slate-900/40'
+              : 'backdrop-blur-[3px] bg-white/40 dark:bg-emerald-950/40'
           }`}
           onClick={() => setPreviewing((p) => !p)}
         >
@@ -69,9 +69,9 @@ const TeacherSubjectCard = ({ subject }: { subject: any }) => {
         <div className={`mt-2 flex items-center gap-1 w-fit px-2 py-1 rounded-md border ${
           isOwn
             ? 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700'
-            : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+            : 'bg-slate-100 dark:bg-emerald-900/40/50 border-slate-200 dark:border-emerald-700/50'
         }`}>
-          <MapPin size={8} className={isOwn ? 'text-emerald-600' : 'text-primary'} />
+          <MapPin size={8} className={isOwn ? 'text-emerald-600' : 'text-emerald-600'} />
           <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
             {subject.room}
           </span>
@@ -115,13 +115,13 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
   };
 
   return (
-    <div className="overflow-x-auto rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none">
+    <div className="overflow-x-auto rounded-[2rem] border border-slate-200 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/60 shadow-xl shadow-slate-200/40 dark:shadow-none">
       <div
         className="grid w-full"
         style={{ gridTemplateColumns: `minmax(90px, auto) repeat(${days.length}, minmax(140px, 1fr))` }}
       >
         {/* Headers */}
-        <div className="p-4 text-left text-slate-500 dark:text-slate-400 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800">
+        <div className="p-4 text-left text-slate-500 dark:text-slate-400 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-emerald-800/50">
           Period
         </div>
         {days.map((day) => {
@@ -129,13 +129,13 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
           return (
             <div
               key={day}
-              className={`p-4 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 flex items-center justify-between ${
-                isToday ? 'text-primary bg-primary/5 dark:bg-primary/10' : 'text-slate-500 dark:text-slate-400'
+              className={`p-4 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-emerald-800/50 last:border-r-0 flex items-center justify-between ${
+                isToday ? 'text-emerald-600 bg-emerald-600/5 dark:bg-emerald-600/10' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               <span>{day}</span>
               {isToday && (
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse block shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse block shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
               )}
             </div>
           );
@@ -144,7 +144,7 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
         {/* Rows */}
         {periods.map((period) => (
           <React.Fragment key={period.id}>
-            <div className="p-4 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 text-center">
+            <div className="p-4 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-emerald-800/50 bg-slate-50 dark:bg-emerald-900/20 text-center">
               {formatSlotTo12Hour(period.timeSlot)}
             </div>
 
@@ -155,12 +155,12 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
               return (
                 <div
                   key={`${period.id}-${day}`}
-                  className={`p-3 border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 transition-all duration-300 relative ${
-                    isCurrent ? 'bg-primary/5 dark:bg-primary/10 z-10' : ''
+                  className={`p-3 border-b border-r border-slate-100 dark:border-emerald-800/50 last:border-r-0 transition-all duration-300 relative ${
+                    isCurrent ? 'bg-emerald-600/5 dark:bg-emerald-600/10 z-10' : ''
                   }`}
                 >
                   {isCurrent && (
-                    <div className="absolute top-2 left-2 z-50 bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.8)] ring-2 ring-blue-300 dark:ring-blue-400">
+                    <div className="absolute top-2 left-2 z-50 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.8)] ring-2 ring-emerald-300 dark:ring-emerald-400">
                       Now
                     </div>
                   )}
@@ -179,8 +179,8 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
                   ) : (
                     <div className={`h-full min-h-[90px] rounded-2xl flex items-center justify-center transition-colors ${
                       isCurrent
-                        ? 'border-2 border-dashed border-primary/30 dark:border-primary/20 bg-white dark:bg-slate-900'
-                        : 'border border-dashed border-slate-200 dark:border-slate-800'
+                        ? 'border-2 border-dashed border-emerald-600/30 dark:border-emerald-600/20 bg-white dark:bg-emerald-950/60'
+                        : 'border border-dashed border-slate-200 dark:border-emerald-800/50'
                     }`}>
                       <span className="text-[10px] text-slate-300 dark:text-slate-600 font-black uppercase tracking-widest">
                         Free

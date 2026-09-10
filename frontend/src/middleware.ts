@@ -76,6 +76,30 @@ export function middleware(req: NextRequest) {
   );
 
   if (isSystemPath) {
+    if (url.pathname.startsWith("/dashboard")) {
+      const token = req.cookies.get("token")?.value;
+      
+      if (!token) {
+        const loginUrl = new URL("/login", req.url);
+        loginUrl.searchParams.set("redirect", url.pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      if (url.pathname.startsWith("/dashboard/teacher")) {
+        try {
+          const payloadBase64 = token.split(".")[1];
+          const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+          const decodedPayload = JSON.parse(atob(base64));
+          
+          if (decodedPayload.userType !== "TEACHER") {
+            return NextResponse.redirect(new URL("/unauthorized", req.url));
+          }
+        } catch (e) {
+          // Let client-side protection handle invalid token formats
+        }
+      }
+    }
+
     return NextResponse.next();
   }
 

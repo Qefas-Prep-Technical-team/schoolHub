@@ -26,7 +26,7 @@ export function ExamStats({ exams, className }: ExamStatsProps) {
       label: 'Total',
       value: stats.total,
       icon: 'file_question',
-      color: 'text-blue-600 dark:text-blue-400',
+      color: 'text-emerald-600 dark:text-emerald-400',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
     },
     {

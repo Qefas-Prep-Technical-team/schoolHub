@@ -148,7 +148,7 @@ export default function AssignmentsPage() {
     };
 
     return (
-        <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-slate-50/50 dark:bg-slate-950/50">
+        <main className="min-h-[calc(100vh-4rem)] w-full p-4 md:p-6 lg:p-8 space-y-6 bg-slate-50/50 dark:bg-slate-950/50">
             <div className="space-y-6">
                 {/* Page Header Modernized */}
                 <PageHeader
@@ -159,7 +159,7 @@ export default function AssignmentsPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-primary/90 transition-all duration-200"
+                                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl shadow-sm hover:bg-primary/90 transition-all duration-200"
                             >
                                 <PlusCircle size={18} strokeWidth={2} />
                                 Create New

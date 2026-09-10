@@ -12,23 +12,32 @@ interface ClassListProps {
 
 const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
   const getAttendanceStyles = (attendance: number) => {
-    if (attendance >= 95) return "text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/10 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/30";
-    if (attendance >= 85) return "text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/10 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/30";
-    return "text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/10 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-900/30";
+    if (attendance >= 95) return "text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-800/30";
+    if (attendance >= 85) return "text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800/30";
+    if (attendance >= 40) return "text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-800/30";
+    return "text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800/30";
   };
 
   const getGradeStyles = (grade: number) => {
-    if (grade >= 85) return "text-emerald-600 dark:text-emerald-400";
-    if (grade >= 75) return "text-amber-600 dark:text-amber-400";
-    return "text-rose-600 dark:text-rose-400";
+    if (grade >= 90) return "text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-800/30";
+    if (grade >= 75) return "text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800/30";
+    if (grade >= 40) return "text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-800/30";
+    return "text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800/30";
+  };
+
+  const getPendingStyles = (pending: number) => {
+    if (pending === 0) return "text-slate-500 dark:text-slate-400 font-medium";
+    if (pending <= 2) return "text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-800/30";
+    if (pending <= 5) return "text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-800/30";
+    return "text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800/30";
   };
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div className="w-full bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <tr className="bg-slate-50 dark:bg-emerald-900/40 border-b border-slate-200 dark:border-emerald-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               <th className="px-6 py-4 font-semibold w-12 text-center">#</th>
               <th className="px-6 py-4 font-semibold">Class Info</th>
               <th className="px-6 py-4 font-semibold">Level / Schedule</th>
@@ -38,7 +47,7 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
               <th className="px-6 py-4 font-semibold text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+          <tbody className="divide-y divide-slate-100 dark:divide-emerald-800/50">
             <AnimatePresence>
               {classes.map((cls, idx) => {
                 const pendingCount = (cls.assignments || 0) + (cls.exams || 0);
@@ -49,7 +58,7 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                    className="group hover:bg-slate-50 dark:hover:bg-emerald-900/30 transition-colors"
                   >
                     <td className="px-6 py-4 text-center">
                       <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
@@ -58,11 +67,11 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-emerald-700/50">
                           <Image src={cls.image || '/users/user 1.jpeg'} alt={cls.name} width={48} height={48} className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{cls.name}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">{cls.name}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                             <GraduationCap size={12} /> {cls.subject}
                           </p>
@@ -79,18 +88,18 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={cn("text-sm font-bold", getGradeStyles(cls.averageGrade))}>
+                      <span className={cn("text-xs transition-transform duration-300 inline-block", getGradeStyles(cls.averageGrade))}>
                         {cls.averageGrade}%
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={cn("text-xs transition-transform duration-300", getAttendanceStyles(cls.attendance))}>
+                      <span className={cn("text-xs transition-transform duration-300 inline-block", getAttendanceStyles(cls.attendance))}>
                         {cls.attendance}%
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       {pendingCount > 0 ? (
-                         <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-500/20">
+                         <span className={cn("text-xs transition-transform duration-300 inline-block", getPendingStyles(pendingCount))}>
                             {pendingCount} Tasks
                          </span>
                       ) : (
@@ -99,7 +108,7 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link href={`/dashboard/teacher/my-classes/${cls.id}`} onClick={() => onClassClick(cls.id)}>
-                        <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-primary hover:text-white transition-all">
+                        <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 dark:bg-emerald-900/40 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
                           Enter
                           <ArrowRight size={14} />
                         </button>

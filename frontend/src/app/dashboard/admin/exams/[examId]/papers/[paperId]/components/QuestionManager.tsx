@@ -32,6 +32,7 @@ import { CSS } from "@dnd-kit/utilities";
 import ManualAddForm from "./ManualAddForm";
 import AITools from "./AITools";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import StudentResultsList from "./StudentResultsList";
 
 interface Question {
   id: string;
@@ -228,8 +229,9 @@ export default function QuestionManager({
         </div>
       </div>
 
-      <div className="mt-6">
-        {activeTab === "list" && (
+      <div className="mt-6 grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+        <div className="xl:col-span-3">
+          {activeTab === "list" && (
           <div className="space-y-4">
             {questions.length === 0 ? (
               <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-16 text-center shadow-sm">
@@ -323,7 +325,7 @@ export default function QuestionManager({
         )}
 
         {activeTab === "ai" && (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             <Card className="p-8 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden rounded-2xl">
                <AITools 
                  paperId={paperId} 
@@ -334,6 +336,50 @@ export default function QuestionManager({
             </Card>
           </div>
         )}
+        </div>
+
+        {/* Sticky Details Sidebar */}
+        <div className="hidden xl:block xl:col-span-1 sticky top-6 space-y-6">
+          <Card className="p-5 border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">Paper Details</h3>
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Total Questions</span>
+                <span className="font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-lg">{questions.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Total Marks</span>
+                <span className="font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 px-2 py-0.5 rounded-lg">{questions.reduce((acc: number, q: Question) => acc + (q.marks || 0), 0)}</span>
+              </div>
+              {paper?.durationMinutes ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Duration</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{paper.durationMinutes} mins</span>
+                </div>
+              ) : null}
+              {paper?.subject?.name ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Subject</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]" title={paper.subject.name}>{paper.subject.name}</span>
+                </div>
+              ) : null}
+            </div>
+            
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+               <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                 {paper?.status === 'PUBLISHED' 
+                   ? "This paper is live. Unpublish it to edit or reorder questions."
+                   : "Draft mode. You can add, edit, or reorder questions freely."}
+               </p>
+            </div>
+          </Card>
+          
+          {paper?.status === 'PUBLISHED' && (
+            <Card className="p-5 border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+              <StudentResultsList examId={examId} paperId={paperId} />
+            </Card>
+          )}
+        </div>
       </div>
 
       <DeleteConfirmationModal

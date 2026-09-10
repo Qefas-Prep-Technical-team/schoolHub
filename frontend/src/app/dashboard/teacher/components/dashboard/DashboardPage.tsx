@@ -38,6 +38,7 @@ export default function DashboardPage() {
     averagePerformance: 0,
     attendanceRate: 0,
     session: "Loading...",
+    subjectNames: [] as string[],
   });
   const [performanceMetrics, setPerformanceMetrics] = useState({
     topStudents: [],
@@ -63,7 +64,8 @@ export default function DashboardPage() {
       setStats({
         ...dashboardData.stats,
         session: dashboardData.stats.session || "Session Not Set",
-        classNames: dashboardData.stats.classNames || []
+        classNames: dashboardData.stats.classNames || [],
+        subjectNames: dashboardData.stats.subjectNames || []
       });
       setPerformanceMetrics(dashboardData.performanceMetrics);
       setRecentExams(dashboardData.recentExams);
@@ -185,6 +187,7 @@ export default function DashboardPage() {
             totalClasses={stats.totalClasses}
             sessionName={stats.session}
             classNames={stats.classNames}
+            subjectNames={stats.subjectNames}
           />
 
           <AnimatePresence mode="wait">

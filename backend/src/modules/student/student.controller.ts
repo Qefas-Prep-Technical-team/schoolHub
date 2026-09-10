@@ -13,6 +13,7 @@ import { sendEmailUpdateVerification } from "../auth/auth.service";
 import { handleError } from "../../utils/error-handler";
 import prisma from "../../config/database";
 import { getStudentAssignmentsService } from "../assignment/assignment.service";
+import { canTeacherAccessStudent } from "./student.permissions";
 
 export const requestEmailUpdate = async (req: Request, res: Response) => {
   try {
@@ -197,6 +198,16 @@ export const getStudentById = async (req: Request, res: Response) => {
       });
     }
 
+    if (currentUserType === UserRole.TEACHER) {
+      const hasAccess = await canTeacherAccessStudent(currentUserId, studentId as string);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view details of students enrolled in your assigned classes.",
+        });
+      }
+    }
+
     const profile = await getStudentProfileService(studentId as string);
 
     if (!profile) {
@@ -219,6 +230,17 @@ export const getStudentAssignments = async (req: Request, res: Response) => {
   try {
     const { id: studentId } = req.params;
     const { status, page = "1", limit = "10" } = req.query;
+    const { userType: currentUserType, id: currentUserId } = req.user!;
+
+    if (currentUserType === UserRole.TEACHER) {
+      const hasAccess = await canTeacherAccessStudent(currentUserId, studentId as string);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view details of students enrolled in your assigned classes.",
+        });
+      }
+    }
 
     const data = await getStudentAssignmentsService({
       studentId: studentId as string,
@@ -244,12 +266,21 @@ export const getStudentAttendance = async (req: Request, res: Response) => {
     const { userType: currentUserType, id: currentUserId } = req.user!;
 
     // Admins and teachers can view. Students/Parents can view if it's them.
-    // Assuming middleware handles high-level auth, but we might want to check if the student can view their own.
     if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
       return res.status(403).json({
         success: false,
         message: "You can only view your own attendance",
       });
+    }
+
+    if (currentUserType === UserRole.TEACHER) {
+      const hasAccess = await canTeacherAccessStudent(currentUserId, studentId as string);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view details of students enrolled in your assigned classes.",
+        });
+      }
     }
 
     const attendance = await getStudentAttendanceService(studentId as string, {
@@ -415,6 +446,16 @@ export const getStudentHistory = async (req: Request, res: Response) => {
     // Security check: if not admin, maybe check if it's the student themselves or a parent
     if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    if (currentUserType === UserRole.TEACHER) {
+      const hasAccess = await canTeacherAccessStudent(currentUserId, studentId as string);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view details of students enrolled in your assigned classes.",
+        });
+      }
     }
 
     let schoolIdFilter: string | undefined = undefined;

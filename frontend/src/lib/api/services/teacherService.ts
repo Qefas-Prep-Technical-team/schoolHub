@@ -96,6 +96,14 @@ export const teacherService = {
   },
 
   /**
+   * Delete an individual grade record
+   */
+  deleteClassGrade: async (classId: string, gradeId: string) => {
+    const response = await apiClient.delete(`/teacher/classes/${classId}/grades/${gradeId}`);
+    return response.data;
+  },
+
+  /**
    * Get performance trends for the teacher
    */
   getPerformanceTrends: async (schoolId?: string, range: string = 'month') => {
@@ -206,6 +214,26 @@ export const teacherService = {
    */
   updatePassword: async (data: any): Promise<any> => {
     const response = await apiClient.post("/auth/password/change", data);
+    return response.data;
+  },
+
+  /**
+   * Delete an assignment
+   */
+  deleteAssignment: async (assignmentId: string, schoolId?: string) => {
+    const response = await apiClient.delete(`/assignment/teacher/${assignmentId}`, {
+      headers: schoolId ? { 'x-school-id': schoolId } : {}
+    });
+    return response.data;
+  },
+
+  /**
+   * Update assignment status
+   */
+  updateAssignmentStatus: async (assignmentId: string, status: string, schoolId?: string) => {
+    const response = await apiClient.patch(`/assignment/${assignmentId}/status`, { status }, {
+      headers: schoolId ? { 'x-school-id': schoolId } : {}
+    });
     return response.data;
   }
 };

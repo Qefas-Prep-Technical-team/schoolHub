@@ -1,18 +1,25 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ExamToolbar } from './components/ExamToolbar'
 import { ExamTable } from './components/ExamTable'
 import { Exam, ExamFilter, ExamStatus } from './components/types'
 import { teacherService } from '@/lib/api/services/teacherService'
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore'
 import { Loader2 } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
+import { TabSkeleton } from '../TabSkeleton'
 
 export default function ExamsPage() {
+  const router = useRouter()
   const params = useParams()
   const classId = params.classId as string
+  const { user } = useAuthStore()
+  const { selectedSchoolId } = useDashboardStore()
+  const currentTeacherId = (user as any)?.id as string | undefined
   const [searchQuery, setSearchQuery] = useState('')
   const [filters] = useState<ExamFilter>({})
   const [currentPage, setCurrentPage] = useState(1)
@@ -23,6 +30,7 @@ export default function ExamsPage() {
     queryFn: async () => {
       let examsRes = [];
       let papersRes = [];
+      let assignmentsRes = [];
       try {
         examsRes = await teacherService.getExams({ classId });
       } catch (error) {
@@ -33,17 +41,42 @@ export default function ExamsPage() {
       } catch (error) {
         console.error("Failed to fetch subject papers:", error);
       }
-      return { exams: examsRes || [], papers: papersRes || [] };
+      try {
+        assignmentsRes = await teacherService.getAssignments({ classId });
+      } catch (error) {
+        console.error("Failed to fetch assignments:", error);
+      }
+      return { exams: examsRes || [], papers: papersRes || [], assignments: assignmentsRes || [] };
     },
     enabled: !!classId,
   })
+
+  const isPersonal = selectedSchoolId === currentTeacherId;
+  const filterId = isPersonal ? undefined : selectedSchoolId;
+  const { data: subjectsData } = useQuery({
+    queryKey: ['teacher-subjects', filterId],
+    queryFn: () => teacherService.getSubjects(filterId ? { schoolId: filterId } : {}),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const authorizedSubjects = useMemo(() => {
+    if (!subjectsData) return new Set<string>()
+    return new Set<string>((subjectsData as any[]).map((s: any) => (s.subject?.name || s.name || '').toLowerCase()))
+  }, [subjectsData])
 
   // Map backend exam format to frontend exam format
   const exams: Exam[] = useMemo(() => [
     ...(data?.exams || []).map((e: any) => ({
       id: e.id,
       title: e.title,
-      type: (e.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'exam',
+      type: e.category?.toLowerCase() || 
+            ((e.title || '').toLowerCase().includes('ca ') || (e.title || '').toLowerCase().includes(' ca') || (e.title || '').toLowerCase() === 'ca' ? 'ca' : 
+            (e.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'exam'),
+      subjects: [
+        ...(e.subjectExamPapers?.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
+        e.subject?.name || e.subject
+      ].filter(Boolean),
+      teacherId: e.teacherId,
       questions: e.totalQuestions || 0,
       totalMarks: e.totalMarks || 0,
       scheduledDate: new Date(e.startDate || e.createdAt),
@@ -55,13 +88,31 @@ export default function ExamsPage() {
     ...(data?.papers || []).map((p: any) => ({
       id: p.id,
       title: p.title || 'Untitled Subject Paper',
-      type: 'subject_paper',
+      type: p.category?.toLowerCase() || 
+            ((p.title || '').toLowerCase().includes('ca ') || (p.title || '').toLowerCase().includes(' ca') || (p.title || '').toLowerCase() === 'ca' ? 'ca' : 
+            (p.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'subject_paper'),
+      subjects: [p.subject?.name || p.subject].filter(Boolean),
+      teacherId: p.teacherId,
       questions: p.questions?.length || 0,
       totalMarks: p.totalMarks || 0,
       scheduledDate: new Date(p.createdAt), // Papers don't have scheduled dates usually
       status: p.status === 'APPROVED' ? 'published' : 'draft',
       createdAt: new Date(p.createdAt),
       updatedAt: new Date(p.updatedAt),
+      classId: classId
+    })),
+    ...(data?.assignments || []).map((a: any) => ({
+      id: a.id,
+      title: a.title || 'Untitled Assignment',
+      type: 'assignment',
+      subjects: [a.subject?.name || a.subject].filter(Boolean),
+      teacherId: a.teacherId,
+      questions: a.totalQuestions || a.questions?.length || 0,
+      totalMarks: a.totalMarks || a.maxScore || 100,
+      scheduledDate: new Date(a.dueDate || a.createdAt),
+      status: a.status?.toLowerCase() || 'published',
+      createdAt: new Date(a.createdAt),
+      updatedAt: new Date(a.updatedAt),
       classId: classId
     }))
   ], [data, classId]);
@@ -99,13 +150,23 @@ export default function ExamsPage() {
   }, [searchQuery, exams, filters])
 
   const handleViewExam = (exam: Exam) => {
-    // console.log('View exam:', exam)
-    // Navigate to exam details
+    const params: Record<string, string> = {
+      id: exam.id,
+      title: exam.title,
+      type: exam.type,
+      questions: exam.questions.toString(),
+      marks: exam.totalMarks.toString(),
+      subject: (exam.subjects && exam.subjects.length > 0) ? exam.subjects[0] : 'General'
+    };
+    if (classId) {
+      params.fromClass = classId;
+    }
+    const searchParams = new URLSearchParams(params);
+    router.push(`/dashboard/teacher/exams&quizzes/preview?${searchParams.toString()}`)
   }
 
   const handleEditExam = (exam: Exam) => {
-    // console.log('Edit exam:', exam)
-    // Navigate to exam editor
+    router.push(`/dashboard/teacher/exams&quizzes/${exam.id}/papers`)
   }
 
   const handleDeleteExam = (exam: Exam) => {
@@ -131,17 +192,14 @@ export default function ExamsPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="mt-4 text-gray-500 font-medium">Loading exams...</p>
-      </div>
-    );
+    return <TabSkeleton tabId="exams&quizzes" />;
   }
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedExams = filteredExams.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     < >
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
        
 
@@ -156,12 +214,15 @@ export default function ExamsPage() {
         />
 
         <ExamTable
-          exams={filteredExams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
+          exams={paginatedExams}
           onView={handleViewExam}
           onEdit={handleEditExam}
-          onDelete={handleDeleteExam}
-          onDuplicate={handleDuplicateExam}
-          onExport={handleExportExam}
+          onDelete={(exam) => console.log('Delete', exam)}
+          onDuplicate={(exam) => console.log('Duplicate', exam)}
+          onExport={(exam) => console.log('Export', exam)}
+          startIndex={startIndex}
+          currentTeacherId={currentTeacherId}
+          authorizedSubjects={authorizedSubjects}
         />
         
         {filteredExams.length > 0 && (

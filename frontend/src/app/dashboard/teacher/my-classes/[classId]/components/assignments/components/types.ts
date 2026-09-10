@@ -12,6 +12,7 @@ export interface Assignment {
   }
   createdAt: Date
   updatedAt: Date
+  teacherId?: string
 }
 
 export interface NavItem {

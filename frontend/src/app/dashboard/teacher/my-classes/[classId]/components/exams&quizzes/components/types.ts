@@ -1,4 +1,4 @@
-export type ExamType = 'exam' | 'quiz' | 'subject_paper'
+export type ExamType = 'exam' | 'quiz' | 'subject_paper' | 'ca' | 'assignment'
 export type ExamStatus = 'draft' | 'scheduled' | 'completed' | 'graded' | 'cancelled' | 'published'
 
 export interface Exam {
@@ -6,6 +6,8 @@ export interface Exam {
   title: string
   type: ExamType
   description?: string
+  subjects?: string[]
+  teacherId?: string
   questions: number
   totalMarks: number
   passingMarks?: number

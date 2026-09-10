@@ -59,7 +59,7 @@ const Pagination: React.FC<PaginationProps> = ({
                 key={index}
                 className={`flex h-9 min-w-9 px-3 items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90 ${
                   currentPage === page
-                    ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/20 dark:from-indigo-600 dark:to-violet-700 dark:shadow-indigo-950/40 scale-105'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 dark:from-emerald-600 dark:to-emerald-700 dark:shadow-emerald-950/40 scale-105'
                     : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
                 onClick={() => onPageChange(page)}

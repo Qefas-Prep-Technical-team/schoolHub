@@ -4,9 +4,11 @@ import TopNavBar from "./components/TopNavBar"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
 import FeatureGuard from "@/components/auth/FeatureGuard"
 
+import { ProtectedTeacherRoute } from "./components/ProtectedTeacherRoute"
+
 export default function Layout({ children }: { children: React.ReactNode }) {
     return (
-        // <ProtectedTeacherRoute>
+        <ProtectedTeacherRoute>
         <SidebarProvider
             style={{
                 "--sidebar-width": "220px",
@@ -24,6 +26,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </div>
             </SidebarInset>
         </SidebarProvider>
-        // </ProtectedTeacherRoute>
+        </ProtectedTeacherRoute>
     )
 }

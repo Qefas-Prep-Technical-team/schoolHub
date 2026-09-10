@@ -55,7 +55,7 @@ export default function AttendanceSummary({ data, onViewAll }: AttendanceSummary
   };
 
   return (
-    <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-800/60 rounded-[3rem] p-8 shadow-2xl h-full flex flex-col relative overflow-hidden">
+    <div className="bg-white/70 dark:bg-emerald-950/40 backdrop-blur-3xl border border-slate-200/60 dark:border-emerald-800/50 rounded-[3rem] p-8 shadow-2xl h-full flex flex-col relative overflow-hidden">
       {/* Background Glow */}
       <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none"></div>
 
@@ -66,7 +66,7 @@ export default function AttendanceSummary({ data, onViewAll }: AttendanceSummary
         </h2>
         <button
           onClick={onViewAll}
-          className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-dark transition-colors"
+          className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-800 transition-colors"
         >
           Detailed Log
         </button>
@@ -104,7 +104,7 @@ export default function AttendanceSummary({ data, onViewAll }: AttendanceSummary
 
 function MetricBox({ icon: Icon, label, value, color, bg, border }: any) {
     return (
-        <div className={`p-4 rounded-3xl bg-white/40 dark:bg-slate-800/40 flex flex-col items-center justify-center text-center border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg group cursor-pointer ${border}`}>
+        <div className={`p-4 rounded-3xl bg-white/40 dark:bg-emerald-900/30 flex flex-col items-center justify-center text-center border border-slate-200/50 dark:border-emerald-700/40 transition-all duration-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg group cursor-pointer ${border}`}>
             <div className={`p-3 rounded-[1rem] mb-3 ${bg} ${color} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
                 <Icon size={18} strokeWidth={2.5} />
             </div>

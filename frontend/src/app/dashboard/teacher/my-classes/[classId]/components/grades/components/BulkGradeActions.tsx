@@ -52,7 +52,7 @@ export function BulkGradeActions({
           
           <button
             onClick={handleApply}
-            className="px-4 py-1.5 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors"
+            className="px-4 py-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-600/90 rounded-lg transition-colors"
           >
             Apply
           </button>

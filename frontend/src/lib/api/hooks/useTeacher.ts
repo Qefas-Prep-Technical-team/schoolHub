@@ -14,6 +14,8 @@ export const useTeacherProfile = () => {
   return useQuery({
     queryKey: teacherKeys.profile(),
     queryFn: () => teacherService.getProfile(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 };
 

@@ -9,7 +9,7 @@ const HeaderTitle: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.22em] text-[10px] mb-2 leading-none">
+      <div className="flex items-center gap-2 text-emerald-500 font-black uppercase tracking-[0.22em] text-[10px] mb-2 leading-none">
         <Sparkles size={12} className="animate-pulse" />
         Academic Directory
       </div>
@@ -17,7 +17,7 @@ const HeaderTitle: React.FC = () => {
         Students
       </h1>
       <div className="mt-3 flex items-center gap-2">
-        <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/20">
+        <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
           {isPersonal ? "All Connected Schools" : selectedSchoolName}
         </span>
         {isPersonal && (

@@ -75,9 +75,9 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
 
 function SectionCard({ title, children, className = '', headerAction }: { title: string; children: React.ReactNode; className?: string; headerAction?: React.ReactNode }) {
     return (
-        <div className={cn("bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 rounded-2xl shadow-sm overflow-hidden", className)}>
+        <div className={cn("bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50 rounded-2xl shadow-sm overflow-hidden", className)}>
             <div className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-emerald-800/50 pb-4">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
                     {headerAction}
                 </div>
@@ -89,7 +89,7 @@ function SectionCard({ title, children, className = '', headerAction }: { title:
 
 function StatBadge({ label, value, icon: Icon, themeColor, trend }: { label: string; value: string | number; icon: React.ElementType; themeColor: string; trend?: string }) {
     return (
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 shadow-sm space-y-4 flex flex-col justify-between">
+        <div className="p-6 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50 shadow-sm space-y-4 flex flex-col justify-between">
             <div className="flex items-center justify-between">
                 <div className="size-12 rounded-[14px] flex items-center justify-center" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
                     <Icon size={22} strokeWidth={2.5} />
@@ -117,7 +117,7 @@ function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate
         <div className="flex items-center gap-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-sm">
             <button 
                 onClick={onPrev}
-                className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm active:scale-90"
+                className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
             >
                 <ChevronLeft size={20} />
             </button>
@@ -127,7 +127,7 @@ function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate
             </div>
             <button 
                 onClick={onNext}
-                className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm active:scale-90"
+                className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
             >
                 <ChevronRight size={20} />
             </button>
@@ -205,7 +205,7 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
                                         <div 
                                             key={`${day.full}-${hour}`} 
                                             onClick={() => onCellClick(day.full, hour)}
-                                            className="h-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/30 dark:hover:border-primary/30 transition-all cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-0.5"
+                                            className="h-20 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/30 dark:hover:border-primary/30 transition-all cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-0.5"
                                             style={{ '--primary': themeColor } as any}
                                         >
                                             {type === 'attendance' ? (
@@ -291,7 +291,7 @@ export default function StudentProfilePage() {
     })
 
     const { data: settings } = useSchoolSettings(schoolId)
-    const primaryColor = settings?.themeColor || '#2563eb'
+    const primaryColor = '#10b981' // Force Emerald 500 for Teacher Dashboard
 
     const tabParam = searchParams.get('tab')
     const [activeTab, setActiveTab] = useState(tabParam || 'overview')
@@ -589,7 +589,7 @@ export default function StudentProfilePage() {
     // ── Loading & Errors ─────────────────────────────────────────────────────
     if (isStudentLoading) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
+            <div className="min-h-screen bg-slate-50 dark:bg-transparent flex flex-col items-center justify-center gap-4">
                 <div className="size-14 rounded-full border-4 border-slate-100 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Student...</p>
             </div>
@@ -598,7 +598,7 @@ export default function StudentProfilePage() {
 
     if (studentError || !student) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
+            <div className="min-h-screen bg-slate-50 dark:bg-transparent flex flex-col items-center justify-center gap-4">
                 <ShieldCheck size={48} className="text-slate-200" />
                 <p className="text-sm font-bold text-red-500">Student not found.</p>
                 <button onClick={() => router.back()} className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
@@ -650,10 +650,10 @@ export default function StudentProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-500 pb-20">
+        <div className="min-h-screen bg-[#f8fafc] dark:bg-transparent transition-colors duration-500 pb-20">
 
             {/* ── Top Actions ──────────────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pt-6 flex justify-between items-center">
+            <div className="w-full px-4 sm:px-6 lg:px-12 pt-6 flex justify-between items-center">
                 <button
                     onClick={() => router.back()}
                     className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -663,10 +663,8 @@ export default function StudentProfilePage() {
             </div>
 
             {/* ── Profile Header (Skillery Style Hero) ─────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6">
-                <div className="rounded-[2rem] overflow-hidden relative p-8 md:p-12 shadow-sm border border-slate-100 dark:border-white/5" style={{
-                    background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}DD 100%)`
-                }}>
+            <div className="w-full px-4 sm:px-6 lg:px-12 mt-6">
+                <div className="rounded-[2rem] overflow-hidden relative p-8 md:p-12 shadow-xl shadow-emerald-500/10 border border-slate-100 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800">
                     <div className="absolute inset-0 opacity-20"
                         style={{ backgroundImage: 'radial-gradient(circle at 100% 0%, white 0%, transparent 50%)' }} />
                     
@@ -720,8 +718,8 @@ export default function StudentProfilePage() {
             </div>
 
             {/* ── Tabs (Verlof Style) ─────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-8">
-                <div className="flex gap-6 overflow-x-auto scrollbar-hide border-b border-slate-200 dark:border-slate-800">
+            <div className="w-full px-4 sm:px-6 lg:px-12 mt-8">
+                <div className="flex gap-6 overflow-x-auto scrollbar-hide border-b border-slate-200 dark:border-emerald-800/50">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
@@ -742,7 +740,7 @@ export default function StudentProfilePage() {
 
             {/* ── Overview Tab ─────────────────────────────────────────────── */}
             {activeTab === 'overview' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
+                <main className="w-full px-0 md:px-12 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
 
                     <div className="lg:col-span-2 space-y-6 md:space-y-10">
                         {/* Summary Metrics */}
@@ -853,7 +851,7 @@ export default function StudentProfilePage() {
 
             {/* ── History Tab ─────────────────────────────────────────────── */}
             {activeTab === 'history' && (
-                <main className="max-w-4xl mx-auto px-4 md:px-12 mt-10 pb-20 space-y-10">
+                <main className="w-full px-4 md:px-12 mt-10 pb-20 space-y-10">
                     
                     {/* Connected Schools Section */}
                     <SectionCard title="Connected Schools">
@@ -878,7 +876,7 @@ export default function StudentProfilePage() {
                                     
                                     if (schools.length === 0) {
                                         return (
-                                            <div className="col-span-full py-10 text-center space-y-3 border border-dashed border-slate-200 dark:border-slate-800 rounded-[1.5rem]">
+                                            <div className="col-span-full py-10 text-center space-y-3 border border-dashed border-slate-200 dark:border-emerald-800/50 rounded-[1.5rem]">
                                                 <Building2 size={32} className="text-slate-200 dark:text-slate-700 mx-auto" />
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No Connected Schools Found</p>
                                             </div>
@@ -886,8 +884,8 @@ export default function StudentProfilePage() {
                                     }
 
                                     return schools.map((sch: any) => (
-                                        <div key={sch.id} className="flex items-center gap-4 p-4 rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                                            <div className="size-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                        <div key={sch.id} className="flex items-center gap-4 p-4 rounded-[1.5rem] border border-slate-200 dark:border-emerald-800/50 bg-slate-50 dark:bg-emerald-950/60">
+                                            <div className="size-12 rounded-xl bg-white dark:bg-emerald-900/40 border border-slate-200 dark:border-emerald-800/50 flex items-center justify-center overflow-hidden shrink-0">
                                                 {sch.logo ? (
                                                     <img src={sch.logo} alt={sch.name} className="w-full h-full object-cover" />
                                                 ) : (
@@ -920,35 +918,35 @@ export default function StudentProfilePage() {
 
             {/* ── Behaviour Tab ────────────────────────────────────────────── */}
             {activeTab === 'behaviour' && isBehaviourLoading && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                <main className="w-full px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
                     <div className="space-y-6">
                         {/* Conduct Standing Skeleton */}
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
-                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/2" />
-                            <div className="size-36 rounded-full bg-slate-200 dark:bg-slate-800 mx-auto" />
-                            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-3/4 mx-auto" />
+                        <div className="bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-800/50 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-1/2" />
+                            <div className="size-36 rounded-full bg-slate-200 dark:bg-emerald-900/40 mx-auto" />
+                            <div className="h-10 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-3/4 mx-auto" />
                         </div>
                         {/* Core Strengths Skeleton */}
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
-                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/2" />
+                        <div className="bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-800/50 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-1/2" />
                             <div className="space-y-4">
-                                <div className="h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-full" />
-                                <div className="h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-full" />
+                                <div className="h-16 bg-slate-100 dark:bg-emerald-900/40/50 rounded-2xl w-full" />
+                                <div className="h-16 bg-slate-100 dark:bg-emerald-900/40/50 rounded-2xl w-full" />
                             </div>
                         </div>
                     </div>
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
-                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/3" />
-                            <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
-                            <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
+                        <div className="bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-800/50 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-1/3" />
+                            <div className="h-24 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-full" />
+                            <div className="h-24 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-full" />
                         </div>
                     </div>
                 </main>
             )}
 
             {activeTab === 'behaviour' && !isBehaviourLoading && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                <main className="w-full px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
                     {/* Left Panel: Score and Strengths */}
                     <div className="space-y-6">
                         <SectionCard 
@@ -956,7 +954,7 @@ export default function StudentProfilePage() {
                             headerAction={
                                 <button
                                     onClick={handleOpenEditProfile}
-                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-emerald-900/30 rounded-xl transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
                                 >
                                     <Edit2 size={16} />
                                 </button>
@@ -1075,7 +1073,7 @@ export default function StudentProfilePage() {
                             headerAction={
                                 <button
                                     onClick={handleOpenEditProfile}
-                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-emerald-900/30 rounded-xl transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
                                 >
                                     <Plus size={16} />
                                 </button>
@@ -1134,7 +1132,7 @@ export default function StudentProfilePage() {
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No core strengths registered</p>
                                         <button
                                             onClick={handleOpenEditProfile}
-                                            className="mt-2 h-9 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-[1.01]"
+                                            className="mt-2 h-9 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-[1.01]"
                                         >
                                             Add First Strength
                                         </button>
@@ -1173,9 +1171,9 @@ export default function StudentProfilePage() {
                                     <div className="space-y-6">
                                         {paginatedAlerts.map((alert: any) => (
                                             <div key={alert.id} className="relative pl-8 group">
-                                                <div className="absolute left-[11px] top-7 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800 group-last:hidden" />
+                                                <div className="absolute left-[11px] top-7 bottom-0 w-0.5 bg-slate-100 dark:bg-emerald-900/40 group-last:hidden" />
                                                 <div className={cn(
-                                                    "absolute left-0 top-1.5 size-6 rounded-full border-4 flex items-center justify-center bg-white dark:bg-slate-950",
+                                                    "absolute left-0 top-1.5 size-6 rounded-full border-4 flex items-center justify-center bg-white dark:bg-emerald-950",
                                                     alert.type === 'DANGER' 
                                                         ? "border-rose-500 text-rose-500" 
                                                         : "border-amber-400 text-amber-400"
@@ -1198,7 +1196,7 @@ export default function StudentProfilePage() {
                                                         <div className="flex items-center gap-1">
                                                             <button 
                                                                 onClick={() => handleOpenEditAlert(alert)}
-                                                                className="size-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                                                                className="size-8 rounded-lg hover:bg-slate-200 dark:hover:bg-emerald-900/30 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
                                                             >
                                                                 <Edit2 size={12} />
                                                             </button>
@@ -1266,7 +1264,7 @@ export default function StudentProfilePage() {
 
             {/* ── Academic Tab ─────────────────────────────────────────────── */}
             {activeTab === 'academic' && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 space-y-10">
+                <main className="w-full px-4 md:px-12 mt-10 pb-20 space-y-10">
                     
                     {/* Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -1339,7 +1337,7 @@ export default function StudentProfilePage() {
                                     className={cn(
                                         "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                                         academicSubTab === 'exams' 
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" 
+                                            ? "bg-white dark:bg-emerald-900/40 text-slate-900 dark:text-white shadow-sm" 
                                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -1350,7 +1348,7 @@ export default function StudentProfilePage() {
                                     className={cn(
                                         "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                                         academicSubTab === 'papers' 
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" 
+                                            ? "bg-white dark:bg-emerald-900/40 text-slate-900 dark:text-white shadow-sm" 
                                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -1520,14 +1518,14 @@ export default function StudentProfilePage() {
 
             {/* ── Attendance Tab ─────────────────────────────────────────────── */}
             {activeTab === 'attendance' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 pb-20">
+                <main className="w-full px-0 md:px-12 mt-10 pb-20">
                      <AttendanceCalendar studentId={studentId} themeColor={primaryColor} />
                 </main>
             )}
 
             {/* ── Time Table Tab ────────────────────────────────────────────── */}
             {activeTab === 'timetable' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 pb-20">
+                <main className="w-full px-0 md:px-12 mt-10 pb-20">
                      <SectionCard 
                         title="Weekly Schedule"
                         headerAction={
@@ -1568,7 +1566,7 @@ export default function StudentProfilePage() {
             />
 
             <Dialog open={!!selectedScheduleCell} onOpenChange={() => setSelectedScheduleCell(null)}>
-                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
@@ -1601,7 +1599,7 @@ export default function StudentProfilePage() {
                                 </div>
                                 <div className="p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="size-8 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                                        <div className="size-8 rounded-full bg-slate-200 dark:bg-emerald-900/40 overflow-hidden">
                                             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Admin`} alt="Admin" />
                                         </div>
                                         <div>
@@ -1633,14 +1631,14 @@ export default function StudentProfilePage() {
                                 </div>
                                 
                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                                    <div className="size-10 rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0">
+                                    <div className="size-10 rounded-xl bg-slate-200 dark:bg-emerald-900/40 overflow-hidden shrink-0">
                                         <img src={`https://api.dicebear.com/7.x/initials/svg?seed=Teacher`} alt="Teacher" />
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Dr. Sarah Jenkins</p>
                                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Lead Instructor</p>
                                     </div>
-                                    <button className="size-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+                                    <button className="size-10 rounded-xl bg-white dark:bg-emerald-900/40 shadow-sm flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
                                         <Mail size={16} />
                                     </button>
                                 </div>
@@ -1661,7 +1659,7 @@ export default function StudentProfilePage() {
 
             {/* ── Edit Behaviour Profile Modal ────────────────────────────── */}
             <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-                <DialogContent className="max-w-lg rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl overflow-y-auto max-h-[85vh] custom-scrollbar">
+                <DialogContent className="max-w-lg rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl overflow-y-auto max-h-[85vh] custom-scrollbar">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
@@ -1704,7 +1702,7 @@ export default function StudentProfilePage() {
                                         return (
                                             <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5">
                                                 <div className="flex gap-3 items-center">
-                                                    <div className="size-8 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                                    <div className="size-8 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-emerald-900/40 text-slate-500">
                                                         <Icon size={14} />
                                                     </div>
                                                     <div>
@@ -1739,7 +1737,7 @@ export default function StudentProfilePage() {
                                         placeholder="e.g. Leadership"
                                         value={newStrengthName}
                                         onChange={(e) => setNewStrengthName(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -1747,7 +1745,7 @@ export default function StudentProfilePage() {
                                     <select
                                         value={newStrengthIcon}
                                         onChange={(e) => setNewStrengthIcon(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
                                     >
                                         <option value="Star">Star</option>
                                         <option value="Award">Award</option>
@@ -1767,13 +1765,13 @@ export default function StudentProfilePage() {
                                     placeholder="Describe this strength..."
                                     value={newStrengthDesc}
                                     onChange={(e) => setNewStrengthDesc(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none resize-none"
+                                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none resize-none"
                                 />
                             </div>
                             <button
                                 type="button"
                                 onClick={handleAddStrength}
-                                className="w-full h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-slate-300 text-slate-700 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all"
+                                className="w-full h-10 rounded-xl bg-white dark:bg-emerald-900/40 border border-slate-200 dark:border-white/10 hover:border-slate-300 text-slate-700 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all"
                             >
                                 <Plus size={12} /> Add to Profile
                             </button>
@@ -1784,7 +1782,7 @@ export default function StudentProfilePage() {
                             <button 
                                 type="button"
                                 onClick={() => setIsEditProfileOpen(false)}
-                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
@@ -1803,7 +1801,7 @@ export default function StudentProfilePage() {
 
             {/* ── Log Behaviour Alert Modal ─────────────────────────────── */}
             <Dialog open={isLogAlertOpen} onOpenChange={setIsLogAlertOpen}>
-                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
@@ -1885,7 +1883,7 @@ export default function StudentProfilePage() {
                             <button 
                                 type="button"
                                 onClick={() => setIsLogAlertOpen(false)}
-                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
@@ -1904,7 +1902,7 @@ export default function StudentProfilePage() {
 
             {/* ── Edit Behaviour Alert Modal ─────────────────────────────── */}
             <Dialog open={isEditAlertOpen} onOpenChange={setIsEditAlertOpen}>
-                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
@@ -1986,7 +1984,7 @@ export default function StudentProfilePage() {
                             <button 
                                 type="button"
                                 onClick={() => setIsEditAlertOpen(false)}
-                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
@@ -2005,7 +2003,7 @@ export default function StudentProfilePage() {
 
             {/* ── Remove Behaviour Alert Modal ───────────────────────────── */}
             <Dialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-2xl flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-500">
@@ -2030,7 +2028,7 @@ export default function StudentProfilePage() {
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
                             <button 
                                 onClick={() => setIsDeleteAlertOpen(false)}
-                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>

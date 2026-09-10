@@ -10,6 +10,9 @@ interface AssignmentTableProps {
   onView: (assignment: Assignment) => void
   onEdit: (assignment: Assignment) => void
   onGrade: (assignment: Assignment) => void
+  onDelete?: (assignment: Assignment) => void
+  onUnpublish?: (assignment: Assignment) => void
+  currentUserId?: string
   className?: string
   startIndex?: number
 }
@@ -19,6 +22,9 @@ export function AssignmentTable({
   onView,
   onEdit,
   onGrade,
+  onDelete,
+  onUnpublish,
+  currentUserId,
   className,
   startIndex = 0
 }: AssignmentTableProps) {
@@ -33,12 +39,12 @@ export function AssignmentTable({
 
   return (
     <div className={cn(
-      "bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm",
+      "bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200/80 dark:border-emerald-800/50 overflow-hidden shadow-sm",
       className
     )}>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
+          <thead className="border-b border-slate-200 dark:border-emerald-800/50 bg-slate-50 dark:bg-emerald-950/40">
             <tr>
               {headers.map((header) => (
                 <th
@@ -57,7 +63,8 @@ export function AssignmentTable({
             {assignments.map((assignment, idx) => (
               <tr
                 key={assignment.id}
-                className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                className="border-b border-slate-100 dark:border-emerald-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                onClick={() => onView(assignment)}
               >
                 <td className="p-4 text-xs font-black text-slate-300 dark:text-slate-600 text-center">
                   {startIndex + idx + 1}
@@ -83,25 +90,30 @@ export function AssignmentTable({
                     `${assignment.submissions.submitted} / ${assignment.submissions.total}`
                   )}
                 </td>
-                <td className="p-4 text-right">
+                <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end items-center gap-2">
-                    <button
-                      onClick={() => onView(assignment)}
-                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-xl hover:bg-primary/10 dark:hover:bg-primary/20 transition-all hover:scale-105"
-                      title="View assignment"
-                    >
-                      <Icon name="visibility" className="text-xl" />
-                    </button>
-                    <button
-                      onClick={() => onEdit(assignment)}
-                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-xl hover:bg-primary/10 dark:hover:bg-primary/20 transition-all hover:scale-105"
-                      title="Edit assignment"
-                    >
-                      <Icon name="edit" className="text-xl" />
-                    </button>
+                    {/* View/Grade logic can stay visible for all teachers in class, or we can restrict view. For now, restrict action buttons to creator */}
+                    {(!currentUserId || assignment.teacherId === currentUserId) && (
+                      <>
+                        <button
+                          onClick={() => onView(assignment)}
+                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
+                          title="View assignment"
+                        >
+                          <Icon name="visibility" className="text-xl" />
+                        </button>
+                        <button
+                          onClick={() => onEdit(assignment)}
+                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
+                          title="Edit assignment"
+                        >
+                          <Icon name="edit" className="text-xl" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => onGrade(assignment)}
-                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-xl hover:bg-primary/10 dark:hover:bg-primary/20 transition-all hover:scale-105"
+                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
                       title="Grade submissions"
                       disabled={assignment.status === 'draft'}
                     >
@@ -113,6 +125,29 @@ export function AssignmentTable({
                         )}
                       />
                     </button>
+                    {(!currentUserId || assignment.teacherId === currentUserId) && (
+                      assignment.status === 'published' ? (
+                        onUnpublish && (
+                          <button
+                            onClick={() => onUnpublish(assignment)}
+                            className="p-2 text-amber-500 hover:text-amber-600 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all hover:scale-105"
+                            title="Unpublish assignment"
+                          >
+                            <Icon name="unpublished" className="text-xl" />
+                          </button>
+                        )
+                      ) : (
+                        onDelete && (
+                          <button
+                            onClick={() => onDelete(assignment)}
+                            className="p-2 text-red-400 hover:text-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all hover:scale-105"
+                            title="Delete assignment"
+                          >
+                            <Icon name="delete" className="text-xl" />
+                          </button>
+                        )
+                      )
+                    )}
                   </div>
                 </td>
               </tr>

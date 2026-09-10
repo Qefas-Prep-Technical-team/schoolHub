@@ -33,8 +33,8 @@ export function ExamActions({
       <DropdownMenu.Trigger asChild>
         <button
           className={cn(
-            "p-1.5 text-gray-500 dark:text-gray-400 hover:text-primary",
-            "dark:hover:text-primary-400 rounded-full hover:bg-gray-100",
+            "p-1.5 text-gray-500 dark:text-gray-400 hover:text-emerald-600",
+            "dark:hover:text-emerald-600-400 rounded-full hover:bg-gray-100",
             "dark:hover:bg-gray-800 transition-colors",
             className
           )}
@@ -50,27 +50,29 @@ export function ExamActions({
           align="end"
           sideOffset={5}
         >
-          <DropdownMenu.Item
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer outline-none"
-            onClick={onView}
-          >
-            <Icon name="visibility" className="h-4 w-4" />
-            View Details
-          </DropdownMenu.Item>
+          <div className="flex items-center justify-between gap-1 p-1 mb-1 border-b border-gray-100 dark:border-gray-700">
+            <DropdownMenu.Item
+              className="flex-1 flex flex-col items-center justify-center gap-1 p-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer outline-none"
+              onClick={onView}
+            >
+              <Icon name="visibility" className="h-4 w-4" />
+              Preview
+            </DropdownMenu.Item>
 
-          <DropdownMenu.Item
-            className={cn(
-              "flex items-center gap-2 px-3 py-2 text-sm rounded cursor-pointer outline-none",
-              isDraft
-                ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                : "opacity-50 cursor-not-allowed"
-            )}
-            onClick={isDraft ? onEdit : undefined}
-            disabled={!isDraft}
-          >
-            <Icon name="edit" className="h-4 w-4" />
-            Edit
-          </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className={cn(
+                "flex-1 flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-md outline-none",
+                isDraft
+                  ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                  : "opacity-50 cursor-not-allowed text-gray-500"
+              )}
+              onClick={isDraft ? onEdit : undefined}
+              disabled={!isDraft}
+            >
+              <Icon name="edit" className="h-4 w-4" />
+              Edit
+            </DropdownMenu.Item>
+          </div>
 
           {isCompleted && (
             <div className="w-full outline-none">

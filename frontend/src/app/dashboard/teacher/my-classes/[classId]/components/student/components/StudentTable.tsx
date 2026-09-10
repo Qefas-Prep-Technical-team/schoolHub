@@ -31,7 +31,7 @@ function Avatar({ student }: { student: Student }) {
 
   return (
     <div className="relative flex-shrink-0">
-      <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md bg-slate-100 dark:bg-slate-800">
+      <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white dark:border-emerald-700/50 shadow-md bg-slate-100 dark:bg-emerald-900/40">
         {student.avatar && !imgError ? (
           <Image 
             src={student.avatar} 
@@ -60,7 +60,7 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.04 }}
-      className="group grid grid-cols-12 gap-4 px-6 py-4 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-primary/20 dark:hover:border-primary/20 transition-all items-center"
+      className="group grid grid-cols-12 gap-4 px-6 py-4 bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200/80 dark:border-emerald-800/50 shadow-sm hover:shadow-md hover:border-emerald-600/20 dark:hover:border-emerald-600/20 transition-all items-center"
     >
       {/* Identity */}
       <div className="col-span-4 flex items-center gap-4">
@@ -84,7 +84,7 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
       {/* Class */}
       <div className="col-span-2">
         <p className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-          <BookOpen size={12} className="text-primary" />
+          <BookOpen size={12} className="text-emerald-600" />
           {student.grade || '—'}
         </p>
         <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Class</p>
@@ -104,7 +104,7 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
       {/* Attendance */}
       <div className="col-span-2">
         <div className="flex items-center gap-1.5">
-          <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-slate-100 dark:bg-emerald-900/40 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full ${attendanceNum >= 80 ? 'bg-emerald-500' : attendanceNum >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
               style={{ width: `${Math.min(attendanceNum, 100)}%` }}
@@ -122,7 +122,7 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
         </span>
         <button
           onClick={() => onView(student)}
-          className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-primary hover:text-white dark:hover:bg-primary/20 dark:hover:text-primary transition-all hover:scale-105"
+          className="p-2.5 rounded-xl bg-slate-100 dark:bg-emerald-900/60 text-slate-500 dark:text-slate-400 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600/20 dark:hover:text-emerald-600 transition-all hover:scale-105"
         >
           <Eye size={15} strokeWidth={2.5} />
         </button>
@@ -139,7 +139,7 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: idx * 0.05 }}
-      className="group bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/20 transition-all p-5 flex flex-col gap-4"
+      className="group bg-white dark:bg-emerald-950/60 rounded-3xl border border-slate-200/80 dark:border-emerald-800/50 shadow-sm hover:shadow-xl hover:border-emerald-600/20 dark:hover:border-emerald-600/20 transition-all p-5 flex flex-col gap-4"
     >
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -161,7 +161,7 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
           </p>
         )}
         {student.grade && (
-          <p className="text-[10px] text-primary font-bold flex items-center gap-1 mt-1">
+          <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
             <BookOpen size={9} /> {student.grade}
           </p>
         )}
@@ -169,11 +169,11 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3">
+        <div className="bg-slate-50 dark:bg-emerald-900/50 rounded-xl p-3">
           <p className={`text-sm font-black ${performanceColors[student.performance || 'Medium']}`}>{student.performance || 'Medium'}</p>
           <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Performance</p>
         </div>
-        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3">
+        <div className="bg-slate-50 dark:bg-emerald-900/50 rounded-xl p-3">
           <p className={`text-sm font-black ${attendanceNum >= 80 ? 'text-emerald-500' : attendanceNum >= 60 ? 'text-amber-500' : 'text-rose-500'}`}>{attendanceNum}%</p>
           <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Attendance</p>
         </div>
@@ -181,16 +181,16 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
 
       {/* Last Exam */}
       {student.lastExam && student.lastExam !== 'N/A' && (
-        <div className="flex items-center justify-between text-xs bg-primary/5 rounded-xl px-3 py-2 border border-primary/10">
+        <div className="flex items-center justify-between text-xs bg-emerald-600/5 rounded-xl px-3 py-2 border border-emerald-600/10">
           <span className="text-slate-500 font-semibold">Last Exam</span>
-          <span className="font-black text-primary">{student.lastExam}</span>
+          <span className="font-black text-emerald-600">{student.lastExam}</span>
         </div>
       )}
 
       {/* Action */}
       <button
         onClick={() => onView(student)}
-        className="w-full h-9 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white dark:hover:bg-primary/20 dark:hover:text-primary transition-all"
+        className="w-full h-9 bg-slate-100 dark:bg-emerald-900/60 text-slate-600 dark:text-slate-300 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600/20 dark:hover:text-emerald-600 transition-all"
       >
         <Eye size={13} strokeWidth={2.5} /> View Profile
       </button>
@@ -201,8 +201,8 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
 export function StudentTable({ students, onView, onCall, viewMode = 'list', startIndex = 0 }: StudentTableProps) {
   if (students.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800">
-        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-[1.5rem] flex items-center justify-center mb-4">
+      <div className="flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-dashed border-slate-200 dark:border-emerald-800/50">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-emerald-900/40 rounded-[1.5rem] flex items-center justify-center mb-4">
           <User size={28} className="text-slate-300" />
         </div>
         <h3 className="text-lg font-black text-slate-900 dark:text-white">No Students Found</h3>
@@ -224,7 +224,7 @@ export function StudentTable({ students, onView, onCall, viewMode = 'list', star
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800/50 mb-2">
+      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-emerald-950/40 rounded-2xl border border-slate-100 dark:border-emerald-800/40 mb-2">
         <div className="col-span-4 flex items-center gap-4">
           <span className="w-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right shrink-0">#</span>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Student</span>

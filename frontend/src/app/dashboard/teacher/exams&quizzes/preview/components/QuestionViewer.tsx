@@ -18,6 +18,7 @@ interface QuestionViewerProps {
   selectedAnswers: Record<number, number>;
   onSelectAnswer: (questionId: number, answerIndex: number) => void;
   isPreview: boolean;
+  onNavigateToQuestion?: (questionId: number) => void;
 }
 
 export default function QuestionViewer({
@@ -26,31 +27,38 @@ export default function QuestionViewer({
   selectedAnswers,
   onSelectAnswer,
   isPreview,
+  onNavigateToQuestion,
 }: QuestionViewerProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   
   const currentQuestionData = questions[currentQuestion - 1];
   const selectedAnswer = selectedAnswers[currentQuestion];
-  const isCorrect = selectedAnswer === currentQuestionData.correctAnswer;
+  const isCorrect = selectedAnswer === currentQuestionData?.correctAnswer;
 
   const handlePrevious = () => {
     if (currentQuestion > 1) {
-      // Scroll to previous question
-      document.getElementById(`question-${currentQuestion - 1}`)?.scrollIntoView({ behavior: 'smooth' });
+      if (onNavigateToQuestion) {
+        onNavigateToQuestion(currentQuestion - 1);
+      } else {
+        document.getElementById(`question-${currentQuestion - 1}`)?.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
   const handleNext = () => {
     if (currentQuestion < questions.length) {
-      // Scroll to next question
-      document.getElementById(`question-${currentQuestion + 1}`)?.scrollIntoView({ behavior: 'smooth' });
+      if (onNavigateToQuestion) {
+        onNavigateToQuestion(currentQuestion + 1);
+      } else {
+        document.getElementById(`question-${currentQuestion + 1}`)?.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
   return (
     <div 
       id={`question-${currentQuestion}`}
-      className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6"
+      className="rounded-xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-900/10 p-6"
     >
       {/* Question Header */}
       <div className="flex items-center justify-between mb-6">
@@ -89,14 +97,14 @@ export default function QuestionViewer({
         {currentQuestionData.options.map((option, index) => {
           const isSelected = selectedAnswer === index;
           const isCorrectOption = currentQuestionData.correctAnswer === index;
-          const showCorrect = showAnswer && isPreview;
+          const showCorrect = (showAnswer || selectedAnswer !== undefined) && isPreview;
           
           return (
             <label
               key={index}
               className={`flex items-center gap-4 rounded-lg border p-4 cursor-pointer transition-all ${
                 isSelected
-                  ? 'border-primary bg-primary/10'
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               } ${
                 showCorrect && isCorrectOption
@@ -109,10 +117,10 @@ export default function QuestionViewer({
                 name={`question-${currentQuestion}`}
                 checked={isSelected}
                 onChange={() => onSelectAnswer(currentQuestion, index)}
-                disabled={isPreview}
+                disabled={(selectedAnswer !== undefined || showAnswer) && isPreview}
                 className={`h-5 w-5 border-gray-300 dark:border-gray-600 ${
-                  isPreview ? 'cursor-not-allowed' : 'cursor-pointer'
-                } text-primary focus:ring-primary disabled:opacity-50`}
+                  ((selectedAnswer !== undefined || showAnswer) && isPreview) ? 'cursor-not-allowed' : 'cursor-pointer'
+                } text-emerald-600 focus:ring-emerald-600 disabled:opacity-50`}
               />
               
               <span className={`flex-1 text-base ${
@@ -134,7 +142,7 @@ export default function QuestionViewer({
       </div>
 
       {/* Feedback for Preview */}
-      {isPreview && showAnswer && currentQuestionData.correctAnswer !== undefined && (
+      {isPreview && (showAnswer || selectedAnswer !== undefined) && currentQuestionData.correctAnswer !== undefined && (
         <div className={`mt-6 p-4 rounded-lg ${
           isCorrect 
             ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
@@ -156,10 +164,10 @@ export default function QuestionViewer({
         <button
           onClick={handlePrevious}
           disabled={currentQuestion <= 1}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             currentQuestion > 1
-              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              : 'bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-600 cursor-not-allowed'
           }`}
         >
           <ChevronLeft className="w-4 h-4" />
@@ -169,10 +177,10 @@ export default function QuestionViewer({
         <button
           onClick={handleNext}
           disabled={currentQuestion >= questions.length}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             currentQuestion < questions.length
-              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              : 'bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-600 cursor-not-allowed'
           }`}
         >
           Next Question

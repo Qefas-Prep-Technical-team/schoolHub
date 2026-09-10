@@ -567,13 +567,17 @@ export const reorderAssignmentQuestions = async (assignmentId: string, reordered
   );
 };
 
-export const updateAssignmentStatusService = async (assignmentId: string, schoolId: string, status: "DRAFT" | "PUBLISHED") => {
+export const updateAssignmentStatusService = async (assignmentId: string, schoolId: string, status: "DRAFT" | "PUBLISHED", userId?: string, userType?: string) => {
   // Use updateMany to allow filtering by non-unique fields in the WHERE clause,
   // or first verify it exists and then update it by id.
   const assignment = await prisma.assignment.findFirst({
     where: { id: assignmentId, schoolId }
   });
   if (!assignment) throw new Error("Assignment not found");
+
+  if (userType !== 'ADMIN' && assignment.teacherId !== userId) {
+    throw new Error("Unauthorized: Only the creator or an admin can update the assignment status");
+  }
 
   return prisma.assignment.update({
     where: { id: assignmentId },
@@ -600,31 +604,37 @@ export const updateAssignmentSettingsService = async (assignmentId: string, scho
   });
 };
 
-export const deleteAssignmentService = async (assignmentId: string, schoolId: string) => {
+export const deleteAssignmentService = async (assignmentId: string, schoolId: string, userId?: string, userType?: string) => {
   const assignment = await prisma.assignment.findFirst({
     where: { id: assignmentId, schoolId }
   });
   if (!assignment) throw new Error("Assignment not found");
 
-  // First delete related assignment questions to avoid foreign key constraints
-  await prisma.assignmentQuestion.deleteMany({
-    where: { assignmentId }
-  });
+  if (userType !== 'ADMIN' && assignment.teacherId !== userId) {
+    throw new Error("Unauthorized: Only the creator or an admin can delete this assignment");
+  }
 
-  // Then delete submissions (and their answers due to cascade or manual)
+  // First find all submissions for this assignment
   const submissions = await prisma.assignmentSubmission.findMany({
     where: { assignmentId }
   });
   
   if (submissions.length > 0) {
     const submissionIds = submissions.map(s => s.id);
+    // Delete all answers associated with these submissions
     await prisma.assignmentAnswer.deleteMany({
       where: { submissionId: { in: submissionIds } }
     });
+    // Delete the submissions
     await prisma.assignmentSubmission.deleteMany({
       where: { assignmentId }
     });
   }
+
+  // Then delete related assignment questions
+  await prisma.assignmentQuestion.deleteMany({
+    where: { assignmentId }
+  });
 
   return prisma.assignment.delete({
     where: { id: assignmentId }

@@ -1,16 +1,22 @@
 
 import { GradeStatus, StudentGrade } from './types'
 
-export function getGradeStatusColor(status: GradeStatus): string {
-  switch (status) {
+export function getGradeStatusColor(status: string): string {
+  const normalizedStatus = status.toLowerCase()
+  switch (normalizedStatus) {
     case 'graded':
-      return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300'
+    case 'published':
+    case 'scored':
+      return 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300'
     case 'pending':
+    case 'draft':
       return 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300'
     case 'missing':
       return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300'
     case 'excused':
+    case 'submitted':
       return 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300'
+    case 'archived':
     default:
       return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
   }
@@ -27,21 +33,29 @@ export function getStatusLabel(status: GradeStatus): string {
 }
 
 export function calculateLetterGrade(percentage: number): string {
-  if (percentage >= 90) return 'A'
-  if (percentage >= 80) return 'B'
-  if (percentage >= 70) return 'C'
-  if (percentage >= 60) return 'D'
+  if (percentage >= 70) return 'A'
+  if (percentage >= 60) return 'B'
+  if (percentage > 40) return 'C'
   return 'F'
 }
 
 export function getLetterGradeColor(grade: string): string {
   switch (grade) {
-    case 'A': return 'text-green-600 dark:text-green-400'
-    case 'B': return 'text-blue-600 dark:text-blue-400'
-    case 'C': return 'text-yellow-600 dark:text-yellow-400'
-    case 'D': return 'text-orange-600 dark:text-orange-400'
-    case 'F': return 'text-red-600 dark:text-red-400'
+    case 'A': return 'text-emerald-600 dark:text-emerald-400' // green
+    case 'B': return 'text-blue-600 dark:text-blue-400'       // blue
+    case 'C': return 'text-yellow-600 dark:text-yellow-400'   // yellow
+    case 'F': return 'text-red-600 dark:text-red-400'         // red
     default: return 'text-gray-600 dark:text-gray-400'
+  }
+}
+
+export function getLetterGradeBgColor(grade: string): string {
+  switch (grade) {
+    case 'A': return 'bg-emerald-100 dark:bg-emerald-900/30'
+    case 'B': return 'bg-blue-100 dark:bg-blue-900/30'
+    case 'C': return 'bg-yellow-100 dark:bg-yellow-900/30'
+    case 'F': return 'bg-red-100 dark:bg-red-900/30'
+    default: return 'bg-gray-100 dark:bg-gray-800'
   }
 }
 

@@ -18,7 +18,7 @@ export default function QuickActions({
       icon: <FileText className="w-5 h-5" />,
       label: 'Add Assignment',
       onClick: onAddAssignment,
-      color: 'bg-blue-500',
+      color: 'bg-emerald-500',
     },
     {
       icon: <GraduationCap className="w-5 h-5" />,

@@ -30,11 +30,13 @@ router.post("/student/:id/submit", submitAssignment);
 router.get("/teacher", getTeacherAssignments);
 router.get("/teacher/:id", getTeacherAssignmentById);
 router.post("/teacher", createAssignment);
+router.delete("/teacher/:id", deleteAssignment);
 
 // Admin endpoints (reusing teacher endpoints since admin can view all based on schoolId)
 router.get("/admin", getTeacherAssignments);
 router.get("/admin/:id", getTeacherAssignmentById);
 router.post("/admin", createAssignment);
+router.delete("/admin/:id", deleteAssignment);
 router.post("/admin/:id/submissions/:subId/grade", gradeSubmission);
 
 // Question endpoints (usable by teachers/admins)

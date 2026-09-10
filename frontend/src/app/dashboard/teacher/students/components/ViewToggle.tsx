@@ -17,7 +17,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ viewType, onViewChange }) => {
   ];
 
   return (
-    <div className="relative flex h-10 items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-1 w-full lg:w-32 border border-slate-200 dark:border-slate-700">
+    <div className="relative flex h-10 items-center rounded-lg bg-slate-100 dark:bg-emerald-900/40 p-1 w-full lg:w-32 border border-slate-200 dark:border-emerald-700/50">
       {views.map((view) => (
         <label
           key={view.type}

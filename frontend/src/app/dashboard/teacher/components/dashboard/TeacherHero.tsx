@@ -11,13 +11,31 @@ interface TeacherHeroProps {
   totalClasses?: number;
   sessionName?: string;
   classNames?: string[];
+  subjectNames?: string[];
 }
 
-export default function TeacherHero({ selectedSchoolName, isPersonal, totalClasses = 0, sessionName = "Session Not Set", classNames = [] }: TeacherHeroProps) {
+export default function TeacherHero({ 
+  selectedSchoolName, 
+  isPersonal, 
+  totalClasses = 0, 
+  sessionName = "Session Not Set", 
+  classNames = [],
+  subjectNames = []
+}: TeacherHeroProps) {
   const { user } = useAuthStore();
   
   const displaySession = sessionName === "Session Not Set" ? "No Session" : sessionName;
   const greetingName = user?.name?.split(' ')[0] || 'Educator';
+
+  const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
+
+  useEffect(() => {
+    if (subjectNames.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSubjectIndex((prev) => (prev + 1) % subjectNames.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [subjectNames.length]);
 
   return (
     <div className="mb-8">
@@ -56,14 +74,49 @@ export default function TeacherHero({ selectedSchoolName, isPersonal, totalClass
           </div>
         </div>
 
-        {/* Right Image (simulated with a gradient/pattern for now if no real image) */}
-        <div className="hidden md:block w-1/3 relative">
+        {/* Right Image & Subjects Slider */}
+        <div className="hidden md:block w-1/3 relative overflow-hidden">
            <div 
-             className="absolute inset-0 bg-cover bg-center"
+             className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
              style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1000&auto=format&fit=crop")' }}
            />
            {/* Gradient fade to blend image into background */}
-           <div className="absolute inset-0 bg-gradient-to-r from-[#334155] via-[#334155]/60 to-transparent" />
+           <div className="absolute inset-0 bg-gradient-to-r from-[#334155] via-[#334155]/80 to-[#334155]/40" />
+           
+           <div className="absolute inset-0 flex flex-col items-end justify-center p-8 z-20">
+             {subjectNames.length > 0 && (
+               <div className="text-right">
+                 <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-2">Assigned Subjects</p>
+                 <div className="h-10 relative w-48 overflow-hidden">
+                   <AnimatePresence mode="popLayout">
+                     <motion.div
+                       key={currentSubjectIndex}
+                       initial={{ y: 20, opacity: 0 }}
+                       animate={{ y: 0, opacity: 1 }}
+                       exit={{ y: -20, opacity: 0 }}
+                       transition={{ duration: 0.5, ease: "easeOut" }}
+                       className="absolute right-0 text-xl font-bold text-white whitespace-nowrap"
+                     >
+                       {subjectNames[currentSubjectIndex]}
+                     </motion.div>
+                   </AnimatePresence>
+                 </div>
+                 
+                 {subjectNames.length > 1 && (
+                   <div className="flex justify-end gap-1.5 mt-3">
+                     {subjectNames.map((_, i) => (
+                       <div 
+                         key={i} 
+                         className={`h-1.5 rounded-full transition-all duration-300 ${
+                           i === currentSubjectIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/30'
+                         }`}
+                       />
+                     ))}
+                   </div>
+                 )}
+               </div>
+             )}
+           </div>
         </div>
       </div>
     </div>

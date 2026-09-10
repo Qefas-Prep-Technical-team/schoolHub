@@ -16,7 +16,7 @@ export default function ClassStats({ stats }: ClassStatsProps) {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-800/60 rounded-[3rem] shadow-2xl overflow-hidden"
+      className="w-full bg-white/70 dark:bg-emerald-950/40 backdrop-blur-3xl border border-slate-200/60 dark:border-emerald-800/50 rounded-[3rem] shadow-2xl overflow-hidden"
     >
       <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-slate-200/50 dark:divide-slate-800/50">
         <StatBlock 
@@ -34,8 +34,8 @@ export default function ClassStats({ stats }: ClassStatsProps) {
           value={stats.assignmentsCompleted}
           trend="Total Graded"
           icon={ClipboardList}
-          color="text-blue-500"
-          bg="bg-blue-500/10"
+          color="text-emerald-500"
+          bg="bg-emerald-500/10"
           borderGlow="group-hover:border-blue-500/50"
           shadowGlow="group-hover:shadow-blue-500/20"
         />
@@ -64,10 +64,10 @@ export default function ClassStats({ stats }: ClassStatsProps) {
           value={`${stats.participationRate}%`}
           trend="Attendance"
           icon={ShieldCheck}
-          color="text-primary"
-          bg="bg-primary/10"
-          borderGlow="group-hover:border-primary/50"
-          shadowGlow="group-hover:shadow-primary/20"
+          color="text-emerald-600"
+          bg="bg-emerald-600/10"
+          borderGlow="group-hover:border-emerald-600/50"
+          shadowGlow="group-hover:shadow-emerald-600/20"
         />
       </div>
     </motion.div>
@@ -85,7 +85,7 @@ function StatBlock({ label, value, trend, icon: Icon, color, bg, borderGlow, sha
                 <div className={`p-4 rounded-[1.25rem] ${bg} ${color} transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-lg`}>
                     <Icon size={24} strokeWidth={2.5} />
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 text-slate-400 group-hover:bg-transparent group-hover:text-slate-500 transition-colors">
+                <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-emerald-900/40/50 text-slate-400 group-hover:bg-transparent group-hover:text-slate-500 transition-colors">
                     {trend}
                 </span>
             </div>

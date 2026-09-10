@@ -28,7 +28,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
       case 'late':
         return 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
       default:
-        return 'bg-slate-100 text-slate-500 dark:bg-slate-800';
+        return 'bg-slate-100 text-slate-500 dark:bg-emerald-900/40';
     }
   };
 
@@ -44,18 +44,18 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
   };
 
   return (
-    <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-800/60 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden">
+    <div className="bg-white/70 dark:bg-emerald-950/40 backdrop-blur-3xl border border-slate-200/60 dark:border-emerald-800/50 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden">
       {/* Background Glow */}
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-600/5 blur-[80px] rounded-full pointer-events-none"></div>
 
       <div className="relative z-10 flex items-center justify-between mb-8">
         <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter flex items-center gap-3">
-          <FileText className="text-primary" size={20} />
+          <FileText className="text-emerald-600" size={20} />
           Recent Submissions
         </h2>
         <button
           onClick={onViewAll}
-          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-dark transition-all"
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-800 transition-all"
         >
           View All
           <ArrowRight size={14} />
@@ -69,13 +69,13 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group flex items-center justify-between p-5 bg-white/40 dark:bg-slate-800/40 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all border border-slate-200/50 dark:border-slate-700/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 cursor-pointer relative overflow-hidden"
+            className="group flex items-center justify-between p-5 bg-white/40 dark:bg-emerald-900/30 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all border border-slate-200/50 dark:border-emerald-700/40 hover:border-emerald-600/30 hover:shadow-xl hover:shadow-emerald-600/5 cursor-pointer relative overflow-hidden"
           >
             {/* Hover Indicator */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
             <div className="flex items-center gap-5 relative z-10">
-              <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden shadow-inner transition-transform group-hover:scale-110 group-hover:-rotate-3 border border-slate-200/50 dark:border-slate-700">
+              <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden shadow-inner transition-transform group-hover:scale-110 group-hover:-rotate-3 border border-slate-200/50 dark:border-emerald-700/50">
                 <Image
                   src={submission.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
                   alt={submission.studentName}
@@ -85,7 +85,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-primary transition-colors">
+                <p className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 transition-colors">
                   {submission.studentName}
                 </p>
                 <div className="flex items-center gap-2">
@@ -103,7 +103,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
                       {submission.status}
                    </span>
                    {submission.grade && (
-                     <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                     <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-600/10 px-2 py-0.5 rounded-md">
                        Grade: {submission.grade}%
                      </span>
                    )}
@@ -113,7 +113,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
 
             <button
               onClick={() => onGradeSubmission(submission.id)}
-              className="relative z-10 flex items-center justify-center h-10 px-5 bg-white/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 rounded-xl hover:bg-primary hover:text-white hover:border-transparent transition-all border border-slate-200/50 dark:border-slate-800 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md active:scale-95 group-hover:border-primary/30"
+              className="relative z-10 flex items-center justify-center h-10 px-5 bg-white/50 dark:bg-emerald-950/50 text-slate-500 dark:text-slate-400 rounded-xl hover:bg-emerald-600 hover:text-white hover:border-transparent transition-all border border-slate-200/50 dark:border-emerald-800/50 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md active:scale-95 group-hover:border-emerald-600/30"
             >
               {submission.status === 'graded' ? 'Review' : 'Grade'}
             </button>
@@ -123,7 +123,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
 
       {submissions.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
+          <div className="w-16 h-16 bg-slate-50 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-emerald-700/50">
              <FileBox className="text-slate-300" size={24} />
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No recent submissions</p>

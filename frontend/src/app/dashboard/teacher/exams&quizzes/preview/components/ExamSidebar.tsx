@@ -32,13 +32,14 @@ export default function ExamSidebar({
   };
 
   const getQuestionButtonClass = (status: string) => {
+    const baseClass = "flex h-10 w-10 items-center justify-center rounded-lg transition-all font-semibold text-sm";
     switch (status) {
       case 'current':
-        return 'bg-primary text-white hover:bg-primary/90';
+        return `${baseClass} bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 ring-2 ring-emerald-600 dark:ring-emerald-500 ring-offset-2 dark:ring-offset-gray-900 scale-105`;
       case 'answered':
-        return 'bg-green-500 text-white hover:bg-green-600';
+        return `${baseClass} bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60`;
       default:
-        return 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+        return `${baseClass} bg-white dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/60`;
     }
   };
 
@@ -46,7 +47,7 @@ export default function ExamSidebar({
   const unansweredCount = totalQuestions - answeredCount;
 
   return (
-    <div className="sticky top-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+    <div className="sticky top-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-900/10 p-6">
       {/* Timer */}
       <div className="flex flex-col items-center mb-6">
         <div className="flex items-center gap-2 text-lg font-medium text-gray-600 dark:text-gray-400">
@@ -81,7 +82,7 @@ export default function ExamSidebar({
               <button
                 key={questionNumber}
                 onClick={() => onNavigateToQuestion(questionNumber)}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all ${getQuestionButtonClass(status)}`}
+                className={getQuestionButtonClass(status)}
                 title={`Question ${questionNumber} - ${status}`}
               >
                 {questionNumber}
@@ -94,16 +95,16 @@ export default function ExamSidebar({
       {/* Status Legend */}
       <div className="mb-6 space-y-2">
         <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded-full bg-primary"></div>
-          <span className="text-gray-600 dark:text-gray-400">Current</span>
+          <div className="w-3 h-3 rounded-full bg-emerald-600 ring-2 ring-emerald-600/30"></div>
+          <span className="text-gray-600 dark:text-gray-400 font-medium">Current</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          <span className="text-gray-600 dark:text-gray-400">Answered</span>
+          <div className="w-3 h-3 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700"></div>
+          <span className="text-gray-600 dark:text-gray-400 font-medium">Answered</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 border border-gray-300 dark:border-gray-600 rounded-full"></div>
-          <span className="text-gray-600 dark:text-gray-400">Unanswered</span>
+          <div className="w-3 h-3 rounded-full bg-white dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-700"></div>
+          <span className="text-gray-600 dark:text-gray-400 font-medium">Unanswered</span>
         </div>
       </div>
 
@@ -135,8 +136,8 @@ export default function ExamSidebar({
         disabled={isPreview}
         className={`w-full py-3 rounded-lg text-center font-semibold transition-all ${
           isPreview
-            ? 'bg-primary/50 text-white cursor-not-allowed'
-            : 'bg-primary text-white hover:bg-primary/90'
+            ? 'bg-emerald-600/50 text-white cursor-not-allowed'
+            : 'bg-emerald-600 text-white hover:bg-emerald-700'
         }`}
       >
         {isPreview ? 'Preview Mode (Submit Disabled)' : 'Submit Exam'}

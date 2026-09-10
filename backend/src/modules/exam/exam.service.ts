@@ -399,11 +399,13 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
   return formattedExam;
 };
 
-export const getExamPapersService = async (examId: string, schoolId?: string) => {
+export const getExamPapersService = async (examId: string, schoolId?: string, user?: { id: string; userType: string; schoolId?: string }) => {
   const links = await prisma.examSubjectPaper.findMany({
     where: { 
       examId,
-      exam: schoolId ? { schoolId } : undefined
+      exam: schoolId ? { schoolId } : undefined,
+      // Only show published papers in preview
+      subjectPaper: { status: 'PUBLISHED' }
     },
     include: {
       subjectPaper: {
@@ -418,10 +420,36 @@ export const getExamPapersService = async (examId: string, schoolId?: string) =>
     },
   });
 
-  return links.map(link => ({
+  const allPapers = links.map(link => ({
     ...link.subjectPaper,
-    examId: link.examId, // Keep for backward compatibility if possible
+    examId: link.examId,
   }));
+
+  // Authorization filter for teachers: hide papers they're not connected to before exam ends
+  if (user && user.userType?.toUpperCase() === "TEACHER") {
+    const now = new Date();
+
+    // Get teacher's connected subject IDs once
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+      where: { teacherId: user.id },
+      select: { subjectId: true },
+    });
+    const connectedSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+
+    // Get the exam's endDate to determine if we are past it
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      select: { endDate: true },
+    });
+    const isAfterEndDate = exam?.endDate ? now > new Date(exam.endDate) : false;
+
+    if (!isAfterEndDate) {
+      // Only show papers connected to this teacher via subject
+      return allPapers.filter(paper => paper.subjectId && connectedSubjectIds.has(paper.subjectId));
+    }
+  }
+
+  return allPapers;
 };
 
 export const getSubjectPapersService = async (filters: { 
@@ -592,8 +620,10 @@ export const unlinkSubjectPaperService = async (subjectPaperId: string, examId?:
   }
 };
 
-export const getSubjectPaperByIdService = async (id: string) => {
-  return prisma.subjectExamPaper.findUnique({
+import { UserRole } from "@prisma/client";
+
+export const getSubjectPaperByIdService = async (id: string, user?: any) => {
+  const paper = await prisma.subjectExamPaper.findUnique({
     where: { id },
     include: {
       exams: {
@@ -625,6 +655,54 @@ export const getSubjectPaperByIdService = async (id: string) => {
       }
     },
   });
+
+  if (!paper) return null;
+
+  // Only allow previewing published papers
+  if (paper.status !== 'PUBLISHED') return null;
+
+  // Tenant / School Isolation Check
+  // Ensure that users can only access papers belonging to their own school, unless it's a global paper (no schoolId)
+  if (user && user.schoolId && paper.schoolId && user.schoolId !== paper.schoolId) {
+    throw new Error("FORBIDDEN_TENANT");
+  }
+
+  // Authorization Check for Teacher Previews
+  if (user && user.userType?.toUpperCase() === "TEACHER") {
+    const now = new Date();
+    // Assuming a paper is linked to one or more exams. If multiple, we take the most permissive or earliest start date.
+    // Usually a paper is linked to one exam.
+    let isAfterEndDate = false;
+    let hasExams = paper.exams.length > 0;
+
+    if (hasExams) {
+      // If ANY exam is past its end date, they can preview it (safest approach)
+      isAfterEndDate = paper.exams.some(link => {
+        const endDate = link.exam.endDate;
+        return endDate && now > new Date(endDate);
+      });
+    }
+
+    if (!isAfterEndDate) {
+      // It's before the end date (or during the taking window)
+      // Check if the teacher is connected to THIS paper via subject
+      let isConnected = false;
+      
+      if (paper.subjectId) {
+        // Check if teacher is connected via subject
+        const teacherSubject = await prisma.teacherSubject.findFirst({
+          where: { teacherId: user.id, subjectId: paper.subjectId }
+        });
+        if (teacherSubject) isConnected = true;
+      }
+
+      if (!isConnected) {
+        throw new Error("FORBIDDEN_PREVIEW");
+      }
+    }
+  }
+
+  return paper;
 };
 
 export const createSubjectPaperService = async ({

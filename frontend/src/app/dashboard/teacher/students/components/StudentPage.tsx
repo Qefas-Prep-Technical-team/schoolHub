@@ -118,7 +118,7 @@ const StudentPage: React.FC = () => {
     <div className="font-display bg-slate-50/50 dark:bg-transparent">
       <div className="relative flex min-h-screen w-full flex-row">
         <main className="flex-1 p-6 md:p-8">
-          <div className="mx-auto max-w-7xl space-y-6">
+          <div className="w-full space-y-6">
             <Header onQuickAttendance={() => setIsAttendanceModalOpen(true)} onExport={handleExport} />
             <ControlsBar 
               searchQuery={searchQuery}

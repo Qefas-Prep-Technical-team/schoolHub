@@ -83,119 +83,144 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     };
   }
 
-  // 2. Execute queries sequentially to prevent connection pool exhaustion
-  // (Prisma default pool size is 10; Promise.all with 6 queries easily starves it under load)
-  const enrollmentCount = await prisma.classEnrollment.groupBy({
-    by: ['studentId'],
-    where: { classId: { in: assignedClassIds } },
-  }).then(groups => groups.length);
+  // 2. Fetch raw data to aggregate in-memory (prevents multiple slow full-table scans on unindexed classId)
+  const [
+    enrollmentCount,
+    rawGrades,
+    rawAttendances
+  ] = await Promise.all([
+    prisma.classEnrollment.count({
+      where: { classId: { in: assignedClassIds } },
+    }),
+    
+    prisma.grade.findMany({
+      where: { classId: { in: assignedClassIds } },
+      select: { studentId: true, score: true, maxMarks: true, createdAt: true },
+    }),
+    
+    prisma.attendance.findMany({
+      where: {
+        classId: { in: assignedClassIds },
+        date: { gte: new Date(new Date().setHours(0,0,0,0)) },
+      },
+      select: { status: true },
+    })
+  ]);
 
-  const recentExams = await prisma.exam.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-      ...(schoolId ? { schoolId } : {}),
-    },
-    take: 5,
-    orderBy: { createdAt: "desc" },
-    include: { class: { select: { name: true } }, subject: { select: { name: true } } },
-  });
-
-  const gradeStats = await prisma.grade.aggregate({
-    where: { classId: { in: assignedClassIds } },
-    _sum: { score: true, maxMarks: true },
-  });
-
-  const studentGradeAverages = await prisma.grade.groupBy({
-    by: ['studentId'],
-    where: { classId: { in: assignedClassIds } },
-    _sum: { score: true, maxMarks: true },
-    orderBy: { _sum: { score: 'desc' } }, // Note: This doesn't sort by average, but it's a good proxy for finding candidates
-    take: 10,
-  });
-
-  const distributionStats = await prisma.grade.findMany({
-    where: { classId: { in: assignedClassIds } },
-    select: { score: true, maxMarks: true },
-    take: 200,
-    orderBy: { createdAt: 'desc' }
-  });
-
-  const attendanceToday = await prisma.attendance.aggregate({
-    where: {
-      classId: { in: assignedClassIds },
-      date: { gte: new Date(new Date().setHours(0,0,0,0)) },
-    },
-    _count: { status: true },
-  });
-
-  // 3. Process Attendance (Separate query for "present" to be efficient)
-  const presentCount = await prisma.attendance.count({
-    where: {
-      classId: { in: assignedClassIds },
-      date: { gte: new Date(new Date().setHours(0,0,0,0)) },
-      status: "present"
-    }
-  });
-
-  const totalAttendance = attendanceToday._count.status;
+  const totalAttendance = rawAttendances.length;
+  const presentCount = rawAttendances.filter(a => a.status === "present" || (a.status as any) === "PRESENT").length;
   const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
 
   // 4. Process Performance
+  let totalScore = 0;
+  let totalMaxMarks = 0;
+  const studentMap = new Map<string, { score: number; maxMarks: number }>();
+  
+  rawGrades.forEach(g => {
+    totalScore += (g.score || 0);
+    totalMaxMarks += (g.maxMarks || 0);
+    
+    if (!studentMap.has(g.studentId)) studentMap.set(g.studentId, { score: 0, maxMarks: 0 });
+    const s = studentMap.get(g.studentId)!;
+    s.score += (g.score || 0);
+    s.maxMarks += (g.maxMarks || 0);
+  });
+
   let averageScore = 0;
-  if (gradeStats._sum.maxMarks && gradeStats._sum.maxMarks > 0) {
-    averageScore = Math.round((gradeStats._sum.score || 0) / gradeStats._sum.maxMarks * 100);
+  if (totalMaxMarks > 0) {
+    averageScore = Math.round((totalScore / totalMaxMarks) * 100);
   }
+
+  // Calculate Today's Schedule Data Setup
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const currentDayStr = days[new Date().getDay()];
+
+  // Batch 2: Lists and Detailed Data
+  const [
+    recentExams,
+    rawSchedule,
+    teacherSubjects,
+    recentAssignments
+  ] = await Promise.all([
+    prisma.exam.findMany({
+      where: {
+        classId: { in: assignedClassIds },
+        ...(schoolId ? { schoolId } : {}),
+      },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { class: { select: { name: true } }, subject: { select: { name: true } } },
+    }),
+    
+    prisma.timetablePeriod.findMany({
+      where: {
+        OR: [
+          { classId: { in: assignedClassIds } },
+          { teacherId }
+        ],
+        day: currentDayStr
+      },
+      include: {
+        class: { select: { name: true } },
+        subject: { select: { name: true } }
+      },
+      orderBy: {
+        startTime: 'asc'
+      }
+    }),
+    
+    prisma.teacherSubject.findMany({
+      where: { teacherId },
+      include: { subject: { select: { name: true } } }
+    }),
+    
+    prisma.assignment.findMany({
+      where: {
+        classId: { in: assignedClassIds },
+      },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+    })
+  ]);
 
   // 5. Process Distribution
   const distribution = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+  // Sort grades by createdAt desc for distribution limit
+  const distributionStats = [...rawGrades].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 200);
   distributionStats.forEach((g) => {
-    const avg = (g.score / g.maxMarks) * 100;
-    if (avg >= 70) distribution.A++;
-    else if (avg >= 60) distribution.B++;
-    else if (avg >= 50) distribution.C++;
-    else if (avg >= 45) distribution.D++;
-    else if (avg >= 40) distribution.E++;
-    else distribution.F++;
+    if (g.maxMarks > 0) {
+      const avg = (g.score / g.maxMarks) * 100;
+      if (avg >= 70) distribution.A++;
+      else if (avg >= 60) distribution.B++;
+      else if (avg >= 50) distribution.C++;
+      else if (avg >= 45) distribution.D++;
+      else if (avg >= 40) distribution.E++;
+      else distribution.F++;
+    }
   });
 
   // 6. Process Top Students (Fetch minimal info for top candidates)
-  const topStudentIds = studentGradeAverages.map(s => s.studentId);
+  const topStudentStats = Array.from(studentMap.entries())
+    .map(([studentId, data]) => ({ studentId, score: data.score, maxMarks: data.maxMarks }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+    
+  const topStudentIds = topStudentStats.map(s => s.studentId);
   const topStudents = await prisma.student.findMany({
     where: { id: { in: topStudentIds } },
     select: { id: true, name: true, profileImage: true, studentCode: true },
   });
-  const studentMap = new Map(topStudents.map(s => [s.id, s]));
+  const dbStudentMap = new Map(topStudents.map(s => [s.id, s]));
 
-  const topStudentsWithInfo = studentGradeAverages.map((s) => {
-    const student = studentMap.get(s.studentId);
+  const topStudentsWithInfo = topStudentStats.map((s) => {
+    const student = dbStudentMap.get(s.studentId);
     return {
       id: s.studentId,
       name: student?.name || "Unknown",
       studentCode: student?.studentCode || "N/A",
       image: student?.profileImage,
-      average: s._sum.maxMarks && s._sum.maxMarks > 0 ? Math.round((s._sum.score || 0) / s._sum.maxMarks * 100) : 0,
+      average: s.maxMarks && s.maxMarks > 0 ? Math.round((s.score || 0) / s.maxMarks * 100) : 0,
     };
-  });
-
-  // Calculate Today's Schedule
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const currentDayStr = days[new Date().getDay()];
-  
-  const rawSchedule = await prisma.timetablePeriod.findMany({
-    where: {
-      OR: [
-        { classId: { in: assignedClassIds } },
-        { teacherId }
-      ],
-      day: currentDayStr
-    },
-    include: {
-      class: { select: { name: true } },
-      subject: { select: { name: true } }
-    },
-    orderBy: {
-      startTime: 'asc'
-    }
   });
 
   const todaySchedule = rawSchedule.map(p => ({
@@ -207,20 +232,7 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     startTime: p.startTime // For sorting on frontend
   }));
 
-  const teacherSubjects = await prisma.teacherSubject.findMany({
-    where: { teacherId },
-    include: { subject: { select: { name: true } } }
-  });
   const subjectNames = Array.from(new Set(teacherSubjects.map(ts => ts.subject?.name).filter(Boolean))) as string[];
-
-  // Fetch recent assignments
-  const recentAssignments = await prisma.assignment.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-    },
-    take: 10,
-    orderBy: { createdAt: "desc" },
-  });
 
   const classMap = new Map(classTeachers.map(ct => [ct.classId, ct.class?.name]));
 
@@ -1006,7 +1018,12 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
             student: {
                 include: {
                     grades: {
-                        where: { classId }
+                        where: { classId },
+                        include: {
+                            exam: { select: { title: true } },
+                            subjectPaper: { select: { title: true, createdAt: true, updatedAt: true } },
+                            subjectExamAttempt: { select: { submittedAt: true } }
+                        }
                     }
                 }
             }
@@ -1030,11 +1047,38 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
         const totalScore = caScore + examScore;
         const totalMarks = caTotal + examTotal;
 
+        const individualGrades = grades.map(g => {
+            let title = g.subject !== 'General' ? g.subject : '';
+            if (g.assessmentType) {
+                title += title ? ` (${g.assessmentType})` : g.assessmentType;
+            }
+            if (g.exam?.title) title = g.exam.title;
+            if (!title) title = g.category;
+            
+            return {
+                id: g.id,
+                teacherId: g.teacherId,
+                category: g.category,
+                type: g.assessmentType || g.category,
+                assessmentName: g.remarks || g.exam?.title || g.assessmentType || g.category,
+                paper: g.subjectPaper?.title || undefined,
+                subject: g.subject,
+                title,
+                score: g.score,
+                maxMarks: g.maxMarks,
+                status: g.status,
+                submittedAt: g.createdAt,
+                createdAt: g.subjectPaper?.createdAt || g.createdAt,
+                updatedAt: g.subjectPaper?.updatedAt || g.updatedAt
+            };
+        });
+
         return {
             id: student.id,
             studentId: student.studentCode || student.id.slice(-5).toUpperCase(),
             studentName: student.name,
             avatar: student.profileImage,
+            individualGrades,
             grades: {
                 continuousAssessment: { 
                     score: caTotal > 0 ? caScore : undefined, 
@@ -1071,6 +1115,9 @@ export const updateTeacherClassStudentGradeService = async (
     classId: string, 
     studentId: string, 
     data: { 
+        gradeId?: string,
+        score?: number,
+        maxMarks?: number,
         continuousScore?: number, 
         continuousTotal?: number,
         examScore?: number, 
@@ -1079,13 +1126,105 @@ export const updateTeacherClassStudentGradeService = async (
         notes?: string
     }
 ) => {
-    // 1. Verify assignment
+    // 1. Verify assignment to class
     const assigned = await prisma.classTeacher.findUnique({
         where: { classId_teacherId: { classId, teacherId } }
     });
 
     if (!assigned) {
         throw new Error("You are not assigned to this class");
+    }
+
+    // 2. If a specific gradeId is provided, we update that individual grade
+    if (data.gradeId) {
+        const existingGrade = await prisma.grade.findUnique({
+            where: { id: data.gradeId }
+        });
+
+        if (!existingGrade) {
+            throw new Error("Grade not found");
+        }
+
+        // Security: Check the teacher is assigned to teach this grade's subject
+        if (existingGrade.subject) {
+            // Find the subject by name in this school
+            const gradeSubject = await prisma.subject.findFirst({
+                where: {
+                    name: { equals: existingGrade.subject, mode: 'insensitive' },
+                    schoolId: existingGrade.schoolId
+                }
+            });
+
+            if (gradeSubject) {
+                // Check if this teacher is assigned to this subject
+                const teacherAssigned = await prisma.teacherSubject.findFirst({
+                    where: { teacherId, subjectId: gradeSubject.id }
+                });
+
+                if (!teacherAssigned) {
+                    throw new Error("You are not authorized to edit grades for this subject. Only the assigned subject teacher can modify these grades.");
+                }
+            }
+        }
+
+        const newStatus = (data.status as any) || existingGrade.status;
+        
+        const updatedGrade = await prisma.grade.update({
+            where: { id: data.gradeId },
+            data: { 
+                score: data.score !== undefined ? data.score : existingGrade.score,
+                maxMarks: data.maxMarks !== undefined ? data.maxMarks : existingGrade.maxMarks,
+                status: newStatus,
+                remarks: data.notes !== undefined ? data.notes : existingGrade.remarks
+            }
+        });
+
+        await prisma.gradeAuditLog.create({
+            data: {
+                gradeId: updatedGrade.id,
+                schoolId: updatedGrade.schoolId,
+                changedById: teacherId,
+                changedByType: 'TEACHER',
+                previousScore: existingGrade.score,
+                newScore: updatedGrade.score,
+                previousStatus: existingGrade.status,
+                newStatus: updatedGrade.status,
+                reason: 'Teacher dashboard individual grade update'
+            }
+        });
+
+        // Notify all school admins about the grade change
+        const teacher = await prisma.teacher.findUnique({ where: { id: teacherId }, select: { name: true } });
+        const student = await prisma.student.findUnique({ where: { id: studentId }, select: { name: true } });
+        const schoolAdmins = await prisma.schoolAdmin.findMany({
+            where: { schoolId: existingGrade.schoolId, active: true },
+            select: { adminId: true }
+        });
+
+        if (schoolAdmins.length > 0) {
+            await prisma.notification.createMany({
+                data: schoolAdmins.map(admin => ({
+                    recipientType: 'ADMIN' as any,
+                    recipientId: admin.adminId,
+                    senderType: 'TEACHER' as any,
+                    senderId: teacherId,
+                    type: 'GENERAL' as any,
+                    title: 'Grade Updated',
+                    message: `${teacher?.name || 'A teacher'} updated ${student?.name || 'a student'}'s grade for ${existingGrade.subject} from ${existingGrade.score} to ${updatedGrade.score}/${updatedGrade.maxMarks}.`,
+                    link: `/dashboard/admin/grades`,
+                    meta: {
+                        gradeId: updatedGrade.id,
+                        studentId,
+                        subject: existingGrade.subject,
+                        previousScore: existingGrade.score,
+                        newScore: updatedGrade.score,
+                        classId
+                    }
+                }))
+            });
+        }
+
+        return true;
     }
 
     const existingGrades = await prisma.grade.findMany({
@@ -1162,6 +1301,79 @@ export const updateTeacherClassStudentGradeService = async (
 
     if (data.examScore !== undefined) {
         await upsertAggregateGrade(examGrades, 'EXAM', data.examScore, data.examTotal || 50);
+    }
+
+    return true;
+};
+
+/**
+ * Delete an individual grade record, with subject ownership security check.
+ */
+export const deleteTeacherClassStudentGradeService = async (
+    teacherId: string,
+    classId: string,
+    gradeId: string
+) => {
+    // 1. Verify class assignment
+    const assigned = await prisma.classTeacher.findUnique({
+        where: { classId_teacherId: { classId, teacherId } }
+    });
+
+    if (!assigned) {
+        throw new Error("You are not assigned to this class");
+    }
+
+    // 2. Fetch the grade
+    const grade = await prisma.grade.findUnique({ where: { id: gradeId } });
+    if (!grade) {
+        throw new Error("Grade not found");
+    }
+
+    // 3. Security: Check the teacher is assigned to the grade's subject
+    if (grade.subject) {
+        const gradeSubject = await prisma.subject.findFirst({
+            where: {
+                name: { equals: grade.subject, mode: 'insensitive' },
+                schoolId: grade.schoolId
+            }
+        });
+
+        if (gradeSubject) {
+            const teacherAssigned = await prisma.teacherSubject.findFirst({
+                where: { teacherId, subjectId: gradeSubject.id }
+            });
+
+            if (!teacherAssigned) {
+                throw new Error("You are not authorized to delete grades for this subject.");
+            }
+        }
+    }
+
+    // 4. Delete the grade
+    await prisma.grade.delete({ where: { id: gradeId } });
+
+    // 5. Notify school admins
+    const teacher = await prisma.teacher.findUnique({ where: { id: teacherId }, select: { name: true } });
+    const student = await prisma.student.findUnique({ where: { id: grade.studentId }, select: { name: true } });
+    const schoolAdmins = await prisma.schoolAdmin.findMany({
+        where: { schoolId: grade.schoolId, active: true },
+        select: { adminId: true }
+    });
+
+    if (schoolAdmins.length > 0) {
+        await prisma.notification.createMany({
+            data: schoolAdmins.map(admin => ({
+                recipientType: 'ADMIN' as any,
+                recipientId: admin.adminId,
+                senderType: 'TEACHER' as any,
+                senderId: teacherId,
+                type: 'GENERAL' as any,
+                title: 'Grade Deleted',
+                message: `${teacher?.name || 'A teacher'} deleted ${student?.name || 'a student'}'s grade for ${grade.subject} (Score: ${grade.score}/${grade.maxMarks}).`,
+                link: `/dashboard/admin/grades`,
+                meta: { gradeId, studentId: grade.studentId, subject: grade.subject, classId }
+            }))
+        });
     }
 
     return true;

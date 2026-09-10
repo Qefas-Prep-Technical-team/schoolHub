@@ -27,7 +27,7 @@ export default function TabNavigation({
   return (
     <div className="w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-800/80 backdrop-blur-md rounded-[1.8rem] shadow-inner border border-slate-200/50 dark:border-slate-700/50 flex-wrap gap-1">
+        <div className="inline-flex p-1.5 bg-slate-100 dark:bg-emerald-950/60 backdrop-blur-md rounded-[1.8rem] shadow-inner border border-slate-200/50 dark:border-emerald-800/50 flex-wrap gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -37,10 +37,10 @@ export default function TabNavigation({
               <div className="relative z-10 flex items-center gap-2.5">
                 <tab.icon
                   size={16}
-                  className={`transition-colors duration-500 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`}
+                  className={`transition-colors duration-500 ${activeTab === tab.id ? 'text-white dark:text-slate-900' : 'text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`}
                   strokeWidth={activeTab === tab.id ? 2.5 : 2}
                 />
-                <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-500 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`}>
+                <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-500 ${activeTab === tab.id ? 'text-white dark:text-slate-900' : 'text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200'}`}>
                   {tab.label}
                 </span>
               </div>
@@ -48,7 +48,7 @@ export default function TabNavigation({
               {activeTab === tab.id && (
                 <motion.div
                   layoutId="active-class-tab-bg"
-                  className="absolute inset-0 bg-primary shadow-lg shadow-primary/20 rounded-2xl"
+                  className="absolute inset-0 bg-emerald-600 shadow-lg shadow-emerald-600/20 rounded-2xl"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.6 }}
                 />
               )}

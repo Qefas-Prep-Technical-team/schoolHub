@@ -32,8 +32,8 @@ export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderP
     >
       {/* Dynamic Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-50%] right-[-20%] w-[80%] h-[200%] bg-primary/30 blur-[150px] rounded-full mix-blend-screen animate-pulse-slow"></div>
-        <div className="absolute bottom-[-50%] left-[-10%] w-[60%] h-[150%] bg-blue-600/20 blur-[120px] rounded-full mix-blend-screen"></div>
+        <div className="absolute top-[-50%] right-[-20%] w-[80%] h-[200%] bg-emerald-600/30 blur-[150px] rounded-full mix-blend-screen animate-pulse-slow"></div>
+        <div className="absolute bottom-[-50%] left-[-10%] w-[60%] h-[150%] bg-emerald-600/20 blur-[120px] rounded-full mix-blend-screen"></div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
       </div>
@@ -46,8 +46,8 @@ export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderP
              {isSessionLoading ? (
                <div className="h-8 w-40 bg-slate-800 rounded-xl animate-pulse"></div>
              ) : (
-               <div className="px-4 py-1.5 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-xl flex items-center gap-2">
-                  <Sparkles size={14} className="text-primary-light animate-pulse" />
+               <div className="px-4 py-1.5 bg-emerald-600/20 backdrop-blur-md border border-emerald-600/30 rounded-xl flex items-center gap-2">
+                  <Sparkles size={14} className="text-emerald-400 animate-pulse" />
                   <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white whitespace-nowrap">
                      {classData.academicYear} • {classData.term}
                   </span>
@@ -68,7 +68,7 @@ export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderP
               {classData.name}
             </h1>
             <div className="flex items-center gap-3 text-lg md:text-xl font-bold text-slate-300">
-              <span className="px-3 py-1 bg-white/10 rounded-lg text-primary-light backdrop-blur-sm border border-white/10">{classData.subject}</span>
+              <span className="px-3 py-1 bg-white/10 rounded-lg text-emerald-400 backdrop-blur-sm border border-white/10">{classData.subject}</span>
               <span className="text-slate-600">•</span> 
               <span className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs text-white">{classData.teacher.charAt(0)}</div> {classData.teacher}</span>
             </div>
@@ -81,7 +81,7 @@ export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderP
           onClick={onAddAnnouncement}
           className="shrink-0 flex items-center justify-center gap-3 h-14 px-8 bg-white/10 hover:bg-white text-white hover:text-slate-900 rounded-2xl transition-all shadow-[0_0_30px_rgba(255,255,255,0.05)] border border-white/20 hover:border-white text-[11px] font-black uppercase tracking-[0.2em] backdrop-blur-md group"
         >
-          <Megaphone className="w-5 h-5 text-primary-light group-hover:text-primary transition-colors" />
+          <Megaphone className="w-5 h-5 text-emerald-400 group-hover:text-emerald-600 transition-colors" />
           <span>Announce</span>
         </motion.button>
       </div>
@@ -104,7 +104,7 @@ function HeroMetaCard({ icon: Icon, label, value }: { icon: React.ElementType, l
                 <Icon size={20} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col overflow-hidden">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-primary-light transition-colors">{label}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-emerald-400 transition-colors">{label}</span>
                 <span className="text-sm font-bold text-white tracking-tight truncate">{value}</span>
             </div>
         </div>

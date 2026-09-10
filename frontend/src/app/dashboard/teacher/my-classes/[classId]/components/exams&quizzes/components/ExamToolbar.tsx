@@ -49,7 +49,7 @@ export function ExamToolbar({
         <Icon name="filter_list" className="text-base" />
         Filter
         {activeFiltersCount > 0 && (
-          <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
+          <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">
             {activeFiltersCount}
           </span>
         )}

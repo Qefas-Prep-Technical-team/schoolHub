@@ -14,6 +14,7 @@ interface TimetablePageProps {
 }
 
 import FilterButton from '@/app/dashboard/admin/classes/[id]/components/timetable/components/FilterButton';
+import { TabSkeleton } from '../TabSkeleton';
 
 export default function TimetablePage({ classData }: TimetablePageProps) {
     const params = useParams();
@@ -106,7 +107,7 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <CalendarDays className="text-primary" />
+                        <CalendarDays className="text-emerald-600" />
                         My Class Schedule
                     </h2>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">
@@ -134,9 +135,7 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
             </div>
 
             {isLoading ? (
-                <div className="h-[400px] w-full rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 animate-pulse flex items-center justify-center">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Schedule...</span>
-                </div>
+                <TabSkeleton tabId="timetable" />
             ) : (
                 <TeacherTimetableGrid periods={periods} days={days} />
             )}

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getTeacherClassAssignmentsService, getTeacherClassDetailService, getTeacherClassGradesService, getTeacherClassesService, getTeacherDashboardStatsService, getTeacherLinkedSchoolsService, getTeacherPerformanceTrendsService, getTeacherProfileService, getTeacherSettingsService, getTeacherStudentsService, getTeacherSubjectsService, requestTeacherEmailUpdateService, updateTeacherProfileService, updateTeacherSettingsService, verifyTeacherEmailUpdateService, updateTeacherClassStudentGradeService } from "./teacher-dashboard.service";
+import { getTeacherClassAssignmentsService, getTeacherClassDetailService, getTeacherClassGradesService, getTeacherClassesService, getTeacherDashboardStatsService, getTeacherLinkedSchoolsService, getTeacherPerformanceTrendsService, getTeacherProfileService, getTeacherSettingsService, getTeacherStudentsService, getTeacherSubjectsService, requestTeacherEmailUpdateService, updateTeacherProfileService, updateTeacherSettingsService, verifyTeacherEmailUpdateService, updateTeacherClassStudentGradeService, deleteTeacherClassStudentGradeService } from "./teacher-dashboard.service";
 
 /**
  * Handle fetching teacher settings
@@ -333,5 +333,21 @@ export const updateTeacherClassStudentGrade = async (req: Request, res: Response
         return res.status(200).json({ success: true, message: "Grade updated successfully", data });
     } catch (error: any) {
         return handleError(res, error, "teacher.updateTeacherClassStudentGrade");
+    }
+};
+
+/**
+ * Delete an individual grade
+ */
+export const deleteTeacherClassStudentGrade = async (req: Request, res: Response) => {
+    try {
+        const { classId, gradeId } = req.params;
+        const teacherId = (req as any).user.id;
+        
+        await deleteTeacherClassStudentGradeService(teacherId, classId as string, gradeId as string);
+        
+        return res.status(200).json({ success: true, message: "Grade deleted successfully" });
+    } catch (error: any) {
+        return handleError(res, error, "teacher.deleteTeacherClassStudentGrade");
     }
 };

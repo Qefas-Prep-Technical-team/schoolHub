@@ -6,10 +6,22 @@ import {
   upsertStudentBehaviourProfileService,
 } from "./behaviourProfile.service";
 import { handleError } from "../../utils/error-handler";
+import { canTeacherAccessStudent } from "./student.permissions";
 
 export const getStudentBehaviourProfile = async (req: Request, res: Response) => {
   try {
     const studentId = req.params.id as string;
+    const { userType: currentUserType, id: currentUserId } = req.user!;
+
+    if (currentUserType === UserRole.TEACHER) {
+      const hasAccess = await canTeacherAccessStudent(currentUserId, studentId);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view details of students enrolled in your assigned classes.",
+        });
+      }
+    }
 
     const profile = await getStudentBehaviourProfileService(studentId);
 
@@ -32,6 +44,16 @@ export const upsertStudentBehaviourProfile = async (req: Request, res: Response)
         success: false,
         message: "Only administrators and teachers are authorized to update behavior profiles",
       });
+    }
+
+    if (currentUserType === UserRole.TEACHER) {
+      const hasAccess = await canTeacherAccessStudent(req.user!.id, studentId);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only update details of students enrolled in your assigned classes.",
+        });
+      }
     }
 
     const parseResult = updateBehaviourProfileSchema.safeParse(req.body);

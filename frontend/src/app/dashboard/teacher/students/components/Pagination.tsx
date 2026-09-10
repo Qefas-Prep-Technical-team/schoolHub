@@ -19,9 +19,9 @@ const Pagination: React.FC<PaginationProps> = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <nav aria-label="Pagination" className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 dark:border-slate-800/50 mt-12 pt-8 gap-4 px-2">
+    <nav aria-label="Pagination" className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 dark:border-emerald-800/40 mt-12 pt-8 gap-4 px-2">
       <div className="flex flex-col sm:flex-row items-center gap-2">
-        <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+        <div className="p-2 rounded-xl bg-slate-50 dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
             Showing
             <span className="text-slate-900 dark:text-white mx-1.5">{startItem || 0}</span>
@@ -38,14 +38,14 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="group inline-flex items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-primary hover:border-primary hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xl shadow-slate-200/50 dark:shadow-none active:scale-90"
+          className="group inline-flex items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white hover:bg-emerald-500 hover:border-emerald-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xl shadow-slate-200/50 dark:shadow-none active:scale-90"
         >
           <ChevronLeft className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" />
           <span className="sr-only">Previous Page</span>
         </button>
 
         {/* Dynamic Page Indicator */}
-        <div className="flex items-center gap-1.5 px-4 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50">
+        <div className="flex items-center gap-1.5 px-4 h-11 rounded-2xl bg-slate-100 dark:bg-emerald-900/40 border border-slate-200/50 dark:border-emerald-700/40">
           <span className="text-sm font-black text-slate-900 dark:text-white tracking-widest">{currentPage}</span>
           <span className="text-slate-400 font-bold">/</span>
           <span className="text-sm font-black text-slate-400 tracking-widest">{totalPages}</span>
@@ -54,7 +54,7 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="group inline-flex items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-primary hover:border-primary hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xl shadow-slate-200/50 dark:shadow-none active:scale-90"
+          className="group inline-flex items-center justify-center p-3 rounded-2xl border border-slate-200 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white hover:bg-emerald-500 hover:border-emerald-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xl shadow-slate-200/50 dark:shadow-none active:scale-90"
         >
           <ChevronRight className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" />
           <span className="sr-only">Next Page</span>

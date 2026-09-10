@@ -9,9 +9,11 @@ import { toast } from 'react-toastify';
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
 
 // Admin Components we want to mirror
-import CustomTabs from '@/app/dashboard/admin/classes/[id]/components/Tabs';
-import Overview from '@/app/dashboard/admin/classes/[id]/components/Overview';
 import Breadcrumbs from '@/app/dashboard/admin/classes/[id]/components/students/components/Breadcrumbs';
+
+// Premium Teacher Components
+import TabNavigation from './TabNavigation';
+import Overview from './Overview';
 
 // Teacher Specific Pages
 import StudentsPage from './student/page';
@@ -21,70 +23,7 @@ import GradesPage from './grades/page';
 import TimetablePage from './timetable/page';
 import AttendancePage from './attendance/page';
 
-const TabSkeleton = ({ tabId }: { tabId: string }) => {
-  if (tabId === "overview") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
-        <div className="col-span-2 space-y-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-150 dark:border-gray-700 space-y-4 shadow-sm">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5" />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-150 dark:border-gray-700 space-y-4 shadow-sm">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-20 bg-gray-100 dark:bg-gray-700 rounded-xl" />
-              <div className="h-20 bg-gray-100 dark:bg-gray-700 rounded-xl" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-150 dark:border-gray-700 space-y-4 h-96 shadow-sm">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex gap-3">
-                <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                <div className="flex-1 space-y-2 py-1">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Generic List/Table Skeleton for other tabs
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700 p-6 space-y-4 shadow-sm animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/6" />
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
-      </div>
-      <div className="space-y-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 py-3 last:border-b-0">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
-              <div className="space-y-1.5">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32" />
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
-              </div>
-            </div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
+import { TabSkeleton } from './TabSkeleton';
 export default function ClassDetails() {
   const params = useParams();
   const router = useRouter();
@@ -93,6 +32,11 @@ export default function ClassDetails() {
   const { data: classData, isLoading: loading, error } = useSingleClass(classId);
   const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(classId);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Helper to detect if a string is a raw UUID
+  const isUUID = (str: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
+  
+  const displaySession = classData?.session && !isUUID(classData.session) ? classData.session : "Current Session";
 
   useEffect(() => {
     if (error) {
@@ -110,20 +54,7 @@ export default function ClassDetails() {
     reportedBy: alert.reporter?.name || "System",
   }));
 
-   const upcomingExams = [
-     {
-       id: '1',
-       subject: 'Biology',
-       date: '25 Oct 2024',
-       type: 'Mid-term',
-     },
-     {
-       id: '2',
-       subject: 'Mathematics',
-       date: '28 Oct 2024',
-       type: 'Quiz',
-     },
-   ];
+
 
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/' },
@@ -135,7 +66,7 @@ export default function ClassDetails() {
     { 
       id: "overview", 
       label: "Overview", 
-      content: <Overview behaviourAlerts={behaviourAlerts} upcomingExams={upcomingExams} classData={classData} />
+      content: <Overview behaviourAlerts={behaviourAlerts} classData={classData} />
     },
     { 
       id: 'students', 
@@ -171,7 +102,7 @@ export default function ClassDetails() {
 
   if (!classData && !loading) {
     return (
-      <div className="flex h-[80vh] w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="flex h-[80vh] w-full items-center justify-center bg-gray-50 dark:bg-neutral-950">
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md border border-gray-200 dark:border-gray-700">
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="text-red-500" size={32} />
@@ -182,7 +113,7 @@ export default function ClassDetails() {
           </p>
           <button 
             onClick={() => router.push('/dashboard/teacher/my-classes')}
-            className="w-full py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
+            className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95"
           >
             Back to My Classes
           </button>
@@ -192,7 +123,7 @@ export default function ClassDetails() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
+    <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-neutral-950">
       <main className="flex-1 p-8">
         <div className="w-full">
           <div className="mb-4">
@@ -203,7 +134,7 @@ export default function ClassDetails() {
           <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
             <div className="flex flex-col gap-1">
               {loading ? (
-                <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+                <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
               ) : (
                 <p className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-tight">
                   {classData?.name} {classData?.section ? `- ${classData.section}` : ""}
@@ -213,18 +144,18 @@ export default function ClassDetails() {
                 {loading ? (
                   <>
                     <span className="flex items-center gap-1.5 animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
-                       Code: <span className="inline-block h-3.5 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <span className="w-2 h-2 rounded-full bg-slate-200 dark:bg-emerald-900/40" />
+                       Code: <span className="inline-block h-3.5 w-12 bg-slate-200 dark:bg-emerald-900/40 rounded" />
                     </span>
                     <span>|</span>
                     <span className="animate-pulse">
-                      Students: <span className="inline-block h-3.5 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
+                      Students: <span className="inline-block h-3.5 w-8 bg-slate-200 dark:bg-emerald-900/40 rounded" />
                     </span>
                   </>
                 ) : (
                   <>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                        Code: <span className="text-gray-900 dark:text-white font-bold">{classData?.classCode}</span>
                     </span>
                     {classData?.level && (
@@ -235,11 +166,11 @@ export default function ClassDetails() {
                         </span>
                       </>
                     )}
-                    {classData?.session && (
+                    {(classData?.session || "Current Session") && (
                       <>
                         <span>|</span>
                         <span>
-                          Session: <span className="text-gray-900 dark:text-white font-bold">{classData.session}</span>
+                          Session: <span className="text-gray-900 dark:text-white font-bold">{displaySession}</span>
                         </span>
                       </>
                     )}
@@ -263,23 +194,20 @@ export default function ClassDetails() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-2 overflow-hidden mb-8">
-            <CustomTabs
-              tabs={tabs}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
-
-          {/* Tab Content */}
-          <div className="mt-6">
-            {loading ? (
-              <TabSkeleton tabId={activeTab} />
-            ) : (
-              tabs.find(t => t.id === activeTab)?.content
-            )}
-          </div>
+          {/* Beautiful Tab Navigation */}
+          <TabNavigation 
+            activeTab={activeTab as any} 
+            onTabChange={(tabId) => setActiveTab(tabId)}
+          >
+            {/* Tab Content */}
+            <div className="mt-6">
+              {loading ? (
+                <TabSkeleton tabId={activeTab} />
+              ) : (
+                tabs.find(t => t.id === activeTab)?.content
+              )}
+            </div>
+          </TabNavigation>
         </div>
       </main>
     </div>

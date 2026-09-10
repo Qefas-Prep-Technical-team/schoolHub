@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Sparkles, FileText, Loader2, Check, RefreshCw, AlertCircle, Lock, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,11 @@ import { apiClient } from "@/lib/api/client";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import { useFeatureAccess } from "@/lib/api/hooks/useFeatureAccess";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import QuestionViewer from "@/app/dashboard/teacher/exams&quizzes/preview/components/QuestionViewer";
 
 interface AIQuestion {
-  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER";
+  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
   question: string;
   optionA: string | null;
   optionB: string | null;
@@ -43,7 +45,10 @@ export default function AITools({
   const [prompt, setPrompt] = useState("");
   const [rawText, setRawText] = useState("");
   const [questionCount, setQuestionCount] = useState(10);
+  const [questionType, setQuestionType] = useState<string>("MULTIPLE_CHOICE");
   const [previewQuestions, setPreviewQuestions] = useState<AIQuestion[]>([]);
+  const [currentPreviewQuestion, setCurrentPreviewQuestion] = useState(1);
+  const [selectedPreviewAnswers, setSelectedPreviewAnswers] = useState<Record<number, number>>({});
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
 
@@ -69,7 +74,8 @@ export default function AITools({
         prompt,
         subjectName: paper.title,
         examTitle: paper.exam?.title,
-        questionCount
+        questionCount,
+        questionType
       });
       return response.data.data.questions;
     },
@@ -101,7 +107,8 @@ export default function AITools({
       const response = await apiClient.post("/exams/ai/parse-text", {
         rawText,
         subjectName: paper.title,
-        examTitle: paper.exam?.title
+        examTitle: paper.exam?.title,
+        questionType
       });
       return response.data.data.questions;
     },
@@ -178,6 +185,38 @@ export default function AITools({
       </div>
     );
   }
+
+  const formattedPreviewQuestions = useMemo(() => {
+    return previewQuestions.map((q, idx) => {
+      const options = [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean) as string[];
+      let correctAnswerIndex = undefined;
+      
+      if (q.correctAnswer) {
+        const matchingIndex = options.findIndex(
+          (opt, i) => 
+            opt === q.correctAnswer || 
+            (q.correctAnswer.length === 1 && String.fromCharCode(65 + i) === q.correctAnswer)
+        );
+        if (matchingIndex !== -1) {
+          correctAnswerIndex = matchingIndex;
+        }
+      }
+
+      return {
+        id: idx + 1,
+        text: q.question,
+        options,
+        correctAnswer: correctAnswerIndex,
+      };
+    });
+  }, [previewQuestions]);
+
+  const handleSelectPreviewAnswer = (questionId: number, answerIndex: number) => {
+    setSelectedPreviewAnswers((prev) => ({
+      ...prev,
+      [questionId]: answerIndex,
+    }));
+  };
 
   // Not Subscribed View
   if (!hasAiAccess) {
@@ -289,30 +328,42 @@ export default function AITools({
           </div>
         </div>
 
-        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin">
-          {previewQuestions.map((q, idx) => (
-            <Card key={idx} className="p-4 border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-[10px] font-bold uppercase text-primary bg-primary/10 px-2 py-0.5 rounded">
-                  {q.type}
-                </span>
-                <span className="text-xs font-bold text-gray-400">{q.marks} pts</span>
-              </div>
-              <div className="text-sm font-medium mb-3">
-                <LaTeXRenderer content={q.question} />
-              </div>
-              {q.type === 'MULTIPLE_CHOICE' && (
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
-                  {['A', 'B', 'C', 'D'].map(opt => (
-                    <div key={opt} className={`p-1.5 rounded border ${(q as any)[`option${opt}`] ? 'bg-white dark:bg-gray-800 flex items-center gap-2' : 'opacity-50'} ${q.correctAnswer === opt ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-100 dark:border-gray-700'}`}>
-                      <span className="font-bold mr-1 shrink-0">{opt}:</span> 
-                      <LaTeXRenderer content={(q as any)[`option${opt}`] || 'N/A'} className="text-[10px]" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          ))}
+        <div className="mt-4">
+          <QuestionViewer
+            questions={formattedPreviewQuestions}
+            currentQuestion={currentPreviewQuestion}
+            selectedAnswers={selectedPreviewAnswers}
+            onSelectAnswer={handleSelectPreviewAnswer}
+            isPreview={true}
+            onNavigateToQuestion={setCurrentPreviewQuestion}
+          />
+        </div>
+        
+        {/* Navigation Controls specifically for the AITools preview context */}
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <div className="text-sm text-gray-500">
+            Previewing question {currentPreviewQuestion} of {previewQuestions.length}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPreviewQuestion(p => Math.max(1, p - 1))}
+              disabled={currentPreviewQuestion <= 1}
+              className="rounded-xl"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPreviewQuestion(p => Math.min(previewQuestions.length, p + 1))}
+              disabled={currentPreviewQuestion >= previewQuestions.length}
+              className="rounded-xl"
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -345,7 +396,12 @@ export default function AITools({
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Describe the questions you need</Label>
+              <div className="flex justify-between items-end">
+                <Label>Describe the questions you need</Label>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1">
+                  <Check size={10} /> Supports LaTeX (wrap in $$...$$)
+                </span>
+              </div>
               <Textarea
                 placeholder="e.g. Generate 5 difficult algebra questions focusing on quadratic equations for grade 10 students."
                 value={prompt}
@@ -353,7 +409,21 @@ export default function AITools({
                 className="min-h-[120px] rounded-xl border-gray-200 dark:border-gray-800 focus:ring-primary/20"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Question Type</Label>
+                <Select value={questionType} onValueChange={setQuestionType}>
+                  <SelectTrigger className="w-full rounded-xl">
+                    <SelectValue placeholder="Select question type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
+                    <SelectItem value="TRUE_FALSE">True / False</SelectItem>
+                    <SelectItem value="SHORT_ANSWER">Short Answer</SelectItem>
+                    <SelectItem value="ESSAY">Essay / Theory</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>Number of Questions</Label>
                 <Input
@@ -364,8 +434,8 @@ export default function AITools({
                   max={50}
                 />
               </div>
-              <div className="flex items-end">
-                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 p-2 rounded-xl flex items-start gap-2 text-[10px] text-amber-700 dark:text-amber-400">
+              <div className="flex items-end h-full">
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 p-2 rounded-xl flex items-start gap-2 text-[10px] text-amber-700 dark:text-amber-400 w-full">
                   <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
                   AI may take up to 30 seconds to generate high-quality questions.
                 </div>
@@ -387,7 +457,25 @@ export default function AITools({
                 className="min-h-[200px] rounded-xl border-gray-200 dark:border-gray-800 focus:ring-primary/20"
               />
             </div>
-            <p className="text-[11px] text-gray-500 italic">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 max-w-xs">
+                <Label>Question Type</Label>
+                <Select value={questionType} onValueChange={setQuestionType}>
+                  <SelectTrigger className="w-full rounded-xl">
+                    <SelectValue placeholder="Select question type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
+                    <SelectItem value="TRUE_FALSE">True / False</SelectItem>
+                    <SelectItem value="SHORT_ANSWER">Short Answer</SelectItem>
+                    <SelectItem value="ESSAY">Essay / Theory</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-gray-500 italic mt-2">
               Best results are achieved when text is clear and follows a standard pattern.
             </p>
           </div>

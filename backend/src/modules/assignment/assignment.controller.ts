@@ -216,7 +216,10 @@ export const updateAssignmentStatus = async (req: Request, res: Response) => {
     }
 
     const safeAssignmentId = Array.isArray(assignmentId) ? assignmentId[0] : assignmentId as string;
-    const data = await assignmentService.updateAssignmentStatusService(safeAssignmentId, schoolId, status);
+    const userId = req.user?.id;
+    const userType = req.user?.userType;
+
+    const data = await assignmentService.updateAssignmentStatusService(safeAssignmentId, schoolId, status, userId, userType);
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return handleError(res, error, "assignment.updateAssignmentStatus");
@@ -252,7 +255,10 @@ export const deleteAssignment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Missing school ID' });
     }
 
-    await assignmentService.deleteAssignmentService(safeId, schoolId);
+    const userId = req.user?.id;
+    const userType = req.user?.userType;
+
+    await assignmentService.deleteAssignmentService(safeId, schoolId, userId, userType);
     return res.status(200).json({ success: true, message: 'Assignment deleted successfully' });
   } catch (error) {
     return handleError(res, error, 'assignment.deleteAssignment');

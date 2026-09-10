@@ -20,9 +20,9 @@ export function AddAssignmentButton({
       onClick={onClick}
       className={cn(
         "flex min-w-[84px] cursor-pointer items-center justify-center gap-2",
-        "overflow-hidden rounded-xl h-12 px-5 bg-primary text-white",
+        "overflow-hidden rounded-xl h-12 px-5 bg-emerald-600 text-white",
         "text-sm font-bold leading-normal tracking-[0.015em]",
-        "hover:bg-primary/90 transition-colors",
+        "hover:bg-emerald-600/90 transition-colors",
         className
       )}
     >

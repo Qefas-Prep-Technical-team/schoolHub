@@ -59,12 +59,20 @@ export interface SubjectAttempt {
   subjectPaperId: string;
   subjectPaper: SubjectPaper;
   answers: QuestionAnswer[];
+  score?: number;
+  totalMarks?: number;
 }
 
 export interface ExamAttempt {
   id: string;
   examId: string;
   studentId: string;
+  student?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+  };
   status: "IN_PROGRESS" | "SUBMITTED" | "SCORED" | "EXPIRED";
   startedAt: string;
   submittedAt?: string;
@@ -201,10 +209,23 @@ export const examService = {
   },
 
   getPaperById: async (examId: string, paperId: string) => {
-    const response = await apiClient.get<{ data: SubjectPaper }>(
-      `/exams/${examId}/papers/${paperId}`,
-    );
-    return response.data.data;
+    try {
+      const response = await apiClient.get<{ data: SubjectPaper }>(
+        `/exams/${examId}/papers/${paperId}`,
+      );
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        return {
+          id: paperId,
+          title: "Restricted Paper",
+          status: "FORBIDDEN",
+          questions: [],
+          _forbiddenMessage: error.response?.data?.message || "Not authorized to preview",
+        } as unknown as SubjectPaper;
+      }
+      throw error;
+    }
   },
 
   createSubjectPaper: async (

@@ -6,7 +6,7 @@ import NavBar from "@/components/reusable/NavBar";
 import { ThemeClientProvider } from "@/context/ThemeClientProvider";
 import Footer from "@/components/reusable/Footer";
 import Providers from "@/utils/providers";
-import NextTopLoader from 'nextjs-toploader';
+import { ThemedTopLoader } from '@/components/reuseables/ThemedTopLoader';
 import AppInitializer from "@/utils/AppInitializer";
 import AuthModal from "@/components/reusable/AuthModal";
 import AIChatWidget from "@/components/Home/AIChatWidget";
@@ -127,7 +127,7 @@ export default function RootLayout({
               <NavBar />
               <AuthModal />
               <GlobalLogoutModal />
-              <NextTopLoader showSpinner={false} />
+              <ThemedTopLoader />
               {children}
               <Footer />
               <AIChatWidget />

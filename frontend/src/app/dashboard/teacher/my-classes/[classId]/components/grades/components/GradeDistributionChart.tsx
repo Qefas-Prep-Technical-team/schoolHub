@@ -12,7 +12,7 @@ export function GradeDistributionChart({ distribution, className }: GradeDistrib
   
   const colors = {
     A: 'bg-green-500',
-    B: 'bg-blue-500',
+    B: 'bg-emerald-500',
     C: 'bg-yellow-500',
     D: 'bg-orange-500',
     F: 'bg-red-500',

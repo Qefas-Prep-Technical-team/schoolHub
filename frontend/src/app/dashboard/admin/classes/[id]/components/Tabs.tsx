@@ -25,7 +25,7 @@ const CustomTabs: React.FC<CustomTabsProps> = ({ tabs, activeTab, onTabChange })
             className={`
               px-5 py-2.5 text-sm font-semibold tracking-wide transition-all duration-200 rounded-full whitespace-nowrap focus:outline-none
               ${isActive 
-                ? 'bg-primary text-white shadow-sm font-bold' 
+                ? 'bg-primary text-white shadow-sm font-bold dark:bg-primary-container' 
                 : 'bg-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               }
             `}

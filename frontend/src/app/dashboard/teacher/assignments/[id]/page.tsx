@@ -119,8 +119,23 @@ export default function AssignmentDetailPage() {
   }
 
   const assignment = assignmentData;
-  // Preview mode: either ?preview=true in URL, or the assignment belongs to another teacher
-  const isPreviewMode = searchParams.get('preview') === 'true' || (assignment?.teacherId && assignment.teacherId !== user?.id);
+
+  // Protect the route: Only Admin and Creator can view
+  if (assignment?.teacherId && assignment.teacherId !== user?.id && user?.userType !== "ADMIN") {
+    return (
+      <div className="max-w-6xl mx-auto p-6 md:p-8 text-center flex flex-col items-center justify-center min-h-[60vh]">
+        <Lock className="w-12 h-12 text-gray-400 mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Restricted</h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-6">
+          Only the teacher who created this assignment or an administrator can view its details.
+        </p>
+        <Button onClick={() => router.back()}>Go Back</Button>
+      </div>
+    );
+  }
+
+  // Preview mode: either ?preview=true in URL
+  const isPreviewMode = searchParams.get('preview') === 'true';
 
   return (
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">

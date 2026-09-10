@@ -63,6 +63,14 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
       </div>
     );
   }
+  
+  const getPreviewLink = (exam: any) => {
+    const titleParam = encodeURIComponent(exam.title || exam.subject?.name || '');
+    const subjectParam = encodeURIComponent(exam.subject?.name || (exam.subjects && exam.subjects[0]) || '');
+    if (activeTab === 'assignment') return `/dashboard/teacher/assignments/${exam.id}?preview=true`;
+    if (isSubjectPaperTab) return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=subject_paper&title=${titleParam}&subject=${subjectParam}`;
+    return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=${exam.type || 'exam'}&title=${titleParam}&subject=${subjectParam}`;
+  };
 
   if (viewMode === 'grid') {
     return (
@@ -161,7 +169,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
 
                 <div className="flex items-center gap-1.5">
                   {/* Preview always visible */}
-                  <Link href={activeTab === 'assignment' ? `/dashboard/teacher/assignments/${exam.id}?preview=true` : isSubjectPaperTab ? `/dashboard/teacher/exams&quizzes/preview?paperId=${exam.id}` : `/dashboard/teacher/exams&quizzes/preview`}>
+                  <Link href={getPreviewLink(exam)}>
                     <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Preview">
                       <Eye size={14} strokeWidth={2.5} />
                     </button>
@@ -296,7 +304,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
 
                 <div className="flex items-center gap-2">
                   {/* Preview always visible */}
-                  <Link href={activeTab === 'assignment' ? `/dashboard/teacher/assignments/${exam.id}?preview=true` : isSubjectPaperTab ? `/dashboard/teacher/exams&quizzes/preview?paperId=${exam.id}` : `/dashboard/teacher/exams&quizzes/preview`}>
+                  <Link href={getPreviewLink(exam)}>
                     <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Preview">
                       <Eye size={16} strokeWidth={2.5} />
                     </button>

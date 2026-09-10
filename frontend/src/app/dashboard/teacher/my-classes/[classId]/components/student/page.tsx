@@ -11,6 +11,7 @@ import { teacherService } from '@/lib/api/services/teacherService';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { motion } from 'framer-motion';
 import { Skeleton } from "@/components/ui/skeleton";
+import { TabSkeleton } from '../TabSkeleton';
 
 export default function StudentsPage() {
   const params = useParams();
@@ -105,7 +106,7 @@ export default function StudentsPage() {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; padding: 40px; font-size: 13px; }
-    .header { border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 24px; }
+    .header { border-bottom: 3px solid #059669; padding-bottom: 20px; margin-bottom: 24px; }
     .school-name { font-size: 22px; font-weight: 900; color: #1e3a8a; letter-spacing: -0.5px; }
     .school-meta { font-size: 11px; color: #64748b; margin-top: 4px; }
     .doc-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 16px; }
@@ -185,18 +186,7 @@ export default function StudentsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-4 animate-pulse">
-        <div className="flex gap-2 flex-wrap">
-          {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-9 w-28 rounded-xl" />)}
-        </div>
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    );
+    return <TabSkeleton tabId="students" />;
   }
 
   if (error) {
@@ -229,7 +219,7 @@ export default function StudentsPage() {
           {allStudents.length} Total
         </div>
         {filtered.length !== allStudents.length && (
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-600/5 px-3 py-1.5 rounded-full border border-emerald-600/10">
             {filtered.length} Matching filters
           </div>
         )}
@@ -237,11 +227,11 @@ export default function StudentsPage() {
 
       {/* Table / Grid */}
       {paginated.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[28vh] rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800 p-10 text-center">
+        <div className="flex flex-col items-center justify-center min-h-[28vh] rounded-[2rem] border border-dashed border-slate-200 dark:border-emerald-800/50 p-10 text-center">
           <p className="text-sm font-black uppercase tracking-widest text-slate-400">No students match your filters</p>
           <button
             onClick={() => { handleSearchChange(''); handleFilterChange({ gender: '', status: '', performance: '' }); }}
-            className="mt-3 text-[10px] font-black uppercase tracking-widest text-primary underline underline-offset-4"
+            className="mt-3 text-[10px] font-black uppercase tracking-widest text-emerald-600 underline underline-offset-4"
           >
             Clear all filters
           </button>

@@ -20,7 +20,7 @@ const questionSchema = {
         properties: {
           type: {
             type: "string",
-            enum: ["MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER"],
+            enum: ["MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER", "ESSAY"],
           },
           question: { type: "string" },
           optionA: { type: ["string", "null"] },
@@ -52,10 +52,12 @@ export const parseRawExamTextToStructuredQuestions = async ({
   rawText,
   subjectName,
   examTitle,
+  questionType,
 }: {
   rawText: string;
   subjectName?: string;
   examTitle?: string;
+  questionType?: string;
 }) => {
   const response = await client.responses.create({
     model,
@@ -93,6 +95,7 @@ export const parseRawExamTextToStructuredQuestions = async ({
             text:
               `Exam title: ${examTitle || "Untitled Exam"}\n` +
               `Subject: ${subjectName || "Unknown Subject"}\n\n` +
+              (questionType ? `MANDATORY RULE: YOU MUST PARSE THE TEXT AND OUTPUT ONLY QUESTIONS OF TYPE: ${questionType}. Ignore or adapt text that doesn't fit.\n\n` : "") +
               `Raw exam text:\n${rawText}`,
           },
         ],
@@ -117,11 +120,13 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
   subjectName,
   examTitle,
   questionCount = 20,
+  questionType,
 }: {
   prompt: string;
   subjectName?: string;
   examTitle?: string;
   questionCount?: number;
+  questionType?: string;
 }) => {
   const response = await client.responses.create({
     model,
@@ -146,7 +151,7 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
               "- Use \\sin, \\cos, \\tan, \\log, \\ln for function names: $\\sin(\\theta)$.\n" +
               "JSON ESCAPING: In JSON strings, ALL LaTeX backslashes must be doubled (\\\\). Example: \"\\\\frac{1}{2}\" in JSON renders as $\\frac{1}{2}$.\n" +
               "CORRECTNESS: For MULTIPLE_CHOICE, correctAnswer MUST be exactly 'A', 'B', 'C', or 'D'. Apply LaTeX formatting to options as needed.\n" +
-              "QUESTION TYPES: Use MULTIPLE_CHOICE, TRUE_FALSE, or SHORT_ANSWER only."
+              "QUESTION TYPES: Use MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER, or ESSAY only."
           },
         ],
       },
@@ -159,6 +164,7 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
               `Exam title: ${examTitle || "Generated Exam"}\n` +
               `Subject: ${subjectName || "Unknown Subject"}\n` +
               `Question count: ${questionCount}\n\n` +
+              (questionType ? `MANDATORY RULE: YOU MUST ONLY GENERATE QUESTIONS OF TYPE: ${questionType}. Do not generate any other type.\n\n` : "") +
               `Prompt:\n${prompt}`,
           },
         ],

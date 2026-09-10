@@ -28,35 +28,42 @@ export function GradeStatistics({ grades, className }: GradeStatisticsProps) {
     gradeDistribution: calculateGradeDistribution(gradedGrades)
   }
 
+  const getScoreColors = (score: number) => {
+    const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+    switch (grade) {
+      case 'A': return { color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/20' };
+      case 'B': return { color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20' };
+      case 'C': return { color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20' };
+      case 'D': return { color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-50 dark:bg-orange-900/20' };
+      default: return { color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-900/20' };
+    }
+  };
+
   const statCards = [
     {
       label: 'Class Average',
       value: `${stats.averageScore}%`,
       icon: 'bar_chart_3',
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      ...getScoreColors(stats.averageScore),
       trend: '+2.5%',
     },
     {
       label: 'Highest Score',
       value: `${stats.highestScore}%`,
       icon: 'trending_up',
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      ...getScoreColors(stats.highestScore),
     },
     {
       label: 'Lowest Score',
       value: `${stats.lowestScore}%`,
       icon: 'trending_down',
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      ...getScoreColors(stats.lowestScore),
     },
     {
       label: 'Passing Rate',
       value: `${stats.passingRate}%`,
       icon: 'check_circle',
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+      ...getScoreColors(stats.passingRate),
     },
   ]
 
@@ -78,9 +85,9 @@ export function GradeStatistics({ grades, className }: GradeStatisticsProps) {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {stat.label}
               </p>
-              {stat.trend && (
+              {'trend' in stat && stat.trend && (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  {stat.trend} from last term
+                  {stat.trend as string} from last term
                 </p>
               )}
             </div>

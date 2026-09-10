@@ -102,16 +102,17 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         ))}
       </div>
       
-      <div className="grid grid-cols-7 gap-1 text-center text-sm">
+      <div className="grid grid-cols-7 gap-x-1 gap-y-4 text-center text-sm mt-2 mb-4">
         {days.map((day, index) => (
-          <button
-            key={index}
-            onClick={() => onDateSelect?.(day.date)}
-            className={getDayColor(day)}
-            aria-label={`Date: ${day.date.toLocaleDateString()}`}
-          >
-            {day.date.getDate()}
-          </button>
+          <div key={index} className="flex justify-center">
+            <button
+              onClick={() => onDateSelect?.(day.date)}
+              className={getDayColor(day)}
+              aria-label={`Date: ${day.date.toLocaleDateString()}`}
+            >
+              {day.date.getDate()}
+            </button>
+          </div>
         ))}
       </div>
       

@@ -27,7 +27,7 @@ export function ImportExportButtons({
         onExport={onExport}
         label="Export Grades"
         icon={<Icon name="download" className="text-base mr-1" />}
-        className="flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
+        className="flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600/90 transition-colors"
       />
     </div>
   )

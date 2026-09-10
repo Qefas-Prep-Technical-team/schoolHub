@@ -44,7 +44,7 @@ export default function ExamsQuizzesOverview() {
   const isPersonal = selectedSchoolId === user?.id;
   const category = activeTab === 'exams' ? 'EXAM' : activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM';
 
-  const filterId = isPersonal ? undefined : selectedSchoolId;
+  const filterId = (isPersonal || selectedSchoolId === 'all') ? undefined : selectedSchoolId;
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => examService.deleteExam(id),
@@ -73,20 +73,20 @@ export default function ExamsQuizzesOverview() {
     queryFn: async () => {
       if (activeTab === 'subject-papers') {
         const result = await teacherService.getSubjectPapers({
-          schoolId: selectedSchoolId,
+          schoolId: filterId,
         });
         return result;
       }
       if (activeTab === 'assignment') {
         const result = await teacherService.getAssignments({
-          schoolId: isPersonal ? undefined : selectedSchoolId,
+          schoolId: filterId,
           status: filters.status || undefined,
           classId: filters.class || undefined,
         });
         return result;
       }
       const result = await teacherService.getExams({
-        schoolId: isPersonal ? undefined : selectedSchoolId,
+        schoolId: filterId,
         category,
         status: filters.status || undefined,
         classId: filters.class || undefined,

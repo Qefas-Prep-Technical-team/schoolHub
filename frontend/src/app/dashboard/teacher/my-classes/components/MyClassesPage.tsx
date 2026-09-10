@@ -102,8 +102,8 @@ export default function MyClassesPage() {
     const pendingItems = filteredClasses.reduce((sum, cls) => sum + (cls.assignments || 0) + (cls.exams || 0), 0);
 
     return (
-        <main className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8 lg:p-10">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <main className="min-h-screen bg-transparent p-6 md:p-8 lg:p-10">
+            <div className="w-full space-y-8">
                 <PageHeader
                     title="Academic Registry"
                     description={isPersonal 
@@ -117,15 +117,15 @@ export default function MyClassesPage() {
                         label="Active Modules" 
                         value={filteredClasses.length} 
                         icon={GraduationCap} 
-                        color="text-primary"
-                        bgColor="bg-primary/5"
+                        color="text-emerald-500"
+                        bgColor="bg-emerald-500/5"
                     />
                     <StatCard 
                         label="Enrolled Scholars" 
                         value={totalStudents.toLocaleString()} 
                         icon={Users} 
-                        color="text-blue-500"
-                        bgColor="bg-blue-500/5"
+                        color="text-emerald-500"
+                        bgColor="bg-emerald-500/5"
                     />
                     <StatCard 
                         label="Avg. Session Attendance" 
@@ -146,11 +146,11 @@ export default function MyClassesPage() {
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                    className="p-6 bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm"
                 >
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500">
                                 <GraduationCap size={24} strokeWidth={2.5} />
                             </div>
                             <div>
@@ -181,7 +181,7 @@ export default function MyClassesPage() {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                             >
-                                <ClassesSkeleton />
+                                <ClassesSkeleton viewType={viewType} />
                             </motion.div>
                         ) : filteredClasses.length > 0 ? (
                             <motion.div
@@ -216,14 +216,14 @@ function StatCard({ label, value, icon: Icon, color, bgColor }: { label: string,
     return (
         <motion.div 
             whileHover={{ y: -4, scale: 1.01 }}
-            className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+            className="p-6 bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all group"
         >
             <div className="flex items-center gap-4">
                 <div className={`p-4 rounded-xl ${bgColor} ${color} transition-transform group-hover:scale-110`}>
                     <Icon size={24} strokeWidth={2.5} />
                 </div>
                 <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-primary transition-colors">{label}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-500 transition-colors">{label}</p>
                     <p className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{value}</p>
                 </div>
             </div>

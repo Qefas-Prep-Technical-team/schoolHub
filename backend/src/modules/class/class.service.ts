@@ -405,6 +405,17 @@ export const getSingleClassService = async (classId: string) => {
     throw new Error("Class not found");
   }
 
+  // Resolve session UUID to session name if necessary
+  if (foundClass.session && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(foundClass.session)) {
+    const sessionObj = await prisma.session.findUnique({
+      where: { id: foundClass.session },
+      select: { name: true }
+    });
+    if (sessionObj) {
+      foundClass.session = sessionObj.name;
+    }
+  }
+
   return foundClass;
 };
 

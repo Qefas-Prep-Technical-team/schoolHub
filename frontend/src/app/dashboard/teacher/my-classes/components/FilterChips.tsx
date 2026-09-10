@@ -115,12 +115,12 @@ function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onCha
                 onClick={onToggle}
                 className={`flex h-10 items-center justify-between gap-3 rounded-lg px-4 border transition-all duration-300 ${
                     value 
-                    ? 'bg-primary text-white border-primary shadow-sm' 
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-primary/50'
+                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' 
+                    : 'bg-white dark:bg-emerald-950/60 border-slate-200 dark:border-emerald-800/50 text-slate-600 dark:text-slate-300 hover:border-emerald-500/50'
                 }`}
             >
                 <div className="flex items-center gap-2">
-                    <Icon size={16} className={value ? 'text-white' : 'text-primary'} strokeWidth={2.5} />
+                    <Icon size={16} className={value ? 'text-white' : 'text-emerald-500'} strokeWidth={2.5} />
                     <span className="text-[10px] font-black uppercase tracking-widest leading-none">
                         {value || label}
                     </span>
@@ -134,7 +134,7 @@ function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onCha
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full left-0 mt-3 p-3 bg-white/90 dark:bg-slate-900/95 backdrop-blur-3xl rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-2xl z-50 min-w-[200px]"
+                        className="absolute top-full left-0 mt-3 p-3 bg-white/90 dark:bg-emerald-950/60/95 backdrop-blur-3xl rounded-3xl border border-slate-200/60 dark:border-emerald-800/50 shadow-2xl z-50 min-w-[200px]"
                     >
                         <div className="space-y-1">
                             {options.map((opt: string) => (
@@ -143,7 +143,7 @@ function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onCha
                                     onClick={() => onChange(opt)}
                                     className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                                         value === opt 
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/10' 
+                                        ? 'bg-emerald-500 text-white shadow-lg shadow-primary/10' 
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                     }`}
                                 >

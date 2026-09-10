@@ -23,6 +23,8 @@ export function getExamStatusColor(status: ExamStatus): string {
 
 export function getExamTypeLabel(type: ExamType): string {
   if (type === 'subject_paper') return 'Subject Paper'
+  if (type === 'ca') return 'Continuous Assessment'
+  if (type === 'assignment') return 'Assignment'
   return type.charAt(0).toUpperCase() + type.slice(1)
 }
 

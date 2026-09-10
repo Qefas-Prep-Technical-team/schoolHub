@@ -32,7 +32,7 @@ export const parseRawExamText = async (req: Request, res: Response) => {
       });
     }
 
-    const { rawText, subjectName, examTitle } = req.body;
+    const { rawText, subjectName, examTitle, questionType } = req.body;
 
     if (!rawText) {
       return res.status(400).json({
@@ -45,6 +45,7 @@ export const parseRawExamText = async (req: Request, res: Response) => {
       rawText,
       subjectName,
       examTitle,
+      questionType,
     });
 
     // 2. Log usage after successful generation
@@ -85,7 +86,7 @@ export const generateExamQuestions = async (req: Request, res: Response) => {
       });
     }
 
-    const { prompt, subjectName, examTitle, questionCount } = req.body;
+    const { prompt, subjectName, examTitle, questionCount, questionType } = req.body;
 
     if (!prompt) {
       return res.status(400).json({
@@ -99,6 +100,7 @@ export const generateExamQuestions = async (req: Request, res: Response) => {
       subjectName,
       examTitle,
       questionCount,
+      questionType,
     });
 
     // 2. Log usage after successful generation

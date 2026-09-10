@@ -23,6 +23,7 @@ import {
 } from '@/lib/api/hooks/useClasses';
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { TabSkeleton } from '../TabSkeleton';
 
 export default function TeacherAttendancePage() {
   const router = useRouter();
@@ -58,8 +59,8 @@ export default function TeacherAttendancePage() {
     }));
   }, [studentsData]);
 
+  // Calendar generation effect — must be before any early return
   useEffect(() => {
-    // Generate calendar days
     const generateCalendarDays = () => {
       const year = selectedDate.getFullYear();
       const month = selectedDate.getMonth();
@@ -110,6 +111,11 @@ export default function TeacherAttendancePage() {
       attendanceRate: total > 0 ? (present / total) * 100 : (attendanceRecords.length > 0 ? 100 : 0)
     };
   }, [attendanceRecords, selectedDate]);
+
+  // Early return AFTER all hooks have been called
+  if (isLoading) {
+    return <TabSkeleton tabId="attendance" />;
+  }
 
   const handleStartAttendance = () => {
     setShowModeModal(true);
@@ -317,13 +323,13 @@ export default function TeacherAttendancePage() {
               onExport={handleDownloadReport}
               label="Download Report"
               icon={<Download size={16} className="mr-2" />}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-slate-100 dark:bg-emerald-900/40 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-emerald-700/50"
             />
             
             <button
               type="button"
               onClick={handleStartAttendance}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white gap-2 text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_8px_30px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-emerald-600 hover:bg-blue-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white gap-2 text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_8px_30px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5"
             >
               <Plus size={16} />
               <span className="truncate">Start Attendance</span>

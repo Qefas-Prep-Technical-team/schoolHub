@@ -49,7 +49,7 @@ export function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-background-light dark:bg-background-dark px-4 py-3 sm:px-6">
+    <div className="flex items-center justify-between border-t border-slate-200 dark:border-emerald-700/50 bg-background-light dark:bg-background-dark px-4 py-3 sm:px-6">
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -83,7 +83,7 @@ export function Pagination({
                     "ring-1 ring-inset",
                     "focus:z-20 focus:outline-offset-0 transition-all",
                     page === currentPage
-                      ? "z-10 bg-primary text-white ring-primary dark:bg-primary/20 dark:text-primary dark:ring-primary/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      ? "z-10 bg-emerald-600 text-white ring-emerald-600 dark:bg-emerald-600/20 dark:text-emerald-600 dark:ring-emerald-600/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       : "ring-slate-300 dark:ring-slate-700 text-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80",
                     page > 3 && page < totalPages - 1 && "hidden md:inline-flex"
                   )}

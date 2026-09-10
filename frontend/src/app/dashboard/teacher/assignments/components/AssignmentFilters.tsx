@@ -138,11 +138,11 @@ function ViewButton({ active, onClick, icon: Icon, label }: { active: boolean, o
             onClick={onClick}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
                 active 
-                    ? 'bg-primary border-primary text-white' 
+                    ? 'bg-primary border-primary text-primary-foreground' 
                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-primary/50'
             }`}
         >
-            <Icon size={16} strokeWidth={2.5} className={active ? 'text-white' : 'text-primary'} />
+            <Icon size={16} strokeWidth={2.5} className={active ? 'text-primary-foreground' : 'text-primary'} />
             <span className="hidden sm:inline">{label}</span>
         </button>
     );

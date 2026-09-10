@@ -6,6 +6,7 @@ export interface StudentGrade {
   studentId: string
   studentName: string
   avatar?: string
+  individualGrades?: IndividualGrade[]
   grades: {
     continuousAssessment: GradeScore
     exams: GradeScore
@@ -15,6 +16,23 @@ export interface StudentGrade {
   status: GradeStatus
   lastUpdated?: Date
   notes?: string
+}
+
+export interface IndividualGrade {
+  id: string
+  teacherId?: string
+  category: string
+  type?: string
+  subject?: string
+  assessmentName?: string
+  paper?: string
+  title: string
+  score?: number
+  maxMarks: number
+  status: string
+  submittedAt?: string | Date
+  createdAt: string | Date
+  updatedAt: string | Date
 }
 
 export interface GradeScore {
@@ -34,10 +52,12 @@ export interface GradeItem {
 }
 
 export interface GradeFilter {
-  status?: GradeStatus
+  status?: GradeStatus | string
   search?: string
   minScore?: number
   maxScore?: number
+  type?: string
+  subject?: string
 }
 
 export interface GradeStatistics {

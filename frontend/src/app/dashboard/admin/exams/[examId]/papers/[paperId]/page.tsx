@@ -211,7 +211,7 @@ export default function PaperDetailPage() {
   if (isLoadingPaper || isLoadingExam) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
           {/* Header Skeleton */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="h-1 w-full bg-slate-100 dark:bg-slate-800" />
@@ -281,7 +281,7 @@ export default function PaperDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* ── Page Header Card ─────────────────────────────────────────── */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">

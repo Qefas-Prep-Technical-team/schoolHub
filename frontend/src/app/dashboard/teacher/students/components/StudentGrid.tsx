@@ -40,9 +40,9 @@ const StudentGrid: React.FC<StudentGridProps> = ({ students, isLoading, error, s
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10"
+        className="flex flex-col items-center justify-center py-16 rounded-2xl border border-dashed border-slate-200 dark:border-emerald-800/50 bg-slate-50/50 dark:bg-emerald-950/60/10"
       >
-        <div className="p-4 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
+        <div className="p-4 rounded-full bg-slate-100 dark:bg-emerald-900/40 mb-4">
           <User className="w-10 h-10 text-slate-400" />
         </div>
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">No students found</h3>

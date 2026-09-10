@@ -31,7 +31,7 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
   };
 
   return (
-    <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-800/60 rounded-[3rem] p-8 shadow-2xl h-full flex flex-col relative overflow-hidden">
+    <div className="bg-white/70 dark:bg-emerald-950/40 backdrop-blur-3xl border border-slate-200/60 dark:border-emerald-800/50 rounded-[3rem] p-8 shadow-2xl h-full flex flex-col relative overflow-hidden">
       {/* Background Glow */}
       <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full pointer-events-none"></div>
 
@@ -42,7 +42,7 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
         </h2>
         <button
           onClick={onViewAll}
-          className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-dark transition-all"
+          className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-800 transition-all"
         >
           Leaderboard
         </button>
@@ -55,14 +55,14 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
              initial={{ opacity: 0, x: -10 }}
              animate={{ opacity: 1, x: 0 }}
              transition={{ delay: idx * 0.05 }}
-            className="group flex items-center justify-between p-4 md:p-5 bg-white/40 dark:bg-slate-800/40 rounded-[1.5rem] hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 border border-slate-200/50 dark:border-slate-700/50 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5 relative overflow-hidden cursor-pointer"
+            className="group flex items-center justify-between p-4 md:p-5 bg-white/40 dark:bg-emerald-900/30 rounded-[1.5rem] hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 border border-slate-200/50 dark:border-emerald-700/40 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5 relative overflow-hidden cursor-pointer"
           >
             {/* Hover Indicator */}
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
             <div className="flex items-center gap-5 relative z-10">
               <div className="relative">
-                <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
+                <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden border border-slate-200 dark:border-emerald-700/50 shadow-inner transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
                     <Image
                         src={student.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
                         alt={student.name}
@@ -95,7 +95,7 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
 
       {students.length === 0 && (
         <div className="text-center py-12 m-auto">
-          <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
+          <div className="w-16 h-16 bg-slate-50 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-emerald-700/50">
                <Trophy className="w-6 h-6 text-slate-300" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No Data Available</p>

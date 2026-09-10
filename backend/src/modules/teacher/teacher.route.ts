@@ -10,6 +10,7 @@ import {
     getTeacherClassAssignments,
     getTeacherClassGrades,
     updateTeacherClassStudentGrade,
+    deleteTeacherClassStudentGrade,
     getTeacherSubjects,
     getTeacherProfile,
     updateTeacherProfile,
@@ -93,6 +94,13 @@ router.get("/classes/:classId/grades", getTeacherClassGrades);
  * @access  Private-Teacher
  */
 router.patch("/classes/:classId/grades/student/:studentId", updateTeacherClassStudentGrade);
+
+/**
+ * @route   DELETE /api/v1/teacher/classes/:classId/grades/:gradeId
+ * @desc    Delete an individual grade record (subject-owner check enforced)
+ * @access  Private-Teacher
+ */
+router.delete("/classes/:classId/grades/:gradeId", deleteTeacherClassStudentGrade);
 
 /**
  * @route   GET /api/v1/teacher/profile

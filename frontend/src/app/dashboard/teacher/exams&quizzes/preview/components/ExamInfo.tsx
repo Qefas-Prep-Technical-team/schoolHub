@@ -5,46 +5,63 @@ interface ExamInfoProps {
     subject: string;
     totalQuestions: number;
   };
+  isLoading?: boolean;
 }
 
-export default function ExamInfo({ examData }: ExamInfoProps) {
+export default function ExamInfo({ examData, isLoading }: ExamInfoProps) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-900/10 p-4">
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
             Class
           </p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {examData.class}
-          </p>
+          {isLoading ? (
+            <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {examData.class}
+            </p>
+          )}
         </div>
         
         <div className="flex flex-col gap-1">
           <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
             Duration
           </p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {examData.duration} Minutes
-          </p>
+          {isLoading ? (
+            <div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {examData.duration} Minutes
+            </p>
+          )}
         </div>
         
         <div className="flex flex-col gap-1">
           <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
             Subject
           </p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {examData.subject}
-          </p>
+          {isLoading ? (
+            <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {examData.subject}
+            </p>
+          )}
         </div>
         
         <div className="flex flex-col gap-1">
           <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
             Total Questions
           </p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {examData.totalQuestions}
-          </p>
+          {isLoading ? (
+            <div className="h-5 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          ) : (
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {examData.totalQuestions}
+            </p>
+          )}
         </div>
       </div>
       

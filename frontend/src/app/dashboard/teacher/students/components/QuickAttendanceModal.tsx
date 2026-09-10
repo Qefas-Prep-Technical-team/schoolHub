@@ -133,9 +133,9 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+      <div className="bg-white dark:bg-emerald-950/60 rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-emerald-800/50">
         {/* Header */}
-        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-emerald-800/50 flex justify-between items-center bg-slate-50/50 dark:bg-emerald-900/40/50">
           <div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Quick Attendance</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Record attendance securely for your classes</p>
@@ -149,7 +149,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
         </div>
 
         {/* Controls */}
-        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-6 items-end bg-white dark:bg-slate-900">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-emerald-800/50 flex flex-wrap gap-6 items-end bg-white dark:bg-emerald-950/60">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">
               Select Class
@@ -159,7 +159,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
                 disabled={loadingClasses}
-                className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-bold rounded-xl px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                className="w-full appearance-none bg-slate-50 dark:bg-emerald-900/40 border border-slate-200 dark:border-emerald-700/50 text-slate-900 dark:text-white text-sm font-bold rounded-xl px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
               >
                 {loadingClasses ? (
                   <option>Loading classes...</option>
@@ -184,13 +184,13 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-bold rounded-xl px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                className="w-full appearance-none bg-slate-50 dark:bg-emerald-900/40 border border-slate-200 dark:border-emerald-700/50 text-slate-900 dark:text-white text-sm font-bold rounded-xl px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4 w-full md:w-auto mt-4 md:mt-0 justify-between">
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <div className="flex bg-slate-100 dark:bg-emerald-900/40 p-1 rounded-xl">
               <button 
                 onClick={() => setViewMode("list")} 
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -219,7 +219,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
         </div>
 
         {/* Student List or Swipe View */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30 dark:bg-slate-900/50 flex flex-col">
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30 dark:bg-emerald-950/50 flex flex-col">
           {loadingStudents ? (
             <div className="flex flex-col items-center justify-center h-40">
               <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
@@ -268,19 +268,19 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                     <button onClick={() => {
                         setAttendanceData(prev => ({ ...prev, [students[swipeIndex].id]: { status: "ABSENT", note: "" } }));
                         if (swipeIndex < students.length - 1) setSwipeIndex(prev => prev + 1); else setShowSummary(true);
-                      }} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-red-100 dark:border-red-900/30 text-red-500 flex items-center justify-center hover:scale-105 transition-transform"><XIcon size={24} strokeWidth={3} /></button>
+                      }} className="w-14 h-14 rounded-full bg-white dark:bg-emerald-900/40 shadow-lg border border-red-100 dark:border-red-900/30 text-red-500 flex items-center justify-center hover:scale-105 transition-transform"><XIcon size={24} strokeWidth={3} /></button>
                     <button onClick={() => {
                         setAttendanceData(prev => ({ ...prev, [students[swipeIndex].id]: { status: "LATE", note: "" } }));
                         if (swipeIndex < students.length - 1) setSwipeIndex(prev => prev + 1); else setShowSummary(true);
-                      }} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-amber-100 dark:border-amber-900/30 text-amber-500 flex items-center justify-center hover:scale-105 transition-transform"><Clock size={24} strokeWidth={3} /></button>
+                      }} className="w-14 h-14 rounded-full bg-white dark:bg-emerald-900/40 shadow-lg border border-amber-100 dark:border-amber-900/30 text-amber-500 flex items-center justify-center hover:scale-105 transition-transform"><Clock size={24} strokeWidth={3} /></button>
                     <button onClick={() => {
                         setAttendanceData(prev => ({ ...prev, [students[swipeIndex].id]: { status: "EXCUSED", note: "" } }));
                         if (swipeIndex < students.length - 1) setSwipeIndex(prev => prev + 1); else setShowSummary(true);
-                      }} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-blue-100 dark:border-blue-900/30 text-blue-500 flex items-center justify-center hover:scale-105 transition-transform"><AlertCircle size={24} strokeWidth={3} /></button>
+                      }} className="w-14 h-14 rounded-full bg-white dark:bg-emerald-900/40 shadow-lg border border-blue-100 dark:border-blue-900/30 text-emerald-500 flex items-center justify-center hover:scale-105 transition-transform"><AlertCircle size={24} strokeWidth={3} /></button>
                     <button onClick={() => {
                         setAttendanceData(prev => ({ ...prev, [students[swipeIndex].id]: { status: "PRESENT", note: "" } }));
                         if (swipeIndex < students.length - 1) setSwipeIndex(prev => prev + 1); else setShowSummary(true);
-                      }} className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-green-100 dark:border-green-900/30 text-green-500 flex items-center justify-center hover:scale-105 transition-transform"><Check size={24} strokeWidth={3} /></button>
+                      }} className="w-14 h-14 rounded-full bg-white dark:bg-emerald-900/40 shadow-lg border border-green-100 dark:border-green-900/30 text-green-500 flex items-center justify-center hover:scale-105 transition-transform"><Check size={24} strokeWidth={3} /></button>
                   </div>
                 </>
               )}
@@ -291,7 +291,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                   </div>
                   <h4 className="text-xl font-bold text-slate-900 dark:text-white">All Swiped!</h4>
                   <p className="text-sm text-slate-500 mt-1 mb-6">Review using the List view or Save Attendance below.</p>
-                  <button onClick={() => setViewMode("list")} className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <button onClick={() => setViewMode("list")} className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-emerald-700/50 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800">
                     Review List
                   </button>
                 </div>
@@ -304,7 +304,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                 const studentName = student.user ? `${student.user.firstName} ${student.user.lastName}` : "Unknown Student";
                 
                 return (
-                  <div key={student.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={student.id} className="flex items-center justify-between p-4 bg-white dark:bg-emerald-900/40 rounded-2xl border border-slate-100 dark:border-emerald-700/50 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black uppercase">
                         {studentName ? studentName.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : '?'}
@@ -316,7 +316,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                      <div className="flex bg-slate-100 dark:bg-emerald-950/60 p-1 rounded-xl">
                         {["PRESENT", "LATE", "ABSENT", "EXCUSED"].map((status) => {
                           const isActive = data.status === status;
                           return (
@@ -328,7 +328,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                                   ? status === "PRESENT" ? "bg-emerald-500 text-white shadow-md"
                                   : status === "ABSENT" ? "bg-red-500 text-white shadow-md"
                                   : status === "LATE" ? "bg-amber-500 text-white shadow-md"
-                                  : "bg-blue-500 text-white shadow-md"
+                                  : "bg-emerald-500 text-white shadow-md"
                                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                               }`}
                             >
@@ -342,7 +342,7 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                         placeholder="Add note..."
                         value={data.note}
                         onChange={(e) => setAttendanceData(prev => ({ ...prev, [student.id]: { ...prev[student.id], note: e.target.value } }))}
-                        className="w-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:text-white"
+                        className="w-32 bg-slate-50 dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-700/50 rounded-xl px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:text-white"
                       />
                     </div>
                   </div>
@@ -353,10 +353,10 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-end gap-3">
+        <div className="px-8 py-5 border-t border-slate-100 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/60 flex justify-end gap-3">
           <button 
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-emerald-700/50 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             Cancel
           </button>
@@ -433,20 +433,20 @@ const SwipeCard = ({
       }}
       exit={{ x: x.get() * 1.5, y: y.get() * 1.5, opacity: 0, transition: { duration: 0.2 } }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden ${isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
+      className={`absolute inset-0 bg-white dark:bg-emerald-900/40 rounded-3xl shadow-xl border border-slate-200 dark:border-emerald-700/50 flex flex-col overflow-hidden ${isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
     >
       {/* Dynamic Overlays */}
       <motion.div style={{ opacity: presentOpacity }} className="absolute inset-0 bg-emerald-500/20 z-10 flex items-center justify-center">
-        <span className="text-4xl font-black text-emerald-500 border-4 border-emerald-500 rounded-xl px-4 py-2 rotate-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">PRESENT</span>
+        <span className="text-4xl font-black text-emerald-500 border-4 border-emerald-500 rounded-xl px-4 py-2 rotate-12 bg-white/50 dark:bg-emerald-950/50 backdrop-blur-sm">PRESENT</span>
       </motion.div>
       <motion.div style={{ opacity: absentOpacity }} className="absolute inset-0 bg-red-500/20 z-10 flex items-center justify-center">
-        <span className="text-4xl font-black text-red-500 border-4 border-red-500 rounded-xl px-4 py-2 -rotate-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">ABSENT</span>
+        <span className="text-4xl font-black text-red-500 border-4 border-red-500 rounded-xl px-4 py-2 -rotate-12 bg-white/50 dark:bg-emerald-950/50 backdrop-blur-sm">ABSENT</span>
       </motion.div>
       <motion.div style={{ opacity: lateOpacity }} className="absolute inset-0 bg-amber-500/20 z-10 flex items-center justify-center">
-        <span className="text-4xl font-black text-amber-500 border-4 border-amber-500 rounded-xl px-4 py-2 -rotate-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">LATE</span>
+        <span className="text-4xl font-black text-amber-500 border-4 border-amber-500 rounded-xl px-4 py-2 -rotate-12 bg-white/50 dark:bg-emerald-950/50 backdrop-blur-sm">LATE</span>
       </motion.div>
-      <motion.div style={{ opacity: excusedOpacity }} className="absolute inset-0 bg-blue-500/20 z-10 flex items-center justify-center">
-        <span className="text-4xl font-black text-blue-500 border-4 border-blue-500 rounded-xl px-4 py-2 rotate-12 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">EXCUSED</span>
+      <motion.div style={{ opacity: excusedOpacity }} className="absolute inset-0 bg-emerald-500/20 z-10 flex items-center justify-center">
+        <span className="text-4xl font-black text-emerald-500 border-4 border-blue-500 rounded-xl px-4 py-2 rotate-12 bg-white/50 dark:bg-emerald-950/50 backdrop-blur-sm">EXCUSED</span>
       </motion.div>
 
       {/* Card Content */}
@@ -463,7 +463,7 @@ const SwipeCard = ({
       </div>
       
       {/* Instructions hint */}
-      <div className="p-4 bg-slate-50 dark:bg-slate-900/50 text-center border-t border-slate-100 dark:border-slate-800 pointer-events-none">
+      <div className="p-4 bg-slate-50 dark:bg-emerald-950/50 text-center border-t border-slate-100 dark:border-emerald-800/50 pointer-events-none">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           Swipe → Present | ← Absent | ↑ Late | ↓ Excused
         </p>

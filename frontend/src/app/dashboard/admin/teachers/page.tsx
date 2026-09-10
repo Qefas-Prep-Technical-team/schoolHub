@@ -226,14 +226,32 @@ export default function ManageTeachersPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 dark:divide-white/[0.03]">
-                                {isLoading ? [...Array(6)].map((_, i) => (
-                                    <tr key={i}>
-                                        <td className="px-3 py-3"><Skeleton className="h-3 w-6 rounded" /></td>
-                                        <td className="px-4 py-3"><Skeleton className="h-3 w-24 rounded" /></td>
-                                        <td className="px-3 py-3"><div className="flex items-center gap-2.5"><Skeleton className="size-8 rounded-full" /><div className="space-y-1.5"><Skeleton className="h-3 w-32 rounded" /><Skeleton className="h-2.5 w-24 rounded" /></div></div></td>
-                                        <td className="px-3 py-3"><Skeleton className="h-5 w-28 rounded-full" /></td>
-                                        <td className="px-3 py-3"><Skeleton className="h-3 w-16 rounded" /></td>
-                                        <td className="px-3 py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                                {isLoading ? [...Array(10)].map((_, i) => (
+                                    <tr key={i} className="border-b border-gray-50 dark:border-white/[0.03]">
+                                        <td className="px-3 py-4"><Skeleton className="h-3 w-6" /></td>
+                                        <td className="px-4 py-4"><Skeleton className="h-3 w-20" /></td>
+                                        <td className="px-3 py-4">
+                                            <div className="flex items-center gap-2.5">
+                                                <Skeleton className="size-8 rounded-full shrink-0" />
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-3.5 w-32" />
+                                                    <Skeleton className="h-2.5 w-24" />
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-4">
+                                            <div className="flex flex-wrap gap-1">
+                                                <Skeleton className="h-5 w-16 rounded-full" />
+                                                <Skeleton className="h-5 w-12 rounded-full" />
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-4"><Skeleton className="h-3 w-16" /></td>
+                                        <td className="px-3 py-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <Skeleton className="size-1.5 rounded-full" />
+                                                <Skeleton className="h-3 w-12" />
+                                            </div>
+                                        </td>
                                     </tr>
                                 )) : paginatedTeachers.length === 0 ? (
                                     <tr><td colSpan={6} className="py-16 text-center">

@@ -42,7 +42,8 @@ import {
   PlusCircle,
   TrendingUp,
   TrendingDown,
-  BarChart3
+  BarChart3,
+  Trash2
 } from 'lucide-react'
 
 const iconMap = {
@@ -83,7 +84,8 @@ const iconMap = {
   calendar_month: Calendar, // Add logout icon
   trending_up: TrendingUp,
   trending_down: TrendingDown,
-  bar_chart_3: BarChart3
+  bar_chart_3: BarChart3,
+  delete: Trash2
 }
 
 export function Icon({ name, className, size = 20 }: IconProps) {

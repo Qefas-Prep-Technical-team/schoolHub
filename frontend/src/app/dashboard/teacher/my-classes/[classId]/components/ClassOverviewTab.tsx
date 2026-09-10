@@ -81,7 +81,7 @@ export default function ClassOverviewTab({
         <section>
           <div className="flex items-center gap-3 mb-6 px-4">
             <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Session Analytics</h3>
-            <span className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-primary/20 animate-pulse">Live Data</span>
+            <span className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-emerald-600/20 animate-pulse">Live Data</span>
           </div>
           <ClassStats stats={stats} />
         </section>
@@ -117,7 +117,7 @@ export default function ClassOverviewTab({
         </div>
 
         {/* Quick Actions */}
-        <section className="pt-8 border-t border-slate-200/50 dark:border-slate-800/50">
+        <section className="pt-8 border-t border-slate-200/50 dark:border-emerald-800/40">
           <QuickActions 
             onAddAssignment={() => console.log('Add assignment')}
             onAddQuiz={() => console.log('Add quiz')}
