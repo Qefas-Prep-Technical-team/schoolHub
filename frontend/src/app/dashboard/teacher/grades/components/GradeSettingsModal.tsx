@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGradeSettingsStore } from '@/lib/api/hooks/useGradeSettingsStore';
-import { Settings2, RotateCcw } from 'lucide-react';
+import { Settings2, RotateCcw, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface GradeSettingsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ const GradeSettingsModal: React.FC<GradeSettingsModalProps> = ({ isOpen, onClose
   
   // Local state to handle input strings (allowing empty strings during editing)
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // Sync local state when modal opens or gradingScale changes
   useEffect(() => {
@@ -47,15 +49,25 @@ const GradeSettingsModal: React.FC<GradeSettingsModalProps> = ({ isOpen, onClose
 
   const handleReset = () => {
     resetToDefault();
+    toast.success("Settings reset to defaults");
     // After reset, useEffect will sync local values
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    // Simulate network delay for UI feedback
+    await new Promise(resolve => setTimeout(resolve, 600));
+    setIsSaving(false);
+    toast.success("Grade settings saved successfully!");
+    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+      <DialogContent className="sm:max-w-[425px] bg-emerald-50 dark:bg-slate-900 border-emerald-100 dark:border-slate-800/50">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+            <div className="p-2 rounded-lg bg-emerald-600/10 text-emerald-600">
               <Settings2 size={20} />
             </div>
             <DialogTitle className="text-xl font-bold">Grading Scale Settings</DialogTitle>
@@ -77,7 +89,7 @@ const GradeSettingsModal: React.FC<GradeSettingsModalProps> = ({ isOpen, onClose
                   type="number"
                   value={localValues[threshold.grade] ?? threshold.minPercentage.toString()}
                   onChange={(e) => handleInputChange(threshold.grade, e.target.value)}
-                  className="w-24 border-slate-200 dark:border-slate-700 focus:ring-primary shadow-sm"
+                  className="w-24 border-slate-200 dark:border-slate-700 focus:ring-emerald-600 shadow-sm"
                   min="0"
                   max="100"
                 />
@@ -97,8 +109,9 @@ const GradeSettingsModal: React.FC<GradeSettingsModalProps> = ({ isOpen, onClose
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset to Default
           </Button>
-          <Button onClick={onClose} className="bg-primary hover:bg-primary/90 text-white px-8">
-            Save Changes
+          <Button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-600/90 text-white px-8">
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

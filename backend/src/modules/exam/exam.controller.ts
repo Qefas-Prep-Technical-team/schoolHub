@@ -63,7 +63,6 @@ export const getExams = async (req: Request, res: Response) => {
       filters.availableForStudentId = req.user.id;
     } else if (req.user?.userType === UserRole.TEACHER) {
       filters.teacherId = req.user.id;
-      filters.teacherClassesOnly = 'true';
       filters.currentTeacherId = req.user.id;
     } else if (req.user?.userType === UserRole.PARENT && availableForStudentId) {
       // Parents can fetch exams for their linked children by passing availableForStudentId.
@@ -286,7 +285,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
 export const updateSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { paperId } = req.params;
-    const { title, instructions, durationMinutes, readingContent, subjectId, teacherId } = req.body;
+    const { title, instructions, durationMinutes, readingContent, subjectId, teacherId, images, imageLabels } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Authentication required" });
@@ -312,6 +311,8 @@ export const updateSubjectPaper = async (req: Request, res: Response) => {
       readingContent,
       subjectId,
       teacherId,
+      images,
+      imageLabels,
     });
 
     return res.status(200).json({
@@ -406,11 +407,16 @@ export const validateSubjectPaper = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Subject paper not found" });
     }
 
-    // If teacher, must be the assigned teacher
-    if (req.user.userType === UserRole.TEACHER && paper.teacherId !== req.user.id) {
+    const allowed = await canManageSubjectPaper({
+      userId: req.user.id,
+      userType: req.user.userType,
+      subjectPaperId: paperId as string,
+    });
+
+    if (!allowed) {
       return res.status(403).json({
         success: false,
-        message: "You are not authorized to validate this subject paper"
+        message: "You are not authorized to validate this subject paper",
       });
     }
 
@@ -443,11 +449,16 @@ export const publishSubjectPaper = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Subject paper not found" });
     }
 
-    // If teacher, must be the assigned teacher
-    if (req.user.userType === UserRole.TEACHER && paper.teacherId !== req.user.id) {
+    const allowed = await canManageSubjectPaper({
+      userId: req.user.id,
+      userType: req.user.userType,
+      subjectPaperId: paperId as string,
+    });
+
+    if (!allowed) {
       return res.status(403).json({
         success: false,
-        message: "You are not authorized to publish this subject paper"
+        message: "You are not authorized to publish this subject paper",
       });
     }
 
@@ -606,9 +617,17 @@ export const unpublishSubjectPaper = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Subject paper not found" });
     }
 
-    // Admins or the assigned teacher can unpublish
-    if (req.user.userType === UserRole.TEACHER && paper.teacherId !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Forbidden" });
+    const allowed = await canManageSubjectPaper({
+      userId: req.user.id,
+      userType: req.user.userType,
+      subjectPaperId: paperId as string,
+    });
+
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to manage this subject paper",
+      });
     }
 
     const data = await unpublishSubjectPaperService(paperId as string);
@@ -634,9 +653,17 @@ export const deleteSubjectPaper = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Subject paper not found" });
     }
 
-    // Admins or the assigned teacher can delete
-    if (req.user.userType === UserRole.TEACHER && paper.teacherId !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Forbidden" });
+    const allowed = await canManageSubjectPaper({
+      userId: req.user.id,
+      userType: req.user.userType,
+      subjectPaperId: paperId as string,
+    });
+
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to manage this subject paper",
+      });
     }
 
     await deleteSubjectPaperService(paperId as string);

@@ -158,6 +158,20 @@ export const useAssignTeacherToSubject = (teacherId: string) => {
   });
 };
 
+export const useUnassignTeacherFromClass = (teacherId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (classId: string) => adminService.unassignTeacherFromClass(teacherId, classId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
+      toast.success("Teacher unassigned from class successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to unassign teacher from class");
+    },
+  });
+};
+
 export const useUnassignTeacherFromSubject = (teacherId: string) => {
   const queryClient = useQueryClient();
   return useMutation({

@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Sparkles, FileText, Loader2, Check, RefreshCw, AlertCircle, Lock, ArrowRight, Clock } from "lucide-react";
+import { Sparkles, FileText, Loader2, Check, RefreshCw, AlertCircle, Lock, ArrowRight, Clock, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { useFeatureAccess } from "@/lib/api/hooks/useFeatureAccess";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import QuestionViewer from "@/app/dashboard/teacher/exams&quizzes/preview/components/QuestionViewer";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 interface AIQuestion {
   type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
@@ -41,6 +42,8 @@ export default function AITools({
   onCancel: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isTeacher = user?.userType === "TEACHER";
   const [mode, setMode] = useState<"generate" | "parse">("generate");
   const [prompt, setPrompt] = useState("");
   const [rawText, setRawText] = useState("");
@@ -63,6 +66,7 @@ export default function AITools({
       return response.data.data as { current: number; limit: number; remaining: number };
     },
     enabled: !!hasAiAccess,
+    staleTime: 1000 * 60 * 2,
   });
 
   const isLimitReached = aiUsage ? aiUsage.remaining <= 0 : false;
@@ -176,16 +180,6 @@ export default function AITools({
     }
   };
 
-  // Loading state for feature check
-  if (checkingAccess) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="text-sm font-medium text-gray-500">Checking AI feature access...</span>
-      </div>
-    );
-  }
-
   const formattedPreviewQuestions = useMemo(() => {
     return previewQuestions.map((q, idx) => {
       const options = [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean) as string[];
@@ -210,6 +204,16 @@ export default function AITools({
       };
     });
   }, [previewQuestions]);
+
+  // Loading state for feature check
+  if (checkingAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 space-y-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="text-sm font-medium text-gray-500">Checking AI feature access...</span>
+      </div>
+    );
+  }
 
   const handleSelectPreviewAnswer = (questionId: number, answerIndex: number) => {
     setSelectedPreviewAnswers((prev) => ({
@@ -487,12 +491,16 @@ export default function AITools({
           <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
           <div>
             <span className="font-bold">Daily AI limit reached.</span> Quota resets tomorrow.{" "}
-            <button 
-              onClick={() => setIsLimitModalOpen(true)}
-              className="underline font-bold hover:text-red-800 dark:hover:text-red-300 ml-1"
-            >
-              Upgrade plan to get more.
-            </button>
+            {isTeacher ? (
+              <span className="font-medium">Contact your school admin to upgrade the school&apos;s plan for more prompts.</span>
+            ) : (
+              <button 
+                onClick={() => setIsLimitModalOpen(true)}
+                className="underline font-bold hover:text-red-800 dark:hover:text-red-300 ml-1"
+              >
+                Upgrade plan to get more.
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -542,29 +550,46 @@ export default function AITools({
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-14 w-14 rounded-2xl bg-red-50/10 border border-red-500/20 flex items-center justify-center">
-                  <Clock size={24} className="text-red-400" />
+                  {isTeacher ? <School size={24} className="text-red-400" /> : <Clock size={24} className="text-red-400" />}
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400">Limit Reached</p>
-                  <h2 className="text-xl font-black tracking-tight text-white">Daily AI limit hit</h2>
+                  <h2 className="text-xl font-black tracking-tight text-white">
+                    {isTeacher ? "School AI limit hit" : "Daily AI limit hit"}
+                  </h2>
                 </div>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed">
-                You have used all of your daily AI prompts. The quota will reset tomorrow at midnight.
+                {isTeacher
+                  ? "Your school has used all of its daily AI prompts. The quota will reset tomorrow at midnight."
+                  : "You have used all of your daily AI prompts. The quota will reset tomorrow at midnight."
+                }
               </p>
             </div>
           </div>
           <div className="p-8 bg-white dark:bg-slate-950 space-y-6">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Upgrade to a higher plan to get more daily prompts and run unlimited generations.
+              {isTeacher
+                ? "Contact your school admin to upgrade the school\u2019s subscription plan for more daily AI prompts."
+                : "Upgrade to a higher plan to get more daily prompts and run unlimited generations."
+              }
             </p>
             <div className="flex flex-col gap-3 pt-2">
-              <Button
-                onClick={() => { setIsLimitModalOpen(false); window.location.href = '/dashboard/admin/billing'; }}
-                className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                <Sparkles size={16} /> Upgrade Plan <ArrowRight size={16} />
-              </Button>
+              {isTeacher ? (
+                <Button
+                  onClick={() => setIsLimitModalOpen(false)}
+                  className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-sm bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-800 hover:to-slate-700 text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <School size={16} /> Got it
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { setIsLimitModalOpen(false); window.location.href = '/dashboard/admin/billing'; }}
+                  className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={16} /> Upgrade Plan <ArrowRight size={16} />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 onClick={() => setIsLimitModalOpen(false)}

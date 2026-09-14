@@ -14,8 +14,11 @@ interface GradesTableProps {
   onExport: () => void;
   onEditGrade: (grade: StudentGrade) => void;
   onPublishGrade: (grade: StudentGrade) => void;
+  publishingGradeId?: string | null;
   onDeleteGrade: (grade: StudentGrade) => void;
   onViewDetailsGrade: (grade: StudentGrade) => void;
+  onPublishAll?: () => void;
+  isPublishingAll?: boolean;
   currentPage: number;
   totalPages: number;
   totalItems: number;
@@ -32,8 +35,11 @@ const GradesTable: React.FC<GradesTableProps> = ({
   onExport,
   onEditGrade,
   onPublishGrade,
+  publishingGradeId,
   onDeleteGrade,
   onViewDetailsGrade,
+  onPublishAll,
+  isPublishingAll,
   currentPage,
   totalPages,
   totalItems,
@@ -44,13 +50,15 @@ const GradesTable: React.FC<GradesTableProps> = ({
   const endItem = Math.min(currentPage * 10, totalItems);
 
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+    <div className="flex flex-col rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10 overflow-hidden shadow-sm">
       <TableToolbar
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
         onFilter={onFilter}
         onSort={onSort}
         onExport={onExport}
+        onPublishAll={onPublishAll}
+        isPublishingAll={isPublishingAll}
       />
       
       <div className="overflow-x-auto @container">
@@ -67,6 +75,7 @@ const GradesTable: React.FC<GradesTableProps> = ({
                   rowNumber={(currentPage - 1) * 10 + index + 1}
                   onEdit={() => onEditGrade(grade)}
                   onPublish={() => onPublishGrade(grade)}
+                  isPublishing={publishingGradeId === grade.id}
                   onDelete={() => onDeleteGrade(grade)}
                   onViewDetails={() => onViewDetailsGrade(grade)}
                 />

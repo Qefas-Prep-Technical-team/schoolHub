@@ -9,6 +9,8 @@ export interface GradeThreshold {
 
 interface GradeSettingsState {
   gradingScale: GradeThreshold[];
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
   updateThreshold: (grade: string, minPercentage: number) => void;
   resetToDefault: () => void;
 }
@@ -26,6 +28,8 @@ export const useGradeSettingsStore = create<GradeSettingsState>()(
   persist(
     (set) => ({
       gradingScale: defaultScale,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
       updateThreshold: (grade, minPercentage) =>
         set((state) => ({
           gradingScale: state.gradingScale.map((t) =>
@@ -51,6 +55,7 @@ export const useGradeSettingsStore = create<GradeSettingsState>()(
               rehydratedState.gradingScale = newScale;
             }
           }
+          useGradeSettingsStore.getState().setHasHydrated(true);
         };
       },
     }

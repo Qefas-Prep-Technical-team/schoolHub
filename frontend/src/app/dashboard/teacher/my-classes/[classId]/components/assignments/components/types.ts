@@ -13,6 +13,9 @@ export interface Assignment {
   createdAt: Date
   updatedAt: Date
   teacherId?: string
+  teacherName?: string
+  subjectName?: string
+  canGrade?: boolean
 }
 
 export interface NavItem {

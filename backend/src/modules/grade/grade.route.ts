@@ -5,10 +5,12 @@ const router = Router();
 
 router.get("/hub", gradeController.getGradeHub);
 router.post("/", gradeController.createGradeEntry);
+router.post("/bulk", gradeController.bulkCreateGrades);
+router.patch("/bulk/publish", gradeController.bulkPublishGrades);
+
 router.patch("/:id", gradeController.updateGradeScore);
 router.patch("/:id/publish", gradeController.publishGrade);
 router.delete("/:id", gradeController.deleteGrade);
 router.post("/ocr", gradeController.processOCR);
-router.post("/bulk", gradeController.bulkCreateGrades);
 
 export default router;

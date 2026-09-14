@@ -148,7 +148,7 @@ export default function AssignmentsPage() {
     };
 
     return (
-        <main className="min-h-[calc(100vh-4rem)] w-full p-4 md:p-6 lg:p-8 space-y-6 bg-slate-50/50 dark:bg-slate-950/50">
+        <main className="min-h-[calc(100vh-4rem)] w-full p-4 md:p-6 lg:p-8 space-y-6 bg-transparent">
             <div className="space-y-6">
                 {/* Page Header Modernized */}
                 <PageHeader
@@ -172,7 +172,7 @@ export default function AssignmentsPage() {
                 <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 md:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                    className="p-4 md:p-6 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm"
                 >
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
                          <div className="flex items-center gap-3">
@@ -206,7 +206,7 @@ export default function AssignmentsPage() {
                                 exit={{ opacity: 0 }}
                                 className="pt-4"
                             >
-                                <AssignmentsSkeleton />
+                                <AssignmentsSkeleton view={view} />
                             </motion.div>
                         ) : filteredAssignments.length > 0 ? (
                             view === 'list' ? (
@@ -234,6 +234,7 @@ export default function AssignmentsPage() {
                                         onGrade={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
                                         onDelete={(id) => setAssignmentToDelete(id)}
                                         onViewDetails={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
+                                        currentUserId={user?.id}
                                     />
                                 </motion.div>
                             ) : (
@@ -263,6 +264,7 @@ export default function AssignmentsPage() {
                                             onGrade={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
                                             onDelete={() => setAssignmentToDelete(assignment.id)}
                                             onViewDetails={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
+                                            currentUserId={user?.id}
                                         />
                                     ))}
                                 </motion.div>

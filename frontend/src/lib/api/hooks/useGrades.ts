@@ -49,6 +49,16 @@ export const useGradeHub = (schoolId: string, filters?: Record<string, unknown>)
   });
 };
 
+export const useUpdateGrade = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { status?: string; score?: number; remarks?: string } }) => gradeService.updateGradeScore(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gradeKeys.all });
+    },
+  });
+};
+
 export const usePublishGrade = () => {
   const queryClient = useQueryClient();
   return useMutation({

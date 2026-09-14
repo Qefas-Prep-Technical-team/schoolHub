@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { TeacherMobileDrawer } from "./TeacherMobileDrawer";
-import NotificationCenter from "../../admin/components/NotificationCenter";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { teacherService } from "@/lib/api/services/teacherService";
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useSidebar } from "@/components/ui/sidebar";

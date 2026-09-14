@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Dialog, 
@@ -20,6 +20,7 @@ import { examService } from "@/lib/api/services/examService";
 import { imageService } from "@/lib/api/services/imageService";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import { cn } from "@/lib/utils";
+import FormulaPalette from "./FormulaPalette";
 
 interface ReadingContentModalProps {
   isOpen: boolean;
@@ -34,31 +35,44 @@ export default function ReadingContentModal({
   isOpen,
   onClose,
   paperId,
-  initialContent = "",
-  initialImages = [],
-  initialLabels = []
+  initialContent,
+  initialImages,
+  initialLabels
 }: ReadingContentModalProps) {
   const [content, setContent] = useState(initialContent || "");
   const [images, setImages] = useState<string[]>(initialImages || []);
   const [imageLabels, setImageLabels] = useState<string[]>(initialLabels || []);
-  const [isUploading, setIsUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+  const [uploadingFiles, setUploadingFiles] = useState<{ id: string; file: File; progress: number }[]>([]);
+  const [editorMode, setEditorMode] = useState<"normal" | "math">("normal");
+  const [hasEdited, setHasEdited] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
   const queryClient = useQueryClient();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasEdited) {
+      // Show skeleton while images sync in
+      setIsLoadingImages(true);
       setContent(initialContent || "");
-      setImages(initialImages || []);
+      
+      const nextImages = initialImages || [];
+      setImages(nextImages);
+      
       const effectiveLabels = (initialLabels && initialLabels.length > 0) 
         ? initialLabels 
-        : new Array(initialImages?.length || 0).fill("");
-      
-      setImageLabels(prev => {
-        if (JSON.stringify(prev) === JSON.stringify(effectiveLabels)) return prev;
-        return effectiveLabels;
-      });
+        : new Array(nextImages.length).fill("");
+      setImageLabels(effectiveLabels);
+
+      // Short delay so the skeleton is visible, then reveal images
+      const timer = setTimeout(() => setIsLoadingImages(false), 600);
+      return () => clearTimeout(timer);
     }
-  }, [initialContent, initialImages, initialLabels, isOpen]);
+    
+    if (!isOpen) {
+      // Reset edit state when modal closes so it re-syncs when opened next time
+      setHasEdited(false);
+    }
+  }, [initialContent, initialImages, initialLabels, isOpen, hasEdited]);
 
   const updateMutation = useMutation({
     mutationFn: (data: { content: string, images: string[], imageLabels: string[] }) => 
@@ -70,6 +84,7 @@ export default function ReadingContentModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success("Reading content updated successfully!");
+      setHasEdited(false);
       onClose();
     },
     onError: (error: any) => {
@@ -85,28 +100,62 @@ export default function ReadingContentModal({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
-    try {
-      const uploadPromises = Array.from(files).map(file => imageService.proxyUploadToBunny(file));
-      const results = await Promise.all(uploadPromises);
-      const newImageUrls = results.map(res => res.publicUrl);
-      setImages(prev => [...prev, ...newImageUrls]);
-      setImageLabels(prev => [...prev, ...new Array(newImageUrls.length).fill("")]);
-      toast.success(`${files.length} image(s) uploaded successfully!`);
-    } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error("Failed to upload images");
-    } finally {
-      setIsUploading(false);
+    const newUploads = Array.from(files).map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      progress: 0
+    }));
+
+    setUploadingFiles(prev => [...prev, ...newUploads]);
+    
+    // Clear the input value so the same files can be selected again if needed
+    if (e.target) {
+      e.target.value = '';
+    }
+
+    for (const upload of newUploads) {
+      // Simulate progress
+      const interval = setInterval(() => {
+        setUploadingFiles(prev => prev.map(f => {
+          if (f.id === upload.id && f.progress < 90) {
+            const nextProgress = f.progress + Math.floor(Math.random() * 15) + 5;
+            return { ...f, progress: Math.min(nextProgress, 90) };
+          }
+          return f;
+        }));
+      }, 300);
+
+      try {
+        const { publicUrl } = await imageService.proxyUploadToBunny(upload.file);
+        
+        clearInterval(interval);
+        
+        // Remove from uploading list
+        setUploadingFiles(prev => prev.filter(f => f.id !== upload.id));
+        
+        // Add to images
+        setImages(prev => [...prev, publicUrl]);
+        setImageLabels(prev => [...prev, upload.file.name.split('.')[0] || ""]);
+        setHasEdited(true); // Mark as edited so background refetches don't wipe it
+        
+        toast.success(`Image uploaded successfully!`);
+      } catch (error) {
+        console.error("Upload failed:", error);
+        clearInterval(interval);
+        setUploadingFiles(prev => prev.filter(f => f.id !== upload.id));
+        toast.error(`Failed to upload ${upload.file.name}`);
+      }
     }
   };
 
   const removeImage = (index: number) => {
+    setHasEdited(true);
     setImages(prev => prev.filter((_, i) => i !== index));
     setImageLabels(prev => prev.filter((_, i) => i !== index));
   };
 
   const updateLabel = (index: number, label: string) => {
+    setHasEdited(true);
     setImageLabels(prev => {
       const next = [...prev];
       next[index] = label;
@@ -116,7 +165,10 @@ export default function ReadingContentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl focus:outline-none">
+      <DialogContent className={cn(
+        "rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl focus:outline-none transition-all duration-300",
+        editorMode === "math" ? "max-w-5xl" : "sm:max-w-3xl"
+      )}>
         <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-8 pb-4">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
@@ -137,39 +189,78 @@ export default function ReadingContentModal({
               <Label className="text-xs font-black uppercase tracking-widest text-slate-400">
                 Content Editor
               </Label>
-              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-800/60 flex-shrink-0">
                 <button
-                  onClick={() => setActiveTab("edit")}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                    activeTab === "edit" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  )}
+                  type="button"
+                  onClick={() => setEditorMode('normal')}
+                  className={`px-4 py-2 text-[11px] font-black tracking-wide transition-all ${
+                    editorMode === 'normal'
+                      ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
                 >
-                  <Edit3 size={12} /> Edit
+                  ✏️ Normal
                 </button>
                 <button
-                  onClick={() => setActiveTab("preview")}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                    activeTab === "preview" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  )}
+                  type="button"
+                  onClick={() => setEditorMode('math')}
+                  className={`px-4 py-2 text-[11px] font-black tracking-wide transition-all border-l border-slate-200 dark:border-slate-700 ${
+                    editorMode === 'math'
+                      ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
                 >
-                  <Eye size={12} /> Preview
+                  𝑓(𝑥) Math
                 </button>
               </div>
             </div>
 
-            {activeTab === "edit" ? (
+            <div className={`grid grid-cols-1 gap-6 ${editorMode === 'math' ? 'md:grid-cols-[1fr_300px]' : ''}`}>
+              
+              {/* Left Column: Editor & Images */}
               <div className="space-y-4">
+                {editorMode === 'normal' ? (
                 <Textarea
                   id="readingContent"
                   placeholder="Paste your comprehension passage here..."
-                  className="min-h-[400px] rounded-2xl border-slate-200 focus:ring-primary/20 resize-none font-medium leading-relaxed p-6 text-base"
+                  className="min-h-[300px] rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus:border-primary/40 focus:ring-0 resize-y font-medium leading-relaxed p-6 text-base bg-white dark:bg-slate-900"
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    setHasEdited(true);
+                  }}
                 />
+              ) : (
+                <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus-within:border-primary/40 transition-all overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
+                  <Textarea
+                    ref={textareaRef}
+                    value={content}
+                    onChange={(e) => {
+                      setContent(e.target.value);
+                      setHasEdited(true);
+                    }}
+                    placeholder="Type your reading passage. Use the formula builder or LaTeX syntax to add math..."
+                    className="w-full resize-y min-h-[200px] p-6 text-base font-mono leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none border-none focus-visible:ring-0 rounded-none block flex-shrink-0"
+                  />
+                  
+                  <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-50 dark:bg-slate-800 border-t border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                    <Eye size={10} className="text-primary/70" />
+                    <span className="text-[9px] uppercase font-black tracking-widest text-primary/70">Live Preview</span>
+                  </div>
+                  
+                  <div className="flex-1 px-6 py-4 bg-white dark:bg-slate-900 overflow-y-auto">
+                    {content ? (
+                      <LaTeXRenderer content={content} className="text-base leading-relaxed" />
+                    ) : (
+                      <p className="text-slate-300 dark:text-slate-600 text-xs font-medium italic py-2">
+                        Your rendered math appears here as you type...
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
-                <div className="space-y-4">
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-black uppercase tracking-widest text-slate-400">
                       Reading Section Images
@@ -182,26 +273,32 @@ export default function ReadingContentModal({
                         id="image-upload"
                         className="hidden"
                         onChange={handleImageUpload}
-                        disabled={isUploading}
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => document.getElementById('image-upload')?.click()}
-                        disabled={isUploading}
                         className="rounded-xl border-dashed border-2 hover:border-primary hover:text-primary transition-all flex items-center gap-2"
                       >
-                        {isUploading ? (
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        ) : (
-                          <Upload size={16} />
-                        )}
+                        <Upload size={16} />
                         Upload Images
                       </Button>
                     </div>
                   </div>
 
-                  {images && images.length > 0 && (
+                  {/* Image skeleton loading state */}
+                  {isLoadingImages && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="aspect-video rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 animate-pulse" />
+                          <div className="h-7 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!isLoadingImages && images && images.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
                       {images.map((url, idx) => (
                         <div key={idx} className="space-y-2">
@@ -241,39 +338,82 @@ export default function ReadingContentModal({
                       ))}
                     </div>
                   )}
-                </div>
 
-                <p className="text-[10px] text-slate-400 font-medium italic">
+                  {uploadingFiles.length > 0 && (
+                    <div className="space-y-3 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                      {uploadingFiles.map(file => (
+                        <div key={file.id} className="flex items-center gap-4">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <ImageIcon size={14} className="text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">
+                                {file.file.name}
+                              </span>
+                              <span className="text-[10px] font-bold text-primary">
+                                {file.progress}%
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                                style={{ width: `${file.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-slate-400 font-medium italic">
                   Tip: You can use **Markdown** and **LaTeX** (e.g. $x^2$) for formatting. 
                   Upload images above, then click the **Copy icon** to embed them anywhere in your text using `![alt](url)` syntax.
                 </p>
               </div>
-            ) : (
-              <div className="min-h-[400px] max-h-[600px] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 p-8 custom-scrollbar space-y-6">
-                {images && images.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {images.map((url, idx) => (
-                      <img 
-                        key={idx} 
-                        src={url} 
-                        alt={`Reading ${idx + 1}`} 
-                        className="rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm w-full" 
-                      />
-                    ))}
-                  </div>
-                )}
-                {content ? (
-                  <LaTeXRenderer content={content} />
-                ) : (
-                  !images.length && (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 py-20">
-                      <BookOpen size={48} className="opacity-20" />
-                      <p className="text-sm font-medium italic">Nothing to preview yet.</p>
+            </div>
+
+              {/* Right Column: Formula Palette (Only in Math Mode) */}
+              {editorMode === 'math' && (
+                <div className="p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-700 h-fit space-y-4">
+                  <FormulaPalette
+                    onInsert={(formula) => {
+                      const textarea = textareaRef.current;
+                      if (textarea) {
+                        const start = textarea.selectionStart ?? 0;
+                        const end = textarea.selectionEnd ?? 0;
+                        const before = content.substring(0, start);
+                        const after = content.substring(end);
+                        const newVal = before + formula + after;
+                        setContent(newVal);
+                        setTimeout(() => {
+                          textarea.focus();
+                          textarea.setSelectionRange(start + formula.length, start + formula.length);
+                        }, 0);
+                      } else {
+                        setContent((c: string) => c + formula);
+                      }
+                      setHasEdited(true);
+                    }}
+                  />
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
+                    <div className="px-4 py-2.5 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      Example
                     </div>
-                  )
-                )}
-              </div>
-            )}
+                    <div className="p-4 bg-white dark:bg-slate-900">
+                      <LaTeXRenderer
+                        content="Solve for $x$: $$x^2 + 3x - 4 = 0$$"
+                        className="text-sm text-slate-700 dark:text-slate-300"
+                      />
+                      <div className="mt-2 text-[10px] text-slate-400 font-mono overflow-x-auto">
+                        {`Solve for $x$: $$x^2 + 3x - 4 = 0$$`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -288,7 +428,7 @@ export default function ReadingContentModal({
           <Button
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-12 px-8 flex items-center gap-2"
+            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 h-12 px-8 flex items-center gap-2"
           >
             {updateMutation.isPending ? (
               <Loader2 className="animate-spin h-4 w-4" />

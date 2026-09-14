@@ -88,6 +88,11 @@ export const gradeService = {
     const { data: res } = await apiClient.patch(`/grades/${id}/publish`, {});
     return res.data;
   },
+  
+  bulkPublishGrades: async (filters: any) => {
+    const { data: res } = await apiClient.patch('/grades/bulk/publish', filters);
+    return res;
+  },
 
   deleteGrade: async (id: string) => {
     const { data: res } = await apiClient.delete(`/grades/${id}`);

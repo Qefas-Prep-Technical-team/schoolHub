@@ -103,6 +103,8 @@ export interface SubjectPaper {
   subject?: { name: string; schoolId: string };
   questions?: SubjectExamQuestion[];
   _count?: { questions: number };
+  examAttempts?: any[];
+  grades?: any[];
 }
 
 export interface SubjectExamQuestion {

@@ -10,7 +10,8 @@ export default function AssignmentCard({
     onEdit,
     onGrade,
     onDelete,
-    onViewDetails
+    onViewDetails,
+    currentUserId
 }: AssignmentCardProps) {
 
     const getStatusStyles = (status: Assignment['status']) => {
@@ -36,8 +37,9 @@ export default function AssignmentCard({
 
     return (
         <motion.div
+            onClick={() => onViewDetails?.(assignment.id)}
             whileHover={{ y: -5, scale: 1.01 }}
-            className="group relative flex flex-col p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col p-6 md:p-8 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10 shadow-sm hover:shadow-md hover:shadow-emerald-500/10 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300 overflow-hidden cursor-pointer"
         >
 
             <div className="flex justify-between items-start mb-6">
@@ -45,7 +47,7 @@ export default function AssignmentCard({
                     <h3 className="font-black text-xl text-slate-900 dark:text-slate-100 tracking-tight line-clamp-2 leading-tight group-hover:text-primary transition-colors">
                         {assignment.title}
                     </h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
                             {assignment.subject}
                         </span>
@@ -53,6 +55,14 @@ export default function AssignmentCard({
                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                              {assignment.className}
                         </span>
+                        {assignment.creator && (
+                            <>
+                            <span className="text-slate-300">/</span>
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                By {assignment.creator.name}
+                            </span>
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className={`px-3 py-1 rounded-lg border text-xs font-semibold ${getStatusStyles(assignment.status)}`}>
@@ -91,16 +101,20 @@ export default function AssignmentCard({
 
                 <div className="pt-6 border-t border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                        <IconButton onClick={() => onEdit?.(assignment.id)} icon={Edit} title="Edit" />
-                        <IconButton onClick={() => onGrade?.(assignment.id)} icon={Grading} title="Grade" />
-                        <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
+                        {(!currentUserId || (assignment.creator?.id === currentUserId) || (assignment.teacher?.id === currentUserId)) && (
+                            <>
+                                <IconButton onClick={() => onEdit?.(assignment.id)} icon={Edit} title="Edit" />
+                                <IconButton onClick={() => onGrade?.(assignment.id)} icon={Grading} title="Grade" />
+                                <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
+                            </>
+                        )}
                     </div>
 
-                    <Link href={`/dashboard/teacher/assignments/${assignment.id}`}>
+                    <Link href={`/dashboard/teacher/assignments/${assignment.id}`} onClick={(e) => e.stopPropagation()}>
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-900/50 dark:hover:text-emerald-400 transition-all shadow-sm"
                         >
                             Review
                             <ExternalLink size={14} strokeWidth={2} />
@@ -117,7 +131,7 @@ function IconButton({ onClick, icon: Icon, title, variant = 'default' }: { onCli
         <motion.button
             whileHover={{ scale: 1.1, backgroundColor: variant === 'danger' ? 'rgba(244,63,94,0.1)' : 'rgba(var(--primary-rgb),0.1)' }}
             whileTap={{ scale: 0.9 }}
-            onClick={(e) => { e.preventDefault(); onClick?.(); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick?.(); }}
             className={`p-3 rounded-xl transition-all ${
                 variant === 'danger' ? 'text-rose-500' : 'text-slate-400 hover:text-primary'
             }`}

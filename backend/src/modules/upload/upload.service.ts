@@ -351,3 +351,80 @@ export const deleteBunnyFileService = async (fileRecordId: string, schoolId: str
 
   return { success: true };
 };
+
+export const getUploadHistoryService = async (schoolId: string, userId: string, page: number, limit: number) => {
+  const skip = (page - 1) * limit;
+  const records = await prisma.fileRecord.findMany({
+    where: { schoolId, uploaderId: userId },
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: limit,
+  });
+  
+  const total = await prisma.fileRecord.count({
+    where: { schoolId, uploaderId: userId },
+  });
+
+  return { records, total, page, limit };
+};
+
+export const cleanupUnusedImagesService = async (schoolId: string, userId: string) => {
+  // 1. Fetch all user's FileRecords
+  const fileRecords = await prisma.fileRecord.findMany({
+    where: { schoolId, uploaderId: userId },
+  });
+
+  if (!fileRecords.length) return { deletedCount: 0 };
+
+  // 2. Fetch all questions and papers by this user to check usage
+  // We check SubjectExamQuestion and SubjectPaper for 'images' field
+  const papers = await prisma.subjectExamPaper.findMany({
+    where: { teacherId: userId },
+    select: { images: true, questions: { select: { images: true } } },
+  });
+
+  // Flatten used image URLs
+  const usedImages = new Set<string>();
+  papers.forEach((paper: any) => {
+    if (Array.isArray(paper.images)) {
+      paper.images.forEach((img: string) => usedImages.add(img));
+    }
+    if (Array.isArray(paper.questions)) {
+      paper.questions.forEach((q: any) => {
+        if (Array.isArray(q.images)) {
+          q.images.forEach((img: string) => usedImages.add(img));
+        }
+      });
+    }
+  });
+
+  // 3. Identify unused files
+  const deletedUrls: string[] = [];
+  const deletedIds: string[] = [];
+  
+  for (const record of fileRecords) {
+    if (!usedImages.has(record.fileUrl)) {
+      deletedUrls.push(record.fileUrl);
+      deletedIds.push(record.id);
+    }
+  }
+
+  // Delete the FileRecords from the database
+  if (deletedIds.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      await tx.fileRecord.deleteMany({
+        where: { id: { in: deletedIds } }
+      });
+      // Optionally decrement quota
+      const totalSize = fileRecords.filter(r => deletedIds.includes(r.id)).reduce((acc, r) => acc + r.fileSize, 0);
+      const school = await tx.school.findUnique({ where: { id: schoolId } });
+      const newStorage = Math.max(0, (school?.storageUsedBytes || 0) - totalSize);
+      await tx.school.update({
+        where: { id: schoolId },
+        data: { storageUsedBytes: newStorage }
+      });
+    });
+  }
+
+  return { deletedCount: deletedIds.length, deletedUrls };
+};

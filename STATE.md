@@ -21,6 +21,28 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Saturday, September 12, 2026
+
+- **Teacher Exams & Quizzes Page (`/dashboard/teacher/exams&quizzes`) — UI Fixes & Features**:
+    - [x] **Total Marks Fix (`ExamsTable.tsx`)**: `Total Marks` was showing `0` on the exam card even though subject papers had marks. Fixed by summing `subjectExamPapers[].totalMarks` when `exam.totalMarks` is falsy.
+    - [x] **Duration Fix (`ExamsTable.tsx`)**: `Duration` was showing `N/A` when `exam.durationMinutes` was null. Fixed by summing `subjectExamPapers[].durationMinutes` as fallback.
+    - [x] **Backend `getExams` — Subject Teacher Include (`exam.service.ts`)**: Added `teacher: true` and `teacherSubjects: { include: { teacher: true } }` inside the `subject` include of `subjectExamPapers` so teacher data is available on the frontend.
+    - [x] **Backend `getExams` — Direct Teacher Lookup (`exam.service.ts`)**: Replaced fragile nested-include teacher logic with a dedicated two-query approach: after the main query, all unique `subjectId`s are collected, then `prisma.teacherSubject.findMany` and `prisma.subject.findMany` are called in parallel to build a `subjectId → teachers map`. This guarantees ALL assigned teachers appear regardless of how they were assigned (via `Subject.teacherId` or `TeacherSubject` join table).
+    - [x] **Backend `getExams` — `assignedTeachers` field**: Each paper in `subjectExamPapers` now carries an `assignedTeachers` array (deduplicated, combining paper creator + subject primary teacher + all TeacherSubject entries).
+    - [x] **Frontend Subject Papers Expansion (`ExamsTable.tsx`)**: 
+        - Teacher names shown side-by-side (up to 5), with `+X more` badge for overflow.
+        - "Mine" indicator (green badge) shown when the logged-in teacher is in `assignedTeachers` or is the `teacherId` of the paper.
+        - Edit button shown and always visible for papers where the logged-in teacher is assigned.
+    - [x] **Removed Edit/Delete from exam name row** — only the preview eye button remains at the top-level exam.
+
+### Friday, September 11, 2026
+
+- **Exam Paper Grades Manual Override & UI Fixes**:
+    - [x] **Backend Grades Include (`exam.service.ts`)**: The paper endpoint's `grades` include was missing the `teacher` relation, causing the overrider's name to be unavailable to the frontend. Added `teacher: { select: { id: true, name: true } }`.
+    - [x] **Backend Notification Context (`grade.service.ts`)**: Manual grade overrides (both creates and updates) previously sent generic notifications ("A score was manually updated..."). Added logic to query the user table (`Teacher` or `Admin`) based on `userRole` to resolve the acting user's name and insert it into the notification message (e.g. "John Doe manually updated a student's score...").
+    - [x] **Frontend Edit State Fix (`papers/[id]/page.tsx`)**: Fixed the edit button logic for `ONLINE` exam attempts. The code incorrectly tried to call `updateGradeMutation` with an `undefined` grade ID instead of creating a new manual override record. It now safely falls back to `createOverrideGradeMutation` using the `examAttemptId` when overriding an online submission.
+    - [x] **Frontend Grades Table**: Added an "Overridden By" column to the student grades table, dynamically showing `by {teacherName}` next to the 'MANUAL OVERRIDE' badge for clarity and accountability.
+
 ### Saturday, September 5, 2026
 
 - **Full Workspace Build Audit & Type Safety Fixes**:

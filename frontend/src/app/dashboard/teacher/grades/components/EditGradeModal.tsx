@@ -27,6 +27,7 @@ interface EditGradeModalProps {
     score: number | string;
     maxMarks: number;
     remarks?: string;
+    profilePicture?: string;
   } | null;
   isSaving?: boolean;
 }
@@ -74,10 +75,10 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+      <DialogContent className="sm:max-w-[480px] bg-emerald-50/95 dark:bg-slate-900 border-emerald-100 dark:border-emerald-800/40 shadow-xl shadow-emerald-900/5">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+            <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
               <BookOpen size={22} />
             </div>
             <div>
@@ -90,9 +91,13 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
-          <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-              <User size={24} />
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-emerald-100 dark:border-slate-800">
+            <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 overflow-hidden">
+              {grade.profilePicture ? (
+                <img src={grade.profilePicture} alt={grade.name} className="h-full w-full object-cover" />
+              ) : (
+                <User size={24} />
+              )}
             </div>
             <div>
               <h4 className="font-bold text-slate-900 dark:text-slate-100">{grade.name}</h4>
@@ -113,7 +118,7 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
                   setScore(e.target.value);
                   setError(null);
                 }}
-                className={`text-lg font-bold h-12 ${error ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-200 dark:border-slate-700'}`}
+                className={`text-lg font-bold h-12 pr-16 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${error ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-200 dark:border-slate-700'}`}
                 placeholder="0.00"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
@@ -149,7 +154,7 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
           </Button>
           <Button 
             onClick={handleSave} 
-            className="bg-primary hover:bg-primary/90 text-white px-8 h-11"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 px-8 h-11 font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
             disabled={isSaving}
           >
             {isSaving ? (

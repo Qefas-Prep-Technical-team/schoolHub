@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useTeacherDetails, useUnassignTeacherFromSubject } from '@/lib/api/hooks/useAdmin'
+import { useTeacherDetails, useUnassignTeacherFromSubject, useUnassignTeacherFromClass } from '@/lib/api/hooks/useAdmin'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool'
 import SchedulePage from './schedule/SchedulePage'
@@ -9,6 +9,7 @@ import PerformancePage from './performance/PerformancePage'
 import { EditTeacherModal } from '../components/EditTeacherModal'
 import { AssignClassModal } from '../components/AssignClassModal'
 import { AssignSubjectModal } from '../components/AssignSubjectModal'
+import { ConfirmUnassignModal } from '../components/ConfirmUnassignModal'
 import Link from 'next/link'
 import {
     Loader2, ArrowLeft, Edit2, Mail, Phone, MapPin,
@@ -70,13 +71,24 @@ export default function TeacherProfilePage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isAssignClassModalOpen, setIsAssignClassModalOpen] = useState(false)
     const [isAssignSubjectModalOpen, setIsAssignSubjectModalOpen] = useState(false)
+    const [unassignSubjectData, setUnassignSubjectData] = useState<{ id: string, name: string } | null>(null)
+    const [unassignClassData, setUnassignClassData] = useState<{ id: string, name: string } | null>(null)
 
     const unassignSubjectMutation = useUnassignTeacherFromSubject(teacherId)
+    const unassignClassMutation = useUnassignTeacherFromClass(teacherId)
 
-    const handleUnassignSubject = (subjectId: string) => {
-        if (confirm('Are you sure you want to remove this subject?')) {
-            unassignSubjectMutation.mutate(subjectId)
-        }
+    const handleConfirmUnassignSubject = () => {
+        if (!unassignSubjectData) return;
+        unassignSubjectMutation.mutate(unassignSubjectData.id, {
+            onSuccess: () => setUnassignSubjectData(null)
+        });
+    }
+
+    const handleConfirmUnassignClass = () => {
+        if (!unassignClassData) return;
+        unassignClassMutation.mutate(unassignClassData.id, {
+            onSuccess: () => setUnassignClassData(null)
+        });
     }
 
     // ── Loading ──────────────────────────────────────────────────────────────
@@ -87,10 +99,12 @@ export default function TeacherProfilePage() {
                 <Skeleton className="h-40 md:h-64 w-full rounded-none" />
                 
                 {/* Header Skeleton */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative">
-                    <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20">
+                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative">
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20 px-0 sm:px-0">
                         {/* Avatar Skeleton */}
-                        <Skeleton className="size-28 md:size-44 rounded-3xl md:rounded-[2rem] border-[4px] border-slate-100 dark:border-slate-950 shrink-0" />
+                        <div className="size-28 md:size-44 rounded-3xl md:rounded-[2rem] bg-white dark:bg-slate-900 p-1.5 shadow-2xl border-[4px] border-slate-100 dark:border-slate-950 flex items-center justify-center shrink-0 overflow-hidden">
+                            <Skeleton className="w-full h-full rounded-2xl md:rounded-[1.5rem]" />
+                        </div>
                         
                         {/* Info Skeleton */}
                         <div className="flex-1 pt-2 md:pt-20 space-y-4">
@@ -108,12 +122,12 @@ export default function TeacherProfilePage() {
                 </div>
 
                 {/* Tabs Skeleton */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6 md:mt-8">
-                    <Skeleton className="h-12 md:h-14 w-full md:w-[400px] rounded-xl md:rounded-2xl" />
+                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-6 md:mt-8">
+                    <Skeleton className="h-[52px] md:h-[60px] w-full rounded-none md:rounded-2xl" />
                 </div>
 
                 {/* Content Skeleton */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6 md:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-16">
+                <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-6 md:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-16">
                     <div className="lg:col-span-2 space-y-4 md:space-y-6">
                         <Skeleton className="h-40 md:h-48 w-full rounded-[2rem]" />
                         <Skeleton className="h-56 md:h-64 w-full rounded-[2rem]" />
@@ -155,8 +169,20 @@ export default function TeacherProfilePage() {
     const qualification = teacher.highestQualification || 'Not specified'
     const experience = teacher.yearsOfExperience ? `${teacher.yearsOfExperience} Years` : 'Not specified'
     const teacherCode = teacher.teacherCode || 'UNASSIGNED'
-    const subjects: string[] = teacher.professionalInfo?.subjects || []
-    const classes: {id: string; name: string}[] = teacher.professionalInfo?.assignedClasses || []
+    const subjects: any[] = teacher.professionalInfo?.subjects || []
+    const classes: any[] = teacher.professionalInfo?.assignedClasses || []
+    
+    const subjectNames = subjects.map((s: any) => typeof s === 'string' ? s : s.name);
+    const classNames = classes.map((c: any) => typeof c === 'string' ? c : c.name);
+    const formatter = typeof Intl !== 'undefined' && Intl.ListFormat ? new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }) : { format: (arr: string[]) => arr.join(', ') };
+    const formattedSubjects = subjectNames.length > 0 ? formatter.format(subjectNames) : 'multiple subjects';
+    const formattedClasses = classNames.length > 0 ? formatter.format(classNames) : '';
+    
+    const subjectDepartments = Array.from(new Set(
+        subjects.flatMap((s: any) => typeof s !== 'string' && s.departments ? s.departments : [])
+    )).filter(Boolean) as string[];
+    const displayDepartment = subjectDepartments.length > 0 ? formatter.format(subjectDepartments) : 'General';
+    
     const avatar = teacher.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
 
     return (
@@ -290,7 +316,7 @@ export default function TeacherProfilePage() {
                         {/* About / Bio */}
                         <SectionCard title="About">
                             <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                                {(teacher as any).bio || `${name} is a dedicated educator in the ${department} department with ${experience} of professional teaching experience. Specializing in ${subjects.slice(0, 2).join(' and ') || 'multiple subjects'}, they are committed to inspiring students through innovative and engaging learning methodologies.`}
+                                {(teacher as any).bio || `${name} is a dedicated educator in the ${displayDepartment} department with ${experience} of professional teaching experience. Specializing in ${formattedSubjects}${formattedClasses ? `, they currently teach ${formattedClasses}` : ''}. They are committed to inspiring students through innovative and engaging learning methodologies.`}
                             </p>
                         </SectionCard>
 
@@ -336,7 +362,7 @@ export default function TeacherProfilePage() {
                                                         {subjectName}
                                                         {canManageAssignments && subjectId && (
                                                             <button 
-                                                                onClick={() => handleUnassignSubject(subjectId)}
+                                                                onClick={() => setUnassignSubjectData({ id: subjectId, name: subjectName })}
                                                                 disabled={unassignSubjectMutation.isPending}
                                                                 className="hover:text-red-500 hover:bg-slate-200 dark:hover:bg-slate-700 p-0.5 rounded-full transition-colors disabled:opacity-50"
                                                                 title="Remove Subject"
@@ -380,17 +406,30 @@ export default function TeacherProfilePage() {
                                                 
                                                 if (classId) {
                                                     return (
-                                                        <Link href={`/dashboard/admin/classes/${classId}`} key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-100 dark:border-slate-700 transition-colors group cursor-pointer">
-                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{classNameStr}</span>
-                                                            <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-                                                        </Link>
+                                                        <div key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-100 dark:border-slate-700 transition-colors group cursor-pointer">
+                                                            <Link href={`/dashboard/admin/classes/${classId}`} className="flex-1 text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center justify-between">
+                                                                <span>{classNameStr}</span>
+                                                                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors mr-2" />
+                                                            </Link>
+                                                            {canManageAssignments && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setUnassignClassData({ id: classId, name: classNameStr });
+                                                                    }}
+                                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+                                                                    title="Remove Class"
+                                                                >
+                                                                    <X size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     );
                                                 }
                                                 
                                                 return (
                                                     <div key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                                                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{classNameStr}</span>
-                                                        <ChevronRight size={16} className="text-slate-300" />
                                                     </div>
                                                 );
                                             })}
@@ -457,20 +496,37 @@ export default function TeacherProfilePage() {
                         </SectionCard>
 
                         {/* System Health */}
-                        <div className="p-6 md:p-8 rounded-none md:rounded-[2rem] bg-slate-900 dark:bg-slate-800 text-white space-y-4 relative overflow-hidden shadow-2xl">
-                            <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                                <Star size={70} style={{ color: primaryColor }} />
+                        <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-white space-y-6 relative overflow-hidden shadow-2xl border border-slate-700/50 group hover:border-slate-600/50 transition-all duration-300">
+                            {/* Decorative Background */}
+                            <div className="absolute -top-6 -right-6 p-6 opacity-10 group-hover:opacity-20 group-hover:rotate-12 transition-all duration-700 pointer-events-none">
+                                <Star size={120} style={{ color: primaryColor }} className="fill-current" />
                             </div>
-                            <div className="relative z-10">
-                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">Staff Profile</p>
-                                <h3 className="text-2xl font-black tracking-tighter uppercase leading-none mt-1">
-                                    {isVerified ? 'Active' : 'Awaiting'}<br />
-                                    {isVerified ? 'Educator' : 'Verification'}
+                            <div 
+                                className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full blur-[3rem] opacity-20 pointer-events-none transition-all duration-500 group-hover:opacity-40 group-hover:scale-150" 
+                                style={{ backgroundColor: primaryColor }} 
+                            />
+
+                            {/* Content */}
+                            <div className="relative z-10 space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-[2px] w-6 bg-slate-600 rounded-full"></div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Staff Profile</p>
+                                </div>
+                                <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase leading-[1.1] text-white">
+                                    {isVerified ? 'Active' : 'Awaiting'}{' '}
+                                    <span style={{ color: primaryColor }}>
+                                        {isVerified ? 'Educator' : 'Verification'}
+                                    </span>
                                 </h3>
                             </div>
-                            <div className="flex items-center gap-3 relative z-10">
-                                <div className={cn("size-2 rounded-full", isVerified ? "bg-emerald-500 animate-pulse" : "bg-amber-500")} />
-                                <span className={cn("text-[9px] font-black uppercase tracking-widest", isVerified ? "text-emerald-500" : "text-amber-500")}>
+                            
+                            {/* Status Badge */}
+                            <div className="relative z-10 inline-flex items-center gap-3 p-3 px-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 shadow-inner">
+                                <div className="relative flex items-center justify-center">
+                                    <div className={cn("size-2.5 rounded-full z-10 relative", isVerified ? "bg-emerald-400" : "bg-amber-400")} />
+                                    <div className={cn("absolute size-2.5 rounded-full animate-ping", isVerified ? "bg-emerald-400" : "bg-amber-400")} />
+                                </div>
+                                <span className={cn("text-[10px] font-black uppercase tracking-widest", isVerified ? "text-emerald-400" : "text-amber-400")}>
                                     {isVerified ? 'Profile Active' : 'Pending Review'}
                                 </span>
                             </div>
@@ -524,6 +580,26 @@ export default function TeacherProfilePage() {
                 onClose={() => setIsAssignSubjectModalOpen(false)}
                 teacherId={teacher.id}
                 schoolId={teacher.resolvedSchoolId || schoolId}
+                primaryColor={primaryColor}
+            />
+
+            <ConfirmUnassignModal
+                isOpen={!!unassignSubjectData}
+                onClose={() => setUnassignSubjectData(null)}
+                onConfirm={handleConfirmUnassignSubject}
+                title="Unassign Subject"
+                itemName={unassignSubjectData?.name || 'this subject'}
+                isPending={unassignSubjectMutation.isPending}
+                primaryColor={primaryColor}
+            />
+
+            <ConfirmUnassignModal
+                isOpen={!!unassignClassData}
+                onClose={() => setUnassignClassData(null)}
+                onConfirm={handleConfirmUnassignClass}
+                title="Unassign Class"
+                itemName={unassignClassData?.name || 'this class'}
+                isPending={unassignClassMutation.isPending}
                 primaryColor={primaryColor}
             />
         </div>

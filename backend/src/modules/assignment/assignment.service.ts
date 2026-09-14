@@ -296,7 +296,7 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
   };
 };
 
-export const getTeacherAssignmentByIdService = async (assignmentId: string, schoolId: string) => {
+export const getTeacherAssignmentByIdService = async (assignmentId: string, schoolId: string, teacherId?: string) => {
   const assignment = await prisma.assignment.findFirst({
     where: { id: assignmentId, schoolId },
     include: {
@@ -313,11 +313,16 @@ export const getTeacherAssignmentByIdService = async (assignmentId: string, scho
     throw new Error("Assignment not found");
   }
 
-  const [classData, subjectData, departmentData] = await Promise.all([
-    prisma.class.findUnique({ where: { id: assignment.classId }, select: { id: true, name: true } }),
-    prisma.subject.findUnique({ where: { id: assignment.subjectId }, select: { id: true, name: true } }),
-    assignment.departmentId ? prisma.department.findUnique({ where: { id: assignment.departmentId }, select: { id: true, name: true } }) : Promise.resolve(null)
+  const [classData, subjectData, departmentData, classStudentCount, teacherCreator, adminCreator] = await Promise.all([
+    assignment.classId ? prisma.class.findUnique({ where: { id: assignment.classId }, select: { id: true, name: true } }) : Promise.resolve(null),
+    assignment.subjectId ? prisma.subject.findUnique({ where: { id: assignment.subjectId }, select: { id: true, name: true } }) : Promise.resolve(null),
+    assignment.departmentId ? prisma.department.findUnique({ where: { id: assignment.departmentId }, select: { id: true, name: true } }) : Promise.resolve(null),
+    assignment.classId ? prisma.classEnrollment.count({ where: { classId: assignment.classId } }) : Promise.resolve(0),
+    assignment.teacherId ? prisma.teacher.findUnique({ where: { id: assignment.teacherId }, select: { id: true, name: true, profileImage: true } }) : Promise.resolve(null),
+    assignment.teacherId ? prisma.admin.findUnique({ where: { id: assignment.teacherId }, select: { id: true, name: true, profileImage: true } }) : Promise.resolve(null)
   ]);
+  
+  const creatorData = teacherCreator || adminCreator;
 
   const studentIds = assignment.submissions.map(s => s.studentId);
   const students = await prisma.student.findMany({
@@ -331,12 +336,26 @@ export const getTeacherAssignmentByIdService = async (assignmentId: string, scho
     student: studentMap.get(sub.studentId) || null
   }));
 
+  let isAuthorized = false;
+  if (teacherId) {
+    if (assignment.teacherId === teacherId) {
+      isAuthorized = true;
+    } else {
+      const teacherSubjects = await prisma.teacherSubject.findMany({ where: { teacherId } });
+      if (teacherSubjects.some(ts => ts.subjectId === assignment.subjectId)) {
+        isAuthorized = true;
+      }
+    }
+  }
+
   return {
     ...assignment,
     submissions: submissionsWithStudent,
-    class: classData,
+    class: { ...classData, studentCount: classStudentCount },
     subject: subjectData,
-    department: departmentData
+    department: departmentData,
+    creator: creatorData,
+    isAuthorized
   };
 };
 
@@ -438,7 +457,6 @@ export const getTeacherAssignmentsService = async (options: {
     const assignedSubjectIds = subjectTeachers.map(st => st.subjectId);
     
     whereClause.OR = [
-      { classId: { in: assignedClassIds } },
       { teacherId }
     ];
     
@@ -468,17 +486,21 @@ export const getTeacherAssignmentsService = async (options: {
   const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
   const classIds = [...new Set(assignments.map(a => a.classId))].filter(isValidUuid);
   const subjectIds = [...new Set(assignments.map(a => a.subjectId))].filter(isValidUuid);
+  const teacherIds = [...new Set(assignments.map(a => a.teacherId))].filter(isValidUuid);
 
-  const [classes, subjects] = await Promise.all([
+  const [classes, subjects, teachers, admins] = await Promise.all([
     prisma.class.findMany({ 
         where: { id: { in: classIds } }, 
         select: { id: true, name: true, _count: { select: { enrollments: true } } } 
     }),
-    prisma.subject.findMany({ where: { id: { in: subjectIds } }, select: { id: true, name: true } })
+    prisma.subject.findMany({ where: { id: { in: subjectIds } }, select: { id: true, name: true } }),
+    prisma.teacher.findMany({ where: { id: { in: teacherIds } }, select: { id: true, name: true, profileImage: true } }),
+    prisma.admin.findMany({ where: { id: { in: teacherIds } }, select: { id: true, name: true, profileImage: true } })
   ]);
 
   const classMap = Object.fromEntries(classes.map(c => [c.id, c]));
   const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s]));
+  const teacherMap = Object.fromEntries([...teachers, ...admins].map(t => [t.id, t]));
 
   const assignmentsWithNames = await Promise.all(assignments.map(async a => {
     // get class enrollment count for this assignment's department
@@ -493,6 +515,7 @@ export const getTeacherAssignmentsService = async (options: {
       ...a,
       class: classMap[a.classId] || null,
       subject: subjectMap[a.subjectId] || null,
+      creator: teacherMap[a.teacherId] || null,
       totalTargetedStudents: targetStudentsCount
     };
   }));
@@ -597,6 +620,7 @@ export const updateAssignmentSettingsService = async (assignmentId: string, scho
   if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
   if (data.maxScore !== undefined) updateData.totalMarks = data.maxScore;
   if (data.totalMarks !== undefined) updateData.totalMarks = data.totalMarks;
+  if (data.scoreReleaseDate !== undefined) updateData.scoreReleaseDate = data.scoreReleaseDate;
 
   return prisma.assignment.update({
     where: { id: assignmentId },
@@ -645,7 +669,9 @@ export const gradeSubmissionService = async (
   assignmentId: string,
   submissionId: string,
   schoolId: string,
-  grades: Array<{ answerId: string; isCorrect: boolean; score: number; maxScore?: number; teacherComment?: string }>
+  grades: Array<{ answerId: string; isCorrect: boolean; score: number; maxScore?: number; teacherComment?: string }>,
+  userId?: string,
+  userType?: string
 ) => {
   // Verify assignment belongs to the school
   const assignment = await prisma.assignment.findFirst({
@@ -653,6 +679,23 @@ export const gradeSubmissionService = async (
     include: { questions: true }
   });
   if (!assignment) throw new Error("Assignment not found");
+
+  if (userType === 'TEACHER' && userId) {
+      if (assignment.teacherId !== userId) {
+          // Check if they teach the subject
+          const teacherSubject = await prisma.teacherSubject.findFirst({
+              where: {
+                  teacherId: userId,
+                  subjectId: assignment.subjectId
+              }
+          });
+          if (!teacherSubject) {
+              throw new Error("Unauthorized to grade this assignment");
+          }
+      }
+  } else if (userType !== 'ADMIN' && userType !== 'SCHOOL_ADMIN') {
+      throw new Error("Unauthorized to grade this assignment");
+  }
 
   // Fetch the submission and its answers
   const submission = await prisma.assignmentSubmission.findUnique({

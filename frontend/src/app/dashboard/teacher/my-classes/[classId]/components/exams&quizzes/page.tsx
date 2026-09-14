@@ -26,47 +26,84 @@ export default function ExamsPage() {
   const itemsPerPage = 10
 
   const { data, isLoading } = useQuery({
-    queryKey: ['class-exams-and-papers', classId],
+    queryKey: ['class-exams-and-papers', classId, selectedSchoolId],
     queryFn: async () => {
       let examsRes = [];
       let papersRes = [];
-      let assignmentsRes = [];
+      const schoolId = selectedSchoolId || undefined;
       try {
-        examsRes = await teacherService.getExams({ classId });
+        examsRes = await teacherService.getExams({ classId, schoolId });
       } catch (error) {
         console.error("Failed to fetch exams:", error);
       }
       try {
-        papersRes = await teacherService.getSubjectPapers({ classId });
+        papersRes = await teacherService.getSubjectPapers({ classId, schoolId });
       } catch (error) {
         console.error("Failed to fetch subject papers:", error);
       }
-      try {
-        assignmentsRes = await teacherService.getAssignments({ classId });
-      } catch (error) {
-        console.error("Failed to fetch assignments:", error);
-      }
-      return { exams: examsRes || [], papers: papersRes || [], assignments: assignmentsRes || [] };
+      return { exams: examsRes || [], papers: papersRes || [] };
     },
     enabled: !!classId,
   })
 
-  const isPersonal = selectedSchoolId === currentTeacherId;
-  const filterId = isPersonal ? undefined : selectedSchoolId;
+  // Fetch class detail to reliably get schoolId (cached by other tabs, so usually free)
+  const { data: classDetailData } = useQuery({
+    queryKey: ['class-detail', classId],
+    queryFn: () => teacherService.getClassDetail(classId),
+    staleTime: 1000 * 60 * 10,
+    enabled: !!classId,
+  });
+  // classInfo.teacherSubjectIds = subject IDs this teacher teaches in this class
+  // Memoize to keep a stable reference (prevents infinite re-render loop)
+  const classSchoolId = useMemo(
+    () => (classDetailData as any)?.classInfo?.schoolId || (classDetailData as any)?.schoolId,
+    [classDetailData]
+  );
+  const teacherSubjectIdsFromClass = useMemo<string[]>(
+    () => (classDetailData as any)?.classInfo?.teacherSubjectIds || [],
+    [classDetailData]
+  );
+
+  // Also fetch subjects for name-based matching
+  const schoolIdForSubjects = classSchoolId || (selectedSchoolId !== currentTeacherId ? selectedSchoolId : null);
   const { data: subjectsData } = useQuery({
-    queryKey: ['teacher-subjects', filterId],
-    queryFn: () => teacherService.getSubjects(filterId ? { schoolId: filterId } : {}),
+    queryKey: ['teacher-subjects', schoolIdForSubjects],
+    queryFn: () => teacherService.getSubjects(schoolIdForSubjects ? { schoolId: schoolIdForSubjects } : {}),
     staleTime: 1000 * 60 * 5,
+    enabled: !!schoolIdForSubjects,
   })
 
   const authorizedSubjects = useMemo(() => {
     if (!subjectsData) return new Set<string>()
-    return new Set<string>((subjectsData as any[]).map((s: any) => (s.subject?.name || s.name || '').toLowerCase()))
+    const names = (subjectsData as any[]).map((s: any) => (s.subject?.name || s.name || '').toLowerCase()).filter(Boolean)
+    return new Set<string>(names)
   }, [subjectsData])
 
+  // Only use IDs from class detail to strictly highlight subjects they teach in THIS class
+  const authorizedSubjectIds = useMemo(() => {
+    return new Set<string>(teacherSubjectIdsFromClass);
+  }, [teacherSubjectIdsFromClass])
+
   // Map backend exam format to frontend exam format
-  const exams: Exam[] = useMemo(() => [
-    ...(data?.exams || []).map((e: any) => ({
+  const exams: Exam[] = useMemo(() => {
+    console.log("LOG: Recomputing exams", { 
+      examsCount: data?.exams?.length,
+      authorizedSubjectIds: Array.from(authorizedSubjectIds),
+      authorizedSubjects: Array.from(authorizedSubjects)
+    });
+    
+    return [
+    ...(data?.exams || []).map((e: any) => {
+      const myPaper = e.subjectExamPapers?.find((sep: any) => {
+        const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId;
+        const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
+        const hasId = authorizedSubjectIds.has(subId);
+        const hasName = authorizedSubjects.has(subName);
+        console.log(`LOG: Exam ${e.title} - paper subjectId: ${subId}, hasId: ${hasId}, hasName: ${hasName}`);
+        return hasId || hasName;
+      });
+
+      return {
       id: e.id,
       title: e.title,
       type: e.category?.toLowerCase() || 
@@ -76,6 +113,10 @@ export default function ExamsPage() {
         ...(e.subjectExamPapers?.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
         e.subject?.name || e.subject
       ].filter(Boolean),
+      subjectIds: [
+        ...(e.subjectExamPapers?.map((sep: any) => sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId) || []),
+        e.subject?.id || e.subjectId
+      ].filter(Boolean),
       teacherId: e.teacherId,
       questions: e.totalQuestions || 0,
       totalMarks: e.totalMarks || 0,
@@ -83,8 +124,25 @@ export default function ExamsPage() {
       status: e.status?.toLowerCase() || 'draft',
       createdAt: new Date(e.createdAt),
       updatedAt: new Date(e.updatedAt),
-      classId: classId
-    })),
+      classId: classId,
+      subjectPaperIds: e.subjectExamPapers?.map((sep: any) => sep.subjectPaperId).filter(Boolean),
+      mySubjectPaperId: myPaper?.subjectPaperId || undefined,
+      subjectPapers: e.subjectExamPapers?.map((sep: any) => {
+        const title = sep.title || sep.subjectPaper?.title || sep.paper?.title || sep.subjectPaper?.subject?.name || sep.subject?.name || 'Untitled Subject Paper';
+        const subjectId = sep.subject?.id || sep.subjectId || sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId;
+        const subjectName = sep.subject?.name || sep.subjectPaper?.subject?.name;
+        
+        return {
+          id: sep.id || sep.subjectPaperId || sep.subjectPaper?.id,
+          title: title,
+          subjectId: subjectId,
+          subjectName: subjectName !== title ? subjectName : undefined,
+          questionsCount: sep.questions?.length || sep.totalQuestions || sep._count?.questions || sep.subjectPaper?.questions?.length || sep.paper?.questions?.length || 0,
+          totalMarks: sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0
+        };
+      }) || []
+    };
+    }),
     ...(data?.papers || []).map((p: any) => ({
       id: p.id,
       title: p.title || 'Untitled Subject Paper',
@@ -92,30 +150,20 @@ export default function ExamsPage() {
             ((p.title || '').toLowerCase().includes('ca ') || (p.title || '').toLowerCase().includes(' ca') || (p.title || '').toLowerCase() === 'ca' ? 'ca' : 
             (p.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'subject_paper'),
       subjects: [p.subject?.name || p.subject].filter(Boolean),
+      subjectIds: [p.subject?.id || p.subjectId].filter(Boolean),
       teacherId: p.teacherId,
-      questions: p.questions?.length || 0,
+      questions: p.totalQuestions || p.questions?.length || p._count?.questions || 0,
       totalMarks: p.totalMarks || 0,
-      scheduledDate: new Date(p.createdAt), // Papers don't have scheduled dates usually
+      scheduledDate: new Date(p.createdAt),
       status: p.status === 'APPROVED' ? 'published' : 'draft',
       createdAt: new Date(p.createdAt),
       updatedAt: new Date(p.updatedAt),
-      classId: classId
-    })),
-    ...(data?.assignments || []).map((a: any) => ({
-      id: a.id,
-      title: a.title || 'Untitled Assignment',
-      type: 'assignment',
-      subjects: [a.subject?.name || a.subject].filter(Boolean),
-      teacherId: a.teacherId,
-      questions: a.totalQuestions || a.questions?.length || 0,
-      totalMarks: a.totalMarks || a.maxScore || 100,
-      scheduledDate: new Date(a.dueDate || a.createdAt),
-      status: a.status?.toLowerCase() || 'published',
-      createdAt: new Date(a.createdAt),
-      updatedAt: new Date(a.updatedAt),
-      classId: classId
+      classId: classId,
+      subjectPaperIds: [p.id], // paper itself IS the subject paper
+      mySubjectPaperId: p.id
     }))
-  ], [data, classId]);
+  ];
+  }, [data, classId, authorizedSubjects, authorizedSubjectIds]);
 
   const [filteredExams, setFilteredExams] = useState<Exam[]>([])
 
@@ -166,7 +214,25 @@ export default function ExamsPage() {
   }
 
   const handleEditExam = (exam: Exam) => {
-    router.push(`/dashboard/teacher/exams&quizzes/${exam.id}/papers`)
+    if (exam.type === 'assignment') {
+      // Navigate to assignment edit page
+      router.push(`/dashboard/teacher/assignments/${exam.id}?edit=true`)
+    } else if (exam.type === 'subject_paper') {
+      // A standalone subject paper — open the question editor directly
+      router.push(`/dashboard/teacher/exams&quizzes/papers/${exam.id}`)
+    } else {
+      // Exam, quiz, CA — navigate to the attached subject paper's editor if one exists
+      if (exam.mySubjectPaperId) {
+        // Teacher's specific subject paper
+        router.push(`/dashboard/teacher/exams&quizzes/papers/${exam.mySubjectPaperId}`)
+      } else if (exam.subjectPaperIds && exam.subjectPaperIds.length > 0) {
+        // Fallback to the first paper if mySubjectPaperId isn't found
+        router.push(`/dashboard/teacher/exams&quizzes/papers/${exam.subjectPaperIds[0]}`)
+      } else {
+        // No subject paper attached yet — go to the exam's papers page to attach one
+        router.push(`/dashboard/teacher/exams&quizzes/${exam.id}/papers`)
+      }
+    }
   }
 
   const handleDeleteExam = (exam: Exam) => {
@@ -217,12 +283,14 @@ export default function ExamsPage() {
           exams={paginatedExams}
           onView={handleViewExam}
           onEdit={handleEditExam}
+          onEditPaper={(paperId) => router.push(`/dashboard/teacher/exams&quizzes/papers/${paperId}`)}
           onDelete={(exam) => console.log('Delete', exam)}
           onDuplicate={(exam) => console.log('Duplicate', exam)}
           onExport={(exam) => console.log('Export', exam)}
           startIndex={startIndex}
           currentTeacherId={currentTeacherId}
           authorizedSubjects={authorizedSubjects}
+          authorizedSubjectIds={authorizedSubjectIds}
         />
         
         {filteredExams.length > 0 && (

@@ -33,6 +33,9 @@ export const canManageExam = async ({
   }
 
   if (userType === UserRole.TEACHER) {
+    if (exam.teacherId === userId) {
+      return true;
+    }
     if (exam.classId) {
       if (await canManageClass({ userId, userType, classId: exam.classId })) {
         return true;
@@ -102,6 +105,17 @@ export const canManageSubjectPaper = async ({
         examId: link.examId,
       });
       if (allowed) return true;
+    }
+
+    if (!paper.teacherId) {
+      // If no teacher is assigned, allow any teacher from the same school to manage it
+      const paperSchoolId = paper.schoolId || paper.exams?.[0]?.exam?.schoolId;
+      if (paperSchoolId) {
+        const teacherProfile = await prisma.teacher.findUnique({ where: { id: userId } });
+        if (teacherProfile && (('activeSchoolId' in teacherProfile ? (teacherProfile as any).activeSchoolId === paperSchoolId : false) || ('primarySchoolId' in teacherProfile ? (teacherProfile as any).primarySchoolId === paperSchoolId : false))) {
+          return true;
+        }
+      }
     }
 
     return canTeacherManageSubject({

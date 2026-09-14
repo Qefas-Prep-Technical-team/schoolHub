@@ -11,6 +11,7 @@ import {
   GradeStatus,
 } from "@prisma/client";
 import { validateExamQuestionInput } from "./exam.validation";
+import { canManageSubjectPaper } from "./exam.permissions";
 
 export const createExamService = async ({
   title,
@@ -55,7 +56,8 @@ export const createExamService = async ({
 }) => {
   if (schoolId) await enforceExamLimit(schoolId);
   console.log("LOG: [createExamService] Data received:", { title, scope, schoolId });
-  return prisma.exam.create({
+  
+  const exam = await prisma.exam.create({
     data: {
       title,
       description: description || null,
@@ -90,6 +92,18 @@ export const createExamService = async ({
       subjectExamPapers: true,
     },
   });
+
+  if (exam.schoolId) {
+    createNotification({
+      recipientType: "SCHOOL",
+      recipientId: exam.schoolId,
+      type: "GENERAL",
+      title: "New Assessment Draft Created",
+      message: `A new assessment "${exam.title}" has been created as a draft by a teacher.`,
+    }).catch((err) => console.error("Failed to notify school of exam creation:", err));
+  }
+
+  return exam;
 };
 
 export const getExamsService = async (filters: {
@@ -259,11 +273,26 @@ export const getExamsService = async (filters: {
       },
       class: true,
       session: true,
+      subject: {
+        include: {
+          teacher: true,
+          teacherSubjects: {
+            include: { teacher: true }
+          }
+        }
+      },
       subjectExamPapers: {
         include: {
           subjectPaper: {
             include: {
-              subject: true,
+              subject: {
+                include: {
+                  teacher: true,
+                  teacherSubjects: {
+                    include: { teacher: true }
+                  }
+                }
+              },
               teacher: true,
               questions: {
                 orderBy: { order: "asc" },
@@ -293,11 +322,75 @@ export const getExamsService = async (filters: {
 
   const total = filters.page && filters.limit ? await prisma.exam.count({ where }) : exams.length;
 
+  // Collect all unique subjectIds across all papers for a direct teacher lookup
+  const allSubjectIds = new Set<string>();
+  (exams as any[]).forEach(exam => {
+    if (exam.subjectId) {
+      allSubjectIds.add(exam.subjectId);
+    }
+    exam.subjectExamPapers.forEach((link: any) => {
+      if (link.subjectPaper?.subjectId) {
+        allSubjectIds.add(link.subjectPaper.subjectId);
+      }
+    });
+  });
+
+  // Directly query ALL teacher assignments for those subjects — covers both TeacherSubject and Subject.teacherId
+  const [teacherSubjectRecords, subjectPrimaryTeachers] = await Promise.all([
+    allSubjectIds.size > 0
+      ? prisma.teacherSubject.findMany({
+          where: { subjectId: { in: Array.from(allSubjectIds) } },
+          include: { teacher: true },
+        })
+      : Promise.resolve([]),
+    allSubjectIds.size > 0
+      ? prisma.subject.findMany({
+          where: { id: { in: Array.from(allSubjectIds) } },
+          select: { id: true, teacher: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  // Build a map of subjectId -> Set of unique teachers
+  const subjectTeachersMap = new Map<string, Map<string, any>>();
+  for (const ts of teacherSubjectRecords as any[]) {
+    if (!subjectTeachersMap.has(ts.subjectId)) subjectTeachersMap.set(ts.subjectId, new Map());
+    if (ts.teacher) subjectTeachersMap.get(ts.subjectId)!.set(ts.teacher.id, ts.teacher);
+  }
+  for (const subj of subjectPrimaryTeachers as any[]) {
+    if (subj.teacher) {
+      if (!subjectTeachersMap.has(subj.id)) subjectTeachersMap.set(subj.id, new Map());
+      subjectTeachersMap.get(subj.id)!.set(subj.teacher.id, subj.teacher);
+    }
+  }
+
   const formattedExams = (exams as any[]).map(exam => {
-    const papers = exam.subjectExamPapers.map((link: any) => ({
-      ...link.subjectPaper,
-      examId: link.examId
-    }));
+    const papers = exam.subjectExamPapers.map((link: any) => {
+      const subjectPaper = link.subjectPaper;
+      const teachersMap = new Map<string, any>();
+      // Add paper's direct teacher
+      if (subjectPaper?.teacher) teachersMap.set(subjectPaper.teacher.id, subjectPaper.teacher);
+      // Add all teachers from the direct subject lookup (paper level)
+      if (subjectPaper?.subjectId) {
+        const subjectTeachers = subjectTeachersMap.get(subjectPaper.subjectId);
+        if (subjectTeachers) {
+          subjectTeachers.forEach((teacher: any, id: string) => teachersMap.set(id, teacher));
+        }
+      }
+      // Add all teachers from the direct subject lookup (exam level)
+      if (exam.subjectId) {
+        const examSubjectTeachers = subjectTeachersMap.get(exam.subjectId);
+        if (examSubjectTeachers) {
+          examSubjectTeachers.forEach((teacher: any, id: string) => teachersMap.set(id, teacher));
+        }
+      }
+      const assignedTeachers = Array.from(teachersMap.values());
+      return {
+        ...subjectPaper,
+        examId: link.examId,
+        assignedTeachers,
+      };
+    });
     
     return {
       ...exam,
@@ -400,13 +493,18 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
 };
 
 export const getExamPapersService = async (examId: string, schoolId?: string, user?: { id: string; userType: string; schoolId?: string }) => {
+  const whereClause: any = {
+    examId,
+    exam: schoolId ? { schoolId } : undefined,
+  };
+
+  // Only hide non-published papers for students
+  if (user?.userType === "STUDENT") {
+    whereClause.subjectPaper = { status: 'PUBLISHED' };
+  }
+
   const links = await prisma.examSubjectPaper.findMany({
-    where: { 
-      examId,
-      exam: schoolId ? { schoolId } : undefined,
-      // Only show published papers in preview
-      subjectPaper: { status: 'PUBLISHED' }
-    },
+    where: whereClause,
     include: {
       subjectPaper: {
         include: {
@@ -444,8 +542,11 @@ export const getExamPapersService = async (examId: string, schoolId?: string, us
     const isAfterEndDate = exam?.endDate ? now > new Date(exam.endDate) : false;
 
     if (!isAfterEndDate) {
-      // Only show papers connected to this teacher via subject
-      return allPapers.filter(paper => paper.subjectId && connectedSubjectIds.has(paper.subjectId));
+      // Show papers connected to this teacher via subject OR created by this teacher
+      return allPapers.filter(paper => 
+        paper.teacherId === user.id || 
+        (paper.subjectId && connectedSubjectIds.has(paper.subjectId))
+      );
     }
   }
 
@@ -469,42 +570,46 @@ export const getSubjectPapersService = async (filters: {
 }) => {
   const where: any = {};
   
-  // 1. Filter by teacher (creator or assigned teacher)
+  // 1. Filter by teacher (creator OR assigned via subject)
   if (filters.teacherId) {
-    where.teacherId = filters.teacherId;
-
-    // We still need classIds for the teacherClassesOnly filter
-    const assignedClasses = await prisma.classTeacher.findMany({
+    // Get all subjects assigned to this teacher (via TeacherSubject or Subject.teacherId)
+    const teacherSubjects = await prisma.teacherSubject.findMany({
       where: { teacherId: filters.teacherId },
-      select: { classId: true }
+      select: { subjectId: true }
     });
-    const classIds = assignedClasses.map(c => c.classId);
+    const teacherSubjectIds = teacherSubjects.map(ts => ts.subjectId);
 
-    // Implement teacherClassesOnly scoping
-    const isTeacherClassesOnly = filters.teacherClassesOnly === 'true';
-      if (isTeacherClassesOnly) {
-        if (filters.classId) {
-          if (!classIds.includes(filters.classId)) {
-            where.id = "none";
+    // Also include subjects where this teacher is the primary teacher
+    const primarySubjects = await prisma.subject.findMany({
+      where: { teacherId: filters.teacherId, isArchived: false },
+      select: { id: true }
+    });
+    primarySubjects.forEach(s => {
+      if (!teacherSubjectIds.includes(s.id)) teacherSubjectIds.push(s.id);
+    });
+
+    // OR: paper created by teacher, OR paper's subject is assigned to teacher
+    if (!where.AND) where.AND = [];
+    where.AND.push({
+      OR: [
+        { teacherId: filters.teacherId },
+        ...(teacherSubjectIds.length > 0 ? [{ subjectId: { in: teacherSubjectIds } }] : [])
+      ]
+    });
+
+    // Exclude papers linked to CA or QUIZ category exams (ASSIGNMENT is a separate model)
+    where.AND.push({
+      NOT: {
+        exams: {
+          some: {
+            exam: {
+              category: { in: [ExamCategory.CA, ExamCategory.QUIZ] }
+            }
           }
-        } else {
-          const classSubjects = await prisma.classSubject.findMany({
-            where: { classId: { in: classIds } },
-            select: { subjectId: true }
-          });
-          const classSubjectIds = classSubjects.map((cs: any) => cs.subjectId);
-          
-          if (!where.AND) where.AND = [];
-          where.AND.push({
-            OR: [
-              { subjectId: { in: classSubjectIds } },
-              { exams: { some: { exam: { classId: { in: classIds } } } } },
-              { teacherId: filters.teacherId }
-            ]
-          });
         }
       }
-    }
+    });
+  }
 
   // 3. Filter by school or personal context
   if (filters.isPersonal) {
@@ -554,8 +659,17 @@ export const getSubjectPapersService = async (filters: {
   const papers = await prisma.subjectExamPaper.findMany({
     where,
     include: {
-      subject: true,
-      teacher: true,
+      subject: {
+        include: {
+          teacher: { select: { id: true, name: true, profileImage: true } },
+          teacherSubjects: {
+            include: {
+              teacher: { select: { id: true, name: true, profileImage: true } }
+            }
+          }
+        }
+      },
+      teacher: { select: { id: true, name: true, profileImage: true } },
       exams: {
         include: { exam: true }
       },
@@ -573,17 +687,50 @@ export const getSubjectPapersService = async (filters: {
     } : {}),
   });
 
-  const total = filters.page && filters.limit ? await prisma.subjectExamPaper.count({ where }) : papers.length;
+  // Build assignedTeachers for each paper: creator + subject's primary teacher + subject's TeacherSubject entries
+  const enrichedPapers = papers.map((paper: any) => {
+    const teachersMap = new Map<string, { id: string; name: string; profileImage?: string | null; isCreator: boolean }>();
+
+    // Paper creator
+    if (paper.teacher) {
+      teachersMap.set(paper.teacher.id, { ...paper.teacher, isCreator: paper.teacher.id === paper.teacherId });
+    }
+
+    // Subject's primary teacher
+    if (paper.subject?.teacher) {
+      const t = paper.subject.teacher;
+      if (!teachersMap.has(t.id)) {
+        teachersMap.set(t.id, { ...t, isCreator: t.id === paper.teacherId });
+      }
+    }
+
+    // Subject's assigned teachers via TeacherSubject
+    if (paper.subject?.teacherSubjects) {
+      for (const ts of paper.subject.teacherSubjects) {
+        if (ts.teacher && !teachersMap.has(ts.teacher.id)) {
+          teachersMap.set(ts.teacher.id, { ...ts.teacher, isCreator: ts.teacher.id === paper.teacherId });
+        }
+      }
+    }
+
+    return {
+      ...paper,
+      questionsCount: paper.questions?.length ?? 0,
+      assignedTeachers: Array.from(teachersMap.values()),
+    };
+  });
+
+  const total = filters.page && filters.limit ? await prisma.subjectExamPaper.count({ where }) : enrichedPapers.length;
 
   return filters.page && filters.limit ? {
-    data: papers,
+    data: enrichedPapers,
     pagination: {
       total,
       pages: Math.ceil(total / filters.limit),
       page: filters.page,
       limit: filters.limit
     }
-  } : papers;
+  } : enrichedPapers;
 };
 
 export const linkSubjectPaperToExamService = async (subjectPaperId: string, examId: string) => {
@@ -650,7 +797,14 @@ export const getSubjectPaperByIdService = async (id: string, user?: any) => {
       },
       grades: {
         include: {
-          student: true
+          student: true,
+          teacher: {
+            select: { id: true, name: true }
+          },
+          auditLogs: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
         }
       }
     },
@@ -658,8 +812,37 @@ export const getSubjectPaperByIdService = async (id: string, user?: any) => {
 
   if (!paper) return null;
 
-  // Only allow previewing published papers
-  if (paper.status !== 'PUBLISHED') return null;
+  // Resolve overrider names for grades from audit logs
+  if (paper.grades && paper.grades.length > 0) {
+    const teacherIds = new Set<string>();
+    const adminIds = new Set<string>();
+
+    paper.grades.forEach((g: any) => {
+      const log = g.auditLogs?.[0];
+      if (log) {
+        if (log.changedByType === 'TEACHER') teacherIds.add(log.changedById);
+        if (log.changedByType === 'ADMIN') adminIds.add(log.changedById);
+      }
+    });
+
+    const nameMap = new Map<string, string>();
+    if (teacherIds.size > 0) {
+      const teachers = await prisma.teacher.findMany({ where: { id: { in: Array.from(teacherIds) } }, select: { id: true, name: true } });
+      teachers.forEach(t => nameMap.set(t.id, t.name));
+    }
+    if (adminIds.size > 0) {
+      const admins = await prisma.admin.findMany({ where: { id: { in: Array.from(adminIds) } }, select: { id: true, name: true } });
+      admins.forEach(a => nameMap.set(a.id, a.name));
+    }
+
+    paper.grades = paper.grades.map((g: any) => {
+      const log = g.auditLogs?.[0];
+      return {
+        ...g,
+        overriderName: log ? nameMap.get(log.changedById) : null
+      };
+    }) as any;
+  }
 
   // Tenant / School Isolation Check
   // Ensure that users can only access papers belonging to their own school, unless it's a global paper (no schoolId)
@@ -684,19 +867,14 @@ export const getSubjectPaperByIdService = async (id: string, user?: any) => {
     }
 
     if (!isAfterEndDate) {
-      // It's before the end date (or during the taking window)
-      // Check if the teacher is connected to THIS paper via subject
-      let isConnected = false;
-      
-      if (paper.subjectId) {
-        // Check if teacher is connected via subject
-        const teacherSubject = await prisma.teacherSubject.findFirst({
-          where: { teacherId: user.id, subjectId: paper.subjectId }
-        });
-        if (teacherSubject) isConnected = true;
-      }
+      // Check if the teacher is authorized to manage this paper
+      const allowed = await canManageSubjectPaper({
+        userId: user.id,
+        userType: user.userType,
+        subjectPaperId: paper.id,
+      });
 
-      if (!isConnected) {
+      if (!allowed) {
         throw new Error("FORBIDDEN_PREVIEW");
       }
     }
@@ -1002,10 +1180,23 @@ export const validateSubjectPaperService = async (subjectPaperId: string) => {
 export const publishSubjectPaperService = async (subjectPaperId: string) => {
   const paper = await prisma.subjectExamPaper.findUnique({
     where: { id: subjectPaperId },
-    include: { questions: true },
+    include: { 
+      questions: true,
+      exams: { include: { exam: true } }
+    },
   });
 
   if (!paper) throw new Error("Subject paper not found");
+
+  // Prevent publishing if any linked main exam is already published AND is an EXAM category
+  const isLinkedToPublishedExamCategory = paper.exams?.some(link => 
+    (link.exam.status === AssessmentStatus.PUBLISHED) && 
+    link.exam.category === 'EXAM'
+  );
+  if (isLinkedToPublishedExamCategory) {
+    throw new Error("Cannot modify subject paper while the main exam is active");
+  }
+
   if (!paper.questions.length) {
     throw new Error("Subject paper must have at least one question");
   }
@@ -1033,6 +1224,17 @@ export const publishSubjectPaperService = async (subjectPaperId: string) => {
     },
     include: { questions: true },
   });
+
+  // Auto-publish associated non-EXAM main exams (CA, QUIZ, ASSIGNMENT)
+  const nonExamCategoryExams = paper.exams?.filter(link => link.exam.category !== 'EXAM') || [];
+  for (const link of nonExamCategoryExams) {
+    if (link.exam.status !== AssessmentStatus.PUBLISHED) {
+      await prisma.exam.update({
+        where: { id: link.examId },
+        data: { status: AssessmentStatus.PUBLISHED }
+      });
+    }
+  }
 
   if (updatedPaper.schoolId) {
     createNotification({
@@ -1477,16 +1679,26 @@ export const unpublishExamService = async (examId: string) => {
 export const unpublishSubjectPaperService = async (subjectPaperId: string) => {
   const paper = await prisma.subjectExamPaper.findUnique({
     where: { id: subjectPaperId },
+    include: { exams: { include: { exam: true } } },
   });
 
   if (!paper) throw new Error("Subject paper not found");
+
+  // Prevent unpublishing if any linked main exam is already published AND is an EXAM category
+  const isLinkedToPublishedExamCategory = paper.exams?.some(link => 
+    (link.exam.status === AssessmentStatus.PUBLISHED) && 
+    link.exam.category === 'EXAM'
+  );
+  if (isLinkedToPublishedExamCategory) {
+    throw new Error("Cannot modify subject paper while the main exam is active");
+  }
   
   // Can unpublish if it's APPROVED or PUBLISHED
   if (paper.status !== SubjectPaperStatus.APPROVED && paper.status !== SubjectPaperStatus.PUBLISHED) {
     throw new Error("Only approved or published papers can be unpublished");
   }
 
-  return prisma.subjectExamPaper.update({
+  const updatedPaper = await prisma.subjectExamPaper.update({
     where: { id: subjectPaperId },
     data: {
       status: SubjectPaperStatus.DRAFT,
@@ -1494,6 +1706,19 @@ export const unpublishSubjectPaperService = async (subjectPaperId: string) => {
       validatedAt: null,
     },
   });
+
+  // Auto-unpublish associated non-EXAM main exams (CA, QUIZ, ASSIGNMENT)
+  const nonExamCategoryExams = paper.exams?.filter(link => link.exam.category !== 'EXAM') || [];
+  for (const link of nonExamCategoryExams) {
+    if (link.exam.status === AssessmentStatus.PUBLISHED) {
+      await prisma.exam.update({
+        where: { id: link.examId },
+        data: { status: AssessmentStatus.DRAFT }
+      });
+    }
+  }
+
+  return updatedPaper;
 };
 
 export const deleteSubjectPaperService = async (subjectPaperId: string) => {

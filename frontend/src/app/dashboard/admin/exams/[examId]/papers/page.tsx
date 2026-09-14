@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { examService } from "@/lib/api/services/examService";
 import { CreatePaperForm } from "./components/CreatePaperForm";
 import { sessionService } from "@/lib/api/services/sessionService";
-import { Copy, FileText, Clock, Users, Check, Loader2, ShieldCheck, ChevronLeft, Settings2, Calendar, Trash2, Link as LinkIcon, Link2Off, Globe, Lock, Unlock, AlertCircle, Shuffle, Building2, Eye } from "lucide-react";
+import { Copy, FileText, Clock, Users, Check, Loader2, ShieldCheck, ChevronLeft, Settings2, Calendar, Trash2, Link as LinkIcon, Link2Off, Globe, Lock, Unlock, AlertCircle, Shuffle, Building2, Eye, CheckCircle2, XCircle } from "lucide-react";
 import { useUnlinkPaper } from "@/lib/api/hooks/useExams";
+import { useUpdateGrade } from "@/lib/api/hooks/useGrades";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
@@ -136,6 +137,8 @@ export default function ExamPapersPage() {
     }
   });
 
+  const updateGradeMutation = useUpdateGrade();
+
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -158,6 +161,49 @@ export default function ExamPapersPage() {
       ...config,
       isOpen: true,
     });
+  };
+
+  const [isApprovingAll, setIsApprovingAll] = useState(false);
+  const handleApproveAll = async () => {
+    setIsApprovingAll(true);
+    try {
+      const unapprovedGrades = attempts
+        .filter((a: any) => a.grades && a.grades.length > 0 && a.grades[0].status !== 'PUBLISHED')
+        .map((a: any) => a.grades[0]);
+      
+      if (unapprovedGrades.length === 0) {
+        toast.info("No unapproved grades found.");
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        return;
+      }
+      
+      await Promise.all(unapprovedGrades.map((g: any) => updateGradeMutation.mutateAsync({ id: g.id, data: { status: 'PUBLISHED' } })));
+      toast.success(`Approved ${unapprovedGrades.length} grades successfully!`);
+      
+      queryClient.setQueryData(["exam-attempts", examId], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.map((attempt: any) => {
+          if (attempt.grades && attempt.grades.length > 0 && attempt.grades[0].status !== 'PUBLISHED') {
+            const newGrades = [...attempt.grades];
+            newGrades[0] = { 
+              ...newGrades[0], 
+              status: 'PUBLISHED',
+              approverName: user?.name || 'Admin',
+              approvedAt: new Date().toISOString()
+            };
+            return { ...attempt, grades: newGrades };
+          }
+          return attempt;
+        });
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["exam-attempts", examId] });
+      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+    } catch (error) {
+      toast.error("Failed to approve some grades");
+    } finally {
+      setIsApprovingAll(false);
+    }
   };
 
   const [previewPaperId, setPreviewPaperId] = useState<string | null>(null);
@@ -183,6 +229,7 @@ export default function ExamPapersPage() {
     sessionId: "",
     term: "",
     teacherId: "",
+    mode: "COMBINED",
   });
 
   // Use the school ID associated with the exam for all contextual fetches
@@ -247,6 +294,7 @@ export default function ExamPapersPage() {
         term: exam.term || "",
         teacherId: exam.teacherId || "",
         shuffleQuestions: !!exam.shuffleQuestions,
+        mode: (exam as any).mode || "COMBINED",
       });
     }
   }, [exam, isSettingsOpen]);
@@ -599,7 +647,7 @@ export default function ExamPapersPage() {
                   onConfirm: () => publishExamMutation.mutate()
                 })}
                 disabled={publishExamMutation.isPending || !allPapersPublished}
-                className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:grayscale text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-95"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:grayscale text-primary-foreground font-black text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-95"
               >
                 {publishExamMutation.isPending ? <Loader2 size={15} className="animate-spin" /> : <Globe size={15} />}
                 Publish Exam
@@ -621,6 +669,8 @@ export default function ExamPapersPage() {
               </button>
             )}
 
+
+
             {/* Settings */}
             <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
               <DialogTrigger asChild>
@@ -628,12 +678,12 @@ export default function ExamPapersPage() {
                   <Settings2 size={15} /> Settings
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-5xl w-[95vw] rounded-[2.5rem] p-0 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl shadow-indigo-500/10 focus:outline-none bg-slate-50 dark:bg-slate-950">
+              <DialogContent className="sm:max-w-5xl w-[95vw] rounded-[2.5rem] p-0 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl shadow-blue-500/10 focus:outline-none bg-slate-50 dark:bg-slate-950">
                 <div className="bg-white dark:bg-slate-900 p-8 pb-6 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                      <div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                         <Settings2 size={24} />
                       </div>
                       <div>
@@ -667,7 +717,7 @@ export default function ExamPapersPage() {
 
                       <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center gap-2 mb-6 border-b border-slate-50 dark:border-slate-800/50 pb-4">
-                          <div className="p-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"><Calendar size={18} /></div>
+                          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"><Calendar size={18} /></div>
                           <Label className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Timing &amp; Schedule</Label>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -686,11 +736,11 @@ export default function ExamPapersPage() {
                         </div>
                       </div>
 
-                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 p-6 rounded-[1.5rem] border border-indigo-100 dark:border-indigo-900/30">
+                      <div className="bg-blue-50 dark:bg-blue-950/30 p-6 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30">
                         <div className="flex items-center justify-between gap-4">
                           <div className="space-y-1">
-                            <Label className="text-sm font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2"><Shuffle size={16} className="text-indigo-500" /> Shuffle Questions</Label>
-                            <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70 font-medium">Randomize question order for every student attempt.</p>
+                            <Label className="text-sm font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2"><Shuffle size={16} className="text-blue-500" /> Shuffle Questions</Label>
+                            <p className="text-xs text-blue-600/70 dark:text-blue-400/70 font-medium">Randomize question order for every student attempt.</p>
                           </div>
                           <Switch checked={examSettings.shuffleQuestions} onCheckedChange={(checked) => setExamSettings({ ...examSettings, shuffleQuestions: checked })} />
                         </div>
@@ -700,13 +750,13 @@ export default function ExamPapersPage() {
                     <div className="space-y-6">
                       <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center gap-2 mb-6 border-b border-slate-50 dark:border-slate-800/50 pb-4">
-                          <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"><Users size={18} /></div>
+                          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"><Users size={18} /></div>
                           <Label className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Targeting &amp; Scope</Label>
                         </div>
                         <div className="space-y-5">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold text-slate-600 dark:text-slate-400">Exam Scope</Label>
-                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer" value={examSettings.scope} onChange={(e) => setExamSettings({ ...examSettings, scope: e.target.value as any })}>
+                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 cursor-pointer" value={examSettings.scope} onChange={(e) => setExamSettings({ ...examSettings, scope: e.target.value as any })}>
                               <option value="SCHOOL">Whole School</option>
                               <option value="CLASS">By Class Group</option>
                               <option value="DEPARTMENT">By Academic Department</option>
@@ -714,7 +764,7 @@ export default function ExamPapersPage() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold text-slate-600 dark:text-slate-400">Target Class</Label>
-                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer" value={examSettings.classId} onChange={(e) => setExamSettings({ ...examSettings, classId: e.target.value })}>
+                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 cursor-pointer" value={examSettings.classId} onChange={(e) => setExamSettings({ ...examSettings, classId: e.target.value })}>
                               <option value="">No specific class</option>
                               {classesData?.map((c: any) => (<option key={c.id} value={c.id}>{c.name} {c.section}</option>))}
                             </select>
@@ -729,8 +779,8 @@ export default function ExamPapersPage() {
                                 {departmentsData.map((d: any) => {
                                   const isSelected = examSettings.departmentIds?.includes(d.id);
                                   return (
-                                    <div key={d.id} onClick={() => { const current = examSettings.departmentIds || []; const next = current.includes(d.id) ? current.filter((id) => id !== d.id) : [...current, d.id]; setExamSettings({ ...examSettings, departmentIds: next }); }} className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${isSelected ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300" : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300"}`}>
-                                      <div className={`w-4 h-4 flex-shrink-0 rounded flex items-center justify-center border ${isSelected ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 dark:border-slate-700 text-transparent"}`}><Check size={10} strokeWidth={4} /></div>
+                                    <div key={d.id} onClick={() => { const current = examSettings.departmentIds || []; const next = current.includes(d.id) ? current.filter((id) => id !== d.id) : [...current, d.id]; setExamSettings({ ...examSettings, departmentIds: next }); }} className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${isSelected ? "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300" : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300"}`}>
+                                      <div className={`w-4 h-4 flex-shrink-0 rounded flex items-center justify-center border ${isSelected ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 dark:border-slate-700 text-transparent"}`}><Check size={10} strokeWidth={4} /></div>
                                       <span className="text-xs font-bold truncate">{d.name}</span>
                                     </div>
                                   );
@@ -745,21 +795,21 @@ export default function ExamPapersPage() {
 
                       <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center gap-2 mb-6 border-b border-slate-50 dark:border-slate-800/50 pb-4">
-                          <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"><Building2 size={18} /></div>
+                          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"><Building2 size={18} /></div>
                           <Label className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Academic Context</Label>
                         </div>
                         <div className="space-y-5">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label className="text-xs font-bold text-slate-600 dark:text-slate-400">Session</Label>
-                              <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-indigo-500 cursor-pointer" value={examSettings.sessionId} onChange={(e) => setExamSettings({ ...examSettings, sessionId: e.target.value })}>
+                              <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-blue-500 cursor-pointer" value={examSettings.sessionId} onChange={(e) => setExamSettings({ ...examSettings, sessionId: e.target.value })}>
                                 <option value="">No specific session</option>
                                 {sessionsData?.map((s: any) => (<option key={s.id} value={s.id}>{s.name}</option>))}
                               </select>
                             </div>
                             <div className="space-y-2">
                               <Label className="text-xs font-bold text-slate-600 dark:text-slate-400">Term</Label>
-                              <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-indigo-500 cursor-pointer" value={examSettings.term} onChange={(e) => setExamSettings({ ...examSettings, term: e.target.value as any })}>
+                              <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-blue-500 cursor-pointer" value={examSettings.term} onChange={(e) => setExamSettings({ ...examSettings, term: e.target.value as any })}>
                                 <option value="">No specific term</option>
                                 <option value="FIRST">First Term</option>
                                 <option value="SECOND">Second Term</option>
@@ -769,7 +819,7 @@ export default function ExamPapersPage() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold text-slate-600 dark:text-slate-400">Global Teacher (Optional)</Label>
-                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-indigo-500 cursor-pointer" value={examSettings.teacherId} onChange={(e) => setExamSettings({ ...examSettings, teacherId: e.target.value })}>
+                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-blue-500 cursor-pointer" value={examSettings.teacherId} onChange={(e) => setExamSettings({ ...examSettings, teacherId: e.target.value })}>
                               <option value="">No global teacher assigned</option>
                               {Array.isArray(teacherResponse) && teacherResponse.map((t: any) => (<option key={t.id} value={t.id}>{t.name}</option>))}
                               {Array.isArray(teacherResponse?.data) && teacherResponse.data.map((t: any) => (<option key={t.id} value={t.id}>{t.name}</option>))}
@@ -780,13 +830,13 @@ export default function ExamPapersPage() {
 
                       <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                         <div className="flex items-center gap-2 mb-6 border-b border-slate-50 dark:border-slate-800/50 pb-4">
-                          <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400"><Eye size={18} /></div>
+                          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"><Eye size={18} /></div>
                           <Label className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Results Settings</Label>
                         </div>
                         <div className="space-y-5">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold text-slate-600 dark:text-slate-400">Visibility Timing</Label>
-                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-indigo-500 cursor-pointer" value={examSettings.allowImmediateResult ? "immediate" : "scheduled"} onChange={(e) => setExamSettings({ ...examSettings, allowImmediateResult: e.target.value === "immediate" })}>
+                            <select className="w-full h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 text-sm outline-none focus:border-blue-500 cursor-pointer" value={examSettings.allowImmediateResult ? "immediate" : "scheduled"} onChange={(e) => setExamSettings({ ...examSettings, allowImmediateResult: e.target.value === "immediate" })}>
                               <option value="immediate">Show results immediately after submission</option>
                               <option value="scheduled">Hold results until specific release date</option>
                             </select>
@@ -811,7 +861,7 @@ export default function ExamPapersPage() {
                     </div>
                     <div className="flex gap-3 ml-auto w-full sm:w-auto">
                       <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="flex-1 sm:flex-none rounded-xl font-bold h-12 px-6">Cancel</Button>
-                      <Button onClick={() => updateExamMutation.mutate(examSettings)} disabled={updateExamMutation.isPending} className="flex-1 sm:flex-none rounded-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 border-0 h-12 px-8">
+                      <Button onClick={() => updateExamMutation.mutate(examSettings)} disabled={updateExamMutation.isPending} className="flex-1 sm:flex-none rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 border-0 h-12 px-8">
                         {updateExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
                         Save Changes
                       </Button>
@@ -821,21 +871,6 @@ export default function ExamPapersPage() {
               </DialogContent>
             </Dialog>
 
-            {/* Grades toggle */}
-            <button
-              onClick={() => openConfirmDialog({
-                title: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
-                description: exam?.allowImmediateResult ? "Students will no longer see their results." : "All students will immediately see their results.",
-                variant: "warning",
-                confirmText: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
-                onConfirm: () => updateExamMutation.mutate({ allowImmediateResult: !exam?.allowImmediateResult })
-              })}
-              disabled={updateExamMutation.isPending}
-              className={`flex items-center gap-2 border font-bold text-sm px-4 py-2.5 rounded-xl transition-all ${exam?.allowImmediateResult ? "bg-amber-500/15 border-amber-500/30 text-amber-400 hover:bg-amber-500/25" : "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25"}`}
-            >
-              {exam?.allowImmediateResult ? <Lock size={15} /> : <Unlock size={15} />}
-              {exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades"}
-            </button>
 
             {/* Delete — admin only */}
             {user?.userType === "ADMIN" && (
@@ -879,7 +914,7 @@ export default function ExamPapersPage() {
               <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <FileText size={18} />
               </div>
-              <h2 className="font-black text-slate-900 dark:text-white text-base">Add Subject Paper</h2>
+              <h2 className="font-black text-slate-900 dark:text-white text-base">Create Subject Paper</h2>
             </div>
             <CreatePaperForm
               examId={examId}
@@ -1076,6 +1111,22 @@ export default function ExamPapersPage() {
                 <p className="text-xs font-medium text-slate-400 mt-0.5">Students who have started or submitted this examination</p>
               </div>
             </div>
+            {attempts.some((a: any) => a.grades && a.grades.length > 0 && a.grades[0].status !== 'PUBLISHED') && (
+              <button
+                onClick={() => openConfirmDialog({
+                  title: "Approve Grades",
+                  description: `Approve all unapproved grades for this exam? This will make the results visible to students. Your name will be attached as the signature for these grades.`,
+                  variant: "warning",
+                  confirmText: "Approve All",
+                  onConfirm: handleApproveAll
+                })}
+                disabled={isApprovingAll}
+                className="flex items-center gap-2 border font-bold text-sm px-4 py-2.5 rounded-xl transition-all shadow-sm bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
+              >
+                {isApprovingAll ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                Approve Grades
+              </button>
+            )}
           </div>
 
           {isLoadingAttempts ? (
@@ -1096,6 +1147,10 @@ export default function ExamPapersPage() {
                   <tr className="border-b border-slate-100 dark:border-slate-800">
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Grade Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Signature</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date Approved</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date Recorded</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Progress</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
@@ -1132,6 +1187,46 @@ export default function ExamPapersPage() {
                           </span>
                         </td>
                         <td className="px-8 py-4">
+                          {attempt.grades && attempt.grades.length > 0 ? (
+                            <span className={`inline-flex items-center w-fit gap-1 border text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${
+                              attempt.grades[0].status === 'PUBLISHED' 
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                            }`}>
+                              {attempt.grades[0].status === 'PUBLISHED' ? "Approved" : "Unapproved"}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-400 italic">No Grade</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-4">
+                          {attempt.grades && attempt.grades.length > 0 && attempt.grades[0].status === 'PUBLISHED' && attempt.grades[0].approverName ? (
+                            <span className="text-[10px] font-bold text-slate-500">
+                              {attempt.grades[0].approverName}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-4">
+                          {attempt.grades && attempt.grades.length > 0 && attempt.grades[0].status === 'PUBLISHED' && attempt.grades[0].approvedAt ? (
+                            <span className="text-[10px] font-bold text-slate-500">
+                              {format(new Date(attempt.grades[0].approvedAt), "MMM d, yyyy")}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-4">
+                          {attempt.grades && attempt.grades.length > 0 && attempt.grades[0].createdAt ? (
+                            <span className="text-[10px] font-bold text-slate-500">
+                              {format(new Date(attempt.grades[0].createdAt), "MMM d, yyyy")}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-4">
                           <div className="flex items-center gap-2">
                             <div className="w-20 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                               <div
@@ -1153,19 +1248,82 @@ export default function ExamPapersPage() {
                           </div>
                         </td>
                         <td className="px-8 py-4 text-right">
-                          <Button
-                            variant="ghost" size="sm"
-                            onClick={() => openConfirmDialog({
-                              title: "Clear Student Record",
-                              description: `Delete ${attempt.student?.name}'s attempt? This removes their answers and lets them retake.`,
-                              variant: "danger",
-                              confirmText: "Clear & Reset",
-                              onConfirm: () => deleteAttemptMutation.mutate(attempt.studentId)
-                            })}
-                            className="h-8 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold text-xs flex items-center gap-1.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Trash2 size={13} /> Clear
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            {attempt.grades && attempt.grades.length > 0 && (
+                              <Button
+                                variant="ghost" size="sm"
+                                disabled={updateGradeMutation.isPending && (updateGradeMutation.variables as any)?.id === attempt.grades[0].id}
+                                onClick={() => {
+                                  const grade = attempt.grades[0];
+                                  const newStatus = grade.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+                                  openConfirmDialog({
+                                    title: newStatus === 'PUBLISHED' ? "Approve Grade" : "Unapprove Grade",
+                                    description: newStatus === 'PUBLISHED' 
+                                      ? `Approve ${attempt.student?.name}'s grade? This will make their result visible. Your name will be attached as the signature for this grade.`
+                                      : `Unapprove ${attempt.student?.name}'s grade? This will hide their result.`,
+                                    variant: "warning",
+                                    confirmText: newStatus === 'PUBLISHED' ? "Approve" : "Unapprove",
+                                    onConfirm: () => updateGradeMutation.mutate(
+                                      { id: grade.id, data: { status: newStatus } },
+                                      { 
+                                        onSuccess: () => {
+                                          toast.success(newStatus === 'PUBLISHED' ? "Grade approved!" : "Grade unapproved!");
+                                          
+                                          queryClient.setQueryData(["exam-attempts", examId], (oldData: any) => {
+                                            if (!oldData) return oldData;
+                                            return oldData.map((a: any) => {
+                                              if (a.grades && a.grades.length > 0 && a.grades[0].id === grade.id) {
+                                                const newGrades = [...a.grades];
+                                                newGrades[0] = { 
+                                                  ...newGrades[0], 
+                                                  status: newStatus,
+                                                  approverName: newStatus === 'PUBLISHED' ? (user?.name || 'Admin') : null,
+                                                  approvedAt: newStatus === 'PUBLISHED' ? new Date().toISOString() : null
+                                                };
+                                                return { ...a, grades: newGrades };
+                                              }
+                                              return a;
+                                            });
+                                          });
+
+                                          queryClient.invalidateQueries({ queryKey: ["exam-attempts", examId] });
+                                          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                        },
+                                        onError: () => {
+                                          toast.error("Failed to update grade status");
+                                        }
+                                      }
+                                    )
+                                  });
+                                }}
+                                className={`h-8 rounded-xl font-bold text-xs flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ${
+                                  attempt.grades[0].status === 'PUBLISHED' 
+                                    ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                    : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                }`}
+                              >
+                                {updateGradeMutation.isPending && (updateGradeMutation.variables as any)?.id === attempt.grades[0].id ? (
+                                  <Loader2 className="animate-spin h-3.5 w-3.5" />
+                                ) : (
+                                  attempt.grades[0].status === 'PUBLISHED' ? <XCircle size={13} /> : <CheckCircle2 size={13} />
+                                )}
+                                {attempt.grades[0].status === 'PUBLISHED' ? "Unapprove" : "Approve"}
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost" size="sm"
+                              onClick={() => openConfirmDialog({
+                                title: "Clear Student Record",
+                                description: `Delete ${attempt.student?.name}'s attempt? This removes their answers and lets them retake.`,
+                                variant: "danger",
+                                confirmText: "Clear & Reset",
+                                onConfirm: () => deleteAttemptMutation.mutate(attempt.studentId)
+                              })}
+                              className="h-8 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold text-xs flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Trash2 size={13} /> Clear
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1200,7 +1358,9 @@ export default function ExamPapersPage() {
           unpublishPaperMutation.isPending ||
           unlinkPaperMutation.isPending ||
           deleteAttemptMutation.isPending ||
-          updateExamMutation.isPending
+          updateExamMutation.isPending ||
+          updateGradeMutation.isPending ||
+          isApprovingAll
         }
       />
 

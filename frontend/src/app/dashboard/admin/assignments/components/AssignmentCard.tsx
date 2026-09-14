@@ -12,7 +12,8 @@ export default function AssignmentCard({
     onGrade,
     onDelete,
     onViewDetails,
-    viewMode
+    viewMode,
+    index
 }: AssignmentCardProps) {
     const [isNavigating, setIsNavigating] = useState(false);
 
@@ -40,16 +41,34 @@ export default function AssignmentCard({
     if (viewMode === 'list') {
         return (
             <motion.div
-                className="group relative grid grid-cols-1 md:grid-cols-[2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800/60 transition-all duration-300 first:rounded-t-2xl last:rounded-b-2xl last:border-0 z-10 cursor-pointer"
+                className="group relative grid grid-cols-1 md:grid-cols-[0.5fr_2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800/60 transition-all duration-300 first:rounded-t-2xl last:rounded-b-2xl last:border-0 z-10 cursor-pointer"
             >
                 <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 opacity-0 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none -z-10 rounded-inherit" />
+                
+                {/* Index Column */}
+                <div className="hidden md:block font-bold text-slate-400 dark:text-slate-500 text-sm">
+                    {index ? String(index).padStart(2, '0') : ''}
+                </div>
+
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                        <FileText size={18} />
+                        {assignment.creator?.profileImage ? (
+                            <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                            <FileText size={18} />
+                        )}
                     </div>
                     <div>
                         <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-primary transition-colors">{assignment.title}</h4>
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{assignment.subject}</span>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{assignment.subject}</span>
+                           {assignment.creator && (
+                               <>
+                               <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+                               <span className="text-[10px] font-bold text-slate-500 truncate max-w-[120px] hidden sm:inline">{assignment.creator.name}</span>
+                               </>
+                           )}
+                        </div>
                     </div>
                 </div>
 
@@ -104,16 +123,25 @@ export default function AssignmentCard({
                 <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 blur-3xl rounded-full"></div>
             )}
 
+            {/* Index Number */}
+            <div className="absolute top-4 left-4 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center text-[10px] font-black z-10 shadow-sm border border-slate-200 dark:border-slate-700">
+                {index ? String(index).padStart(2, '0') : ''}
+            </div>
+
             <div className="flex flex-col items-center text-center mb-6 pt-2">
-                <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 shadow-sm border border-slate-100 dark:border-slate-700/50 group-hover:text-primary group-hover:bg-primary/5 group-hover:border-primary/20 transition-all">
-                    <FileText size={24} />
+                <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 shadow-sm border border-slate-100 dark:border-slate-700/50 group-hover:text-primary group-hover:bg-primary/5 group-hover:border-primary/20 transition-all overflow-hidden">
+                    {assignment.creator?.profileImage ? (
+                        <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-full h-full object-cover" />
+                    ) : (
+                        <FileText size={24} />
+                    )}
                 </div>
                 
                 <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 tracking-tight line-clamp-2 leading-tight mb-2">
                     {assignment.title}
                 </h3>
                 
-                <div className="flex items-center gap-2 justify-center">
+                <div className="flex items-center gap-2 justify-center flex-wrap">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         {assignment.subject}
                     </span>
@@ -121,6 +149,12 @@ export default function AssignmentCard({
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         {assignment.className}
                     </span>
+                    {assignment.creator && (
+                        <>
+                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                        <span className="text-[10px] font-bold text-slate-500">By {assignment.creator.name}</span>
+                        </>
+                    )}
                 </div>
             </div>
 

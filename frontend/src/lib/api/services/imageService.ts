@@ -84,4 +84,53 @@ export const imageService = {
 
     return { publicUrl, key: filePath };
   },
+
+  /**
+   * Delete file from Supabase Storage by its public URL
+   */
+  deleteFromSupabaseByUrl: async (url: string, bucket: string = "school-assets") => {
+    try {
+      if (!url.includes(bucket)) return false;
+      const parts = url.split(`${bucket}/`);
+      if (parts.length < 2) return false;
+      
+      // Handle potential query params in the URL (e.g. ?t=123)
+      const filePath = parts[1].split('?')[0];
+      const supabase = getSupabase();
+      
+      const { error } = await supabase.storage.from(bucket).remove([filePath]);
+      if (error) {
+        console.error("Failed to delete from Supabase:", error);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Error deleting from Supabase:", err);
+      return false;
+    }
+  },
+
+  /**
+   * Get file upload history for the current user
+   */
+  getUploadHistory: async (page: number = 1, limit: number = 50) => {
+    const response = await apiClient.get(`/upload/history?page=${page}&limit=${limit}`);
+    return response.data.data; // { records, total, page, limit }
+  },
+
+  /**
+   * Cleanup unused images from database and Supabase
+   */
+  cleanupUnusedImages: async () => {
+    const response = await apiClient.post(`/upload/cleanup`);
+    const { deletedUrls, deletedCount } = response.data.data;
+    
+    if (deletedUrls && deletedUrls.length > 0) {
+      // Bulk delete the returned unused URLs from Supabase
+      Promise.all(deletedUrls.map((url: string) => imageService.deleteFromSupabaseByUrl(url)))
+        .catch(err => console.error("Failed to delete unused images from Supabase:", err));
+    }
+    
+    return { deletedCount };
+  }
 };

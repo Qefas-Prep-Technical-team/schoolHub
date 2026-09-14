@@ -31,6 +31,7 @@ router.get("/teacher", getTeacherAssignments);
 router.get("/teacher/:id", getTeacherAssignmentById);
 router.post("/teacher", createAssignment);
 router.delete("/teacher/:id", deleteAssignment);
+router.post("/teacher/:id/submissions/:subId/grade", gradeSubmission);
 
 // Admin endpoints (reusing teacher endpoints since admin can view all based on schoolId)
 router.get("/admin", getTeacherAssignments);

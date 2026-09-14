@@ -1,4 +1,5 @@
-import { Eye, Edit, PlusCircle, Trash2, Calendar, FileText, BarChart3, Clock, User } from 'lucide-react';
+import { Eye, Edit, Trash2, ChevronDown, ChevronRight, FileText, Calendar, PlusCircle, BarChart3, Clock, User, Users } from 'lucide-react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -7,6 +8,7 @@ export interface Exam {
   id: string;
   title?: string;
   status: string;
+  mode?: string;
   createdAt?: string;
   totalMarks?: number;
   durationMinutes?: number;
@@ -28,12 +30,24 @@ interface ExamsTableProps {
   viewMode?: 'list' | 'grid';
   currentPage?: number;
   itemsPerPage?: number;
+  mySubjectIds?: string[];
   onDelete?: (exam: Exam) => void;
 }
 
-export default function ExamsTable({ exams, activeTab, viewMode = 'list', currentPage = 1, itemsPerPage = 10, onDelete }: ExamsTableProps) {
+export default function ExamsTable({ exams, activeTab, viewMode = 'list', currentPage = 1, itemsPerPage = 10, mySubjectIds = [], onDelete }: ExamsTableProps) {
   const { user } = useAuthStore();
   const isSubjectPaperTab = activeTab === 'subject-papers';
+  const [expandedExamIds, setExpandedExamIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setExpandedExamIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const getStatusStyles = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -72,14 +86,30 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
     return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=${exam.type || 'exam'}&title=${titleParam}&subject=${subjectParam}`;
   };
 
+  const getEditLink = (exam: any) => {
+    if (exam.mode === 'SINGLE_SUBJECT' && exam.subjectExamPapers?.[0]) {
+      const paperId = exam.subjectExamPapers[0].subjectPaper?.id || exam.subjectExamPapers[0].subjectPaperId;
+      if (paperId) return `/dashboard/teacher/exams&quizzes/papers/${paperId}`;
+    }
+    return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
+  };
+
   if (viewMode === 'grid') {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
         {exams.map((exam, idx) => {
           const baseIndex = (currentPage - 1) * itemsPerPage;
           const numStr = String(baseIndex + idx + 1).padStart(2, '0');
-          const isMyItem = exam.teacherId === user?.id;
-          // For assignments, only the owner can edit/delete
+          let isMyItem = false;
+          if (isSubjectPaperTab) {
+            isMyItem = (exam as any).assignedTeachers?.some((t: any) => t.id === user?.id) || exam.teacherId === user?.id;
+          } else if (activeTab === 'assignment') {
+            const isAssignedSubject = mySubjectIds.includes((exam as any).subjectId || exam.subject?.name); // Using subject object just in case
+            isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || exam.subject?.id);
+          } else {
+            isMyItem = exam.teacherId === user?.id;
+          }
+          // For assignments, only the owner or subject teacher can edit/delete
           const canEdit = activeTab !== 'assignment' || isMyItem;
           
           return (
@@ -88,11 +118,11 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={`group relative rounded-3xl p-5 border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col ${isMyItem ? 'bg-primary/5 border-primary/30 dark:border-primary/20' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}
+              className={`group relative rounded-3xl p-5 border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col ${isMyItem ? 'bg-emerald-500/5 border-emerald-500/30 dark:border-emerald-500/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40'}`}
             >
               {/* Header inside Card */}
               <div className="flex items-start justify-between gap-4">
-                <div className={`p-3 rounded-[1.2rem] bg-primary/5 text-primary group-hover:scale-110 transition-transform duration-500`}>
+                <div className={`p-3 rounded-[1.2rem] ${exam.mode === 'SINGLE_SUBJECT' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-primary/5 text-primary'} group-hover:scale-110 transition-transform duration-500`}>
                   <FileText size={20} strokeWidth={2.5} />
                 </div>
                 
@@ -119,9 +149,15 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 </h4>
                 
                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                    <BarChart3 size={9} />
-                    {isSubjectPaperTab ? (exam.subject?.name || 'No Subject') : (exam.class?.name || 'All Classes')}
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg shrink-0">
+                    <BarChart3 size={10} />
+                    {isSubjectPaperTab 
+                      ? (exam.subject?.name || 'No Subject') 
+                      : (
+                        exam.class?.name 
+                          ? `${exam.class.name}${exam.subject?.name ? ` • ${exam.subject.name}` : ''}` 
+                          : (exam.subject?.name || 'All Classes')
+                      )}
                   </div>
                   {isSubjectPaperTab && (exam.exams?.length || 0) > 0 && (
                     <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2 py-0.5 rounded-md">
@@ -130,17 +166,51 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                     </div>
                   )}
                 </div>
+                
+                {isSubjectPaperTab && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-3 text-[9px] text-slate-500 dark:text-slate-400">
+                     <Users size={10} className="shrink-0" />
+                     {(() => {
+                       const all: any[] = (exam as any).assignedTeachers || [];
+                       return all.length > 0 ? all.map((t: any) => (
+                         <span key={t.id} className={`px-1.5 py-0.5 rounded border font-medium ${t.isCreator ? 'bg-primary/5 text-primary border-primary/20' : 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}>
+                           {t.name?.split(' ')[0] || 'Unknown'}{t.isCreator ? ' (Creator)' : ''}
+                         </span>
+                       )) : <span className="text-slate-400">No teachers</span>;
+                     })()}
+                  </div>
+                )}
+                {activeTab === 'assignment' && (exam as any).creator && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-3 text-[9px] text-slate-500 dark:text-slate-400">
+                     <User size={10} className="shrink-0" />
+                     <span className="px-1.5 py-0.5 rounded border font-medium bg-primary/5 text-primary border-primary/20">
+                       {(exam as any).creator.name?.split(' ')[0] || 'Unknown'} (Creator)
+                     </span>
+                  </div>
+                )}
               </div>
 
               {/* Metrics Divider */}
               <div className="my-4 border-t border-slate-100 dark:border-slate-800/50 pt-4 grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <span className="block text-xs font-black text-slate-900 dark:text-slate-100">{exam.totalMarks || 0}</span>
+                  <span className="block text-xs font-black text-slate-900 dark:text-slate-100">
+                    {(() => {
+                      return exam.totalMarks || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.totalMarks || 0), 0)) || 0;
+                    })()}
+                  </span>
                   <span className="text-[8px] font-black uppercase tracking-tighter text-slate-400">Total Marks</span>
                 </div>
                 <div>
                   <span className="block text-xs font-black text-slate-900 dark:text-slate-100">
-                    {(isSubjectPaperTab || activeTab === 'ca' || activeTab === 'quizzes' || activeTab === 'assignment') ? (exam.questions?.length || 0) : (exam.subjectPapers?.length || 0)}
+                    {(() => {
+                      if (isSubjectPaperTab || activeTab === 'assignment') {
+                        return (exam as any).questionsCount || (exam as any)._count?.questions || exam.questions?.length || 0;
+                      }
+                      if (activeTab === 'ca' || activeTab === 'quizzes') {
+                        return (exam as any).totalQuestions || exam.questions?.length || exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
+                      }
+                      return exam.subjectExamPapers?.length || 0;
+                    })()}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
                     {(isSubjectPaperTab || activeTab === 'ca' || activeTab === 'quizzes' || activeTab === 'assignment') ? 'Questions' : 'Papers'}
@@ -154,7 +224,10 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 <div>
                   <div className="flex items-center justify-center gap-0.5 text-xs font-black text-slate-900 dark:text-slate-100">
                     <Clock size={10} className="text-slate-400" />
-                    {exam.durationMinutes ? `${exam.durationMinutes} min` : 'N/A'}
+                    {(() => {
+                      const dur = exam.durationMinutes || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.durationMinutes || 0), 0)) || 0;
+                      return dur > 0 ? `${dur} min` : 'N/A';
+                    })()}
                   </div>
                   <span className="text-[8px] font-black uppercase tracking-tighter text-slate-400">Duration</span>
                 </div>
@@ -168,29 +241,36 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  {/* Edit button for subject papers */}
+                  {isSubjectPaperTab && isMyItem && (
+                    <Link href={`/dashboard/teacher/exams&quizzes/papers/${exam.id}`}>
+                      <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Paper">
+                        <Edit size={14} strokeWidth={2.5} />
+                      </button>
+                    </Link>
+                  )}
+                  {/* Edit button for exams, quizzes, CA */}
+                  {!isSubjectPaperTab && activeTab !== 'assignment' && isMyItem && (
+                    <Link href={getEditLink(exam)}>
+                      <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assessment">
+                        <Edit size={14} strokeWidth={2.5} />
+                      </button>
+                    </Link>
+                  )}
+                  {/* Edit button for assignments where teacher is assigned/creator */}
+                  {activeTab === 'assignment' && isMyItem && (
+                    <Link href={`/dashboard/teacher/assignments/${exam.id}?edit=true`}>
+                      <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assignment">
+                        <Edit size={14} strokeWidth={2.5} />
+                      </button>
+                    </Link>
+                  )}
                   {/* Preview always visible */}
                   <Link href={getPreviewLink(exam)}>
                     <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Preview">
                       <Eye size={14} strokeWidth={2.5} />
                     </button>
                   </Link>
-                  {/* Edit and Delete only for owner */}
-                  {canEdit && (
-                    <Link href={isSubjectPaperTab ? `/dashboard/teacher/exams&quizzes/papers/${exam.id}` : activeTab === 'assignment' ? `/dashboard/teacher/assignments/${exam.id}` : `/dashboard/teacher/exams&quizzes/${exam.id}/papers`}>
-                      <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Edit">
-                        <Edit size={14} strokeWidth={2.5} />
-                      </button>
-                    </Link>
-                  )}
-                  {canEdit && (
-                    <button 
-                      onClick={() => onDelete?.(exam)}
-                      className="p-3 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90" 
-                      title="Delete"
-                    >
-                      <Trash2 size={14} strokeWidth={2.5} />
-                    </button>
-                  )}
                 </div>
               </div>
             </motion.div>
@@ -216,8 +296,15 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
         {exams.map((exam, idx) => {
           const baseIndex = (currentPage - 1) * itemsPerPage;
           const numStr = String(baseIndex + idx + 1).padStart(2, '0');
-          const isMyItem = exam.teacherId === user?.id;
-          // For assignments, only the owner can edit/delete
+          let isMyItem = false;
+          if (isSubjectPaperTab) {
+            isMyItem = (exam as any).assignedTeachers?.some((t: any) => t.id === user?.id) || exam.teacherId === user?.id;
+          } else if (activeTab === 'assignment') {
+            isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || exam.subject?.id);
+          } else {
+            isMyItem = exam.teacherId === user?.id;
+          }
+          // For assignments, only the owner or subject teacher can edit/delete
           const canEdit = activeTab !== 'assignment' || isMyItem;
 
           return (
@@ -226,16 +313,30 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={`group flex flex-col lg:flex-row items-center cursor-pointer justify-between gap-4 p-4 md:p-5 rounded-2xl border ${isMyItem ? 'bg-primary/[0.02] border-primary/30' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'} hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md`}
+              className={`group flex flex-col items-stretch cursor-pointer gap-4 p-4 md:p-5 rounded-2xl border ${isMyItem ? 'bg-emerald-500/5 border-emerald-500/30 dark:border-emerald-500/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40'} hover:border-emerald-500/50 transition-all duration-300 shadow-sm hover:shadow-md`}
+              onClick={() => {}}
             >
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-4 w-full">
               {/* Title & Context */}
               <div className="flex items-center gap-6 flex-1 min-w-0">
                 {/* Numbering */}
                 <div className="text-sm font-black text-slate-400 dark:text-slate-600 w-8 shrink-0">
                   #{numStr}
                 </div>
-                <div className={`p-3 rounded-[1.2rem] bg-primary/5 text-primary group-hover:scale-110 transition-transform duration-500`}>
-                  <FileText size={20} strokeWidth={2.5} />
+                <div className="flex items-center gap-2 min-w-0">
+                  {(!isSubjectPaperTab && exam.subjectExamPapers && exam.subjectExamPapers.length > 0) ? (
+                    <button 
+                      onClick={(e) => toggleExpand(e, exam.id)}
+                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"
+                    >
+                      {expandedExamIds.has(exam.id) ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    </button>
+                  ) : (
+                    <div className="w-6" /> // spacer
+                  )}
+                  <div className={`p-3 rounded-[1.2rem] ${exam.mode === 'SINGLE_SUBJECT' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'} group-hover:scale-110 transition-transform duration-500 shrink-0`}>
+                    <FileText size={20} strokeWidth={2.5} />
+                  </div>
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-base font-black text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
@@ -244,7 +345,13 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                   <div className="flex flex-wrap items-center gap-3 mt-1.5">
                     <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">
                       <BarChart3 size={10} />
-                      {isSubjectPaperTab ? (exam.subject?.name || 'No Subject') : (exam.class?.name || 'All Classes')}
+                      {isSubjectPaperTab 
+                        ? (exam.subject?.name || 'No Subject') 
+                        : (
+                          exam.class?.name 
+                            ? `${exam.class.name}${exam.subject?.name ? ` • ${exam.subject.name}` : ''}` 
+                            : (exam.subject?.name || 'All Classes')
+                        )}
                     </div>
                     {isSubjectPaperTab && (exam.exams?.length || 0) > 0 && (
                       <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2 py-1 rounded-lg">
@@ -257,6 +364,33 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                       <Calendar size={12} />
                       {new Date(exam.createdAt || '').toLocaleDateString()}
                     </div>
+                    {isSubjectPaperTab && (
+                      <>
+                        <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                           <Users size={12} className="shrink-0" />
+                           {(() => {
+                             const all: any[] = (exam as any).assignedTeachers || [];
+                             return all.length > 0 ? all.map((t: any) => (
+                               <span key={t.id} className={`px-2 py-0.5 rounded-md border font-medium ${t.isCreator ? 'bg-primary/5 text-primary border-primary/20 font-bold' : 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}>
+                                 {t.name || 'Unknown'}{t.isCreator ? ' (Creator)' : ''}
+                               </span>
+                             )) : <span className="text-slate-400">No teachers assigned</span>;
+                           })()}
+                        </div>
+                      </>
+                    )}
+                    {activeTab === 'assignment' && (exam as any).creator && (
+                      <>
+                        <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                           <User size={12} className="shrink-0" />
+                           <span className="px-2 py-0.5 rounded-md border font-medium bg-primary/5 text-primary border-primary/20">
+                             {(exam as any).creator.name || 'Unknown'} (Creator)
+                           </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -264,12 +398,24 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               {/* Metrics */}
               <div className="flex flex-wrap items-center gap-8 px-6 border-x border-slate-100 dark:border-slate-800/50">
                 <div className="flex flex-col items-center">
-                  <span className="text-sm font-black text-slate-900 dark:text-slate-100">{exam.totalMarks || 0}</span>
+                  <span className="text-sm font-black text-slate-900 dark:text-slate-100">
+                    {(() => {
+                      return exam.totalMarks || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.totalMarks || 0), 0)) || 0;
+                    })()}
+                  </span>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Total Marks</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-sm font-black text-slate-900 dark:text-slate-100">
-                    {(isSubjectPaperTab || activeTab === 'ca' || activeTab === 'quizzes' || activeTab === 'assignment') ? (exam.questions?.length || 0) : (exam.subjectPapers?.length || 0)}
+                    {(() => {
+                      if (isSubjectPaperTab || activeTab === 'assignment') {
+                        return (exam as any).questionsCount || (exam as any)._count?.questions || exam.questions?.length || 0;
+                      }
+                      if (activeTab === 'ca' || activeTab === 'quizzes') {
+                        return (exam as any).totalQuestions || exam.questions?.length || exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
+                      }
+                      return exam.subjectExamPapers?.length || 0;
+                    })()}
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">
                     {(isSubjectPaperTab || activeTab === 'ca' || activeTab === 'quizzes' || activeTab === 'assignment') ? 'Questions' : 'Papers'}
@@ -278,7 +424,10 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1 text-sm font-black text-slate-900 dark:text-slate-100">
                     <Clock size={12} className="text-slate-400" />
-                    {exam.durationMinutes ? `${exam.durationMinutes} min` : 'N/A'}
+                    {(() => {
+                      const dur = exam.durationMinutes || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.durationMinutes || 0), 0)) || 0;
+                      return dur > 0 ? `${dur} min` : 'N/A';
+                    })()}
                   </div>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Duration</span>
                 </div>
@@ -303,31 +452,113 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Edit button for subject papers where teacher is assigned */}
+                  {isSubjectPaperTab && isMyItem && (
+                    <Link href={`/dashboard/teacher/exams&quizzes/papers/${exam.id}`}>
+                      <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Paper">
+                        <Edit size={16} strokeWidth={2.5} />
+                      </button>
+                    </Link>
+                  )}
+                  {/* Edit button for exams, quizzes, CA */}
+                  {!isSubjectPaperTab && activeTab !== 'assignment' && isMyItem && (
+                    <Link href={getEditLink(exam)}>
+                      <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assessment">
+                        <Edit size={16} strokeWidth={2.5} />
+                      </button>
+                    </Link>
+                  )}
+                  {/* Edit button for assignments where teacher is assigned/creator */}
+                  {activeTab === 'assignment' && isMyItem && (
+                    <Link href={`/dashboard/teacher/assignments/${exam.id}?edit=true`}>
+                      <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assignment">
+                        <Edit size={16} strokeWidth={2.5} />
+                      </button>
+                    </Link>
+                  )}
                   {/* Preview always visible */}
                   <Link href={getPreviewLink(exam)}>
                     <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Preview">
                       <Eye size={16} strokeWidth={2.5} />
                     </button>
                   </Link>
-                  {/* Edit and Delete only for owner */}
-                  {canEdit && (
-                    <Link href={isSubjectPaperTab ? `/dashboard/teacher/exams&quizzes/papers/${exam.id}` : activeTab === 'assignment' ? `/dashboard/teacher/assignments/${exam.id}` : `/dashboard/teacher/exams&quizzes/${exam.id}/papers`}>
-                      <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Edit">
-                        <Edit size={16} strokeWidth={2.5} />
-                      </button>
-                    </Link>
-                  )}
-                  {canEdit && (
-                    <button 
-                      onClick={() => onDelete?.(exam)}
-                      className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90" 
-                      title="Delete"
-                    >
-                      <Trash2 size={16} strokeWidth={2.5} />
-                    </button>
-                  )}
                 </div>
               </div>
+                </div>
+              
+              {/* Expanded Papers Section */}
+              {expandedExamIds.has(exam.id) && exam.subjectExamPapers && exam.subjectExamPapers.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-200/50 dark:border-slate-700/50 animate-in slide-in-from-top-2 fade-in duration-200">
+                  <h4 className="text-xs font-bold text-slate-500 dark:text-emerald-400 mb-3 uppercase tracking-wider pl-4">Subject Papers</h4>
+                  <div className="grid gap-3">
+                    {exam.subjectExamPapers.map((paper: any) => {
+                      // Use pre-built assignedTeachers from backend (deduplicated from TeacherSubject + Subject.teacherId + SubjectExamPaper.teacherId)
+                      const allTeachers: any[] = paper.assignedTeachers?.length > 0 ? paper.assignedTeachers : (exam.assignedTeachers ?? []);
+                      const isMine = allTeachers.some((t: any) => t.id === user?.id) || paper.teacherId === user?.id || exam.teacherId === user?.id;
+
+                      return (
+                        <div key={paper.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl p-3 shadow-sm bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800 gap-3 group/paper hover:border-emerald-500/30 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/40">
+                              <FileText className="text-emerald-600 dark:text-emerald-400" size={16} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                  {(() => {
+                                    const subjectName = paper.subject?.name || exam.subject?.name;
+                                    return subjectName && subjectName !== paper.title 
+                                      ? `${subjectName} : ${paper.title}` 
+                                      : paper.title || 'Untitled Paper';
+                                  })()}
+                                </p>
+                                {isMine && (
+                                  <span className="flex items-center justify-center gap-1 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] rounded-md border border-primary/20 bg-primary/10 text-primary shrink-0">
+                                    <User size={8} /> Mine
+                                  </span>
+                                )}
+                              </div>
+                              {allTeachers.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                                  <Users size={10} className="shrink-0" />
+                                  <span className="shrink-0">Teachers:</span>
+                                  {allTeachers.slice(0, 5).map((t: any) => (
+                                    <span key={t.id} className="bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md font-medium">
+                                      {t.name || 'Unknown'}
+                                    </span>
+                                  ))}
+                                  {allTeachers.length > 5 && (
+                                    <span className="bg-slate-200 dark:bg-slate-700/80 px-2 py-0.5 rounded-md font-medium">
+                                      +{allTeachers.length - 5} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="flex flex-col items-center">
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{paper.questionsCount || paper.questions?.length || 0}</p>
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Questions</p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{paper.totalMarks || 0}</p>
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Marks</p>
+                          </div>
+                          {isMine && (
+                            <Link href={`/dashboard/teacher/exams&quizzes/papers/${paper.id}`}>
+                              <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Edit Paper">
+                                <Edit size={14} strokeWidth={2.5} />
+                              </button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  </div>
+                </div>
+              )}
             </motion.div>
           );
         })}

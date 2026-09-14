@@ -11,7 +11,7 @@ interface StatusBadgeProps {
 
 export default function StatusBadge({ status, className = '' }: StatusBadgeProps) {
     const getStatusConfig = (status: string) => {
-        switch (status) {
+        switch (status?.toLowerCase()) {
             case 'published':
             case 'on-time':
                 return {
@@ -45,8 +45,8 @@ export default function StatusBadge({ status, className = '' }: StatusBadgeProps
                 };
             case 'graded':
                 return {
-                    bg: 'bg-purple-100 dark:bg-purple-900/50',
-                    text: 'text-purple-800 dark:text-purple-300',
+                    bg: 'bg-emerald-100 dark:bg-emerald-900/50',
+                    text: 'text-emerald-800 dark:text-emerald-300',
                     label: 'Graded'
                 };
             default:

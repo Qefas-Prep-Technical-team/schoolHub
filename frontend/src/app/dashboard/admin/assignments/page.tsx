@@ -116,7 +116,7 @@ export default function AssignmentsPage() {
 
     return (
         <main className="min-h-screen bg-transparent p-4 md:p-8 lg:p-12">
-            <div className="max-w-7xl mx-auto space-y-10">
+            <div className="w-[90%] mx-auto space-y-10">
                 {/* Page Header Modernized */}
                 <PageHeader
                     title="Assignments"
@@ -206,7 +206,7 @@ export default function AssignmentsPage() {
                                 exit={{ opacity: 0 }}
                                 className="pt-4"
                             >
-                                <AssignmentsSkeleton />
+                                <AssignmentsSkeleton view={view} />
                             </motion.div>
                         ) : filteredAssignments.length > 0 ? (
                             <motion.div
@@ -217,7 +217,8 @@ export default function AssignmentsPage() {
                                 className="pt-4"
                             >
                                 {view === 'list' && (
-                                    <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-t-2xl">
+                                    <div className="hidden md:grid grid-cols-[0.5fr_2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-t-2xl">
+                                        <div>#</div>
                                         <div>Assignment Details</div>
                                         <div>Class</div>
                                         <div>Deadline</div>
@@ -230,13 +231,14 @@ export default function AssignmentsPage() {
                                     ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
                                     : "flex flex-col bg-white dark:bg-slate-900 rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800 shadow-sm"
                                 }>
-                                    {paginatedAssignments.map((assignment: any) => {
+                                {paginatedAssignments.map((assignment: any, index: number) => {
                                         const totalStudents = typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (typeof assignment.class === 'object' && assignment.class?._count?.enrollments ? assignment.class._count.enrollments : 0);
                                         const submitted = assignment._count?.submissions || 0;
                                         const progress = totalStudents > 0 ? Math.round((submitted / totalStudents) * 100) : 0;
                                         return (
                                             <AssignmentCard
                                                 key={assignment.id}
+                                                index={(currentPage - 1) * itemsPerPage + index + 1}
                                                 assignment={{
                                                     ...assignment,
                                                     subject: typeof assignment.subject === 'string' ? assignment.subject : (assignment.subject?.name || "General"),

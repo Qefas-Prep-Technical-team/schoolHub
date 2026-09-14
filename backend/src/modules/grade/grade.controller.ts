@@ -69,6 +69,16 @@ export const publishGrade = async (req: Request, res: Response) => {
   }
 };
 
+export const bulkPublishGrades = async (req: Request, res: Response) => {
+  try {
+    const filters = req.body;
+    const count = await gradeService.bulkPublishGradesService(filters);
+    res.json({ success: true, count, message: `${count} grades published successfully` });
+  } catch (error: any) {
+    return handleError(res, error, "grade.bulkPublishGrades");
+  }
+};
+
 export const processOCR = async (req: Request, res: Response) => {
   try {
     const { imageUrl } = req.body;

@@ -52,7 +52,8 @@ export const getTeacherAssignmentById = async (req: Request, res: Response) => {
     }
 
     const safeId = Array.isArray(id) ? id[0] : id as string;
-    const data = await assignmentService.getTeacherAssignmentByIdService(safeId, schoolId);
+    const teacherId = (req as any).user?.id || (req as any).user?.userId;
+    const data = await assignmentService.getTeacherAssignmentByIdService(safeId, schoolId, teacherId);
 
     return res.status(200).json({ success: true, data });
   } catch (error) {
@@ -87,14 +88,11 @@ export const getTeacherAssignments = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Missing or invalid school ID" });
     }
 
-    // Determine if user is admin or teacher based on context/role if needed.
-    // For now, if role is TEACHER, pass teacherId. If admin, pass undefined to fetch all.
-    const isTeacher = req.user?.userType === "TEACHER";
     const { status, page = "1", limit = "10" } = req.query;
 
     const data = await assignmentService.getTeacherAssignmentsService({
       schoolId,
-      teacherId: isTeacher ? userId : undefined,
+      teacherId: userId,
       status: status as string,
       page: parseInt(page as string),
       limit: parseInt(limit as string),
@@ -283,7 +281,9 @@ export const gradeSubmission = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Missing or invalid grades payload' });
     }
 
-    await assignmentService.gradeSubmissionService(safeAssignmentId, safeSubId, schoolId, grades);
+    const userId = (req as any).user?.id;
+    const userType = (req as any).user?.userType;
+    await assignmentService.gradeSubmissionService(safeAssignmentId, safeSubId, schoolId, grades, userId, userType);
     return res.status(200).json({ success: true, message: 'Submission graded successfully' });
   } catch (error) {
     return handleError(res, error, 'assignment.gradeSubmission');

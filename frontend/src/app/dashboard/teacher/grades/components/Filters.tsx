@@ -19,18 +19,18 @@ const Filters: React.FC<FiltersProps> = ({ filters, onFilterSelect }) => {
         <DropdownMenu key={filter.value}>
           <DropdownMenuTrigger asChild>
             <button
-              className="group flex h-10 shrink-0 items-center justify-center gap-x-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-95 transition-all duration-200"
+              className="group flex h-10 shrink-0 items-center justify-center gap-x-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 px-4 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-200 dark:hover:border-emerald-700 hover:shadow-sm active:scale-95 transition-all duration-200"
             >
               <p className="text-sm font-semibold tracking-tight">{filter.label}</p>
-              <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors" />
+              <ChevronDown className="h-4 w-4 text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[200px] rounded-xl shadow-xl border-slate-200 dark:border-slate-800 p-1.5">
+          <DropdownMenuContent align="start" className="w-[200px] rounded-xl shadow-xl border-emerald-200 dark:border-emerald-800/50 bg-white dark:bg-slate-900 p-1.5">
             {filter.options?.map((option) => (
               <DropdownMenuItem
                 key={option.value}
                 onClick={() => onFilterSelect(filter.value, option.value)}
-                className="cursor-pointer rounded-lg focus:bg-primary/5 focus:text-primary transition-colors py-2 px-3 text-sm font-medium"
+                className="cursor-pointer rounded-lg focus:bg-emerald-50 focus:text-emerald-700 dark:focus:bg-emerald-900/20 dark:focus:text-emerald-400 transition-colors py-2 px-3 text-sm font-medium"
               >
                 {option.label}
               </DropdownMenuItem>

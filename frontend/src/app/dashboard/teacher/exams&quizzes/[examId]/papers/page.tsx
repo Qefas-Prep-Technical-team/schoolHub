@@ -813,21 +813,6 @@ export default function ExamPapersPage() {
               </DialogContent>
             </Dialog>
 
-            {/* Grades toggle */}
-            <button
-              onClick={() => openConfirmDialog({
-                title: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
-                description: exam?.allowImmediateResult ? "Students will no longer see their results." : "All students will immediately see their results.",
-                variant: "warning",
-                confirmText: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
-                onConfirm: () => updateExamMutation.mutate({ allowImmediateResult: !exam?.allowImmediateResult })
-              })}
-              disabled={updateExamMutation.isPending}
-              className={`flex items-center gap-2 border font-bold text-sm px-4 py-2.5 rounded-xl transition-all ${exam?.allowImmediateResult ? "bg-amber-500/15 border-amber-500/30 text-amber-400 hover:bg-amber-500/25" : "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25"}`}
-            >
-              {exam?.allowImmediateResult ? <Lock size={15} /> : <Unlock size={15} />}
-              {exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades"}
-            </button>
 
             {/* Delete — admin only */}
             {user?.userType === "ADMIN" && (
@@ -1058,6 +1043,20 @@ export default function ExamPapersPage() {
                 <p className="text-xs font-medium text-slate-400 mt-0.5">Students who have started or submitted this examination</p>
               </div>
             </div>
+            <button
+              onClick={() => openConfirmDialog({
+                title: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
+                description: exam?.allowImmediateResult ? "Students will no longer see their results." : "All students will immediately see their results.",
+                variant: "warning",
+                confirmText: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
+                onConfirm: () => updateExamMutation.mutate({ allowImmediateResult: !exam?.allowImmediateResult })
+              })}
+              disabled={updateExamMutation.isPending}
+              className={`flex items-center gap-2 border font-bold text-sm px-4 py-2.5 rounded-xl transition-all shadow-sm ${exam?.allowImmediateResult ? "bg-amber-500/15 border-amber-500/30 text-amber-400 hover:bg-amber-500/25" : "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25"}`}
+            >
+              {exam?.allowImmediateResult ? <Lock size={15} /> : <Unlock size={15} />}
+              {exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades"}
+            </button>
           </div>
 
           {isLoadingAttempts ? (
@@ -1078,6 +1077,7 @@ export default function ExamPapersPage() {
                   <tr className="border-b border-slate-100 dark:border-slate-800">
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Grade Status</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Progress</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
                     <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
@@ -1112,6 +1112,19 @@ export default function ExamPapersPage() {
                           <span className={`inline-flex items-center gap-1 border text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${statusCls}`}>
                             {attempt.status}
                           </span>
+                        </td>
+                        <td className="px-8 py-4">
+                          {attempt.grades && attempt.grades.length > 0 ? (
+                            <span className={`inline-flex items-center gap-1 border text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${
+                              attempt.grades[0].status === 'PUBLISHED' 
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                            }`}>
+                              {attempt.grades[0].status === 'PUBLISHED' ? "Approved" : "Unapproved"}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-400 italic">No Grade</span>
+                          )}
                         </td>
                         <td className="px-8 py-4">
                           <div className="flex items-center gap-2">

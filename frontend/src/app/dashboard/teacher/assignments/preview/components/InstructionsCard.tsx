@@ -10,22 +10,22 @@ interface InstructionsCardProps {
 
 export default function InstructionsCard({ assignment }: InstructionsCardProps) {
     return (
-        <div className="bg-white dark:bg-[#191e2b] rounded-xl p-6">
+        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-xl p-6">
             <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
                 Instructions
             </h2>
 
             <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-6">
-                <div dangerouslySetInnerHTML={{ __html: assignment.instructions }} />
+                <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: assignment.instructions || (assignment as any).description || '' }} />
             </div>
 
-            {assignment.attachments.length > 0 && (
+            {assignment.attachments && assignment.attachments.length > 0 && (
                 <>
                     <h3 className="text-gray-800 dark:text-gray-200 text-base font-bold mt-6 mb-3">
                         Attachments
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {assignment.attachments.map((attachment) => (
+                        {assignment.attachments.map((attachment: any) => (
                             <AttachmentCard
                                 key={attachment.id}
                                 attachment={attachment}

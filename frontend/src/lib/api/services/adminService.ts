@@ -97,6 +97,14 @@ export const adminService = {
   },
 
   /**
+   * Unassign teacher from class
+   */
+  unassignTeacherFromClass: async (teacherId: string, classId: string) => {
+    const response = await apiClient.delete(`/admin/teachers/${teacherId}/remove-class/${classId}`);
+    return response.data;
+  },
+
+  /**
    * Delete timetable period
    */
   deleteTimetablePeriod: async (teacherId: string, periodId: string) => {

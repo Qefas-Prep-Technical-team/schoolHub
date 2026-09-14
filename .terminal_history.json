@@ -3,116 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "cd mobile",
-      "timestamp": 1782196591143,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd backend",
-      "timestamp": 1782196598914,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "cd ../",
-      "timestamp": 1782196624976,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "cd backend",
-      "timestamp": 1782196630247,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "npx expo start -c",
-      "timestamp": 1782197124225,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_cwb91g.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_cwb91g.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782198518750,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git add .",
-      "timestamp": 1782198523872,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git commit -m \"merge fixed \"",
-      "timestamp": 1782198569452,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git push origin",
-      "timestamp": 1782198582874,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "npx expo start -c",
-      "timestamp": 1782237744511,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "cd ../",
-      "timestamp": 1782237747206,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "git pull origin",
-      "timestamp": 1782237761749,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_yeo7pp.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_yeo7pp.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782289034512,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_8viswk.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_8viswk.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782289043712,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_jt0kq9.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_jt0kq9.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782289044660,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd mobile",
-      "timestamp": 1782289064094,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd ../",
-      "timestamp": 1782289068332,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "git status",
-      "timestamp": 1782289234504,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd backend",
-      "timestamp": 1782289249029,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "clea",
-      "timestamp": 1782289251822,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npm i",
-      "timestamp": 1782289289117,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx expo start -c",
-      "timestamp": 1782293106943,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
       "command": "npm run dev",
       "timestamp": 1782362636488,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
@@ -2501,7 +2391,117 @@
       "command": "cd ../",
       "timestamp": 1789042292735,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1789042299159,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"completed the teacher ui updaet and security fixes \"",
+      "timestamp": 1789042320257,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1789042332230,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789042503900,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd fron& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_o6z9br.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_o6z9br.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1789061930688,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_6lemgh.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_6lemgh.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1789061930705,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd frontend",
+      "timestamp": 1789061938094,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789061948440,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789117109262,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "c;ear",
+      "timestamp": 1789235589472,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789245951111,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "clea",
+      "timestamp": 1789248161184,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789311975760,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "cleare",
+      "timestamp": 1789317568589,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789328077113,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_pno4zk.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_pno4zk.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1789395916814,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_4tifos.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_4tifos.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1789396057859,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd frontend",
+      "timestamp": 1789396062563,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789396066157,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "clea",
+      "timestamp": 1789396068355,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789396603170,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "cd ../",
+      "timestamp": 1789400953345,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
     }
   ],
-  "lastUpdated": 1789042292735
+  "lastUpdated": 1789400953345
 }

@@ -23,6 +23,7 @@ import {
   Pencil,
 } from "lucide-react";
 import FormulaPalette from "./FormulaPalette";
+import MediaLibraryModal from "./MediaLibraryModal";
 
 // ─── Question Editor — Normal/Math tab switcher ───────────────────────────────
 function QuestionEditorPane({
@@ -257,12 +258,37 @@ export default function ManualAddForm({
   });
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [imageLabels, setImageLabels] = useState<string[]>(initialData?.imageLabels || []);
-  const [isUploading, setIsUploading] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [sessionUploads, setSessionUploads] = useState<string[]>([]);
+  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [explanation, setExplanation] = useState(initialData?.explanation || "");
   const [showPalette, setShowPalette] = useState(true);
   const [editorMode, setEditorMode] = useState<'normal' | 'math'>('normal');
   const questionRef = useRef<HTMLTextAreaElement>(null);
   const isEditing = !!initialData;
+
+  useEffect(() => {
+    if (pendingUploads.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        const next = { ...prev };
+        let changed = false;
+        pendingUploads.forEach(id => {
+          const current = next[id] || 0;
+          if (current < 95) {
+            // Increments quickly at first, then slows down
+            next[id] = current + Math.max(1, (95 - current) * 0.1);
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [pendingUploads]);
 
 
   const addQuestionMutation = useMutation({
@@ -283,6 +309,14 @@ export default function ManualAddForm({
     },
   });
 
+  const handleCancel = () => {
+    if (sessionUploads.length > 0) {
+      Promise.all(sessionUploads.map(url => imageService.deleteFromSupabaseByUrl(url)))
+        .catch(err => console.error("Failed to cleanup session uploads on cancel:", err));
+    }
+    onCancel();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim()) {
@@ -293,6 +327,15 @@ export default function ManualAddForm({
       toast.error("At least options A and B are required");
       return;
     }
+
+    // Clean up removed images from storage
+    const allKnownImages = [...(initialData?.images || []), ...sessionUploads];
+    const removedImages = allKnownImages.filter(url => !images.includes(url));
+    if (removedImages.length > 0) {
+      Promise.all(removedImages.map(url => imageService.deleteFromSupabaseByUrl(url)))
+        .catch(err => console.error("Failed to cleanup removed images:", err));
+    }
+
     addQuestionMutation.mutate({
       type: type === "ESSAY" ? "SHORT_ANSWER" : type,
       question,
@@ -403,78 +446,128 @@ export default function ManualAddForm({
           />
 
           {/* Question images */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">
                 Question Images <span className="normal-case font-medium text-slate-400">(optional)</span>
               </Label>
-              <div>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  id="question-images"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const files = e.target.files;
-                    if (!files || files.length === 0) return;
-                    setIsUploading(true);
-                    try {
-                      const results = await Promise.all(
-                        Array.from(files).map((f) => imageService.proxyUploadToBunny(f))
-                      );
-                      setImages((prev) => [...prev, ...results.map((r) => r.publicUrl)]);
-                      toast.success(`${files.length} image${files.length > 1 ? "s" : ""} uploaded`);
-                    } catch {
-                      toast.error("Upload failed");
-                    } finally {
-                      setIsUploading(false);
+              
+              {/* ALWAYS render the hidden input so other buttons can click it */}
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                id="question-images"
+                className="hidden"
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  
+                  let filesToUpload = Array.from(files);
+                  const totalActive = images.length + pendingUploads.length;
+                  const totalAfter = totalActive + filesToUpload.length;
+                  
+                  if (totalAfter > 3) {
+                    const allowed = 3 - totalActive;
+                    if (allowed <= 0) {
+                      toast.error("Maximum 3 images allowed per question.");
+                      e.target.value = "";
+                      return;
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isUploading}
-                  onClick={() => document.getElementById("question-images")?.click()}
-                  className="h-8 rounded-xl text-xs font-bold gap-2 border-dashed"
-                >
-                  {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload size={13} />}
-                  {isUploading ? "Uploading…" : "Upload Image"}
-                </Button>
-              </div>
+                    toast.warning(`Only ${allowed} more image${allowed > 1 ? 's' : ''} allowed. Limiting selection.`);
+                    filesToUpload = filesToUpload.slice(0, allowed);
+                  }
+                  
+                  // Generate unique IDs for this batch of placeholders
+                  const batchIds = filesToUpload.map(() => Math.random().toString(36).substring(7));
+                  setPendingUploads(prev => [...prev, ...batchIds]);
+
+                  try {
+                    const results = await Promise.all(
+                      filesToUpload.map((f) => imageService.proxyUploadToBunny(f))
+                    );
+                    const newUrls = results.map((r) => r.publicUrl);
+                    setImages((prev) => [...prev, ...newUrls]);
+                    setSessionUploads((prev) => [...prev, ...newUrls]);
+                    toast.success(`${filesToUpload.length} image${filesToUpload.length > 1 ? "s" : ""} uploaded`);
+                  } catch {
+                    toast.error("Upload failed");
+                  } finally {
+                    setPendingUploads(prev => prev.filter(id => !batchIds.includes(id)));
+                    e.target.value = "";
+                  }
+                }}
+              />
             </div>
-            {images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {images.map((url, i) => (
-                  <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <img src={url} alt="" className="w-full h-28 object-cover" />
-                    <input
-                      type="text"
-                      placeholder="Add caption…"
-                      value={imageLabels[i] || ""}
-                      onChange={(e) => {
-                        const next = [...imageLabels];
-                        next[i] = e.target.value;
-                        setImageLabels(next);
-                      }}
-                      className="absolute bottom-0 left-0 right-0 text-[10px] px-2 py-1 bg-black/50 text-white placeholder:text-white/50 border-none outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImages((prev) => prev.filter((_, idx) => idx !== i));
-                        setImageLabels((prev) => prev.filter((_, idx) => idx !== i));
-                      }}
-                      className="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={11} />
-                    </button>
+                  <div key={i} className="flex flex-col gap-2">
+                    <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                      <img src={url} alt="" className="w-full h-28 object-contain" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImages((prev) => prev.filter((_, idx) => idx !== i));
+                          setImageLabels((prev) => prev.filter((_, idx) => idx !== i));
+                        }}
+                        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove image"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                    {/* Explicit Label Input */}
+                    <div className="flex items-center gap-2 px-1">
+                      <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 shrink-0">
+                        Label
+                      </Label>
+                      <Input
+                        type="text"
+                        placeholder="e.g. Figure 1"
+                        value={imageLabels[i] || ""}
+                        onChange={(e) => {
+                          const next = [...imageLabels];
+                          next[i] = e.target.value;
+                          setImageLabels(next);
+                        }}
+                        className="h-7 text-xs flex-1 rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-2"
+                      />
+                    </div>
                   </div>
                 ))}
+                
+                {/* Uploading Placeholders */}
+                {pendingUploads.map((id) => (
+                  <div key={`uploading-${id}`} className="flex flex-col gap-2">
+                    <div className="flex flex-col items-center justify-center h-28 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                      <Loader2 className="h-6 w-6 animate-spin text-slate-400 mb-2" />
+                      <span className="text-[10px] uppercase font-bold text-slate-400">Uploading</span>
+                    </div>
+                    {/* Progress Bar under the box */}
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-0 relative">
+                      <div 
+                        className="bg-primary h-full rounded-full transition-all duration-200 ease-out absolute left-0 top-0"
+                        style={{ width: `${Math.min(uploadProgress[id] || 0, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Add Image Button in Grid (Always available if under limit) */}
+                {(images.length + pendingUploads.length) < 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMediaLibraryOpen(true)}
+                    className="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all gap-2 mt-0"
+                  >
+                    <Plus size={20} />
+                    <span className="text-xs font-bold">
+                      {(images.length + pendingUploads.length) === 0 ? "Add image" : "Add another image"}
+                    </span>
+                  </button>
+                )}
               </div>
-            )}
           </div>
 
           {/* ── Options section ─────────────────────────────────────── */}
@@ -599,7 +692,7 @@ export default function ManualAddForm({
         <Button
           type="button"
           variant="ghost"
-          onClick={onCancel}
+          onClick={handleCancel}
           className="rounded-xl font-bold"
         >
           Cancel
@@ -622,6 +715,21 @@ export default function ManualAddForm({
           )}
         </Button>
       </div>
+      
+      {/* Media Library Modal */}
+      <MediaLibraryModal 
+        isOpen={isMediaLibraryOpen}
+        onClose={() => setIsMediaLibraryOpen(false)}
+        currentImages={images}
+        onSelectImage={(url) => {
+          setImages(prev => [...prev, url]);
+          toast.success("Image added from library");
+        }}
+        onTriggerUpload={() => {
+          setIsMediaLibraryOpen(false);
+          document.getElementById("question-images")?.click();
+        }}
+      />
     </form>
   );
 }

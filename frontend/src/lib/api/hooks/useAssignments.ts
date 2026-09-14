@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient as api } from '../client';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 export interface Assignment {
   id: string;
@@ -150,10 +151,12 @@ export const useDeleteAssignment = (schoolId: string) => {
 
 export const useGradeSubmission = (schoolId: string) => {
   const queryClient = useQueryClient();
+  const user = useAuthStore(state => state.user);
   
   return useMutation({
     mutationFn: async ({ assignmentId, submissionId, grades }: { assignmentId: string, submissionId: string, grades: Array<{ answerId: string, isCorrect: boolean, score: number, teacherComment?: string }> }) => {
-      const response = await api.post(`/assignment/admin/${assignmentId}/submissions/${submissionId}/grade`, { grades }, {
+      const rolePath = user?.userType === 'TEACHER' ? 'teacher' : 'admin';
+      const response = await api.post(`/assignment/${rolePath}/${assignmentId}/submissions/${submissionId}/grade`, { grades }, {
         headers: { 'x-school-id': schoolId }
       });
       return response.data;

@@ -11,6 +11,7 @@ import { sendTeacherInvitationEmail } from "../auth/auth.service";
 import crypto from "crypto";
 import { enforceTeacherLimit } from "../subscription/quota.helpers";
 import { handleError } from "../../utils/error-handler";
+import { createNotification } from "../notification/notification.service";
 
 /**
  * Get detailed teacher information by ID
@@ -28,7 +29,15 @@ export const getTeacherById = async (req: Request, res: Response) => {
         currentSchool: true,
         teacherSubjects: {
           include: {
-            subject: true,
+            subject: {
+              include: {
+                departments: {
+                  include: {
+                    department: true
+                  }
+                }
+              }
+            },
           },
         },
         classTeachers: {
@@ -77,7 +86,11 @@ export const getTeacherById = async (req: Request, res: Response) => {
       },
       professionalInfo: {
         department: teacher.department || "General",
-        subjects: teacher.teacherSubjects.map((ts: any) => ({ id: ts.subject.id, name: ts.subject.name })),
+        subjects: teacher.teacherSubjects.map((ts: any) => ({
+          id: ts.subject.id,
+          name: ts.subject.name,
+          departments: ts.subject.departments?.map((ds: any) => ds.department?.name).filter(Boolean) || []
+        })),
         assignedClasses: teacher.classTeachers.map((ct: any) => ({ id: ct.class.id, name: ct.class.name })),
       },
       statistics: {
@@ -151,6 +164,17 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
         isLead,
       },
     });
+
+    const classRecord = await prisma.class.findUnique({ where: { id: classId } });
+    if (classRecord) {
+      await createNotification({
+        recipientType: "TEACHER",
+        recipientId: teacherId,
+        type: "ACADEMIC",
+        title: "Class Assignment",
+        message: `You have been assigned to class ${classRecord.name}.`,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -229,6 +253,14 @@ export const assignTeacherToSubject = async (req: Request, res: Response) => {
       },
     });
 
+    await createNotification({
+      recipientType: "TEACHER",
+      recipientId: teacherId,
+      type: "ACADEMIC",
+      title: "Subject Assignment",
+      message: `You have been assigned to teach ${subject.name}.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Teacher assigned to subject successfully",
@@ -248,13 +280,17 @@ export const assignTeacherToSubject = async (req: Request, res: Response) => {
  */
 export const removeTeacherFromSubject = async (req: Request, res: Response) => {
   try {
-    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
-    const subjectId = getSingleString(req.params.subjectId as string | string[] | undefined);
+    const teacherId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
+    const subjectId = getSingleString(
+      req.params.subjectId as string | string[] | undefined,
+    );
 
-    if (!subjectId) {
+    if (!teacherId || !subjectId) {
       return res.status(400).json({
         success: false,
-        message: "subjectId is required",
+        message: "Teacher ID and Subject ID are required",
       });
     }
 
@@ -262,38 +298,52 @@ export const removeTeacherFromSubject = async (req: Request, res: Response) => {
       where: { id: subjectId },
     });
 
-    if (!subject || !subject.schoolId) {
+    if (!subject) {
       return res.status(404).json({
         success: false,
-        message: "Subject not found or has no school associated",
+        message: "Subject not found",
       });
     }
 
-    // Resolve real teacher ID if inputId is a teacherCode
-    let realTeacherId = teacherId;
-    const teacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [{ id: teacherId }, { teacherCode: teacherId }],
-      },
-      select: { id: true },
-    });
-
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher not found",
-      });
-    }
-    realTeacherId = teacher.id;
-
-    await prisma.teacherSubject.delete({
-      where: {
-        teacherId_subjectId_schoolId: {
-          teacherId: realTeacherId,
-          subjectId,
-          schoolId: subject.schoolId,
+    // Try deleting from teacherSubject join table
+    let deletedCount = 0;
+    try {
+      await prisma.teacherSubject.delete({
+        where: {
+          teacherId_subjectId_schoolId: {
+            teacherId,
+            subjectId,
+            schoolId: subject.schoolId || '',
+          },
         },
-      },
+      });
+      deletedCount++;
+    } catch (err: any) {
+      // Ignore if not found
+    }
+
+    // Also check if they are the primary teacher on the Subject model
+    if (subject.teacherId === teacherId) {
+      await prisma.subject.update({
+        where: { id: subjectId },
+        data: { teacherId: null },
+      });
+      deletedCount++;
+    }
+
+    if (deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher was not assigned to this subject",
+      });
+    }
+
+    await createNotification({
+      recipientType: "TEACHER",
+      recipientId: teacherId,
+      type: "ACADEMIC",
+      title: "Subject Unassigned",
+      message: `You have been unassigned from teaching ${subject.name}.`,
     });
 
     return res.status(200).json({
@@ -302,6 +352,69 @@ export const removeTeacherFromSubject = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("removeTeacherFromSubject error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Remove a teacher from a class
+ */
+export const removeTeacherFromClass = async (req: Request, res: Response) => {
+  try {
+    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
+    const classId = getSingleString(req.params.classId as string | string[] | undefined);
+
+    if (!teacherId || !classId) {
+      return res.status(400).json({
+        success: false,
+        message: "Teacher ID and Class ID are required",
+      });
+    }
+
+    const classRecord = await prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found",
+      });
+    }
+
+    try {
+      await prisma.classTeacher.delete({
+        where: {
+          classId_teacherId: {
+            classId,
+            teacherId,
+          },
+        },
+      });
+    } catch (err: any) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher was not assigned to this class",
+      });
+    }
+
+    await createNotification({
+      recipientType: "TEACHER",
+      recipientId: teacherId,
+      type: "ACADEMIC",
+      title: "Class Unassigned",
+      message: `You have been unassigned from class ${classRecord.name}.`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Teacher removed from class successfully",
+    });
+  } catch (error: any) {
+    console.error("removeTeacherFromClass error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Server error",

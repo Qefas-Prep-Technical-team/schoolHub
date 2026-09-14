@@ -16,9 +16,15 @@ export default function AssignmentHeader({
     onEdit,
     onGradeAll
 }: AssignmentHeaderProps) {
-    const formatClasses = (classes: string[]) => {
-        return classes.join(', ');
+    const formatClasses = (assignment: any) => {
+        const studentCountStr = assignment.class?.studentCount ? ` (${assignment.class.studentCount} students)` : '';
+        if (assignment.class?.name) return `${assignment.class.name}${studentCountStr}`;
+        if (Array.isArray(assignment.classes)) return assignment.classes.join(', ');
+        return 'No class assigned';
     };
+    
+    const subjectName = typeof assignment.subject === 'string' ? assignment.subject : (assignment as any).subject?.name || 'Subject';
+    const dueDate = assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No deadline';
 
     return (
         <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
@@ -30,28 +36,31 @@ export default function AssignmentHeader({
                     <StatusBadge status={assignment.status} />
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal">
-                    {assignment.subject} • {formatClasses(assignment.classes)} • Due: {assignment.dueDate}
+                    {subjectName} • {formatClasses(assignment)} • Due: {dueDate}
                 </p>
             </div>
 
             <div className="flex gap-3">
-                <Button
-                    variant="outline"
-                    icon="edit"
-                    onClick={onEdit}
-                >
-                    Edit Assignment
-                </Button>
-                <Link href={`/dashboard/teacher/assignments/preview-assignment/${assignment.id}`}>
-                
-                <Button
-                    icon="grading"
-                    onClick={onGradeAll}
-                    className="cursor-pointer"
-                >
-                    Grade All
-                </Button>
-                </Link>
+                {onEdit && (
+                    <Button
+                        variant="outline"
+                        icon="edit"
+                        onClick={onEdit}
+                    >
+                        Edit Assignment
+                    </Button>
+                )}
+                {onGradeAll && (
+                    <Link href={`/dashboard/teacher/assignments/preview-assignment/${assignment.id}`}>
+                        <Button
+                            icon="grading"
+                            onClick={onGradeAll}
+                            className="bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                        >
+                            Grade All
+                        </Button>
+                    </Link>
+                )}
             </div>
         </div>
     );

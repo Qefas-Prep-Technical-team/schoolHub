@@ -50,7 +50,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
 
       // Check user type restrictions
       if (requireAuth && isAuthenticated && userTypes.length > 0) {
-        const userRole = user?.role?.toUpperCase();
+        const userRole = (user?.userType || user?.role)?.toUpperCase();
         const hasAccess = userTypes.some(
           (type) => type.toUpperCase() === userRole
         );

@@ -44,7 +44,7 @@ export default function AssignmentDetailPage() {
       <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30 animate-pulse">
         {/* Sticky Header Skeleton */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Skeleton className="h-10 w-10 rounded-full" />
               <div className="flex flex-col gap-2">
@@ -66,7 +66,7 @@ export default function AssignmentDetailPage() {
         </div>
 
         {/* Main Content Skeleton */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-12 w-full max-w-2xl rounded-xl mb-8" />
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
             <div className="space-y-6">
@@ -99,7 +99,7 @@ export default function AssignmentDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
             <Button 
                 variant="ghost" 
@@ -109,14 +109,27 @@ export default function AssignmentDetailPage() {
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <div className="truncate">
+            <div className="truncate flex flex-col justify-center">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Assignment Details</span>
-                <span className="text-gray-300 dark:text-gray-700">/</span>
+                <span className="text-xs font-bold text-primary uppercase tracking-wider hidden sm:inline">Assignment Details</span>
+                <span className="text-gray-300 dark:text-gray-700 hidden sm:inline">/</span>
                 <h1 className="text-lg font-bold text-gray-900 dark:text-white capitalize truncate">
                   {assignment.title}
                 </h1>
               </div>
+              {assignment.creator && (
+                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-gray-500">
+                    <span>Created by</span>
+                    {assignment.creator.profileImage ? (
+                        <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-4 h-4 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
+                            {assignment.creator.name.charAt(0)}
+                        </div>
+                    )}
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{assignment.creator.name}</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -192,17 +205,23 @@ export default function AssignmentDetailPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-8 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl w-full max-w-2xl grid grid-cols-3">
-            <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-              <LayoutList size={16} /> <span className="hidden sm:inline">Questions</span>
+            <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <LayoutList size={16} /> <span>Questions</span>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="submissions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-              <Users size={16} /> <span className="hidden sm:inline">Submissions</span>
+            <TabsTrigger value="submissions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <Users size={16} /> <span>Submissions</span>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="instructions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-              <FileText size={16} /> <span className="hidden sm:inline">Instructions & Files</span>
+            <TabsTrigger value="instructions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <FileText size={16} /> <span>Instructions & Files</span>
+              </div>
             </TabsTrigger>
           </TabsList>
 

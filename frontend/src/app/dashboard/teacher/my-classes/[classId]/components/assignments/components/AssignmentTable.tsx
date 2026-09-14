@@ -30,10 +30,12 @@ export function AssignmentTable({
 }: AssignmentTableProps) {
   const headers = [
     { key: 'number', label: '#', className: 'w-12 text-center' },
-    { key: 'title', label: 'Assignment Title', className: 'w-2/5' },
-    { key: 'dueDate', label: 'Due Date', className: 'w-1/5' },
-    { key: 'status', label: 'Status', className: 'w-1/5' },
-    { key: 'submissions', label: 'Submissions', className: 'w-1/5' },
+    { key: 'title', label: 'Assignment Title', className: 'w-1/4' },
+    { key: 'subject', label: 'Subject', className: 'w-[15%]' },
+    { key: 'creator', label: 'Creator', className: 'w-[15%]' },
+    { key: 'dueDate', label: 'Due Date', className: 'w-[15%]' },
+    { key: 'status', label: 'Status', className: 'w-[10%]' },
+    { key: 'submissions', label: 'Submissions', className: 'w-[10%]' },
     { key: 'actions', label: 'Actions', className: 'text-right w-auto' },
   ]
 
@@ -73,6 +75,12 @@ export function AssignmentTable({
                   {assignment.title}
                 </td>
                 <td className="p-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {assignment.subjectName || '-'}
+                </td>
+                <td className="p-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {assignment.teacherName || '-'}
+                </td>
+                <td className="p-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   {formatDate(assignment.dueDate)}
                 </td>
                 <td className="p-4">
@@ -92,39 +100,40 @@ export function AssignmentTable({
                 </td>
                 <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end items-center gap-2">
-                    {/* View/Grade logic can stay visible for all teachers in class, or we can restrict view. For now, restrict action buttons to creator */}
-                    {(!currentUserId || assignment.teacherId === currentUserId) && (
-                      <>
-                        <button
-                          onClick={() => onView(assignment)}
-                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
-                          title="View assignment"
-                        >
-                          <Icon name="visibility" className="text-xl" />
-                        </button>
-                        <button
-                          onClick={() => onEdit(assignment)}
-                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
-                          title="Edit assignment"
-                        >
-                          <Icon name="edit" className="text-xl" />
-                        </button>
-                      </>
-                    )}
+                    {/* View logic visible for all teachers in class */}
                     <button
-                      onClick={() => onGrade(assignment)}
+                      onClick={() => onView(assignment)}
                       className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
-                      title="Grade submissions"
-                      disabled={assignment.status === 'draft'}
+                      title="View assignment"
                     >
-                      <Icon
-                        name="grading"
-                        className={cn(
-                          "text-xl",
-                          assignment.status === 'draft' && "opacity-50"
-                        )}
-                      />
+                      <Icon name="visibility" className="text-xl" />
                     </button>
+                    {/* Restrict edit/delete action buttons to creator */}
+                    {(!currentUserId || assignment.teacherId === currentUserId) && (
+                      <button
+                        onClick={() => onEdit(assignment)}
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
+                        title="Edit assignment"
+                      >
+                        <Icon name="edit" className="text-xl" />
+                      </button>
+                    )}
+                    {assignment.canGrade && (!currentUserId || assignment.teacherId === currentUserId) && (
+                      <button
+                        onClick={() => onGrade(assignment)}
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-600 rounded-xl hover:bg-emerald-600/10 dark:hover:bg-emerald-600/20 transition-all hover:scale-105"
+                        title="Grade submissions"
+                        disabled={assignment.status === 'draft'}
+                      >
+                        <Icon
+                          name="grading"
+                          className={cn(
+                            "text-xl",
+                            assignment.status === 'draft' && "opacity-50"
+                          )}
+                        />
+                      </button>
+                    )}
                     {(!currentUserId || assignment.teacherId === currentUserId) && (
                       assignment.status === 'published' ? (
                         onUnpublish && (

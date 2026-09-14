@@ -1,6 +1,7 @@
 import prisma from "../../config/database";
 import { UserRole } from "@prisma/client";
 import { PLAN_LIMITS, DEFAULT_PLAN } from "./plan.constants";
+import { EntitlementService } from "./entitlement.service";
 
 export class AiLimiterService {
   /**
@@ -31,27 +32,33 @@ export class AiLimiterService {
       }
     }
 
-    // 2. Check individual user limits (TEACHER, etc.)
-    const roleKey = userType.toLowerCase();
-    const userModel = (prisma as any)[roleKey];
-    if (userModel) {
-      const user = await userModel.findUnique({ where: { id: userId } });
-      if (user) {
-        const isExpired = user.subscriptionEnd && new Date(user.subscriptionEnd) < new Date();
-        
-        if (!isExpired && user.maxAiUsageOverride !== null && user.maxAiUsageOverride !== undefined) {
-          return user.maxAiUsageOverride;
+    // 2. Check individual user limits (TEACHER, etc.) — but ONLY if enforcement is enabled for that role
+    const roleCategory = userType.toLowerCase(); // e.g. "teacher"
+    const isEnforced = await EntitlementService.isEnforced(roleCategory);
+
+    if (isEnforced) {
+      const userModel = (prisma as any)[roleCategory];
+      if (userModel) {
+        const user = await userModel.findUnique({ where: { id: userId } });
+        if (user) {
+          const isExpired = user.subscriptionEnd && new Date(user.subscriptionEnd) < new Date();
+          
+          if (!isExpired && user.maxAiUsageOverride !== null && user.maxAiUsageOverride !== undefined) {
+            return user.maxAiUsageOverride;
+          }
+          const activePlanId = (user as any).subscriptionPlanId || (user as any).planId;
+          if (!isExpired && activePlanId) {
+            const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
+            if (plan) return plan.maxAiUsage;
+          }
+          const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (user.plan || DEFAULT_PLAN).toUpperCase();
+          const limits = PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN];
+          return limits.maxAiUsage;
         }
-        const activePlanId = (user as any).subscriptionPlanId || (user as any).planId;
-        if (!isExpired && activePlanId) {
-          const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
-          if (plan) return plan.maxAiUsage;
-        }
-        const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (user.plan || DEFAULT_PLAN).toUpperCase();
-        const limits = PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN];
-        return limits.maxAiUsage;
       }
     }
+    // If enforcement is OFF for this role, we skip the personal plan check entirely
+    // and fall through to use the school's plan below.
 
     // 3. Fallback to school if user doesn't have personal limits but is associated with a school
     if (schoolId) {

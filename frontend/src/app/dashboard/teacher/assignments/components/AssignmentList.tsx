@@ -11,6 +11,7 @@ interface AssignmentListProps {
     onGrade?: (id: string) => void;
     onDelete?: (id: string) => void;
     onViewDetails?: (id: string) => void;
+    currentUserId?: string;
 }
 
 export default function AssignmentList({
@@ -18,7 +19,8 @@ export default function AssignmentList({
     onEdit,
     onGrade,
     onDelete,
-    onViewDetails
+    onViewDetails,
+    currentUserId
 }: AssignmentListProps) {
     if (!assignments || assignments.length === 0) {
         return null;
@@ -44,10 +46,11 @@ export default function AssignmentList({
     };
 
     return (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10 shadow-sm">
             <table className="w-full text-left border-collapse">
                 <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                    <tr className="border-b border-emerald-200 dark:border-emerald-800/50 bg-emerald-100/50 dark:bg-emerald-800/20">
+                        <th className="py-4 px-4 w-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">#</th>
                         <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Assignment</th>
                         <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Class & Subject</th>
                         <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Deadline</th>
@@ -56,22 +59,35 @@ export default function AssignmentList({
                         <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                    {assignments.map((assignment) => (
+                <tbody className="divide-y divide-emerald-100 dark:divide-emerald-800/50">
+                    {assignments.map((assignment, index) => (
                         <motion.tr 
                             key={assignment.id}
-                            whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.5)' }}
-                            className="group transition-colors dark:hover:bg-slate-800/30"
+                            onClick={() => onViewDetails?.(assignment.id)}
+                            whileHover={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
+                            className="group transition-colors dark:hover:bg-emerald-900/20 cursor-pointer"
                         >
+                            <td className="py-4 px-4 w-12 text-center text-sm font-bold text-slate-400 dark:text-slate-500">
+                                {index + 1}
+                            </td>
                             <td className="py-4 px-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                        <FileText size={18} strokeWidth={2.5} />
+                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                                        {assignment.creator?.profileImage ? (
+                                            <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <FileText size={18} strokeWidth={2.5} />
+                                        )}
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors line-clamp-1">
                                             {assignment.title}
                                         </h4>
+                                        {assignment.creator && (
+                                            <span className="text-[10px] font-bold text-slate-500 line-clamp-1">
+                                                By {assignment.creator.name}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </td>
@@ -114,12 +130,16 @@ export default function AssignmentList({
                             </td>
                             <td className="py-4 px-6">
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <IconButton onClick={() => onEdit?.(assignment.id)} icon={Edit} title="Edit" />
-                                    <IconButton onClick={() => onGrade?.(assignment.id)} icon={Grading} title="Grade" />
-                                    <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
+                                    {(!currentUserId || (assignment as any).teacherId === currentUserId) && (
+                                        <>
+                                            <IconButton onClick={() => onEdit?.(assignment.id)} icon={Edit} title="Edit" />
+                                            <IconButton onClick={() => onGrade?.(assignment.id)} icon={Grading} title="Grade" />
+                                            <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
+                                        </>
+                                    )}
                                     
-                                    <Link href={`/dashboard/teacher/assignments/${assignment.id}`}>
-                                        <button className="ml-2 p-2 bg-slate-100 hover:bg-primary hover:text-white dark:bg-slate-800 dark:hover:bg-primary text-slate-600 dark:text-slate-300 rounded-xl transition-colors">
+                                    <Link href={`/dashboard/teacher/assignments/${assignment.id}`} onClick={(e) => e.stopPropagation()}>
+                                        <button className="ml-2 p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400 rounded-xl transition-colors">
                                             <ChevronRight size={16} strokeWidth={2.5} />
                                         </button>
                                     </Link>
@@ -136,7 +156,7 @@ export default function AssignmentList({
 function IconButton({ onClick, icon: Icon, title, variant = 'default' }: { onClick?: () => void, icon: any, title: string, variant?: 'default' | 'danger' }) {
     return (
         <button
-            onClick={(e) => { e.preventDefault(); onClick?.(); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick?.(); }}
             className={`p-2 rounded-xl transition-all ${
                 variant === 'danger' ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10' : 'text-slate-400 hover:text-primary hover:bg-primary/5'
             }`}

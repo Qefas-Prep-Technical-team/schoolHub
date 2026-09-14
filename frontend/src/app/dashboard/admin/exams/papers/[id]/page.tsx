@@ -147,7 +147,7 @@ export default function StandalonePaperDetailPage() {
 
   if (isLoadingPaper) {
     return (
-      <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-8">
+      <div className="max-w-[106rem] mx-auto p-6 md:p-8 space-y-8">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-8 w-1/3" />
@@ -159,7 +159,7 @@ export default function StandalonePaperDetailPage() {
 
   if (isErrorPaper || !paper) {
     return (
-      <div className="max-w-6xl mx-auto p-6 md:p-8 text-center">
+      <div className="max-w-[106rem] mx-auto p-6 md:p-8 text-center">
         <h2 className="text-xl font-bold text-red-600 mb-2">Paper Not Found</h2>
         <p className="text-gray-500 mb-6">The subject paper you are looking for does not exist or has been removed.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
@@ -169,7 +169,7 @@ export default function StandalonePaperDetailPage() {
 
   if (!canAccess) {
     return (
-      <div className="max-w-6xl mx-auto p-6 md:p-8 text-center">
+      <div className="max-w-[106rem] mx-auto p-6 md:p-8 text-center">
         <h2 className="text-xl font-bold text-amber-600 mb-2">Access Denied</h2>
         <p className="text-gray-500 mb-6">You do not have permission to manage this subject paper.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
@@ -180,7 +180,7 @@ export default function StandalonePaperDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-[106rem] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
             <Button 
                 variant="ghost" 
@@ -297,7 +297,7 @@ export default function StandalonePaperDetailPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[106rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-8 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl w-full max-w-md">
             <TabsTrigger value="questions" className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all">
@@ -530,6 +530,8 @@ export default function StandalonePaperDetailPage() {
         onClose={() => setIsReadingModalOpen(false)}
         paperId={paperId}
         initialContent={paper.readingContent}
+        initialImages={paper.images}
+        initialLabels={paper.imageLabels}
       />
 
       <PaperPreviewModal

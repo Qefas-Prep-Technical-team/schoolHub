@@ -1,4 +1,5 @@
 import prisma from "../../config/database";
+import { createNotification } from "../notification/notification.service";
 import { GradeCategory, GradeStatus, Term } from "@prisma/client";
 import OpenAI from "openai";
 
@@ -16,7 +17,21 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
 
   // Support teacherId filter (Personal Dashboard or teacher-specific view)
   if (filters.teacherId && filters.teacherId !== 'all' && filters.teacherId !== '') {
-    where.teacherId = filters.teacherId;
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+      where: { teacherId: filters.teacherId },
+      select: { subjectId: true }
+    });
+    
+    const subjectIds = teacherSubjects.map(ts => ts.subjectId);
+
+    if (subjectIds.length > 0) {
+      where.OR = [
+        { teacherId: filters.teacherId },
+        { subjectPaper: { subjectId: { in: subjectIds } } }
+      ];
+    } else {
+      where.teacherId = filters.teacherId;
+    }
   }
 
   // Restrict to teacher's assigned classes if teacherClassesOnly is requested
@@ -57,7 +72,7 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
       take: limit,
       include: {
         student: {
-          select: { id: true, name: true, gradeLevel: true, studentCode: true }
+          select: { id: true, name: true, gradeLevel: true, studentCode: true, profileImage: true }
         },
         class: {
           select: { id: true, name: true, section: true }
@@ -115,6 +130,30 @@ export const createGradeEntryService = async (data: any, userId: string, userRol
         reason: 'Manual grade update via Grade Hub'
       }
     });
+    if (existing.score !== updated.score) {
+      // Resolve the name of whoever made the override
+      let overriderName = 'A staff member';
+      try {
+        if (userRole === 'TEACHER') {
+          const teacher = await prisma.teacher.findUnique({ where: { id: userId }, select: { name: true } });
+          if (teacher?.name) overriderName = teacher.name;
+        } else if (userRole === 'ADMIN') {
+          const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { name: true } });
+          if (admin?.name) overriderName = admin.name;
+        }
+      } catch { /* non-fatal */ }
+
+      await createNotification({
+        recipientType: "SCHOOL",
+        recipientId: updated.schoolId,
+        senderType: userRole as any,
+        senderId: userId,
+        type: "ACADEMIC",
+        title: "Grade Manually Overridden",
+        message: `${overriderName} manually updated a student's score from ${existing.score} to ${gradeData.score}.`,
+      });
+    }
+
     return updated;
   }
 
@@ -135,6 +174,30 @@ export const createGradeEntryService = async (data: any, userId: string, userRol
       reason: 'Manual grade creation via Grade Hub'
     }
   });
+
+  // Resolve the name of whoever made the override
+  let overriderName = 'A staff member';
+  try {
+    if (userRole === 'TEACHER') {
+      const teacher = await prisma.teacher.findUnique({ where: { id: userId }, select: { name: true } });
+      if (teacher?.name) overriderName = teacher.name;
+    } else if (userRole === 'ADMIN') {
+      const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { name: true } });
+      if (admin?.name) overriderName = admin.name;
+    }
+  } catch { /* non-fatal */ }
+
+  if (gradeData.examAttemptId) {
+    await createNotification({
+      recipientType: "SCHOOL",
+      recipientId: created.schoolId,
+      senderType: userRole as any,
+      senderId: userId,
+      type: "ACADEMIC",
+      title: "Grade Manually Overridden",
+      message: `${overriderName} manually overrode a student's online score to ${gradeData.score}.`,
+    });
+  }
 
   return created;
 };
@@ -166,6 +229,30 @@ export const updateGradeScoreService = async (id: string, data: { score?: number
       reason: 'Grade score or status update via Grade Hub'
     }
   });
+
+  if (existing.score !== updated.score) {
+    // Resolve the name of whoever made the override
+    let overriderName = 'A staff member';
+    try {
+      if (userRole === 'TEACHER') {
+        const teacher = await prisma.teacher.findUnique({ where: { id: userId }, select: { name: true } });
+        if (teacher?.name) overriderName = teacher.name;
+      } else if (userRole === 'ADMIN') {
+        const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { name: true } });
+        if (admin?.name) overriderName = admin.name;
+      }
+    } catch { /* non-fatal */ }
+
+    await createNotification({
+      recipientType: "SCHOOL",
+      recipientId: updated.schoolId,
+      senderType: userRole as any,
+      senderId: userId,
+      type: "ACADEMIC",
+      title: "Grade Manually Overridden",
+      message: `${overriderName} manually updated a student's score from ${existing.score} to ${updated.score}.`,
+    });
+  }
 
   return updated;
 };
@@ -218,6 +305,27 @@ export const processGradeOCRService = async (imageUrl: string) => {
     }
     throw error;
   }
+};
+
+export const bulkPublishGradesService = async (filters: any) => {
+  const { schoolId, teacherId, classId, sessionId, category } = filters;
+  
+  const whereClause: any = {
+    schoolId,
+    status: { in: ['PENDING', 'DRAFT'] }
+  };
+  
+  if (teacherId) whereClause.teacherId = teacherId;
+  if (classId) whereClause.classId = classId;
+  if (sessionId) whereClause.sessionId = sessionId;
+  if (category) whereClause.category = category;
+
+  const result = await prisma.grade.updateMany({
+    where: whereClause,
+    data: { status: 'PUBLISHED' }
+  });
+
+  return result.count;
 };
 
 export const bulkCreateGradesService = async (schoolId: string, grades: any[], userId: string, userRole: string) => {
@@ -354,7 +462,45 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
 };
 
 export const deleteGradeService = async (id: string) => {
-  return prisma.grade.delete({
+  // 1. Fetch the grade details to get schoolId, student, and subject info
+  const grade = await prisma.grade.findUnique({
+    where: { id },
+    include: {
+      student: { select: { name: true } },
+      subjectPaper: { select: { title: true } }
+    }
+  });
+
+  if (!grade) {
+    throw new Error('Grade not found');
+  }
+
+  // 2. Delete the grade
+  const deletedGrade = await prisma.grade.delete({
     where: { id },
   });
+
+  // 3. Find all admins for the school
+  const schoolAdmins = await prisma.schoolAdmin.findMany({
+    where: { schoolId: grade.schoolId },
+    select: { adminId: true }
+  });
+
+  // 4. Send notification to each admin
+  if (schoolAdmins.length > 0) {
+    const subjectName = grade.subjectPaper?.title || grade.subject || 'a subject';
+    const notifications = schoolAdmins.map(admin => ({
+      recipientType: 'ADMIN' as const,
+      recipientId: admin.adminId,
+      type: 'GENERAL' as const,
+      title: 'Grade Deleted',
+      message: `A grade for student ${grade.student.name} in ${subjectName} has been deleted.`,
+    }));
+
+    await prisma.notification.createMany({
+      data: notifications
+    });
+  }
+
+  return deletedGrade;
 };

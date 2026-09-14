@@ -7,6 +7,7 @@ export interface Exam {
   type: ExamType
   description?: string
   subjects?: string[]
+  subjectIds?: string[]
   teacherId?: string
   questions: number
   totalMarks: number
@@ -17,6 +18,16 @@ export interface Exam {
   createdAt: Date
   updatedAt: Date
   classId: string
+  subjectPaperIds?: string[]
+  mySubjectPaperId?: string
+  subjectPapers?: {
+    id: string
+    title: string
+    subjectId?: string
+    subjectName?: string
+    questionsCount?: number
+    totalMarks?: number
+  }[]
 }
 
 export interface ExamFilter {

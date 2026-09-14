@@ -218,6 +218,24 @@ export default function TeacherProfilePage() {
                         </CardContent>
                     </Card>
 
+                    {/* Professional Details Card */}
+                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950">
+                        <CardHeader className="p-8 md:p-10 pb-0">
+                            <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4 italic uppercase">
+                                <Briefcase className="text-primary h-6 w-6 md:h-8 md:w-8" /> 
+                                Professional Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8 md:p-10 space-y-8 md:space-y-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                                <InfoItem icon={<Hash size={20} />} label="Department" value={profile.department || 'General'} description="Academic department." />
+                                <InfoItem icon={<GraduationCap size={20} />} label="Qualification" value={profile.highestQualification || 'Not specified'} description="Highest degree obtained." />
+                                <InfoItem icon={<Briefcase size={20} />} label="Experience" value={profile.yearsOfExperience ? `${profile.yearsOfExperience} Years` : 'Not specified'} description="Teaching experience." />
+                                <InfoItem icon={<Fingerprint size={20} />} label="Teacher ID" value={profile.teacherCode || 'N/A'} description="Unique identifier." />
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* Academic Institution Card */}
                     <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl overflow-hidden bg-slate-950 text-white">
                         <CardHeader className="p-8 md:p-10 pb-6">

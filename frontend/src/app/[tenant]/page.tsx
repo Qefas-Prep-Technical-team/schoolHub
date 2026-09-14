@@ -34,6 +34,16 @@ export default function TenantLandingPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const tenant = resolvedParams.tenant;
 
+  const systemPaths = [
+    "dashboard", "login", "signup", "verification", "onboarding", 
+    "checkout", "unauthorized", "pricing", "features", "join", "auth"
+  ];
+  
+  if (systemPaths.includes(tenant)) {
+    import("next/navigation").then((mod) => mod.notFound());
+    return null;
+  }
+
   const { data: schoolData, isLoading, error } = useSchoolLandingPageBySubdomain(tenant);
   // console.log("Fetched landing page data for tenant:", tenant, schoolData);
   

@@ -107,15 +107,15 @@ export default function NotificationDetailModal({
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'LINK_REQUEST': return "bg-blue-50 text-blue-700 border-blue-100";
-      case 'SYSTEM': return "bg-orange-50 text-orange-700 border-orange-100";
-      case 'LINK_ACCEPTED': return "bg-green-50 text-green-700 border-green-100";
-      case 'LINK_RESPONSE': return "bg-primary/10 text-primary border-primary/20";
-      case 'LINK_REJECTED': return "bg-red-50 text-red-700 border-red-100";
-      case 'MESSAGE': return "bg-primary/5 text-primary border-primary/10";
-      case 'ANNOUNCEMENT': return "bg-purple-50 text-purple-700 border-purple-100";
-      case 'ACADEMIC': return "bg-green-50 text-green-700 border-green-100";
-      default: return "bg-gray-50 text-gray-700 border-gray-100";
+      case 'LINK_REQUEST': return "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/50";
+      case 'SYSTEM': return "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-100 dark:border-orange-800/50";
+      case 'LINK_ACCEPTED': return "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-100 dark:border-green-800/50";
+      case 'LINK_RESPONSE': return "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary border-primary/20 dark:border-primary/30";
+      case 'LINK_REJECTED': return "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50";
+      case 'MESSAGE': return "bg-primary/5 dark:bg-primary/10 text-primary border-primary/10 dark:border-primary/20";
+      case 'ANNOUNCEMENT': return "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-800/50";
+      case 'ACADEMIC': return "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-100 dark:border-green-800/50";
+      default: return "bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 border-gray-100 dark:border-gray-800";
     }
   };
 
@@ -131,7 +131,7 @@ export default function NotificationDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white dark:bg-gray-950">
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border border-gray-200 dark:border-gray-800 shadow-2xl rounded-[2rem] bg-white dark:bg-gray-950">
         <div className="relative p-8 pb-0">
            <div className="flex items-center justify-between mb-6">
               <Badge variant="outline" className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2", getTypeColor(notification.type))}>

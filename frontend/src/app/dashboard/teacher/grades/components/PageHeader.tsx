@@ -44,7 +44,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <Button 
               onClick={onOCRClick}
               variant="outline" 
-              className="relative rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-200 flex items-center justify-center group cursor-pointer"
+              className="relative rounded-xl h-12 w-12 p-0 font-bold border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all duration-200 flex items-center justify-center group cursor-pointer"
               title={hasOCRAccess ? 'AI Vision Grade Scanner' : 'Upgrade to unlock AI Vision Scanner'}
             >
               {hasOCRAccess ? (
@@ -70,7 +70,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <Button 
               onClick={onUploadClick}
               variant="outline" 
-              className="relative rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-200 flex items-center justify-center group cursor-pointer"
+              className="relative rounded-xl h-12 w-12 p-0 font-bold border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all duration-200 flex items-center justify-center group cursor-pointer"
               title={hasCSVAccess ? 'Batch Upload' : 'Upgrade to unlock Batch Upload'}
             >
               {hasCSVAccess ? (
@@ -94,7 +94,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             whileTap={{ scale: 0.98 }}
           >
             <Button 
-              className="h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-300 font-semibold text-sm"
+              className="h-12 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-300 font-semibold text-sm"
               onClick={onAddGrade}
             >
               <Plus className="mr-2 h-5 w-5" />

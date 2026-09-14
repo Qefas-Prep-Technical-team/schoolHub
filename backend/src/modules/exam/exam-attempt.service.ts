@@ -1042,13 +1042,14 @@ export const getExamAttemptsService = async ({
   examId: string;
   schoolId?: string;
 }) => {
-  return prisma.examAttempt.findMany({
+  const attempts = await prisma.examAttempt.findMany({
     where: {
       examId,
       exam: schoolId ? { schoolId } : undefined,
     },
     include: {
       student: true,
+      grades: true,
       subjectExamAttempts: {
         include: {
           subjectPaper: {
@@ -1063,6 +1064,41 @@ export const getExamAttemptsService = async ({
       totalScore: "desc",
     },
   });
+
+  const gradeIds = attempts.flatMap(a => a.grades.map((g: any) => g.id));
+  if (gradeIds.length > 0) {
+    const logs = await prisma.gradeAuditLog.findMany({
+       where: { gradeId: { in: gradeIds }, newStatus: 'PUBLISHED' },
+       orderBy: { createdAt: 'desc' }
+    });
+    
+    const logMap = new Map();
+    for (const log of logs) {
+       if (!logMap.has(log.gradeId)) logMap.set(log.gradeId, log);
+    }
+
+    const adminIds = [...new Set(logs.filter((l: any) => l.changedByType === 'ADMIN' || l.changedByType === 'SUPER_ADMIN').map((l: any) => l.changedById))];
+    const teacherIds = [...new Set(logs.filter((l: any) => l.changedByType === 'TEACHER').map((l: any) => l.changedById))];
+
+    const admins = adminIds.length > 0 ? await prisma.admin.findMany({ where: { id: { in: adminIds } }, select: { id: true, name: true } }) : [];
+    const teachers = teacherIds.length > 0 ? await prisma.teacher.findMany({ where: { id: { in: teacherIds } }, select: { id: true, name: true } }) : [];
+
+    const userMap = new Map();
+    admins.forEach((a: any) => userMap.set(a.id, a.name));
+    teachers.forEach((t: any) => userMap.set(t.id, t.name));
+
+    for (const attempt of attempts) {
+      for (const grade of attempt.grades) {
+        const log = logMap.get(grade.id);
+        if (log) {
+          (grade as any).approverName = userMap.get(log.changedById) || 'Admin';
+          (grade as any).approvedAt = log.createdAt;
+        }
+      }
+    }
+  }
+
+  return attempts;
 };
 
 export const getStudentExamAttemptsService = async (studentId: string, page: number = 1, limit: number = 10) => {

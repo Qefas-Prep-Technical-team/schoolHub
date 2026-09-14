@@ -7,7 +7,8 @@ import {
   DropdownMenuContent, 
   DropdownMenuTrigger,
   DropdownMenuLabel,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
+  DropdownMenuItem
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,14 +52,14 @@ export default function NotificationCenter() {
 
   const handleOpenModal = React.useCallback((notification: Notification) => {
     setSelectedNotification(notification);
-    // Add a small delay to ensure DropdownMenu closes before Dialog opens
-    // This fixes focus/z-index issues in Radix UI
+    // Wait for the dropdown menu exit animation to fully complete (usually ~200-300ms)
+    // before opening the Dialog, otherwise Radix UI focus trapping and pointer-events conflict.
     setTimeout(() => {
       setIsModalOpen(true);
       if (!notification.isRead) {
         handleMarkAsRead(notification.id);
       }
-    }, 150);
+    }, 350);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -150,13 +151,13 @@ export default function NotificationCenter() {
             ) : (
               <div className="flex flex-col">
                 {filteredNotifications.map((n: Notification) => (
-                  <div 
+                  <DropdownMenuItem 
                     key={n.id} 
                     className={cn(
-                      "p-4 border-b hover:bg-accent/50 transition-colors relative group cursor-pointer",
+                      "p-4 border-b hover:bg-accent/50 transition-colors relative group cursor-pointer focus:bg-accent/50",
                       !n.isRead && "bg-primary/5 dark:bg-primary/10"
                     )}
-                    onClick={() => handleOpenModal(n)}
+                    onSelect={() => handleOpenModal(n)}
                   >
                     {!n.isRead && (
                       <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
@@ -182,7 +183,7 @@ export default function NotificationCenter() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </DropdownMenuItem>
                 ))}
               </div>
             )}

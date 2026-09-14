@@ -5,6 +5,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Plus, Sparkles, FileText, Trash2, Edit2, GripVertical, Check, Loader2, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
 import { examService } from "@/lib/api/services/examService";
@@ -69,6 +70,8 @@ export default function QuestionManager({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [bulkDeleteType, setBulkDeleteType] = useState<"selected" | "all" | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const deleteQuestionMutation = useMutation({
     mutationFn: (questionId: string) => examService.deleteQuestion(questionId),
@@ -128,6 +131,9 @@ export default function QuestionManager({
       reorderMutation.mutate(newOrder.map(q => q.id));
     }
   };
+
+  const totalPages = Math.ceil(localQuestions.length / itemsPerPage);
+  const paginatedQuestions = localQuestions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleEdit = (question: any) => {
     setEditingQuestion(question);
@@ -273,14 +279,14 @@ export default function QuestionManager({
                     <span className="text-xs text-gray-400 font-medium hidden md:block">{paper?.status === 'PUBLISHED' ? "Read-only: Unpublish this paper to reorder or edit" : "Reorder dragging via the handle grip"}</span>
                   </div>
                   <SortableContext 
-                    items={localQuestions.map(q => q.id)}
+                    items={paginatedQuestions.map(q => q.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    {localQuestions.map((q: Question, idx: number) => (
+                    {paginatedQuestions.map((q: Question, idx: number) => (
                       <SortableQuestionCard 
                         key={q.id} 
                         q={q} 
-                        idx={idx} 
+                        idx={(currentPage - 1) * itemsPerPage + idx} 
                         onEdit={handleEdit} 
                         onDelete={handleDelete}
                         isSelected={selectedIds.includes(q.id)}
@@ -291,6 +297,31 @@ export default function QuestionManager({
                     ))}
                   </SortableContext>
                 </DndContext>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-gray-100 dark:border-gray-800">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="rounded-xl font-bold h-9"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-gray-500 font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="rounded-xl font-bold h-9"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -343,6 +374,27 @@ export default function QuestionManager({
           <Card className="p-5 border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
             <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">Paper Details</h3>
             <div className="space-y-4 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Exam Link</span>
+                {(!paper?.exams || paper.exams.length === 0) ? (
+                  <span className="font-bold px-2 py-0.5 rounded-lg text-[10px] uppercase tracking-widest bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    Not linked
+                  </span>
+                ) : (
+                  <span className={cn("font-bold px-2 py-0.5 rounded-lg text-[10px] uppercase tracking-widest", 
+                    (paper?.exams?.[0]?.exam?.status === 'PUBLISHED' || paper?.exams?.[0]?.exam?.status === 'ONGOING' || paper?.exams?.[0]?.exam?.status === 'COMPLETED') ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                  )}>
+                    {paper?.exams?.[0]?.exam?.status || 'N/A'}
+                    {paper?.exams?.[0]?.exam?.category === 'EXAM' ? ' (Admin)' : ''}
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Paper Status</span>
+                <span className={cn("font-bold px-2 py-0.5 rounded-lg text-[10px] uppercase tracking-widest", 
+                  paper?.status === 'PUBLISHED' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                )}>{paper?.status || 'DRAFT'}</span>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Total Questions</span>
                 <span className="font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-lg">{questions.length}</span>
@@ -402,6 +454,8 @@ export default function QuestionManager({
 }
 
 function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSelect, isDeleting, isPublished }: any) {
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   const {
     attributes,
     listeners,
@@ -480,20 +534,20 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSe
             </div>
 
             {q.images && q.images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 mt-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4 mt-2">
                 {q.images.map((url: string, i: number) => (
-                  <div key={i} className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-900 group/img transition-all hover:shadow-md">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full bg-white/20 text-white backdrop-blur-sm"
-                        onClick={() => window.open(url, '_blank')}
-                      >
-                        <ImageIcon size={14} />
-                      </Button>
+                  <div key={i} className="flex flex-col gap-1.5 cursor-pointer" onClick={() => setPreviewImage(url)}>
+                    <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-gray-900 group/img transition-all hover:shadow-md hover:ring-2 ring-primary/20">
+                      <img src={url} alt={q.imageLabels?.[i] || "Question image"} className="w-full h-full object-contain" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                        <div className="h-8 w-8 rounded-full bg-white/20 text-white backdrop-blur-sm flex items-center justify-center">
+                          <ImageIcon size={14} />
+                        </div>
+                      </div>
                     </div>
+                    {q.imageLabels?.[i] && (
+                      <p className="text-[10px] font-bold text-center text-gray-500 uppercase tracking-widest truncate px-1">{q.imageLabels[i]}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -539,6 +593,17 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSe
           </div>
         </div>
       </Card>
+
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl p-1 bg-white dark:bg-gray-900 border-none shadow-2xl rounded-2xl overflow-hidden">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          <div className="relative w-full h-[80vh] flex items-center justify-center bg-gray-50/50 dark:bg-gray-900/50">
+            {previewImage && (
+              <img src={previewImage} alt="Preview" className="max-w-full max-h-full object-contain rounded-xl" />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

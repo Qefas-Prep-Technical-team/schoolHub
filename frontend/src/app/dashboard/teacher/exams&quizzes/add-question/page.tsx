@@ -453,8 +453,10 @@ export default function TeacherAddQuestionDashboard() {
       <ReadingContentModal
         isOpen={isReadingModalOpen}
         onClose={() => setIsReadingModalOpen(false)}
-        paperId={paperId!}
-        initialContent={paper.readingContent}
+        paperId={paperId as string}
+        initialContent={paper?.readingContent}
+        initialImages={paper?.images}
+        initialLabels={paper?.imageLabels}
       />
 
       <PaperPreviewModal

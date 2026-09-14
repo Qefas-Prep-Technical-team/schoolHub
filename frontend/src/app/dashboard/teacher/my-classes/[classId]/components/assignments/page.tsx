@@ -50,6 +50,10 @@ export default function AssignmentsPage() {
       submissions: { submitted: number; total: number };
       createdAt: string | Date;
       updatedAt: string | Date;
+      teacherId?: string;
+      teacherName?: string;
+      subjectName?: string;
+      canGrade?: boolean;
     }) => ({
       id: a.id,
       title: a.title,
@@ -58,6 +62,10 @@ export default function AssignmentsPage() {
       submissions: a.submissions,
       createdAt: new Date(a.createdAt),
       updatedAt: new Date(a.updatedAt),
+      teacherId: a.teacherId,
+      teacherName: a.teacherName,
+      subjectName: a.subjectName,
+      canGrade: a.canGrade,
     }))
   }, [data])
 
@@ -82,7 +90,7 @@ export default function AssignmentsPage() {
   )
 
   const handleViewAssignment = (assignment: Assignment) => {
-    router.push(`/dashboard/teacher/assignments/${assignment.id}`)
+    router.push(`/dashboard/teacher/assignments/preview/${assignment.id}`)
   }
 
   const handleEditAssignment = (assignment: Assignment) => {

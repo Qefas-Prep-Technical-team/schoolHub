@@ -984,6 +984,31 @@ export const getTeacherClassAssignmentsService = async (teacherId: string, class
         where: { classId }
     });
 
+    // 4. Get subjects the teacher teaches (they are already verified as assigned to this class)
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+        where: { teacherId },
+        select: { subjectId: true }
+    });
+    const taughtSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+
+    // 5. Fetch subjects and teachers for the assignments
+    const subjectIds = [...new Set(assignments.map(a => a.subjectId))];
+    const teacherIds = [...new Set(assignments.map(a => a.teacherId))];
+
+    const [subjects, teachers, admins, schoolAdmins] = await Promise.all([
+        prisma.subject.findMany({ where: { id: { in: subjectIds } } }),
+        prisma.teacher.findMany({ where: { id: { in: teacherIds } } }),
+        prisma.admin.findMany({ where: { id: { in: teacherIds } } }),
+        prisma.schoolAdmin.findMany({ where: { id: { in: teacherIds } }, include: { admin: true } })
+    ]);
+
+    const subjectMap = new Map(subjects.map(s => [s.id, s.name]));
+    
+    const creatorMap = new Map();
+    teachers.forEach(t => creatorMap.set(t.id, t.name));
+    admins.forEach(a => creatorMap.set(a.id, a.name));
+    schoolAdmins.forEach(sa => creatorMap.set(sa.id, sa.admin?.name || 'Admin'));
+
     return assignments.map(assignment => ({
         id: assignment.id,
         title: assignment.title,
@@ -994,7 +1019,11 @@ export const getTeacherClassAssignmentsService = async (teacherId: string, class
             total: totalStudents
         },
         createdAt: assignment.createdAt,
-        updatedAt: assignment.updatedAt
+        updatedAt: assignment.updatedAt,
+        teacherId: assignment.teacherId,
+        teacherName: creatorMap.get(assignment.teacherId) || 'Unknown',
+        subjectName: subjectMap.get(assignment.subjectId) || 'Unknown',
+        canGrade: assignment.teacherId === teacherId || taughtSubjectIds.has(assignment.subjectId)
     }));
 };
 

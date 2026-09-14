@@ -17,15 +17,19 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose, assignment, schoolId }: SettingsModalProps) {
   const queryClient = useQueryClient();
+  const toLocalDatetimeLocal = (dateString?: string | null) => {
+    if (!dateString) return "";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "";
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+  };
+
   const [title, setTitle] = useState(assignment?.title || "");
   const [instructions, setInstructions] = useState(assignment?.instructions || "");
   const [maxScore, setMaxScore] = useState(assignment?.totalMarks || 100);
-  const [dueDate, setDueDate] = useState(
-    assignment?.dueDate ? new Date(assignment.dueDate).toISOString().slice(0, 16) : ""
-  );
-  const [scoreReleaseDate, setScoreReleaseDate] = useState(
-    assignment?.scoreReleaseDate ? new Date(assignment.scoreReleaseDate).toISOString().slice(0, 16) : ""
-  );
+  const [dueDate, setDueDate] = useState(toLocalDatetimeLocal(assignment?.dueDate));
+  const [scoreReleaseDate, setScoreReleaseDate] = useState(toLocalDatetimeLocal(assignment?.scoreReleaseDate));
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -62,7 +66,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings size={18} className="text-primary" />
@@ -117,11 +121,12 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
 
           <div className="space-y-2">
             <Label htmlFor="instructions">General Instructions</Label>
-            <Input 
+            <textarea 
               id="instructions" 
               value={instructions} 
               onChange={(e) => setInstructions(e.target.value)} 
-              placeholder="E.g. Answer all questions" 
+              placeholder="E.g. Answer all questions"
+              className="flex min-h-[120px] w-full rounded-md border border-gray-200 dark:border-gray-800 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 

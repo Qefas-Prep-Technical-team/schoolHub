@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { handleError } from "../../utils/error-handler";
-import { uploadBufferToBunnyService, getS3PresignedUrlService, confirmS3UploadService, deleteS3FileService, deleteBunnyFileService } from "./upload.service";
+import { uploadBufferToBunnyService, getS3PresignedUrlService, confirmS3UploadService, deleteS3FileService, deleteBunnyFileService, getUploadHistoryService, cleanupUnusedImagesService } from "./upload.service";
 
 /**
  * Legacy - No longer supported. Use /upload/proxy instead.
@@ -144,5 +144,31 @@ export const deleteBunnyFile = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, message: "File deleted successfully from Bunny.net" });
   } catch (error: any) {
     return handleError(res, error, "upload.deleteBunnyFile");
+  }
+};
+
+export const getUploadHistory = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const history = await getUploadHistoryService(user.schoolId, user.id, page, limit);
+
+    return res.status(200).json({ success: true, data: history });
+  } catch (error: any) {
+    return handleError(res, error, "upload.getUploadHistory");
+  }
+};
+
+export const cleanupUnusedImages = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    
+    const result = await cleanupUnusedImagesService(user.schoolId, user.id);
+
+    return res.status(200).json({ success: true, data: result, message: `Cleaned up ${result.deletedCount} unused images.` });
+  } catch (error: any) {
+    return handleError(res, error, "upload.cleanupUnusedImages");
   }
 };

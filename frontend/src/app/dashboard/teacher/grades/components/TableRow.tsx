@@ -1,5 +1,12 @@
 import { GradeStatus, StudentGrade } from "./types";
-import { Edit2, MoreVertical, Edit, Eye, Send, Trash2 } from "lucide-react";
+import { 
+  MoreVertical, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  Send,
+  Loader2
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -14,6 +21,7 @@ interface TableRowProps {
   rowNumber: number;
   onEdit: () => void;
   onPublish: () => void;
+  isPublishing?: boolean;
   onDelete: () => void;
   onViewDetails: () => void;
 }
@@ -23,6 +31,7 @@ const TableRow: React.FC<TableRowProps> = ({
   rowNumber,
   onEdit,
   onPublish,
+  isPublishing,
   onDelete,
   onViewDetails
 }) => {
@@ -47,7 +56,10 @@ const TableRow: React.FC<TableRowProps> = ({
     .slice(0, 2);
 
   return (
-    <tr className="group border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-300">
+    <tr 
+      onClick={onViewDetails}
+      className="group cursor-pointer border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-300"
+    >
       <td className="px-6 py-4 text-sm font-black text-slate-400 dark:text-slate-600">
         {String(rowNumber).padStart(2, '0')}
       </td>
@@ -112,9 +124,9 @@ const TableRow: React.FC<TableRowProps> = ({
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
-                <MoreVertical size={16} />
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-emerald-500">
+                <MoreVertical size={16} className="text-slate-400" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl bg-white dark:bg-slate-900 z-50">
@@ -125,8 +137,9 @@ const TableRow: React.FC<TableRowProps> = ({
                 <Eye size={14} /> View Details
               </DropdownMenuItem>
               {grade.status !== 'Graded' && (
-                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 dark:text-emerald-400 gap-2" onClick={(e) => { e.stopPropagation(); onPublish(); }}>
-                  <Send size={14} /> Publish Now
+                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 dark:text-emerald-400 gap-2" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onPublish(); }} disabled={isPublishing}>
+                  {isPublishing ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} 
+                  {isPublishing ? 'Publishing...' : 'Publish Now'}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => { e.stopPropagation(); onDelete(); }}>

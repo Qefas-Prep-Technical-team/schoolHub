@@ -144,6 +144,88 @@ export default function ManageTeachersPage() {
         return pages
     }
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8">
+                <div className="max-w-[1400px] mx-auto space-y-5">
+                    {/* Header Skeleton */}
+                    <div>
+                        <Skeleton className="h-7 w-48 mb-2" />
+                        <Skeleton className="h-4 w-64" />
+                    </div>
+
+                    {/* Stats Skeleton */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                    <Skeleton className="h-4 w-24" />
+                                    <Skeleton className="size-8 rounded-lg" />
+                                </div>
+                                <Skeleton className="h-8 w-16 mb-2" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Chart Skeleton */}
+                    <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
+                        <div className="mb-4">
+                            <Skeleton className="h-5 w-32 mb-2" />
+                            <Skeleton className="h-3 w-40" />
+                        </div>
+                        <Skeleton className="h-[200px] w-full rounded-lg" />
+                    </div>
+
+                    {/* Toolbar & Table Skeleton */}
+                    <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm overflow-hidden">
+                        <div className="flex flex-wrap items-center gap-2 p-3 border-b border-gray-100 dark:border-white/5">
+                            <Skeleton className="h-9 w-[180px] rounded-lg" />
+                            <div className="ml-auto flex items-center gap-2">
+                                <Skeleton className="h-9 w-24 rounded-lg" />
+                                <Skeleton className="h-9 w-28 rounded-lg" />
+                                <Skeleton className="h-9 w-32 rounded-lg" />
+                            </div>
+                        </div>
+                        
+                        {/* Table Header */}
+                        <div className="border-b border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-slate-800/30 p-3 flex gap-4">
+                            <Skeleton className="h-4 w-10" />
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-4 w-48" />
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-16" />
+                        </div>
+
+                        {/* Table Rows */}
+                        <div className="divide-y divide-gray-50 dark:divide-white/[0.03]">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="p-3 flex items-center gap-4">
+                                    <Skeleton className="h-3 w-6 shrink-0" />
+                                    <Skeleton className="h-3 w-32 shrink-0" />
+                                    <div className="flex items-center gap-2.5 w-48 shrink-0">
+                                        <Skeleton className="size-8 rounded-full shrink-0" />
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-3.5 w-32" />
+                                            <Skeleton className="h-2.5 w-24" />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1 w-32 shrink-0">
+                                        <Skeleton className="h-5 w-16 rounded-full" />
+                                        <Skeleton className="h-5 w-12 rounded-full" />
+                                    </div>
+                                    <Skeleton className="h-3 w-24 shrink-0" />
+                                    <Skeleton className="h-5 w-20 rounded-full shrink-0" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8">
             <div className="max-w-[1400px] mx-auto space-y-5">

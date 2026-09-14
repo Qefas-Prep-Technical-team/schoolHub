@@ -27,12 +27,15 @@ import { useRespondToLinkRequest, useAcceptAllLinkRequests } from '@/lib/api/hoo
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import NotificationDetailModal from '@/components/notifications/NotificationDetailModal';
+import NotificationAnalyticsCard from '@/components/notifications/NotificationAnalyticsCard';
 import { Notification } from '@/lib/api/services/notificationService';
 
 export default function NotificationsPage() {
   const router = useRouter();
   const [selectedNotification, setSelectedNotification] = React.useState<Notification | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
 
   const markAsReadMutation = useMarkAsRead();
@@ -100,7 +103,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-5xl space-y-8 animate-in fade-in duration-500">
+    <div className="container mx-auto py-8 max-w-7xl space-y-8 animate-in fade-in duration-500">
       {/* Header section with Batch Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
@@ -138,7 +141,11 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {notifications.length === 0 ? (
+      <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-6 items-start relative">
+
+        {/* Notification list — 80% */}
+        <div className="w-full min-w-0">
+          {notifications.length === 0 ? (
         <Card className="rounded-[2.5rem] border-none shadow-sm overflow-hidden py-24 text-center">
           <CardContent>
             <div className="w-20 h-20 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -149,119 +156,200 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {notifications.map((n: Notification) => (
-            <Card
-              key={n.id}
+        <div className="grid gap-3">
+          {(() => {
+            const totalPages = Math.ceil(notifications.length / itemsPerPage);
+            const paginatedNotifications = notifications.slice(
+              (currentPage - 1) * itemsPerPage,
+              currentPage * itemsPerPage
+            );
+            return (
+              <>
+                {paginatedNotifications.map((n: Notification) => (
+                  <Card
+                    key={n.id}
               className={cn(
-                "rounded-3xl border-none transition-all duration-300 group overflow-hidden cursor-pointer",
+                "rounded-2xl border transition-all duration-200 group overflow-hidden cursor-pointer hover:shadow-md",
                 !n.isRead
-                  ? "bg-white dark:bg-gray-800 shadow-xl shadow-primary/5 ring-1 ring-primary/10"
-                  : "bg-gray-50/50 dark:bg-gray-900/50 opacity-80"
+                  ? "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 shadow-sm hover:border-primary/30 dark:hover:border-primary/40"
+                  : "bg-gray-50/70 dark:bg-gray-900/40 border-gray-100 dark:border-gray-800 opacity-70 hover:opacity-100"
               )}
               onClick={() => handleOpenModal(n)}
             >
-              <CardContent className="p-6">
-                <div className="flex gap-6">
+              <CardContent className="p-0">
+                <div className="flex items-stretch">
+                  {/* Left accent stripe */}
                   <div className={cn(
-                    "mt-1 p-3 rounded-2xl shrink-0 h-12 w-12 flex items-center justify-center transition-all",
-                    !n.isRead ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
-                  )}>
-                    {getTypeIcon(n.type)}
-                  </div>
+                    "w-1 rounded-l-2xl shrink-0 transition-all",
+                    !n.isRead ? "bg-primary" : "bg-transparent"
+                  )} />
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className={cn(
-                          "text-lg leading-tight truncate",
-                          !n.isRead ? "font-black text-gray-900 dark:text-white" : "font-bold text-gray-500 dark:text-gray-400"
-                        )}>
-                          {n.title}
-                        </h3>
-                        {!n.isRead && <Badge className="bg-primary text-white text-[9px] font-black tracking-widest uppercase py-0.5">New</Badge>}
-                      </div>
-                      <span className="text-xs text-gray-400 font-bold flex items-center gap-1.5 shrink-0 ml-4">
-                        <Clock size={14} /> {new Date(n.createdAt).toLocaleDateString()}
-                      </span>
+                  <div className="flex gap-4 p-5 flex-1 min-w-0">
+                    {/* Icon */}
+                    <div className={cn(
+                      "mt-0.5 rounded-xl shrink-0 h-10 w-10 flex items-center justify-center transition-all",
+                      !n.isRead
+                        ? "bg-primary/10 dark:bg-primary/15 text-primary"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
+                    )}>
+                      {getTypeIcon(n.type)}
                     </div>
 
-                    <p className={cn(
-                      "text-sm leading-relaxed mb-4",
-                      !n.isRead ? "text-gray-600 dark:text-gray-300 font-medium" : "text-gray-500 dark:text-gray-500"
-                    )}>
-                      {n.message}
-                    </p>
-
-                    <div className="flex flex-wrap items-center justify-between gap-4 mt-2">
-                      <div className="flex gap-3">
-                        {n.type === 'LINK_REQUEST' && !n.isRead && Boolean(n.data?.linkId) && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleLinkAction(n.id, n.data!.linkId as string, 'ACCEPT')}
-                              disabled={respondMutation.isPending}
-                              className="px-5 rounded-xl bg-primary text-white font-bold text-xs h-10 shadow-md shadow-primary/20 hover:scale-105 transition-all"
-                            >
-                              <Check size={16} className="mr-1.5" /> Accept
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleLinkAction(n.id, n.data!.linkId as string, 'REJECT')}
-                              disabled={respondMutation.isPending}
-                              className="px-5 rounded-xl border-2 font-bold text-xs h-10 hover:bg-gray-50"
-                            >
-                              <X size={16} className="mr-1.5 text-red-500" /> Decline
-                            </Button>
-                          </>
-                        )}
-
-                        {n.link && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              handleMarkAsRead(n.id);
-                              router.push(n.link!);
-                            }}
-                            className="text-primary font-bold text-xs h-10 hover:bg-primary/5 transition-all"
-                          >
-                            View details <ExternalLink className="ml-1.5" size={14} />
-                          </Button>
-                        )}
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Top row: title + timestamp */}
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h3 className={cn(
+                            "text-sm leading-tight truncate",
+                            !n.isRead
+                              ? "font-black text-gray-900 dark:text-white"
+                              : "font-semibold text-gray-500 dark:text-gray-400"
+                          )}>
+                            {n.title}
+                          </h3>
+                          {!n.isRead && (
+                            <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-primary/15 dark:bg-primary/25 text-primary border border-primary/20 dark:border-primary/30">
+                              New
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold flex items-center gap-1 shrink-0">
+                          <Clock size={11} />
+                          {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {!n.isRead && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleMarkAsRead(n.id)}
-                            className="h-10 w-10 rounded-xl text-gray-400 hover:text-primary"
-                            title="Mark as read"
-                          >
-                            <Check size={18} />
-                          </Button>
-                        )}
+                      {/* Type chip */}
+                      <span className={cn(
+                        "inline-flex mb-2 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md",
+                        n.type === 'LINK_REQUEST' ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400" :
+                        n.type === 'SYSTEM' ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400" :
+                        n.type === 'ANNOUNCEMENT' ? "bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400" :
+                        n.type === 'ACADEMIC' ? "bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400" :
+                        "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                      )}>
+                        {n.type.replace(/_/g, ' ')}
+                      </span>
+
+                      {/* Message */}
+                      <p className={cn(
+                        "text-sm leading-relaxed line-clamp-2",
+                        !n.isRead
+                          ? "text-gray-600 dark:text-gray-300"
+                          : "text-gray-400 dark:text-gray-500"
+                      )}>
+                        {n.message}
+                      </p>
+
+                      {/* Actions row */}
+                      {((n.type === 'LINK_REQUEST' && !n.isRead && Boolean(n.data?.linkId)) || n.link) ? (
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          {n.type === 'LINK_REQUEST' && !n.isRead && Boolean(n.data?.linkId) && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); handleLinkAction(n.id, n.data!.linkId as string, 'ACCEPT'); }}
+                                disabled={respondMutation.isPending}
+                                className="h-8 px-4 rounded-lg bg-primary text-white font-bold text-xs shadow-sm shadow-primary/20 hover:scale-105 transition-all"
+                              >
+                                <Check size={13} className="mr-1" /> Accept
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); handleLinkAction(n.id, n.data!.linkId as string, 'REJECT'); }}
+                                disabled={respondMutation.isPending}
+                                className="h-8 px-4 rounded-lg border border-gray-200 dark:border-gray-700 font-bold text-xs hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 hover:border-red-200 dark:hover:border-red-800 transition-all"
+                              >
+                                <X size={13} className="mr-1 text-red-500" /> Decline
+                              </Button>
+                            </>
+                          )}
+                          {n.link && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); handleMarkAsRead(n.id); router.push(n.link!); }}
+                              className="h-8 px-3 rounded-lg text-primary font-bold text-xs hover:bg-primary/5 dark:hover:bg-primary/15 transition-all"
+                            >
+                              View details <ExternalLink className="ml-1" size={12} />
+                            </Button>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Hover action icons */}
+                    <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      {!n.isRead && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteMutation.mutate(n.id)}
-                          className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-500"
-                          title="Delete"
+                          onClick={(e) => { e.stopPropagation(); handleMarkAsRead(n.id); }}
+                          className="h-8 w-8 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/15"
+                          title="Mark as read"
                         >
-                          <Trash2 size={18} />
+                          <Check size={15} />
                         </Button>
-                      </div>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(n.id); }}
+                        className="h-8 w-8 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                        title="Delete"
+                      >
+                        <Trash2 size={15} />
+                      </Button>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm mt-4">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, notifications.length)} of {notifications.length} notifications
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 rounded-lg text-xs font-bold border-gray-200 dark:border-gray-800"
+                >
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 rounded-lg text-xs font-bold border-gray-200 dark:border-gray-800"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    })()}
+  </div>
+)}
         </div>
-      )}
+
+        {/* Analytics sidebar — 20% */}
+        <div className="hidden lg:block">
+          <NotificationAnalyticsCard notifications={notifications} />
+        </div>
+      </div>
+
+      {/* Mobile Modal */}
       <NotificationDetailModal
         notification={selectedNotification}
         isOpen={isModalOpen}

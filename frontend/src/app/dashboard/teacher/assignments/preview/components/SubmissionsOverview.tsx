@@ -22,7 +22,7 @@ export default function SubmissionsOverview({
         : 0;
 
     return (
-        <div className="bg-white dark:bg-[#191e2b] rounded-xl p-6 sticky top-8">
+        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-xl p-6 sticky top-8">
             <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
                 Submissions Overview
             </h2>
@@ -41,10 +41,10 @@ export default function SubmissionsOverview({
             </div>
 
             {overview.averageScore !== null && (
-                <div className="mb-6 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="mb-6 p-3 bg-emerald-100/50 dark:bg-emerald-800/30 rounded-lg">
                     <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-300">Average Score</span>
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                        <span className="text-sm text-emerald-700 dark:text-emerald-300">Average Score</span>
+                        <span className="text-lg font-bold text-emerald-900 dark:text-emerald-100">
                             {overview.averageScore.toFixed(1)} / 100
                         </span>
                     </div>
@@ -52,34 +52,41 @@ export default function SubmissionsOverview({
             )}
 
             <div className="flex flex-col gap-3">
-                <Link  href={`/dashboard/teacher/assignments/bulk-grading/123`}>
-                <Button
-                    icon="edit_document"
-                    onClick={onGradeSubmissions}
-                >
-                    Grade Submissions
-                </Button>
-                </Link>
+                {onGradeSubmissions && (
+                    <Link href={`/dashboard/teacher/assignments/bulk-grading/123`}>
+                        <Button
+                            icon="edit_document"
+                            onClick={onGradeSubmissions}
+                            className="!bg-blue-600 !text-white hover:!bg-blue-700 w-full"
+                        >
+                            Grade Submissions
+                        </Button>
+                    </Link>
+                )}
 
-                <Button
-                    variant="secondary"
-                    icon="download"
-                    onClick={onExportSubmissions}
-                >
-                    Export Submissions
-                </Button>
-                 <Link 
-                 className="w-2/3 bg-red"
-                  href={`/dashboard/teacher/assignments/analytics`}>
-                <Button
-                    variant="secondary"
-                    icon="chart_data"
-                    onClick={onExportSubmissions}
-                    className="cursor-pointer"
-                >
-                    Assignment Analytics 
-                </Button>
-                </Link>
+                {onExportSubmissions && (
+                    <>
+                        <Button
+                            variant="secondary"
+                            icon="download"
+                            onClick={onExportSubmissions}
+                        >
+                            Export Submissions
+                        </Button>
+                        <Link 
+                            className="w-full"
+                            href={`/dashboard/teacher/assignments/analytics`}
+                        >
+                            <Button
+                                variant="secondary"
+                                icon="chart_data"
+                                className="cursor-pointer w-full"
+                            >
+                                Assignment Analytics 
+                            </Button>
+                        </Link>
+                    </>
+                )}
             </div>
         </div>
     );

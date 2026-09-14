@@ -4,7 +4,9 @@ import {
   Filter, 
   ArrowUpDown, 
   Download, 
-  X 
+  X,
+  Send,
+  Loader2
 } from "lucide-react";
 
 interface TableToolbarProps {
@@ -13,6 +15,8 @@ interface TableToolbarProps {
   onFilter: () => void;
   onSort: () => void;
   onExport: () => void;
+  onPublishAll?: () => void;
+  isPublishingAll?: boolean;
 }
 
 const TableToolbar: React.FC<TableToolbarProps> = ({
@@ -20,7 +24,9 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
   onSearchChange,
   onFilter,
   onSort,
-  onExport
+  onExport,
+  onPublishAll,
+  isPublishingAll
 }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-50/50 dark:bg-slate-900/20">
@@ -65,6 +71,16 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
+        {onPublishAll && (
+          <button
+            onClick={onPublishAll}
+            disabled={isPublishingAll}
+            className="flex h-10 items-center justify-center gap-2.5 rounded-xl border border-emerald-600 bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 active:scale-95 transition-all disabled:opacity-70 disabled:active:scale-100"
+          >
+            {isPublishingAll ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+            <span>Publish All</span>
+          </button>
+        )}
         <button
           onClick={onExport}
           className="flex h-10 items-center justify-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-all active:scale-95"

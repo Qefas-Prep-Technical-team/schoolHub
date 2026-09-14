@@ -137,7 +137,9 @@ export default function EditPaperModal({
         examDescription: exam?.description || "",
       });
     }
-  }, [paper, exam, reset, isOpen]);
+  // Re-run when subjects/teachers finish loading so the selected value is reflected
+  // in the now-populated <option> list
+  }, [paper, exam, reset, isOpen, isLoadingData]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: PaperFormValues) => {
@@ -234,16 +236,23 @@ export default function EditPaperModal({
                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                       <BookOpen size={12} /> Subject
                     </Label>
-                    <select
-                      {...register("subjectId")}
-                      disabled={isLoadingData}
-                      className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    >
-                      <option value="">{isLoadingData ? "Loading..." : "No Subject (Optional)"}</option>
-                      {subjects.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      {isLoadingData && (
+                        <div className="absolute inset-0 z-10 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center px-4">
+                          <div className="h-3 w-32 bg-slate-300 dark:bg-slate-600 rounded-full animate-pulse" />
+                        </div>
+                      )}
+                      <select
+                        {...register("subjectId")}
+                        disabled={isLoadingData}
+                        className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                      >
+                        <option value="">No Subject (Optional)</option>
+                        {subjects.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -264,16 +273,23 @@ export default function EditPaperModal({
                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                       <UserCircle size={12} /> Assigned Teacher
                     </Label>
-                    <select
-                      {...register("teacherId")}
-                      disabled={isLoadingData}
-                      className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    >
-                      <option value="">{isLoadingData ? "Loading..." : "No Teacher (Optional)"}</option>
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      {isLoadingData && (
+                        <div className="absolute inset-0 z-10 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center px-4">
+                          <div className="h-3 w-40 bg-slate-300 dark:bg-slate-600 rounded-full animate-pulse" />
+                        </div>
+                      )}
+                      <select
+                        {...register("teacherId")}
+                        disabled={isLoadingData}
+                        className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                      >
+                        <option value="">No Teacher (Optional)</option>
+                        {teachers.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

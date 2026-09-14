@@ -14,8 +14,9 @@ export interface Assignment {
   progress?: number;
   classes?:string[];
   instructions?:string;
-attachments?: Attachment[];
-teacher?: {id: string; name: string; avatarUrl: string; };
+  attachments?: Attachment[];
+  creator?: { id: string; name: string; profileImage?: string };
+  teacher?: { id: string; name: string; avatarUrl: string; };
 }
 
 export interface AssignmentCardProps {
@@ -25,6 +26,7 @@ export interface AssignmentCardProps {
   onDelete?: (id: string) => void;
   onViewDetails?: (id: string) => void;
   viewMode?: 'grid' | 'list';
+  index?: number;
 }
 
 export interface PaginationProps {

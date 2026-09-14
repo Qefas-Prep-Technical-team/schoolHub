@@ -19,6 +19,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import CreatePaperForm from './CreatePaperForm';
+import CreateExamForm from './CreateExamForm';
+import CreateAssignmentForm from './CreateAssignmentForm';
 import { useRouter } from 'next/navigation';
 import Pagination from '@/components/ui/Pagination';
 
@@ -34,6 +36,9 @@ export default function ExamsQuizzesOverview() {
   });
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [isAddPaperModalOpen, setIsAddPaperModalOpen] = useState(false);
+  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+  const [createCategory, setCreateCategory] = useState<'EXAM' | 'QUIZ' | 'CA'>('EXAM');
   const [examToDelete, setExamToDelete] = useState<any>(null);
   
   const queryClient = useQueryClient();
@@ -95,8 +100,13 @@ export default function ExamsQuizzesOverview() {
     },
   });
 
-  const handleCreateNew = () => {
-    // Handled in PageHeader Link
+  const handleCreateNew = (category: 'EXAM' | 'QUIZ' | 'CA' | 'ASSIGNMENT') => {
+    if (category === 'ASSIGNMENT') {
+      setIsAssignmentModalOpen(true);
+    } else {
+      setCreateCategory(category);
+      setIsExamModalOpen(true);
+    }
   };
 
   const handleFilterChange = (filterType: 'class' | 'subject' | 'status' | 'date', value: string) => {
@@ -139,6 +149,20 @@ export default function ExamsQuizzesOverview() {
       });
     }
 
+    // Filter quizzes strictly according to teacher permissions (client-side fallback)
+    const mySubjectIds = subjectsData?.map((s: any) => s.id || s.subjectId) || [];
+    if (activeTab === 'quizzes' && !isPersonal) {
+      list = list.filter(item => {
+        const isCreator = item.teacherId === user?.id || item.teacherId === (user as any)?.tenantId;
+        const isSubjectAssigned = mySubjectIds.includes(item.subjectId) || 
+                                  mySubjectIds.includes(item.subject?.id);
+        const isAssignedDirectly = item.assignedTeachers?.some((t: any) => t.id === user?.id || t.id === (user as any)?.tenantId);
+        return isCreator || isSubjectAssigned || isAssignedDirectly;
+      });
+    }
+    // Note: subject-papers tab filtering (creator/assigned-subject + category exclusion) is done in the backend
+
+
     // Filter by date client-side
     if (filters.date) {
       const now = new Date();
@@ -156,10 +180,10 @@ export default function ExamsQuizzesOverview() {
     }
 
     return list;
-  }, [data, filters.class, filters.subject, filters.date]);
+  }, [data, filters.class, filters.subject, filters.date, activeTab, isPersonal, subjectsData, user?.id]);
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+    <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[90%] mx-auto">
       <div className="flex flex-col flex-1">
         <PageHeader 
           title="Assessments" 
@@ -171,11 +195,11 @@ export default function ExamsQuizzesOverview() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6"
+          className="bg-white dark:bg-emerald-950/30 backdrop-blur-md rounded-2xl border border-emerald-100 dark:border-emerald-800/40 shadow-xl shadow-emerald-900/5 p-6"
         >
           {/* Tabs Strategy */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <div className="inline-flex p-1.5 bg-slate-100/80 dark:bg-slate-800/60 rounded-[1.5rem] shadow-inner border border-slate-200/50 dark:border-slate-700/40 flex-wrap md:flex-nowrap gap-1 backdrop-blur-sm">
+            <div className="inline-flex p-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-[1.5rem] shadow-inner border border-emerald-100/50 dark:border-emerald-800/30 flex-wrap md:flex-nowrap gap-1 backdrop-blur-sm">
               <TabButton 
                 active={activeTab === 'exams'} 
                 onClick={() => handleTabChange('exams')}
@@ -212,7 +236,7 @@ export default function ExamsQuizzesOverview() {
 
 
                {/* Grid / List view mode switcher */}
-               <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/40 backdrop-blur-sm">
+               <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 p-1 rounded-xl border border-emerald-100/50 dark:border-emerald-800/30 backdrop-blur-sm">
                  <button
                    onClick={() => setViewMode('list')}
                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
@@ -272,6 +296,7 @@ export default function ExamsQuizzesOverview() {
                     viewMode={viewMode}
                     currentPage={currentPage}
                     itemsPerPage={itemsPerPage}
+                    mySubjectIds={subjectsData?.map((s: any) => s.id || s.subjectId) || []}
                     onDelete={(exam) => setExamToDelete(exam)}
                   />
                   {filteredData.length > 0 && (
@@ -292,6 +317,7 @@ export default function ExamsQuizzesOverview() {
         </motion.div>
       </div>
 
+      {/* Add Paper Modal */}
       <Dialog open={isAddPaperModalOpen} onOpenChange={setIsAddPaperModalOpen}>
         <DialogContent className="sm:max-w-[80vw] p-0 overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem]">
           <DialogHeader className="p-8 pb-0">
@@ -311,6 +337,51 @@ export default function ExamsQuizzesOverview() {
               }} 
             />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Exam/Quiz/CA Modal */}
+      <Dialog open={isExamModalOpen} onOpenChange={setIsExamModalOpen}>
+        <DialogContent className="sm:max-w-[540px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 uppercase">
+              <Sparkles className="w-5 h-5 text-emerald-500" />
+              Create {
+                createCategory === 'EXAM' ? 'Single Paper Exam' :
+                createCategory === 'CA' ? 'Continuous Assessment' :
+                createCategory === 'QUIZ' ? 'Test (Quizzes)' : createCategory
+              }
+            </DialogTitle>
+          </DialogHeader>
+          <CreateExamForm 
+            category={createCategory} 
+            onSuccess={(id, paperId) => {
+              setIsExamModalOpen(false);
+              if (paperId) {
+                router.push(`/dashboard/teacher/exams&quizzes/papers/${paperId}`);
+              } else {
+                router.push(`/dashboard/teacher/exams&quizzes/${id}/papers`);
+              }
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Assignment Modal */}
+      <Dialog open={isAssignmentModalOpen} onOpenChange={setIsAssignmentModalOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 uppercase">
+              <BookOpen className="w-5 h-5 text-emerald-500" />
+              Create Assignment
+            </DialogTitle>
+          </DialogHeader>
+          <CreateAssignmentForm 
+            onSuccess={(id) => {
+              setIsAssignmentModalOpen(false);
+              router.push(`/dashboard/teacher/assignments/${id}?edit=true`);
+            }} 
+          />
         </DialogContent>
       </Dialog>
 
@@ -352,7 +423,7 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, on
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center cursor-pointer gap-2 px-4 py-2 rounded-xl transition-all duration-500 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400/70 focus-visible:ring-offset-0 ${
+      className={`relative flex items-center cursor-pointer gap-2 px-4 py-2 rounded-xl transition-all duration-500 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400/70 focus-visible:ring-offset-0 ${
         active 
           ? 'text-white' 
           : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 dark:text-slate-400'
@@ -364,7 +435,7 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, on
       {active && (
         <motion.div 
           layoutId="active-tab-bg"
-          className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-violet-600 dark:from-indigo-600 dark:to-violet-700 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-950/40"
+          className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 shadow-lg shadow-emerald-500/20 dark:shadow-emerald-950/40"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}

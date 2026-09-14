@@ -65,10 +65,10 @@ export default function AssignmentDetailPage() {
 
   if (isLoading || isPending || (!assignmentData && !isError)) {
     return (
-      <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30 animate-pulse">
+      <div className="w-full h-full min-h-[80vh] animate-pulse">
         {/* Sticky Header Skeleton */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Skeleton className="h-10 w-10 rounded-full" />
               <div className="flex flex-col gap-2">
@@ -90,17 +90,17 @@ export default function AssignmentDetailPage() {
         </div>
 
         {/* Main Content Skeleton */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Skeleton className="h-12 w-full max-w-2xl rounded-xl mb-8" />
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
-            <div className="space-y-6">
+        <main className="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-[calc(100vh-12rem)]">
+          <Skeleton className="h-12 w-full max-w-2xl rounded-xl mb-8 shrink-0" />
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm flex-1 flex flex-col">
+            <div className="space-y-6 flex-1">
               <div className="flex justify-between items-center mb-8">
                 <Skeleton className="h-8 w-1/4 rounded-lg" />
                 <Skeleton className="h-10 w-32 rounded-lg" />
               </div>
               <Skeleton className="h-32 w-full rounded-2xl" />
               <Skeleton className="h-32 w-full rounded-2xl" />
-              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-32 w-full rounded-2xl flex-1" />
             </div>
           </div>
         </main>
@@ -120,14 +120,14 @@ export default function AssignmentDetailPage() {
 
   const assignment = assignmentData;
 
-  // Protect the route: Only Admin and Creator can view
-  if (assignment?.teacherId && assignment.teacherId !== user?.id && user?.userType !== "ADMIN") {
+  // Protect the route: Only Admin, Creator, or Assigned Teachers can view
+  if (assignment && !assignment.isAuthorized && user?.userType !== "ADMIN") {
     return (
       <div className="max-w-6xl mx-auto p-6 md:p-8 text-center flex flex-col items-center justify-center min-h-[60vh]">
         <Lock className="w-12 h-12 text-gray-400 mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Restricted</h2>
         <p className="text-gray-500 max-w-md mx-auto mb-6">
-          Only the teacher who created this assignment or an administrator can view its details.
+          You are not authorized to view this assignment. Only the creator, teachers assigned to the subject, or administrators have access.
         </p>
         <Button onClick={() => router.back()}>Go Back</Button>
       </div>
@@ -138,9 +138,9 @@ export default function AssignmentDetailPage() {
   const isPreviewMode = searchParams.get('preview') === 'true';
 
   return (
-    <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">
+    <div className="w-full h-full min-h-[calc(100vh-8rem)]">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
             <Button 
                 variant="ghost" 
@@ -244,7 +244,7 @@ export default function AssignmentDetailPage() {
       {/* Preview Mode Banner */}
       {isPreviewMode && (
         <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
+          <div className="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold">
               <Lock size={12} />
               Preview Mode — This is another teacher's assignment. You can view it but cannot make any changes.
@@ -253,17 +253,23 @@ export default function AssignmentDetailPage() {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-8 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl w-full max-w-2xl grid grid-cols-3">
-            <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-              <LayoutList size={16} /> <span className="hidden sm:inline">Questions</span>
+            <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
+              <div className="flex flex-row items-center justify-center gap-2">
+                <LayoutList size={16} /> <span className="hidden sm:inline">Questions</span>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="submissions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-              <Users size={16} /> <span className="hidden sm:inline">Submissions</span>
+            <TabsTrigger value="submissions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
+              <div className="flex flex-row items-center justify-center gap-2">
+                <Users size={16} /> <span className="hidden sm:inline">Submissions</span>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="instructions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-              <FileText size={16} /> <span className="hidden sm:inline">Instructions & Files</span>
+            <TabsTrigger value="instructions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
+              <div className="flex flex-row items-center justify-center gap-2">
+                <FileText size={16} /> <span className="hidden sm:inline">Instructions & Files</span>
+              </div>
             </TabsTrigger>
           </TabsList>
 

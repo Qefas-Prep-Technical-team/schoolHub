@@ -14,6 +14,7 @@ interface ExamActionsProps {
   onDuplicate: () => void
   onExport: () => void
   className?: string
+  canEdit?: boolean
 }
 
 export function ExamActions({
@@ -23,7 +24,8 @@ export function ExamActions({
   onDelete,
   onDuplicate,
   onExport,
-  className
+  className,
+  canEdit = true
 }: ExamActionsProps) {
   const isDraft = exam.status === 'draft'
   const isCompleted = exam.status === 'completed' || exam.status === 'graded'
@@ -59,19 +61,15 @@ export function ExamActions({
               Preview
             </DropdownMenu.Item>
 
-            <DropdownMenu.Item
-              className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-md outline-none",
-                isDraft
-                  ? "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                  : "opacity-50 cursor-not-allowed text-gray-500"
-              )}
-              onClick={isDraft ? onEdit : undefined}
-              disabled={!isDraft}
-            >
-              <Icon name="edit" className="h-4 w-4" />
-              Edit
-            </DropdownMenu.Item>
+            {canEdit && (
+              <DropdownMenu.Item
+                className="flex-1 flex flex-col items-center justify-center gap-1 p-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer outline-none"
+                onClick={onEdit}
+              >
+                <Icon name="edit" className="h-4 w-4" />
+                Edit
+              </DropdownMenu.Item>
+            )}
           </div>
 
           {isCompleted && (

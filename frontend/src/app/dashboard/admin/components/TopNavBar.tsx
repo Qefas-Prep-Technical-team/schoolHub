@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/theme-toggle";
-import NotificationCenter from "./NotificationCenter";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { linkService } from "@/lib/api/services/linkService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";

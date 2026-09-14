@@ -25,6 +25,9 @@ export const useSocketSync = () => {
         // console.log("♻️ Invalidating links query due to notification...");
         queryClient.invalidateQueries({ queryKey: ["links"] });
       }
+      
+      // Always invalidate notifications to update badges/lists in real-time
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
       // Special toast for acceptance
       if (notification.type === "LINK_ACCEPTED") {

@@ -27,6 +27,7 @@ import { useGradeSettingsStore } from '@/lib/api/hooks/useGradeSettingsStore';
 import { calculateGrade } from '../utils/gradeCalculator';
 import GradeSettingsModal from './GradeSettingsModal';
 import EditGradeModal from './EditGradeModal';
+import GradeDetailsModal from './GradeDetailsModal';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -61,6 +62,10 @@ const GradesOverview: React.FC = () => {
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [selectedSessionId, setSelectedSessionId] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const [sortConfig, setSortConfig] = useState<{ field: string, order: 'asc' | 'desc' } | null>(null);
+  const [selectedGradeForDetails, setSelectedGradeForDetails] = useState<StudentGrade | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
@@ -131,7 +136,7 @@ const GradesOverview: React.FC = () => {
     queryFn: async () => {
       try {
         const result = await gradeService.getGradeHub(filterId || '', {
-          page: currentPage,
+          page: currentPage.toString(),
           search: searchQuery,
           teacherId: isPersonal ? user?.id : undefined,
           classId: selectedClassId !== 'all' ? selectedClassId : undefined,
@@ -154,7 +159,11 @@ const GradesOverview: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
       setEditingGrade(null);
+      toast.success("Grade updated successfully!");
     },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || err?.message || "Failed to update grade");
+    }
   });
 
   const publishGradeMutation = useMutation({
@@ -165,6 +174,25 @@ const GradesOverview: React.FC = () => {
     },
     onError: (err: any) => {
       toast.error(err?.message || "Failed to publish grade");
+    }
+  });
+
+  const bulkPublishMutation = useMutation({
+    mutationFn: () => {
+      return gradeService.bulkPublishGrades({
+        schoolId: filterId,
+        teacherId: isPersonal ? user?.id : undefined,
+        classId: selectedClassId !== 'all' ? selectedClassId : undefined,
+        sessionId: selectedSessionId !== 'all' ? selectedSessionId : undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      });
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
+      toast.success(res.message || "All pending grades published!");
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || err?.message || "Failed to publish grades");
     }
   });
 
@@ -187,11 +215,17 @@ const GradesOverview: React.FC = () => {
   };
 
   const handleViewDetails = (grade: StudentGrade) => {
-    if (grade.studentId) {
-      router.push(`/dashboard/teacher/students/${grade.studentId}?tab=academic`);
-    } else {
-      toast.error("Student ID not found for this record");
-    }
+    setSelectedGradeForDetails(grade);
+  };
+
+  const handleSortToggle = () => {
+    setSortConfig(current => {
+      if (!current) return { field: 'score', order: 'desc' };
+      if (current.field === 'score' && current.order === 'desc') return { field: 'score', order: 'asc' };
+      if (current.field === 'score' && current.order === 'asc') return { field: 'name', order: 'asc' };
+      if (current.field === 'name' && current.order === 'asc') return { field: 'name', order: 'desc' };
+      return null;
+    });
   };
 
   const rawData = useMemo(() => response?.data || [], [response?.data]);
@@ -200,11 +234,11 @@ const GradesOverview: React.FC = () => {
   const mappedGrades: StudentGrade[] = useMemo(() => {
     if (!rawData || !Array.isArray(rawData)) return [];
     
-    return rawData.map((item: {
+    const grades = rawData.map((item: {
       id?: string | number;
       score?: number;
       maxMarks?: number;
-      student?: { name?: string; studentCode?: string; profilePicture?: string; avatar?: string };
+      student?: { name?: string; studentCode?: string; profileImage?: string; avatar?: string };
       name?: string;
       studentId?: string;
       subjectPaper?: { title?: string };
@@ -231,10 +265,26 @@ const GradesOverview: React.FC = () => {
         grade: calculateGrade(score, maxMarks, gradingScale) as GradeLetter,
         status: (item.status || 'Graded') as GradeStatus,
         remarks: item.remarks || '',
-        profilePicture: item.student?.profilePicture || item.student?.avatar || ''
+        profilePicture: item.student?.profileImage || item.student?.avatar || ''
       };
     });
-  }, [rawData, gradingScale]);
+
+    if (sortConfig) {
+      grades.sort((a, b) => {
+        if (sortConfig.field === 'score') {
+          return sortConfig.order === 'asc' ? a.rawScore - b.rawScore : b.rawScore - a.rawScore;
+        }
+        if (sortConfig.field === 'name') {
+          return sortConfig.order === 'asc' 
+            ? a.name.localeCompare(b.name) 
+            : b.name.localeCompare(a.name);
+        }
+        return 0;
+      });
+    }
+    
+    return grades;
+  }, [rawData, gradingScale, sortConfig]);
 
   const filters: FilterOption[] = useMemo(() => {
     const activeFilters: FilterOption[] = [];
@@ -287,7 +337,7 @@ const GradesOverview: React.FC = () => {
 
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-slate-50/50 dark:bg-slate-950/50">
-      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[80%] mx-auto">
         <div className="flex flex-col flex-1">
           
           {/* Header Section */}
@@ -310,7 +360,7 @@ const GradesOverview: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 rounded-xl px-4 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="h-10 rounded-xl px-4 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 backdrop-blur-sm text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
                 onClick={() => setIsSettingsOpen(true)}
               >
                 <Settings2 className="mr-2 h-4 w-4" />
@@ -343,16 +393,28 @@ const GradesOverview: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-200">Record Management</h2>
-              <Filters 
-                filters={filters}
-                onFilterSelect={(type, value) => {
-                  setCurrentPage(1);
-                  if (type === 'session') setSelectedSessionId(value);
-                  if (type === 'class') setSelectedClassId(value);
-                  if (type === 'category') setSelectedCategory(value);
-                }}
-              />
             </div>
+
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  className="overflow-hidden"
+                >
+                  <Filters 
+                    filters={filters}
+                    onFilterSelect={(type, value) => {
+                      setCurrentPage(1);
+                      if (type === 'session') setSelectedSessionId(value);
+                      if (type === 'class') setSelectedClassId(value);
+                      if (type === 'category') setSelectedCategory(value);
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence mode="wait">
               {error ? (
@@ -385,11 +447,14 @@ const GradesOverview: React.FC = () => {
                     grades={mappedGrades}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
-                    onFilter={() => {}}
-                    onSort={() => {}}
+                    onFilter={() => setShowFilters(!showFilters)}
+                    onSort={handleSortToggle}
                     onExport={() => {}}
+                    onPublishAll={() => bulkPublishMutation.mutate()}
+                    isPublishingAll={bulkPublishMutation.isPending}
                     onEditGrade={setEditingGrade}
                     onPublishGrade={(grade) => publishGradeMutation.mutate(grade.id)}
+                    publishingGradeId={publishGradeMutation.isPending ? publishGradeMutation.variables : null}
                     onDeleteGrade={setGradeToDelete}
                     onViewDetailsGrade={handleViewDetails}
                     currentPage={currentPage}
@@ -438,7 +503,14 @@ const GradesOverview: React.FC = () => {
               onClick={handleConfirmDelete}
               className="h-10 rounded-xl px-4 font-black uppercase tracking-wider text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 active:scale-95 transition-all"
             >
-              Delete Forever
+              {deleteGradeMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin inline-block" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Forever'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -554,6 +626,12 @@ const GradesOverview: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <GradeDetailsModal
+        isOpen={!!selectedGradeForDetails}
+        onClose={() => setSelectedGradeForDetails(null)}
+        grade={selectedGradeForDetails}
+      />
     </div>
   );
 };

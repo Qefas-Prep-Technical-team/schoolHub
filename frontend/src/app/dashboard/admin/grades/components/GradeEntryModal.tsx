@@ -21,6 +21,7 @@ import { gradeKeys } from '@/lib/api/hooks/useGrades';
 import { apiClient } from '@/lib/api/client';
 import { useStudents } from '@/lib/api/hooks/useStudent';
 import AddStudentDialog from '../../students/components/AddStudentDialog';
+import { toast } from 'react-toastify';
 
 interface GradeEntryModalProps {
   isOpen: boolean;
@@ -144,10 +145,14 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gradeKeys.all });
+      toast.success("Grades saved successfully!");
       onClose();
       setSelectedExamId('');
       setSelectedPaperId('');
       setScores({});
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error || "Failed to save grades");
     },
   });
 
@@ -162,11 +167,11 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[1000px] h-[90vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shadow-2xl">
+        <DialogContent className="sm:max-w-[1000px] h-[90vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border-emerald-100 dark:border-slate-800/50 bg-emerald-50 dark:bg-slate-950 shadow-2xl">
           {/* Header */}
           <div className="px-8 py-6 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-primary dark:bg-primary/10 text-primary dark:text-primary flex items-center justify-center shadow-inner">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-600 dark:bg-slate-600/10 text-emerald-600 dark:text-emerald-600 flex items-center justify-center shadow-inner">
                 <Save size={28} />
               </div>
               <div>
@@ -176,7 +181,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                 <DialogDescription asChild>
                   <div className="mt-1">
                     {selectedExam ? (
-                      <span className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-tight">
+                      <span className="flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-tight">
                         <BookOpen size={12} />
                         {selectedExam.title}
                         {selectedPaper ? (
@@ -229,7 +234,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                 <Accordion type="single" collapsible className="space-y-2">
                   {exams.map((exam: any) => (
                     <AccordionItem key={exam.id} value={exam.id} className="border-none">
-                      <AccordionTrigger className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors data-[state=open]:bg-primary/5 data-[state=open]:text-primary border border-transparent data-[state=open]:border-primary/10">
+                      <AccordionTrigger className="px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors data-[state=open]:bg-emerald-600/5 data-[state=open]:text-emerald-600 border border-transparent data-[state=open]:border-emerald-600/10">
                         <div className="flex flex-col items-start text-left gap-1">
                           <span className="font-bold text-sm">{exam.title}</span>
                           <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">
@@ -251,15 +256,15 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                                 onClick={() => handleSelectPaper(exam.id, paper.id)}
                                 className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center gap-3 ${
                                   isSelected 
-                                    ? 'bg-primary text-white shadow-md' 
+                                    ? 'bg-emerald-600 text-white shadow-md' 
                                     : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                                 }`}
                               >
-                                <FileText size={16} className={isSelected ? 'text-primary-foreground' : 'text-slate-400'} />
+                                <FileText size={16} className={isSelected ? 'text-white' : 'text-slate-400'} />
                                 <div className="flex flex-col">
                                   <span className="text-sm font-bold truncate max-w-[200px]">{paper.title}</span>
                                   {paper.totalMarks && (
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary-foreground/80' : 'text-slate-400'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
                                       Max: {paper.totalMarks} marks
                                     </span>
                                   )}
@@ -297,7 +302,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                           </span>
                         )}
                         {selectedExam?.term && (
-                          <span className="px-3 py-1 rounded-full bg-primary/5 dark:bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest">
+                          <span className="px-3 py-1 rounded-full bg-emerald-600/5 dark:bg-slate-600/10 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
                             Term: {selectedExam.term}
                           </span>
                         )}
@@ -319,10 +324,10 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                   <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                       <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
-                        <User size={14} className="text-primary" />
+                        <User size={14} className="text-emerald-600" />
                         Score Candidates
                         {scoredCount > 0 && (
-                          <span className="text-[10px] font-black text-primary bg-primary/5 dark:bg-primary/10 px-3 py-1 rounded-full">
+                          <span className="text-[10px] font-black text-emerald-600 bg-emerald-600/5 dark:bg-slate-600/10 px-3 py-1 rounded-full">
                             {scoredCount} filled
                           </span>
                         )}
@@ -333,7 +338,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                           placeholder="Search students..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-9 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-primary/20"
+                          className="pl-9 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-emerald-600/20"
                         />
                       </div>
                     </div>
@@ -370,8 +375,8 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                           
                           return (
                             <div key={student.id} className={`flex items-center justify-between p-4 rounded-2xl group transition-all ${
-                              isOnline ? 'bg-primary/5 dark:bg-primary/5 border border-primary/50' :
-                              hasExisting ? 'bg-emerald-50/60 dark:bg-emerald-500/5 border border-emerald-200' : 
+                              isOnline ? 'bg-emerald-600/5 dark:bg-slate-600/5 border border-emerald-600/50' :
+                              hasExisting ? 'bg-emerald-50/60 dark:bg-slate-500/5 border border-emerald-200' : 
                               'bg-white dark:bg-slate-900 hover:shadow-md border border-slate-100 dark:border-slate-800'
                             }`}>
                               <div className="flex items-center gap-4">
@@ -379,7 +384,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                                   {index + 1}.
                                 </span>
                                 <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${
-                                  isOnline ? 'bg-primary text-primary' :
+                                  isOnline ? 'bg-emerald-600 text-emerald-600' :
                                   hasExisting ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 
                                   'bg-slate-50 dark:bg-slate-800 text-slate-400'
                                 }`}>
@@ -392,11 +397,11 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                                   {hasExisting ? (
                                     <div className="flex items-center gap-2 mt-1">
                                       {isOnline ? (
-                                        <span className="px-2 py-0.5 rounded-md bg-primary text-white text-[8px] font-black uppercase tracking-widest">Automatic</span>
+                                        <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest">Automatic</span>
                                       ) : (
                                         <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest">Manual</span>
                                       )}
-                                      <span className={`text-[10px] font-bold uppercase tracking-tight ${isOnline ? 'text-primary' : 'text-emerald-600'}`}>
+                                      <span className={`text-[10px] font-bold uppercase tracking-tight ${isOnline ? 'text-emerald-600' : 'text-emerald-600'}`}>
                                         {isOnline ? 'Online Result: ' : 'Manual Entry: '}{existing.score}/{existing.maxMarks}
                                       </span>
                                     </div>
@@ -415,9 +420,9 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                                   onChange={(e) => setScores(prev => ({ ...prev, [student.id]: e.target.value }))}
                                   disabled={isOnline}
                                   className={`w-24 h-12 text-center rounded-xl font-black text-lg bg-slate-50 dark:bg-slate-950 shadow-inner ${
-                                    isOnline ? 'border-primary text-primary opacity-70 cursor-not-allowed bg-primary/5/30' :
+                                    isOnline ? 'border-emerald-600 text-emerald-600 opacity-70 cursor-not-allowed bg-emerald-600/5/30' :
                                     hasExisting ? 'border-emerald-200 text-emerald-600 focus:ring-emerald-500/10' : 
-                                    'border-slate-200 dark:border-slate-800 focus:ring-primary/20 focus:border-primary'
+                                    'border-slate-200 dark:border-slate-800 focus:ring-emerald-600/20 focus:border-emerald-600'
                                   }`}
                                 />
                                 <span className="text-xs font-black text-slate-400 uppercase w-12">/ {maxMarks}</span>
@@ -441,7 +446,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
             <Button
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending || !isFormValid}
-              className="flex-1 h-12 rounded-xl bg-primary text-white font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex-1 h-12 rounded-xl bg-emerald-600 text-white font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:scale-[1.02] active:scale-95 transition-all"
             >
               {mutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" size={18} />}
               {mutation.isPending ? 'Saving...' : `Save ${scoredCount || ''} Grades`}
