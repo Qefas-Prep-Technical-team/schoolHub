@@ -36,7 +36,7 @@ export default function StudentSubmissionsTable({
     };
 
     const formatScore = (submission: any) => {
-        const isGraded = submission.status === 'GRADED' || submission.graded;
+        const isGraded = submission.status === 'graded' || submission.graded;
         if (!isGraded || submission.score === null) {
             return (
                 <span className="text-gray-500 dark:text-gray-400">
@@ -87,9 +87,9 @@ export default function StudentSubmissionsTable({
                                 <th className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">
                                     <div className="flex items-center gap-3">
                                         <div className="relative w-8 h-8 flex-shrink-0">
-                                            {submission.student?.profileImage || submission.student?.avatarUrl ? (
+                                            {submission.student?.avatarUrl ? (
                                                 <Image
-                                                    src={submission.student.profileImage || submission.student.avatarUrl}
+                                                    src={submission.student.avatarUrl}
                                                     alt={`${submission.student?.name || 'Student'}'s avatar`}
                                                     fill
                                                     className="rounded-full object-cover bg-gray-100"
@@ -106,7 +106,7 @@ export default function StudentSubmissionsTable({
                                 </th>
 
                                 <td className="px-6 py-4">
-                                    {formatDate(submission.submittedAt || submission.createdAt || submission.submissionTime)}
+                                    {formatDate(submission.submissionTime || '')}
                                 </td>
 
                                 <td className="px-6 py-4">
@@ -118,7 +118,7 @@ export default function StudentSubmissionsTable({
                                 </td>
 
                                 <td className="px-6 py-4 text-right">
-                                    {(submission.status === 'GRADED' || submission.graded) ? (
+                                    {(submission.status === 'graded' || submission.graded) ? (
                                         <button
                                             onClick={() => onViewGrade?.(submission.id)}
                                             className="font-medium text-primary hover:underline"

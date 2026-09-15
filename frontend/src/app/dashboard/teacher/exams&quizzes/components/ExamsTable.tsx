@@ -87,8 +87,8 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
   };
 
   const getEditLink = (exam: any) => {
-    if (exam.mode === 'SINGLE_SUBJECT' && exam.subjectExamPapers?.[0]) {
-      const paperId = exam.subjectExamPapers[0].subjectPaper?.id || exam.subjectExamPapers[0].subjectPaperId;
+    if (exam.mode === 'SINGLE_SUBJECT' && (exam as any).subjectExamPapers?.[0]) {
+      const paperId = (exam as any).subjectExamPapers[0].subjectPaper?.id || (exam as any).subjectExamPapers[0].subjectPaperId;
       if (paperId) return `/dashboard/teacher/exams&quizzes/papers/${paperId}`;
     }
     return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
@@ -104,8 +104,8 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
           if (isSubjectPaperTab) {
             isMyItem = (exam as any).assignedTeachers?.some((t: any) => t.id === user?.id) || exam.teacherId === user?.id;
           } else if (activeTab === 'assignment') {
-            const isAssignedSubject = mySubjectIds.includes((exam as any).subjectId || exam.subject?.name); // Using subject object just in case
-            isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || exam.subject?.id);
+            const isAssignedSubject = mySubjectIds.includes((exam as any).subjectId || (exam.subject as any)?.name); // Using subject object just in case
+            isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || (exam.subject as any)?.id);
           } else {
             isMyItem = exam.teacherId === user?.id;
           }
@@ -195,7 +195,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 <div>
                   <span className="block text-xs font-black text-slate-900 dark:text-slate-100">
                     {(() => {
-                      return exam.totalMarks || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.totalMarks || 0), 0)) || 0;
+                      return exam.totalMarks || ((exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.totalMarks || 0), 0)) || 0;
                     })()}
                   </span>
                   <span className="text-[8px] font-black uppercase tracking-tighter text-slate-400">Total Marks</span>
@@ -207,9 +207,9 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                         return (exam as any).questionsCount || (exam as any)._count?.questions || exam.questions?.length || 0;
                       }
                       if (activeTab === 'ca' || activeTab === 'quizzes') {
-                        return (exam as any).totalQuestions || exam.questions?.length || exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
+                        return (exam as any).totalQuestions || exam.questions?.length || (exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
                       }
-                      return exam.subjectExamPapers?.length || 0;
+                      return (exam as any).subjectExamPapers?.length || 0;
                     })()}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
@@ -225,7 +225,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                   <div className="flex items-center justify-center gap-0.5 text-xs font-black text-slate-900 dark:text-slate-100">
                     <Clock size={10} className="text-slate-400" />
                     {(() => {
-                      const dur = exam.durationMinutes || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.durationMinutes || 0), 0)) || 0;
+                      const dur = exam.durationMinutes || ((exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.durationMinutes || 0), 0)) || 0;
                       return dur > 0 ? `${dur} min` : 'N/A';
                     })()}
                   </div>
@@ -300,7 +300,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
           if (isSubjectPaperTab) {
             isMyItem = (exam as any).assignedTeachers?.some((t: any) => t.id === user?.id) || exam.teacherId === user?.id;
           } else if (activeTab === 'assignment') {
-            isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || exam.subject?.id);
+            isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || (exam.subject as any)?.id);
           } else {
             isMyItem = exam.teacherId === user?.id;
           }
@@ -324,7 +324,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                   #{numStr}
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
-                  {(!isSubjectPaperTab && exam.subjectExamPapers && exam.subjectExamPapers.length > 0) ? (
+                  {(!isSubjectPaperTab && (exam as any).subjectExamPapers && (exam as any).subjectExamPapers.length > 0) ? (
                     <button 
                       onClick={(e) => toggleExpand(e, exam.id)}
                       className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"
@@ -400,7 +400,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 <div className="flex flex-col items-center">
                   <span className="text-sm font-black text-slate-900 dark:text-slate-100">
                     {(() => {
-                      return exam.totalMarks || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.totalMarks || 0), 0)) || 0;
+                      return exam.totalMarks || ((exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.totalMarks || 0), 0)) || 0;
                     })()}
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Total Marks</span>
@@ -412,9 +412,9 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                         return (exam as any).questionsCount || (exam as any)._count?.questions || exam.questions?.length || 0;
                       }
                       if (activeTab === 'ca' || activeTab === 'quizzes') {
-                        return (exam as any).totalQuestions || exam.questions?.length || exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
+                        return (exam as any).totalQuestions || exam.questions?.length || (exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
                       }
-                      return exam.subjectExamPapers?.length || 0;
+                      return (exam as any).subjectExamPapers?.length || 0;
                     })()}
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">
@@ -425,7 +425,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                   <div className="flex items-center gap-1 text-sm font-black text-slate-900 dark:text-slate-100">
                     <Clock size={12} className="text-slate-400" />
                     {(() => {
-                      const dur = exam.durationMinutes || (exam.subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.durationMinutes || 0), 0)) || 0;
+                      const dur = exam.durationMinutes || ((exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.durationMinutes || 0), 0)) || 0;
                       return dur > 0 ? `${dur} min` : 'N/A';
                     })()}
                   </div>
@@ -487,13 +487,13 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 </div>
               
               {/* Expanded Papers Section */}
-              {expandedExamIds.has(exam.id) && exam.subjectExamPapers && exam.subjectExamPapers.length > 0 && (
+              {expandedExamIds.has(exam.id) && (exam as any).subjectExamPapers && (exam as any).subjectExamPapers.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-slate-200/50 dark:border-slate-700/50 animate-in slide-in-from-top-2 fade-in duration-200">
                   <h4 className="text-xs font-bold text-slate-500 dark:text-emerald-400 mb-3 uppercase tracking-wider pl-4">Subject Papers</h4>
                   <div className="grid gap-3">
-                    {exam.subjectExamPapers.map((paper: any) => {
+                    {(exam as any).subjectExamPapers.map((paper: any) => {
                       // Use pre-built assignedTeachers from backend (deduplicated from TeacherSubject + Subject.teacherId + SubjectExamPaper.teacherId)
-                      const allTeachers: any[] = paper.assignedTeachers?.length > 0 ? paper.assignedTeachers : (exam.assignedTeachers ?? []);
+                      const allTeachers: any[] = paper.assignedTeachers?.length > 0 ? paper.assignedTeachers : ((exam as any).assignedTeachers ?? []);
                       const isMine = allTeachers.some((t: any) => t.id === user?.id) || paper.teacherId === user?.id || exam.teacherId === user?.id;
 
                       return (

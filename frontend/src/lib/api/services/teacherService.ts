@@ -64,6 +64,17 @@ export const teacherService = {
   },
 
   /**
+   * Create an assignment
+   */
+  createAssignment: async (data: any) => {
+    const { schoolId, ...payload } = data;
+    const response = await apiClient.post("/assignment/teacher", payload, {
+      headers: schoolId ? { 'x-school-id': schoolId } : undefined
+    });
+    return response.data;
+  },
+
+  /**
    * Get teacher's assignments
    */
   getAssignments: async (options: { schoolId?: string; status?: string; classId?: string } = {}) => {

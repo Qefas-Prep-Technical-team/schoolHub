@@ -221,7 +221,7 @@ export default function AssignmentDetailsPage() {
         breadcrumbItems.push({ label: subjectName, href: '/dashboard/teacher/assignments' });
     }
 
-    breadcrumbItems.push({ label: assignment?.title || 'Loading...' });
+    breadcrumbItems.push({ label: assignment?.title || 'Loading...', href: '#' });
 
     if (isLoading || isPending || (!assignmentData && !isError)) {
         return (

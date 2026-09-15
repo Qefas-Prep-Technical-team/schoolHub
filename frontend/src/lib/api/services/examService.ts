@@ -126,12 +126,12 @@ export interface SubjectExamQuestion {
 
 export interface CreateExamDTO {
   title: string;
-  description: string;
+  description?: string;
   scope: string;
   creationMode: string;
   category: string;
   mode: string;
-  schoolId: string;
+  schoolId?: string;
   sessionId?: string;
   term?: string;
   teacherId?: string;
@@ -151,6 +151,7 @@ export interface CreatePaperDTO {
   title: string;
   instructions: string;
   durationMinutes: number;
+  totalMarks?: number;
   passMark?: number;
   readingContent?: string;
   images?: string[];

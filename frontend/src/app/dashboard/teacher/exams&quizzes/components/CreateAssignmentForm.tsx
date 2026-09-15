@@ -48,7 +48,7 @@ export default function CreateAssignmentForm({ onSuccess }: CreateAssignmentForm
   });
 
   const { register, handleSubmit, formState: { errors } } = useForm<AssignmentFormValues>({
-    resolver: zodResolver(assignmentSchema),
+    resolver: zodResolver(assignmentSchema) as any,
     defaultValues: {
       title: '',
       subjectId: '',

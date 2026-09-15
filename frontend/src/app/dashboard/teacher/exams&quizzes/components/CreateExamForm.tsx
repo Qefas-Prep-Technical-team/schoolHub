@@ -61,7 +61,7 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
   });
 
   const { register, handleSubmit, formState: { errors } } = useForm<ExamFormValues>({
-    resolver: zodResolver(examSchema),
+    resolver: zodResolver(examSchema) as any,
     defaultValues: {
       title: '',
       description: '',
