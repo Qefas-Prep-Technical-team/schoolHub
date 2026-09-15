@@ -90,9 +90,11 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
         resultReleaseAt: data.resultReleaseAt ? new Date(data.resultReleaseAt).toISOString() : undefined,
       });
 
-      // 2. Auto-create the first Subject Paper for this exam
+      if (!exam?.id) throw new Error('Exam creation failed — no ID returned');
+
+      // 2. Auto-create the default Subject Paper for this exam
       let paper = null;
-      if (exam && exam.id) {
+      try {
         paper = await examService.createSubjectPaper(exam.id, {
           title: data.title,
           subjectId: data.subjectId,
@@ -103,6 +105,14 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
           instructions: data.description || '',
           creationMode: "MANUAL",
         });
+      } catch (paperError: any) {
+        console.error('[CreateExamForm] Paper creation failed:', paperError);
+        // Show a warning but don't block — exam was created
+        toast.warn(
+          paperError?.response?.data?.message ||
+          'Assessment created, but the default subject paper could not be created. You may not be assigned to this subject.',
+          { autoClose: 6000 }
+        );
       }
 
       return { exam, paper };

@@ -139,7 +139,7 @@ export default function TeacherAddQuestionDashboard() {
 
   if (isLoadingPaper) {
     return (
-      <div className="max-w-7xl mx-auto p-8 space-y-8">
+      <div className="w-full xl:max-w-[1600px] mx-auto p-8 space-y-8">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-8 w-1/3" />
@@ -151,7 +151,7 @@ export default function TeacherAddQuestionDashboard() {
 
   if (isErrorPaper || !paper) {
     return (
-      <div className="max-w-7xl mx-auto p-8 text-center pt-20">
+      <div className="w-full xl:max-w-[1600px] mx-auto p-8 text-center pt-20">
         <h2 className="text-xl font-bold text-red-600 mb-2">Paper Not Found</h2>
         <p className="text-slate-500 mb-6">The subject paper you are looking for does not exist or has been removed.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
@@ -163,7 +163,7 @@ export default function TeacherAddQuestionDashboard() {
     <div className="min-h-screen bg-transparent">
       {/* Admin-matched Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-full xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
             <Button 
                 variant="ghost" 
@@ -264,7 +264,7 @@ export default function TeacherAddQuestionDashboard() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-8 p-1 bg-slate-100/50 dark:bg-slate-800/50 rounded-[1.25rem] w-full max-w-sm border border-slate-200/50 dark:border-slate-800/50">
             <TabsTrigger value="questions" className="flex-1 rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm py-2.5 font-black text-xs uppercase tracking-widest transition-all">
@@ -276,7 +276,7 @@ export default function TeacherAddQuestionDashboard() {
           </TabsList>
 
           <TabsContent value="questions">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[70vh]">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[70vh] p-6 md:p-8 lg:p-10">
                 <QuestionManager 
                     paperId={paperId} 
                     examId={examId}

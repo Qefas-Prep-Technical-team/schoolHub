@@ -81,38 +81,38 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Context Header */}
-      <div className="flex flex-col gap-4 p-5 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-2xl">
-                    <Building2 className="text-primary w-5 h-5" />
+      <div className="flex flex-col gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/10 rounded-xl">
+                    <Building2 className="text-primary w-4 h-4" />
                 </div>
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target Context</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[200px]">{isPersonal ? "Personal Dashboard" : (selectedSchoolName || "Unknown School")}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Context</p>
+                    <p className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[150px]">{isPersonal ? "Personal" : (selectedSchoolName || "Unknown")}</p>
                 </div>
             </div>
-            <div className="hidden md:block h-8 w-[1px] bg-slate-200 dark:bg-slate-800" />
-            <div className="flex items-center gap-4">
-                <div className="p-3 bg-emerald-500/10 rounded-2xl">
-                    <User className="text-emerald-500 w-5 h-5" />
+            <div className="hidden sm:block h-6 w-[1px] bg-slate-200 dark:bg-slate-800" />
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+                    <User className="text-emerald-500 w-4 h-4" />
                 </div>
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Assigned Teacher</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[200px]">{user?.name || user?.email}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Teacher</p>
+                    <p className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[150px]">{user?.name || user?.email}</p>
                 </div>
             </div>
         </div>
         
         {/* New: Assigned Subjects List */}
         {!isLoadingSubjects && subjects?.length > 0 && (
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Your Assigned Subjects in this School:</p>
-                <div className="flex flex-wrap gap-2">
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5 px-1">Your Subjects:</p>
+                <div className="flex flex-wrap gap-1.5">
                     {(subjects as any[]).map((s: any) => (
-                        <span key={s.id} className="px-3 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                        <span key={s.id} className="px-2 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] font-bold text-slate-600 dark:text-slate-300">
                             {s.name}
                         </span>
                     ))}
@@ -121,8 +121,8 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
         )}
       </div>
 
-      <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Subject Selector */}
           <div className="space-y-2.5 relative">
             <Label className="text-xs font-black uppercase tracking-widest text-slate-500 px-1 flex justify-between items-center">
@@ -201,7 +201,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
             <Button
               type="submit"
               disabled={isPending}
-              className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3 active:scale-[0.98]"
+              className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-[0.98]"
             >
               {isPending ? (
                 <Loader2 className="animate-spin" size={20} />

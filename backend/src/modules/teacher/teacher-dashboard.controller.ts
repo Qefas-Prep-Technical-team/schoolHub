@@ -205,14 +205,7 @@ export const getTeacherSubjects = async (req: Request, res: Response) => {
         const teacherId = (req as any).user.id;
         const { schoolId } = req.query;
 
-        if (!schoolId) {
-            return res.status(400).json({
-                success: false,
-                message: "schoolId is required",
-            });
-        }
-
-        const data = await getTeacherSubjectsService(teacherId, schoolId as string);
+        const data = await getTeacherSubjectsService(teacherId, schoolId as string | undefined);
 
         return res.status(200).json({
             success: true,

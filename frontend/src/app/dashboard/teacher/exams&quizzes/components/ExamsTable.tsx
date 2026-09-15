@@ -87,10 +87,18 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
   };
 
   const getEditLink = (exam: any) => {
-    if (exam.mode === 'SINGLE_SUBJECT' && (exam as any).subjectExamPapers?.[0]) {
-      const paperId = (exam as any).subjectExamPapers[0].subjectPaper?.id || (exam as any).subjectExamPapers[0].subjectPaperId;
+    if (isSubjectPaperTab) return `/dashboard/teacher/exams&quizzes/papers/${exam.id}`;
+
+    const papers: any[] = (exam as any).subjectExamPapers || [];
+
+    if (papers.length === 1) {
+      // paper.id is already the SubjectPaper ID (backend spreads ...subjectPaper)
+      const paperId = papers[0].id;
       if (paperId) return `/dashboard/teacher/exams&quizzes/papers/${paperId}`;
     }
+
+    // 0 papers → go to the exam's papers management page to add one
+    // 2+ papers → go to the exam's papers list
     return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
   };
 
@@ -271,6 +279,16 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                       <Eye size={14} strokeWidth={2.5} />
                     </button>
                   </Link>
+                  {/* Delete button — only for items the teacher owns */}
+                  {isMyItem && onDelete && (
+                    <button
+                      onClick={() => onDelete(exam)}
+                      className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} strokeWidth={2.5} />
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -482,6 +500,16 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                       <Eye size={16} strokeWidth={2.5} />
                     </button>
                   </Link>
+                  {/* Delete button — only for items the teacher owns */}
+                  {isMyItem && onDelete && (
+                    <button
+                      onClick={() => onDelete(exam)}
+                      className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} strokeWidth={2.5} />
+                    </button>
+                  )}
                 </div>
               </div>
                 </div>

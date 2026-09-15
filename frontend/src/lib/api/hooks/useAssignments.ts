@@ -133,6 +133,23 @@ export const useUpdateAssignmentStatus = (schoolId: string) => {
   });
 };
 
+export const useUpdateAssignmentSettings = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ assignmentId, data }: { assignmentId: string, data: any }) => {
+      const response = await api.patch(`/assignment/${assignmentId}/settings`, data, {
+        headers: { 'x-school-id': schoolId }
+      });
+      return response.data.data;
+    },
+    onSuccess: (_, { assignmentId }) => {
+      queryClient.invalidateQueries({ queryKey: ['assignment-detail', assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+    }
+  });
+};
+
 export const useDeleteAssignment = (schoolId: string) => {
   const queryClient = useQueryClient();
   

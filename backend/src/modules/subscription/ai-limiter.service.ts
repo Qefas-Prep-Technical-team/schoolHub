@@ -3,6 +3,9 @@ import { UserRole } from "@prisma/client";
 import { PLAN_LIMITS, DEFAULT_PLAN } from "./plan.constants";
 import { EntitlementService } from "./entitlement.service";
 
+/** Minimum daily AI prompts guaranteed to every teacher linked to a school */
+const TEACHER_SCHOOL_MIN_DAILY_AI = 10;
+
 export class AiLimiterService {
   /**
    * Resolves the daily AI usage limit for a given user or their associated school.
@@ -32,8 +35,54 @@ export class AiLimiterService {
       }
     }
 
-    // 2. Check individual user limits (TEACHER, etc.) — but ONLY if enforcement is enabled for that role
-    const roleCategory = userType.toLowerCase(); // e.g. "teacher"
+    // 2. Teachers linked to a school get a guaranteed minimum of 10 prompts/day,
+    //    tracked individually. Their personal plan or school plan can grant more.
+    if (userType === UserRole.TEACHER) {
+      // Check for a personal maxAiUsageOverride on the teacher record
+      const teacher = await (prisma as any).teacher.findUnique({ where: { id: userId } });
+      if (teacher) {
+        const isExpired = teacher.subscriptionEnd && new Date(teacher.subscriptionEnd) < new Date();
+
+        // Explicit personal override takes precedence
+        if (!isExpired && teacher.maxAiUsageOverride !== null && teacher.maxAiUsageOverride !== undefined) {
+          return teacher.maxAiUsageOverride;
+        }
+
+        // Personal subscription plan
+        const activePlanId = (teacher as any).subscriptionPlanId || (teacher as any).planId;
+        if (!isExpired && activePlanId) {
+          const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
+          if (plan && plan.maxAiUsage > TEACHER_SCHOOL_MIN_DAILY_AI) return plan.maxAiUsage;
+        }
+      }
+
+      // School plan (take the higher of school plan or minimum guarantee)
+      const resolvedSchoolId = schoolId || teacher?.schoolId || teacher?.activeSchoolId || teacher?.primarySchoolId;
+      if (resolvedSchoolId) {
+        const school = await prisma.school.findUnique({ where: { id: resolvedSchoolId } });
+        if (school) {
+          const isExpired = school.subscriptionEnd && new Date(school.subscriptionEnd) < new Date();
+
+          if (!isExpired && school.maxAiUsageOverride !== null && school.maxAiUsageOverride !== undefined) {
+            return Math.max(school.maxAiUsageOverride, TEACHER_SCHOOL_MIN_DAILY_AI);
+          }
+          const activePlanId = (school as any).subscriptionPlanId || (school as any).planId;
+          if (!isExpired && activePlanId) {
+            const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
+            if (plan) return Math.max(plan.maxAiUsage, TEACHER_SCHOOL_MIN_DAILY_AI);
+          }
+          const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (school.plan || DEFAULT_PLAN).toUpperCase();
+          const limits = PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN];
+          return Math.max(limits.maxAiUsage, TEACHER_SCHOOL_MIN_DAILY_AI);
+        }
+      }
+
+      // Teacher exists but no school — still grant minimum
+      return TEACHER_SCHOOL_MIN_DAILY_AI;
+    }
+
+    // 3. Check individual user limits for other roles — but ONLY if enforcement is enabled for that role
+    const roleCategory = userType.toLowerCase();
     const isEnforced = await EntitlementService.isEnforced(roleCategory);
 
     if (isEnforced) {
@@ -57,10 +106,8 @@ export class AiLimiterService {
         }
       }
     }
-    // If enforcement is OFF for this role, we skip the personal plan check entirely
-    // and fall through to use the school's plan below.
 
-    // 3. Fallback to school if user doesn't have personal limits but is associated with a school
+    // 4. Fallback to school if user doesn't have personal limits but is associated with a school
     if (schoolId) {
       const school = await prisma.school.findUnique({ where: { id: schoolId } });
       if (school) {
@@ -130,3 +177,4 @@ export class AiLimiterService {
     });
   }
 }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from './PageHeader';
@@ -23,6 +23,7 @@ import CreateExamForm from './CreateExamForm';
 import CreateAssignmentForm from './CreateAssignmentForm';
 import { useRouter } from 'next/navigation';
 import Pagination from '@/components/ui/Pagination';
+import { toast } from 'react-toastify';
 
 export default function ExamsQuizzesOverview() {
   const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment'>('exams');
@@ -40,6 +41,7 @@ export default function ExamsQuizzesOverview() {
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [createCategory, setCreateCategory] = useState<'EXAM' | 'QUIZ' | 'CA'>('EXAM');
   const [examToDelete, setExamToDelete] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -54,8 +56,13 @@ export default function ExamsQuizzesOverview() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => examService.deleteExam(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher-exams'] });
       setExamToDelete(null);
+      toast.success('Assessment deleted successfully.');
+      setIsRefreshing(true);
+      queryClient.invalidateQueries({ queryKey: ['teacher-exams'] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to delete assessment.');
     }
   });
 
@@ -73,7 +80,7 @@ export default function ExamsQuizzesOverview() {
     enabled: !isPersonal && !!filterId,
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters.status, filters.class],
     queryFn: async () => {
       if (activeTab === 'subject-papers') {
@@ -99,6 +106,11 @@ export default function ExamsQuizzesOverview() {
       return result;
     },
   });
+
+  // Clear refresh spinner once the background refetch settles
+  useEffect(() => {
+    if (!isFetching) setIsRefreshing(false);
+  }, [isFetching]);
 
   const handleCreateNew = (category: 'EXAM' | 'QUIZ' | 'CA' | 'ASSIGNMENT') => {
     if (category === 'ASSIGNMENT') {
@@ -273,7 +285,7 @@ export default function ExamsQuizzesOverview() {
 
           <div className="mt-8">
             <AnimatePresence mode="wait">
-              {isLoading ? (
+              {(isLoading || isRefreshing) ? (
                 <motion.div
                   key="skeleton"
                   initial={{ opacity: 0 }}
@@ -319,17 +331,17 @@ export default function ExamsQuizzesOverview() {
 
       {/* Add Paper Modal */}
       <Dialog open={isAddPaperModalOpen} onOpenChange={setIsAddPaperModalOpen}>
-        <DialogContent className="sm:max-w-[80vw] p-0 overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem]">
-          <DialogHeader className="p-8 pb-0">
-            <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-              Create <span className="text-primary">Subject Paper</span>
+        <DialogContent className="sm:max-w-[540px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 uppercase">
+              <Building2 className="w-5 h-5 text-primary" />
+              Create Subject Paper
             </DialogTitle>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 flex items-center gap-2">
-              <Building2 size={12} className="text-primary" />
               For: <span className="text-slate-900 dark:text-slate-100">{selectedSchoolName}</span>
             </p>
           </DialogHeader>
-          <div className="p-8">
+          <div className="pt-2">
             <CreatePaperForm 
               onSuccess={(paperId) => {
                 router.push(`/dashboard/teacher/exams&quizzes/add-question?paperId=${paperId}`);

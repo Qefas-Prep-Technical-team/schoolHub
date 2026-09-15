@@ -51,6 +51,13 @@ export default function ExamPapersPage() {
     enabled: !!examId,
   });
 
+  // Auto-redirect: if this exam has exactly 1 paper, go straight to the paper edit page
+  useEffect(() => {
+    if (!isLoadingPapers && papers.length === 1) {
+      router.replace(`/dashboard/teacher/exams&quizzes/papers/${(papers[0] as any).id}`);
+    }
+  }, [papers, isLoadingPapers, router]);
+
   const validateExamMutation = useMutation({
     mutationFn: () => examService.validateExam(examId),
     onSuccess: () => {

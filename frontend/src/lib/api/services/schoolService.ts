@@ -149,7 +149,7 @@ export const schoolService = {
     return response.data.data ?? [];
   },
 
-  getSubjects: async (schoolId: string) => {
+  getSubjects: async (schoolId?: string) => {
     const response = await apiClient.get(`/academic/subjects`, { params: { schoolId } });
     return response.data.data ?? [];
   },

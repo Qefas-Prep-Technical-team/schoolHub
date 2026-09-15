@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
+import prisma from "../../config/database";
 import {
   addAIQuestionsToPaperService,
   addManualQuestionsToPaperService,
@@ -26,12 +27,10 @@ import {
   unlinkSubjectPaperService,
   updateSubjectPaperService,
 } from "./exam.service";
-import {
-  canManageExam,
-  canManageSubjectPaper,
-} from "./exam.permissions";
+import { canManageExam, canManageSubjectPaper } from "./exam.permissions";
 import { canTeacherManageSubject } from "../academic/teacher-subject.permissions";
 import { handleError } from "../../utils/error-handler";
+import { createNotification } from "../notification/notification.service";
 
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
@@ -242,9 +241,10 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
             message: "You are not allowed to manage this exam",
           });
         }
-      }
-
-      if (subjectId) {
+        // When creating a paper for an exam they can already manage,
+        // skip the subject-level check — exam ownership is sufficient.
+      } else if (subjectId) {
+        // Standalone paper (no examId): check subject permissions
         const canManageSubject = await canTeacherManageSubject({
           teacherId: req.user.id,
           subjectId,
@@ -678,11 +678,55 @@ export const deleteSubjectPaper = async (req: Request, res: Response) => {
 
 export const deleteExam = async (req: Request, res: Response) => {
   try {
-    if (!req.user || req.user.userType !== UserRole.ADMIN) {
-      return res.status(403).json({ success: false, message: "Only admins can delete exams" });
+    const examId = req.params.id as string;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    await deleteExamService(req.params.id as string);
+    // Fetch the exam to check ownership and get school info
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      select: { id: true, title: true, teacherId: true, schoolId: true, teacher: { select: { name: true } } },
+    });
+
+    if (!exam) {
+      return res.status(404).json({ success: false, message: "Exam not found" });
+    }
+
+    if (user.userType === UserRole.ADMIN) {
+      // Admins can delete any exam
+    } else if (user.userType === UserRole.TEACHER && exam.teacherId === user.id) {
+      // Teachers can delete only their own exams
+      // After deletion, notify the school admin
+      await deleteExamService(examId);
+
+      if (exam.schoolId) {
+        const teacherName = exam.teacher?.name || "A teacher";
+        createNotification({
+          recipientType: "SCHOOL",
+          recipientId: exam.schoolId,
+          senderType: "TEACHER",
+          senderId: user.id,
+          type: "GENERAL",
+          title: "Assessment Deleted by Teacher",
+          message: `${teacherName} has deleted the assessment "${exam.title || 'Untitled'}". This action was performed by the teacher who created it.`,
+        }).catch((err) => console.error("Failed to notify admin of exam deletion:", err));
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Exam deleted successfully",
+      });
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this exam. Only the creator or an admin can delete it.",
+      });
+    }
+
+    await deleteExamService(examId);
     return res.status(200).json({
       success: true,
       message: "Exam deleted successfully",

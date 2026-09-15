@@ -10,12 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, FileText, Check, Globe, Settings as SettingsIcon, Trash2, Users, LayoutList, Eye, EyeOff, Loader2, ExternalLink, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import QuestionManager from "../../../admin/assignments/[id]/components/QuestionManager";
-import { useUpdateAssignmentStatus, useDeleteAssignment } from "@/lib/api/hooks/useAssignments";
+import { useUpdateAssignmentStatus, useDeleteAssignment, useUpdateAssignmentSettings } from "@/lib/api/hooks/useAssignments";
 import { toast } from "react-toastify";
 import SettingsModal from "../../../admin/assignments/[id]/components/SettingsModal";
 import SubmissionList from "../../../admin/assignments/[id]/components/SubmissionList";
 import { useState, useEffect } from "react";
 import VideoPlayer from "@/components/ui/VideoPlayer";
+import { Pencil, Save, X } from "lucide-react";
 
 
 export default function AssignmentDetailPage() {
@@ -30,6 +31,9 @@ export default function AssignmentDetailPage() {
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAssignmentStatus(effectiveSchoolId);
   const { mutate: deleteAssignment, isPending: isDeleting } = useDeleteAssignment(effectiveSchoolId);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [editForm, setEditForm] = useState({ instructions: "", videoUrl: "", referenceUrl: "", attachmentUrl: "" });
+  const { mutate: updateSettings, isPending: isUpdatingSettings } = useUpdateAssignmentSettings(effectiveSchoolId);
 
   // If edit=true is passed, open settings modal automatically
   useEffect(() => {
@@ -293,53 +297,160 @@ export default function AssignmentDetailPage() {
 
           <TabsContent value="instructions">
             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm prose dark:prose-invert max-w-none">
-                <h3>Instructions</h3>
-                <p>{assignment.instructions || "No instructions provided."}</p>
-                
-                {assignment.attachmentUrl && (
-                  <div className="mt-8 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="m-0">Attached File Preview</h4>
+              <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                <h3 className="m-0">Instructions & Resources</h3>
+                {!isPreviewMode && !isEditingInstructions && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setEditForm({
+                        instructions: assignment.instructions || "",
+                        videoUrl: assignment.videoUrl || "",
+                        referenceUrl: assignment.referenceUrl || "",
+                        attachmentUrl: assignment.attachmentUrl || ""
+                      });
+                      setIsEditingInstructions(true);
+                    }}
+                    className="h-8 rounded-lg flex items-center gap-1.5"
+                  >
+                    <Pencil size={14} /> Edit
+                  </Button>
+                )}
+                {isEditingInstructions && (
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setIsEditingInstructions(false)}
+                      className="h-8 rounded-lg flex items-center gap-1.5"
+                      disabled={isUpdatingSettings}
+                    >
+                      <X size={14} /> Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      disabled={isUpdatingSettings}
+                      onClick={() => {
+                        updateSettings({
+                          assignmentId,
+                          data: {
+                            instructions: editForm.instructions,
+                            videoUrl: editForm.videoUrl,
+                            referenceUrl: editForm.referenceUrl,
+                            attachmentUrl: editForm.attachmentUrl
+                          }
+                        }, {
+                          onSuccess: () => {
+                            toast.success("Instructions updated successfully");
+                            setIsEditingInstructions(false);
+                          },
+                          onError: (err: any) => toast.error(err?.response?.data?.error || "Failed to update instructions")
+                        });
+                      }}
+                      className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5"
+                    >
+                      {isUpdatingSettings ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                      Save Changes
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {isEditingInstructions ? (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold">Instructions Text</label>
+                    <textarea 
+                      value={editForm.instructions}
+                      onChange={(e) => setEditForm({ ...editForm, instructions: e.target.value })}
+                      className="w-full min-h-[150px] p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none resize-y"
+                      placeholder="Enter detailed instructions here..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold">Video URL (e.g. YouTube)</label>
+                      <input 
+                        type="url"
+                        value={editForm.videoUrl}
+                        onChange={(e) => setEditForm({ ...editForm, videoUrl: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold">Reference URL</label>
+                      <input 
+                        type="url"
+                        value={editForm.referenceUrl}
+                        onChange={(e) => setEditForm({ ...editForm, referenceUrl: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-sm font-bold">Attachment File URL (Optional Direct Link)</label>
+                      <input 
+                        type="url"
+                        value={editForm.attachmentUrl}
+                        onChange={(e) => setEditForm({ ...editForm, attachmentUrl: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p>{assignment.instructions || "No instructions provided."}</p>
+                  
+                  {assignment.attachmentUrl && (
+                    <div className="mt-8 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="m-0">Attached File Preview</h4>
+                        <a 
+                          href={assignment.attachmentUrl} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-bold transition-colors no-underline"
+                        >
+                          Open in new tab <ExternalLink size={16} />
+                        </a>
+                      </div>
+                      <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-video w-full relative group">
+                        <iframe 
+                          src={assignment.attachmentUrl} 
+                          className="w-full h-full border-0 absolute inset-0" 
+                          title="Attachment Preview"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/5 dark:bg-white/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {assignment.videoUrl && (
+                    <div className="mt-8">
+                      <VideoPlayer videoUrl={assignment.videoUrl} title="Video Resource" />
+                    </div>
+                  )}
+
+                  {assignment.referenceUrl && (
+                    <div className="mt-8 space-y-4">
+                      <h4 className="m-0">External Reference</h4>
                       <a 
-                        href={assignment.attachmentUrl} 
+                        href={assignment.referenceUrl} 
                         target="_blank" 
                         rel="noreferrer" 
-                        className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-bold transition-colors no-underline"
+                        className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-bold transition-colors no-underline border border-blue-100 dark:border-blue-800/50"
                       >
-                        Open in new tab <ExternalLink size={16} />
+                        <ExternalLink size={18} /> {assignment.referenceUrl}
                       </a>
                     </div>
-                    <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-video w-full relative group">
-                      <iframe 
-                        src={assignment.attachmentUrl} 
-                        className="w-full h-full border-0 absolute inset-0" 
-                        title="Attachment Preview"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-black/5 dark:bg-white/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    </div>
-                  </div>
-                )}
-
-                {assignment.videoUrl && (
-                  <div className="mt-8">
-                    <VideoPlayer videoUrl={assignment.videoUrl} title="Video Resource" />
-                  </div>
-                )}
-
-                {assignment.referenceUrl && (
-                  <div className="mt-8 space-y-4">
-                    <h4 className="m-0">External Reference</h4>
-                    <a 
-                      href={assignment.referenceUrl} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-bold transition-colors no-underline border border-blue-100 dark:border-blue-800/50"
-                    >
-                      <ExternalLink size={18} /> {assignment.referenceUrl}
-                    </a>
-                  </div>
-                )}
+                  )}
+                </>
+              )}
             </div>
           </TabsContent>
         </Tabs>

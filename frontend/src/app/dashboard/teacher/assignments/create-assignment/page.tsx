@@ -86,9 +86,15 @@ export default function CreateAssignmentPage() {
             }
 
             // Prepare submission data
+            let mappedStatus = 'DRAFT';
+            if (action === 'publish') {
+                if (formData.publishStatus === 'publish-now') mappedStatus = 'PUBLISHED';
+                if (formData.publishStatus === 'schedule-later') mappedStatus = 'SCHEDULED';
+            }
+
             const submissionData = {
                 ...formData,
-                status: action === 'draft' ? 'draft' : formData.publishStatus,
+                status: mappedStatus,
                 publishNow: action === 'publish' && formData.publishStatus === 'publish-now',
                 scheduledFor: formData.publishStatus === 'schedule-later' ? formData.scheduledDate : null
             };

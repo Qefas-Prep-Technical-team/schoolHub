@@ -1412,17 +1412,28 @@ export const deleteTeacherClassStudentGradeService = async (
  * Fetch subjects assigned to a teacher, filtered by school.
  * This checks both direct assignment (Subject.teacherId) and the TeacherSubject relation.
  */
-export const getTeacherSubjectsService = async (teacherId: string, schoolId: string) => {
+export const getTeacherSubjectsService = async (teacherId: string, schoolId?: string) => {
+    const whereClause: any = {
+        isArchived: false,
+        OR: []
+    };
+
+    if (schoolId) {
+        whereClause.schoolId = schoolId;
+        whereClause.OR = [
+            { teacherId },
+            { teacherSubjects: { some: { teacherId } } },
+            { timetablePeriods: { some: { teacherId } } }
+        ];
+    } else {
+        // Personal scope
+        whereClause.scope = 'PERSONAL'; // Ensure we only get personal subjects if no schoolId
+        whereClause.teacherId = teacherId;
+        delete whereClause.OR;
+    }
+
     return prisma.subject.findMany({
-        where: {
-            schoolId,
-            isArchived: false,
-            OR: [
-                { teacherId },
-                { teacherSubjects: { some: { teacherId } } },
-                { classes: { some: { class: { teachers: { some: { teacherId } } } } } }
-            ]
-        },
+        where: whereClause,
         include: {
             teacher: {
                 select: { name: true, id: true }

@@ -621,6 +621,9 @@ export const updateAssignmentSettingsService = async (assignmentId: string, scho
   if (data.maxScore !== undefined) updateData.totalMarks = data.maxScore;
   if (data.totalMarks !== undefined) updateData.totalMarks = data.totalMarks;
   if (data.scoreReleaseDate !== undefined) updateData.scoreReleaseDate = data.scoreReleaseDate;
+  if (data.attachmentUrl !== undefined) updateData.attachmentUrl = data.attachmentUrl;
+  if (data.videoUrl !== undefined) updateData.videoUrl = data.videoUrl;
+  if (data.referenceUrl !== undefined) updateData.referenceUrl = data.referenceUrl;
 
   return prisma.assignment.update({
     where: { id: assignmentId },

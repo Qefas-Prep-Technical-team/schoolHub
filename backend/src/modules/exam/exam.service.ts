@@ -99,7 +99,7 @@ export const createExamService = async ({
       recipientId: exam.schoolId,
       type: "GENERAL",
       title: "New Assessment Draft Created",
-      message: `A new assessment "${exam.title}" has been created as a draft by a teacher.`,
+      message: `A new assessment "${exam.title}" has been created as a draft by ${exam.teacher?.name || 'a teacher'}.`,
     }).catch((err) => console.error("Failed to notify school of exam creation:", err));
   }
 
@@ -1222,7 +1222,7 @@ export const publishSubjectPaperService = async (subjectPaperId: string) => {
       validatedAt: paper.validatedAt || new Date(),
       publishedAt: new Date(),
     },
-    include: { questions: true },
+    include: { questions: true, teacher: true },
   });
 
   // Auto-publish associated non-EXAM main exams (CA, QUIZ, ASSIGNMENT)
@@ -1242,7 +1242,7 @@ export const publishSubjectPaperService = async (subjectPaperId: string) => {
       recipientId: updatedPaper.schoolId,
       type: "GENERAL",
       title: "Subject Paper Published",
-      message: `A new subject paper "${updatedPaper.title}" has been published by a teacher.`,
+      message: `A new subject paper "${updatedPaper.title}" has been published by ${updatedPaper.teacher?.name || 'a teacher'}.`,
     }).catch((err) => console.error("Failed to notify school of paper publication:", err));
   }
 
@@ -1331,7 +1331,7 @@ export const publishExamService = async (examId: string) => {
       publishedAt: new Date(),
       totalMarks,
     },
-    include: { subjectExamPapers: true },
+    include: { subjectExamPapers: true, teacher: true },
   });
 
   if (updatedExam.schoolId) {
@@ -1340,7 +1340,7 @@ export const publishExamService = async (examId: string) => {
       recipientId: updatedExam.schoolId,
       type: "GENERAL",
       title: "New Exam Published",
-      message: `The exam "${updatedExam.title}" has been published by a teacher.`,
+      message: `The exam "${updatedExam.title}" has been published by ${updatedExam.teacher?.name || 'a teacher'}.`,
     }).catch((err) => console.error("Failed to notify school of exam publication:", err));
   }
 

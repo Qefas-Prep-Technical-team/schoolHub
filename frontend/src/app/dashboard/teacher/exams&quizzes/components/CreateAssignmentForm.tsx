@@ -71,8 +71,8 @@ export default function CreateAssignmentForm({ onSuccess }: CreateAssignmentForm
     onSuccess: (data: any) => {
       toast.success('Assignment created successfully!');
       queryClient.invalidateQueries({ queryKey: ['teacher-exams'] });
-      if (onSuccess && data?.assignments?.[0]?.id) {
-        onSuccess(data.assignments[0].id);
+      if (onSuccess && data?.data?.[0]?.id) {
+        onSuccess(data.data[0].id);
       }
     },
     onError: (error: any) => {
