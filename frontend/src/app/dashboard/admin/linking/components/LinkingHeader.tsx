@@ -32,19 +32,20 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
 
         {/* Connect with Code — pill shaped */}
         {isLimitReached ? (
-          <button
+          <Button
             disabled
-            className="inline-flex items-center h-11 px-6 rounded-full font-semibold text-sm cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 shadow-none border border-slate-200 dark:border-slate-700"
+            variant="outline"
+            className="h-11 px-6 rounded-full font-semibold text-sm text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed"
           >
             <Link2 className="mr-2 h-4 w-4" /> Limit Reached
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={onConnectClick}
-            className="inline-flex items-center justify-center overflow-hidden rounded-full h-11 px-6 bg-primary hover:bg-primary/90 text-white gap-2 text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+            className="h-11 px-6 rounded-full font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
           >
             <Link2 className="mr-2 h-4 w-4" /> Connect with Code
-          </button>
+          </Button>
         )}
       </div>
     </div>

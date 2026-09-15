@@ -3,36 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "git commit  -m \"ai training data \"",
-      "timestamp": 1782647626653,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git push origin",
-      "timestamp": 1782647745457,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_0sgn0s.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_0sgn0s.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782729054620,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_yxkc5m.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_yxkc5m.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782729054637,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_mz2jaz.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_mz2jaz.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1782729246833,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "Set-Location -Path \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -ne '.png' -and $_.Extension -ne '.jpg' -and $_.Extension -ne '.jpeg' -and $_.Extension -ne '.ico' -and $_.Extension -ne '.svg' -and $_.FullName -notmatch '\\\\.git\\\\' } | ForEach-Object { $path = $_.FullName; try { Select-String -Path $path -Pattern 'school hub|School Hub|schoolHub|SchoolHub' -SimpleMatch | ForEach-Object { [PSCustomObject]@{File=$path; Line=$_.LineNumber; Text=$_.Line.Trim()} } } catch {} } | Format-Table -AutoSize",
-      "timestamp": 1782729423642,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
       "command": "Set-Location -Path \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -notin '.png','.jpg','.jpeg','.ico','.svg','.psd','.exe','.dll' } | ForEach-Object { try { Select-String -Path $_.FullName -Pattern 'school hub|School Hub|schoolHub|SchoolHub' -SimpleMatch } catch {} } | Select-Object Path,LineNumber,Line | Format-Table -AutoSize",
       "timestamp": 1782729733866,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
@@ -2501,7 +2471,37 @@
       "command": "git push origin",
       "timestamp": 1789479236357,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1789479352153,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"staging fixe\"",
+      "timestamp": 1789479361820,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1789479370229,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd frontend",
+      "timestamp": 1789479494911,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789485989343,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
+    },
+    {
+      "command": "cd ../",
+      "timestamp": 1789486002087,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
     }
   ],
-  "lastUpdated": 1789479236357
+  "lastUpdated": 1789486002087
 }

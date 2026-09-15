@@ -26,6 +26,7 @@ import { PendingRequestsGrid } from './components/PendingRequestsGrid';
 import { ProfilePreviewModal } from './components/ProfilePreviewModal';
 import { ConnectModal } from './components/ConnectModal';
 import QRCodeModal from './components/QRCodeModal';
+import { LinkingSkeleton } from './components/LinkingSkeleton';
 import Pagination from '@/components/ui/Pagination';
 import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
 import { getMemberDetails, isClassLink } from './components/LinkingUtils';
@@ -186,7 +187,7 @@ function LinkingHub() {
   const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-[calc(100vh-4rem)]">
+    <div className="p-8 w-[80%] max-w-[80%] mx-auto space-y-8 min-h-[calc(100vh-4rem)]">
       <LinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)} 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
@@ -241,10 +242,7 @@ function LinkingHub() {
         />
 
         {isLoadingActive || isLoadingRequests ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-            <p className="text-slate-500 font-medium">Fetching {subTab} {mainTab} connections...</p>
-          </div>
+          <LinkingSkeleton count={8} />
         ) : subTab === 'active' ? (
           <ActiveLinksGrid 
             links={filteredActiveLinks}

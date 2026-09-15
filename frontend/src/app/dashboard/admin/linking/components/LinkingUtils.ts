@@ -56,18 +56,18 @@ export function getLinkTypeConfig(linkType: string) {
     case 'TEACHER_CLASS':
       return {
         label: 'Teacher → Class',
-        border: 'border-l-emerald-500',
-        shadow: 'shadow-emerald-100/60 dark:shadow-emerald-900/20',
-        badge: 'bg-emerald-600 text-white',
-        avatar: 'bg-emerald-600',
-        avatarGlow: 'bg-emerald-500',
-        topBar: 'bg-emerald-500',
-        code: 'text-emerald-600 dark:text-emerald-400',
-        codeBox: 'bg-emerald-50/60 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-800/40',
-        acceptBtn: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20',
-        noteBar: 'bg-emerald-300',
-        hover: 'hover:text-emerald-500',
-        progressBar: 'bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_8px_rgba(52,211,153,0.6)]',
+        border: 'border-l-purple-500',
+        shadow: 'shadow-purple-100/60 dark:shadow-purple-900/20',
+        badge: 'bg-purple-600 text-white',
+        avatar: 'bg-purple-600',
+        avatarGlow: 'bg-purple-500',
+        topBar: 'bg-purple-500',
+        code: 'text-purple-600 dark:text-purple-400',
+        codeBox: 'bg-purple-50/60 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/40',
+        acceptBtn: 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/20',
+        noteBar: 'bg-purple-300',
+        hover: 'hover:text-purple-500',
+        progressBar: 'bg-gradient-to-r from-purple-400 to-purple-600 shadow-[0_0_8px_rgba(168,85,247,0.6)]',
       };
     case 'STUDENT_CLASS':
       return {
@@ -123,18 +123,22 @@ export function getLinkTypeConfig(linkType: string) {
 export const getMemberDetails = (item: any, currentUserId?: string) => {
   // Handling both LinkRequest and RelationshipLink
   const req = item.approvedFromRequest || item;
-  
-  // Robust person identification
-  const person = 
-    req.requesterTeacher || req.targetTeacher ||
-    req.requesterStudent || req.targetStudent ||
-    req.requesterParent || req.targetParent ||
-    req.requesterAdmin || req.approverAdmin ||
-    req.sender || req.receiver;
-
+  const classObj = req.class || item.class;
   const school = req.targetSchool || req.requesterSchool || item.school;
+  
+  // Robust person identification - filter out the current user so we find the peer
+  const participants = [
+    req.requesterTeacher, req.targetTeacher,
+    req.requesterStudent, req.targetStudent,
+    req.requesterParent, req.targetParent,
+    req.requesterAdmin, req.approverAdmin,
+    req.sender, req.receiver
+  ].filter(Boolean);
+  
+  const person = participants.find((p: any) => p.id !== currentUserId) || 
+                 (participants.length > 0 && !classObj && !school ? participants[0] : null);
 
-  const className = req.class ? (req.class.name + (req.class.section ? ` - ${req.class.section}` : '')) : undefined;
+  const className = classObj ? (classObj.name + (classObj.section ? ` - ${classObj.section}` : '')) : undefined;
   
   // Determine identification codes
   let peerCode = item.leftEntityId === currentUserId ? item.rightCode : item.leftCode;
@@ -176,7 +180,7 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       email: person.email || 'No Email',
       phone: person.phone || person.phoneNumber || null,
       className: className,
-      classCode: req.class?.classCode || null,
+      classCode: classObj?.classCode || null,
       grade: person.grade || person.year || person.level || null,
       subject: person.subject || person.specialization || null,
       role,
@@ -184,6 +188,28 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       schoolLogo: school?.logo || null,
       code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || bestCode,
       image: person.profileImage || person.avatar
+    };
+  }
+
+  const isClassLink = item.linkType === 'TEACHER_CLASS' || item.linkType === 'STUDENT_CLASS';
+
+  if (classObj || isClassLink) {
+    const fallbackName = school?.name ? `${school.name} Class` : 'Unknown Class';
+    const finalName = className || (item.peerName && item.peerName !== 'Linked Member' ? item.peerName : fallbackName);
+
+    return {
+      name: finalName,
+      email: school?.name || 'Classroom Entity',
+      phone: null,
+      className: undefined,
+      classCode: classObj?.classCode || null,
+      grade: classObj?.grade || null,
+      subject: classObj?.subject || null,
+      role: 'Class',
+      schoolName: school?.name || null,
+      schoolLogo: school?.logo || null,
+      code: classObj?.classCode || bestCode,
+      image: undefined
     };
   }
 
@@ -201,23 +227,6 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       schoolLogo: school.logo,
       code: school.schoolCode || bestCode,
       image: school.logo
-    };
-  }
-
-  if (req.class) {
-    return {
-      name: className || 'Unknown Class',
-      email: 'Classroom Entity',
-      phone: null,
-      className: undefined,
-      classCode: req.class.classCode || null,
-      grade: req.class.grade || null,
-      subject: req.class.subject || null,
-      role: 'Class',
-      schoolName: null,
-      schoolLogo: null,
-      code: req.class.classCode || bestCode,
-      image: undefined
     };
   }
   
