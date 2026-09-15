@@ -51,7 +51,8 @@ export function middleware(req: NextRequest) {
     subdomain === "flexiti" ||
     subdomain === "localhost" ||
     subdomain === "lvh" ||
-    subdomain === "schoolhub"
+    subdomain === "schoolhub" ||
+    subdomain === "staging"
   ) {
     return NextResponse.next();
   }
