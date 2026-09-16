@@ -246,7 +246,7 @@ export const getTeacherProfile = async (req: Request, res: Response) => {
 export const updateTeacherProfile = async (req: Request, res: Response) => {
     try {
         const teacherId = (req as any).user.id;
-        const { name, gender, phone, profileImage, bannerImage } = req.body;
+        const { name, gender, phone, profileImage, bannerImage, department, highestQualification, yearsOfExperience, address } = req.body;
 
         const updatedProfile = await updateTeacherProfileService(teacherId, {
             name,
@@ -254,6 +254,10 @@ export const updateTeacherProfile = async (req: Request, res: Response) => {
             phone,
             profileImage,
             bannerImage,
+            department,
+            highestQualification,
+            yearsOfExperience,
+            address,
         });
 
         return res.status(200).json({

@@ -11,7 +11,7 @@ import { StudentLifecycleService } from "../student/student.lifecycle.service";
  * @param adminId The ID of the admin
  * @param data Data to update
  */
-export const updateAdminProfileService = async (adminId: string, data: { name?: string; gender?: any }) => {
+export const updateAdminProfileService = async (adminId: string, data: { name?: string; gender?: any; profileImage?: string; bannerImage?: string }) => {
   return await prisma.admin.update({
     where: { id: adminId },
     data,

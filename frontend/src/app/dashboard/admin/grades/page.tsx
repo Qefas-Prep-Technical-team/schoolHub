@@ -588,9 +588,43 @@ function ExamGradesFlow({
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-2xl bg-slate-50 dark:bg-slate-800/50 animate-pulse border border-slate-100 dark:border-slate-800" />)}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-2xl bg-slate-50 dark:bg-slate-800/50 animate-pulse border border-slate-100 dark:border-slate-800" />)}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+                <thead>
+                    <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                        <th className="p-4 w-12"><div className="h-4 w-6 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                        <th className="p-4"><div className="h-4 w-32 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                        <th className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                        <th className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                        <th className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                        <th className="p-4 w-12"><div className="h-4 w-4 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <tr key={i} className="border-b border-slate-100 dark:border-slate-800/40">
+                            <td className="p-4 text-center"><div className="h-4 w-4 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                            <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 animate-pulse" />
+                                    <div className="h-4 w-32 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                </div>
+                            </td>
+                            <td className="p-4 text-center"><div className="h-4 w-8 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                            <td className="p-4 text-center"><div className="h-4 w-8 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                            <td className="p-4 text-center"><div className="h-4 w-8 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                            <td className="p-4 text-center"><div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+          </div>
+        )
       ) : paginatedExams.length === 0 ? (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-4">
            <Trophy className="h-12 w-12 text-slate-300 dark:text-slate-600" strokeWidth={1.5} />
@@ -598,93 +632,109 @@ function ExamGradesFlow({
         </div>
       ) : (
         <div className="space-y-6">
-            <div className={cn(
-                viewMode === 'grid' 
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" 
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-200 dark:divide-slate-800"
-            )}>
-                {paginatedExams.map((exam: any, index: number) => (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        key={exam.id} 
-                        onClick={() => setSelectedExamId(exam.id)}
-                        className={cn(
-                            "group relative overflow-hidden transition-all duration-300 cursor-pointer",
-                            viewMode === 'grid' 
-                                ? "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1" 
-                                : "hover:bg-slate-50 dark:hover:bg-slate-800/50 p-4 sm:px-6 flex items-center justify-between gap-4"
-                        )}
-                    >
-                        {viewMode === 'list' ? (
-                            <div className="flex items-center gap-4 w-full">
-                                <div className="text-sm font-bold text-slate-400 w-6 text-center shrink-0">
-                                    {index + 1 + (currentPage - 1) * itemsPerPage}.
-                                </div>
-                                <div className="h-10 w-10 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0" style={{ color: primaryColor }}>
-                                    <Trophy size={18} strokeWidth={2} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">{exam.title}</h3>
-                                    <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                                        <span>{exam.category || 'General'}</span>
-                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                        <span>Class {exam.class?.name || "Global"}</span>
-                                    </div>
-                                </div>
-                                <div className="hidden sm:flex items-center gap-8 px-6 border-x border-slate-100 dark:border-slate-800">
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">Papers</span>
+            {viewMode === 'list' ? (
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Exam Details</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Papers</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Questions</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Students</th>
+                                <th className="p-4 w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                            {paginatedExams.map((exam: any, index: number) => (
+                                <tr 
+                                    key={exam.id} 
+                                    onClick={() => setSelectedExamId(exam.id)}
+                                    className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer"
+                                >
+                                    <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                        #{index + 1 + (currentPage - 1) * itemsPerPage}
+                                    </td>
+                                    <td className="p-4 relative">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
+                                                <Trophy size={18} strokeWidth={2.5} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                    {exam.title}
+                                                </h3>
+                                                <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                                                    <span>{exam.category || 'General'}</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                                    <span>Class {exam.class?.name || "Global"}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 relative text-center">
                                         <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam.totalPapers || 0}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">Questions</span>
+                                    </td>
+                                    <td className="p-4 relative text-center">
                                         <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam.totalQuestions || 0}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">Students</span>
+                                    </td>
+                                    <td className="p-4 relative text-center">
                                         <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam._count?.examAttempts || 0}</span>
-                                    </div>
-                                </div>
-                                <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors flex-shrink-0" style={{ color: primaryColor }}>
-                                    <ChevronRight size={18} />
-                                </div>
-                            </div>
-                        ) : (() => {
-                            const isQuiz = exam.category === 'QUIZ';
-                            const isCA = (exam.category as string) === 'CA';
-                            const isExam = !isQuiz && !isCA;
+                                    </td>
+                                    <td className="p-4 relative text-center">
+                                        <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                                            <ChevronRight size={18} />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                    {paginatedExams.map((exam: any, index: number) => {
+                        const isQuiz = exam.category === 'QUIZ';
+                        const isCA = (exam.category as string) === 'CA';
+                        const isExam = !isQuiz && !isCA;
 
-                            const theme = isQuiz ? {
-                                border: 'border-orange-500/20 hover:border-orange-500/50',
-                                bg: 'bg-gradient-to-br from-white to-orange-50 dark:from-slate-900 dark:to-orange-950/20',
-                                iconBg: 'bg-orange-500 text-white shadow-orange-500/30',
-                                textHighlight: 'text-orange-600 dark:text-orange-400',
-                                statusBg: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-                                icon: PenTool,
-                                accentHover: 'group-hover:bg-orange-500 group-hover:text-white'
-                            } : isCA ? {
-                                border: 'border-emerald-500/20 hover:border-emerald-500/50',
-                                bg: 'bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20',
-                                iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
-                                textHighlight: 'text-emerald-600 dark:text-emerald-400',
-                                statusBg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                                icon: BookOpen,
-                                accentHover: 'group-hover:bg-emerald-500 group-hover:text-white'
-                            } : {
-                                border: 'border-blue-500/20 hover:border-blue-500/50',
-                                bg: 'bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20',
-                                iconBg: 'bg-blue-600 text-white shadow-blue-600/30',
-                                textHighlight: 'text-blue-600 dark:text-blue-400',
-                                statusBg: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                                icon: FileText,
-                                accentHover: 'group-hover:bg-blue-600 group-hover:text-white'
-                            };
+                        const theme = isQuiz ? {
+                            border: 'border-orange-500/20 hover:border-orange-500/50',
+                            bg: 'bg-gradient-to-br from-white to-orange-50 dark:from-slate-900 dark:to-orange-950/20',
+                            iconBg: 'bg-orange-500 text-white shadow-orange-500/30',
+                            textHighlight: 'text-orange-600 dark:text-orange-400',
+                            statusBg: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                            icon: PenTool,
+                            accentHover: 'group-hover:bg-orange-500 group-hover:text-white'
+                        } : isCA ? {
+                            border: 'border-emerald-500/20 hover:border-emerald-500/50',
+                            bg: 'bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20',
+                            iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
+                            textHighlight: 'text-emerald-600 dark:text-emerald-400',
+                            statusBg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+                            icon: BookOpen,
+                            accentHover: 'group-hover:bg-emerald-500 group-hover:text-white'
+                        } : {
+                            border: 'border-blue-500/20 hover:border-blue-500/50',
+                            bg: 'bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20',
+                            iconBg: 'bg-blue-600 text-white shadow-blue-600/30',
+                            textHighlight: 'text-blue-600 dark:text-blue-400',
+                            statusBg: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                            icon: FileText,
+                            accentHover: 'group-hover:bg-blue-600 group-hover:text-white'
+                        };
 
-                            const Icon = theme.icon;
+                        const Icon = theme.icon;
 
-                            return (
+                        return (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                key={exam.id} 
+                                onClick={() => setSelectedExamId(exam.id)}
+                                className="group relative overflow-hidden transition-all duration-300 cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1" 
+                            >
                                 <div className={`relative rounded-3xl border ${theme.border} ${theme.bg} overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 h-full w-full group`}>
                                     <div className={`h-1.5 w-full ${theme.iconBg} absolute top-0 left-0`} />
                                     <div className="p-7 relative z-10">
@@ -759,11 +809,11 @@ function ExamGradesFlow({
                                         </div>
                                     </div>
                                 </div>
-                            );
-                        })()}
-                    </motion.div>
-                ))}
-            </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+            )}
             {filteredExams.length > 0 && (
                 <Pagination 
                     currentPage={currentPage}
@@ -1010,75 +1060,123 @@ function ExamStudentList({
 
         <div className="space-y-4">
             {isLoading ? (
-                <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-xs animate-pulse bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">Loading results...</div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                <th className="p-4 w-16"><div className="h-4 w-6 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                                <th className="p-4"><div className="h-4 w-32 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                                <th className="p-4"><div className="h-4 w-24 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                                <th className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                                <th className="p-4 w-12"><div className="h-4 w-4 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <tr key={i} className="border-b border-slate-100 dark:border-slate-800/40">
+                                    <td className="p-4 text-center"><div className="h-4 w-4 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 animate-pulse" />
+                                            <div className="h-4 w-32 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                        </div>
+                                    </td>
+                                    <td className="p-4"><div className="h-4 w-24 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" /></td>
+                                    <td className="p-4 text-center"><div className="h-6 w-16 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                    <td className="p-4 text-center"><div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             ) : paginatedAttempts.length === 0 ? (
                 <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">No candidates found</div>
-            ) : paginatedAttempts.map((attempt: any, idx: number) => {
-                const scorePercent = attempt.totalMarks ? Math.round((attempt.totalScore / attempt.totalMarks) * 100) : Math.round(attempt.totalScore || attempt.percentage || 0);
-                const serialNumber = idx + 1 + (currentPage - 1) * itemsPerPage;
-                const isPassed = scorePercent >= 50;
-                
-                const theme = isPassed ? {
-                    border: 'border-emerald-500/20 hover:border-emerald-500/50',
-                    bg: 'bg-gradient-to-br from-white to-emerald-50/50 dark:from-slate-900 dark:to-emerald-950/20',
-                    textHighlight: 'text-emerald-600 dark:text-emerald-400',
-                    badge: 'bg-emerald-500 text-white shadow-emerald-500/30',
-                    progress: 'bg-emerald-500'
-                } : {
-                    border: 'border-red-500/20 hover:border-red-500/50',
-                    bg: 'bg-gradient-to-br from-white to-red-50/50 dark:from-slate-900 dark:to-red-950/20',
-                    textHighlight: 'text-red-600 dark:text-red-400',
-                    badge: 'bg-red-500 text-white shadow-red-500/30',
-                    progress: 'bg-red-500'
-                };
+            ) : (
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-16 text-center">#</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student Details</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                                <th className="p-4 w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                            {paginatedAttempts.map((attempt: any, idx: number) => {
+                                const scorePercent = attempt.totalMarks ? Math.round((attempt.totalScore / attempt.totalMarks) * 100) : Math.round(attempt.totalScore || attempt.percentage || 0);
+                                const serialNumber = idx + 1 + (currentPage - 1) * itemsPerPage;
+                                const isPassed = scorePercent >= 50;
+                                
+                                const theme = isPassed ? {
+                                    textHighlight: 'text-emerald-600 dark:text-emerald-400',
+                                    badge: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30',
+                                    progress: 'bg-emerald-500'
+                                } : {
+                                    textHighlight: 'text-rose-600 dark:text-rose-400',
+                                    badge: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border-rose-100 dark:border-rose-900/30',
+                                    progress: 'bg-rose-500'
+                                };
 
-                return (
-                    <div 
-                        key={attempt.id} 
-                        onClick={() => onSelectStudent(attempt.studentId)}
-                        className={`group relative rounded-3xl border ${theme.border} ${theme.bg} p-4 sm:p-6 cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
-                    >
-                        <div className={`absolute top-0 left-0 w-1.5 h-full ${theme.progress}`} />
-                        
-                        <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto ml-2">
-                            <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-500 shrink-0 font-black text-lg">
-                                #{serialNumber}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
-                                    {attempt.student?.name}
-                                </h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 truncate">
-                                    {attempt.student?.studentId || "UID-UNSET"}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-row items-center justify-between sm:justify-end gap-6 sm:gap-8 w-full sm:w-auto pl-16 sm:pl-0">
-                            <div className="flex flex-col sm:items-end">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</span>
-                                <div className="flex items-center gap-3">
-                                    <div className="hidden sm:block w-24 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                        <div className={`h-full ${theme.progress}`} style={{ width: `${scorePercent}%` }} />
-                                    </div>
-                                    <span className={`text-xl font-black ${theme.textHighlight}`}>
-                                        {scorePercent}%
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-4">
-                                <span className={`hidden sm:inline-block px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-md ${theme.badge}`}>
-                                    {isPassed ? "Passed" : "Review"}
-                                </span>
-                                <div className="h-10 w-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-all">
-                                    {isNavigating === attempt.id ? <Loader2 className="animate-spin h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
+                                return (
+                                    <tr 
+                                        key={attempt.id} 
+                                        onClick={() => onSelectStudent(attempt.studentId)}
+                                        className={cn(
+                                            "group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer",
+                                            isNavigating === attempt.id ? "opacity-70 pointer-events-none" : ""
+                                        )}
+                                    >
+                                        <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                            #{serialNumber}
+                                        </td>
+                                        <td className="p-4 relative">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
+                                                    <User size={18} strokeWidth={2.5} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                        {attempt.student?.name}
+                                                    </h3>
+                                                    <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                                                        {attempt.student?.studentId || "UID-UNSET"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 relative">
+                                            <div className="flex items-center gap-3 max-w-[200px]">
+                                                <div className="flex-1 hidden sm:block h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className={`h-full ${theme.progress}`} style={{ width: `${scorePercent}%` }} />
+                                                </div>
+                                                <span className={`text-sm font-black ${theme.textHighlight}`}>
+                                                    {scorePercent}%
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 relative text-center">
+                                            <span className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded border ${theme.badge}`}>
+                                                {isPassed ? "Passed" : "Review"}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 relative text-center">
+                                            <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                                                {isNavigating === attempt.id ? (
+                                                    <Loader2 className="animate-spin h-4 w-4" />
+                                                ) : (
+                                                    <ChevronRight className="h-5 w-5" />
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
             {filteredAttempts.length > 0 && (
                 <div className="pt-6">
                     <Pagination 
@@ -1532,64 +1630,122 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
       </div>
 
       <div className="space-y-12">
-          <div className={cn(
-              viewMode === 'grid' 
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-200 dark:divide-slate-800"
-          )}>
             {isLoading ? (
-              [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-48 rounded-2xl bg-slate-50 dark:bg-slate-800/50 animate-pulse border border-slate-200 dark:border-slate-800" />)
+              viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-48 rounded-2xl bg-slate-50 dark:bg-slate-800/50 animate-pulse border border-slate-200 dark:border-slate-800" />)}
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                <th className="p-4 w-12"><div className="h-4 w-6 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                                <th className="p-4"><div className="h-4 w-32 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                                <th className="p-4 text-center"><div className="h-4 w-24 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                                <th className="p-4 text-center"><div className="h-4 w-24 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                                <th className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                                <th className="p-4 w-12"><div className="h-4 w-4 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <tr key={i} className="border-b border-slate-100 dark:border-slate-800/40">
+                                    <td className="p-4 text-center"><div className="h-4 w-4 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 animate-pulse" />
+                                            <div className="h-4 w-32 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                    <td className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                    <td className="p-4 text-center"><div className="h-4 w-8 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                    <td className="p-4 text-center"><div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+              )
             ) : paginatedPapers.length === 0 ? (
               <div className="col-span-full py-32 text-center bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-4">
                  <BarChart3 className="h-12 w-12 text-slate-300 dark:text-slate-600" />
                  <p className="text-sm font-medium text-slate-500">No Papers Found</p>
               </div>
             ) : (
-              paginatedPapers.map((paper: any, index: number) => (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  key={paper.id}
-                  onClick={() => {
-                      setIsNavigating(paper.id);
-                      onSelectPaper(paper.exams?.[0]?.examId || 'none', paper.id);
-                  }}
-                  className={cn(
-                      "group relative overflow-hidden transition-all duration-300 cursor-pointer",
-                      viewMode === 'grid' 
-                        ? "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm hover:shadow-md hover:border-primary/30" 
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800/50 p-4 lg:p-5 flex items-center justify-between gap-4 lg:gap-8 hover:border-primary/30",
-                      isNavigating === paper.id ? "opacity-70 pointer-events-none scale-[0.98]" : ""
-                  )}
-                >
-                    {viewMode === 'list' ? (
-                       <div className="flex items-center gap-4 lg:gap-6 w-full">
-                            <div className="text-sm font-bold text-slate-400 w-6 text-center shrink-0">
-                                {index + 1 + (currentPage - 1) * itemsPerPage}.
-                            </div>
-                            <div className="h-12 w-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-bold text-lg flex-shrink-0" style={{ color: primaryColor }}>
-                                {paper.subject?.name?.charAt(0) || 'P'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate">{paper.title}</h3>
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    <span className="text-xs text-slate-500 font-medium">{paper.subject?.name || 'Unassigned'}</span>
-                                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                                    <span className="text-xs text-slate-500 font-medium truncate">{paper.exams?.[0]?.exam?.title || 'Standalone'}</span>
-                                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                                    <span className="text-xs text-slate-500 font-medium">{paper.questions?.length || 0} Questions</span>
-                                </div>
-                            </div>
-                            <div className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary transition-all duration-300 flex-shrink-0">
-                                {isNavigating === paper.id ? (
-                                    <Loader2 className="animate-spin h-4 w-4" />
-                                ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                )}
-                            </div>
-                       </div>
-                    ) : (() => {
+                viewMode === 'list' ? (
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Details</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Linked Exam</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Subject</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Questions</th>
+                                    <th className="p-4 w-12"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                                {paginatedPapers.map((paper: any, index: number) => (
+                                    <tr 
+                                        key={paper.id}
+                                        onClick={() => {
+                                            setIsNavigating(paper.id);
+                                            onSelectPaper(paper.exams?.[0]?.examId || 'none', paper.id);
+                                        }}
+                                        className={cn(
+                                            "group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer",
+                                            isNavigating === paper.id ? "opacity-70 pointer-events-none" : ""
+                                        )}
+                                    >
+                                        <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                            #{index + 1 + (currentPage - 1) * itemsPerPage}
+                                        </td>
+                                        <td className="p-4 relative">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-bold text-lg text-slate-500 group-hover:text-primary transition-colors shrink-0">
+                                                    {paper.subject?.name?.charAt(0) || 'P'}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                        {paper.title}
+                                                    </h3>
+                                                    <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                                                        {paper.subject?.name || 'Unassigned'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 relative text-center">
+                                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                                {paper.exams?.[0]?.exam?.title || 'Standalone'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 relative text-center">
+                                            <span className="text-sm font-semibold text-slate-900 dark:text-white">{paper.subject?.name || 'Unassigned'}</span>
+                                        </td>
+                                        <td className="p-4 relative text-center">
+                                            <span className="text-sm font-semibold text-slate-900 dark:text-white">{paper.questions?.length || 0}</span>
+                                        </td>
+                                        <td className="p-4 relative text-center">
+                                            <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                                                {isNavigating === paper.id ? (
+                                                    <Loader2 className="animate-spin h-4 w-4" />
+                                                ) : (
+                                                    <ChevronRight className="h-5 w-5" />
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedPapers.map((paper: any, index: number) => {
                         const getStatusStyles = (status: string) => {
                           switch (status) {
                             case 'DRAFT': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
@@ -1689,11 +1845,10 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
                                 </div>
                             </div>
                         );
-                    })()}
-                </motion.div>
-              ))
+                    })}
+                </div>
+                )
             )}
-          </div>
           {filteredPapers.length > 0 && (
               <Pagination 
                 currentPage={currentPage}

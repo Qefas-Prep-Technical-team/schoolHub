@@ -1465,6 +1465,10 @@ export const updateTeacherProfileService = async (teacherId: string, data: {
     phone?: string;
     profileImage?: string;
     bannerImage?: string;
+    department?: string;
+    highestQualification?: string;
+    yearsOfExperience?: number;
+    address?: string;
 }) => {
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
@@ -1472,6 +1476,10 @@ export const updateTeacherProfileService = async (teacherId: string, data: {
     if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
     if (data.bannerImage !== undefined) updateData.bannerImage = data.bannerImage;
+    if (data.department !== undefined) updateData.department = data.department;
+    if (data.highestQualification !== undefined) updateData.highestQualification = data.highestQualification;
+    if (data.yearsOfExperience !== undefined) updateData.yearsOfExperience = data.yearsOfExperience;
+    if (data.address !== undefined) updateData.address = data.address;
 
     return prisma.teacher.update({
         where: { id: teacherId },

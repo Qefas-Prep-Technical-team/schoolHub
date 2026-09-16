@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
 
-export type NotificationType = 'LINK_REQUEST' | 'LINK_RESPONSE' | 'SYSTEM' | 'ACADEMIC' | 'ANNOUNCEMENT' | 'MESSAGE';
+export type NotificationType = 'LINK_REQUEST' | 'LINK_RESPONSE' | 'SYSTEM' | 'ACADEMIC' | 'ANNOUNCEMENT' | 'MESSAGE' | 'GENERAL';
 export type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
 
 export interface Notification {

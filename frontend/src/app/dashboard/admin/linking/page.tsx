@@ -187,7 +187,7 @@ function LinkingHub() {
   const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
 
   return (
-    <div className="p-8 w-[80%] max-w-[80%] mx-auto space-y-8 min-h-[calc(100vh-4rem)]">
+    <div className="p-8 w-[90%] max-w-[90%] mx-auto space-y-8 min-h-[calc(100vh-4rem)]">
       <LinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)} 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}

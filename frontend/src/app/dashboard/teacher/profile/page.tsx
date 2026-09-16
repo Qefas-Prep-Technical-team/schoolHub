@@ -15,11 +15,11 @@ import {
     ChevronRight,
     Briefcase,
     Fingerprint,
-    Cake,
     ShieldCheck,
     MapPin,
     Loader2,
-    Phone
+    Phone,
+    Image as ImageIcon
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -38,9 +38,7 @@ import {
     SelectTrigger, 
     SelectValue 
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ImageUpload from '@/components/reusable/ImageUpload';
@@ -52,12 +50,17 @@ export default function TeacherProfilePage() {
     const requestEmailUpdate = useRequestTeacherEmailUpdate();
     const verifyEmailUpdate = useVerifyTeacherEmailUpdate();
 
-    const [isEditing, setIsEditing] = useState(false);
+    // editingTab controls which tab is open in the modal, null means modal is closed
+    const [editingTab, setEditingTab] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         gender: '',
         phone: '',
+        department: '',
+        highestQualification: '',
+        yearsOfExperience: '',
+        address: '',
         profileImage: '',
         bannerImage: ''
     });
@@ -67,21 +70,22 @@ export default function TeacherProfilePage() {
 
     useEffect(() => {
         if (profile) {
-            // console.log("DEBUG: Teacher Profile Loaded:", profile);
             setFormData({
                 name: profile.name || '',
                 email: profile.email || '',
                 gender: profile.gender || '',
                 phone: profile.phone || '',
+                department: profile.department || '',
+                highestQualification: profile.highestQualification || '',
+                yearsOfExperience: profile.yearsOfExperience ? String(profile.yearsOfExperience) : '',
+                address: profile.address || '',
                 profileImage: profile.profileImage || '',
                 bannerImage: profile.bannerImage || ''
             });
         }
     }, [profile]);
 
-    const handleEdit = () => {
-        setIsEditing(true);
-    };
+    const handleEdit = (tab: string = 'personal') => setEditingTab(tab);
 
     const handleRequestEmailChange = async () => {
         await requestEmailUpdate.mutateAsync(formData.email);
@@ -96,426 +100,445 @@ export default function TeacherProfilePage() {
 
     const handleSave = async () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { email, ...rest } = formData;
-        await updateProfile.mutateAsync(rest);
-        setIsEditing(false);
+        const { email, yearsOfExperience, ...rest } = formData;
+        // Parse yearsOfExperience back to number if provided
+        const parsedExperience = yearsOfExperience ? parseInt(yearsOfExperience) : undefined;
+        
+        await updateProfile.mutateAsync({
+            ...rest,
+            ...(parsedExperience !== undefined ? { yearsOfExperience: parsedExperience } : {})
+        });
+        setEditingTab(null);
     };
 
     if (isLoading) {
         return (
-            <div className="min-h-[80vh] flex items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-500 opacity-50" />
             </div>
         );
     }
 
     if (!profile) return null;
 
-    const initials = (profile.name || 'T').split(' ').map((n: string) => n[0]).join('').toUpperCase();
+    const initials = (profile.name || 'T').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
 
     return (
-        <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700 space-y-6 md:space-y-10 px-0 md:px-4">
-            {/* Header / Hero Section (Social Style) */}
-            <div className="relative group/hero">
-                {/* Cover Photo / Pattern */}
-                <div className="h-48 md:h-80 w-full overflow-hidden bg-slate-950 md:rounded-[3rem] relative shadow-2xl">
+        <div className="w-[80%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+            
+            {/* Header / Hero Section (SaaS Style) */}
+            <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                {/* Cover Photo / Banner */}
+                <div className="h-48 md:h-64 w-full relative bg-emerald-600 flex items-center justify-center overflow-hidden group">
                     {profile.bannerImage ? (
                         <Image
-                          src={profile.bannerImage}
-                          alt="Banner"
-                          fill
-                          className="w-full h-full object-cover"
+                            src={profile.bannerImage}
+                            alt="Banner"
+                            fill
+                            className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="absolute inset-0 opacity-30">
-                            <div className="absolute top-0 -left-20 w-80 h-80 bg-primary blur-[120px] rounded-full animate-pulse" />
-                            <div className="absolute bottom-0 -right-20 w-80 h-80 bg-indigo-500 blur-[120px] rounded-full animate-pulse delay-700" />
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-90" />
                     )}
+                    <Button 
+                        onClick={() => handleEdit('visuals')}
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-white/80 hover:bg-white text-emerald-700 shadow-sm"
+                    >
+                        <Edit3 size={16} />
+                    </Button>
                 </div>
 
-                {/* Profile Identity (Overlapping) */}
-                <div className="relative -mt-20 md:-mt-24 px-6 md:px-12 flex flex-col items-center md:items-end md:flex-row gap-6 md:gap-10">
-                    <div className="relative shrink-0">
-                        <div className="h-32 w-32 md:h-44 md:w-44 rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-4xl md:text-6xl font-black text-white shadow-2xl border-4 border-white dark:border-slate-950 hover:scale-105 transition-transform duration-500 overflow-hidden">
+                {/* Profile Identity */}
+                <div className="relative -mt-16 px-6 md:px-10 flex flex-col md:flex-row items-center md:items-end gap-6 pb-8">
+                    <div className="relative shrink-0 group">
+                        <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl bg-white dark:bg-slate-900 p-1.5 shadow-md border border-gray-50 dark:border-slate-800 flex items-center justify-center text-4xl md:text-5xl font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer overflow-hidden relative" onClick={() => handleEdit('visuals')}>
                             {profile.profileImage ? (
-                                <Image
-                                  src={profile.profileImage}
-                                  alt={profile.name}
-                                  width={176}
-                                  height={176}
-                                  className="w-full h-full object-cover"
-                                />
+                                <div className="w-full h-full relative rounded-xl overflow-hidden">
+                                    <Image
+                                        src={profile.profileImage}
+                                        alt={profile.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
                             ) : (
-                                initials
+                                <div className="w-full h-full rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+                                    {initials}
+                                </div>
                             )}
-                        </div>
-                        <Badge className="absolute -top-1 -right-1 md:-top-3 md:-right-3 h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-emerald-500 border-4 border-white dark:border-slate-950 flex items-center justify-center">
-                            <CheckCircle2 size={16} className="text-white" />
-                        </Badge>
-                    </div>
-
-                    <div className="flex-1 text-center md:text-left pt-2 md:pt-10 space-y-4">
-                        <div className="space-y-1">
-                            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-center md:justify-start">
-                                <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">
-                                    {profile.name}
-                                </h1>
-                                <Badge variant="secondary" className="w-fit mx-auto md:mx-0 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-mono text-[10px] uppercase tracking-widest py-1 border-none px-3">
-                                    {profile.teacherCode || 'TEACHER'}
-                                </Badge>
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                                <Edit3 size={24} className="text-white" />
                             </div>
-                            <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center md:justify-start gap-2 italic">
-                                <Fingerprint size={14} className="text-primary/50" /> Official Educator Identity
-                            </p>
                         </div>
+                        <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-teal-500 border-4 border-white dark:border-slate-950 flex items-center justify-center" title="Verified Educator">
+                            <CheckCircle2 size={14} className="text-white" />
+                        </div>
+                    </div>
 
-                        <div className="flex items-center justify-center md:justify-start gap-3">
-                            <Button 
-                                onClick={handleEdit}
-                                className="rounded-2xl h-11 md:h-12 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-none hover:scale-105 active:scale-95 transition-all font-black text-xs uppercase tracking-widest shadow-xl"
-                            >
-                                <Edit3 size={16} className="mr-2" /> Edit Profile
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                className="rounded-2xl h-11 md:h-12 w-11 md:w-auto px-0 md:px-6 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900 font-bold transition-all"
-                            >
-                                <Mail size={18} className="md:mr-2" />
-                                <span className="hidden md:inline">Support</span>
-                            </Button>
+                    <div className="flex-1 text-center md:text-left mb-2">
+                        <div className="flex flex-col md:flex-row md:items-center gap-3 justify-center md:justify-start">
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                                {profile.name}
+                            </h1>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                                {profile.teacherCode || 'TEACHER'}
+                            </span>
                         </div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-slate-400 mt-1 flex items-center justify-center md:justify-start gap-1.5">
+                            <Briefcase size={14} /> Official Educator Identity
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 mb-2">
+                        <Button 
+                            variant="outline" 
+                            className="h-10 px-4 rounded-lg border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900 font-semibold text-sm transition-all"
+                            onClick={() => handleEdit('security')}
+                        >
+                            <ShieldCheck size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Security</span>
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            className="h-10 px-4 rounded-lg border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900 font-semibold text-sm transition-all"
+                        >
+                            <Mail size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Support</span>
+                        </Button>
                     </div>
                 </div>
             </div>
 
-            {/* Quick Stats Overlay (Mobile Horizontal Scroll) */}
-            <div className="px-6 md:px-0 overflow-hidden">
-                <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide">
-                    <StatCard icon={<Hash size={24} />} label="Educator ID" value={profile.teacherCode || 'N/A'} color="text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" />
-                    <StatCard icon={<GraduationCap size={24} />} label="Role" value="Senior Educator" color="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" />
-                    <StatCard icon={<Briefcase size={24} />} label="Status" value="Active" color="text-amber-600 bg-amber-50 dark:bg-amber-500/10" />
-                </div>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard icon={<Hash size={20} />} label="Educator ID" value={profile.teacherCode || 'N/A'} color="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" />
+                <StatCard icon={<GraduationCap size={20} />} label="Role" value="Senior Educator" color="text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10" />
+                <StatCard icon={<CheckCircle2 size={20} />} label="Status" value="Active" color="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" />
             </div>
 
-            {/* Main Content Sections */}
-            <div className="px-6 md:px-0 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-                <div className="lg:col-span-2 space-y-6 md:space-y-10">
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950">
-                        <CardHeader className="p-8 md:p-10 pb-0">
-                            <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4 italic uppercase">
-                                <User className="text-primary h-6 w-6 md:h-8 md:w-8" /> 
+            {/* Main Content Grids */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Personal Data */}
+                    <Card className="rounded-2xl border-gray-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden relative group">
+                        <CardHeader className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 bg-white dark:bg-slate-950 flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <User className="text-emerald-500 h-5 w-5" /> 
                                 Personal Data
                             </CardTitle>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleEdit('personal')}
+                                className="h-8 w-8 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                            >
+                                <Edit3 size={16} />
+                            </Button>
                         </CardHeader>
-                        <CardContent className="p-8 md:p-10 space-y-8 md:space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                                <InfoItem icon={<User size={20} />} label="Legal Name" value={profile.name} description="Verified registration name." />
-                                <InfoItem icon={<Mail size={20} />} label="Email" value={profile.email} description="Primary contact address." />
-                                <InfoItem icon={<ShieldCheck size={20} />} label="Gender" value={profile.gender || 'Not Specified'} description="Biological gender." />
-                                <InfoItem icon={<Phone size={20} />} label="Phone Number" value={profile.phone || 'N/A'} description="Contact phone number." />
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <InfoItem label="Legal Name" value={profile.name} />
+                                <InfoItem label="Email Address" value={profile.email} />
+                                <InfoItem label="Gender" value={profile.gender || 'Not Specified'} />
+                                <InfoItem label="Phone Number" value={profile.phone || 'N/A'} />
+                                <div className="sm:col-span-2">
+                                    <InfoItem label="Home Address" value={profile.address || 'Not Provided'} />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Professional Details Card */}
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950">
-                        <CardHeader className="p-8 md:p-10 pb-0">
-                            <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4 italic uppercase">
-                                <Briefcase className="text-primary h-6 w-6 md:h-8 md:w-8" /> 
+                    {/* Professional Details */}
+                    <Card className="rounded-2xl border-gray-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden relative group">
+                        <CardHeader className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 bg-white dark:bg-slate-950 flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Briefcase className="text-emerald-500 h-5 w-5" /> 
                                 Professional Details
                             </CardTitle>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleEdit('professional')}
+                                className="h-8 w-8 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                            >
+                                <Edit3 size={16} />
+                            </Button>
                         </CardHeader>
-                        <CardContent className="p-8 md:p-10 space-y-8 md:space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                                <InfoItem icon={<Hash size={20} />} label="Department" value={profile.department || 'General'} description="Academic department." />
-                                <InfoItem icon={<GraduationCap size={20} />} label="Qualification" value={profile.highestQualification || 'Not specified'} description="Highest degree obtained." />
-                                <InfoItem icon={<Briefcase size={20} />} label="Experience" value={profile.yearsOfExperience ? `${profile.yearsOfExperience} Years` : 'Not specified'} description="Teaching experience." />
-                                <InfoItem icon={<Fingerprint size={20} />} label="Teacher ID" value={profile.teacherCode || 'N/A'} description="Unique identifier." />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Academic Institution Card */}
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl overflow-hidden bg-slate-950 text-white">
-                        <CardHeader className="p-8 md:p-10 pb-6">
-                            <CardTitle className="text-xl md:text-2xl font-black italic uppercase flex items-center gap-3">
-                                <School className="text-indigo-400" /> Institution
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-8 md:p-10 pt-0 space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Primary Academy</p>
-                                    <p className="text-lg md:text-xl font-black italic">{profile.school?.name || 'Qefas-Prep Academy'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Joined</p>
-                                    <p className="text-lg md:text-xl font-black italic">{profile.createdAt ? format(new Date(profile.createdAt), 'MMMM yyyy') : 'N/A'}</p>
-                                </div>
-                            </div>
-                            <Separator className="bg-white/10" />
-                            <div className="p-5 md:p-6 rounded-[2rem] bg-white/5 border border-white/10 flex items-center gap-4">
-                                <div className="h-10 w-10 shrink-0 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                                    <CheckCircle2 size={20} />
-                                </div>
-                                <p className="text-xs text-white/70 font-medium italic">Your educator account is fully verified and compliant with institutional standards.</p>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <InfoItem label="Department" value={profile.department || 'General'} />
+                                <InfoItem label="Qualification" value={profile.highestQualification || 'Not specified'} />
+                                <InfoItem label="Experience" value={profile.yearsOfExperience ? `${profile.yearsOfExperience} Years` : 'Not specified'} />
+                                <InfoItem label="Teacher ID" value={profile.teacherCode || 'N/A'} />
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="space-y-6 md:space-y-10">
-                    <div className="p-8 pb-10 rounded-[2.5rem] md:rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl space-y-8">
-                        <div className="space-y-1">
-                            <h3 className="text-xl font-black italic uppercase text-slate-900 dark:text-white tracking-tight">Quick Actions</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Institutional Services</p>
-                        </div>
-                        <div className="space-y-4">
-                            <MobileQuickAction icon={<MapPin size={22} />} label="Home Address" status="Set Location" color="text-rose-500 bg-rose-50 dark:bg-rose-500/10" />
-                            <MobileQuickAction icon={<Calendar size={22} />} label="Academic Calendar" status="View Schedule" color="text-primary bg-indigo-50 dark:bg-primary/10" />
-                            <MobileQuickAction icon={<ShieldCheck size={22} />} label="Security Settings" status="Strong" color="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" />
-                        </div>
-                    </div>
+                <div className="space-y-6">
+                    {/* Academic Institution Card */}
+                    <Card className="rounded-2xl border-emerald-100 dark:border-emerald-500/20 shadow-sm bg-emerald-50/50 dark:bg-emerald-500/5 overflow-hidden">
+                        <CardHeader className="px-6 py-5 bg-emerald-50/80 dark:bg-emerald-500/10 border-b border-emerald-100/50 dark:border-emerald-500/20 flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
+                                <School className="text-emerald-600 dark:text-emerald-400 h-5 w-5" /> Institution
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400/70 uppercase tracking-wider mb-1">Primary Academy</p>
+                                    <p className="text-base font-bold text-emerald-950 dark:text-emerald-100">{profile.school?.name || 'Qefas-Prep Academy'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400/70 uppercase tracking-wider mb-1">Joined</p>
+                                    <p className="text-base font-bold text-emerald-950 dark:text-emerald-100">{profile.createdAt ? format(new Date(profile.createdAt), 'MMMM yyyy') : 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div className="p-4 rounded-xl bg-white dark:bg-slate-900/50 border border-emerald-100 dark:border-emerald-500/20 flex gap-3 shadow-sm">
+                                <div className="h-8 w-8 shrink-0 rounded-lg bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center text-teal-500 dark:text-teal-400">
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">Your educator account is fully verified and compliant with institutional standards.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Quick Actions */}
+                    <Card className="rounded-2xl border-gray-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+                        <CardHeader className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 bg-white dark:bg-slate-950">
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">Services</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-2">
+                            <QuickActionItem icon={<MapPin size={18} />} label="Home Address" status={profile.address ? "Set" : "Set Location"} onClick={() => handleEdit('personal')} />
+                            <QuickActionItem icon={<Calendar size={18} />} label="Academic Calendar" status="View Schedule" />
+                            <QuickActionItem icon={<ShieldCheck size={18} />} label="Security Settings" status="Strong" onClick={() => handleEdit('security')} />
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
-            {/* Edit Drawer / Overlay */}
-            {isEditing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
-                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm pointer-events-auto transition-opacity" onClick={() => setIsEditing(false)} />
+            {/* Edit Modal (SaaS Style) */}
+            {editingTab !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12">
+                    <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onClick={() => setEditingTab(null)} />
                     
-                    <Card className="relative z-10 w-full max-w-6xl rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border-slate-200/50 dark:border-slate-800/50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-3xl pointer-events-auto transform animate-in zoom-in-95 duration-500 overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[80vh]">
-                        {/* Left Pane: Live Preview */}
-                        <div className="w-full md:w-[40%] bg-slate-950 relative flex flex-col overflow-y-auto scrollbar-hide border-r border-slate-800 hidden md:flex">
-                            {/* Live Preview Header */}
-                            <div className="h-48 w-full relative shrink-0">
-                                {formData.bannerImage ? (
-                                    <Image src={formData.bannerImage} alt="Banner" fill className="object-cover" />
-                                ) : (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-indigo-950 flex items-center justify-center">
-                                        <div className="w-32 h-32 bg-primary blur-[80px] rounded-full animate-pulse" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                    <Card className="relative z-10 w-full max-w-2xl rounded-2xl shadow-2xl border-0 bg-white dark:bg-slate-950 overflow-hidden flex flex-col h-full max-h-[85vh] animate-in zoom-in-95 duration-200">
+                        
+                        {/* Modal Header */}
+                        <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+                            <div className="space-y-1">
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Edit Profile</h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Update your details across different sections.</p>
                             </div>
-                            
-                            {/* Live Preview Avatar */}
-                            <div className="relative -mt-16 px-8 flex justify-between items-end shrink-0">
-                                <div className="h-28 w-28 rounded-[2rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-black text-white shadow-2xl border-4 border-slate-950 overflow-hidden relative group">
-                                    {formData.profileImage ? (
-                                        <Image src={formData.profileImage} alt={formData.name} fill className="object-cover" />
-                                    ) : (
-                                        (formData.name || 'T').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                            <Button variant="ghost" size="icon" onClick={() => setEditingTab(null)} className="rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300">
+                                <X size={20} />
+                            </Button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <Tabs value={editingTab} onValueChange={setEditingTab} className="w-full">
+                                <TabsList className="w-full flex mb-6 bg-slate-50 dark:bg-slate-900 rounded-lg p-1 overflow-x-auto scrollbar-hide">
+                                    <TabsTrigger value="personal" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Personal</TabsTrigger>
+                                    <TabsTrigger value="professional" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Professional</TabsTrigger>
+                                    <TabsTrigger value="visuals" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Visuals</TabsTrigger>
+                                    <TabsTrigger value="security" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Security</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="personal" className="space-y-5 mt-0 outline-none">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Full Legal Name</Label>
+                                        <Input 
+                                            value={formData.name} 
+                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            placeholder="Enter full name"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Gender</Label>
+                                            <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
+                                                <SelectTrigger className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent">
+                                                    <SelectValue placeholder="Select Gender" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="MALE">Male</SelectItem>
+                                                    <SelectItem value="FEMALE">Female</SelectItem>
+                                                    <SelectItem value="OTHER">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Phone Number</Label>
+                                            <Input 
+                                                type="tel"
+                                                value={formData.phone} 
+                                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                placeholder="+1 (555) 000-0000"
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Home Address</Label>
+                                        <Input 
+                                            value={formData.address} 
+                                            onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                            className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            placeholder="Enter your full home address"
+                                        />
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="professional" className="space-y-5 mt-0 outline-none">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Department</Label>
+                                        <Input 
+                                            value={formData.department} 
+                                            onChange={(e) => setFormData({...formData, department: e.target.value})}
+                                            className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            placeholder="e.g. Science, Mathematics"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Highest Qualification</Label>
+                                            <Input 
+                                                value={formData.highestQualification} 
+                                                onChange={(e) => setFormData({...formData, highestQualification: e.target.value})}
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                                placeholder="e.g. M.Sc. Physics"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Years of Experience</Label>
+                                            <Input 
+                                                type="number"
+                                                value={formData.yearsOfExperience} 
+                                                onChange={(e) => setFormData({...formData, yearsOfExperience: e.target.value})}
+                                                placeholder="e.g. 5"
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="visuals" className="space-y-5 mt-0 outline-none">
+                                    <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            <User size={16} className="text-slate-400" /> Profile Avatar
+                                        </div>
+                                        <ImageUpload 
+                                            label="Upload Avatar" 
+                                            value={formData.profileImage} 
+                                            onChange={(url) => setFormData({...formData, profileImage: url})} 
+                                            description="Recommended 400x400px (1:1)"
+                                            aspectRatio="square"
+                                        />
+                                    </div>
+                                    <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            <ImageIcon size={16} className="text-slate-400" /> Profile Banner
+                                        </div>
+                                        <ImageUpload 
+                                            label="Upload Banner" 
+                                            value={formData.bannerImage} 
+                                            onChange={(url) => setFormData({...formData, bannerImage: url})} 
+                                            description="Recommended 1200x400px (3:1)"
+                                            aspectRatio="video"
+                                        />
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="security" className="space-y-5 mt-0 outline-none">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Contact Email</Label>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <Input 
+                                                value={formData.email} 
+                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                disabled={emailStep !== 'input'}
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 disabled:bg-slate-50 dark:disabled:bg-slate-900 disabled:text-slate-500 bg-transparent flex-1"
+                                            />
+                                            {formData.email !== profile.email && emailStep === 'input' && (
+                                                <Button 
+                                                    type="button"
+                                                    onClick={handleRequestEmailChange}
+                                                    disabled={requestEmailUpdate.isPending}
+                                                    className="h-10 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm"
+                                                >
+                                                    {requestEmailUpdate.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Verify"}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {emailStep === 'verify' && (
+                                        <div className="p-5 rounded-xl border border-emerald-100 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Verification Required</h4>
+                                                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">We sent a code to {formData.email}</p>
+                                                </div>
+                                                <Button variant="ghost" size="sm" onClick={() => setEmailStep('input')} className="text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-900 h-8 px-2 rounded-md">
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Input 
+                                                    placeholder="Enter code"
+                                                    value={verificationCode}
+                                                    onChange={(e) => setVerificationCode(e.target.value)}
+                                                    className="h-10 border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-center tracking-widest font-semibold flex-1"
+                                                    maxLength={6}
+                                                />
+                                                <Button 
+                                                    type="button"
+                                                    onClick={handleVerifyEmail}
+                                                    disabled={verifyEmailUpdate.isPending}
+                                                    className="h-10 px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-semibold text-sm shadow-sm"
+                                                >
+                                                    {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Confirm"}
+                                                </Button>
+                                            </div>
+                                        </div>
                                     )}
-                                </div>
-                                <Badge className="bg-indigo-500 border-none text-white font-mono text-[10px] uppercase tracking-widest px-3 py-1 mb-2">Live Preview</Badge>
-                            </div>
-
-                            {/* Live Preview Details */}
-                            <div className="px-8 py-6 space-y-6 flex-1">
-                                <div className="space-y-1">
-                                    <h2 className="text-3xl font-black text-white italic tracking-tight uppercase line-clamp-2">
-                                        {formData.name || "Your Name"}
-                                    </h2>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <ShieldCheck size={14} className="text-primary" /> 
-                                        {formData.gender ? formData.gender.toLowerCase() : "Unspecified"}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4 pt-4 border-t border-slate-800">
-                                    <div className="flex items-center gap-3 text-slate-300">
-                                        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-primary shrink-0">
-                                            <Mail size={18} />
-                                        </div>
-                                        <p className="text-sm font-medium truncate">{formData.email || "No email provided"}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-slate-300">
-                                        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-primary shrink-0">
-                                            <Phone size={18} />
-                                        </div>
-                                        <p className="text-sm font-medium truncate">{formData.phone || "No phone provided"}</p>
-                                    </div>
-                                </div>
-                            </div>
+                                </TabsContent>
+                            </Tabs>
                         </div>
 
-                        {/* Right Pane: Edit Form */}
-                        <div className="w-full md:w-[60%] flex flex-col h-full bg-white dark:bg-slate-950/50">
-                            <CardHeader className="p-6 md:p-8 flex flex-row items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-800/50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md z-10">
-                                <div className="space-y-1">
-                                    <CardTitle className="text-2xl font-black italic tracking-tight uppercase text-slate-900 dark:text-white flex items-center gap-3">
-                                        <Edit3 className="text-primary h-6 w-6" /> Refine Identity
-                                    </CardTitle>
-                                    <CardDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Secure Profile Management</CardDescription>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <Button 
-                                        type="button"
-                                        onClick={handleSave}
-                                        disabled={
-                                            updateProfile.isPending || 
-                                            (formData.email !== profile.email && emailStep !== 'input') || 
-                                            emailStep === 'verify' ||
-                                            (formData.name === profile.name && 
-                                             formData.gender === profile.gender && 
-                                             formData.phone === (profile.phone || '') &&
-                                             formData.profileImage === profile.profileImage &&
-                                             formData.bannerImage === profile.bannerImage &&
-                                             formData.email === profile.email)
-                                        }
-                                        className="rounded-xl h-11 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale"
-                                    >
-                                        {updateProfile.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Save size={16} />} 
-                                        <span className="hidden sm:inline">Save</span>
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} className="rounded-xl h-11 w-11 hover:bg-rose-500/10 hover:text-rose-500 transition-colors bg-slate-50 dark:bg-slate-900">
-                                        <X size={20} />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            
-                            <div className="flex-1 overflow-y-auto scrollbar-hide p-6 md:p-8">
-                                <Tabs defaultValue="personal" className="w-full">
-                                    <TabsList className="w-full h-14 p-1 bg-slate-100 dark:bg-slate-900 rounded-[1.5rem] grid grid-cols-3 mb-8">
-                                        <TabsTrigger value="personal" className="rounded-2xl text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Personal</TabsTrigger>
-                                        <TabsTrigger value="visuals" className="rounded-2xl text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Visuals</TabsTrigger>
-                                        <TabsTrigger value="security" className="rounded-2xl text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Security</TabsTrigger>
-                                    </TabsList>
-
-                                    <TabsContent value="personal" className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                                        <div className="space-y-4">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Full Legal Name</Label>
-                                            <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 w-14 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
-                                                    <User size={18} />
-                                                </div>
-                                                <Input 
-                                                    value={formData.name} 
-                                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                                    className="h-14 pl-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-                                                    placeholder="Enter full name..."
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-4">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Gender Identification</Label>
-                                                <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
-                                                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20">
-                                                        <SelectValue placeholder="Select Gender" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-2xl">
-                                                        <SelectItem value="MALE" className="rounded-xl font-bold">Male</SelectItem>
-                                                        <SelectItem value="FEMALE" className="rounded-xl font-bold">Female</SelectItem>
-                                                        <SelectItem value="OTHER" className="rounded-xl font-bold">Other</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Phone Number</Label>
-                                                <div className="relative group">
-                                                    <div className="absolute inset-y-0 left-0 w-14 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
-                                                        <Phone size={18} />
-                                                    </div>
-                                                    <Input 
-                                                        type="tel"
-                                                        value={formData.phone} 
-                                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                                        placeholder="+1 (555) 000-0000"
-                                                        className="h-14 pl-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </TabsContent>
-
-                                    <TabsContent value="visuals" className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-                                        <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 hover:border-primary/20 transition-colors group">
-                                            <ImageUpload 
-                                                label="Profile Avatar" 
-                                                value={formData.profileImage} 
-                                                onChange={(url) => setFormData({...formData, profileImage: url})} 
-                                                description="Your official digital portrait."
-                                                aspectRatio="square"
-                                            />
-                                        </div>
-                                        <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 hover:border-primary/20 transition-colors group">
-                                            <ImageUpload 
-                                                label="Profile Banner" 
-                                                value={formData.bannerImage} 
-                                                onChange={(url) => setFormData({...formData, bannerImage: url})} 
-                                                description="Custom background for your header."
-                                                aspectRatio="video"
-                                            />
-                                        </div>
-                                    </TabsContent>
-
-                                    <TabsContent value="security" className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                                        <div className="space-y-4">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Contact Email</Label>
-                                            <div className="flex flex-col sm:flex-row gap-4">
-                                                <div className="relative group flex-1">
-                                                    <div className="absolute inset-y-0 left-0 w-14 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
-                                                        <Mail size={18} />
-                                                    </div>
-                                                    <Input 
-                                                        value={formData.email} 
-                                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                                        disabled={emailStep !== 'input'}
-                                                        className="h-14 pl-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner disabled:opacity-50"
-                                                    />
-                                                </div>
-                                                {formData.email !== profile.email && emailStep === 'input' && (
-                                                    <Button 
-                                                        type="button"
-                                                        onClick={handleRequestEmailChange}
-                                                        disabled={requestEmailUpdate.isPending}
-                                                        className="h-14 rounded-2xl px-8 bg-indigo-600 text-white hover:bg-indigo-700 font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-500/20"
-                                                    >
-                                                        {requestEmailUpdate.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Verify"}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {emailStep === 'verify' && (
-                                            <div className="p-8 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-primary text-white space-y-6 animate-in zoom-in-95 duration-500 shadow-xl shadow-indigo-500/30">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Protocol Alpha</p>
-                                                        <h3 className="text-xl font-black italic">Verification Required</h3>
-                                                    </div>
-                                                    <Button variant="ghost" onClick={() => setEmailStep('input')} className="text-white hover:bg-white/10 rounded-xl h-10 w-10 p-0">
-                                                        <X size={20} />
-                                                    </Button>
-                                                </div>
-                                                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                                                    <Input 
-                                                        placeholder="CODE"
-                                                        value={verificationCode}
-                                                        onChange={(e) => setVerificationCode(e.target.value)}
-                                                        className="h-14 rounded-2xl bg-white/10 border-white/20 text-center text-xl font-black tracking-[0.5em] focus:ring-4 focus:ring-white/10 transition-all text-white placeholder:text-white/30 flex-1"
-                                                        maxLength={6}
-                                                    />
-                                                    <Button 
-                                                        type="button"
-                                                        onClick={handleVerifyEmail}
-                                                        disabled={verifyEmailUpdate.isPending}
-                                                        className="h-14 w-full sm:w-auto px-8 rounded-2xl bg-white text-indigo-600 hover:bg-white/90 font-black text-[10px] uppercase tracking-widest shadow-xl"
-                                                    >
-                                                        {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin" /> : "Submit"}
-                                                    </Button>
-                                                </div>
-                                                <p className="text-[10px] font-bold text-white/60 text-center">We&apos;ve dispatched a security token to <b>{formData.email}</b></p>
-                                            </div>
-                                        )}
-                                    </TabsContent>
-                                </Tabs>
-                            </div>
+                        <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800 shrink-0 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/50">
+                            <Button variant="outline" onClick={() => setEditingTab(null)} className="h-10 rounded-lg border-slate-200 dark:border-slate-700 font-semibold">
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={handleSave}
+                                disabled={
+                                    updateProfile.isPending || 
+                                    (formData.email !== profile.email && emailStep !== 'input') || 
+                                    emailStep === 'verify' ||
+                                    (formData.name === profile.name && 
+                                     formData.gender === profile.gender && 
+                                     formData.phone === (profile.phone || '') &&
+                                     formData.profileImage === profile.profileImage &&
+                                     formData.bannerImage === profile.bannerImage &&
+                                     formData.email === profile.email &&
+                                     formData.department === (profile.department || '') &&
+                                     formData.highestQualification === (profile.highestQualification || '') &&
+                                     formData.yearsOfExperience === (profile.yearsOfExperience ? String(profile.yearsOfExperience) : '') &&
+                                     formData.address === (profile.address || ''))
+                                }
+                                className="h-10 px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-semibold shadow-sm"
+                            >
+                                {updateProfile.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save size={16} className="mr-2" />} 
+                                Save Changes
+                            </Button>
                         </div>
                     </Card>
                 </div>
@@ -526,50 +549,40 @@ export default function TeacherProfilePage() {
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string, color: string }) {
     return (
-        <div className="shrink-0 w-[240px] md:w-auto p-6 md:p-8 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 transition-all hover:shadow-xl hover:scale-[1.02]">
-            <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", color)}>
+        <div className="bg-white dark:bg-slate-950 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0", color)}>
                 {icon}
             </div>
             <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</p>
-                <p className="text-lg font-black truncate">{value}</p>
+                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1 truncate">{label}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white truncate">{value}</p>
             </div>
         </div>
     );
 }
 
-function InfoItem({ icon, label, value, description }: { icon: React.ReactNode, label: string, value: string, description: string }) {
+function InfoItem({ label, value }: { label: string, value: string }) {
     return (
-        <div className="group flex gap-4 md:gap-6 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
-            <div className="h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all shadow-sm">
-                {icon}
-            </div>
-            <div className="space-y-1 min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                <div className="flex items-center gap-2">
-                    <p className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">{value}</p>
-                    <ChevronRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
-                </div>
-                <p className="text-[10px] font-bold text-slate-500 italic leading-none truncate">{description}</p>
-            </div>
+        <div className="flex flex-col">
+            <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">{label}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-slate-200 truncate">{value}</span>
         </div>
     );
 }
 
-function MobileQuickAction({ icon, label, status, color }: { icon: React.ReactNode, label: string, status: string, color: string }) {
+function QuickActionItem({ icon, label, status, onClick }: { icon: React.ReactNode, label: string, status: string, onClick?: () => void }) {
     return (
-        <button className="w-full flex items-center justify-between p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-primary/20 transition-all group overflow-hidden relative">
-            <div className="flex items-center gap-4 relative z-10">
-                <div className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", color)}>
+        <button onClick={onClick} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group text-left border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
+            <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-500 flex items-center justify-center group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {icon}
                 </div>
-                <div className="text-left">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-white italic">{status}</p>
+                <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-200">{label}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-slate-400">{status}</p>
                 </div>
             </div>
-            <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-colors relative z-10" />
-            <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ChevronRight size={16} className="text-gray-300 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors" />
         </button>
     );
 }

@@ -324,7 +324,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <Layers size={16} className="text-emerald-500" /> Section
+                  <Layers size={16} className="text-blue-500" /> Section
                 </Label>
                 <Input
                   value={formData.section}
@@ -372,7 +372,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <Users size={16} className="text-emerald-500" /> Assign Educators / Teachers
+                <Users size={16} className="text-blue-500" /> Assign Educators / Teachers
               </Label>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-4 border border-slate-100 dark:border-slate-800">
                 <div className="relative">

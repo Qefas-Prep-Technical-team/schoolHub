@@ -586,9 +586,53 @@ const SubjectsPage = () => {
         {/* Subjects List */}
         <AnimatePresence mode="wait">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {[1,2,3,4,5,6].map(i => <div key={i} className="h-80 rounded-[4rem] bg-white dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)}
-            </div>
+            viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                 {[1,2,3,4,5,6].map(i => <div key={i} className="h-80 rounded-[4rem] bg-white dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)}
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                      <thead>
+                          <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                              <th className="p-4 w-12"><div className="h-4 w-4 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                              <th className="p-4"><div className="h-4 w-32 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                              <th className="p-4 text-center"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                              <th className="p-4"><div className="h-4 w-24 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                              <th className="p-4 text-center"><div className="h-4 w-12 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                              <th className="p-4 text-center"><div className="h-4 w-20 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                              <th className="p-4 w-24"><div className="h-4 w-12 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                          {[1, 2, 3, 4, 5, 6].map((i) => (
+                              <tr key={i} className="border-b border-slate-100 dark:border-slate-800/40">
+                                  <td className="p-4 text-center"><div className="h-4 w-4 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                  <td className="p-4">
+                                      <div className="flex items-center gap-4">
+                                          <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 shrink-0 animate-pulse" />
+                                          <div className="space-y-2">
+                                              <div className="h-4 w-32 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                              <div className="h-3 w-48 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                          </div>
+                                      </div>
+                                  </td>
+                                  <td className="p-4 text-center"><div className="h-6 w-16 rounded-lg bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                  <td className="p-4"><div className="h-6 w-20 rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse" /></td>
+                                  <td className="p-4 text-center"><div className="h-4 w-8 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                  <td className="p-4 text-center"><div className="h-6 w-20 rounded-full bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                                  <td className="p-4 text-right">
+                                      <div className="flex items-center justify-end gap-2">
+                                          <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                          <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                      </div>
+                                  </td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+            )
           ) : filteredSubjects.length > 0 ? (
             <motion.div
               key="view"

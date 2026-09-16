@@ -507,6 +507,7 @@ export const submitInquiry = async (req: Request, res: Response) => {
       type: "GENERAL",
       title: "New Website Inquiry",
       message: `You have a new inquiry from ${name} (${email}).`,
+      link: "/dashboard/admin/inquiries",
     });
 
     return res.status(201).json({ success: true, message: "Inquiry submitted successfully", data: inquiry });

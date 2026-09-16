@@ -1,5 +1,6 @@
 import { Exam, SubjectPaper } from "@/lib/api/services/examService";
-import { BookOpen, FileText, LayoutDashboard, PenTool } from "lucide-react";
+import { BookOpen, FileText, LayoutDashboard, PenTool, Plus } from "lucide-react";
+import Link from "next/link";
 
 interface StatsCardsProps {
     examsCount?: number;
@@ -9,85 +10,94 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount = 0, papersCount = 0 }: StatsCardsProps) {
-    const totalExams = examsCount;
-    const totalQuizzes = quizzesCount;
-    const totalCAs = casCount;
-    const totalPapers = papersCount;
-
     const stats = [
         { 
             label: 'Total Exams', 
-            value: totalExams.toString(),
+            value: examsCount,
             icon: LayoutDashboard,
-            bg: "bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20",
-            border: "border-blue-500/20 hover:border-blue-500/50",
-            accent: "bg-blue-600",
-            iconBg: "bg-blue-600 text-white shadow-blue-600/30",
-            textHighlight: "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+            bg: "bg-white dark:bg-slate-900",
+            iconColor: "text-blue-500",
+            iconBg: "bg-blue-50 dark:bg-blue-900/20",
         },
         { 
             label: 'Total Quizzes', 
-            value: totalQuizzes.toString(),
+            value: quizzesCount,
             icon: PenTool,
-            bg: "bg-gradient-to-br from-white to-amber-50 dark:from-slate-900 dark:to-amber-950/20",
-            border: "border-amber-500/20 hover:border-amber-500/50",
-            accent: "bg-amber-500",
-            iconBg: "bg-amber-500 text-white shadow-amber-500/30",
-            textHighlight: "group-hover:text-amber-600 dark:group-hover:text-amber-400"
+            bg: "bg-white dark:bg-slate-900",
+            iconColor: "text-orange-500",
+            iconBg: "bg-orange-50 dark:bg-orange-900/20",
         },
         { 
-            label: 'Continuous Assessments', 
-            value: totalCAs.toString(),
+            label: 'Total CAs', 
+            value: casCount,
             icon: BookOpen,
-            bg: "bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20",
-            border: "border-emerald-500/20 hover:border-emerald-500/50",
-            accent: "bg-emerald-500",
-            iconBg: "bg-emerald-500 text-white shadow-emerald-500/30",
-            textHighlight: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400"
+            bg: "bg-white dark:bg-slate-900",
+            iconColor: "text-emerald-500",
+            iconBg: "bg-emerald-50 dark:bg-emerald-900/20",
         },
         { 
             label: 'Subject Papers', 
-            value: totalPapers.toString(),
+            value: papersCount,
             icon: FileText,
-            bg: "bg-gradient-to-br from-white to-purple-50 dark:from-slate-900 dark:to-purple-950/20",
-            border: "border-purple-500/20 hover:border-purple-500/50",
-            accent: "bg-purple-600",
-            iconBg: "bg-purple-600 text-white shadow-purple-600/30",
-            textHighlight: "group-hover:text-purple-600 dark:group-hover:text-purple-400"
-        },
+            bg: "bg-white dark:bg-slate-900",
+            iconColor: "text-purple-500",
+            iconBg: "bg-purple-50 dark:bg-purple-900/20",
+        }
     ];
 
     return (
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-            {stats.map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                    <div
-                        key={index}
-                        className={`group relative overflow-hidden rounded-3xl border ${stat.border} ${stat.bg} p-6 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-500 cursor-default flex flex-col justify-between`}
-                    >
-                        <div className={`absolute top-0 left-0 w-full h-1.5 ${stat.accent}`} />
-                        <Icon className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-[0.03] text-slate-900 dark:text-white transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12`} />
-                        
-                        <div className="relative z-10 flex flex-col h-full gap-8">
-                            <div className="flex justify-between items-start">
-                                <div className={`p-3.5 rounded-2xl shadow-lg transition-transform duration-500 group-hover:-rotate-6 ${stat.iconBg}`}>
-                                    <Icon className="w-6 h-6" strokeWidth={2.5} />
-                                </div>
-                            </div>
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+            {/* Banner Card */}
+            <div className="lg:col-span-12 xl:col-span-6 bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-800 rounded-[2rem] p-8 md:p-10 flex flex-col justify-center text-white relative overflow-hidden shadow-sm">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-400/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+                
+                <div className="relative z-10">
+                    <h2 className="text-3xl md:text-4xl font-black mb-3">Ready to manage exams?</h2>
+                    <p className="text-indigo-100 font-medium mb-8 max-w-md leading-relaxed text-sm">
+                        Create, schedule, and grade assessments. Keep your school's examination process organized and efficient.
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                        <Link href="/dashboard/admin/exams/new?category=EXAM&mode=SINGLE_SUBJECT">
+                            <button className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl transition-colors shadow-sm flex items-center gap-2 text-sm">
+                                <Plus size={18} strokeWidth={2.5} />
+                                Create Exam
+                            </button>
+                        </Link>
+                        <Link href="/dashboard/admin/exams/new/paper">
+                            <button className="bg-indigo-700/50 hover:bg-indigo-700 border border-indigo-400/30 text-white font-bold px-6 py-3 rounded-xl transition-colors flex items-center gap-2 text-sm">
+                                <FileText size={18} strokeWidth={2.5} />
+                                New Subject Paper
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
 
-                            <div>
-                                <p className={`text-4xl font-black text-slate-900 dark:text-white tracking-tighter transition-colors duration-300 ${stat.textHighlight}`}>
-                                    {stat.value}
-                                </p>
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">
+            {/* Stats Grid */}
+            <div className="lg:col-span-12 xl:col-span-6 grid grid-cols-2 gap-6">
+                {stats.map((stat, index) => {
+                    const Icon = stat.icon;
+                    return (
+                        <div
+                            key={index}
+                            className={`rounded-[2rem] border border-slate-100 dark:border-slate-800 ${stat.bg} p-6 shadow-sm flex flex-col justify-center`}
+                        >
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.iconBg} ${stat.iconColor}`}>
+                                    <Icon size={24} strokeWidth={2.5} />
+                                </div>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                     {stat.label}
                                 </p>
                             </div>
+                            <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                {stat.value}
+                            </p>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </section>
     );
 }

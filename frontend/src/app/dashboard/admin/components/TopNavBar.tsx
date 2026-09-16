@@ -203,8 +203,11 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
                     sideOffset={12}
                     className="w-[240px] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl p-2 animate-in slide-in-from-top-2 duration-300 z-50"
                   >
-                    <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-primary focus:bg-primary/10 focus:text-primary transition-all font-medium">
-                        <Settings className="h-4 w-4" />
+                    <DropdownMenuItem 
+                        onClick={() => router.push('/dashboard/admin/notifications')}
+                        className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-primary focus:bg-primary/10 focus:text-primary transition-all font-medium"
+                    >
+                        <Bell className="h-4 w-4" />
                         <span>Notifications</span>
                     </DropdownMenuItem>
 

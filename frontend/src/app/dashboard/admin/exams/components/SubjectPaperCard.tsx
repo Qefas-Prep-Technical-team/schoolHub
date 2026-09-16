@@ -4,6 +4,7 @@ import { SubjectPaper, examService } from '@/lib/api/services/examService';
 import { FileText, User, Calendar, BookOpen, Trash2, ArrowRight, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
@@ -18,9 +19,11 @@ interface SubjectPaperCardProps {
   examId?: string;
   viewMode?: 'grid' | 'list';
   index?: number;
+  isSelected?: boolean;
+  onSelect?: (checked: boolean) => void;
 }
 
-export default function SubjectPaperCard({ paper, examId: propExamId, viewMode = 'grid', index = 0 }: SubjectPaperCardProps) {
+export default function SubjectPaperCard({ paper, examId: propExamId, viewMode = 'grid', index = 0, isSelected = false, onSelect }: SubjectPaperCardProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const effectiveExamId = propExamId || paper.examId || 'none';
@@ -64,70 +67,61 @@ export default function SubjectPaperCard({ paper, examId: propExamId, viewMode =
   if (viewMode === 'list') {
     return (
       <>
-        <div className="group relative transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-8 border-l-4 border-transparent hover:border-purple-500/50">
-          <Link href={detailUrl} className="absolute inset-0 z-0" />
-          
-          <div className="flex items-center gap-6 w-full sm:w-auto relative z-10 pointer-events-none">
-            <div className="text-sm font-black text-slate-400 w-8 text-center shrink-0 hidden sm:block">
-                #{index + 1}
-            </div>
-            
-            <div className="h-12 w-12 rounded-2xl bg-purple-600 text-white shadow-purple-600/30 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300">
-                <Layers size={20} strokeWidth={2.5} />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white truncate flex items-center gap-2 transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
-                    {paper.title || `${paper.subject?.name} Paper`}
-                    <span className="sm:hidden text-xs text-slate-400 font-bold">#{index + 1}</span>
-                </h3>
-                
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                        <BookOpen size={12} className="text-purple-600 dark:text-purple-400" />
-                        {paper.subject?.name || 'Unknown'}
-                    </span>
-                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                        <User size={12} className="text-purple-600 dark:text-purple-400" />
-                        {paper.teacher?.name || 'Unassigned'}
-                    </span>
-                </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-20 sm:pl-0 relative z-10">
-            <div className="flex gap-6 hidden md:flex">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</span>
-                    <div className="flex items-center gap-1 text-sm font-black text-slate-700 dark:text-slate-300">
-                        {paper.durationMinutes || 0}<span className="text-xs font-medium text-slate-400">m</span>
-                    </div>
-                </div>
-                <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 my-auto" />
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</span>
-                    <div className="flex items-center gap-1 text-sm font-black text-slate-700 dark:text-slate-300">
-                        {paper.totalMarks || 0}<span className="text-xs font-medium text-slate-400">pts</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl ${statusStyle} shadow-sm`}>
-                    {paper.status}
-                </span>
-
-                <button 
-                    onClick={handleDeleteClick}
-                    className="p-2 z-20 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative pointer-events-auto"
-                    aria-label="Delete paper"
-                >
-                    <Trash2 className="h-4 w-4" />
-                </button>
-            </div>
-          </div>
-        </div>
+        <tr className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative">
+          <td className="p-4 text-center relative z-10">
+              <input 
+                  type="checkbox" 
+                  className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                  checked={isSelected}
+                  onChange={(e) => onSelect?.(e.target.checked)}
+              />
+          </td>
+          <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+              #{index + 1}
+          </td>
+          <td className="p-4 relative">
+              <Link href={detailUrl} className="absolute inset-0 z-0" />
+              <div className="flex items-center gap-3 relative z-10 pointer-events-none">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Layers size={14} strokeWidth={2.5} />
+                  </div>
+                  <span className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-emerald-600 transition-colors">
+                      {paper.title || `${paper.subject?.name} Paper`}
+                  </span>
+              </div>
+          </td>
+          <td className="p-4 text-xs font-bold text-slate-500 relative z-10">
+              <div className="flex flex-col gap-0.5">
+                  <span className="text-slate-700 dark:text-slate-300">{paper.subject?.name || 'Unknown'}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400">{paper.teacher?.name || 'Unassigned'}</span>
+              </div>
+          </td>
+          <td className="p-4 text-xs font-bold text-slate-500 relative z-10">
+              <div className="flex flex-col gap-0.5">
+                  <span className="text-slate-700 dark:text-slate-300">{paper.durationMinutes || 0}m</span>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400">{paper.totalMarks || 0} pts</span>
+              </div>
+          </td>
+          <td className="p-4 relative z-10">
+              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-block ${statusStyle}`}>
+                  {paper.status}
+              </span>
+          </td>
+          <td className="p-4 text-xs font-semibold text-slate-500 relative z-10">
+              {paper.createdAt ? format(new Date(paper.createdAt), 'MMM d, yyyy') : 'N/A'}
+          </td>
+          <td className="p-4 text-center relative z-20">
+              <div className="flex justify-center">
+                  <button 
+                      onClick={handleDeleteClick}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                      aria-label="Delete paper"
+                  >
+                      <Trash2 className="h-4 w-4" />
+                  </button>
+              </div>
+          </td>
+        </tr>
 
         <ConfirmationModal
           isOpen={isDeleteModalOpen}

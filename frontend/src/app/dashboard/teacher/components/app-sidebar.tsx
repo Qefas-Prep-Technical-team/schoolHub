@@ -307,14 +307,7 @@ export function AppSidebar() {
                                     </div>
                                 )}
 
-                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 focus:bg-emerald-500/10 focus:text-emerald-600 transition-all font-medium">
-                                    <User2 className="h-4 w-4" />
-                                    <span>Account Settings</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 focus:bg-emerald-500/10 focus:text-emerald-600 transition-all font-medium">
-                                    <CreditCard className="h-4 w-4" />
-                                    <span>Subscription</span>
-                                </DropdownMenuItem>
+
 
                                 <div className="h-px bg-slate-100 dark:bg-white/5 my-1.5" />
 

@@ -381,7 +381,7 @@ export default function ClassesOverviewPage() {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         {cls.isLive ? (
-                                                            <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-200 dark:border-emerald-500/20">In Session</span>
+                                                            <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold border border-blue-200 dark:border-blue-500/20">In Session</span>
                                                         ) : (
                                                             <span className="px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold border border-slate-200 dark:border-slate-700">Inactive</span>
                                                         )}
@@ -436,7 +436,7 @@ export default function ClassesOverviewPage() {
                 {/* Global Security Footer */}
                 <div className="flex justify-center pt-8">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500">
-                        <ShieldCheck size={14} className="text-emerald-500" /> Verified Classes
+                        <ShieldCheck size={14} className="text-blue-500" /> Verified Classes
                     </div>
                 </div>
             </div>

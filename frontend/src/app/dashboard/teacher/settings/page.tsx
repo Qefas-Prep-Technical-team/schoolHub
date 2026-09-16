@@ -1,25 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     Settings, 
     Bell, 
     Shield, 
     User, 
     Palette, 
-    Smartphone, 
-    Mail, 
-    Lock, 
     Globe, 
     Eye,
-    CheckCircle2,
     Loader2,
     Save,
     ChevronDown,
     School,
     LogOut,
     Languages,
-    Clock
+    Clock,
+    Lock,
+    Fingerprint
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,11 +31,7 @@ import { useTeacherProfile, useTeacherSettings, useUpdateTeacherSettings } from 
 import { cn } from '@/lib/utils';
 import { useLogoutMutation } from '@/app/(auth)/login/services/use-auth-mutations';
 import { useTheme } from 'next-themes';
-import { useEffect } from 'react';
 import Image from 'next/image';
-import { useMutation } from '@tanstack/react-query';
-import { teacherService } from '@/lib/api/services/teacherService';
-import { toast } from 'react-toastify';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 import DeviceSessions from '@/components/DeviceSessions';
 
@@ -47,8 +41,6 @@ export default function TeacherSettingsPage() {
     const { data: backendSettings, isLoading: isSettingsLoading } = useTeacherSettings();
     const updateSettings = useUpdateTeacherSettings();
     const { mutate: logout } = useLogoutMutation();
-
-
 
     // Local state for settings
     const [settings, setSettings] = useState({
@@ -79,128 +71,137 @@ export default function TeacherSettingsPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-[80vh] flex items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-500 opacity-50" />
             </div>
         );
     }
 
+    const initials = (profile?.name || 'T').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
+
     return (
-        <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-700 space-y-10 px-6 md:px-10">
+        <div className="w-[80%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            <Settings size={28} />
-                        </div>
-                        <h1 className="text-4xl font-black italic uppercase tracking-tight text-slate-900 dark:text-white">Settings</h1>
-                    </div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-14 italic">Control Center & System Preferences</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                        <Settings className="text-emerald-500" size={28} />
+                        Settings
+                    </h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        Control your account preferences and system configuration.
+                    </p>
                 </div>
                 
                 <Button 
                     onClick={handleSave} 
                     disabled={updateSettings.isPending}
-                    className="h-14 px-8 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all"
+                    className="h-10 px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 font-semibold shadow-sm transition-all"
                 >
-                    {updateSettings.isPending ? <Loader2 className="animate-spin mr-2" /> : <Save size={18} className="mr-2" />}
-                    Sync Preferences
+                    {updateSettings.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save size={16} className="mr-2" />}
+                    Save Preferences
                 </Button>
             </div>
 
-            <Tabs defaultValue="account" className="w-full space-y-10">
-                <div className="bg-slate-100/50 dark:bg-slate-900/50 p-1.5 rounded-[2rem] border border-slate-200/50 dark:border-slate-800/50 w-fit">
-                    <TabsList className="bg-transparent gap-2 h-auto">
-                        <TabsTrigger value="account" className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-lg transition-all">
-                            <User size={16} className="mr-2" /> Account
-                        </TabsTrigger>
-                        <TabsTrigger value="security" className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-lg transition-all">
-                            <Shield size={16} className="mr-2" /> Security
-                        </TabsTrigger>
-                        <TabsTrigger value="preferences" className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-lg transition-all">
-                            <Palette size={16} className="mr-2" /> Display
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+            <Tabs defaultValue="account" className="w-full space-y-6">
+                <TabsList className="bg-slate-50 dark:bg-slate-900 rounded-lg p-1 w-full max-w-md grid grid-cols-3 h-auto">
+                    <TabsTrigger value="account" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                        <div className="flex flex-row items-center justify-center gap-2">
+                            <User size={14} /> <span>Account</span>
+                        </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                        <div className="flex flex-row items-center justify-center gap-2">
+                            <Shield size={14} /> <span>Security</span>
+                        </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="preferences" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                        <div className="flex flex-row items-center justify-center gap-2">
+                            <Palette size={14} /> <span>Display</span>
+                        </div>
+                    </TabsTrigger>
+                </TabsList>
 
                 {/* Account Settings */}
                 <TabsContent value="account" className="space-y-6 focus-visible:outline-none">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-6">
-                            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                                <CardHeader className="p-8 md:p-10 pb-6">
-                                    <CardTitle className="text-xl font-black italic uppercase flex items-center gap-3">
-                                        <Fingerprint className="text-primary" /> Educator Profile
+                            <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+                                <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                        <Fingerprint className="text-emerald-500" size={18} /> Educator Identity
                                     </CardTitle>
                                     <CardDescription>Manage your primary account identity.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-8 md:p-10 pt-0 space-y-8">
-                                    <div className="flex items-center gap-6 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50">
-                                        <div className="h-20 w-20 rounded-[1.5rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-black text-white shadow-lg overflow-hidden">
+                                <CardContent className="p-6 space-y-6">
+                                    <div className="flex items-center gap-5 p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                                        <div className="h-16 w-16 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-xl font-bold text-emerald-600 dark:text-emerald-400 overflow-hidden">
                                             {profile?.profileImage ? (
                                                 <Image 
                                                     src={profile.profileImage} 
                                                     alt={profile.name} 
-                                                    width={80} 
-                                                    height={80} 
+                                                    width={64} 
+                                                    height={64} 
                                                     className="w-full h-full object-cover" 
                                                 />
                                             ) : (
-                                                profile?.name?.charAt(0) || 'T'
+                                                initials
                                             )}
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-lg font-black italic tracking-tight">{profile?.name}</p>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{profile?.teacherCode} • Official Member</p>
+                                            <p className="text-base font-bold text-slate-900 dark:text-white">{profile?.name}</p>
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{profile?.teacherCode} • Educator</p>
                                         </div>
-                                        <Button variant="outline" className="ml-auto rounded-xl h-10 px-4 text-[10px] font-black uppercase tracking-widest" onClick={() => window.location.href='/dashboard/teacher/profile'}>
-                                            Edit
+                                        <Button variant="outline" className="ml-auto rounded-lg h-9 px-4 text-xs font-semibold border-slate-200 dark:border-slate-700" onClick={() => window.location.href='/dashboard/teacher/profile'}>
+                                            Edit Profile
                                         </Button>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Display Name</Label>
-                                                <Input value={profile?.name} disabled className="h-14 rounded-2xl bg-slate-100/50 dark:bg-slate-900 border-none opacity-50" />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Institutional Email</Label>
-                                                <Input value={profile?.email} disabled className="h-14 rounded-2xl bg-slate-100/50 dark:bg-slate-900 border-none opacity-50" />
-                                            </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Display Name</Label>
+                                            <Input value={profile?.name} disabled className="h-10 rounded-lg bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-500" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Institutional Email</Label>
+                                            <Input value={profile?.email} disabled className="h-10 rounded-lg bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-500" />
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl overflow-hidden bg-slate-950 text-white">
-                                <CardContent className="p-8 md:p-10 flex items-center justify-between gap-6">
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-black italic uppercase">Logout Session</h3>
-                                        <p className="text-xs text-white/50 font-medium">Terminate your current secure session on this device.</p>
+                            <Card className="rounded-2xl border-rose-100 dark:border-rose-900/30 shadow-sm bg-rose-50/50 dark:bg-rose-950/20 overflow-hidden">
+                                <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <h3 className="text-sm font-bold text-rose-900 dark:text-rose-400">Logout Session</h3>
+                                        <p className="text-xs text-rose-700 dark:text-rose-300/70">Terminate your current secure session on this device.</p>
                                     </div>
-                                    <Button onClick={() => logout()} variant="destructive" className="h-14 px-8 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-600 hover:bg-rose-700 shadow-xl shadow-rose-900/40">
-                                        <LogOut size={18} className="mr-2" /> Sign Out
+                                    <Button onClick={() => logout()} variant="destructive" className="h-10 px-6 rounded-lg font-semibold text-xs bg-rose-600 hover:bg-rose-700 shadow-sm">
+                                        <LogOut size={16} className="mr-2" /> Sign Out
                                     </Button>
                                 </CardContent>
                             </Card>
                         </div>
 
                         <div className="space-y-6">
-                            <Card className="rounded-[2.5rem] bg-indigo-600 text-white shadow-xl overflow-hidden relative group">
-                                <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform">
-                                    <School size={120} />
-                                </div>
-                                <CardHeader className="relative z-10 p-8">
-                                    <CardTitle className="text-lg font-black uppercase italic tracking-widest">Linked Academy</CardTitle>
+                            <Card className="rounded-2xl border-emerald-100 dark:border-emerald-500/20 shadow-sm bg-emerald-50/50 dark:bg-emerald-500/5 overflow-hidden">
+                                <CardHeader className="px-6 py-5 bg-emerald-50/80 dark:bg-emerald-500/10 border-b border-emerald-100/50 dark:border-emerald-500/20">
+                                    <CardTitle className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
+                                        <School className="text-emerald-600 dark:text-emerald-400" size={18} /> Linked Academy
+                                    </CardTitle>
                                 </CardHeader>
-                                <CardContent className="relative z-10 p-8 pt-0 space-y-6">
-                                    <div className="space-y-1">
-                                        <p className="text-3xl font-black italic leading-tight">{profile?.school?.name || 'Qefas Hub Academy'}</p>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">{profile?.school?.schoolCode || 'SH-2024'}</p>
+                                <CardContent className="p-6 space-y-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400/70 uppercase tracking-wider mb-1">Institution</p>
+                                            <p className="text-base font-bold text-emerald-950 dark:text-emerald-100">{profile?.school?.name || 'Qefas Hub Academy'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400/70 uppercase tracking-wider mb-1">School Code</p>
+                                            <p className="text-base font-bold text-emerald-950 dark:text-emerald-100">{profile?.school?.schoolCode || 'SH-2024'}</p>
+                                        </div>
                                     </div>
-                                    <Button variant="outline" className="w-full rounded-2xl h-12 bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest">
+                                    <Button variant="outline" className="w-full rounded-lg h-10 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 font-semibold text-xs">
                                         View Institution
                                     </Button>
                                 </CardContent>
@@ -211,22 +212,23 @@ export default function TeacherSettingsPage() {
 
                 {/* Security Settings */}
                 <TabsContent value="security" className="focus-visible:outline-none">
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                                <CardHeader className="p-8 pb-4">
-                                    <CardTitle className="text-xl font-black italic uppercase flex items-center gap-3">
-                                        <Lock className="text-rose-500" /> Password
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+                                <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                        <Lock className="text-emerald-500" size={18} /> Password
                                     </CardTitle>
+                                    <CardDescription>Manage your account password.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-8">
-                                    <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                                <CardContent className="p-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 gap-4">
                                         <div className="space-y-1">
                                             <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
-                                            <p className="text-xs text-slate-500">Change your password to ensure account security.</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Change your password to ensure account security.</p>
                                         </div>
                                         <ChangePasswordModal>
-                                            <Button className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-[10px] tracking-widest px-6 h-12 shadow-xl shadow-rose-900/40">
+                                            <Button className="shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-6 h-10 shadow-sm">
                                                 Change Password
                                             </Button>
                                         </ChangePasswordModal>
@@ -234,32 +236,28 @@ export default function TeacherSettingsPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl relative">
-                                <CardHeader className="p-8 pb-4">
-                                    <CardTitle className="text-xl font-black italic uppercase flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <Shield className="text-emerald-500" /> Two-Factor Auth
+                            <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden relative">
+                                <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                                    <CardTitle className="text-lg font-bold flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <Shield className="text-emerald-500" size={18} /> Two-Factor Auth
                                         </div>
-                                        <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black text-emerald-500 bg-emerald-500/10 border-emerald-500/20">Coming Soon</Badge>
+                                        <Badge variant="outline" className="text-[10px] font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>
                                     </CardTitle>
+                                    <CardDescription>Extra layer of account security.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-8 pt-0 space-y-6 opacity-60 pointer-events-none">
-                                    <div className="p-6 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 space-y-4">
-                                        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 italic leading-relaxed">
-                                            Extra layer of security. We&apos;ll ask for a code on your phone in addition to your password.
-                                        </p>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable 2FA Protection</span>
-                                            <Switch checked={false} disabled />
+                                <CardContent className="p-6 space-y-5 opacity-60 pointer-events-none">
+                                    <div className="flex items-center justify-between p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                                        <div className="space-y-1">
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Require 2FA</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Ask for a code on your phone when signing in.</p>
                                         </div>
+                                        <Switch checked={false} disabled />
                                     </div>
-                                    <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
-                                    <div className="space-y-2">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authentication Method</p>
-                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300">
-                                            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                                <Globe size={16} />
-                                            </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Authentication Method</Label>
+                                        <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            <Globe size={16} className="text-emerald-500" />
                                             {profile?.authProvider || 'Google Account'}
                                         </div>
                                     </div>
@@ -273,22 +271,20 @@ export default function TeacherSettingsPage() {
 
                 {/* Display Preferences */}
                 <TabsContent value="preferences" className="focus-visible:outline-none">
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                        <CardHeader className="p-8 md:p-12">
-                            <CardTitle className="text-2xl font-black italic uppercase flex items-center gap-4 tracking-tight">
-                                <Palette className="text-primary" /> Visual & Regional
+                    <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+                        <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <Palette className="text-emerald-500" size={18} /> Visual & Regional
                             </CardTitle>
+                            <CardDescription>Customize how the dashboard looks and feels.</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-8 md:p-12 pt-0 space-y-12">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                            <Eye size={20} />
-                                        </div>
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Interface Theme</Label>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-3">
+                        <CardContent className="p-6 space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                                        <Eye size={16} className="text-slate-400" /> Interface Theme
+                                    </Label>
+                                    <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                                         {['light', 'dark', 'system'].map((t) => (
                                             <button 
                                                 key={t}
@@ -297,10 +293,10 @@ export default function TeacherSettingsPage() {
                                                     setSettings({...settings, theme: t});
                                                 }}
                                                 className={cn(
-                                                    "h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                                    "h-9 rounded-lg text-[11px] font-semibold capitalize transition-all",
                                                     currentTheme === t 
-                                                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg" 
-                                                        : "bg-slate-100 dark:bg-slate-900 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+                                                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700" 
+                                                        : "text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
                                                 )}
                                             >
                                                 {t}
@@ -309,35 +305,29 @@ export default function TeacherSettingsPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 opacity-60 pointer-events-none relative">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                            <Languages size={20} />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Default Language</Label>
-                                            <Badge variant="outline" className="w-fit mt-1 text-[8px] uppercase tracking-widest font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>
-                                        </div>
+                                <div className="space-y-3 opacity-60 pointer-events-none">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                                            <Languages size={16} className="text-slate-400" /> Default Language
+                                        </Label>
+                                        <Badge variant="outline" className="text-[9px] uppercase font-semibold text-slate-500">Coming Soon</Badge>
                                     </div>
-                                    <div className="relative group">
-                                        <Input value="English (US)" disabled className="h-14 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border-none font-bold" />
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <div className="relative">
+                                        <Input value="English (US)" disabled className="h-10 rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 font-medium" />
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 opacity-60 pointer-events-none relative">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                            <Clock size={20} />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Academic Timezone</Label>
-                                            <Badge variant="outline" className="w-fit mt-1 text-[8px] uppercase tracking-widest font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>
-                                        </div>
+                                <div className="space-y-3 opacity-60 pointer-events-none">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                                            <Clock size={16} className="text-slate-400" /> Academic Timezone
+                                        </Label>
+                                        <Badge variant="outline" className="text-[9px] uppercase font-semibold text-slate-500">Coming Soon</Badge>
                                     </div>
-                                    <div className="relative group">
-                                        <Input value="UTC +0:00 (London)" disabled className="h-14 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border-none font-bold" />
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <div className="relative">
+                                        <Input value="UTC +0:00 (London)" disabled className="h-10 rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 font-medium" />
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     </div>
                                 </div>
                             </div>
@@ -347,44 +337,4 @@ export default function TeacherSettingsPage() {
             </Tabs>
         </div>
     );
-}
-
-function SettingsToggle({ icon, title, description, checked, onCheckedChange }: { 
-    icon: React.ReactNode, 
-    title: string, 
-    description: string, 
-    checked: boolean,
-    onCheckedChange: (val: boolean) => void 
-}) {
-    return (
-        <div className="flex items-start justify-between p-6 md:p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 group hover:border-primary/20 transition-all">
-            <div className="flex gap-4 md:gap-6">
-                <div className="h-14 w-14 shrink-0 rounded-2xl bg-white dark:bg-slate-950 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500">
-                    {icon}
-                </div>
-                <div className="space-y-1">
-                    <h4 className="text-lg font-black italic tracking-tight">{title}</h4>
-                    <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-[240px]">{description}</p>
-                </div>
-            </div>
-            <Switch checked={checked} onCheckedChange={onCheckedChange} className="mt-2" />
-        </div>
-    );
-}
-
-function Fingerprint({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("lucide lucide-fingerprint", className)}>
-            <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.02-.3 3"/>
-            <path d="M14 22a10 10 0 0 0-4-19.5"/>
-            <path d="M18 8a6 6 0 0 0-12 0c0 .7 0 1.4.1 2.1"/>
-            <path d="M22 10a10 10 0 0 0-1.7-5.3"/>
-            <path d="M2 10c0-1.2.2-2.3.6-3.4"/>
-            <path d="M6 18c.2 1 .4 1.9.8 2.8"/>
-            <path d="M12 22c1.1 0 2.2-.2 3.3-.5"/>
-            <path d="M7 15c.1-.4.1-.7.1-1.1"/>
-            <path d="M12 14c1.1 0 2 .9 2 2"/>
-            <path d="M14 11c0-1.1-.9-2-2-2s-2 .9-2 2"/>
-        </svg>
-    )
 }

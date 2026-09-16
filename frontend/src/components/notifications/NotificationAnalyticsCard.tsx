@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Bell, CheckCircle2, Link2, AlertCircle, Megaphone, Clock, TrendingUp } from 'lucide-react';
+import { Bell, CheckCircle2, Link2, AlertCircle, Megaphone, Clock, TrendingUp, BookOpen, Smartphone, Mail } from 'lucide-react';
 import { Notification } from '@/lib/api/services/notificationService';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +21,7 @@ export default function NotificationAnalyticsCard({ notifications }: Notificatio
 
   const typeStats = [
     {
-      label: 'Link Requests',
+      label: 'Requests',
       count: (byType['LINK_REQUEST'] || 0) + (byType['LINK_ACCEPTED'] || 0) + (byType['LINK_REJECTED'] || 0) + (byType['LINK_RESPONSE'] || 0),
       icon: <Link2 size={12} />,
       color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/30',
@@ -43,6 +43,30 @@ export default function NotificationAnalyticsCard({ notifications }: Notificatio
       count: byType['ACADEMIC'] || 0,
       icon: <TrendingUp size={12} />,
       color: 'text-green-500 bg-green-50 dark:bg-green-950/30',
+    },
+    {
+      label: 'Assessments',
+      count: notifications.filter(n => n.title?.includes('Assignment') || n.title?.includes('Assessment')).length,
+      icon: <BookOpen size={12} />,
+      color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/30',
+    },
+    {
+      label: 'Website Inquiries',
+      count: notifications.filter(n => n.type === 'GENERAL' && n.title === 'New Website Inquiry').length,
+      icon: <Mail size={12} />,
+      color: 'text-rose-500 bg-rose-50 dark:bg-rose-950/30',
+    },
+    {
+      label: 'Messages',
+      count: byType['MESSAGE'] || 0,
+      icon: <Mail size={12} />,
+      color: 'text-pink-500 bg-pink-50 dark:bg-pink-950/30',
+    },
+    {
+      label: 'Devices',
+      count: notifications.filter(n => n.title?.includes('Device Login')).length,
+      icon: <Smartphone size={12} />,
+      color: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30',
     },
   ].filter((s) => s.count > 0);
 

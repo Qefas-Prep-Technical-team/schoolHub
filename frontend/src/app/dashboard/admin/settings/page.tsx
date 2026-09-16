@@ -7,34 +7,34 @@ import { useSessions } from '@/lib/api/hooks/useSessions';
 import { adminService } from '@/lib/api/services/adminService';
 import { 
   Settings, 
-  Bell, 
   Lock, 
   Palette, 
   Database, 
   Rocket,
   Save,
-  RotateCcw,
   AlertCircle,
-  Mail,
-  Smartphone,
   ShieldCheck,
   UserCheck,
   Paintbrush,
   UserCircle,
-  Key
+  Key,
+  Fingerprint
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 import ImageUpload from '@/components/reusable/ImageUpload';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuthStore();
@@ -43,7 +43,7 @@ export default function SettingsPage() {
   const { data: sessionsResponse } = useSessions(schoolId);
   const dbSessions = sessionsResponse?.data || [];
   
-  const { data: settings, isLoading } = useSchoolSettings(schoolId);
+  const { data: settings, isLoading: isSettingsLoading } = useSchoolSettings(schoolId);
   const updateMutation = useUpdateSchoolSettings();
 
   const { data: landingPageSettings, isLoading: isLandingPageLoading } = useSchoolLandingPage(schoolId);
@@ -52,7 +52,6 @@ export default function SettingsPage() {
   const [localSettings, setLocalSettings] = useState<any>(null);
   const [localLandingPage, setLocalLandingPage] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState('General');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [personalProfile, setPersonalProfile] = useState<any>({
     name: user?.name || '',
@@ -72,7 +71,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (settings) {
-      // Ensure all fields have at least a default value to avoid uncontrolled input warnings
       setLocalSettings({
         ...settings,
         themeColor: settings.themeColor || '#2563eb',
@@ -98,15 +96,15 @@ export default function SettingsPage() {
         features: Array.isArray(landingPageSettings.features) && landingPageSettings.features.length > 0
           ? landingPageSettings.features
           : [
-              { title: 'Expert Faculty', description: 'Learn from highly qualified educators who are passionate about teaching and mentoring.', icon: 'Users' },
-              { title: 'Modern Curriculum', description: 'An innovative, dynamic curriculum tailored to meet global standards.', icon: 'BookOpen' },
-              { title: 'Holistic Development', description: 'Strong focus on co-curricular activities and character building.', icon: 'Award' }
+              { title: 'Expert Faculty', description: 'Learn from highly qualified educators.', icon: 'Users' },
+              { title: 'Modern Curriculum', description: 'An innovative, dynamic curriculum.', icon: 'BookOpen' },
+              { title: 'Holistic Development', description: 'Strong focus on co-curricular activities.', icon: 'Award' }
             ],
         testimonials: Array.isArray(landingPageSettings.testimonials) && landingPageSettings.testimonials.length > 0
           ? landingPageSettings.testimonials
           : [
-              { name: 'Sarah Jenkins', role: 'Parent', text: 'Choosing this school was the best decision for my son. The individual attention is exceptional.' },
-              { name: 'David Cole', role: 'Alumni', text: 'The skills and values I gained here laid the foundation for my career.' }
+              { name: 'Sarah Jenkins', role: 'Parent', text: 'Choosing this school was the best decision.' },
+              { name: 'David Cole', role: 'Alumni', text: 'The skills I gained laid the foundation.' }
             ]
       });
     }
@@ -149,605 +147,551 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     try {
-      if (activeTab === 'Profile') {
+      let savedAny = false;
+
+      // Check if profile changed
+      if (personalProfile.name !== user?.name || personalProfile.gender !== (user as any)?.gender || personalProfile.profileImage !== (user as any)?.profileImage) {
         setIsSavingProfile(true);
         await adminService.updateProfile(personalProfile);
         updateUser({ name: personalProfile.name, gender: personalProfile.gender, profileImage: personalProfile.profileImage } as any);
-        toast.success('Profile updated successfully');
-        setHasChanges(false);
-        setIsSavingProfile(false);
-        return;
+        savedAny = true;
       }
 
-      if (activeTab === 'Landing Page') {
-        await updateLandingPageMutation.mutateAsync({
-          schoolId,
-          data: localLandingPage
-        });
-        toast.success('Landing page settings updated successfully');
-        setHasChanges(false);
-        return;
+      // Check if settings changed
+      if (localSettings && localSettings !== settings) {
+        const { id, schoolId: sid, createdAt, updatedAt, ...cleanData } = localSettings;
+        await updateMutation.mutateAsync({ schoolId, data: cleanData });
+        savedAny = true;
       }
 
-      // Strip metadata fields that Prisma doesn't expect in an update
-      const { id, schoolId: sid, createdAt, updatedAt, ...cleanData } = localSettings;
+      // Check if landing page changed
+      if (localLandingPage && localLandingPage !== landingPageSettings) {
+        await updateLandingPageMutation.mutateAsync({ schoolId, data: localLandingPage });
+        savedAny = true;
+      }
 
-      await updateMutation.mutateAsync({
-        schoolId,
-        data: cleanData
-      });
-      toast.success('Settings updated successfully');
-      setHasChanges(false);
+      if (savedAny) {
+        toast.success('Settings updated successfully');
+        setHasChanges(false);
+      }
     } catch (error: any) {
       console.error('Update Error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update settings';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || error.message || 'Failed to update settings');
     } finally {
       setIsSavingProfile(false);
     }
   };
 
-  const resetSettings = () => {
-    if (settings) {
-      setLocalSettings({
-        ...settings,
-        themeColor: settings.themeColor || '#2563eb',
-        defaultSession: settings.defaultSession || '',
-        defaultTerm: settings.defaultTerm || '',
-        enableEmailNotifications: settings.enableEmailNotifications ?? true,
-        enablePushNotifications: settings.enablePushNotifications ?? true,
-        enableMaintenanceMode: settings.enableMaintenanceMode ?? false,
-        allowTeacherDigitalSignature: settings.allowTeacherDigitalSignature ?? false,
-        lockSettings: settings.lockSettings ?? false,
-      });
-    }
-    if (landingPageSettings) {
-      setLocalLandingPage({
-        heroTitle: landingPageSettings.heroTitle || '',
-        heroSubtitle: landingPageSettings.heroSubtitle || '',
-        aboutTitle: landingPageSettings.aboutTitle || '',
-        aboutText: landingPageSettings.aboutText || '',
-        primaryColor: landingPageSettings.primaryColor || '#3b82f6',
-        features: Array.isArray(landingPageSettings.features) && landingPageSettings.features.length > 0
-          ? landingPageSettings.features
-          : [
-              { title: 'Expert Faculty', description: 'Learn from highly qualified educators who are passionate about teaching and mentoring.', icon: 'Users' },
-              { title: 'Modern Curriculum', description: 'An innovative, dynamic curriculum tailored to meet global standards.', icon: 'BookOpen' },
-              { title: 'Holistic Development', description: 'Strong focus on co-curricular activities and character building.', icon: 'Award' }
-            ],
-        testimonials: Array.isArray(landingPageSettings.testimonials) && landingPageSettings.testimonials.length > 0
-          ? landingPageSettings.testimonials
-          : [
-              { name: 'Sarah Jenkins', role: 'Parent', text: 'Choosing this school was the best decision for my son. The individual attention is exceptional.' },
-              { name: 'David Cole', role: 'Alumni', text: 'The skills and values I gained here laid the foundation for my career.' }
-            ]
-      });
-    }
-    setHasChanges(false);
-  };
+  const isLoading = isSettingsLoading || isLandingPageLoading || !localSettings || !localLandingPage;
 
-  if (isLoading || isLandingPageLoading || !localSettings || !localLandingPage) {
+  if (isLoading) {
     return (
-        <div className="p-8 space-y-8">
-            <Skeleton className="h-10 w-64" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Skeleton className="h-64 rounded-3xl" />
-                <Skeleton className="h-64 rounded-3xl" />
+        <div className="w-[80%] max-w-none mx-auto py-8 space-y-6 md:space-y-8 px-4 md:px-8">
+            {/* Header Skeleton */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                    <Skeleton className="h-4 w-72 bg-slate-100 dark:bg-slate-800/50 rounded-md" />
+                </div>
+                <Skeleton className="h-10 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="space-y-6">
+                <Skeleton className="h-12 w-full max-w-3xl bg-slate-100 dark:bg-slate-800/50 rounded-lg" />
+
+                {/* Content Skeleton */}
+                <div className="space-y-6">
+                    <Skeleton className="h-[300px] w-full bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-800" />
+                    <Skeleton className="h-[200px] w-full bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-800" />
+                </div>
             </div>
         </div>
     );
   }
 
-  const tabs = [
-    { label: 'General', icon: Database },
-    { label: 'Appearance', icon: Palette },
-    { label: 'Security', icon: Lock },
-    { label: 'Profile', icon: UserCircle },
-    { label: 'Landing Page', icon: Rocket },
-  ];
+  const isPending = updateMutation.isPending || updateLandingPageMutation.isPending || isSavingProfile;
+  const initials = (personalProfile?.name || 'A').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 lg:p-12 max-w-6xl mx-auto space-y-10">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-            <Settings className="text-primary" size={36} />
-            Institutional Settings
+    <div className="w-[80%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <Settings className="text-blue-500" size={28} />
+            Settings
           </h1>
-          <p className="text-slate-500 font-medium">Manage your school&apos;s digital infrastructure and preferences.</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+            Manage your school&apos;s digital infrastructure and preferences.
+          </p>
         </div>
-
-        <AnimatePresence>
-          {hasChanges && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="flex items-center gap-3"
-            >
-              <Button 
-                variant="outline" 
-                onClick={resetSettings}
-                className="rounded-xl border-slate-200 h-11"
-              >
-                <RotateCcw size={16} className="mr-2" /> Reset
-              </Button>
-              <Button 
-                onClick={handleSave}
-                disabled={updateMutation.isPending || updateLandingPageMutation.isPending || isSavingProfile}
-                className="rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-11 px-8 font-black uppercase tracking-widest text-[10px]"
-              >
-                {updateMutation.isPending || updateLandingPageMutation.isPending || isSavingProfile ? 'Saving...' : <><Save size={16} className="mr-2" /> Save Changes</>}
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-        {/* Navigation Sidebar */}
-        <aside className="md:col-span-3 space-y-2">
-            {tabs.map((item, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setActiveTab(item.label)}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-bold transition-all",
-                    activeTab === item.label ? "bg-white dark:bg-slate-900 shadow-md text-primary" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  )}
-                >
-                    <item.icon size={18} />
-                    {item.label}
-                </button>
-            ))}
-        </aside>
-
-        {/* Settings Content */}
-        <main className="md:col-span-9 space-y-8">
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {activeTab === 'General' && (
-                        <div className="space-y-8">
-                            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                                        <Rocket size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-lg">Feature Management</h3>
-                                        <p className="text-xs text-slate-500">Control feature availability across dashboards</p>
-                                    </div>
-                                </div>
-                                <CardContent className="p-8 space-y-8">
-                                    <SettingItem 
-                                      title="Coming Soon Overlay"
-                                      description="Enable a 'Coming Soon' placeholder for features currently in development."
-                                      icon={Rocket}
-                                      checked={localSettings.showComingSoon ?? false}
-                                      onCheckedChange={(val: boolean) => handleToggle('showComingSoon', val)}
-                                    />
-                                    
-                                    <div className="p-6 rounded-3xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 flex gap-4">
-                                        <AlertCircle className="text-amber-600 shrink-0" size={24} />
-                                        <div>
-                                            <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Development Mode Warning</p>
-                                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                                                Enabling the Coming Soon overlay will globally restrict access to beta features for all students and staff members.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900">
-                                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-xl bg-primary/50/10 text-primary flex items-center justify-center">
-                                        <Database size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-lg">Academic Configuration</h3>
-                                        <p className="text-xs text-slate-500">Default settings for the current academic cycle</p>
-                                    </div>
-                                </div>
-                                <CardContent className="p-8 space-y-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Default Session</Label>
-                                            <select 
-                                             className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
-                                             value={localSettings.defaultSession || ''}
-                                             onChange={(e) => handleChange('defaultSession', e.target.value)}
-                                            >
-                                                <option value="">Select Session</option>
-                                                {dbSessions.map((session: any) => (
-                                                  <option key={session.id} value={session.name}>
-                                                    {session.name}
-                                                  </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Default Term</Label>
-                                            <select 
-                                              className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
-                                              value={localSettings.defaultTerm || ''}
-                                              onChange={(e) => handleChange('defaultTerm', e.target.value)}
-                                            >
-                                                <option value="">Select Term</option>
-                                                <option value="First Term">First Term</option>
-                                                <option value="Second Term">Second Term</option>
-                                                <option value="Third Term">Third Term</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-
-                    {activeTab === 'Appearance' && (
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="h-10 w-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
-                                    <Paintbrush size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-lg">Theme Settings</h3>
-                                    <p className="text-xs text-slate-500">Personalize your institution&apos;s digital atmosphere</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-8 space-y-8">
-                                <div className="space-y-10">
-                                    <div className="space-y-4">
-                                        <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Institutional Color Presets</Label>
-                                        <div className="flex flex-wrap gap-4">
-                                            {[
-                                                { name: 'Institutional Blue', hex: '#2563eb' },
-                                                { name: 'Royal Blue', hex: '#2563eb' },
-                                                { name: 'Royal Blue', hex: '#2563eb' },
-                                                { name: 'Emerald Growth', hex: '#10b981' },
-                                                { name: 'Academic Slate', hex: '#475569' },
-                                                { name: 'Rose Excellence', hex: '#e11d48' },
-                                            ].map((preset) => (
-                                                <button
-                                                    key={preset.hex}
-                                                    onClick={() => handleChange('themeColor', preset.hex)}
-                                                    className={cn(
-                                                        "h-12 w-12 rounded-2xl transition-all hover:scale-110 active:scale-95 border-4",
-                                                        localSettings.themeColor === preset.hex ? "border-white dark:border-slate-800 shadow-xl scale-110" : "border-transparent"
-                                                    )}
-                                                    style={{ backgroundColor: preset.hex }}
-                                                    title={preset.name}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col md:flex-row gap-8 items-start md:items-center pt-8 border-t border-slate-100 dark:border-white/5">
-                                        <div className="space-y-4 flex-1">
-                                            <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Custom System Frequency (Hex)</Label>
-                                            <div className="flex gap-4 items-center">
-                                                <div className="relative">
-                                                    <Input 
-                                                        type="color" 
-                                                        value={localSettings.themeColor || '#2563eb'} 
-                                                        onChange={(e) => handleChange('themeColor', e.target.value)}
-                                                        className="w-16 h-14 p-1 rounded-2xl cursor-copy border-none bg-transparent relative z-10"
-                                                    />
-                                                    <div className="absolute inset-0 rounded-2xl border-2 border-slate-200 dark:border-slate-800 pointer-events-none" />
-                                                </div>
-                                                <Input 
-                                                    type="text" 
-                                                    value={localSettings.themeColor || ''} 
-                                                    onChange={(e) => handleChange('themeColor', e.target.value)}
-                                                    placeholder="#000000"
-                                                    className="h-14 rounded-[1.4rem] font-mono font-black border-slate-200 dark:border-white/10 text-lg uppercase tracking-widest px-6"
-                                                />
-                                            </div>
-                                            <p className="text-[11px] text-slate-500 font-bold italic leading-relaxed">
-                                                Select a preset or enter a custom hex code. This primary frequency will be broadcast across all user dashboard interfaces.
-                                            </p>
-                                        </div>
-                                        <div 
-                                            className="h-40 w-40 rounded-[3rem] shadow-3xl border-[8px] border-white dark:border-slate-800 group relative overflow-hidden"
-                                            style={{ backgroundColor: localSettings.themeColor || '#2563eb' }}
-                                        >
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Paintbrush className="text-white" size={32} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-
-                    {activeTab === 'Security' && (
-                        <div className="space-y-8">
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                                    <ShieldCheck size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-lg">Institutional Security</h3>
-                                    <p className="text-xs text-slate-500">Global safeguards and administrative controls</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-8 space-y-8">
-                                <SettingItem 
-                                    title="Maintenance Mode"
-                                    description="Restrict access to all users except administrators during system upgrades."
-                                    icon={Settings}
-                                    checked={localSettings.enableMaintenanceMode ?? false}
-                                    onCheckedChange={(val: boolean) => handleToggle('enableMaintenanceMode', val)}
-                                    comingSoon={true}
-                                />
-                                <SettingItem 
-                                    title="Teacher Digital Signatures"
-                                    description="Enable cryptographic signing for report cards and official documents."
-                                    icon={UserCheck}
-                                    checked={localSettings.allowTeacherDigitalSignature ?? false}
-                                    onCheckedChange={(val: boolean) => handleToggle('allowTeacherDigitalSignature', val)}
-                                    comingSoon={true}
-                                />
-                                <SettingItem 
-                                    title="Lock Institutional Settings"
-                                    description="Prevent modifications to these settings by non-owner administrators."
-                                    icon={Lock}
-                                    checked={localSettings.lockSettings ?? false}
-                                    onCheckedChange={(val: boolean) => handleToggle('lockSettings', val)}
-                                    comingSoon={true}
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                                    <Key size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-lg">Password & Authentication</h3>
-                                    <p className="text-xs text-slate-500">Manage your login credentials</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-8">
-                                <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
-                                        <p className="text-xs text-slate-500">Change your password to ensure account security.</p>
-                                    </div>
-                                    <ChangePasswordModal>
-                                        <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-[10px] tracking-widest px-6 h-12">
-                                            Change Password
-                                        </Button>
-                                    </ChangePasswordModal>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        
-                        <div className="mt-8">
-                            <DeviceSessions />
-                        </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'Profile' && (
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                                    <UserCircle size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-lg">Personal Profile</h3>
-                                    <p className="text-xs text-slate-500">Manage your personal account details</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-8 space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</Label>
-                                        <Input 
-                                            value={personalProfile.name}
-                                            onChange={(e) => {
-                                                setPersonalProfile((p: any) => ({ ...p, name: e.target.value }));
-                                                setHasChanges(true);
-                                            }}
-                                            placeholder="Your Full Name"
-                                            className="h-12 rounded-2xl border-slate-200"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gender</Label>
-                                        <select 
-                                            className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
-                                            value={personalProfile.gender}
-                                            onChange={(e) => {
-                                                setPersonalProfile((p: any) => ({ ...p, gender: e.target.value }));
-                                                setHasChanges(true);
-                                            }}
-                                        >
-                                            <option value="">Select Gender</option>
-                                            <option value="MALE">Male</option>
-                                            <option value="FEMALE">Female</option>
-                                            <option value="OTHER">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-                                    <ImageUpload
-                                        label="Profile Picture"
-                                        description="Upload a professional profile photo. It will appear on the top navigation bar."
-                                        value={personalProfile.profileImage}
-                                        onChange={(url) => {
-                                            setPersonalProfile((p: any) => ({ ...p, profileImage: url }));
-                                            setHasChanges(true);
-                                        }}
-                                        aspectRatio="square"
-                                    />
-                                </div>
-
-                                <div className="p-6 rounded-3xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 flex gap-4">
-                                    <ShieldCheck className="text-blue-600 shrink-0" size={24} />
-                                    <div>
-                                        <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Security & Email</p>
-                                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                                            To change your login email or password, please use the security verification flow available in the dropdown menu.
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {activeTab === 'Landing Page' && (
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                                    <Rocket size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-lg">Landing Page Settings</h3>
-                                    <p className="text-xs text-slate-500">Configure your public school landing page design and content.</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-8 space-y-8">
-                                <div className="space-y-6">
-                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Hero Section</h4>
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hero Title</Label>
-                                            <Input 
-                                                value={localLandingPage?.heroTitle || ''}
-                                                onChange={(e) => handleLandingPageChange('heroTitle', e.target.value)}
-                                                placeholder="Welcome to Greenwood Academy"
-                                                className="h-12 rounded-2xl border-slate-200"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hero Subtitle</Label>
-                                            <Input 
-                                                value={localLandingPage?.heroSubtitle || ''}
-                                                onChange={(e) => handleLandingPageChange('heroSubtitle', e.target.value)}
-                                                placeholder="Nurturing Minds, Shaping the Future of Education."
-                                                className="h-12 rounded-2xl border-slate-200"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6 border-t border-slate-100 dark:border-white/5 pt-8">
-                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">About Section</h4>
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">About Title</Label>
-                                            <Input 
-                                                value={localLandingPage?.aboutTitle || ''}
-                                                onChange={(e) => handleLandingPageChange('aboutTitle', e.target.value)}
-                                                placeholder="Our Vision & Mission"
-                                                className="h-12 rounded-2xl border-slate-200"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">About Text</Label>
-                                            <textarea
-                                                value={localLandingPage?.aboutText || ''}
-                                                onChange={(e) => handleLandingPageChange('aboutText', e.target.value)}
-                                                placeholder="Describe your school vision and mission..."
-                                                rows={4}
-                                                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6 border-t border-slate-100 dark:border-white/5 pt-8">
-                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">School Features / Highlights</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {localLandingPage?.features?.map((feat: any, index: number) => (
-                                            <div key={index} className="p-5 border border-slate-100 dark:border-slate-850 rounded-3xl bg-slate-50/50 dark:bg-slate-800/10 space-y-4">
-                                                <h5 className="font-bold text-sm text-slate-700 dark:text-slate-300">Feature {index + 1}</h5>
-                                                <div className="space-y-2">
-                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Title</Label>
-                                                    <Input 
-                                                        value={feat.title || ''}
-                                                        onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
-                                                        placeholder="Feature Title"
-                                                        className="h-10 rounded-xl border-slate-200 text-xs"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Description</Label>
-                                                    <textarea
-                                                        value={feat.description || ''}
-                                                        onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
-                                                        placeholder="Feature description..."
-                                                        rows={3}
-                                                        className="w-full bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs font-medium focus:outline-none"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6 border-t border-slate-100 dark:border-white/5 pt-8">
-                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Parent / Alumni Testimonials</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {localLandingPage?.testimonials?.map((t: any, index: number) => (
-                                            <div key={index} className="p-5 border border-slate-100 dark:border-slate-850 rounded-3xl bg-slate-50/50 dark:bg-slate-800/10 space-y-4">
-                                                <h5 className="font-bold text-sm text-slate-700 dark:text-slate-300">Testimonial {index + 1}</h5>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Name</Label>
-                                                        <Input 
-                                                            value={t.name || ''}
-                                                            onChange={(e) => handleTestimonialChange(index, 'name', e.target.value)}
-                                                            placeholder="Name"
-                                                            className="h-10 rounded-xl border-slate-200 text-xs"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Role</Label>
-                                                        <Input 
-                                                            value={t.role || ''}
-                                                            onChange={(e) => handleTestimonialChange(index, 'role', e.target.value)}
-                                                            placeholder="Role (e.g., Parent)"
-                                                            className="h-10 rounded-xl border-slate-200 text-xs"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Testimonial Text</Label>
-                                                    <textarea
-                                                        value={t.text || ''}
-                                                        onChange={(e) => handleTestimonialChange(index, 'text', e.target.value)}
-                                                        placeholder="Testimonial text..."
-                                                        rows={3}
-                                                        className="w-full bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs font-medium focus:outline-none"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </motion.div>
-            </AnimatePresence>
-        </main>
+        
+        <Button 
+            onClick={handleSave} 
+            disabled={isPending || !hasChanges}
+            className="h-10 px-6 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 font-semibold shadow-sm transition-all"
+        >
+            {isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save size={16} className="mr-2" />}
+            Save Changes
+        </Button>
       </div>
+
+      <Tabs defaultValue="general" className="w-full space-y-6">
+        <TabsList className="bg-slate-50 dark:bg-slate-900 rounded-lg p-1 w-full max-w-3xl grid grid-cols-5 h-auto">
+            <TabsTrigger value="general" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                <div className="flex flex-row items-center justify-center gap-2">
+                    <Database size={14} /> <span className="hidden sm:inline">General</span>
+                </div>
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                <div className="flex flex-row items-center justify-center gap-2">
+                    <Palette size={14} /> <span className="hidden sm:inline">Appearance</span>
+                </div>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                <div className="flex flex-row items-center justify-center gap-2">
+                    <ShieldCheck size={14} /> <span className="hidden sm:inline">Security</span>
+                </div>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                <div className="flex flex-row items-center justify-center gap-2">
+                    <UserCircle size={14} /> <span className="hidden sm:inline">Profile</span>
+                </div>
+            </TabsTrigger>
+            <TabsTrigger value="landing" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                <div className="flex flex-row items-center justify-center gap-2">
+                    <Rocket size={14} /> <span className="hidden sm:inline">Landing Page</span>
+                </div>
+            </TabsTrigger>
+        </TabsList>
+
+        {/* General Settings */}
+        <TabsContent value="general" className="space-y-6 focus-visible:outline-none">
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Rocket className="text-blue-500" size={18} /> Feature Management
+                  </CardTitle>
+                  <CardDescription>Control feature availability across dashboards.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                  <SettingItem 
+                    title="Coming Soon Overlay"
+                    description="Enable a 'Coming Soon' placeholder for features currently in development."
+                    icon={Rocket}
+                    checked={localSettings.showComingSoon ?? false}
+                    onCheckedChange={(val: boolean) => handleToggle('showComingSoon', val)}
+                  />
+                  
+                  <div className="p-5 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 flex gap-4">
+                      <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
+                      <div>
+                          <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Development Mode Warning</p>
+                          <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mt-1">
+                              Enabling the Coming Soon overlay will globally restrict access to beta features for all students and staff members.
+                          </p>
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Database className="text-blue-500" size={18} /> Academic Configuration
+                  </CardTitle>
+                  <CardDescription>Default settings for the current academic cycle.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Default Session</Label>
+                          <select 
+                            className="w-full h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                            value={localSettings.defaultSession || ''}
+                            onChange={(e) => handleChange('defaultSession', e.target.value)}
+                          >
+                              <option value="">Select Session</option>
+                              {dbSessions.map((session: any) => (
+                                <option key={session.id} value={session.name}>
+                                  {session.name}
+                                </option>
+                              ))}
+                          </select>
+                      </div>
+                      <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Default Term</Label>
+                          <select 
+                            className="w-full h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                            value={localSettings.defaultTerm || ''}
+                            onChange={(e) => handleChange('defaultTerm', e.target.value)}
+                          >
+                              <option value="">Select Term</option>
+                              <option value="First Term">First Term</option>
+                              <option value="Second Term">Second Term</option>
+                              <option value="Third Term">Third Term</option>
+                          </select>
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Appearance Settings */}
+        <TabsContent value="appearance" className="space-y-6 focus-visible:outline-none">
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Paintbrush className="text-blue-500" size={18} /> Theme Settings
+                  </CardTitle>
+                  <CardDescription>Personalize your institution&apos;s digital atmosphere.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-8">
+                  <div className="space-y-4">
+                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Institutional Color Presets</Label>
+                      <div className="flex flex-wrap gap-4">
+                          {[
+                              { name: 'Institutional Blue', hex: '#2563eb' },
+                              { name: 'Emerald Growth', hex: '#10b981' },
+                              { name: 'Academic Slate', hex: '#475569' },
+                              { name: 'Rose Excellence', hex: '#e11d48' },
+                          ].map((preset) => (
+                              <button
+                                  key={preset.hex}
+                                  onClick={() => handleChange('themeColor', preset.hex)}
+                                  className={cn(
+                                      "h-10 w-10 rounded-lg transition-all hover:scale-110 active:scale-95 border-2",
+                                      localSettings.themeColor === preset.hex ? "border-slate-900 dark:border-white shadow-md scale-110" : "border-transparent"
+                                  )}
+                                  style={{ backgroundColor: preset.hex }}
+                                  title={preset.name}
+                              />
+                          ))}
+                      </div>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row gap-8 items-start md:items-center pt-6 border-t border-slate-100 dark:border-slate-800">
+                      <div className="space-y-4 flex-1">
+                          <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Custom System Color (Hex)</Label>
+                          <div className="flex gap-3 items-center">
+                              <div className="relative">
+                                  <Input 
+                                      type="color" 
+                                      value={localSettings.themeColor || '#2563eb'} 
+                                      onChange={(e) => handleChange('themeColor', e.target.value)}
+                                      className="w-12 h-10 p-1 rounded-lg cursor-copy border border-slate-200 dark:border-slate-800 bg-transparent relative z-10"
+                                  />
+                              </div>
+                              <Input 
+                                  type="text" 
+                                  value={localSettings.themeColor || ''} 
+                                  onChange={(e) => handleChange('themeColor', e.target.value)}
+                                  placeholder="#000000"
+                                  className="h-10 rounded-lg font-mono text-sm border-slate-200 dark:border-slate-800 px-3 uppercase w-32"
+                              />
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium">
+                              Select a preset or enter a custom hex code. This primary color will be used across all user dashboards.
+                          </p>
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security Settings */}
+        <TabsContent value="security" className="space-y-6 focus-visible:outline-none">
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <ShieldCheck className="text-blue-500" size={18} /> Institutional Security
+                  </CardTitle>
+                  <CardDescription>Global safeguards and administrative controls.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                  <SettingItem 
+                      title="Maintenance Mode"
+                      description="Restrict access to all users except administrators during system upgrades."
+                      icon={Settings}
+                      checked={localSettings.enableMaintenanceMode ?? false}
+                      onCheckedChange={(val: boolean) => handleToggle('enableMaintenanceMode', val)}
+                      comingSoon={true}
+                  />
+                  <SettingItem 
+                      title="Teacher Digital Signatures"
+                      description="Enable cryptographic signing for report cards and official documents."
+                      icon={UserCheck}
+                      checked={localSettings.allowTeacherDigitalSignature ?? false}
+                      onCheckedChange={(val: boolean) => handleToggle('allowTeacherDigitalSignature', val)}
+                      comingSoon={true}
+                  />
+                  <SettingItem 
+                      title="Lock Institutional Settings"
+                      description="Prevent modifications to these settings by non-owner administrators."
+                      icon={Lock}
+                      checked={localSettings.lockSettings ?? false}
+                      onCheckedChange={(val: boolean) => handleToggle('lockSettings', val)}
+                      comingSoon={true}
+                  />
+              </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Key className="text-blue-500" size={18} /> Password & Authentication
+                  </CardTitle>
+                  <CardDescription>Manage your login credentials.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                  <div className="flex items-center justify-between p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                      <div className="space-y-1">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
+                          <p className="text-xs font-medium text-slate-500">Change your password to ensure account security.</p>
+                      </div>
+                      <ChangePasswordModal>
+                          <Button className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 h-9 shadow-sm">
+                              Change Password
+                          </Button>
+                      </ChangePasswordModal>
+                  </div>
+              </CardContent>
+          </Card>
+          
+          <DeviceSessions />
+        </TabsContent>
+
+        {/* Profile Settings */}
+        <TabsContent value="profile" className="space-y-6 focus-visible:outline-none">
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <UserCircle className="text-blue-500" size={18} /> Personal Profile
+                  </CardTitle>
+                  <CardDescription>Manage your personal account details.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-8">
+                  <div className="flex items-center gap-5 p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                      <div className="h-16 w-16 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 flex items-center justify-center text-xl font-bold text-blue-600 dark:text-blue-400 overflow-hidden">
+                          {personalProfile?.profileImage ? (
+                              <Image 
+                                  src={personalProfile.profileImage} 
+                                  alt={personalProfile.name} 
+                                  width={64} 
+                                  height={64} 
+                                  className="w-full h-full object-cover" 
+                              />
+                          ) : (
+                              initials
+                          )}
+                      </div>
+                      <div className="space-y-1">
+                          <h3 className="text-base font-bold text-slate-900 dark:text-white">Admin Avatar</h3>
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
+                              Upload a professional picture. It will appear on your top navigation bar.
+                          </p>
+                      </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Full Name</Label>
+                          <Input 
+                              value={personalProfile.name}
+                              onChange={(e) => {
+                                  setPersonalProfile((p: any) => ({ ...p, name: e.target.value }));
+                                  setHasChanges(true);
+                              }}
+                              placeholder="Your Full Name"
+                              className="h-10 rounded-lg border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Gender</Label>
+                          <select 
+                              className="w-full h-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              value={personalProfile.gender}
+                              onChange={(e) => {
+                                  setPersonalProfile((p: any) => ({ ...p, gender: e.target.value }));
+                                  setHasChanges(true);
+                              }}
+                          >
+                              <option value="">Select Gender</option>
+                              <option value="MALE">Male</option>
+                              <option value="FEMALE">Female</option>
+                              <option value="OTHER">Other</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                      <ImageUpload
+                          label="Profile Picture"
+                          description="Update your photo by uploading a new one below. Changes save automatically."
+                          value={personalProfile.profileImage}
+                          onChange={async (url) => {
+                              setPersonalProfile((p: any) => ({ ...p, profileImage: url }));
+                              
+                              try {
+                                const newProfile = { ...personalProfile, profileImage: url };
+                                await adminService.updateProfile(newProfile);
+                                updateUser({ name: newProfile.name, gender: newProfile.gender, profileImage: url } as any);
+                                toast.success(url ? 'Profile picture updated successfully' : 'Profile picture removed successfully');
+                              } catch (error) {
+                                toast.error('Failed to update profile picture');
+                              }
+                          }}
+                          aspectRatio="square"
+                      />
+                  </div>
+
+                  <div className="p-5 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 flex gap-4">
+                      <ShieldCheck className="text-blue-600 shrink-0 mt-0.5" size={20} />
+                      <div>
+                          <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Security & Email</p>
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mt-1">
+                              To change your login email or password, please use the security verification flow available in the Security tab.
+                          </p>
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Landing Page Settings */}
+        <TabsContent value="landing" className="space-y-6 focus-visible:outline-none">
+          <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Rocket className="text-blue-500" size={18} /> Landing Page Content
+                  </CardTitle>
+                  <CardDescription>Configure your public school landing page design and content.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-8">
+                  <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Hero Section</h4>
+                      <div className="grid grid-cols-1 gap-6">
+                          <div className="space-y-2">
+                              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Hero Title</Label>
+                              <Input 
+                                  value={localLandingPage?.heroTitle || ''}
+                                  onChange={(e) => handleLandingPageChange('heroTitle', e.target.value)}
+                                  placeholder="Welcome to Greenwood Academy"
+                                  className="h-10 rounded-lg border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Hero Subtitle</Label>
+                              <Input 
+                                  value={localLandingPage?.heroSubtitle || ''}
+                                  onChange={(e) => handleLandingPageChange('heroSubtitle', e.target.value)}
+                                  placeholder="Nurturing Minds, Shaping the Future of Education."
+                                  className="h-10 rounded-lg border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
+                              />
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">About Section</h4>
+                      <div className="grid grid-cols-1 gap-6">
+                          <div className="space-y-2">
+                              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">About Title</Label>
+                              <Input 
+                                  value={localLandingPage?.aboutTitle || ''}
+                                  onChange={(e) => handleLandingPageChange('aboutTitle', e.target.value)}
+                                  placeholder="Our Vision & Mission"
+                                  className="h-10 rounded-lg border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">About Text</Label>
+                              <textarea
+                                  value={localLandingPage?.aboutText || ''}
+                                  onChange={(e) => handleLandingPageChange('aboutText', e.target.value)}
+                                  placeholder="Describe your school vision and mission..."
+                                  rows={4}
+                                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              />
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">School Features / Highlights</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          {localLandingPage?.features?.map((feat: any, index: number) => (
+                              <div key={index} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 space-y-4">
+                                  <h5 className="font-bold text-sm text-slate-700 dark:text-slate-300">Feature {index + 1}</h5>
+                                  <div className="space-y-2">
+                                      <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Title</Label>
+                                      <Input 
+                                          value={feat.title || ''}
+                                          onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
+                                          placeholder="Feature Title"
+                                          className="h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs"
+                                      />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</Label>
+                                      <textarea
+                                          value={feat.description || ''}
+                                          onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
+                                          placeholder="Feature description..."
+                                          rows={3}
+                                          className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs font-medium focus:outline-none"
+                                      />
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+
+                  <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Parent / Alumni Testimonials</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {localLandingPage?.testimonials?.map((t: any, index: number) => (
+                              <div key={index} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 space-y-4">
+                                  <h5 className="font-bold text-sm text-slate-700 dark:text-slate-300">Testimonial {index + 1}</h5>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                          <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Name</Label>
+                                          <Input 
+                                              value={t.name || ''}
+                                              onChange={(e) => handleTestimonialChange(index, 'name', e.target.value)}
+                                              placeholder="Name"
+                                              className="h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs"
+                                          />
+                                      </div>
+                                      <div className="space-y-2">
+                                          <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Role</Label>
+                                          <Input 
+                                              value={t.role || ''}
+                                              onChange={(e) => handleTestimonialChange(index, 'role', e.target.value)}
+                                              placeholder="Role (e.g., Parent)"
+                                              className="h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs"
+                                          />
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Testimonial Text</Label>
+                                      <textarea
+                                          value={t.text || ''}
+                                          onChange={(e) => handleTestimonialChange(index, 'text', e.target.value)}
+                                          placeholder="Testimonial text..."
+                                          rows={3}
+                                          className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs font-medium focus:outline-none"
+                                      />
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -756,23 +700,18 @@ function SettingItem({ title, description, icon: Icon, checked, onCheckedChange,
   return (
     <div className={cn("flex items-center justify-between gap-6", comingSoon && "opacity-60 pointer-events-none")}>
       <div className="flex gap-4">
-        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
-          <Icon size={20} />
+        <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+          <Icon size={18} />
         </div>
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <p className="font-black text-sm">{title}</p>
-            {comingSoon && <Badge variant="outline" className="text-[8px] uppercase tracking-widest font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>}
+            <p className="font-bold text-sm text-slate-900 dark:text-slate-100">{title}</p>
+            {comingSoon && <Badge variant="outline" className="text-[9px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-0 px-1.5">Coming Soon</Badge>}
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed max-w-md">{description}</p>
+          <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-md">{description}</p>
         </div>
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={comingSoon} />
     </div>
   );
 }
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
-}
-

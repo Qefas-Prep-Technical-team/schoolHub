@@ -719,6 +719,8 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    console.log("UPDATE ADMIN PROFILE Payload:", { name, gender, profileImage, bannerImage });
+
     const updated = await updateAdminProfileService(adminId, { 
       name, 
       gender,

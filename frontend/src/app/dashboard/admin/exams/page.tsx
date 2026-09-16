@@ -113,23 +113,45 @@ export default function Dashboard() {
                     ))}
                 </div>
             ) : (
-                <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-sm divide-y-2 divide-slate-100 dark:divide-slate-800">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-6 gap-6">
-                            <div className="flex items-center gap-5 min-w-0">
-                                <Skeleton className="h-14 w-14 rounded-2xl flex-shrink-0" />
-                                <div className="space-y-2 w-full max-w-sm">
-                                    <Skeleton className="h-5 w-64 rounded-md" />
-                                    <Skeleton className="h-4 w-40 rounded-md" />
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                <Skeleton className="h-6 w-20 rounded-full hidden md:block" />
-                                <Skeleton className="h-4 w-24 rounded-md hidden lg:block" />
-                                <Skeleton className="h-10 w-28 rounded-xl flex-shrink-0" />
-                            </div>
-                        </div>
-                    ))}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                <th className="p-4 w-14"><Skeleton className="h-4 w-4 rounded-md mx-auto" /></th>
+                                <th className="p-4 w-12"><Skeleton className="h-4 w-6 rounded-md mx-auto" /></th>
+                                <th className="p-4"><Skeleton className="h-4 w-24 rounded-md" /></th>
+                                <th className="p-4"><Skeleton className="h-4 w-20 rounded-md" /></th>
+                                <th className="p-4"><Skeleton className="h-4 w-16 rounded-md" /></th>
+                                <th className="p-4"><Skeleton className="h-4 w-16 rounded-md" /></th>
+                                <th className="p-4"><Skeleton className="h-4 w-20 rounded-md" /></th>
+                                <th className="p-4 text-center"><Skeleton className="h-4 w-8 rounded-md mx-auto" /></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <tr key={i} className="border-b border-slate-100 dark:border-slate-800/40">
+                                    <td className="p-4 text-center"><Skeleton className="h-4 w-4 rounded-md mx-auto" /></td>
+                                    <td className="p-4 text-center"><Skeleton className="h-4 w-4 rounded-md mx-auto" /></td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                                            <Skeleton className="h-4 w-32 rounded-md" />
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col gap-1">
+                                            <Skeleton className="h-4 w-24 rounded-md" />
+                                            <Skeleton className="h-3 w-16 rounded-md" />
+                                        </div>
+                                    </td>
+                                    <td className="p-4"><Skeleton className="h-5 w-16 rounded-md" /></td>
+                                    <td className="p-4"><Skeleton className="h-5 w-20 rounded-md" /></td>
+                                    <td className="p-4"><Skeleton className="h-4 w-20 rounded-md" /></td>
+                                    <td className="p-4 text-center"><Skeleton className="h-6 w-6 rounded-md mx-auto" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>

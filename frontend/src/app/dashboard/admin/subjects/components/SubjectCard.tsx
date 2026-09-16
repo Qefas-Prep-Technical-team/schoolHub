@@ -113,15 +113,22 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
                   </span>
               </div>
 
-              <div className="hidden md:flex flex-wrap gap-2">
+              <div className="hidden md:flex items-center flex-wrap gap-2">
                   {subject.departments && subject.departments.length > 0 ? (
-                      subject.departments.map(d => (
-                          <span key={d.departmentId} className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-50 dark:bg-white/5 text-slate-500 border border-slate-100 dark:border-white/10">
-                              {d.department?.name}
-                          </span>
-                      ))
+                      <>
+                          {subject.departments.slice(0, 2).map(d => (
+                              <span key={d.departmentId} className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-50 dark:bg-white/5 text-slate-500 border border-slate-100 dark:border-white/10">
+                                  {d.department?.name}
+                              </span>
+                          ))}
+                          {subject.departments.length > 2 && (
+                              <span className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                  +{subject.departments.length - 2} More
+                              </span>
+                          )}
+                      </>
                   ) : (
-                      <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-500/5 text-red-500 border border-transparent">
+                      <span className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-500/5 text-red-500 border border-transparent">
                           Unassigned
                       </span>
                   )}

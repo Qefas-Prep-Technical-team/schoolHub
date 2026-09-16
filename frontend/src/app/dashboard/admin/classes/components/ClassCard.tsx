@@ -38,9 +38,9 @@ const statusConfig = {
   complete: {
     label: 'TIMETABLE READY',
     icon: CheckCircle,
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/20'
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/20'
   },
   incomplete: {
     label: 'PARTIAL SCHEDULE',
@@ -205,7 +205,7 @@ export default function ClassCard({
                   </div>
               </div>
               <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center size-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                       <Target size={14} />
                   </div>
                   <div>
@@ -218,8 +218,8 @@ export default function ClassCard({
           <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2">
                   {classData.isLive ? (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                        <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> In Session
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                    <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" /> In Session
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold">

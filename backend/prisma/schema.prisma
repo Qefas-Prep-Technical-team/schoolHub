@@ -189,6 +189,9 @@ model Teacher {
   authProvider            String              @default("EMAIL")
   subject                 String?
   department              String?
+  highestQualification    String?
+  yearsOfExperience       Int?
+  address                 String?
   verified                Boolean             @default(false)
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt

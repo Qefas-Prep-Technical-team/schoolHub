@@ -87,6 +87,8 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   const [selectedGrade, setSelectedGrade] = useState<any | null>(null);
   const [gradeToDelete, setGradeToDelete] = useState<any | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
@@ -164,6 +166,33 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   const proceedToUpload = () => {
     setIsUploadInstructionsModalOpen(false);
     setIsUploadModalOpen(true);
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+        setSelectedIds(safeGrades.map((g: any) => g.id));
+    } else {
+        setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+        setSelectedIds(prev => [...prev, id]);
+    } else {
+        setSelectedIds(prev => prev.filter(item => item !== id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+        await Promise.all(selectedIds.map(id => deleteMutation.mutateAsync(id)));
+        setSelectedIds([]);
+        setIsBulkDeleteOpen(false);
+        toast.success("Selected records deleted successfully.");
+    } catch (error: any) {
+        toast.error("Some records could not be deleted.");
+    }
   };
 
   // Fetch school classes dynamically
@@ -403,16 +432,64 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
       </div>
 
       {/* Main Content Rendering (Grid vs List) */}
+      {selectedIds.length > 0 && viewMode === 'list' && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  {selectedIds.length} record{selectedIds.length !== 1 ? 's' : ''} selected
+              </span>
+              <Button 
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                  variant="ghost"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-lg text-sm font-bold transition-colors"
+              >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Selected
+              </Button>
+          </div>
+      )}
+
       {isLoading ? (
-        <div className={cn(
-          viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" 
-            : "space-y-4"
-        )}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-44 rounded-3xl bg-slate-100 dark:bg-slate-800/40 animate-pulse border border-slate-200 dark:border-slate-800" />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-44 rounded-3xl bg-slate-100 dark:bg-slate-800/40 animate-pulse border border-slate-200 dark:border-slate-800" />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+                <thead>
+                    <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                        <th className="p-4 w-14"><div className="h-4 w-4 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                        <th className="p-4 w-12"><div className="h-4 w-6 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                        <th className="p-4"><div className="h-4 w-32 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                        <th className="p-4"><div className="h-4 w-24 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                        <th className="p-4"><div className="h-4 w-24 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                        <th className="p-4"><div className="h-4 w-16 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" /></th>
+                        <th className="p-4 text-center"><div className="h-4 w-8 rounded-md bg-slate-200 dark:bg-slate-700 mx-auto animate-pulse" /></th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <tr key={i} className="border-b border-slate-100 dark:border-slate-800/40">
+                            <td className="p-4 text-center"><div className="h-4 w-4 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                            <td className="p-4 text-center"><div className="h-4 w-4 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                            <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 animate-pulse" />
+                                    <div className="h-4 w-32 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                                </div>
+                            </td>
+                            <td className="p-4"><div className="h-4 w-24 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" /></td>
+                            <td className="p-4"><div className="h-5 w-16 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" /></td>
+                            <td className="p-4"><div className="h-5 w-16 rounded-md bg-slate-100 dark:bg-slate-800 animate-pulse" /></td>
+                            <td className="p-4 text-center"><div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 mx-auto animate-pulse" /></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+          </div>
+        )
       ) : paginatedGrades.length === 0 ? (
         <div className="text-center py-32 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-slate-400">
           <AlertCircle size={40} />
@@ -538,63 +615,94 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         </div>
       ) : (
         /* Unified List View (matches SubjectPapersView) */
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-sm divide-y divide-slate-200 dark:divide-slate-800">
-            {paginatedGrades.map((grade: any, index: number) => {
-                const percent = Math.round((grade.score / grade.maxMarks) * 100);
-                
-                return (
-                    <div 
-                        key={grade.id}
-                        onClick={() => handleGradeClick(grade)}
-                        className="group relative overflow-hidden transition-all duration-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-4 lg:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-8 hover:border-primary/30"
-                    >
-                        <div className="flex items-center gap-4 lg:gap-6 w-full sm:w-auto">
-                            <div className="text-sm font-bold text-slate-400 w-6 text-center shrink-0 hidden sm:block">
-                                {index + 1 + (currentPage - 1) * itemsPerPage}.
-                            </div>
-                            <div className="h-12 w-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
-                                <User size={20} strokeWidth={2.5} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate flex items-center gap-2">
-                                    {grade.student?.name}
-                                    <span className="sm:hidden text-xs text-slate-400 font-bold">#{index + 1 + (currentPage - 1) * itemsPerPage}</span>
-                                </h3>
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    <span className="text-xs text-slate-500 font-medium">Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}</span>
-                                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                                    <span className="text-xs text-slate-500 font-medium truncate flex items-center gap-1"><FileText size={12} /> {grade.subject}</span>
-                                    <span className="text-slate-300 dark:text-slate-700">•</span>
-                                    <span className="text-xs text-slate-500 font-medium">{grade.category || grade.assessmentType}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-16 sm:pl-0">
-                            <div className="flex flex-col sm:items-end">
-                                <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                                    {grade.score}<span className="text-[10px] text-slate-400">/{grade.maxMarks}</span>
-                                </span>
-                                <div className="w-16 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-1.5 overflow-hidden">
-                                    <div className="h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: primaryColor }} />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
-                                    <span className="hidden sm:inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
-                                        Published
-                                    </span>
-                                ) : (
-                                    <span className="hidden sm:inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                        Draft
-                                    </span>
-                                )}
-
-                                <div onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+                <thead>
+                    <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
+                            <input 
+                                type="checkbox" 
+                                className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                                checked={safeGrades.length > 0 && selectedIds.length === safeGrades.length}
+                                onChange={handleSelectAll}
+                            />
+                        </th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject / Type</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                    {paginatedGrades.map((grade: any, index: number) => {
+                        const percent = Math.round((grade.score / grade.maxMarks) * 100);
+                        const isSelected = selectedIds.includes(grade.id);
+                        
+                        return (
+                            <tr 
+                                key={grade.id}
+                                onClick={() => handleGradeClick(grade)}
+                                className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer"
+                            >
+                                <td className="p-4 text-center relative z-10" onClick={(e) => e.stopPropagation()}>
+                                    <input 
+                                        type="checkbox" 
+                                        className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                                        checked={isSelected}
+                                        onChange={(e) => handleSelectOne(grade.id, e.target.checked)}
+                                    />
+                                </td>
+                                <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                    #{index + 1 + (currentPage - 1) * itemsPerPage}
+                                </td>
+                                <td className="p-4 relative">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
+                                            <User size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                {grade.student?.name}
+                                            </h3>
+                                            <p className="text-xs text-slate-500 font-medium truncate">
+                                                Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-4 relative">
+                                    <div className="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        <span className="flex items-center gap-1"><FileText size={12} className="text-slate-400" /> {grade.subject}</span>
+                                        <span className="text-xs text-slate-500">{grade.category || grade.assessmentType}</span>
+                                    </div>
+                                </td>
+                                <td className="p-4 relative">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black text-slate-900 dark:text-white leading-none">
+                                            {grade.score}<span className="text-[10px] text-slate-400 font-medium">/{grade.maxMarks}</span>
+                                        </span>
+                                        <div className="w-16 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-1.5 overflow-hidden">
+                                            <div className="h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: primaryColor }} />
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-4 relative">
+                                    {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
+                                        <span className="px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+                                            Published
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                            Draft
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="p-4 relative text-center" onClick={(e) => e.stopPropagation()}>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary transition-all duration-300 shrink-0">
+                                            <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-all mx-auto">
                                                 <MoreVertical size={16} />
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -615,12 +723,12 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
           </div>
       )}
 

@@ -23,9 +23,11 @@ interface AssessmentCardProps {
     assessment: Exam;
     viewMode?: 'grid' | 'list';
     index?: number;
+    isSelected?: boolean;
+    onSelect?: (checked: boolean) => void;
 }
 
-export default function AssessmentCard({ assessment, viewMode = 'grid', index = 0 }: AssessmentCardProps) {
+export default function AssessmentCard({ assessment, viewMode = 'grid', index = 0, isSelected = false, onSelect }: AssessmentCardProps) {
     const router = useRouter();
     const deleteExamMutation = useDeleteExam();
     const unpublishExamMutation = useUnpublishExam();
@@ -128,60 +130,57 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
 
     if (viewMode === 'list') {
         return (
-            <div className={`group relative transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-8 border-l-4 border-transparent hover:${theme.border.split(' ')[0]}`}>
-                <Link href={`/dashboard/admin/exams/${assessment.id}/papers`} className="absolute inset-0 z-0" />
-                
-                <div className="flex items-center gap-6 w-full sm:w-auto relative z-10 pointer-events-none">
-                    <div className="text-sm font-black text-slate-400 w-8 text-center shrink-0 hidden sm:block">
+            <>
+                <tr className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative">
+                    <td className="p-4 text-center relative z-10">
+                        <input 
+                            type="checkbox" 
+                            className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                            checked={isSelected}
+                            onChange={(e) => onSelect?.(e.target.checked)}
+                        />
+                    </td>
+                    <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
                         #{index + 1}
-                    </div>
-                    
-                    <div className={`h-12 w-12 rounded-2xl ${theme.iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300`}>
-                        <Icon size={20} strokeWidth={2.5} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                        <h3 className={`text-lg font-black text-slate-900 dark:text-white truncate flex items-center gap-2 transition-colors group-hover:${theme.textHighlight}`}>
-                            {assessment.title}
-                            <span className="sm:hidden text-xs text-slate-400 font-bold">#{index + 1}</span>
-                        </h3>
-                        
-                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                                <School size={12} className={theme.textHighlight} />
-                                {assessment.scope?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </span>
-                            <span className="text-slate-300 dark:text-slate-700">•</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                                <Laptop size={12} className={theme.textHighlight} />
-                                {assessment.mode?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </td>
+                    <td className="p-4 relative">
+                        <Link href={`/dashboard/admin/exams/${assessment.id}/papers`} className="absolute inset-0 z-0" />
+                        <div className="flex items-center gap-3 relative z-10 pointer-events-none">
+                            <div className={`h-8 w-8 rounded-lg ${theme.iconBg} flex items-center justify-center shrink-0`}>
+                                <Icon size={14} strokeWidth={2.5} />
+                            </div>
+                            <span className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-blue-600 transition-colors">
+                                {assessment.title}
                             </span>
                         </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-20 sm:pl-0 relative z-10">
-                    <div className="flex flex-col sm:items-end hidden md:flex">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Created</span>
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-                            <Calendar className="h-3.5 w-3.5" />
-                            {format(new Date(assessment.createdAt), 'MMM d, yyyy')}
+                    </td>
+                    <td className="p-4 text-xs font-bold text-slate-500 relative z-10">
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-slate-700 dark:text-slate-300">{assessment.scope?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                            <span className="text-[10px] uppercase tracking-wider text-slate-400">{assessment.mode?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                         </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl ${theme.statusBg} shadow-sm`}>
+                    </td>
+                    <td className="p-4 relative z-10">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${theme.statusBg}`}>
+                            {assessment.category}
+                        </span>
+                    </td>
+                    <td className="p-4 relative z-10">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-block ${assessment.status === 'PUBLISHED' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
                             {assessment.status}
                         </span>
-
-                        <div className="pointer-events-auto">
+                    </td>
+                    <td className="p-4 text-xs font-semibold text-slate-500 relative z-10">
+                        {format(new Date(assessment.createdAt), 'MMM d, yyyy')}
+                    </td>
+                    <td className="p-4 text-center relative z-20">
+                        <div className="flex justify-center">
                             <DropdownMenu items={menuItems} />
                         </div>
-                    </div>
-                </div>
-                
+                    </td>
+                </tr>
                 {renderModals()}
-            </div>
+            </>
         );
     }
 

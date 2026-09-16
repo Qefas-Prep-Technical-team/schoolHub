@@ -85,15 +85,19 @@ export default function InvitationsPage() {
           <TabsList className="bg-slate-100 dark:bg-slate-800/50 p-1 rounded-full h-auto inline-flex w-fit">
             <TabsTrigger 
               value="students" 
-              className="rounded-full px-6 py-2 text-sm font-medium text-slate-500 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
+              className="rounded-full px-6 py-2 text-sm font-medium text-slate-500 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
             >
-              <GraduationCap size={16} /> Students
+              <div className="flex flex-row items-center justify-center gap-2">
+                <GraduationCap size={16} /> Students
+              </div>
             </TabsTrigger>
             <TabsTrigger 
               value="teachers" 
-              className="rounded-full px-6 py-2 text-sm font-medium text-slate-500 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
+              className="rounded-full px-6 py-2 text-sm font-medium text-slate-500 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
             >
-              <Users size={16} /> Teachers
+              <div className="flex flex-row items-center justify-center gap-2">
+                <Users size={16} /> Teachers
+              </div>
             </TabsTrigger>
           </TabsList>
           

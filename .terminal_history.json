@@ -3,86 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "Set-Location -Path \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -notin '.png','.jpg','.jpeg','.ico','.svg','.psd','.exe','.dll' } | ForEach-Object { try { Select-String -Path $_.FullName -Pattern 'school hub|School Hub|schoolHub|SchoolHub' -SimpleMatch } catch {} } | Select-Object Path,LineNumber,Line | Format-Table -AutoSize",
-      "timestamp": 1782729733866,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "Get-ChildItem -Recurse -File | Select-Object -First 5 | Format-List FullName",
-      "timestamp": 1782730589934,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "Get-ChildItem -Recurse -File | Where-Object { @('.png','.jpg','.jpeg','.ico','.svg','.psd','.exe','.dll') -notcontains $_.Extension } | ForEach-Object { try { Select-String -Path $_.FullName -Pattern 'school hub' -SimpleMatch } catch {} } | Select-Object Path,LineNumber,Line",
-      "timestamp": 1782731049508,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; cmd /c \"findstr /spin /c:\"school hub\" * > \"%TEMP%\\schoolhub_findstr.txt\" 2>nul\"; Get-Content \"$env:TEMP\\schoolhub_findstr.txt\" | Select-Object -First 200",
-      "timestamp": 1782731390769,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; cmd /c \"findstr /spin /c:\"schoolHub\" * > \"%TEMP%\\schoolhub_findstr.txt\" 2>nul\"; if (Test-Path \"$env:TEMP\\schoolhub_findstr.txt\") { Get-Content \"$env:TEMP\\schoolhub_findstr.txt\" | Select-Object -First 200 }",
-      "timestamp": 1782732166044,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git add .",
-      "timestamp": 1782736630372,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git commit -m \"index\"",
-      "timestamp": 1782736641237,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git push origin",
-      "timestamp": 1782736653614,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_gml9sq.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_gml9sq.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1783484242778,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_uj24c.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_uj24c.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1783484242806,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_e6n1zn.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_e6n1zn.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1783574549113,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_wj1xi.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_wj1xi.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1783574550717,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd mobile",
-      "timestamp": 1784292757153,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_jbp57g.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_jbp57g.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1784292761314,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_47erjo.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_47erjo.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1784292761326,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd backend",
-      "timestamp": 1784292774043,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
       "command": "npm run dev",
       "timestamp": 1784295451216,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
@@ -2501,7 +2421,87 @@
       "command": "cd ../",
       "timestamp": 1789486002087,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1789486006212,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"notification and linking teachers dash bord\"",
+      "timestamp": 1789486028955,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1789486052365,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_sm8mti.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_sm8mti.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1789546735318,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_w4kget.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_w4kget.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1789546738969,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789546892122,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd frontend",
+      "timestamp": 1789546902346,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789546910743,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cleart",
+      "timestamp": 1789546913867,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789549223088,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "cd ../",
+      "timestamp": 1789549228622,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789549239270,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npx prisma generate",
+      "timestamp": 1789549254101,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npx prisma db push",
+      "timestamp": 1789549283097,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789553705339,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
+    },
+    {
+      "command": "cd ../",
+      "timestamp": 1789559666630,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
     }
   ],
-  "lastUpdated": 1789486002087
+  "lastUpdated": 1789559666630
 }

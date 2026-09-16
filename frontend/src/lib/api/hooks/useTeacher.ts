@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { teacherService } from "../services/teacherService";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 export const teacherKeys = {
   all: ["teachers"] as const,
@@ -25,12 +26,30 @@ export const useUpdateTeacherProfile = () => {
     mutationFn: (data: { 
       name?: string; 
       gender?: string; 
+      phone?: string;
       dateOfBirth?: string | Date;
       profileImage?: string;
       bannerImage?: string;
+      department?: string;
+      highestQualification?: string;
+      yearsOfExperience?: number;
+      address?: string;
     }) =>
       teacherService.updateProfile(data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Optimistically update the query cache for immediate UI feedback
+      queryClient.setQueryData(teacherKeys.profile(), (old: any) => ({
+        ...old,
+        ...variables
+      }));
+      
+      // Update the global auth store for immediate navbar/sidebar updates
+      const updateUser = useAuthStore.getState().updateUser;
+      if (updateUser) {
+        updateUser(variables);
+      }
+
+      // Still invalidate to ensure background sync with server
       queryClient.invalidateQueries({ queryKey: teacherKeys.profile() });
       toast.success("Profile updated successfully");
     },
