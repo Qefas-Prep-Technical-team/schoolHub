@@ -8,7 +8,7 @@ import { ClassHeader } from './components/ClassHeader';
 import { ClassStats } from './components/ClassStats';
 import { ClassList } from './components/ClassList';
 import { AcademicSummary } from './components/AcademicSummary';
-import { ClassItem } from './components/ClassCard';
+import { ClassItem } from './components/ClassTable';
 
 export default function StudentClassesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,15 +80,16 @@ export default function StudentClassesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 lg:p-10 pb-40">
-      <div className="max-w-7xl mx-auto space-y-12">
-        <ClassHeader searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <div className="w-[90%] mx-auto">
         <ClassStats totalClasses={classesList.length} />
-        <ClassList isLoading={isLoading} filteredClasses={filteredClasses} />
-        <AcademicSummary
-          totalSubjects={totalSubjects}
-          totalMarks={totalMarks}
-          classPosition={classPosition}
+        
+        <ClassHeader 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery} 
+          totalClasses={classesList.length}
         />
+        
+        <ClassList isLoading={isLoading} filteredClasses={filteredClasses} />
       </div>
     </div>
   );

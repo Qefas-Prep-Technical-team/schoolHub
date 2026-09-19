@@ -46,11 +46,13 @@ export default function Home() {
             if (isAssignment) {
                 const dueDate = item.dueDate ? new Date(item.dueDate) : null;
                 
-                let status: Assessment['status'] = 'active';
+                let status: Assessment['status'] = 'open';
                 if (item.status === 'overdue') status = 'missing';
-                else if (item.status === 'submitted' || item.status === 'graded') status = 'taken';
+                else if (item.status === 'submitted' || item.status === 'graded') status = 'submitted';
                 else if (item.status === 'in_progress') status = 'ongoing';
-                else if (dueDate && now < dueDate) status = 'active';
+                else if (item.startDate && now < new Date(item.startDate)) status = 'coming soon';
+                else if (dueDate && now > dueDate) status = 'closed';
+                else status = 'open';
 
                 return {
                     id: item.id,
@@ -80,14 +82,17 @@ export default function Home() {
                 ? item.durationMinutes 
                 : item.subjectPapers?.reduce((acc: number, paper: any) => acc + (paper.durationMinutes || 0), 0) || 0;
 
-            let status: Assessment['status'] = 'active';
+            let status: Assessment['status'] = 'open';
             if (startDate && now < startDate) {
-                status = 'upcoming';
-            } else if (attempt) {
+                status = 'coming soon';
+            } else if (endDate && now > endDate) {
+                status = 'closed';
+            }
+            if (attempt) {
                 if (attempt.status === 'IN_PROGRESS') {
                     status = 'ongoing';
                 } else if (attempt.status === 'SUBMITTED' || attempt.status === 'SCORED') {
-                    status = 'taken';
+                    status = 'submitted';
                 }
             }
 
@@ -170,7 +175,7 @@ export default function Home() {
     if (isExamsLoading || isStatsLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
             </div>
         );
     }
@@ -187,28 +192,33 @@ export default function Home() {
     return (
         <div className="flex min-h-screen">
             <main className="flex-1 p-6 lg:p-8">
-                <div className="mx-auto max-w-7xl">
+                <div className="mx-auto w-[95%] max-w-[1600px]">
                     <PageHeader />
-                    <AssessmentTypeToggle onTypeChange={(type) => {
-                        setAssessmentType(type);
-                        setCurrentPage(1);
-                    }} />
 
                     {/* Stats & Performance Grid */}
-                    <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+                    <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
                         <div className="xl:col-span-2">
                             <StatsCards cards={dynamicStatCards} />
                         </div>
                         <PerformanceChart stats={statsData} />
                     </div>
 
-                    {/* Assessments List */}
-                    <TimeFilter
-                        filters={timeFilters}
-                        activeFilter={timeFilter}
-                        onFilterChange={setTimeFilter}
-                        title={`Upcoming ${assessmentType === 'ca' ? 'CA' : assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1)}`}
-                    />
+                    {/* Unified Table Toolbar */}
+                    <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <AssessmentTypeToggle onTypeChange={(type) => {
+                            setAssessmentType(type);
+                            setCurrentPage(1);
+                        }} />
+                        
+                        <div className="flex items-center gap-3">
+                            {/* We could add a search input here in the future to perfectly match the design */}
+                            <TimeFilter
+                                filters={timeFilters}
+                                activeFilter={timeFilter}
+                                onFilterChange={setTimeFilter}
+                            />
+                        </div>
+                    </div>
 
                     <AssessmentList assessments={filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} />
                     {filteredAssessments.length > 0 && (

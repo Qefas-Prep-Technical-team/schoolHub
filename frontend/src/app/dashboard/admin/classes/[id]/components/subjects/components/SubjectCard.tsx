@@ -6,9 +6,10 @@ import ProgressBar from './ProgressBar';
 interface SubjectCardProps {
   subject: Subject;
   onClick?: (subject: Subject) => void;
+  performanceLabel?: string;
 }
 
-const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
+const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick, performanceLabel }) => {
   return (
     <div 
       className="flex flex-col gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 cursor-pointer"
@@ -37,7 +38,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
       </div>
       
       <div className="flex flex-col gap-2">
-        <ProgressBar value={subject.classPerformance} />
+        <ProgressBar value={subject.classPerformance} label={performanceLabel} />
       </div>
       
       <button 

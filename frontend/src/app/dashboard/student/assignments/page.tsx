@@ -19,7 +19,7 @@ import SuggestedImprovements from './analytics/components/SuggestedImprovements'
 const statuses = ['All Statuses', 'Pending', 'Submitted', 'Graded', 'Overdue'];
 const dueDates = ['All Dates', 'This Week', 'Next Week', 'This Month', 'Overdue'];
 
-const parseGradeToPercentage = (gradeStr: string | null | undefined): number | null => {
+const parseGradeToPercentage = (gradeStr: string | null | undefined, maxMarks?: number): number | null => {
   if (!gradeStr) return null;
   if (gradeStr.includes('/')) {
     const [scorePart, totalPart] = gradeStr.split('/');
@@ -29,8 +29,14 @@ const parseGradeToPercentage = (gradeStr: string | null | undefined): number | n
       return Math.round((score / total) * 100);
     }
   }
-  const parsed = parseInt(gradeStr.replace(/[^0-9.]/g, ''), 10);
-  return isNaN(parsed) ? null : parsed;
+  const parsed = parseFloat(gradeStr.replace(/[^0-9.]/g, ''));
+  if (isNaN(parsed)) return null;
+
+  if (maxMarks && maxMarks > 0) {
+    return Math.round((parsed / maxMarks) * 100);
+  }
+  
+  return parsed;
 };
 
 export default function AssignmentsPage() {
@@ -44,7 +50,7 @@ export default function AssignmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 12;
 
   const dynamicSubjects = useMemo(() => {
     const subjectNames = Array.from(new Set(assignments.map(a => (a as any).subject || "General")));
@@ -71,7 +77,7 @@ export default function AssignmentsPage() {
     let gradeSum = 0;
     let gradeCount = 0;
     graded.forEach(a => {
-      const numericGrade = parseGradeToPercentage(a.grade);
+      const numericGrade = parseGradeToPercentage(a.grade, (a as any).totalMarks);
       if (numericGrade !== null && !isNaN(numericGrade)) {
         gradeSum += numericGrade;
         gradeCount++;
@@ -168,7 +174,7 @@ export default function AssignmentsPage() {
         const date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
           const monthName = months[date.getMonth()];
-          const scoreVal = parseGradeToPercentage(a.grade);
+          const scoreVal = parseGradeToPercentage(a.grade, (a as any).totalMarks);
           if (scoreVal !== null && !isNaN(scoreVal)) {
             if (!monthlyScores[monthName]) {
               monthlyScores[monthName] = { sum: 0, count: 0 };
@@ -246,7 +252,7 @@ export default function AssignmentsPage() {
   return (
       <div className="relative flex min-h-screen w-full bg-background-light dark:bg-background-dark">  
         <main className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="w-[95%] mx-auto">
             {/* Page Heading */}
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
               <h1 className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
@@ -311,10 +317,10 @@ export default function AssignmentsPage() {
             {isLoading ? (
               <div className={`grid gap-6 ${
                 viewMode === 'grid' 
-                  ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
                   : 'grid-cols-1'
               }`}>
-                {Array.from({ length: 6 }).map((_, i) => (
+                {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className={`rounded-xl border border-gray-200 dark:border-gray-800 ${viewMode === 'grid' ? 'h-48' : 'h-24'}`} />
                 ))}
               </div>
@@ -334,7 +340,7 @@ export default function AssignmentsPage() {
               <div className="space-y-6">
                 <div className={`grid gap-6 ${
                   viewMode === 'grid' 
-                    ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
+                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
                     : 'grid-cols-1'
                 }`}>
                   {paginatedAssignments.map((assignment, index) => (

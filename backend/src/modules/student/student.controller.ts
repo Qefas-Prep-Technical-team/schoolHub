@@ -61,7 +61,7 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
     const { id: currentUserId } = req.user!;
     const { 
       name, email, gender, dateOfBirth, profileImage, bannerImage,
-      height, weight, club, favouriteColour, guardianName, guardianPhone 
+      height, weight, club, favouriteColour, guardianName, guardianPhone, address 
     } = req.body;
 
     const updatedProfile = await updateStudentProfileService(currentUserId, {
@@ -76,7 +76,8 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
       club,
       favouriteColour,
       guardianName,
-      guardianPhone
+      guardianPhone,
+      address
     });
 
     return res.status(200).json({

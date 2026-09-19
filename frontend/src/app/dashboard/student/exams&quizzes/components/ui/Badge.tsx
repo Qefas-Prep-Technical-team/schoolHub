@@ -1,6 +1,6 @@
 interface BadgeProps {
   children: React.ReactNode;
-  variant: 'upcoming' | 'active' | 'ongoing' | 'taken' | 'graded' | 'submitted' | 'missing';
+  variant: 'coming soon' | 'open' | 'closed' | 'ongoing' | 'graded' | 'submitted' | 'missing';
   size?: 'sm' | 'md';
 }
 
@@ -17,13 +17,13 @@ export default function Badge({
   };
 
   const variantClasses = {
-    upcoming: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
-    active: 'bg-blue-100 text-pink-800 dark:bg-pink-900/50 dark:text-blue-300',
-    ongoing: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
-    taken: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-    graded: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-    submitted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-    missing: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+    'coming soon': 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
+    'open': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 
+    'closed': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+    'ongoing': 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/50 dark:text-fuchsia-300', 
+    'graded': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+    'submitted': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+    'missing': 'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300',
   };
 
   return (

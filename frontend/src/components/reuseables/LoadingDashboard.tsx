@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { School } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { UserType } from "@/app/(auth)/login/services/auth-store";
+import { useAuthStore, UserType } from "@/app/(auth)/login/services/auth-store";
 
 const LOADING_STEPS = [
   { message: "Verifying credentials" },
@@ -11,6 +11,12 @@ const LOADING_STEPS = [
   { message: "Syncing dashboard" },
   { message: "Fetching profile" },
   { message: "Welcome" },
+];
+
+const LOGOUT_STEPS = [
+  { message: "Closing session" },
+  { message: "Securing data" },
+  { message: "Logging out..." },
 ];
 
 const TYPE_DISPLAY: Record<string, string> = {
@@ -21,36 +27,84 @@ const TYPE_DISPLAY: Record<string, string> = {
   USER: "User",
 };
 
+const THEME_COLORS: Record<string, { blob1: string; blob2: string; iconOuter: string; icon: string; progress: string; dot: string }> = {
+  STUDENT: {
+    blob1: "bg-rose-300/30 dark:bg-rose-500/15",
+    blob2: "bg-pink-300/30 dark:bg-pink-500/15",
+    iconOuter: "bg-rose-500/15",
+    icon: "text-rose-600 dark:text-rose-400",
+    progress: "bg-rose-600 dark:bg-rose-500",
+    dot: "bg-rose-600 dark:bg-rose-500"
+  },
+  TEACHER: {
+    blob1: "bg-emerald-300/30 dark:bg-emerald-500/15",
+    blob2: "bg-teal-300/30 dark:bg-teal-500/15",
+    iconOuter: "bg-emerald-500/15",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    progress: "bg-emerald-600 dark:bg-emerald-500",
+    dot: "bg-emerald-600 dark:bg-emerald-500"
+  },
+  ADMIN: {
+    blob1: "bg-blue-300/30 dark:bg-blue-500/15",
+    blob2: "bg-indigo-300/30 dark:bg-indigo-500/15",
+    iconOuter: "bg-blue-500/15",
+    icon: "text-blue-600 dark:text-blue-400",
+    progress: "bg-blue-600 dark:bg-blue-500",
+    dot: "bg-blue-600 dark:bg-blue-500"
+  },
+  PARENT: {
+    blob1: "bg-amber-300/30 dark:bg-amber-500/15",
+    blob2: "bg-orange-300/30 dark:bg-orange-500/15",
+    iconOuter: "bg-amber-500/15",
+    icon: "text-amber-600 dark:text-amber-400",
+    progress: "bg-amber-600 dark:bg-amber-500",
+    dot: "bg-amber-600 dark:bg-amber-500"
+  },
+  USER: {
+    blob1: "bg-blue-300/30 dark:bg-blue-500/15",
+    blob2: "bg-indigo-300/30 dark:bg-indigo-500/15",
+    iconOuter: "bg-blue-500/15",
+    icon: "text-blue-600 dark:text-blue-400",
+    progress: "bg-blue-600 dark:bg-blue-500",
+    dot: "bg-blue-600 dark:bg-blue-500"
+  }
+};
+
 export default function LoadingDashboard({
   userType = "USER" as UserType,
   duration = 3200,
 }: { userType?: UserType | null; duration?: number }) {
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
 
+  const theme = THEME_COLORS[userType ?? "USER"] || THEME_COLORS.USER;
+
+  const activeSteps = isLoggingOut ? LOGOUT_STEPS : LOADING_STEPS;
+
   const pct = useMemo(() => {
-    if (LOADING_STEPS.length <= 1) return 0;
-    return Math.round((currentStepIdx / (LOADING_STEPS.length - 1)) * 100);
-  }, [currentStepIdx]);
+    if (activeSteps.length <= 1) return 0;
+    return Math.round((currentStepIdx / (activeSteps.length - 1)) * 100);
+  }, [currentStepIdx, activeSteps]);
 
   useEffect(() => {
-    const intervalTime = duration / LOADING_STEPS.length;
+    const intervalTime = duration / activeSteps.length;
     const timer = setInterval(() => {
       setCurrentStepIdx((prev) => {
-        if (prev < LOADING_STEPS.length - 1) return prev + 1;
+        if (prev < activeSteps.length - 1) return prev + 1;
         clearInterval(timer);
         return prev;
       });
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, [duration]);
+  }, [duration, activeSteps]);
 
   return (
     <div className="min-h-screen grid place-items-center bg-slate-50 dark:bg-zinc-950 px-6 py-10">
       <div className="relative w-full max-w-sm">
         {/* Background blobs */}
-        <div className="pointer-events-none absolute -top-24 -left-16 h-56 w-56 rounded-full bg-blue-300/30 blur-3xl dark:bg-blue-500/15" />
-        <div className="pointer-events-none absolute -bottom-24 -right-16 h-56 w-56 rounded-full bg-indigo-300/30 blur-3xl dark:bg-indigo-500/15" />
+        <div className={`pointer-events-none absolute -top-24 -left-16 h-56 w-56 rounded-full blur-3xl ${theme.blob1}`} />
+        <div className={`pointer-events-none absolute -bottom-24 -right-16 h-56 w-56 rounded-full blur-3xl ${theme.blob2}`} />
 
         {/* Card */}
         <motion.div
@@ -73,10 +127,10 @@ export default function LoadingDashboard({
                 <motion.div
                   animate={{ opacity: [0.35, 0.8, 0.35], scale: [0.95, 1.05, 0.95] }}
                   transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute inset-0 -m-4 rounded-[28px] bg-blue-500/15 blur-xl"
+                  className={`absolute inset-0 -m-4 rounded-[28px] blur-xl ${theme.iconOuter}`}
                 />
                 <div className="relative grid place-items-center rounded-3xl border border-slate-200/70 dark:border-zinc-800/70 bg-white dark:bg-zinc-950 p-5 shadow-sm">
-                  <School className="text-blue-600 dark:text-blue-400" size={44} strokeWidth={1.6} />
+                  <School className={theme.icon} size={44} strokeWidth={1.6} />
                 </div>
               </motion.div>
             </div>
@@ -90,7 +144,7 @@ export default function LoadingDashboard({
               </div>
 
               <h2 className="mt-3 text-xl font-semibold text-slate-900 dark:text-zinc-100">
-                Hello, {TYPE_DISPLAY[userType ?? "USER"]}
+                {isLoggingOut ? "Goodbye" : `Hello, ${TYPE_DISPLAY[userType ?? "USER"]}`}
               </h2>
 
               <div className="relative mt-3 h-7 overflow-hidden">
@@ -103,7 +157,7 @@ export default function LoadingDashboard({
                     transition={{ type: "spring", stiffness: 140, damping: 18 }}
                     className="text-sm font-medium text-slate-500 dark:text-zinc-400"
                   >
-                    {LOADING_STEPS[currentStepIdx].message}
+                    {activeSteps[currentStepIdx]?.message}
                     <motion.span
                       className="inline-block"
                       animate={{ opacity: [0.2, 1, 0.2] }}
@@ -121,7 +175,7 @@ export default function LoadingDashboard({
               <div className="h-2 w-full rounded-full bg-slate-200/80 dark:bg-zinc-800 overflow-hidden">
                 {/* fill */}
                 <motion.div
-                  className="relative h-full bg-blue-600 dark:bg-blue-500"
+                  className={`relative h-full ${theme.progress}`}
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
                   transition={{ duration: duration / 1000, ease: "linear" }}
@@ -149,12 +203,12 @@ export default function LoadingDashboard({
 
             {/* Step dots */}
             <div className="mt-8 flex items-center justify-center gap-2">
-              {LOADING_STEPS.map((_, i) => (
+              {activeSteps.map((_, i) => (
                 <motion.div
                   key={i}
                   className={`h-2 rounded-full transition-all ${
                     i <= currentStepIdx
-                      ? "bg-blue-600 dark:bg-blue-500"
+                      ? theme.dot
                       : "bg-slate-300 dark:bg-zinc-800"
                   }`}
                   animate={{ width: i === currentStepIdx ? 26 : 10 }}

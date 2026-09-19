@@ -40,9 +40,9 @@ export function TeacherLinkingStats({
 
       <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-2 text-primary dark:text-orange-400">
+          <div className="flex items-center justify-between mb-2 text-green-600 dark:text-orange-400">
             <Clock size={20} />
-            <Badge className="bg-primary/10 text-primary dark:text-orange-400 border-none shadow-none">Waiting</Badge>
+            <Badge className="bg-green-600/10 text-green-600 dark:text-orange-400 border-none shadow-none">Waiting</Badge>
           </div>
           <div className="text-3xl font-black text-gray-900 dark:text-white">
             {isLoadingPending ? <Skeleton className="h-9 w-12" /> : pendingCount}

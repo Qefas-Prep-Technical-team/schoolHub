@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
     Settings, 
     Bell, 
@@ -26,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { useTeacherProfile, useTeacherSettings, useUpdateTeacherSettings } from '@/lib/api/hooks/useTeacher';
 import { cn } from '@/lib/utils';
@@ -34,13 +36,17 @@ import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 import DeviceSessions from '@/components/DeviceSessions';
+import TwoFactorSetup from '@/components/auth/TwoFactorSetup';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function TeacherSettingsPage() {
+    const router = useRouter();
     const { theme: currentTheme, setTheme } = useTheme();
     const { data: profile, isLoading: isProfileLoading } = useTeacherProfile();
     const { data: backendSettings, isLoading: isSettingsLoading } = useTeacherSettings();
     const updateSettings = useUpdateTeacherSettings();
     const { mutate: logout } = useLogoutMutation();
+    const queryClient = useQueryClient();
 
     // Local state for settings
     const [settings, setSettings] = useState({
@@ -67,12 +73,96 @@ export default function TeacherSettingsPage() {
         await updateSettings.mutateAsync(settings);
     };
 
+    const [activeTab, setActiveTab] = useState<string>("account");
+    
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get("tab");
+        if (tab) setActiveTab(tab);
+    }, []);
+
     const isLoading = isProfileLoading || isSettingsLoading;
 
     if (isLoading) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-500 opacity-50" />
+            <div className="w-[95%] max-w-[1600px] mx-auto py-8 space-y-6 md:space-y-8 px-4 md:px-8 animate-pulse">
+                {/* Page Header Skeleton */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-4 w-72" />
+                    </div>
+                    <Skeleton className="h-10 w-40 rounded-lg" />
+                </div>
+
+                {/* Tabs Skeleton */}
+                <Skeleton className="h-10 w-full max-w-md rounded-lg" />
+
+                {/* Content Skeleton */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Educator Identity Card Skeleton */}
+                        <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50 space-y-2">
+                                <Skeleton className="h-6 w-40" />
+                                <Skeleton className="h-4 w-60" />
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-6">
+                                <div className="flex items-center gap-5 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <Skeleton className="h-16 w-16 rounded-xl" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-5 w-32" />
+                                        <Skeleton className="h-4 w-24" />
+                                    </div>
+                                    <Skeleton className="ml-auto h-9 w-24 rounded-lg" />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-10 w-full rounded-lg" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-32" />
+                                        <Skeleton className="h-10 w-full rounded-lg" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Logout Card Skeleton */}
+                        <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="space-y-2">
+                                    <Skeleton className="h-5 w-32" />
+                                    <Skeleton className="h-4 w-60" />
+                                </div>
+                                <Skeleton className="h-10 w-32 rounded-lg" />
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="space-y-6">
+                        {/* Linked Academy Card Skeleton */}
+                        <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
+                                <Skeleton className="h-6 w-40" />
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-5 w-40" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-5 w-32" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-10 w-full rounded-lg" />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -80,7 +170,7 @@ export default function TeacherSettingsPage() {
     const initials = (profile?.name || 'T').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
 
     return (
-        <div className="w-[80%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+        <div className="w-[95%] max-w-[1600px] mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
                 <div>
@@ -103,7 +193,7 @@ export default function TeacherSettingsPage() {
                 </Button>
             </div>
 
-            <Tabs defaultValue="account" className="w-full space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
                 <TabsList className="bg-slate-50 dark:bg-slate-900 rounded-lg p-1 w-full max-w-md grid grid-cols-3 h-auto">
                     <TabsTrigger value="account" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
                         <div className="flex flex-row items-center justify-center gap-2">
@@ -201,7 +291,11 @@ export default function TeacherSettingsPage() {
                                             <p className="text-base font-bold text-emerald-950 dark:text-emerald-100">{profile?.school?.schoolCode || 'SH-2024'}</p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" className="w-full rounded-lg h-10 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 font-semibold text-xs">
+                                    <Button 
+                                        variant="outline" 
+                                        className="w-full rounded-lg h-10 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 font-semibold text-xs"
+                                        onClick={() => router.push('/dashboard/teacher/school-profile')}
+                                    >
                                         View Institution
                                     </Button>
                                 </CardContent>
@@ -242,19 +336,17 @@ export default function TeacherSettingsPage() {
                                         <div className="flex items-center gap-2">
                                             <Shield className="text-emerald-500" size={18} /> Two-Factor Auth
                                         </div>
-                                        <Badge variant="outline" className="text-[10px] font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>
                                     </CardTitle>
                                     <CardDescription>Extra layer of account security.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-6 space-y-5 opacity-60 pointer-events-none">
-                                    <div className="flex items-center justify-between p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                                        <div className="space-y-1">
-                                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Require 2FA</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Ask for a code on your phone when signing in.</p>
-                                        </div>
-                                        <Switch checked={false} disabled />
-                                    </div>
-                                    <div className="space-y-1.5">
+                                <CardContent className="p-6 space-y-5">
+                                    <TwoFactorSetup 
+                                        isTwoFactorEnabled={profile?.isTwoFactorEnabled || false} 
+                                        onUpdate={() => {
+                                            queryClient.invalidateQueries({ queryKey: ['teachers', 'profile'] });
+                                        }} 
+                                    />
+                                    <div className="space-y-1.5 opacity-60 pointer-events-none">
                                         <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Authentication Method</Label>
                                         <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm font-medium text-slate-700 dark:text-slate-300">
                                             <Globe size={16} className="text-emerald-500" />

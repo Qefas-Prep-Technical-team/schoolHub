@@ -19,7 +19,7 @@ export default function AssessmentTypeToggle({ onTypeChange }: AssessmentTypeTog
     const [active, setActive] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
 
     return (
-        <div className="mt-8 flex flex-wrap gap-3 p-1.5 bg-slate-100/50 dark:bg-slate-800/40 rounded-2xl w-full sm:w-fit border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
+        <div className="flex flex-wrap gap-1 p-1 bg-slate-100/50 dark:bg-slate-800/40 rounded-xl w-full sm:w-fit border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
             {types.map(({ id, label, icon: Icon }) => (
                 <button
                     key={id}
@@ -28,13 +28,13 @@ export default function AssessmentTypeToggle({ onTypeChange }: AssessmentTypeTog
                         onTypeChange(id);
                     }}
                     className={cn(
-                        "flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300",
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300",
                         active === id
-                            ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-[0_4px_15px_rgba(0,0,0,0.08)] scale-105"
-                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            ? "bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-sm"
+                            : "text-slate-500 hover:text-pink-600 dark:hover:text-pink-400"
                     )}
                 >
-                    <Icon size={16} className={cn(active === id ? "text-primary" : "text-current opacity-40")} />
+                    <Icon size={16} className={cn(active === id ? "text-pink-600 dark:text-pink-400" : "opacity-50")} />
                     {label}
                 </button>
             ))}

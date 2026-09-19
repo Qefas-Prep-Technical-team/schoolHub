@@ -128,7 +128,7 @@ export default function TeacherNotificationsPage() {
 
   return (
     <div className="min-h-screen bg-transparent py-8 animate-in fade-in duration-500">
-      <div className="w-[80%] max-w-[80%] mx-auto flex flex-col lg:flex-row gap-8">
+      <div className="w-[95%] max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8">
         
         {/* Left Column: Main Content */}
         <div className="flex-1 space-y-8 min-w-0">

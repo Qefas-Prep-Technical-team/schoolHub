@@ -7,6 +7,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  theme?: 'emerald' | 'blue';
 }
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -14,7 +15,8 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   totalItems,
   itemsPerPage,
-  onPageChange
+  onPageChange,
+  theme = 'emerald'
 }) => {
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
@@ -59,7 +61,9 @@ const Pagination: React.FC<PaginationProps> = ({
                 key={index}
                 className={`flex h-9 min-w-9 px-3 items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90 ${
                   currentPage === page
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 dark:from-blue-600 dark:to-blue-700 dark:shadow-blue-950/40 scale-105'
+                    ? theme === 'blue'
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20 dark:from-blue-600 dark:to-indigo-700 dark:shadow-blue-950/40 scale-105'
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20 dark:from-green-600 dark:to-emerald-700 dark:shadow-green-950/40 scale-105'
                     : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
                 onClick={() => onPageChange(page)}

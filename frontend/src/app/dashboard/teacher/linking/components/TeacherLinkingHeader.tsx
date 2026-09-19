@@ -23,7 +23,7 @@ export function TeacherLinkingHeader({ onConnectClick, onShowQRCodeClick }: Teac
         <Button
           onClick={onShowQRCodeClick}
           variant="outline"
-          className="h-14 px-8 rounded-2xl font-black bg-white dark:bg-gray-800/60 border-2 border-gray-100 dark:border-gray-700/60 shadow-sm hover:scale-105 active:scale-95 transition-all text-primary dark:text-indigo-400 dark:hover:bg-gray-700/60"
+          className="h-14 px-8 rounded-2xl font-black bg-white dark:bg-gray-800/60 border-2 border-gray-100 dark:border-gray-700/60 shadow-sm hover:scale-105 active:scale-95 transition-all text-green-600 dark:text-green-400 dark:hover:bg-gray-700/60"
         >
           <QrCode className="mr-2 h-5 w-5" /> View QR Hub
         </Button>
@@ -36,12 +36,12 @@ export function TeacherLinkingHeader({ onConnectClick, onShowQRCodeClick }: Teac
             h-14 px-8 rounded-2xl font-black text-sm cursor-pointer
             text-white
             transition-all duration-300 ease-out
-            bg-primary hover:bg-primary/90
-            shadow-lg shadow-primary/25
-            dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600
-            dark:hover:from-indigo-400 dark:hover:to-violet-500
-            dark:shadow-[0_4px_24px_rgba(99,102,241,0.35)]
-            dark:hover:shadow-[0_4px_32px_rgba(99,102,241,0.55)]
+            bg-green-600 hover:bg-green-700
+            shadow-lg shadow-green-500/25
+            dark:bg-gradient-to-r dark:from-green-500 dark:to-emerald-600
+            dark:hover:from-green-400 dark:hover:to-emerald-500
+            dark:shadow-[0_4px_24px_rgba(34,197,94,0.35)]
+            dark:hover:shadow-[0_4px_32px_rgba(34,197,94,0.55)]
             hover:scale-105 active:scale-95
           "
         >

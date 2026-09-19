@@ -5,6 +5,7 @@ import PageHeader from './components/PageHeader';
 import InfoBanner from './components/InfoBanner';
 import StatCard from './components/StatCard';
 import AttendanceChart from './components/AttendanceChart';
+import AttendanceList from './components/AttendanceList';
 import { useStudentAttendance } from '@/lib/api/hooks/useStudent';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { format } from 'date-fns';
@@ -79,26 +80,26 @@ export default function Home() {
         {
             title: 'Present',
             value: `${attendanceData.presentPct}%`,
-            icon: 'check_circle',
-            iconColor: 'text-green-500',
+            bgColor: 'bg-green-500',
+            textColor: 'text-white',
         },
         {
             title: 'Absent',
             value: `${attendanceData.absentPct}%`,
-            icon: 'cancel',
-            iconColor: 'text-red-500',
+            bgColor: 'bg-red-500',
+            textColor: 'text-white',
         },
         {
             title: 'Late',
             value: `${attendanceData.latePct}%`,
-            icon: 'schedule',
-            iconColor: 'text-yellow-500',
+            bgColor: 'bg-orange-500',
+            textColor: 'text-white',
         },
         {
             title: 'Total Days',
             value: `${attendanceData.total}`,
-            icon: 'event_available',
-            iconColor: 'text-text-light-secondary dark:text-dark-secondary',
+            bgColor: 'bg-indigo-500',
+            textColor: 'text-white',
             description: 'in this term',
         },
     ];
@@ -106,7 +107,7 @@ export default function Home() {
     return (
         <div className="relative flex min-h-screen w-full">
             <main className="flex-1 p-6 lg:p-8">
-                <div className="max-w-7xl mx-auto">
+                <div className="mx-auto w-[95%] max-w-[1600px]">
                     <PageHeader records={response || []} />
                     <InfoBanner />
 
@@ -126,16 +127,19 @@ export default function Home() {
 
                             {/* Chart Section */}
                             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm mb-8">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Attendance Overview</h3>
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Attendance Overview</h3>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Chart Visualization</p>
+                                    </div>
+                                    <div className="flex gap-1.5 p-1 bg-slate-100/50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm w-full sm:w-auto">
                                         {(['day', 'week', 'month', 'term'] as const).map((type) => (
                                             <button
                                                 key={type}
                                                 onClick={() => setViewType(type)}
-                                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                                                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 capitalize ${
                                                     viewType === type 
-                                                    ? 'bg-white dark:bg-slate-700 text-pink-600 shadow-sm' 
+                                                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' 
                                                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                                                 }`}
                                             >
@@ -146,6 +150,9 @@ export default function Home() {
                                 </div>
                                 <AttendanceChart data={attendanceData.chartData} />
                             </div>
+
+                            {/* Recent Attendance List */}
+                            <AttendanceList records={response || []} />
                         </>
                     )}
                 </div>

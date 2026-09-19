@@ -11,6 +11,7 @@ import {
   sendVerificationEmail,
   sendSetupCompleteEmail,
   googleAuthService,
+  send2FADisabledEmail,
 } from "./auth.service";
 import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
@@ -121,12 +122,12 @@ export const registerSchool = async (req: Request, res: Response) => {
         const freePlan = envPlanId
           ? await tx.subscriptionPlan.findUnique({ where: { id: envPlanId } })
           : await tx.subscriptionPlan.findFirst({
-              where: {
-                planScope: PlanScope.SCHOOL,
-                type: "free",
-                category: "schools",
-              },
-            });
+            where: {
+              planScope: PlanScope.SCHOOL,
+              type: "free",
+              category: "schools",
+            },
+          });
 
         if (!freePlan) {
           throw new Error(
@@ -1058,9 +1059,9 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
         expiresAt,
       },
     });
-    const testEmail = process.env.TEST_EMAIL;
+    const testEmail = process.env.TEST_EMAIL?.trim();
     console.log(testEmail, "test email");
-    const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
+    const resendTest = process.env.RESEND_TEST?.trim() === "true"; // default to false if not set
     const mainEmail = resendTest ? testEmail : email;
 
     // Detect if user exists to customize email content
@@ -1071,23 +1072,23 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
     });
     const teacher = !admin
       ? await prisma.teacher.findUnique({
-          where: { email },
-          select: { id: true },
-        })
+        where: { email },
+        select: { id: true },
+      })
       : null;
     const student =
       !admin && !teacher
         ? await prisma.student.findUnique({
-            where: { email },
-            select: { id: true },
-          })
+          where: { email },
+          select: { id: true },
+        })
         : null;
     const parent =
       !admin && !teacher && !student
         ? await prisma.parent.findUnique({
-            where: { email },
-            select: { id: true },
-          })
+          where: { email },
+          select: { id: true },
+        })
         : null;
 
     const userExists = !!(admin || teacher || student || parent);
@@ -1463,15 +1464,206 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 //       message: "Logged in successfully",
 //       data: {
 //         accessToken,
+//           },
+//         });
+
+//         if (!user) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Parent not found",
+//           });
+//         }
+
+//         user = await prisma.parent.update({
+//           where: { email },
+//           data: { verified: true },
+//         });
+//         break;
+
+//       default:
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid user type",
+//         });
+//     }
+
+//     // Prepare response based on user type
+//     let message = "";
+//     let responseData: any = {};
+
+//     switch (userType) {
+//       case UserRole.ADMIN:
+//         message = isSchoolOwner
+//           ? "School owner email verified and account approved successfully! You can now access your dashboard."
+//           : "Admin email verified successfully! Waiting for approval from school owner.";
+
+//         responseData = {
+//           admin: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             status: user.status,
+//             verified: user.verified,
+//             isSchoolOwner: isSchoolOwner,
+//           },
+//           schools: user.schoolAdmins.map((sa: any) => ({
+//             schoolId: sa.school.id,
+//             schoolName: sa.school.name,
+//             adminRole: sa.role,
+//           })),
+//         };
+//         break;
+
+//       case UserRole.TEACHER:
+//         message = "Teacher email verified successfully! You can now log in.";
+//         responseData = {
+//           teacher: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             verified: user.verified,
+//             teacherCode: user.teacherCode,
+//             school: user.school,
+//           },
+//         };
+//         break;
+
+//       case UserRole.STUDENT:
+//         message = "Student email verified successfully! You can now log in.";
+//         responseData = {
+//           student: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             verified: user.verified,
+//             studentCode: user.studentCode,
+//             school: user.school,
+//           },
+//         };
+//         break;
+
+//       case UserRole.PARENT:
+//         message = "Parent email verified successfully! You can now log in.";
+//         responseData = {
+//           parent: {
+//             id: user.id,
+//             fullName: user.fullName,
+//             email: user.email,
+//             verified: user.verified,
+//           },
+//           children: user.children.map((child: any) => ({
+//             studentId: child.student.id,
+//             studentName: child.student.name,
+//             studentCode: child.student.studentCode,
+//             linkStatus: child.status,
+//           })),
+//         };
+//         break;
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message,
+//       userRole: userType,
+//       data: responseData,
+//     });
+//   } catch (error) {
+//     console.error("Error verifying code:", error);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+// ====================================
+// login
+// =======================================
+
+// export const login = async (req: Request, res: Response) => {
+//   try {
+//     const { email, password, userType } = req.body;
+
+//     if (!email || !password || !userType) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email and password  required",
+//       });
+//     }
+
+//     // Validate userType
+//     if (!Object.values(UserRole).includes(userType as UserRole)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid user type",
+//       });
+//     }
+
+//     let user: any;
+//     switch (userType) {
+//       case UserRole.ADMIN:
+//         user = await prisma.admin.findUnique({ where: { email } });
+//         break;
+//       case UserRole.TEACHER:
+//         user = await prisma.teacher.findUnique({ where: { email } });
+//         break;
+//       case UserRole.STUDENT:
+//         user = await prisma.student.findUnique({ where: { email } });
+//         break;
+//       case UserRole.PARENT:
+//         user = await prisma.parent.findUnique({ where: { email } });
+//         break;
+//       default:
+//         return res.status(400).json({
+//           success: false,
+//           message: "email or password incorrect",
+//         });
+//     }
+
+//     if (!user)
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+
+//     if (!user.verified)
+//       return res.status(403).json({
+//         success: false,
+//         message: "Email not verified",
+//       });
+
+//     const validPassword = await comparePassword(password, user.password);
+//     if (!validPassword)
+//       return res.status(404).json({
+//         success: false,
+//         message: "password incorrect",
+//       });
+
+//     const accessToken = generateAccessToken(user.id, userType);
+//     const refreshToken = await generateRefreshToken(user.id, userType);
+
+//     res.cookie("token", accessToken, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "lax",
+//       path: "/",
+//       maxAge: 24 * 60 * 60 * 1000,
+//     });
+
+//     res.cookie("refreshToken", refreshToken, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "strict",
+//       path: "/",
+//       maxAge: 7 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Logged in successfully",
+//       data: {
+//         accessToken,
 //         user: {
 //           id: user.id,
 //           email: user.email,
 //           name: user.name || user.fullName,
-//           role: user.role, // RETURN ROLE
-//         },
-//         userRole: user.role, // ADDED: Explicit role for redirection
-//       },
-//     });
+//           role: user.role,
 //   } catch (error) {
 //     console.error(error);
 //     return res.status(500).json({ success: false, message: "Server error" });
@@ -1562,7 +1754,7 @@ export const login = async (req: Request, res: Response) => {
     // 1. Try fetching based on provided type
     user = await withRetry(
       () => fetchUserWithRelations(userType as UserRole, normalizedEmail),
-      `auth.login.fetchUser[${userType}]`
+      `auth.login.fetchUser[${userType}]`,
     );
 
     if (!user) {
@@ -1571,12 +1763,13 @@ export const login = async (req: Request, res: Response) => {
       );
 
       // Check if they exist in another portal to give a better error message
-      const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
-        prisma.student.findFirst({ where: { email: normalizedEmail } }),
-        prisma.teacher.findFirst({ where: { email: normalizedEmail } }),
-        prisma.admin.findFirst({ where: { email: normalizedEmail } }),
-        prisma.parent.findFirst({ where: { email: normalizedEmail } }),
-      ]);
+      const [existingStudent, existingTeacher, existingAdmin, existingParent] =
+        await Promise.all([
+          prisma.student.findFirst({ where: { email: normalizedEmail } }),
+          prisma.teacher.findFirst({ where: { email: normalizedEmail } }),
+          prisma.admin.findFirst({ where: { email: normalizedEmail } }),
+          prisma.parent.findFirst({ where: { email: normalizedEmail } }),
+        ]);
 
       let detectedRole = "";
       if (existingAdmin) detectedRole = "School Admin";
@@ -1587,7 +1780,10 @@ export const login = async (req: Request, res: Response) => {
       if (detectedRole) {
         return res
           .status(403)
-          .json({ success: false, message: `This email is registered as a ${detectedRole}. Please login through the correct portal.` });
+          .json({
+            success: false,
+            message: `This email is registered as a ${detectedRole}. Please login through the correct portal.`,
+          });
       }
 
       return res
@@ -1603,12 +1799,25 @@ export const login = async (req: Request, res: Response) => {
 
     if (preAuthToken) {
       try {
-        const payload = jwt.verify(preAuthToken, process.env.JWT_SECRET || "default_secret") as any;
+        const payload = jwt.verify(
+          preAuthToken,
+          process.env.JWT_SECRET || "default_secret",
+        ) as any;
         if (payload.userId !== user.id) {
-          return res.status(401).json({ success: false, message: "Invalid preAuth token mismatch" });
+          return res
+            .status(401)
+            .json({
+              success: false,
+              message: "Invalid preAuth token mismatch",
+            });
         }
       } catch (err) {
-        return res.status(401).json({ success: false, message: "Invalid or expired preAuth token" });
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Invalid or expired preAuth token",
+          });
       }
     } else {
       const validPassword = await comparePassword(password, user.password);
@@ -1620,12 +1829,23 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Check if it's a student or teacher and if isClaimed is false
-    if ((actualRole === UserRole.STUDENT || actualRole === UserRole.TEACHER) && user.isClaimed === false) {
-      console.log(`Setting isClaimed to true for ${actualRole} user ${user.id}`);
+    if (
+      (actualRole === UserRole.STUDENT || actualRole === UserRole.TEACHER) &&
+      user.isClaimed === false
+    ) {
+      console.log(
+        `Setting isClaimed to true for ${actualRole} user ${user.id}`,
+      );
       if (actualRole === UserRole.STUDENT) {
-        await prisma.student.update({ where: { id: user.id }, data: { isClaimed: true } });
+        await prisma.student.update({
+          where: { id: user.id },
+          data: { isClaimed: true },
+        });
       } else if (actualRole === UserRole.TEACHER) {
-        await prisma.teacher.update({ where: { id: user.id }, data: { isClaimed: true } });
+        await prisma.teacher.update({
+          where: { id: user.id },
+          data: { isClaimed: true },
+        });
       }
       user.isClaimed = true;
     }
@@ -1634,6 +1854,21 @@ export const login = async (req: Request, res: Response) => {
     // Removed obsolete multi-tenant array fixing logic
 
     // ========================================
+
+    // 2FA Intercept
+    if (user.isTwoFactorEnabled) {
+      const tempToken = jwt.sign(
+        { userId: user.id, userType: actualRole },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "10m" },
+      );
+      return res.status(200).json({
+        success: true,
+        message: "2FA verification required",
+        require2FA: true,
+        tempToken,
+      });
+    }
 
     // IMPORTANT: Generate token with ACTUAL role, not the one from the portal
     console.log("DEBUG: Generating tokens for user", user.id);
@@ -1645,12 +1880,27 @@ export const login = async (req: Request, res: Response) => {
     const UAParserClass = UAParser as any;
     const parser = new UAParserClass(userAgent);
     const result = parser.getResult();
-    
+
     const deviceInfo = {
-      deviceType: (req.headers["x-device-type"] as string) || result.device.type || "desktop",
-      deviceModel: (req.headers["x-device-model"] as string) || result.device.model || result.browser.name || "Unknown Browser",
-      osVersion: (req.headers["x-os-version"] as string) || (result.os.name ? `${result.os.name} ${result.os.version || ""}`.trim() : "Unknown OS"),
-      ipAddress: (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim() || "Unknown IP"
+      deviceType:
+        (req.headers["x-device-type"] as string) ||
+        result.device.type ||
+        "desktop",
+      deviceModel:
+        (req.headers["x-device-model"] as string) ||
+        result.device.model ||
+        result.browser.name ||
+        "Unknown Browser",
+      osVersion:
+        (req.headers["x-os-version"] as string) ||
+        (result.os.name
+          ? `${result.os.name} ${result.os.version || ""}`.trim()
+          : "Unknown OS"),
+      ipAddress:
+        (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
+          .toString()
+          .split(",")[0]
+          .trim() || "Unknown IP",
     };
 
     // Device Verification Check
@@ -1658,7 +1908,10 @@ export const login = async (req: Request, res: Response) => {
     // device check for them. They are trusted via the x-device-type header.
     // Web clients still go through the full device cookie + refreshToken validation.
     const isMobileClient = req.headers["x-device-type"] === "mobile";
-    const isDeviceVerified = isMobileClient || req.cookies?.deviceVerified === "true" || !!preAuthToken;
+    const isDeviceVerified =
+      isMobileClient ||
+      req.cookies?.deviceVerified === "true" ||
+      !!preAuthToken;
     if (!isDeviceVerified) {
       const validDevice = await prisma.refreshToken.findFirst({
         where: {
@@ -1672,11 +1925,12 @@ export const login = async (req: Request, res: Response) => {
         const generatedPreAuthToken = jwt.sign(
           { userId: user.id, userType: actualRole },
           process.env.JWT_SECRET || "default_secret",
-          { expiresIn: "15m" }
+          { expiresIn: "15m" },
         );
         return res.status(403).json({
           success: false,
-          message: "Unrecognized or revoked device detected. Verification required.",
+          message:
+            "Unrecognized or revoked device detected. Verification required.",
           requiresVerification: true,
           preAuthToken: generatedPreAuthToken,
         });
@@ -1702,7 +1956,11 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const refreshToken = await generateRefreshToken(user.id, actualRole, deviceInfo);
+    const refreshToken = await generateRefreshToken(
+      user.id,
+      actualRole,
+      deviceInfo,
+    );
     console.log("DEBUG: Refresh token generated and stored");
 
     res.cookie("token", accessToken, {
@@ -1742,6 +2000,8 @@ export const login = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+
           adminCode: user.adminCode,
           schoolCode: primarySchool?.schoolCode || null,
           profileImage: user.profileImage,
@@ -1762,6 +2022,7 @@ export const login = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
           teacherCode: user.teacherCode,
           profileImage: user.profileImage,
           bannerImage: user.bannerImage,
@@ -1781,6 +2042,7 @@ export const login = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
           studentCode: user.studentCode,
           profileImage: user.profileImage,
           bannerImage: user.bannerImage,
@@ -1800,6 +2062,8 @@ export const login = async (req: Request, res: Response) => {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+
           profileImage: user.profileImage,
           bannerImage: user.bannerImage,
           gender: user.gender,
@@ -1822,8 +2086,15 @@ export const login = async (req: Request, res: Response) => {
 
     console.log("DEBUG: Login successful, sending response");
     try {
-      const responseString = JSON.stringify({ success: true, message, data: responseData });
-      console.log("DEBUG: Response serialized successfully. Size:", responseString.length);
+      const responseString = JSON.stringify({
+        success: true,
+        message,
+        data: responseData,
+      });
+      console.log(
+        "DEBUG: Response serialized successfully. Size:",
+        responseString.length,
+      );
     } catch (serializeErr) {
       console.error("DEBUG: Failed to serialize response:", serializeErr);
     }
@@ -1849,9 +2120,7 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
         .json({ success: false, message: "Email and code are required" });
     }
 
-    const normalizedRole = userType
-      ?.toUpperCase()
-      .trim() as UserRole;
+    const normalizedRole = userType?.toUpperCase().trim() as UserRole;
 
     if (!Object.values(UserRole).includes(normalizedRole)) {
       return res
@@ -1860,7 +2129,12 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
     }
 
     const found = await prisma.verificationCode.findFirst({
-      where: { email: normalizedEmail, code, userType: normalizedRole, used: false },
+      where: {
+        email: normalizedEmail,
+        code,
+        userType: normalizedRole,
+        used: false,
+      },
     });
 
     if (!found)
@@ -2113,7 +2387,11 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
   try {
     const { email, code, userType } = req.body;
     const normalizedEmail = email?.trim().toLowerCase();
-    console.log("Verifying code for:", { email: normalizedEmail, userType, code });
+    console.log("Verifying code for:", {
+      email: normalizedEmail,
+      userType,
+      code,
+    });
 
     if (!email || !code || !userType) {
       return res.status(400).json({
@@ -2132,7 +2410,12 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
     });
     console.log("Existing codes for this email and type:", check);
     const found = await prisma.verificationCode.findFirst({
-      where: { email: normalizedEmail, code, userType: userType as UserRole, used: false },
+      where: {
+        email: normalizedEmail,
+        code,
+        userType: userType as UserRole,
+        used: false,
+      },
     });
 
     if (!found)
@@ -2232,7 +2515,9 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.TEACHER:
-        const oldTeacher = await prisma.teacher.findUnique({ where: { email: normalizedEmail } });
+        const oldTeacher = await prisma.teacher.findUnique({
+          where: { email: normalizedEmail },
+        });
         if (oldTeacher) isNewUser = !oldTeacher.verified;
         user = await prisma.teacher.update({
           where: { email: normalizedEmail },
@@ -2253,7 +2538,9 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.STUDENT:
-        const oldStudent = await prisma.student.findUnique({ where: { email: normalizedEmail } });
+        const oldStudent = await prisma.student.findUnique({
+          where: { email: normalizedEmail },
+        });
         if (oldStudent) isNewUser = !oldStudent.verified;
         user = await prisma.student.update({
           where: { email: normalizedEmail },
@@ -2274,7 +2561,9 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.PARENT:
-        const oldParent = await prisma.parent.findUnique({ where: { email: normalizedEmail } });
+        const oldParent = await prisma.parent.findUnique({
+          where: { email: normalizedEmail },
+        });
         if (oldParent) isNewUser = !oldParent.verified;
         user = await prisma.parent.update({
           where: { email: normalizedEmail },
@@ -2334,7 +2623,10 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
 
     if (!dbToken || dbToken.expiresAt < new Date()) {
-      console.error("LOG ERROR: [refreshToken] dbToken missing, invalid, or expired for token", token);
+      console.error(
+        "LOG ERROR: [refreshToken] dbToken missing, invalid, or expired for token",
+        token,
+      );
       return res.status(401).json({
         success: false,
         message: "Invalid or revoked refresh token",
@@ -2346,15 +2638,19 @@ export const refreshToken = async (req: Request, res: Response) => {
     // This prevents replay attacks and detects stolen tokens.
     await prisma.refreshToken.update({
       where: { id: dbToken.id },
-      data: { isValid: false }
+      data: { isValid: false },
     });
 
-    const newRefreshToken = await generateRefreshToken(payload.userId, payload.userType, {
-      deviceType: dbToken.deviceType || undefined,
-      deviceModel: dbToken.deviceModel || undefined,
-      osVersion: dbToken.osVersion || undefined,
-      ipAddress: req.ip || undefined,
-    });
+    const newRefreshToken = await generateRefreshToken(
+      payload.userId,
+      payload.userType,
+      {
+        deviceType: dbToken.deviceType || undefined,
+        deviceModel: dbToken.deviceModel || undefined,
+        osVersion: dbToken.osVersion || undefined,
+        ipAddress: req.ip || undefined,
+      },
+    );
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
@@ -2473,9 +2769,9 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
         expiresAt,
       },
     });
-    const testEmail = process.env.TEST_EMAIL;
+    const testEmail = process.env.TEST_EMAIL?.trim();
     console.log(testEmail, "test email");
-    const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
+    const resendTest = process.env.RESEND_TEST?.trim() === "true"; // default to false if not set
     const mainEmail = resendTest ? testEmail : email;
     // Send reset email
     const result = await sendPasswordResetEmail(mainEmail, resetCode);
@@ -2838,6 +3134,7 @@ export const googleAuth = async (req: Request, res: Response) => {
           name: user.name || user.fullName,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
           adminCode: user.adminCode || undefined,
           teacherCode: user.teacherCode || undefined,
           studentCode: user.studentCode || undefined,
@@ -3061,7 +3358,8 @@ export const claimAccount = async (req: Request, res: Response) => {
       });
 
       // Send notification to school
-      const schoolId = teacher.primarySchoolId || teacher.activeSchoolId || teacher.schoolId;
+      const schoolId =
+        teacher.primarySchoolId || teacher.activeSchoolId || teacher.schoolId;
       if (schoolId) {
         try {
           await createNotification({
@@ -3160,23 +3458,30 @@ export const changePassword = async (req: Request, res: Response) => {
         user = await prisma.parent.findUnique({ where: { id: userId } });
         break;
       default:
-        return res.status(400).json({ success: false, message: "Invalid user role" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid user role" });
     }
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     if (!user.password) {
       return res.status(400).json({
         success: false,
-        message: "You are using Google Login. You cannot change your password here.",
+        message:
+          "You are using Google Login. You cannot change your password here.",
       });
     }
 
     const match = await bcrypt.compare(currentPassword, user.password);
     if (!match) {
-      return res.status(400).json({ success: false, message: "Incorrect current password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect current password" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -3184,10 +3489,16 @@ export const changePassword = async (req: Request, res: Response) => {
 
     switch (userType) {
       case UserRole.STUDENT:
-        await prisma.student.update({ where: { id: userId }, data: updateData });
+        await prisma.student.update({
+          where: { id: userId },
+          data: updateData,
+        });
         break;
       case UserRole.TEACHER:
-        await prisma.teacher.update({ where: { id: userId }, data: updateData });
+        await prisma.teacher.update({
+          where: { id: userId },
+          data: updateData,
+        });
         break;
       case UserRole.ADMIN:
         await prisma.admin.update({ where: { id: userId }, data: updateData });
@@ -3209,7 +3520,8 @@ export const changePassword = async (req: Request, res: Response) => {
 export const getUserSessions = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+    if (!userId)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const sessions = await prisma.refreshToken.findMany({
       where: { userId, isValid: true },
@@ -3227,11 +3539,15 @@ export const getUserSessions = async (req: Request, res: Response) => {
     });
 
     const currentToken = req.cookies.refreshToken;
-    const currentSession = currentToken ? await prisma.refreshToken.findFirst({ where: { token: currentToken, userId } }) : null;
+    const currentSession = currentToken
+      ? await prisma.refreshToken.findFirst({
+        where: { token: currentToken, userId },
+      })
+      : null;
 
-    const data = sessions.map(session => ({
+    const data = sessions.map((session) => ({
       ...session,
-      isCurrentDevice: currentSession?.id === session.id
+      isCurrentDevice: currentSession?.id === session.id,
     }));
 
     return res.status(200).json({ success: true, data });
@@ -3244,15 +3560,18 @@ export const revokeUserSession = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const id = req.params.id as string;
-    
-    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    if (!userId)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const session = await prisma.refreshToken.findFirst({
       where: { id, userId },
     });
 
     if (!session) {
-      return res.status(404).json({ success: false, message: "Session not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Session not found" });
     }
 
     await prisma.refreshToken.update({
@@ -3262,11 +3581,13 @@ export const revokeUserSession = async (req: Request, res: Response) => {
 
     const currentToken = req.cookies.refreshToken;
     if (currentToken === session.token) {
-        res.clearCookie("token");
-        res.clearCookie("refreshToken");
+      res.clearCookie("token");
+      res.clearCookie("refreshToken");
     }
 
-    return res.status(200).json({ success: true, message: "Session revoked successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Session revoked successfully" });
   } catch (error: any) {
     return handleError(res, error, "auth.revokeUserSession");
   }
@@ -3292,9 +3613,9 @@ export const getMe = async (req: Request, res: Response) => {
         include: {
           schoolAdmins: {
             where: { active: true },
-            include: { school: true }
-          }
-        }
+            include: { school: true },
+          },
+        },
       });
       if (user) {
         const schools = user.schoolAdmins.map((sa: any) => ({
@@ -3302,7 +3623,8 @@ export const getMe = async (req: Request, res: Response) => {
           schoolName: sa.school?.name,
           schoolCode: sa.school?.schoolCode,
           adminRole: sa.role,
-          approved: sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+          approved:
+            sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
         }));
         const primarySchool = user.schoolAdmins[0]?.school || null;
 
@@ -3311,6 +3633,8 @@ export const getMe = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+
           adminCode: user.adminCode,
           schoolCode: primarySchool?.schoolCode || null,
           profileImage: user.profileImage,
@@ -3319,7 +3643,7 @@ export const getMe = async (req: Request, res: Response) => {
           schools,
           plan: primarySchool?.plan || user.plan,
           trialUsed: primarySchool?.trialUsed ?? user.trialUsed,
-          tenantId: user.tenantId
+          tenantId: user.tenantId,
         };
       }
     } else if (userType === UserRole.TEACHER) {
@@ -3332,6 +3656,8 @@ export const getMe = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+
           teacherCode: user.teacherCode,
           profileImage: user.profileImage,
           bannerImage: user.bannerImage,
@@ -3339,30 +3665,42 @@ export const getMe = async (req: Request, res: Response) => {
           primarySchoolId: user.primarySchoolId,
           activeSchoolId: user.activeSchoolId,
           isClaimed: user.isClaimed,
-          tenantId: user.tenantId
+          tenantId: user.tenantId,
         };
       }
-    } else if (userType === UserRole.STUDENT) {
-      const user = await prisma.student.findUnique({
-        where: { id: userId }
+    } else if (userType === UserRole.TEACHER) {
+      // Include related school references so frontend can show school.name and school.schoolCode
+      const teacher = await prisma.teacher.findUnique({
+        where: { id: userId },
+        include: {
+          school: true,
+          currentSchool: true,
+          primarySchool: true,
+        },
       });
-      if (user) {
+      if (teacher) {
+        // Normalize school reference for compatibility with frontend
+        const normalizedSchool = teacher.currentSchool || teacher.primarySchool || teacher.school || null;
+
         responseData = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          studentCode: user.studentCode,
-          profileImage: user.profileImage,
-          bannerImage: user.bannerImage,
-          gender: user.gender,
-          schoolId: user.schoolId,
-          tenantId: user.tenantId
+          id: teacher.id,
+          name: teacher.name,
+          email: teacher.email,
+          role: teacher.role,
+          require2FA: teacher.isTwoFactorEnabled || false,
+          teacherCode: teacher.teacherCode,
+          profileImage: teacher.profileImage,
+          bannerImage: teacher.bannerImage,
+          gender: teacher.gender,
+          primarySchoolId: teacher.primarySchoolId,
+          activeSchoolId: teacher.activeSchoolId,
+          isClaimed: teacher.isClaimed,
+          tenantId: teacher.tenantId,
+          school: normalizedSchool,
         };
       }
-    } else if (userType === UserRole.PARENT) {
       const user = await prisma.parent.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
       if (user) {
         responseData = {
@@ -3371,25 +3709,547 @@ export const getMe = async (req: Request, res: Response) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+
           parentCode: user.parentCode,
           profileImage: user.profileImage,
           bannerImage: user.bannerImage,
           gender: user.gender,
-          tenantId: user.tenantId
+          tenantId: user.tenantId,
         };
       }
     }
 
     if (!responseData.id) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     return res.status(200).json({
       success: true,
-      data: responseData
+      data: responseData,
     });
-
   } catch (error) {
     return handleError(res, error, "auth.getMe");
+  }
+};
+
+import speakeasy from "speakeasy";
+import QRCode from "qrcode";
+
+export const generate2FA = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userType = req.user?.userType;
+    if (!userId || !userType)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const secret = speakeasy.generateSecret({ length: 20 });
+
+    // Fetch user email for the QR code label
+    let userEmail = "user";
+    if (userType === UserRole.ADMIN) {
+      const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
+      if (admin?.email) userEmail = admin.email;
+      await prisma.admin.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+    } else if (userType === UserRole.TEACHER) {
+      const teacher = await prisma.teacher.findUnique({ where: { id: userId }, select: { email: true } });
+      if (teacher?.email) userEmail = teacher.email;
+      await prisma.teacher.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+    } else if (userType === UserRole.STUDENT) {
+      const student = await prisma.student.findUnique({ where: { id: userId }, select: { email: true } });
+      if (student?.email) userEmail = student.email;
+      await prisma.student.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+    } else if (userType === UserRole.PARENT) {
+      const parent = await prisma.parent.findUnique({ where: { id: userId }, select: { email: true } });
+      if (parent?.email) userEmail = parent.email;
+      await prisma.parent.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+    }
+
+    const issuer = "QefasHub";
+    const otpauthUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(userEmail)}?secret=${secret.base32}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+
+    const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        qrCodeUrl,
+        secret: secret.base32,
+      },
+    });
+  } catch (error) {
+    return handleError(res, error, "auth.generate2FA");
+  }
+};
+
+export const verify2FA = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userType = req.user?.userType;
+    const { code } = req.body;
+
+    if (!userId || !userType)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    let user: any;
+    if (userType === UserRole.ADMIN)
+      user = await prisma.admin.findUnique({ where: { id: userId } });
+    else if (userType === UserRole.TEACHER)
+      user = await prisma.teacher.findUnique({ where: { id: userId } });
+    else if (userType === UserRole.STUDENT)
+      user = await prisma.student.findUnique({ where: { id: userId } });
+    else if (userType === UserRole.PARENT)
+      user = await prisma.parent.findUnique({ where: { id: userId } });
+
+    if (!user || !user.twoFactorSecret) {
+      return res
+        .status(400)
+        .json({ success: false, message: "2FA setup not initiated" });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: "base32",
+      token: code,
+    });
+
+    if (!verified) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid verification code" });
+    }
+
+    if (userType === UserRole.ADMIN)
+      await prisma.admin.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: true },
+      });
+    else if (userType === UserRole.TEACHER)
+      await prisma.teacher.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: true },
+      });
+    else if (userType === UserRole.STUDENT)
+      await prisma.student.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: true },
+      });
+    else if (userType === UserRole.PARENT)
+      await prisma.parent.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: true },
+      });
+
+    res
+      .status(200)
+      .json({ success: true, message: "2FA enabled successfully" });
+  } catch (error) {
+    return handleError(res, error, "auth.verify2FA");
+  }
+};
+
+export const disable2FA = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userType = req.user?.userType;
+
+    if (!userId || !userType)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const userAgent = req.headers["user-agent"] || "";
+    const UAParserClass = UAParser as any;
+    const parser = new UAParserClass(userAgent);
+    const result = parser.getResult();
+
+    const deviceModel =
+      (req.headers["x-device-model"] as string) ||
+      result.device.model ||
+      result.browser.name ||
+      "Unknown Browser";
+    const osVersion =
+      (req.headers["x-os-version"] as string) ||
+      (result.os.name
+        ? `${result.os.name} ${result.os.version || ""}`.trim()
+        : "Unknown OS");
+    const ipAddress =
+      (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
+        .toString()
+        .split(",")[0]
+        .trim() || "Unknown IP";
+
+    let updatedUser: any;
+    if (userType === UserRole.ADMIN)
+      updatedUser = await prisma.admin.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: false, twoFactorSecret: null },
+      });
+    else if (userType === UserRole.TEACHER)
+      updatedUser = await prisma.teacher.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: false, twoFactorSecret: null },
+      });
+    else if (userType === UserRole.STUDENT)
+      updatedUser = await prisma.student.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: false, twoFactorSecret: null },
+      });
+    else if (userType === UserRole.PARENT)
+      updatedUser = await prisma.parent.update({
+        where: { id: userId },
+        data: { isTwoFactorEnabled: false, twoFactorSecret: null },
+      });
+
+    if (updatedUser?.email) {
+      await send2FADisabledEmail(updatedUser.email).catch((e) =>
+        console.error("Failed to send 2FA disabled email:", e)
+      );
+    }
+
+    await prisma.securityAuditLog.create({
+      data: {
+        userId,
+        userRole: userType,
+        action: "2FA_DISABLED",
+        deviceModel,
+        osVersion,
+        ipAddress,
+      },
+    });
+
+    res
+      .status(200)
+      .json({ success: true, message: "2FA disabled successfully" });
+  } catch (error) {
+    return handleError(res, error, "auth.disable2FA");
+  }
+};
+
+export const login2FA = async (req: Request, res: Response) => {
+  try {
+    const { tempToken, code } = req.body;
+
+    let payload: any;
+    try {
+      payload = jwt.verify(
+        tempToken,
+        process.env.JWT_SECRET || "default_secret",
+      );
+    } catch (err) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired token" });
+    }
+
+    const { userId, userType } = payload;
+
+    let user: any;
+    if (userType === UserRole.ADMIN)
+      user = await prisma.admin.findUnique({
+        where: { id: userId },
+        include: { schoolAdmins: { include: { school: true } } },
+      });
+    else if (userType === UserRole.TEACHER) {
+      const t = await prisma.teacher.findUnique({
+        where: { id: userId },
+        include: { school: true, currentSchool: true, primarySchool: true },
+      });
+      if (t)
+        (t as any).school =
+          t.currentSchool || t.primarySchool || (t as any).school;
+      user = t;
+    } else if (userType === UserRole.STUDENT)
+      user = await prisma.student.findUnique({
+        where: { id: userId },
+        include: { school: true },
+      });
+    else if (userType === UserRole.PARENT)
+      user = await prisma.parent.findUnique({
+        where: { id: userId },
+        include: { children: { include: { student: true } } },
+      });
+
+    if (!user || (!user.twoFactorSecret && !user.email)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user or 2FA not enabled" });
+    }
+
+    let verified = false;
+    try {
+      if (user.twoFactorSecret) {
+        verified = speakeasy.totp.verify({
+          secret: user.twoFactorSecret,
+          encoding: "base32",
+          token: code,
+        });
+      }
+    } catch (e) {
+      console.log("Speakeasy verify error:", e);
+    }
+
+    if (!verified) {
+      // Fallback: Check email verification code
+      const verificationRecord = await prisma.verificationCode.findFirst({
+        where: {
+          email: user.email,
+          code: code.trim(),
+          used: false,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!verificationRecord) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Invalid 2FA code" });
+      }
+
+      if (verificationRecord.expiresAt < new Date()) {
+        return res
+          .status(401)
+          .json({ success: false, message: "2FA code has expired" });
+      }
+
+      // Mark the code as used
+      await prisma.verificationCode.update({
+        where: { id: verificationRecord.id },
+        data: { used: true },
+      });
+    }
+
+    // Reuse login logic for tokens and response
+    const accessToken = generateAccessToken(user.id, userType);
+
+    // basic device info (dummy for this specific route since we don't recalculate it all)
+    const deviceInfo = {
+      deviceType: "desktop",
+      deviceModel: "Unknown Browser",
+      osVersion: "Unknown OS",
+      ipAddress: "Unknown IP",
+    };
+    const refreshToken = await generateRefreshToken(
+      user.id,
+      userType,
+      deviceInfo,
+    );
+
+    res.cookie("token", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // ===== Build response data =====
+    let responseData: any = {};
+    let message = "2FA successful";
+
+    if (userType === UserRole.ADMIN) {
+      const schools =
+        user.schoolAdmins?.map((sa: any) => ({
+          schoolId: sa.school?.id,
+          schoolName: sa.school?.name,
+          schoolCode: sa.school?.schoolCode,
+          adminRole: sa.role,
+          approved:
+            sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+        })) || [];
+      const primarySchool = user.schoolAdmins?.[0]?.school || null;
+
+      responseData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+          adminCode: user.adminCode,
+          schoolCode: primarySchool?.schoolCode || null,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          schools,
+          plan: primarySchool?.plan || user.plan,
+          trialUsed: primarySchool?.trialUsed ?? user.trialUsed,
+        },
+        userRole: user.role,
+        accessToken,
+        refreshToken,
+      };
+    } else if (userType === UserRole.TEACHER) {
+      responseData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+          teacherCode: user.teacherCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          school: user.school,
+          plan: user.plan,
+          trialUsed: user.trialUsed,
+        },
+        userRole: user.role,
+        accessToken,
+        refreshToken,
+      };
+    } else if (userType === UserRole.STUDENT) {
+      responseData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+          studentCode: user.studentCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          school: user.school,
+          plan: user.plan,
+          trialUsed: user.trialUsed,
+        },
+        userRole: user.role,
+        accessToken,
+        refreshToken,
+      };
+    } else if (userType === UserRole.PARENT) {
+      responseData = {
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          parentCode: user.parentCode,
+          plan: user.plan,
+          trialUsed: user.trialUsed,
+        },
+        children: user.children?.map((child: any) => ({
+          studentId: child.student.id,
+          studentName: child.student.name,
+          studentCode: child.student.studentCode,
+          studentImage: child.student.profileImage,
+          linkStatus: child.status,
+        })),
+        userRole: user.role,
+        accessToken,
+        refreshToken,
+      };
+    }
+
+    res.status(200).json({
+      success: true,
+      message,
+      data: responseData,
+    });
+  } catch (error) {
+    return handleError(res, error, "auth.login2FA");
+  }
+};
+
+export const send2FAEmail = async (req: Request, res: Response) => {
+  try {
+    console.log("---- STARTED send2FAEmail ----");
+    const { tempToken } = req.body;
+    console.log("Received tempToken");
+
+    let payload: any;
+    try {
+      payload = jwt.verify(
+        tempToken,
+        process.env.JWT_SECRET || "default_secret",
+      );
+      console.log("Verified tempToken, payload:", payload);
+    } catch (err) {
+      console.log("Token verification failed");
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired token" });
+    }
+
+    const { userId, userType } = payload;
+    console.log("Extracted userId:", userId, "userType:", userType);
+
+    let user: any;
+    if (userType === UserRole.ADMIN)
+      user = await prisma.admin.findUnique({ where: { id: userId } });
+    else if (userType === UserRole.TEACHER)
+      user = await prisma.teacher.findUnique({ where: { id: userId } });
+    else if (userType === UserRole.STUDENT)
+      user = await prisma.student.findUnique({ where: { id: userId } });
+    else if (userType === UserRole.PARENT)
+      user = await prisma.parent.findUnique({ where: { id: userId } });
+
+    console.log("Found user:", user?.email);
+    if (!user || !user.email) {
+      console.log("User or user.email is null");
+      return res.status(400).json({ success: false, message: "Invalid user" });
+    }
+
+    const code = generateRandomSixDigit();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    console.log("Creating VerificationCode record in DB...");
+    try {
+      await prisma.verificationCode.create({
+        data: {
+          email: user.email,
+          code,
+          expiresAt,
+          userType: userType as UserRole,
+        },
+      });
+      console.log("Created VerificationCode record");
+    } catch (dbErr: any) {
+      console.error("DB Error creating verification code:", dbErr);
+      return res
+        .status(500)
+        .json({ success: false, message: "Database error: " + dbErr.message });
+    }
+
+    console.log("Sending email via Resend...");
+    try {
+      await sendVerificationEmail(user.email, code, "confirmation");
+      console.log("Email sent successfully via Resend");
+    } catch (emailErr: any) {
+      console.error("Email Error sending via Resend:", emailErr);
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Email delivery error: " + emailErr.message,
+        });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "2FA fallback email sent successfully",
+    });
+  } catch (error: any) {
+    console.error("Uncaught send2FAEmail error", error);
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal Server Error",
+        stack: error.stack,
+      });
   }
 };

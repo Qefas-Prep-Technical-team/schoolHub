@@ -83,7 +83,7 @@ export default function AdminGradesDashboard() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedPaperId, setSelectedPaperId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers'>('exams');
+  const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers' | 'ca' | 'assignment' | 'test'>('exams');
   const [searchTerm, setSearchTerm] = useState('');
   const [isInstitutionReportModalOpen, setIsInstitutionReportModalOpen] = useState(false);
 
@@ -116,6 +116,43 @@ export default function AdminGradesDashboard() {
     if (!exams || !Array.isArray(exams)) return 84;
     return 78;
   }, [exams]);
+
+  const filteredGradesForHub = useMemo(() => {
+    if (!standaloneGrades) return [];
+    
+    const safeGrades = Array.isArray(standaloneGrades) ? standaloneGrades : (standaloneGrades as any)?.data || [];
+    
+    // 'standalone' = All Grades — return everything
+    if (activeTab === 'standalone') return safeGrades;
+    
+    return safeGrades.filter((g: any) => {
+        // assessmentType is the real discriminator — category always defaults to EXAM
+        // Use assessmentType first, then fall back to category
+        const assess = (g.assessmentType || '').toUpperCase().trim();
+        const cat = (g.category || '').toUpperCase().trim();
+        // If assessmentType exists and is meaningful, use it; otherwise use category
+        const type = assess && assess !== 'NULL' ? assess : cat;
+
+        if (activeTab === 'ca') {
+          return type === 'CA' || type === 'MIDTERM' || type.includes('CONTINUOUS');
+        }
+        if (activeTab === 'assignment') {
+          return type === 'ASSIGNMENT' || type.includes('PROJECT') || type.includes('HOMEWORK') || type.includes('CLASSWORK');
+        }
+        if (activeTab === 'test') {
+          return type === 'QUIZ' || type === 'TEST' || type.includes('QUIZ') || type.includes('TEST');
+        }
+        return true;
+    });
+  }, [standaloneGrades, activeTab]);
+
+
+  // DEBUG: log unique category values — remove after confirming tabs work
+  useMemo(() => {
+    const safeGrades = Array.isArray(standaloneGrades) ? standaloneGrades : (standaloneGrades as any)?.data || [];
+    const uniqueCats = [...new Set(safeGrades.map((g: any) => `${g.category}|${g.assessmentType}`))];
+    if (uniqueCats.length > 0) console.log('[GradeCategories]', uniqueCats);
+  }, [standaloneGrades]);
 
   return (
     <div className="min-h-screen bg-transparent pb-20 font-sans">
@@ -154,82 +191,100 @@ export default function AdminGradesDashboard() {
         {/* Overview Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {/* Card 1: Total Exams */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20 border border-blue-500/20 rounded-3xl p-6 shadow-sm hover:shadow-2xl hover:border-blue-500/50 hover:-translate-y-1 transition-all duration-300 group">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
-                <div className="flex justify-between items-start mb-6">
-                    <span className="text-xs font-black uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70">Total Exams</span>
-                    <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 transition-transform duration-500 group-hover:rotate-6">
-                        <Trophy size={18} strokeWidth={2.5} />
-                    </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
+                <div className="bg-blue-500 p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-lg">Total Exams</span>
+                    <Trophy size={18} className="opacity-80" />
                 </div>
-                <div>
-                    <h3 className="text-4xl font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {isLoadingExams ? (
-                            <Skeleton className="h-10 w-20 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                        ) : (
-                            exams?.length || 0
-                        )}
-                    </h3>
+                <div className="p-6 flex items-center justify-between">
+                    <div className="space-y-1">
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                            {isLoadingExams ? (
+                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                            ) : (
+                                exams?.length || 0
+                            )}
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium tracking-wide">Recorded</p>
+                    </div>
+                    <div className="flex gap-1 items-end h-10">
+                        <div className="w-1.5 h-full bg-slate-100 dark:bg-slate-800 rounded-full" />
+                        <div className="w-1.5 h-3/4 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                        <div className="w-1.5 h-1/2 bg-blue-500 rounded-full" />
+                        <div className="w-1.5 h-5/6 bg-blue-400 rounded-full" />
+                    </div>
                 </div>
             </div>
 
             {/* Card 2: Subject Papers */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-white to-purple-50 dark:from-slate-900 dark:to-purple-950/20 border border-purple-500/20 rounded-3xl p-6 shadow-sm hover:shadow-2xl hover:border-purple-500/50 hover:-translate-y-1 transition-all duration-300 group">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-purple-600" />
-                <div className="flex justify-between items-start mb-6">
-                    <span className="text-xs font-black uppercase tracking-widest text-purple-600/70 dark:text-purple-400/70">Subject Papers</span>
-                    <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/30 transition-transform duration-500 group-hover:-rotate-6">
-                        <Layers size={18} strokeWidth={2.5} />
-                    </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
+                <div className="bg-purple-500 p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-lg">Subject Papers</span>
+                    <Layers size={18} className="opacity-80" />
                 </div>
-                <div>
-                    <h3 className="text-4xl font-black text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        {isLoadingPapers ? (
-                            <Skeleton className="h-10 w-20 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                        ) : (
-                            subjectPapers?.length || 0
-                        )}
-                    </h3>
+                <div className="p-6 flex items-center justify-between">
+                    <div className="space-y-1">
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                            {isLoadingPapers ? (
+                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                            ) : (
+                                subjectPapers?.length || 0
+                            )}
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium tracking-wide">Papers</p>
+                    </div>
+                    <div className="size-10 rounded-full border-4 border-purple-100 dark:border-slate-800 border-t-purple-500 flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">All</span>
+                    </div>
                 </div>
             </div>
 
             {/* Card 3: Graded Students */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20 border border-emerald-500/20 rounded-3xl p-6 shadow-sm hover:shadow-2xl hover:border-emerald-500/50 hover:-translate-y-1 transition-all duration-300 group">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-500" />
-                <div className="flex justify-between items-start mb-6">
-                    <span className="text-xs font-black uppercase tracking-widest text-emerald-600/70 dark:text-emerald-400/70">Students Graded</span>
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-transform duration-500 group-hover:rotate-6">
-                        <Users size={18} strokeWidth={2.5} />
-                    </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
+                <div className="bg-rose-500 p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-lg">Students Graded</span>
+                    <Users size={18} className="opacity-80" />
                 </div>
-                <div>
-                    <h3 className="text-4xl font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        {isLoadingExams ? (
-                            <Skeleton className="h-10 w-20 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                        ) : (
-                            totalAttemptsCount
-                        )}
-                    </h3>
+                <div className="p-6 flex items-center justify-between">
+                    <div className="space-y-1">
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                            {isLoadingExams ? (
+                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                            ) : (
+                                totalAttemptsCount
+                            )}
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium tracking-wide">Attempts</p>
+                    </div>
+                    <div className="flex gap-1 items-end h-10">
+                        <div className="w-1.5 h-1/2 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                        <div className="w-1.5 h-full bg-slate-200 dark:bg-slate-700 rounded-full" />
+                        <div className="w-1.5 h-3/4 bg-rose-500 rounded-full" />
+                        <div className="w-1.5 h-2/3 bg-rose-400 rounded-full" />
+                    </div>
                 </div>
             </div>
 
             {/* Card 4: Average Score */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-white to-orange-50 dark:from-slate-900 dark:to-orange-950/20 border border-orange-500/20 rounded-3xl p-6 shadow-sm hover:shadow-2xl hover:border-orange-500/50 hover:-translate-y-1 transition-all duration-300 group">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-500" />
-                <div className="flex justify-between items-start mb-6">
-                    <span className="text-xs font-black uppercase tracking-widest text-orange-600/70 dark:text-orange-400/70">Average Score</span>
-                    <div className="w-10 h-10 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30 transition-transform duration-500 group-hover:-rotate-6">
-                        <Award size={18} strokeWidth={2.5} />
-                    </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
+                <div className="bg-emerald-500 p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-lg">Average Score</span>
+                    <Award size={18} className="opacity-80" />
                 </div>
-                <div>
-                    <h3 className="text-4xl font-black text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                        {isLoadingExams ? (
-                            <Skeleton className="h-10 w-20 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                        ) : (
-                            `${globalScoreAverage}%`
-                        )}
-                    </h3>
+                <div className="p-6 flex items-center justify-between">
+                    <div className="space-y-1">
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                            {isLoadingExams ? (
+                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                            ) : (
+                                `${globalScoreAverage}%`
+                            )}
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium tracking-wide">Overall Mean</p>
+                    </div>
+                    <div className="size-10 rounded-full border-4 border-emerald-100 dark:border-slate-800 border-t-emerald-500 flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">Avg</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -241,38 +296,74 @@ export default function AdminGradesDashboard() {
                 <button 
                     onClick={() => setActiveTab('exams')}
                     className={cn(
-                        "py-3 text-sm font-medium transition-all whitespace-nowrap border-b-2",
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
                         activeTab === 'exams' 
-                          ? "border-primary text-slate-900 dark:text-white" 
-                          : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     )}
                     style={{ borderBottomColor: activeTab === 'exams' ? primaryColor : 'transparent' }}
                 >
                     Exams
                 </button>
                 <button 
-                    onClick={() => setActiveTab('standalone')}
+                    onClick={() => setActiveTab('ca')}
                     className={cn(
-                        "py-3 text-sm font-medium transition-all whitespace-nowrap border-b-2",
-                        activeTab === 'standalone' 
-                          ? "border-primary text-slate-900 dark:text-white" 
-                          : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        activeTab === 'ca' 
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     )}
-                    style={{ borderBottomColor: activeTab === 'standalone' ? primaryColor : 'transparent' }}
+                    style={{ borderBottomColor: activeTab === 'ca' ? primaryColor : 'transparent' }}
                 >
-                    All Grades
+                    CA
+                </button>
+                <button 
+                    onClick={() => setActiveTab('assignment')}
+                    className={cn(
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        activeTab === 'assignment' 
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                    style={{ borderBottomColor: activeTab === 'assignment' ? primaryColor : 'transparent' }}
+                >
+                    Assignments
+                </button>
+                <button 
+                    onClick={() => setActiveTab('test')}
+                    className={cn(
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        activeTab === 'test' 
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                    style={{ borderBottomColor: activeTab === 'test' ? primaryColor : 'transparent' }}
+                >
+                    Quizzes/Test
                 </button>
                 <button 
                     onClick={() => setActiveTab('papers')}
                     className={cn(
-                        "py-3 text-sm font-medium transition-all whitespace-nowrap border-b-2",
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
                         activeTab === 'papers' 
-                          ? "border-primary text-slate-900 dark:text-white" 
-                          : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     )}
                     style={{ borderBottomColor: activeTab === 'papers' ? primaryColor : 'transparent' }}
                 >
                     Papers
+                </button>
+                <button 
+                    onClick={() => setActiveTab('standalone')}
+                    className={cn(
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        activeTab === 'standalone' 
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                    style={{ borderBottomColor: activeTab === 'standalone' ? primaryColor : 'transparent' }}
+                >
+                    All Grades
                 </button>
             </div>
         </div>
@@ -293,8 +384,8 @@ export default function AdminGradesDashboard() {
                     <Trophy size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Assessments</h2>
-                    <p className="text-xs lg:text-sm font-medium text-slate-500">Breakdown of all student exam results.</p>
+                    <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Exams</h2>
+                    <p className="text-xs lg:text-sm font-medium text-slate-500">Overview of all formal examinations.</p>
                   </div>
                 </div>
                 {selectedExamId && (
@@ -324,9 +415,9 @@ export default function AdminGradesDashboard() {
                 />
               </div>
             </motion.section>
-          ) : activeTab === 'standalone' ? (
+          ) : ['standalone', 'ca', 'assignment', 'test'].includes(activeTab) ? (
             <motion.section 
-              key="standalone"
+              key={activeTab}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -337,13 +428,23 @@ export default function AdminGradesDashboard() {
                   <FileText size={24} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">All Student Grades</h2>
-                  <p className="text-sm font-medium text-slate-500">Comprehensive record of all student grades, quizzes, and class assessments across the school.</p>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                    {activeTab === 'ca' ? 'Continuous Assessments' : 
+                     activeTab === 'assignment' ? 'Assignments' : 
+                     activeTab === 'test' ? 'Quizzes & Tests' : 
+                     'All Student Grades'}
+                  </h2>
+                  <p className="text-sm font-medium text-slate-500">
+                    {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 
+                     activeTab === 'assignment' ? 'Overview of all assignments.' : 
+                     activeTab === 'test' ? 'Overview of quizzes and tests.' : 
+                     'Comprehensive record of all student grades, quizzes, and class assessments across the school.'}
+                  </p>
                 </div>
               </div>
               
               <GradeHub 
-                grades={standaloneGrades || []} 
+                grades={filteredGradesForHub} 
                 isLoading={isLoadingGrades} 
                 schoolId={schoolId}
                 primaryColor={primaryColor}
@@ -418,31 +519,22 @@ function ExamGradesFlow({
   const itemsPerPage = 6;
 
   // New Filters State
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
 
   // Query classes data
   const { data: classesData } = useClasses(schoolId);
-
-  // Extract unique categories dynamically from exams
-  const uniqueCategories = useMemo(() => {
-    const categories = new Set<string>();
-    exams?.forEach((e: any) => {
-      if (e.category) categories.add(e.category);
-    });
-    return Array.from(categories).sort();
-  }, [exams]);
-  
   const filteredExams = (exams || []).filter((e: any) => {
+    const type = (e.category || e.assessmentType || '').toUpperCase();
+    if (type !== 'EXAM') return false;
+
     const matchSearch = searchTerm === '' || 
       e.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.class?.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchCategory = selectedCategory === 'all' || e.category === selectedCategory;
     const matchClass = selectedClass === 'all' || e.classId === selectedClass;
 
-    return matchSearch && matchCategory && matchClass;
+    return matchSearch && matchClass;
   });
 
   const totalPages = Math.ceil(filteredExams.length / itemsPerPage);
@@ -538,20 +630,7 @@ function ExamGradesFlow({
               />
           </div>
 
-          {/* Category Filter */}
-          <div className="w-full sm:w-48">
-            <Select value={selectedCategory} onValueChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}>
-              <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 font-medium text-sm">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-                <SelectItem value="all">All Categories</SelectItem>
-                {uniqueCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
 
           {/* Class Filter */}
           <div className="w-full sm:w-48">

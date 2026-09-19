@@ -51,7 +51,7 @@ export default function MaterialsLayout({ materials, className, description }: M
   const youtubeEmbedUrl = activePreview ? getYoutubeEmbedUrl(activePreview.videoUrl) : null;
 
   return (
-    <div className="max-w-7xl mx-auto relative">
+    <div className="w-full relative">
       <PageHeader 
         title="Study Materials"
         subtitle={description}
@@ -98,7 +98,7 @@ export default function MaterialsLayout({ materials, className, description }: M
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
               <div className="min-w-0 flex-1 pr-4">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60 mb-1">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border border-pink-100 dark:border-pink-900/60 mb-1">
                   {activePreview.folder}
                 </span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-1">
@@ -180,7 +180,7 @@ export default function MaterialsLayout({ materials, className, description }: M
                         href={activePreview.attachmentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors cursor-pointer"
+                        className="flex items-center justify-center p-2 rounded-lg bg-pink-600 hover:bg-pink-700 text-white shadow-sm transition-colors cursor-pointer"
                         title="Download File"
                       >
                         <Download className="h-5 w-5" />
@@ -229,15 +229,27 @@ export default function MaterialsLayout({ materials, className, description }: M
               )}
 
               {activePreview.attachmentUrl && (
-                <a
-                  href={activePreview.attachmentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Resource
-                </a>
+                <>
+                  <a
+                    href={activePreview.attachmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold border border-pink-200 text-pink-600 hover:bg-pink-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open in New Tab
+                  </a>
+                  <a
+                    href={activePreview.attachmentUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-pink-600 hover:bg-pink-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Resource
+                  </a>
+                </>
               )}
 
               <button

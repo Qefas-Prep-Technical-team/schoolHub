@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
     User, 
     Mail, 
@@ -45,6 +46,7 @@ import ImageUpload from '@/components/reusable/ImageUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function TeacherProfilePage() {
+    const router = useRouter();
     const { data: profile, isLoading } = useTeacherProfile();
     const updateProfile = useUpdateTeacherProfile();
     const requestEmailUpdate = useRequestTeacherEmailUpdate();
@@ -69,7 +71,7 @@ export default function TeacherProfilePage() {
     const [verificationCode, setVerificationCode] = useState('');
 
     useEffect(() => {
-        if (profile) {
+        if (profile && editingTab === null) {
             setFormData({
                 name: profile.name || '',
                 email: profile.email || '',
@@ -83,7 +85,7 @@ export default function TeacherProfilePage() {
                 bannerImage: profile.bannerImage || ''
             });
         }
-    }, [profile]);
+    }, [profile, editingTab]);
 
     const handleEdit = (tab: string = 'personal') => setEditingTab(tab);
 
@@ -113,8 +115,72 @@ export default function TeacherProfilePage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-500 opacity-50" />
+            <div className="w-[95%] max-w-[1600px] mx-auto py-8 animate-pulse space-y-6 md:space-y-8 px-4 md:px-8">
+                {/* Header Skeleton */}
+                <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                    <div className="h-48 md:h-64 w-full bg-slate-200 dark:bg-slate-800" />
+                    <div className="relative -mt-16 px-6 md:px-10 flex flex-col md:flex-row items-center md:items-end gap-6 pb-8">
+                        <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl bg-white dark:bg-slate-900 p-1.5 shadow-md border border-gray-50 dark:border-slate-800 shrink-0">
+                            <div className="w-full h-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left mb-2 md:mb-4 space-y-3">
+                            <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg mx-auto md:mx-0" />
+                            <div className="h-4 w-64 bg-slate-200 dark:bg-slate-800 rounded mx-auto md:mx-0" />
+                        </div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="h-10 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                            <div className="h-10 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Stats Grid Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-24 rounded-2xl bg-white dark:bg-slate-950 border border-gray-100 dark:border-slate-800 shadow-sm p-5 flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                            <div className="space-y-2 w-full">
+                                <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Main Content Grids Skeleton */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden min-h-[300px]">
+                            <div className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 flex justify-between">
+                                <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-md" />
+                            </div>
+                            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="space-y-2">
+                                        <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-1 space-y-6">
+                        <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden min-h-[300px]">
+                            <div className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50">
+                                <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="space-y-2">
+                                        <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -124,7 +190,7 @@ export default function TeacherProfilePage() {
     const initials = (profile.name || 'T').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
 
     return (
-        <div className="w-[80%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+        <div className="w-[95%] max-w-[1600px] mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
             
             {/* Header / Hero Section (SaaS Style) */}
             <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
@@ -194,14 +260,21 @@ export default function TeacherProfilePage() {
                     <div className="flex items-center gap-3 mb-2">
                         <Button 
                             variant="outline" 
-                            className="h-10 px-4 rounded-lg border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900 font-semibold text-sm transition-all"
-                            onClick={() => handleEdit('security')}
+                            title="This button turns green when Two-Factor Authentication is set up"
+                            className={cn(
+                                "h-10 px-4 rounded-lg font-semibold text-sm transition-all",
+                                (profile as any).twoFactorEnabled || (profile as any).is2FAEnabled 
+                                    ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-500/10 dark:border-green-500/50 hover:bg-green-100 dark:hover:bg-green-500/20" 
+                                    : "border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900"
+                            )}
+                            onClick={() => window.location.href = '/dashboard/teacher/settings?tab=security'}
                         >
                             <ShieldCheck size={16} className="md:mr-2" />
                             <span className="hidden md:inline">Security</span>
                         </Button>
                         <Button 
                             variant="outline" 
+                            onClick={() => window.location.href = 'mailto:admin@qefashub.com'}
                             className="h-10 px-4 rounded-lg border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900 font-semibold text-sm transition-all"
                         >
                             <Mail size={16} className="md:mr-2" />
@@ -279,7 +352,10 @@ export default function TeacherProfilePage() {
 
                 <div className="space-y-6">
                     {/* Academic Institution Card */}
-                    <Card className="rounded-2xl border-emerald-100 dark:border-emerald-500/20 shadow-sm bg-emerald-50/50 dark:bg-emerald-500/5 overflow-hidden">
+                    <Card 
+                        className="rounded-2xl border-emerald-100 dark:border-emerald-500/20 shadow-sm bg-emerald-50/50 dark:bg-emerald-500/5 overflow-hidden cursor-pointer hover:shadow-md transition-shadow hover:border-emerald-300 dark:hover:border-emerald-400"
+                        onClick={() => router.push('/dashboard/teacher/school-profile')}
+                    >
                         <CardHeader className="px-6 py-5 bg-emerald-50/80 dark:bg-emerald-500/10 border-b border-emerald-100/50 dark:border-emerald-500/20 flex flex-row items-center justify-between">
                             <CardTitle className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
                                 <School className="text-emerald-600 dark:text-emerald-400 h-5 w-5" /> Institution
@@ -522,17 +598,7 @@ export default function TeacherProfilePage() {
                                 disabled={
                                     updateProfile.isPending || 
                                     (formData.email !== profile.email && emailStep !== 'input') || 
-                                    emailStep === 'verify' ||
-                                    (formData.name === profile.name && 
-                                     formData.gender === profile.gender && 
-                                     formData.phone === (profile.phone || '') &&
-                                     formData.profileImage === profile.profileImage &&
-                                     formData.bannerImage === profile.bannerImage &&
-                                     formData.email === profile.email &&
-                                     formData.department === (profile.department || '') &&
-                                     formData.highestQualification === (profile.highestQualification || '') &&
-                                     formData.yearsOfExperience === (profile.yearsOfExperience ? String(profile.yearsOfExperience) : '') &&
-                                     formData.address === (profile.address || ''))
+                                    emailStep === 'verify'
                                 }
                                 className="h-10 px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-semibold shadow-sm"
                             >

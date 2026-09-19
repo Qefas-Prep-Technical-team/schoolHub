@@ -1,4 +1,6 @@
+"use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import Cookies from "js-cookie";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useAuthStore, UserType } from "./auth-store";
@@ -12,6 +14,7 @@ export const useLoginMutation = () => {
   const { info } = useToast();
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setPending2FA = useAuthStore((state) => state.setPending2FA);
   const setHasCompletedOnboarding = useAuthStore((state) => state.setHasCompletedOnboarding);
   const setTransitioning = useAuthStore((state) => state.setTransitioning);
 
@@ -34,13 +37,20 @@ export const useLoginMutation = () => {
         localStorage.clear();
         queryClient.clear();
 
+        if (response.require2FA || (response.data && response.data.require2FA)) {
+          // Trigger 2FA flow without setting isAuthenticated to true
+          const tempToken = response.tempToken || (response.data && response.data.tempToken);
+          setPending2FA({ ...variables, require2FA: true, tempToken } as any);
+          return;
+        }
+
         if (!response || !response.data) {
           throw new Error("Invalid response format: 'data' property is missing.");
         }
 
         const userWithType = {
           ...response.data.user,
-          name: response.data.user.name || response.data.user.fullName || "User",
+          name: response.data.user?.name || response.data.user?.fullName || "User",
           userType: variables.userType,
         };
 
@@ -139,4 +149,74 @@ export const useLogoutMutation = () => {
     mutateAsync: async () => setLogoutModalOpen(true),
     isPending: false,
   };
+};
+
+export const useLogin2FAMutation = () => {
+  const queryClient = useQueryClient();
+  const authToast = useAuthToast();
+  const errorToast = useErrorToast();
+  const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const setHasCompletedOnboarding = useAuthStore((state) => state.setHasCompletedOnboarding);
+  const setTransitioning = useAuthStore((state) => state.setTransitioning);
+  const userTemp = useAuthStore((state) => state.user);
+
+  return useMutation({
+    mutationFn: (data: { tempToken: string; code: string }) => authAPI.login2FA(data),
+    onSuccess: (response: any) => {
+      try {
+        localStorage.clear();
+        queryClient.clear();
+        Cookies.remove("token", { path: "/" });
+        Cookies.remove("refreshToken", { path: "/" });
+
+        if (!response || !response.data) throw new Error("Invalid response format");
+
+        const actualRole = response.data.user?.role || response.data.userRole || userTemp?.userType;
+        const userWithType = {
+          ...response.data.user,
+          name: response.data.user?.name || response.data.user?.fullName || "User",
+          userType: actualRole,
+        };
+
+        if (!response.data.accessToken) {
+          throw new Error("CRITICAL: accessToken is missing from the server response!");
+        }
+
+        setAuth(userWithType, response.data.accessToken);
+        setHasCompletedOnboarding(true);
+
+        authToast.loginSuccess(userWithType.name);
+
+        const userDash = String(actualRole).toLowerCase().replace('_', '-');
+        setTransitioning(true, String(actualRole), userWithType.name);
+
+        setTimeout(() => {
+          setTransitioning(false);
+          router.replace(`/dashboard/${userDash}`);
+        }, 2500);
+
+      } catch (err: any) {
+        errorToast.show(err.message || "2FA Login failed");
+      }
+    },
+    onError: (error: any) => {
+      errorToast.show(error.response?.data?.message || "Invalid 2FA code");
+    }
+  });
+};
+
+export const useSend2FAEmailMutation = () => {
+  const { success } = useToast();
+  const errorToast = useErrorToast();
+
+  return useMutation({
+    mutationFn: (data: { tempToken: string }) => authAPI.send2FAEmail(data),
+    onSuccess: () => {
+      success.show("Verification email sent. Please check your inbox for the 6-digit code.");
+    },
+    onError: (error: any) => {
+      errorToast.show(error.response?.data?.message || "Failed to send email");
+    }
+  });
 };

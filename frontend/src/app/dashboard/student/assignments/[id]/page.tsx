@@ -42,6 +42,8 @@ export default function AssignmentDetailsPage() {
   const [activeTab, setActiveTab] = useState<'instructions' | 'attachments' | 'rubric' | 'materials' | 'quiz'>('instructions');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
+  const [currentQuestionPage, setCurrentQuestionPage] = useState(1);
+  const QUESTIONS_PER_PAGE = 10;
 
   const { data: assignment, isLoading, error } = useAssignmentById(assignmentId);
   const { mutateAsync: submitAssignment } = useSubmitAssignment();
@@ -148,7 +150,7 @@ export default function AssignmentDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background-light dark:bg-background-dark p-8">
-        <div className="max-w-5xl mx-auto">
+        <div className="w-[95%] mx-auto">
           <div className="animate-pulse">
             <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-8"></div>
             <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded-xl mb-8"></div>
@@ -181,7 +183,7 @@ export default function AssignmentDetailsPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       <div className="flex-grow">
-        <main className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto flex w-[95%] flex-col px-4 py-8 sm:px-6 lg:px-8">
           <Breadcrumbs items={breadcrumbs} />
 
           <Header assignment={assignment as Assignment} />
@@ -239,11 +241,24 @@ export default function AssignmentDetailsPage() {
                   )}
 
                   <div className="space-y-8 mt-6">
-                    {Array.isArray(assignment.questions) && assignment.questions.map((q: any, idx: number) => (
-                      <div key={q.id} className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
-                        <div className="flex items-start justify-between gap-4 mb-4">
-                          <h5 className="font-semibold text-slate-900 dark:text-slate-100 flex gap-2">
-                            <span>{idx + 1}.</span>
+                    {Array.isArray(assignment.questions) && (
+                      (() => {
+                        const totalQuestions = assignment.questions.length;
+                        const totalPages = Math.ceil(totalQuestions / QUESTIONS_PER_PAGE);
+                        const paginatedQuestions = assignment.questions.slice(
+                          (currentQuestionPage - 1) * QUESTIONS_PER_PAGE,
+                          currentQuestionPage * QUESTIONS_PER_PAGE
+                        );
+
+                        return (
+                          <>
+                            {paginatedQuestions.map((q: any, idx: number) => {
+                              const actualIndex = (currentQuestionPage - 1) * QUESTIONS_PER_PAGE + idx + 1;
+                              return (
+                                <div key={q.id} className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
+                                  <div className="flex items-start justify-between gap-4 mb-4">
+                                    <h5 className="font-semibold text-slate-900 dark:text-slate-100 flex gap-2">
+                                      <span>{actualIndex}.</span>
                             <span className="whitespace-pre-wrap">{q.question}</span>
                           </h5>
                           <span className="shrink-0 text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700">
@@ -375,7 +390,35 @@ export default function AssignmentDetailsPage() {
                           </div>
                         )}
                       </div>
-                    ))}
+                            );
+                          })}
+
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                              <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800 mt-8">
+                                <button
+                                  onClick={() => setCurrentQuestionPage(p => Math.max(1, p - 1))}
+                                  disabled={currentQuestionPage === 1}
+                                  className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Previous
+                                </button>
+                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                  Page {currentQuestionPage} of {totalPages}
+                                </span>
+                                <button
+                                  onClick={() => setCurrentQuestionPage(p => Math.min(totalPages, p + 1))}
+                                  disabled={currentQuestionPage === totalPages}
+                                  className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()
+                    )}
                   </div>
                 </div>
               </div>

@@ -1437,6 +1437,12 @@ export const getTeacherSubjectsService = async (teacherId: string, schoolId?: st
         include: {
             teacher: {
                 select: { name: true, id: true }
+            },
+            departments: {
+                include: { department: true }
+            },
+            _count: {
+                select: { classes: true, teacherSubjects: true }
             }
         },
         orderBy: { name: 'asc' }

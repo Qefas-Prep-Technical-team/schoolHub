@@ -5,6 +5,7 @@ interface ProgressBarProps {
   max?: number;
   color?: string;
   showLabel?: boolean;
+  label?: string;
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -13,6 +14,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   max = 100, 
   color = 'primary',
   showLabel = true,
+  label = 'Class Performance',
   size = 'md'
 }) => {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
@@ -36,7 +38,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       {showLabel && (
         <div className="flex justify-between items-center mb-1">
           <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
-            Class Performance
+            {label}
           </span>
           <span className="text-primary text-sm font-bold">
             {value}%

@@ -6,7 +6,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 
 import { useLoginMutation } from "../../services/use-auth-mutations";
 import { LoginFormData, loginSchema } from "../../services/auth-schema";
-import PasswordField from "../../student/components/PasswordField";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
 
@@ -70,22 +69,16 @@ export default function TeacherLoginForm() {
 
             {/* Email */}
             <div className="flex flex-col">
-                <label className="flex flex-col">
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1">
-                        Email Address
-                    </p>
-                    <input
-                        type="email"
-                        placeholder="teacher@school.edu"
-                        value={emailValue || ""}
-                        onChange={handleInputChange("email")}
-                        onBlur={handleBlur("email")}
-                        className="flex w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-white h-14 px-5 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                    />
-                </label>
-
+                <input
+                    type="email"
+                    placeholder="Email address"
+                    value={emailValue || ""}
+                    onChange={handleInputChange("email")}
+                    onBlur={handleBlur("email")}
+                    className="flex w-full rounded-full border border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-white h-14 px-6 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all duration-300 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                />
                 {errors.email && (
-                    <p className="text-red-500 text-[10px] font-bold mt-2 ml-2 uppercase tracking-wide animate-fadeIn">
+                    <p className="text-red-500 text-[10px] font-bold mt-2 ml-4 uppercase tracking-wide animate-fadeIn">
                         {errors.email.message}
                     </p>
                 )}
@@ -93,34 +86,36 @@ export default function TeacherLoginForm() {
 
             {/* Password */}
             <div className="flex flex-col">
-                <label className="flex flex-col group">
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1">
-                        Password
-                    </p>
-
-                    <PasswordField
+                <div className="relative flex w-full">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
                         value={passwordValue || ""}
                         onChange={handleInputChange("password")}
                         onBlur={handleBlur("password")}
-                        showPassword={showPassword}
-                        onTogglePassword={togglePasswordVisibility}
-                        placeholder="••••••••••••"
+                        className="flex w-full rounded-full border border-slate-200 dark:border-slate-800 bg-transparent text-slate-900 dark:text-white h-14 px-6 pr-12 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all duration-300 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
-                </label>
-
+                    <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute inset-y-0 right-0 flex items-center pr-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">
+                            {showPassword ? 'visibility_off' : 'visibility'}
+                        </span>
+                    </button>
+                </div>
                 {errors.password && (
-                    <p className="text-red-500 text-[10px] font-bold mt-2 ml-2 uppercase tracking-wide animate-fadeIn">
+                    <p className="text-red-500 text-[10px] font-bold mt-2 ml-4 uppercase tracking-wide animate-fadeIn">
                         {errors.password.message}
                     </p>
                 )}
             </div>
 
-
-
             <div className="flex justify-end -mt-2">
                 <Link 
                     href={ROUTES.AUTH.FORGOT_PASSWORD} 
-                    className="text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors duration-200"
+                    className="text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors duration-200 mr-2"
                 >
                     Forgot Password?
                 </Link>
@@ -131,7 +126,7 @@ export default function TeacherLoginForm() {
                 <button
                     type="submit"
                     disabled={isSubmitDisabled}
-                    className="flex h-14 w-full cursor-pointer items-center justify-center rounded-2xl bg-emerald-600 dark:bg-emerald-500 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:bg-emerald-500 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-14 w-full cursor-pointer items-center justify-center rounded-full bg-[#8bc34a] hover:bg-[#7cb342] text-sm font-bold text-white shadow-lg shadow-[#8bc34a]/20 transition-all duration-300 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-[#8bc34a]/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isPending ? (
                         <div className="flex items-center">
@@ -139,11 +134,21 @@ export default function TeacherLoginForm() {
                             Signing in...
                         </div>
                     ) : (
-                        "Sign In"
+                        "Sign in"
                     )}
                 </button>
             </div>
 
+            <div className="mt-8 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                <p>
+                    By signing in you agree to Qefas Hub&apos;s
+                </p>
+                <p className="mt-1">
+                    <button type="button" className="text-emerald-500 hover:text-emerald-600 font-bold transition-colors">Terms of Services</button>
+                    {" "}and{" "}
+                    <button type="button" className="text-emerald-500 hover:text-emerald-600 font-bold transition-colors">Privacy Policy</button>.
+                </p>
+            </div>
 
         </form>
     );

@@ -67,7 +67,7 @@ export const assessments: Assessment[] = [
     subject: "Physics",
     date: "Oct 25, 2024",
     score: null,
-    status: "upcoming",
+    status: "coming soon",
     type: "exam",
   },
   {

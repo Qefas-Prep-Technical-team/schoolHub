@@ -178,8 +178,23 @@ export default function TimetablePage() {
 
       <div className="w-full">
         {isTimetableLoading ? (
-          <div className="p-10 text-center text-slate-500 animate-pulse border rounded-xl border-slate-200 dark:border-slate-800">
-            Loading timetable...
+          <div className="w-full border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden animate-pulse">
+            <div className="grid grid-cols-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+              <div className="p-4 border-r border-slate-200 dark:border-slate-800"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16"></div></div>
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="p-4 border-r border-slate-200 dark:border-slate-800 last:border-r-0 flex justify-center"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20"></div></div>
+              ))}
+            </div>
+            {[1, 2, 3, 4, 5].map(row => (
+              <div key={row} className="grid grid-cols-6 border-b border-slate-200 dark:border-slate-800 last:border-b-0">
+                <div className="p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 flex items-center"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div></div>
+                {[1, 2, 3, 4, 5].map(col => (
+                  <div key={col} className="p-3 border-r border-slate-200 dark:border-slate-800 last:border-r-0">
+                    <div className="h-20 bg-slate-100 dark:bg-slate-800/40 rounded-xl w-full"></div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         ) : (
           <TimetableGrid

@@ -118,7 +118,7 @@ export default function VideoPlayer({ videoUrl, title = 'Video Lesson', classNam
   if (!videoUrl) return null;
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6 md:p-8 shadow-sm ${className}`}>
+    <div className={`w-full max-w-5xl mx-auto bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6 md:p-8 shadow-sm ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">

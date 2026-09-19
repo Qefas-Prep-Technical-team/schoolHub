@@ -31,7 +31,7 @@ export interface Assessment {
   startDate?: Date;
   endDate?: Date;
   score: string | null;
-  status: "upcoming" | "active" | "taken" | "ongoing" | "graded" | "submitted" | "missing";
+  status: "coming soon" | "open" | "closed" | "ongoing" | "graded" | "submitted" | "missing";
   type: "exam" | "quiz" | "ca" | "assignment";
   durationMinutes?: number;
   questionsCount?: number;

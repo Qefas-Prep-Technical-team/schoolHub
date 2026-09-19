@@ -38,6 +38,7 @@ export interface Student {
   favouriteColour?: string;
   guardianName?: string;
   guardianPhone?: string;
+  address?: string;
 }
 
 export interface StudentBehaviourProfile {
@@ -129,6 +130,7 @@ export const studentService = {
     favouriteColour?: string;
     guardianName?: string;
     guardianPhone?: string;
+    address?: string;
   }) => {
     const response = await apiClient.patch<{ data: StudentProfile }>("/students/profile", data);
     return response.data.data ?? null;

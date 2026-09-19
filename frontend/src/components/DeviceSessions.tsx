@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+
 interface DeviceSession {
     id: string;
     deviceType: string;
@@ -39,6 +41,53 @@ const revokeSession = async (id: string) => {
 
 export default function DeviceSessions() {
     const queryClient = useQueryClient();
+    const user = useAuthStore((state) => state.user);
+
+    const getThemeColors = () => {
+        switch (user?.userType) {
+            case 'ADMIN': return {
+                icon: 'text-blue-500',
+                bg: 'bg-blue-50/50 dark:bg-blue-500/5',
+                border: 'border-blue-100 dark:border-blue-500/20',
+                iconBg: 'bg-blue-100 dark:bg-blue-900/50',
+                iconText: 'text-blue-600 dark:text-blue-400',
+                badgeText: 'text-blue-600 dark:text-blue-400',
+                badgeBg: 'bg-blue-50 dark:bg-blue-500/10',
+                badgeBorder: 'border-blue-200 dark:border-blue-500/20',
+            };
+            case 'STUDENT': return {
+                icon: 'text-rose-500',
+                bg: 'bg-rose-50/50 dark:bg-rose-500/5',
+                border: 'border-rose-100 dark:border-rose-500/20',
+                iconBg: 'bg-rose-100 dark:bg-rose-900/50',
+                iconText: 'text-rose-600 dark:text-rose-400',
+                badgeText: 'text-rose-600 dark:text-rose-400',
+                badgeBg: 'bg-rose-50 dark:bg-rose-500/10',
+                badgeBorder: 'border-rose-200 dark:border-rose-500/20',
+            };
+            case 'PARENT': return {
+                icon: 'text-amber-500',
+                bg: 'bg-amber-50/50 dark:bg-amber-500/5',
+                border: 'border-amber-100 dark:border-amber-500/20',
+                iconBg: 'bg-amber-100 dark:bg-amber-900/50',
+                iconText: 'text-amber-600 dark:text-amber-400',
+                badgeText: 'text-amber-600 dark:text-amber-400',
+                badgeBg: 'bg-amber-50 dark:bg-amber-500/10',
+                badgeBorder: 'border-amber-200 dark:border-amber-500/20',
+            };
+            default: return {
+                icon: 'text-emerald-500',
+                bg: 'bg-emerald-50/50 dark:bg-emerald-500/5',
+                border: 'border-emerald-100 dark:border-emerald-500/20',
+                iconBg: 'bg-emerald-100 dark:bg-emerald-900/50',
+                iconText: 'text-emerald-600 dark:text-emerald-400',
+                badgeText: 'text-emerald-600 dark:text-emerald-400',
+                badgeBg: 'bg-emerald-50 dark:bg-emerald-500/10',
+                badgeBorder: 'border-emerald-200 dark:border-emerald-500/20',
+            };
+        }
+    };
+    const theme = getThemeColors();
 
     const { data: sessions, isLoading, isError } = useQuery({
         queryKey: ['deviceSessions'],
@@ -111,7 +160,7 @@ export default function DeviceSessions() {
         <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
             <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <Server className="text-emerald-500" size={18} /> Logged-in Devices
+                    <Server className={theme.icon} size={18} /> Logged-in Devices
                 </CardTitle>
                 <CardDescription>Manage devices where you are currently signed in.</CardDescription>
             </CardHeader>
@@ -140,14 +189,14 @@ export default function DeviceSessions() {
                             <div key={session.id} className={cn(
                                 "flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border transition-all duration-300 gap-4", 
                                 session.isCurrentDevice 
-                                    ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20" 
+                                    ? `${theme.bg} ${theme.border}` 
                                     : "bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700"
                             )}>
                                 <div className="flex items-start gap-4">
                                     <div className={cn(
                                         "h-12 w-12 shrink-0 rounded-xl flex items-center justify-center", 
                                         session.isCurrentDevice 
-                                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400" 
+                                            ? `${theme.iconBg} ${theme.iconText}` 
                                             : "bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-400 shadow-sm border border-slate-100 dark:border-slate-800"
                                     )}>
                                         {getDeviceIcon(session.deviceType)}
@@ -158,11 +207,11 @@ export default function DeviceSessions() {
                                                 {session.deviceModel || 'Unknown Device'}
                                             </h4>
                                             {session.isCurrentDevice && (
-                                                <Badge variant="outline" className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 px-1.5 py-0">Current</Badge>
+                                                <Badge variant="outline" className={cn("text-[10px] font-semibold px-1.5 py-0", theme.badgeText, theme.badgeBg, theme.badgeBorder)}>Current</Badge>
                                             )}
                                         </div>
                                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                            {session.osVersion === 'Windows 10' ? 'Windows 10/11' : session.osVersion} • {session.ipAddress}
+                                            {session.osVersion === 'Windows 10' ? 'Windows 10/11' : (session.osVersion || 'Unknown OS')} • {session.ipAddress || 'Unknown IP'}
                                         </p>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                                             Last active {formatDistanceToNow(new Date(session.lastActiveAt), { addSuffix: true })}

@@ -16,7 +16,13 @@ import {
   Palette,
   BookText,
   Workflow,
-  Trash2
+  Trash2,
+  FlaskConical,
+  Leaf,
+  Globe2,
+  Laptop,
+  Music,
+  Dumbbell
 } from "lucide-react";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -33,6 +39,7 @@ interface SubjectCardProps {
   onSelect?: (id: string) => void;
   onDelete?: (id: string) => void;
   viewMode?: "grid" | "list";
+  index?: number;
 }
 
 const SubjectCard: React.FC<SubjectCardProps> = ({ 
@@ -42,33 +49,29 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
   selected = false,
   onSelect,
   onDelete,
-  viewMode = "grid"
+  viewMode = "grid",
+  index
 }) => {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#2563eb';
+  const primaryColor = settings?.themeColor || '#059669';
 
-  const getIcon = (code: string) => {
-    const c = code.toUpperCase();
-    if (c.includes("BIO")) return <Atom size={18} className="animate-spin-slow" />;
-    if (c.includes("MAT")) return <Calculator size={18} />;
-    if (c.includes("HIS")) return <HistoryIcon size={18} />;
-    if (c.includes("PHY")) return <Rocket size={18} />;
-    if (c.includes("ART")) return <Palette size={18} />;
-    if (c.includes("LIT")) return <BookText size={18} />;
-    return <BookOpen size={18} />;
-  };
-
-  const getIconGrid = (code: string) => {
-    const c = code.toUpperCase();
-    if (c.includes("BIO")) return <Atom className="size-full animate-spin-slow" />;
-    if (c.includes("MAT")) return <Calculator className="size-full" />;
-    if (c.includes("HIS")) return <HistoryIcon className="size-full" />;
-    if (c.includes("PHY")) return <Rocket className="size-full" />;
-    if (c.includes("ART")) return <Palette className="size-full" />;
-    if (c.includes("LIT")) return <BookText className="size-full" />;
-    return <BookOpen className="size-full" />;
+  const getIcon = (name: string, code: string, className?: string) => {
+    const s = `${name} ${code}`.toUpperCase();
+    if (s.includes("MATH") || s.includes("CALC")) return <Calculator className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("BIO") || s.includes("AGRI")) return <Leaf className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("CHEM") || s.includes("SCI")) return <FlaskConical className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("PHY")) return <Atom className={className || "animate-spin-slow"} size={!className ? 18 : undefined} />;
+    if (s.includes("HIS")) return <HistoryIcon className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("ART")) return <Palette className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("LIT") || s.includes("ENG")) return <BookText className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("GEO")) return <Globe2 className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("COMP") || s.includes("ICT") || s.includes("INFO")) return <Laptop className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("MUS")) return <Music className={className || ""} size={!className ? 18 : undefined} />;
+    if (s.includes("PHYSICAL") || s.includes("P.E") || s.includes("SPORT")) return <Dumbbell className={className || ""} size={!className ? 18 : undefined} />;
+    
+    return <BookOpen className={className || ""} size={!className ? 18 : undefined} />;
   };
 
   if (viewMode === 'list') {
@@ -89,8 +92,13 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
                               onSelect(subject.id);
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="size-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+                          className="size-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/20 cursor-pointer"
                       />
+                  )}
+                  {index !== undefined && !selected && (
+                      <span className="text-sm font-black text-slate-300 dark:text-slate-600 w-5 text-center">
+                          {index.toString().padStart(2, '0')}
+                      </span>
                   )}
               </div>
 
@@ -99,7 +107,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
                       className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-slate-100/50 dark:border-white/5"
                       style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
                   >
-                      {getIcon(subject.code)}
+                      {getIcon(subject.name, subject.code)}
                   </div>
                   <div>
                       <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-primary transition-colors">{subject.name}</h4>
@@ -192,13 +200,21 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
       {/* Top Header: Icon & Actions */}
       <div className="flex justify-between items-start mb-4">
         <div 
-          className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
+          className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0"
           style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
         >
-          {getIconGrid(subject.code)}
+          {getIcon(subject.name, subject.code, "size-6")}
         </div>
 
-        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="flex-1 flex justify-end">
+          {index !== undefined && (
+            <span className="text-4xl font-black text-slate-100 dark:text-slate-800/50 -mt-2 -mr-2 select-none group-hover:text-slate-200 dark:group-hover:text-slate-800 transition-colors">
+              {index.toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute top-6 right-6">
           <Button
             onClick={(e) => {
               e.stopPropagation();

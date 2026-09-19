@@ -7,7 +7,7 @@ import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { format } from 'date-fns';
 import { notFound } from 'next/navigation';
 import MaterialsLayout from './components/MaterialsLayout';
-import LoadingState from './components/LoadingState';
+
 
 /** Detect file type from a URL string */
 function detectFileType(url: string): 'pdf' | 'video' | 'image' | 'document' {
@@ -62,7 +62,32 @@ export default function MaterialsPage() {
   const { data: assignmentsData, isLoading: assignmentsLoading } = useStudentAssignments({ limit: 200 });
 
   if (classLoading || profileLoading || assignmentsLoading) {
-    return <LoadingState />;
+    return (
+      <div className="w-full py-4 animate-pulse">
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/4 mb-8"></div>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar Skeleton */}
+          <div className="w-full lg:w-64 space-y-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+            ))}
+          </div>
+          {/* Content Skeleton */}
+          <div className="flex-1 space-y-6">
+            <div className="flex justify-between">
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl w-64"></div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl w-24"></div>
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (classError || !classData) {
@@ -84,7 +109,7 @@ export default function MaterialsPage() {
     const uploadDate = a.createdAt ? format(new Date(a.createdAt), 'MMM d, yyyy') : 'Unknown date';
     const sharedBase = {
       folder: 'Assignments',
-      teacher: teacherName,
+      teacher: a.instructor?.name || a.teacher?.name || a.createdBy?.name || teacherName,
       uploadDate,
       description: a.instructions || 'No additional instructions provided.',
       assignmentTitle: a.title, // subtitle shown in popup header
@@ -134,7 +159,7 @@ export default function MaterialsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark py-4">
+    <div className="w-full bg-background-light dark:bg-background-dark py-4">
       <MaterialsLayout
         materials={materialCards}
         className={classData.name}

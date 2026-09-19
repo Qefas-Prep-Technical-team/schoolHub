@@ -106,16 +106,17 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendEmailUpdateVerification = async (email: string, code: string) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
-  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: sender,
     to: recipient,
     subject: `ACTION REQUIRED: Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
@@ -149,7 +150,7 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
 
 export const sendVerificationEmail = async (email: string, code: string, type: 'welcome' | 'confirmation' = 'welcome') => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
-  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
 
   const subject = type === 'welcome'
     ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}`
@@ -160,14 +161,19 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     ? "Thank you for joining our academic community. Please use the verification code below to activate your account and proceed with your subscription."
     : "Please use the secure verification code below to confirm your identity and proceed with your request.";
 
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+  
+  console.log('[RESEND DEBUG] RESEND_TEST raw:', JSON.stringify(process.env.RESEND_TEST));
+  console.log('[RESEND DEBUG] isTest:', isTest, '| from:', sender, '| to:', recipient);
+
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: sender,
     to: recipient,
     subject: subject,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
@@ -195,16 +201,16 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
 
 export const sendSetupCompleteEmail = async (email: string) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
-  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Your Account is Ready - Qefas Hub ${isTest ? `(Original: ${email})` : ''}`,
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
@@ -227,6 +233,43 @@ export const sendSetupCompleteEmail = async (email: string) => {
         <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
           <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
           ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+export const send2FADisabledEmail = async (email: string) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `Security Alert: Two-Factor Authentication Disabled ${isTest ? `(Original: ${email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Security</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Security Alert</p>
+          </div>
+        </div>
+        
+        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.3px;">Two-Factor Authentication Disabled</h3>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">This email is to confirm that Two-Factor Authentication (2FA) has been successfully disabled on your account.</p>
+        
+        <div style="padding: 16px; background: #fffcf0; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
+          <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5; font-weight: 500;">
+            <b>Security Recommendation:</b> We strongly suggest leaving 2FA enabled to provide a stronger layer of security for your institutional data. You can re-enable it at any time from your account settings.
+          </p>
+        </div>
+        
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px;">If you did not make this change, please contact your system administrator immediately.</p>
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
         </div>
       </div>
     `,
@@ -264,13 +307,13 @@ export const sendPaymentReceiptEmail = async (params: {
   });
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Payment Receipt: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Payment Confirmation</p>
@@ -409,13 +452,13 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
   }
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: process.env.NODE_ENV === 'test' ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: email, // Changed from [email] to email to match working OTP flow
     subject: "Reset Your Qefas Hub Password",
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="${baseUrl}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
           <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Password Reset Request</p>
         </div>
@@ -467,13 +510,13 @@ export const sendTeacherInvitationEmail = async (email: string, token: string, s
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Invitation to join ${schoolName} on Qefas Hub`,
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="${baseUrl}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
           <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
         </div>
@@ -520,13 +563,13 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Invitation to join ${schoolName} on Qefas Hub`,
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="${baseUrl}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
           <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
         </div>
@@ -812,13 +855,13 @@ export const sendPaymentFailureEmail = async (params: {
   const dashboardUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/billing`;
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Action Required: Payment Failed for ${params.plan} Plan — Qefas Hub${isTest ? ` (Original: ${params.email})` : ''}`,
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Payment Alert</p>
@@ -882,13 +925,13 @@ export const sendSubscriptionExpiredEmail = async (email: string, planName: stri
   const dashboardUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/billing`;
 
   return await resend.emails.send({
-    from: process.env.MAIL_FROM as string,
+    from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Subscription Expired: ${planName} Plan — Qefas Hub${isTest ? ` (Original: ${email})` : ''}`,
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Subscription Expired</p>

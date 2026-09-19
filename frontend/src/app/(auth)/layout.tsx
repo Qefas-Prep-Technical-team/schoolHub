@@ -37,11 +37,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const getLoaderConfig = () => {
     switch (userType) {
       case "STUDENT":
-        return { msg: "Entering Student Portal", color: "blue" as const, icon: GraduationCap };
+        return { msg: "Entering Student Portal", color: "pink" as const, icon: GraduationCap };
       case "TEACHER":
         return { msg: "Accessing Faculty Suite", color: "emerald" as const, icon: Users };
       case "ADMIN":
-        return { msg: "Secure Admin Access", color: "rose" as const, icon: UserCog };
+        return { msg: "Secure Admin Access", color: "blue" as const, icon: UserCog };
       case "PARENT":
         return { msg: "Opening Parent Dashboard", color: "amber" as const, icon: ShieldCheck };
       default:

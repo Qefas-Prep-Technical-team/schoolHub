@@ -54,7 +54,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
         subtitle: "Link with School",
         icon: <GraduationCap className="w-5 h-5" />,
         url: `${baseUrl}/signup/student?teacherCode=${linkingCode}${schoolCode ? `&schoolCode=${schoolCode}` : ''}`,
-        color: "indigo",
+        color: "green",
         active: !!schoolCode,
         type: 'school'
       },
@@ -86,7 +86,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-[2.5rem] overflow-hidden p-0 animate-fadeIn">
-        <div className="bg-gradient-to-br from-primary to-indigo-700 p-10 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-green-600 to-green-800 p-10 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl" />
           <DialogHeader className="text-white relative z-10">
             <div className="flex items-center gap-4 mb-2">
@@ -108,7 +108,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
             {links.map((link) => (
               <div 
                 key={link.title}
-                className={`flex flex-col items-center p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border-2 border-transparent hover:border-primary/20 transition-all duration-300 group relative ${!link.active ? 'opacity-40 grayscale pointer-events-none' : ''}`}
+                className={`flex flex-col items-center p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border-2 border-transparent hover:border-green-500/20 transition-all duration-300 group relative ${!link.active ? 'opacity-40 grayscale pointer-events-none' : ''}`}
               >
                 {!link.active && (
                    <div className="absolute inset-x-0 bottom-4 flex justify-center">
@@ -118,7 +118,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
 
                 <div className={`p-4 rounded-2xl mb-4 shadow-sm ${
                   link.color === 'blue' ? 'bg-blue-100 text-blue-600' : 
-                  link.color === 'indigo' ? 'bg-indigo-100 text-indigo-600' : 
+                  link.color === 'indigo' ? 'bg-green-100 text-green-600' : 
                   'bg-emerald-100 text-emerald-600'
                 }`}>
                   {link.icon}
@@ -143,7 +143,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
                 <Button
                   onClick={() => copyToClipboard(link.url, link.title)}
                   variant="ghost"
-                  className="mt-8 w-full flex items-center justify-center gap-2 font-black py-6 rounded-2xl bg-white dark:bg-slate-700 shadow-sm border border-slate-100 dark:border-slate-800 hover:bg-primary hover:text-white hover:border-primary transition-all active:scale-95 text-sm"
+                  className="mt-8 w-full flex items-center justify-center gap-2 font-black py-6 rounded-2xl bg-white dark:bg-slate-700 shadow-sm border border-slate-100 dark:border-slate-800 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all active:scale-95 text-sm"
                 >
                   <Copy className="w-4 h-4" />
                   <span>Copy Link</span>
@@ -155,7 +155,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
 
         <div className="bg-slate-50 dark:bg-slate-800/30 p-6 flex justify-center border-t border-slate-100 dark:border-slate-800">
           <p className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
             Teacher ID: {linkingCode}
           </p>
         </div>

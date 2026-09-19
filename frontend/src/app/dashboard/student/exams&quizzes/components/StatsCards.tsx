@@ -14,48 +14,57 @@ const iconMap: Record<string, any> = {
     'emoji_events': Trophy,
 };
 
+const colors = [
+    { top: "bg-blue-500", text: "text-blue-500", ring: "ring-blue-500/20" },
+    { top: "bg-indigo-500", text: "text-indigo-500", ring: "ring-indigo-500/20" },
+    { top: "bg-emerald-500", text: "text-emerald-500", ring: "ring-emerald-500/20" },
+    { top: "bg-amber-500", text: "text-amber-500", ring: "ring-amber-500/20" },
+];
+
 export default function StatsCards({ cards }: StatsCardsProps) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {cards.map((card) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {cards.map((card, index) => {
                 const Icon = iconMap[card.icon] || Info;
+                const theme = colors[index % colors.length];
 
                 return (
                     <Link 
                         key={card.label} 
                         href={`/dashboard/student/exams&quizzes/${card.link}`}
-                        className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-primary/50 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/40 dark:backdrop-blur-xl"
+                        className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 dark:bg-slate-900 dark:border-slate-800"
                     >
-                        <div className="flex flex-col gap-2 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-primary">
-                                       <Icon size={18} />
-                                    </div>
-                                    <p className="text-xs font-bold uppercase tracking-wider">{card.label}</p>
-                                </div>
-                                <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary transition-colors" />
-                            </div>
-
-                            <div className="flex items-end gap-3 mt-1">
-                                <p className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                        {/* Colored Top Header */}
+                        <div className={`${theme.top} p-4 text-white flex items-center justify-between`}>
+                            <p className="text-sm font-bold tracking-wide">{card.label}</p>
+                            <Icon size={18} className="opacity-80" />
+                        </div>
+                        
+                        {/* White Bottom Content */}
+                        <div className="p-6 flex items-center justify-between relative bg-white dark:bg-slate-900">
+                            <div>
+                                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                                     {card.value}
                                 </p>
-                                {card.trend && (
-                                    <div className={`flex items-center gap-0.5 mb-1 px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                                        card.trend.color === 'green'
-                                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
-                                            : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'
-                                    }`}>
-                                        {card.trend.color === 'green' ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                                        {card.trend.value}
-                                    </div>
-                                )}
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                    Overall
+                                </p>
                             </div>
+                            
+                            {/* Visual Indicator (Trend or Ring) */}
+                            {card.trend ? (
+                                <div className={`flex flex-col items-end`}>
+                                    <span className={`flex items-center gap-1 text-xs font-bold ${card.trend.color === 'green' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                        {card.trend.color === 'green' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                        {card.trend.value}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className={`size-12 rounded-full border-4 border-slate-100 dark:border-slate-800 border-t-transparent ${theme.text} flex items-center justify-center font-black text-xs ring-4 ring-inset ${theme.ring}`}>
+                                    <ArrowUpRight size={16} />
+                                </div>
+                            )}
                         </div>
-
-                        {/* Decoration */}
-                        <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
                     </Link>
                 );
             })}

@@ -132,6 +132,8 @@ model Admin {
   name                    String
   email                   String            @unique
   password                String?
+  twoFactorSecret         String?
+  isTwoFactorEnabled      Boolean           @default(false)
   role                    UserRole
   adminCode               String            @unique
   googleId                String?           @unique
@@ -180,6 +182,8 @@ model Teacher {
   name                    String
   email                   String?             @unique
   password                String?
+  twoFactorSecret         String?
+  isTwoFactorEnabled      Boolean             @default(false)
   phone                   String?
   isClaimed               Boolean             @default(false)
   invitationToken         String?             @unique
@@ -252,6 +256,8 @@ model Student {
   name                      String
   email                     String                   @unique
   password                  String?
+  twoFactorSecret           String?
+  isTwoFactorEnabled        Boolean                  @default(false)
   studentCode               String                   @unique
   googleId                  String?                  @unique
   authProvider              String                   @default("EMAIL")
@@ -305,6 +311,7 @@ model Student {
   guardianPhone             String?
   hasSeenPrefectCelebration Boolean                  @default(true)
   prefectRole               String?
+  address                   String?
   department                Department?              @relation(fields: [departmentId], references: [id])
   originalSchool            School?                  @relation("OriginalSchool", fields: [originalSchoolId], references: [id])
   school                    School?                  @relation(fields: [schoolId], references: [id])
@@ -329,6 +336,8 @@ model Parent {
   fullName                String
   email                   String            @unique
   password                String?
+  twoFactorSecret         String?
+  isTwoFactorEnabled      Boolean           @default(false)
   parentCode              String            @unique
   phone                   String?
   googleId                String?           @unique
@@ -2015,4 +2024,18 @@ model AIComplaint {
   updatedAt      DateTime      @updatedAt
 
   @@map("ai_complaints")
+}
+
+model SecurityAuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  userRole    String
+  action      String
+  deviceModel String?
+  osVersion   String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@map("security_audit_logs")
 }

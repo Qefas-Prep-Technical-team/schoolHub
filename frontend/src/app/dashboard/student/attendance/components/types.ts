@@ -10,8 +10,11 @@ export interface NavItem {
 export interface StatCardData {
   title: string;
   value: string;
-  icon: string;
-  iconColor: string;
+  icon?: string;
+  iconColor?: string;
+  bgColor?: string;
+  textColor?: string;
+  ringColor?: string;
   trend?: {
     value: string;
     color: string;

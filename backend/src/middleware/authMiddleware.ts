@@ -77,8 +77,8 @@ export const authenticateToken = async (
         const teacher = await prisma.teacher.findUnique({ where: { id: decoded.userId } });
         if (teacher) {
           userExists = true;
-          schoolId = teacher.activeSchoolId || teacher.primarySchoolId || undefined;
-          tenantId = teacher.tenantId;
+          schoolId = (teacher as any).activeSchoolId || (teacher as any).primarySchoolId || (teacher as any).currentSchoolId || (teacher as any).schoolId || undefined;
+          tenantId = (teacher as any).tenantId;
         }
       } else if (decoded.userType === "STUDENT") {
         const student = await prisma.student.findUnique({ where: { id: decoded.userId } });
@@ -115,12 +115,18 @@ export const authenticateToken = async (
     }
 
     // Require schoolId for Teachers and Students (403 — not a session issue, don't logout)
+    // EXEMPTION: Allow /auth routes (like sessions, me) and independent teachers
     if ((decoded.userType === "TEACHER" || decoded.userType === "STUDENT") && !schoolId) {
-      console.warn(`[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) has no schoolId.`);
-      return res.status(403).json({
-        success: false,
-        message: "Your account is not linked to a school yet. Please contact your school admin.",
-      });
+      const isAuthRoute = req.originalUrl.includes('/auth/');
+      const isSettingsRoute = req.originalUrl.includes('/settings') || req.originalUrl.includes('/profile');
+      
+      if (!isAuthRoute && !isSettingsRoute) {
+        console.warn(`[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) has no schoolId on protected route ${req.originalUrl}`);
+        return res.status(403).json({
+          success: false,
+          message: "Your account is not linked to a school yet. Please contact your school admin.",
+        });
+      }
     }
 
     // Check if the session/device is still authorized

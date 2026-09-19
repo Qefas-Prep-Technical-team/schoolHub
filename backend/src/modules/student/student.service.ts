@@ -161,7 +161,11 @@ export const getStudentProfileService = async (studentId: string) => {
         include: {
           class: {
             include: {
-              subjects: true,
+              subjects: {
+                include: {
+                  subject: true,
+                },
+              },
               teachers: {
                 include: {
                   teacher: {
@@ -203,6 +207,7 @@ export const updateStudentProfileService = async (studentId: string, data: {
   favouriteColour?: string;
   guardianName?: string;
   guardianPhone?: string;
+  address?: string;
 }) => {
   const updateData: any = {};
   if (data.name) updateData.name = data.name;
@@ -217,6 +222,7 @@ export const updateStudentProfileService = async (studentId: string, data: {
   if (data.favouriteColour !== undefined) updateData.favouriteColour = data.favouriteColour;
   if (data.guardianName !== undefined) updateData.guardianName = data.guardianName;
   if (data.guardianPhone !== undefined) updateData.guardianPhone = data.guardianPhone;
+  if (data.address !== undefined) updateData.address = data.address;
 
   return prisma.student.update({
     where: { id: studentId },

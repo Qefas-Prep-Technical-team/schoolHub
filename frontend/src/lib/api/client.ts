@@ -69,7 +69,13 @@ apiClient.interceptors.response.use(
       if (isLoginRequest || isAuthPage) {
         // Silently clear the old/expired tokens without triggering refresh/redirect loops
         Cookies.remove("token", { path: "/" });
-        useAuthStore.getState().clearAuth();
+        
+        // Don't clear auth state if we're specifically failing a 2FA attempt, 
+        // otherwise they lose the tempToken and get kicked out of the 2FA form.
+        const url = originalRequest?.url || "";
+        if (!url.includes("login/2fa")) {
+          useAuthStore.getState().clearAuth();
+        }
         return Promise.reject(error);
       }
 

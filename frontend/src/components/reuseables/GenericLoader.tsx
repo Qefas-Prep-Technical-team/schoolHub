@@ -25,6 +25,11 @@ const THEMES = {
     text: "text-rose-600 dark:text-rose-400",
     bg: "bg-rose-600 dark:bg-rose-400",
     spinner: "bg-rose-600/40 dark:bg-rose-400/40",
+  },
+  pink: {
+    text: "text-pink-600 dark:text-pink-400",
+    bg: "bg-pink-600 dark:bg-pink-400",
+    spinner: "bg-pink-600/40 dark:bg-pink-400/40",
   }
 };
 

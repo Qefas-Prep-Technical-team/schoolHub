@@ -23,7 +23,14 @@ import {
   getUserSessions,
   revokeUserSession,
   getMe,
+  generate2FA,
+  verify2FA,
+  disable2FA,
+  login2FA,
+  send2FAEmail,
 } from "./auth.controller";
+import { validateZodRequest } from "../../middleware/validateZodRequest";
+import { verify2FASchema, login2FASchema } from "./auth.zod";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
   schoolRegistrationSchema,
@@ -87,6 +94,8 @@ router.post("/verify-checkout-code", validateRequest(verifyCodeSchema), verifyCh
 
 // Login & Session
 router.post("/login", loginRateLimiter, validateRequest(loginSchema), login);
+router.post("/login/2fa", loginRateLimiter, validateZodRequest(login2FASchema), login2FA);
+router.post("/login/2fa/email", loginRateLimiter, send2FAEmail);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
 router.get("/sessions", authenticateToken, getUserSessions);
@@ -117,5 +126,10 @@ router.post("/claim-account", claimAccount);
 
 // Current User Profile
 router.get("/me", authenticateToken, getMe);
+
+// 2FA Routes
+router.post("/2fa/generate", authenticateToken, generate2FA);
+router.post("/2fa/verify", authenticateToken, validateZodRequest(verify2FASchema), verify2FA);
+router.post("/2fa/disable", authenticateToken, disable2FA);
 
 export default router;

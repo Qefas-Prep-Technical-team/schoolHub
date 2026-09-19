@@ -12,6 +12,7 @@ export const useStudentProfile = () => {
   return useQuery({
     queryKey: studentKeys.profile(),
     queryFn: () => studentService.getProfile(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
@@ -31,6 +32,7 @@ export const useUpdateStudentProfile = () => {
       favouriteColour?: string;
       guardianName?: string;
       guardianPhone?: string;
+      address?: string;
     }) =>
       studentService.updateProfile(data),
     onSuccess: () => {

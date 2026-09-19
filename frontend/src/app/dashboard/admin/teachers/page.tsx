@@ -147,7 +147,7 @@ export default function ManageTeachersPage() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8">
-                <div className="max-w-[1400px] mx-auto space-y-5">
+                <div className="w-[95%] max-w-[1600px] mx-auto space-y-5">
                     {/* Header Skeleton */}
                     <div>
                         <Skeleton className="h-7 w-48 mb-2" />
@@ -228,7 +228,7 @@ export default function ManageTeachersPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8">
-            <div className="max-w-[1400px] mx-auto space-y-5">
+            <div className="w-[95%] max-w-[1600px] mx-auto space-y-5">
 
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">Teacher Overview</h1>

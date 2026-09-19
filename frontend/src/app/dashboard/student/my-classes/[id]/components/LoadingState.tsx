@@ -1,7 +1,7 @@
 // app/student/classes/[id]/components/LoadingState.tsx
 export default function LoadingState() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+    <div className="w-full animate-pulse">
       {/* Header Skeleton */}
       <div className="rounded-2xl bg-gray-200 dark:bg-gray-700 h-64 mb-4"></div>
       

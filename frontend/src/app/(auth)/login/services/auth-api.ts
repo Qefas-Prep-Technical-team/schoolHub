@@ -28,6 +28,16 @@ export const authAPI = {
     return response.data;
   },
 
+  login2FA: async (data: { tempToken: string; code: string }): Promise<LoginResponse> => {
+    const response = await apiClient.post("/auth/login/2fa", data);
+    return response.data;
+  },
+
+  send2FAEmail: async (data: { tempToken: string }): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.post("/auth/login/2fa/email", data);
+    return response.data;
+  },
+
   logout: async (): Promise<void> => {
     await apiClient.post("/auth/logout");
   },

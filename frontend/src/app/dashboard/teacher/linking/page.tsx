@@ -157,7 +157,7 @@ function LinkingHub() {
   );
 
   return (
-    <div className="p-8 w-[80%] max-w-[80%] mx-auto space-y-8 min-h-[calc(100vh-4rem)] bg-gray-50/30 dark:bg-transparent">
+    <div className="p-8 w-[95%] max-w-[1600px] mx-auto space-y-8 min-h-[calc(100vh-4rem)] bg-gray-50/30 dark:bg-transparent">
       <TeacherLinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)}
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}

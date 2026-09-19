@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
     LayoutDashboard,
+    BookOpen,
     BookOpenCheck,
     ClipboardList,
     CalendarDays,
@@ -84,6 +85,7 @@ export const menuGroups = [
     {
         label: "Academic",
         items: [
+            { icon: BookOpen, label: "Subjects", href: "/dashboard/teacher/subjects", featureKey: "subjects" },
             { icon: ClipboardList, label: "Assignments", href: "/dashboard/teacher/assignments", featureKey: "assignments" },
             { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
             { icon: FileCheck2, label: "Exams & Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },

@@ -16,18 +16,18 @@ export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPe
       {isPersonal && (
         <div className="
           relative group overflow-hidden rounded-2xl
-          bg-gradient-to-br from-primary via-primary to-violet-600
-          dark:from-indigo-600 dark:via-violet-700 dark:to-indigo-800
-          p-px shadow-lg shadow-primary/20 dark:shadow-indigo-500/20
+          bg-gradient-to-br from-green-600 via-green-600 to-emerald-600
+          dark:from-green-600 dark:via-emerald-700 dark:to-green-800
+          p-px shadow-lg shadow-green-600/20 dark:shadow-green-500/20
           active:scale-[0.99] transition-all duration-300
         ">
           <div className="relative rounded-[0.95rem] overflow-hidden px-4 py-4
-            bg-gradient-to-br from-primary/95 via-primary to-violet-600/90
-            dark:from-indigo-600/90 dark:via-violet-700/85 dark:to-indigo-800/90
+            bg-gradient-to-br from-green-600/95 via-green-600 to-emerald-600/90
+            dark:from-green-600/90 dark:via-emerald-700/85 dark:to-green-800/90
           ">
             {/* Ambient glows */}
-            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 dark:bg-indigo-300/10 blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-violet-300/10 dark:bg-violet-400/10 blur-xl pointer-events-none" />
+            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 dark:bg-green-300/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-emerald-300/10 dark:bg-emerald-400/10 blur-xl pointer-events-none" />
 
             {/* Shimmer */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 pointer-events-none group-hover:via-white/10 transition-all duration-700" />
@@ -68,8 +68,8 @@ export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPe
                   onClick={() => onCopy(personalCode || '')}
                   className="
                     h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer shrink-0
-                    bg-white text-primary
-                    dark:bg-white/90 dark:text-indigo-700
+                    bg-white text-green-600
+                    dark:bg-white/90 dark:text-green-700
                     shadow-md shadow-black/15
                     hover:scale-110 active:scale-95
                     transition-all duration-200
@@ -87,19 +87,19 @@ export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPe
       {!isPersonal && schoolCode && (
         <div className="
           relative group overflow-hidden rounded-2xl
-          bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700
-          dark:from-slate-800 dark:via-indigo-900 dark:to-slate-900
-          p-px shadow-lg shadow-indigo-500/20 dark:shadow-indigo-500/10
+          bg-gradient-to-br from-green-600 via-green-700 to-emerald-700
+          dark:from-slate-800 dark:via-green-900 dark:to-slate-900
+          p-px shadow-lg shadow-green-500/20 dark:shadow-green-500/10
           active:scale-[0.99] transition-all duration-300
-          dark:border dark:border-indigo-500/20
+          dark:border dark:border-green-500/20
         ">
           <div className="relative rounded-[0.95rem] overflow-hidden px-4 py-4
-            bg-gradient-to-br from-indigo-600/95 via-indigo-700/90 to-violet-700/85
-            dark:from-slate-800/95 dark:via-indigo-900/90 dark:to-slate-900/95
+            bg-gradient-to-br from-green-600/95 via-green-700/90 to-emerald-700/85
+            dark:from-slate-800/95 dark:via-green-900/90 dark:to-slate-900/95
           ">
             {/* Ambient glows */}
-            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-indigo-300/15 dark:bg-indigo-400/10 blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-violet-400/10 dark:bg-violet-500/10 blur-xl pointer-events-none" />
+            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-green-300/15 dark:bg-green-400/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-emerald-400/10 dark:bg-emerald-500/10 blur-xl pointer-events-none" />
 
             {/* Shimmer */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 pointer-events-none group-hover:via-white/8 transition-all duration-700" />
@@ -118,7 +118,7 @@ export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPe
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-white tracking-tight leading-tight">School Code</h3>
-                  <p className="text-[9px] font-bold text-indigo-100/60 dark:text-indigo-300/50 uppercase tracking-widest leading-tight">Active Context</p>
+                  <p className="text-[9px] font-bold text-green-100/60 dark:text-green-300/50 uppercase tracking-widest leading-tight">Active Context</p>
                 </div>
               </div>
 
@@ -127,7 +127,7 @@ export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPe
                 <div className="
                   bg-white/10 dark:bg-black/25 backdrop-blur-xl
                   px-4 py-1.5 rounded-xl
-                  border border-white/15 dark:border-indigo-400/20
+                  border border-white/15 dark:border-green-400/20
                   shadow-md flex items-center justify-center
                   group-hover:bg-white/15 dark:group-hover:bg-black/35
                   transition-all duration-300
@@ -140,13 +140,13 @@ export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPe
                   onClick={() => onCopy(schoolCode)}
                   className="
                     h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer shrink-0
-                    bg-white text-indigo-600
-                    dark:bg-indigo-400/20 dark:text-indigo-200
-                    dark:border dark:border-indigo-400/30
+                    bg-white text-green-600
+                    dark:bg-green-400/20 dark:text-green-200
+                    dark:border dark:border-green-400/30
                     shadow-md shadow-black/15
                     hover:scale-110 active:scale-95
                     transition-all duration-200
-                    dark:hover:bg-indigo-400/30
+                    dark:hover:bg-green-400/30
                   "
                 >
                   <Copy size={14} />

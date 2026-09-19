@@ -38,6 +38,7 @@ export const useGrade = (id: string) => {
     queryKey: gradeKeys.detail(id),
     queryFn: () => gradeService.getGradeById(id),
     enabled: !!id,
+    retry: false,
   });
 };
 

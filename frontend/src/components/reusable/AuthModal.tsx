@@ -13,23 +13,23 @@ import { LogIn, UserPlus, GraduationCap, ChevronLeft, Shield, User, Users } from
 const TeacherLoginForm = dynamic(() => import('@/app/(auth)/login/teacher/components/TeacherLoginForm'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
-const StudentLoginForm = dynamic(() => import('@/app/(auth)/login/student/components/LoginForm'), {
+const StudentLoginForm = dynamic(() => import('@/app/(auth)/login/student/components/StudentLoginForm'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
-const ParentLoginForm = dynamic(() => import('@/app/(auth)/login/parent/components/LoginForm'), {
+const ParentLoginForm = dynamic(() => import('@/app/(auth)/login/parent/components/ParentLoginForm'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
 const SchoolAdminLoginForm = dynamic(() => import('@/app/(auth)/login/school-admin/components/LoginForm'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
 
-const TeacherRegisterForm = dynamic(() => import('@/app/(auth)/signup/teacher/components/TeacherRegisterForm'), {
+const TeacherRegisterForm = dynamic(() => import('@/app/(auth)/signup/teacher/components/TeacherCard'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
-const StudentRegisterForm = dynamic(() => import('@/app/(auth)/signup/student/components/StudentRegisterForm'), {
+const StudentRegisterForm = dynamic(() => import('@/app/(auth)/signup/student/components/StudentCard'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
-const ParentRegisterForm = dynamic(() => import('@/app/(auth)/signup/parent/components/ParentForm'), {
+const ParentRegisterForm = dynamic(() => import('@/app/(auth)/signup/parent/components/ParentCard'), {
     loading: () => <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
 });
 const SchoolRegisterForm = dynamic(() => import('@/app/(auth)/signup/school/components/SchoolCard'), {
@@ -201,3 +201,6 @@ const AuthModal = () => {
 };
 
 export default AuthModal;
+
+// force reload
+

@@ -51,11 +51,11 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] rounded-3xl p-8 border-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
 
-        <DialogHeader className="relative z-10 mb-6">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-            <Link2 className="text-primary" size={32} />
+        <DialogHeader className="text-left">
+          <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4">
+            <Link2 className="text-green-600" size={32} />
           </div>
           <DialogTitle className="text-2xl font-black tracking-tight leading-tight">Connect with Code</DialogTitle>
           <DialogDescription className="text-sm font-medium text-slate-500 mt-2">
@@ -67,7 +67,7 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Connection Type</label>
             <Select value={linkType} onValueChange={(val: string) => setLinkType(val as LinkType)}>
-              <SelectTrigger className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 px-3 text-sm focus:ring-primary focus:border-primary transition-all">
+              <SelectTrigger className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 px-3 text-sm focus:ring-green-500 focus:border-green-500 transition-all">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-none shadow-2xl p-1.5">
@@ -77,7 +77,7 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
             </Select>
           </div>
 
-          <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
             <div className="flex items-center gap-1.5 shrink-0">
               <Hash size={14} className="text-slate-400" />
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Code</span>
@@ -97,7 +97,7 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Linking to my primary account"
-              className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm font-medium focus:ring-primary focus:border-primary transition-all"
+              className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm font-medium focus:ring-green-500 focus:border-green-500 transition-all"
             />
           </div>
 
@@ -117,10 +117,10 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 inline-flex items-center justify-center gap-2
                 h-10 flex-1 rounded-xl font-black text-sm cursor-pointer
                 text-white transition-all duration-300
-                bg-primary hover:bg-primary/90
-                shadow-lg shadow-primary/25
-                dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600
-                dark:hover:from-indigo-400 dark:hover:to-violet-500
+                bg-green-600 hover:bg-green-700
+                shadow-lg shadow-green-500/25
+                dark:bg-gradient-to-r dark:from-green-500 dark:to-emerald-600
+                dark:hover:from-green-400 dark:hover:to-emerald-500
                 dark:shadow-[0_4px_20px_rgba(99,102,241,0.35)]
                 dark:hover:shadow-[0_4px_28px_rgba(99,102,241,0.55)]
                 hover:scale-[1.02] active:scale-[0.98]

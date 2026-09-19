@@ -39,11 +39,12 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/lib/hooks/useToast';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
+import TwoFactorSetup from '@/components/auth/TwoFactorSetup';
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 
 export default function ParentSettingsPage() {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateParentProfile();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
@@ -103,65 +104,59 @@ export default function ParentSettingsPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 md:px-8 mt-6">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 mb-1">
-            <span>Settings</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-2xl shadow-sm">
-              <Settings size={28} className="text-orange-600 dark:text-orange-500" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Account Settings
-            </h1>
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 max-w-xl">
+    <div className="w-[95%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <Settings className="text-orange-600 dark:text-orange-500" size={28} />
+            Account Settings
+          </h1>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
             Manage your personal information, security preferences, and visual appearance.
           </p>
         </div>
-      </header>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <div className="mb-10 w-full overflow-x-auto no-scrollbar pb-2">
-          <TabsList className="inline-flex h-14 items-center justify-start rounded-full bg-slate-100 dark:bg-slate-900/50 p-1.5 border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
-            <TabsTrigger 
-              value="profile" 
-              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
-            >
-              Profile
-            </TabsTrigger>
-            
-            <TabsTrigger 
-              value="appearance" 
-              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
-            >
-              Appearance
-            </TabsTrigger>
+        <Button
+          onClick={handleProfileSubmit}
+          disabled={isUpdating}
+          className="h-10 px-6 rounded-lg bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 font-semibold shadow-sm transition-all"
+        >
+          {!isUpdating && <Save size={16} className="mr-2" />}
+          {isUpdating ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
 
-            <TabsTrigger 
-              value="security" 
-              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
-            >
-              Security
-            </TabsTrigger>
-
-            <TabsTrigger 
-              value="notifications" 
-              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
-            >
-              Notifications
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <Tabs defaultValue="profile" className="w-full space-y-6">
+        <TabsList className="bg-slate-50 dark:bg-slate-900 rounded-md p-0.5 inline-flex gap-0.5 h-auto">
+          <TabsTrigger value="profile" className="rounded-sm h-7 px-3 text-[11px] font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+            <div className="flex flex-row items-center gap-1">
+                <User size={11} /> Profile
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="rounded-sm h-7 px-3 text-[11px] font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+            <div className="flex flex-row items-center gap-1">
+                <Palette size={11} /> Appearance
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="rounded-sm h-7 px-3 text-[11px] font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+            <div className="flex flex-row items-center gap-1">
+                <Lock size={11} /> Security
+            </div>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="rounded-sm h-7 px-3 text-[11px] font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+            <div className="flex flex-row items-center gap-1">
+                <Bell size={11} /> Notifications
+            </div>
+          </TabsTrigger>
+        </TabsList>
 
         {/* PROFILE TAB */}
         <TabsContent value="profile" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 h-full">
+          <div className="w-[80%] mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 h-full">
                 <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
@@ -289,13 +284,14 @@ export default function ParentSettingsPage() {
                   </p>
                 </div>
               </div>
+              </div>
             </div>
           </div>
         </TabsContent>
 
         {/* APPEARANCE TAB */}
         <TabsContent value="appearance" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="max-w-4xl mx-auto">
+          <div className="w-[80%] mx-auto">
             <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
@@ -367,7 +363,7 @@ export default function ParentSettingsPage() {
 
         {/* SECURITY TAB */}
         <TabsContent value="security" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="w-[80%] mx-auto space-y-8">
             <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
@@ -387,10 +383,17 @@ export default function ParentSettingsPage() {
                     <p className="text-sm text-slate-500">Update your password to keep your account secure.</p>
                   </div>
                   <ChangePasswordModal>
-                    <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 h-12 w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl">
                       Change Password
                     </Button>
                   </ChangePasswordModal>
+                </div>
+
+                <div className="mt-8">
+                  <TwoFactorSetup 
+                    isTwoFactorEnabled={user?.isTwoFactorEnabled ?? user?.require2FA ?? false} 
+                    onUpdate={(enabled) => updateUser({ require2FA: enabled, isTwoFactorEnabled: enabled })} 
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -401,7 +404,7 @@ export default function ParentSettingsPage() {
 
         {/* NOTIFICATIONS TAB */}
         <TabsContent value="notifications" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="max-w-4xl mx-auto">
+          <div className="w-[80%] mx-auto">
             <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">

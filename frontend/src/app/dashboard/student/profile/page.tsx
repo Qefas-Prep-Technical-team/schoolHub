@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     User, 
     Mail, 
@@ -8,20 +8,29 @@ import {
     Hash, 
     GraduationCap, 
     School, 
-    MapPin, 
-    Edit3,
-    CheckCircle2,
+    Edit3, 
+    CheckCircle2, 
     Save,
     X,
     ChevronRight,
     Briefcase,
     Fingerprint,
-    Cake,
     ShieldCheck,
-    Phone
+    MapPin,
+    Loader2,
+    Phone,
+    Image as ImageIcon,
+    Cake,
+    Activity
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useStudentProfile, useUpdateStudentProfile, useRequestEmailUpdate, useVerifyEmailUpdate } from '@/lib/api/hooks/useStudent';
+import { 
+    useStudentProfile, 
+    useUpdateStudentProfile, 
+    useRequestEmailUpdate, 
+    useVerifyEmailUpdate 
+} from '@/lib/api/hooks/useStudent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,14 +41,11 @@ import {
     SelectTrigger, 
     SelectValue 
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
-import NextImage from 'next/image';
 import ImageUpload from '@/components/reusable/ImageUpload';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function StudentProfilePage() {
     const { data: profile, isLoading } = useStudentProfile();
@@ -47,7 +53,8 @@ export default function StudentProfilePage() {
     const requestEmailUpdate = useRequestEmailUpdate();
     const verifyEmailUpdate = useVerifyEmailUpdate();
 
-    const [isEditing, setIsEditing] = useState(false);
+    // editingTab controls which tab is open in the modal, null means modal is closed
+    const [editingTab, setEditingTab] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -60,32 +67,34 @@ export default function StudentProfilePage() {
         club: '',
         favouriteColour: '',
         guardianName: '',
-        guardianPhone: ''
+        guardianPhone: '',
+        address: ''
     });
 
     const [emailStep, setEmailStep] = useState<'input' | 'verify'>('input');
     const [verificationCode, setVerificationCode] = useState('');
 
-    const handleEdit = () => {
-        if (!profile) return;
-        setFormData({
-            name: profile.name,
-            email: profile.email,
-            gender: profile.gender || '',
-            dateOfBirth: profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : '',
-            profileImage: profile.profileImage || '',
-            bannerImage: profile.bannerImage || '',
-            height: profile.height?.toString() || '',
-            weight: profile.weight?.toString() || '',
-            club: profile.club || '',
-            favouriteColour: profile.favouriteColour || '',
-            guardianName: profile.guardianName || '',
-            guardianPhone: profile.guardianPhone || profile.parentLinks?.[0]?.parent?.phone || ''
-        });
-        setEmailStep('input');
-        setVerificationCode('');
-        setIsEditing(true);
-    };
+    useEffect(() => {
+        if (profile && editingTab === null) {
+            setFormData({
+                name: profile.name || '',
+                email: profile.email || '',
+                gender: profile.gender || '',
+                dateOfBirth: profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : '',
+                profileImage: profile.profileImage || '',
+                bannerImage: profile.bannerImage || '',
+                height: profile.height?.toString() || '',
+                weight: profile.weight?.toString() || '',
+                club: profile.club || '',
+                favouriteColour: profile.favouriteColour || '',
+                guardianName: profile.guardianName || '',
+                guardianPhone: profile.guardianPhone || profile.parentLinks?.[0]?.parent?.phone || '',
+                address: profile.address || ''
+            });
+        }
+    }, [profile, editingTab]);
+
+    const handleEdit = (tab: string = 'personal') => setEditingTab(tab);
 
     const handleRequestEmailChange = async () => {
         await requestEmailUpdate.mutateAsync(formData.email);
@@ -99,450 +108,550 @@ export default function StudentProfilePage() {
     };
 
     const handleSave = async () => {
-        const { email: _email, ...rest } = formData;
-        await updateProfile.mutateAsync(rest);
-        setIsEditing(false);
+        const { email: _email, height, weight, ...rest } = formData;
+        
+        await updateProfile.mutateAsync({
+            ...rest,
+            height: height ? parseInt(height) : undefined,
+            weight: weight ? parseInt(weight) : undefined
+        });
+        setEditingTab(null);
     };
 
     if (isLoading) {
         return (
-            <div className="min-h-[80vh] flex items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+            <div className="w-[95%] max-w-[1600px] mx-auto py-8 animate-pulse space-y-6 md:space-y-8 px-4 md:px-8">
+                {/* Header Skeleton */}
+                <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                    <div className="h-48 md:h-64 w-full bg-slate-200 dark:bg-slate-800" />
+                    <div className="relative -mt-16 px-6 md:px-10 flex flex-col md:flex-row items-center md:items-end gap-6 pb-8">
+                        <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl bg-white dark:bg-slate-900 p-1.5 shadow-md border border-gray-50 dark:border-slate-800 shrink-0">
+                            <div className="w-full h-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left mb-2 md:mb-4 space-y-3">
+                            <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg mx-auto md:mx-0" />
+                            <div className="h-4 w-64 bg-slate-200 dark:bg-slate-800 rounded mx-auto md:mx-0" />
+                        </div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="h-10 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                            <div className="h-10 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Stats Grid Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-24 rounded-2xl bg-white dark:bg-slate-950 border border-gray-100 dark:border-slate-800 shadow-sm p-5 flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                            <div className="space-y-2 w-full">
+                                <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Main Content Grids Skeleton */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden min-h-[300px]">
+                            <div className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 flex justify-between">
+                                <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-md" />
+                            </div>
+                            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="space-y-2">
+                                        <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-1 space-y-6">
+                        <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden min-h-[300px]">
+                            <div className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50">
+                                <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="space-y-2">
+                                        <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (!profile) return null;
 
-    const initials = profile.name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const initials = (profile.name || 'S').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
 
     return (
-        <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700 space-y-6 md:space-y-10 px-0 md:px-4">
-            {/* Header / Hero Section (Social Style) */}
-            <div className="relative group/hero">
-                {/* Cover Photo / Pattern */}
-                <div className="h-48 md:h-80 w-full overflow-hidden bg-slate-950 md:rounded-[3rem] relative shadow-2xl">
+        <div className="w-[95%] max-w-[1600px] mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+            
+            {/* Header / Hero Section (SaaS Style) */}
+            <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                {/* Cover Photo / Banner */}
+                <div className="h-48 md:h-64 w-full relative bg-pink-600 flex items-center justify-center overflow-hidden group">
                     {profile.bannerImage ? (
-                        <NextImage src={profile.bannerImage} alt="Banner" fill className="object-cover" />
+                        <Image
+                            src={profile.bannerImage}
+                            alt="Banner"
+                            fill
+                            className="w-full h-full object-cover"
+                        />
                     ) : (
-                        <div className="absolute inset-0 opacity-30">
-                            <div className="absolute top-0 -left-20 w-80 h-80 bg-primary blur-[120px] rounded-full animate-pulse" />
-                            <div className="absolute bottom-0 -right-20 w-80 h-80 bg-indigo-500 blur-[120px] rounded-full animate-pulse delay-700" />
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-rose-600 opacity-90" />
                     )}
+                    <Button 
+                        onClick={() => handleEdit('visuals')}
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-white/80 hover:bg-white text-pink-700 shadow-sm"
+                    >
+                        <Edit3 size={16} />
+                    </Button>
                 </div>
 
-                {/* Profile Identity (Overlapping) */}
-                <div className="relative -mt-20 md:-mt-24 px-6 md:px-12 flex flex-col items-center md:items-end md:flex-row gap-6 md:gap-10">
-                    <div className="relative shrink-0">
-                        <div className="h-32 w-32 md:h-44 md:w-44 rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-4xl md:text-6xl font-black text-white shadow-2xl border-4 border-white dark:border-slate-950 hover:scale-105 transition-transform duration-500 overflow-hidden">
+                {/* Profile Identity */}
+                <div className="relative -mt-16 px-6 md:px-10 flex flex-col md:flex-row items-center md:items-end gap-6 pb-8">
+                    <div className="relative shrink-0 group">
+                        <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl bg-white dark:bg-slate-900 p-1.5 shadow-md border border-gray-50 dark:border-slate-800 flex items-center justify-center text-4xl md:text-5xl font-bold text-pink-600 dark:text-pink-400 cursor-pointer overflow-hidden relative" onClick={() => handleEdit('visuals')}>
                             {profile.profileImage ? (
-                                <NextImage src={profile.profileImage} alt={profile.name} fill className="object-cover" />
+                                <div className="w-full h-full relative rounded-xl overflow-hidden">
+                                    <Image
+                                        src={profile.profileImage}
+                                        alt={profile.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
                             ) : (
-                                initials
+                                <div className="w-full h-full rounded-xl bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center">
+                                    {initials}
+                                </div>
                             )}
-                        </div>
-                        <Badge className="absolute -top-1 -right-1 md:-top-3 md:-right-3 h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-emerald-500 border-4 border-white dark:border-slate-950 flex items-center justify-center">
-                            <CheckCircle2 size={16} className="text-white" />
-                        </Badge>
-                    </div>
-
-                    <div className="flex-1 text-center md:text-left pt-2 md:pt-10 space-y-4">
-                        <div className="space-y-1">
-                            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-center md:justify-start">
-                                <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">
-                                    {profile.name}
-                                </h1>
-                                <Badge variant="secondary" className="w-fit mx-auto md:mx-0 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-mono text-[10px] uppercase tracking-widest py-1 border-none px-3">
-                                    {profile.studentCode}
-                                </Badge>
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                                <Edit3 size={24} className="text-white" />
                             </div>
-                            <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center md:justify-start gap-2 italic">
-                                <Fingerprint size={14} className="text-primary/50" /> Official Academic Identity
-                            </p>
                         </div>
+                        <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-indigo-500 border-4 border-white dark:border-slate-950 flex items-center justify-center" title="Verified Student">
+                            <CheckCircle2 size={14} className="text-white" />
+                        </div>
+                    </div>
 
-                        <div className="flex items-center justify-center md:justify-start gap-3">
-                            <Button 
-                                onClick={handleEdit}
-                                className="rounded-2xl h-11 md:h-12 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-none hover:scale-105 active:scale-95 transition-all font-black text-xs uppercase tracking-widest shadow-xl"
-                            >
-                                <Edit3 size={16} className="mr-2" /> Edit Profile
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                className="rounded-2xl h-11 md:h-12 w-11 md:w-auto px-0 md:px-6 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900 font-bold transition-all"
-                            >
-                                <Mail size={18} className="md:mr-2" />
-                                <span className="hidden md:inline">Support</span>
-                            </Button>
+                    <div className="flex-1 text-center md:text-left mb-2">
+                        <div className="flex flex-col md:flex-row md:items-center gap-3 justify-center md:justify-start">
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                                {profile.name}
+                            </h1>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-pink-50 dark:bg-pink-500/10 text-pink-700 dark:text-pink-400 uppercase tracking-widest">
+                                {profile.studentCode || 'STUDENT'}
+                            </span>
                         </div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-slate-400 mt-1 flex items-center justify-center md:justify-start gap-1.5">
+                            <Fingerprint size={14} /> Official Academic Identity
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 mb-2">
+                        <Button 
+                            variant="outline" 
+                            title="This button turns green when Two-Factor Authentication is set up"
+                            className={cn(
+                                "h-10 px-4 rounded-lg font-semibold text-sm transition-all",
+                                (profile as any).twoFactorEnabled || (profile as any).is2FAEnabled 
+                                    ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-500/10 dark:border-green-500/50 hover:bg-green-100 dark:hover:bg-green-500/20" 
+                                    : "border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900"
+                            )}
+                            onClick={() => window.location.href = '/dashboard/student/settings?tab=security'}
+                        >
+                            <ShieldCheck size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Security</span>
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => window.location.href = 'mailto:admin@qefashub.com'}
+                            className="h-10 px-4 rounded-lg border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-900 font-semibold text-sm transition-all"
+                        >
+                            <Mail size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Support</span>
+                        </Button>
                     </div>
                 </div>
             </div>
 
-            {/* Quick Stats Overlay (Mobile Horizontal Scroll) */}
-            <div className="px-6 md:px-0 overflow-hidden">
-                <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide">
-                    <StatCard icon={<Hash size={24} />} label="Reg ID" value={profile.studentCode} color="text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" />
-                    <StatCard icon={<GraduationCap size={24} />} label="Level" value={profile.gradeLevel || 'Standard'} color="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" />
-                    <StatCard icon={<Briefcase size={24} />} label="Dept" value={profile.department?.name || 'General'} color="text-amber-600 bg-amber-50 dark:bg-amber-500/10" />
-                </div>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard icon={<Hash size={20} />} label="Reg ID" value={profile.studentCode || 'N/A'} color="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10" />
+                <StatCard icon={<GraduationCap size={20} />} label="Level" value={profile.gradeLevel || 'Standard'} color="text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10" />
+                <StatCard icon={<Briefcase size={20} />} label="Dept" value={profile.department?.name || 'General'} color="text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10" />
             </div>
 
-            {/* Main Content Sections */}
-            <div className="px-6 md:px-0 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-                <div className="lg:col-span-2 space-y-6 md:space-y-10">
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950">
-                        <CardHeader className="p-8 md:p-10 pb-0">
-                            <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4 italic uppercase">
-                                <User className="text-primary h-6 w-6 md:h-8 md:w-8" /> 
+            {/* Main Content Grids */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Personal Data */}
+                    <Card className="rounded-2xl border-gray-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden relative group">
+                        <CardHeader className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 bg-white dark:bg-slate-950 flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <User className="text-pink-500 h-5 w-5" /> 
                                 Personal Data
                             </CardTitle>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleEdit('personal')}
+                                className="h-8 w-8 text-gray-400 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-500/10"
+                            >
+                                <Edit3 size={16} />
+                            </Button>
                         </CardHeader>
-                        <CardContent className="p-8 md:p-10 space-y-8 md:space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                                <InfoItem icon={<User size={20} />} label="Legal Name" value={profile.name} description="Verified registration name." />
-                                <InfoItem icon={<Mail size={20} />} label="Email" value={profile.email} description="Primary contact address." />
-                                <InfoItem icon={<ShieldCheck size={20} />} label="Gender" value={profile.gender || 'Not Specified'} description="Biological gender." />
-                                <InfoItem icon={<Cake size={20} />} label="Birth Date" value={profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'PPP') : 'N/A'} description="Official date of birth." />
-                                <InfoItem icon={<User size={20} />} label="Guardian Name" value={profile.guardianName || profile.parentLinks?.[0]?.parent?.name || 'Not Linked'} description="Primary emergency contact." />
-                                <InfoItem icon={<Phone size={20} />} label="Guardian Phone" value={profile.guardianPhone || profile.parentLinks?.[0]?.parent?.phone || 'Not Linked'} description="Emergency contact number." />
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <InfoItem label="Legal Name" value={profile.name} />
+                                <InfoItem label="Email Address" value={profile.email} />
+                                <InfoItem label="Gender" value={profile.gender || 'Not Specified'} />
+                                <InfoItem label="Birth Date" value={profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'PPP') : 'Not Specified'} />
+                                <div className="sm:col-span-2">
+                                    <InfoItem label="Home Address" value={profile.address || 'Not Provided'} />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Academic Institution Card */}
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl overflow-hidden bg-slate-950 text-white">
-                        <CardHeader className="p-8 md:p-10 pb-6">
-                            <CardTitle className="text-xl md:text-2xl font-black italic uppercase flex items-center gap-3">
-                                <School className="text-indigo-400" /> Institution
+                    {/* Extracurricular & Bio Details */}
+                    <Card className="rounded-2xl border-gray-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden relative group">
+                        <CardHeader className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 bg-white dark:bg-slate-950 flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Activity className="text-pink-500 h-5 w-5" /> 
+                                Extracurricular & Bio
                             </CardTitle>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleEdit('attributes')}
+                                className="h-8 w-8 text-gray-400 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-500/10"
+                            >
+                                <Edit3 size={16} />
+                            </Button>
                         </CardHeader>
-                        <CardContent className="p-8 md:p-10 pt-0 space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Academy</p>
-                                    <p className="text-lg md:text-xl font-black italic">{profile.school?.name || 'Qefas-Prep Academy'}</p>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <InfoItem label="Club / Activities" value={profile.club || 'None'} />
+                                <InfoItem label="Favourite Colour" value={profile.favouriteColour || 'None'} />
+                                <InfoItem label="Height" value={profile.height ? `${profile.height} cm` : 'N/A'} />
+                                <InfoItem label="Weight" value={profile.weight ? `${profile.weight} kg` : 'N/A'} />
+                                
+                                <div className="sm:col-span-2 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                                    <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><ShieldCheck size={14} /> Emergency Contact</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <InfoItem label="Guardian Name" value={profile.guardianName || profile.parentLinks?.[0]?.parent?.name || 'Not Linked'} />
+                                        <InfoItem label="Guardian Phone" value={profile.guardianPhone || profile.parentLinks?.[0]?.parent?.phone || 'Not Linked'} />
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Joined</p>
-                                    <p className="text-lg md:text-xl font-black italic">{profile.createdAt ? format(new Date(profile.createdAt), 'MMMM yyyy') : 'N/A'}</p>
-                                </div>
-                            </div>
-                            <Separator className="bg-white/10" />
-                            <div className="p-5 md:p-6 rounded-[2rem] bg-white/5 border border-white/10 flex items-center gap-4">
-                                <div className="h-10 w-10 shrink-0 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                                    <CheckCircle2 size={20} />
-                                </div>
-                                <p className="text-xs text-white/70 font-medium italic">Your account is fully verified and compliant with institutional standards.</p>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="space-y-6 md:space-y-10">
-                    <div className="p-8 pb-10 rounded-[2.5rem] md:rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl space-y-8">
-                        <div className="space-y-1">
-                            <h3 className="text-xl font-black italic uppercase text-slate-900 dark:text-white tracking-tight">Quick Actions</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Institutional Services</p>
-                        </div>
-                        <div className="space-y-4">
-                            <MobileQuickAction href="/dashboard/student/settings" icon={<MapPin size={22} />} label="Home Address" status="Set Location" color="text-rose-500 bg-rose-50 dark:bg-rose-500/10" />
-                            <MobileQuickAction href="/dashboard/student/grades" icon={<Calendar size={22} />} label="Grades & Results" status="View Results" color="text-primary bg-indigo-50 dark:bg-primary/10" />
-                            <MobileQuickAction href="/dashboard/student/attendance" icon={<ShieldCheck size={22} />} label="Attendance" status="View Records" color="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" />
-                        </div>
-                    </div>
+                <div className="space-y-6">
+                    {/* Academic Institution Card */}
+                    <Card className="rounded-2xl border-indigo-100 dark:border-indigo-500/20 shadow-sm bg-indigo-50/50 dark:bg-indigo-500/5 overflow-hidden">
+                        <CardHeader className="px-6 py-5 bg-indigo-50/80 dark:bg-indigo-500/10 border-b border-indigo-100/50 dark:border-indigo-500/20 flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-indigo-900 dark:text-indigo-400 flex items-center gap-2">
+                                <School className="text-indigo-600 dark:text-indigo-400 h-5 w-5" /> Institution
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs font-semibold text-indigo-500 dark:text-indigo-400/70 uppercase tracking-wider mb-1">Primary Academy</p>
+                                    <p className="text-base font-bold text-indigo-950 dark:text-indigo-100">{profile.school?.name || 'Qefas-Prep Academy'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-indigo-500 dark:text-indigo-400/70 uppercase tracking-wider mb-1">Joined</p>
+                                    <p className="text-base font-bold text-indigo-950 dark:text-indigo-100">{profile.createdAt ? format(new Date(profile.createdAt), 'MMMM yyyy') : 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div className="p-4 rounded-xl bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-500/20 flex gap-3 shadow-sm">
+                                <div className="h-8 w-8 shrink-0 rounded-lg bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center text-teal-500 dark:text-teal-400">
+                                    <CheckCircle2 size={18} />
+                                </div>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">Your student account is fully verified and compliant with institutional standards.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                    {/* Bio Attributes */}
-                    <div className="p-8 pb-10 rounded-[2.5rem] md:rounded-[3rem] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-inner space-y-8">
-                        <div className="space-y-1">
-                            <h3 className="text-xl font-black italic uppercase text-slate-900 dark:text-white tracking-tight">Extracurricular & Bio</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Student Attributes</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Club</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.club || 'None'}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Fav Colour</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.favouriteColour || 'None'}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Height</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.height ? `${profile.height} cm` : 'N/A'}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Weight</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.weight ? `${profile.weight} kg` : 'N/A'}</p>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Quick Actions */}
+                    <Card className="rounded-2xl border-gray-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
+                        <CardHeader className="px-6 py-5 border-b border-gray-50 dark:border-slate-800/50 bg-white dark:bg-slate-950">
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">Services</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-2">
+                            <QuickActionItem onClick={() => handleEdit('personal')} icon={<MapPin size={18} />} label="Home Address" status={profile.address ? "Set" : "Set Location"} hoverColor="hover:bg-rose-50 dark:hover:bg-rose-500/10 text-rose-600" />
+                            <QuickActionItem onClick={() => handleEdit('attributes')} icon={<Phone size={18} />} label="Emergency Contact" status={profile.guardianPhone ? "Set" : "Update Info"} hoverColor="hover:bg-rose-50 dark:hover:bg-rose-500/10 text-rose-600" />
+                            <QuickActionItem href="/dashboard/student/grades" icon={<Calendar size={18} />} label="Grades & Results" status="View Results" hoverColor="hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-indigo-600" />
+                            <QuickActionItem href="/dashboard/student/attendance" icon={<ShieldCheck size={18} />} label="Attendance" status="View Records" hoverColor="hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-emerald-600" />
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
-            {/* Edit Drawer / Overlay */}
-            {isEditing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center md:items-end md:justify-end p-4 md:p-10 pointer-events-none">
-                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm pointer-events-auto" onClick={() => setIsEditing(false)} />
+            {/* Edit Modal (SaaS Style) */}
+            {editingTab !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12">
+                    <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onClick={() => setEditingTab(null)} />
                     
-                    <Card className="relative z-10 w-full max-w-xl rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 pointer-events-auto transform animate-in slide-in-from-bottom-10 duration-500 max-h-[90vh] overflow-y-auto">
-                        <CardHeader className="p-8 md:p-10 pb-6 flex flex-row items-center justify-between sticky top-0 bg-white dark:bg-slate-950 z-20">
+                    <Card className="relative z-10 w-full max-w-2xl rounded-2xl shadow-2xl border-0 bg-white dark:bg-slate-950 overflow-hidden flex flex-col h-full max-h-[85vh] animate-in zoom-in-95 duration-200">
+                        
+                        {/* Modal Header */}
+                        <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
                             <div className="space-y-1">
-                                <CardTitle className="text-2xl md:text-3xl font-black italic tracking-tight uppercase flex items-center gap-3">
-                                    <Edit3 className="text-primary" />
-                                    Refine Profile
-                                </CardTitle>
-                                <CardDescription className="text-xs md:text-sm">Update your institutional identity records.</CardDescription>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Edit Profile</h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Update your details across different sections.</p>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} className="rounded-2xl">
-                                <X size={24} />
+                            <Button variant="ghost" size="icon" onClick={() => setEditingTab(null)} className="rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300">
+                                <X size={20} />
                             </Button>
-                        </CardHeader>
-                        <CardContent className="p-8 md:p-10 pt-0 space-y-8">
-                            <div className="grid grid-cols-1 gap-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <ImageUpload 
-                                        label="Profile Picture" 
-                                        value={formData.profileImage} 
-                                        onChange={(url) => setFormData({...formData, profileImage: url})} 
-                                        description="Shown on your ID and rankings."
-                                        aspectRatio="square"
-                                    />
-                                    <ImageUpload 
-                                        label="Profile Banner" 
-                                        value={formData.bannerImage} 
-                                        onChange={(url) => setFormData({...formData, bannerImage: url})} 
-                                        description="Background for your profile header."
-                                        aspectRatio="video"
-                                    />
-                                </div>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <Tabs value={editingTab} onValueChange={setEditingTab} className="w-full">
+                                <TabsList className="w-full flex mb-6 bg-slate-50 dark:bg-slate-900 rounded-lg p-1 overflow-x-auto scrollbar-hide">
+                                    <TabsTrigger value="personal" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Personal</TabsTrigger>
+                                    <TabsTrigger value="attributes" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Attributes</TabsTrigger>
+                                    <TabsTrigger value="visuals" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Visuals</TabsTrigger>
+                                    <TabsTrigger value="security" className="flex-1 rounded-md text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Security</TabsTrigger>
+                                </TabsList>
 
-                                <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</Label>
-                                    <div className="relative group">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                                <TabsContent value="personal" className="space-y-5 mt-0 outline-none">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Full Legal Name</Label>
                                         <Input 
                                             value={formData.name} 
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                            className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all border-none ring-1 ring-slate-200 dark:ring-slate-800"
+                                            className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            placeholder="Enter full name"
                                         />
                                     </div>
-                                </div>
 
-                                <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Communication Email</Label>
-                                    <div className="flex flex-col sm:flex-row gap-3">
-                                        <div className="relative group flex-1">
-                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
-                                            <Input 
-                                                value={formData.email} 
-                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                                disabled={emailStep !== 'input'}
-                                                className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all border-none ring-1 ring-slate-200 dark:ring-slate-800 disabled:opacity-50"
-                                            />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Gender</Label>
+                                            <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
+                                                <SelectTrigger className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent">
+                                                    <SelectValue placeholder="Select Gender" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="MALE">Male</SelectItem>
+                                                    <SelectItem value="FEMALE">Female</SelectItem>
+                                                    <SelectItem value="OTHER">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        {formData.email !== profile.email && emailStep === 'input' && (
-                                            <div className="flex gap-2">
-                                                <Button 
-                                                    type="button"
-                                                    onClick={handleRequestEmailChange}
-                                                    disabled={requestEmailUpdate.isPending}
-                                                    className="h-14 flex-1 sm:flex-none rounded-2xl px-6 bg-primary text-white hover:bg-primary/90 font-black uppercase text-xs tracking-widest"
-                                                >
-                                                    {requestEmailUpdate.isPending ? <Loader2 className="animate-spin" /> : "Verify"}
-                                                </Button>
-                                                <Button 
-                                                    type="button"
-                                                    onClick={() => setFormData({...formData, email: profile.email})}
-                                                    variant="outline"
-                                                    className="h-14 w-14 p-0 rounded-2xl border-slate-200"
-                                                >
-                                                    <X size={18} />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {emailStep === 'verify' && (
-                                        <div className="mt-6 p-6 md:p-8 rounded-[2.5rem] bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 backdrop-blur-xl space-y-6 animate-in zoom-in-95 duration-500 shadow-2xl shadow-indigo-500/5">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-3 w-3 rounded-full bg-indigo-500 animate-pulse" />
-                                                    <div>
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Institutional Protocol</p>
-                                                        <p className="text-xs font-bold text-slate-500">Identity Verification Required</p>
-                                                    </div>
-                                                </div>
-                                                <Button 
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setEmailStep('input')}
-                                                    className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-100/50"
-                                                >
-                                                    Cancel
-                                                </Button>
-                                            </div>
 
-                                            <div className="relative group">
-                                                <Fingerprint className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-400/50" size={24} />
-                                                <Input 
-                                                    placeholder="Code"
-                                                    value={verificationCode}
-                                                    onChange={(e) => setVerificationCode(e.target.value)}
-                                                    className="h-16 md:h-20 pl-16 rounded-3xl bg-white dark:bg-slate-950 border-indigo-200 dark:border-indigo-800 text-center text-2xl md:text-3xl font-black tracking-[0.4em] focus:ring-8 focus:ring-indigo-500/5 transition-all placeholder:text-slate-300 placeholder:text-sm placeholder:font-bold placeholder:tracking-normal"
-                                                    maxLength={6}
-                                                />
-                                            </div>
-
-                                            <div className="flex flex-col gap-4">
-                                                <Button 
-                                                    type="button"
-                                                    onClick={handleVerifyEmail}
-                                                    disabled={verifyEmailUpdate.isPending}
-                                                    className="h-14 md:h-16 rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
-                                                >
-                                                    {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin" /> : "Verify Identity"}
-                                                </Button>
-                                                
-                                                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/50 dark:bg-white/5 border border-indigo-50/50 dark:border-indigo-900/10">
-                                                    <p className="text-[10px] font-bold text-slate-500 italic text-center sm:text-left">
-                                                        Code sent to <b>{formData.email}</b>
-                                                    </p>
-                                                    <Separator orientation="vertical" className="hidden sm:block h-4 bg-slate-200" />
-                                                    <button 
-                                                        type="button"
-                                                        onClick={handleRequestEmailChange} 
-                                                        disabled={requestEmailUpdate.isPending}
-                                                        className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 cursor-pointer disabled:opacity-50 transition-colors"
-                                                    >
-                                                        {requestEmailUpdate.isPending ? "Syncing..." : "Resend Code"}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gender</Label>
-                                        <Select 
-                                            value={formData.gender} 
-                                            onValueChange={(val) => setFormData({...formData, gender: val})}
-                                        >
-                                            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 border-none font-bold">
-                                                <SelectValue placeholder="Gender" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl">
-                                                <SelectItem value="MALE">Male</SelectItem>
-                                                <SelectItem value="FEMALE">Female</SelectItem>
-                                                <SelectItem value="OTHER">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date of Birth</Label>
-                                        <div className="relative group">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Date of Birth</Label>
                                             <Input 
                                                 type="date"
                                                 value={formData.dateOfBirth} 
                                                 onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
-                                                className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
                                             />
                                         </div>
                                     </div>
-                                </div>
+                                    
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Home Address</Label>
+                                        <Input 
+                                            value={formData.address} 
+                                            onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                            className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            placeholder="Enter your full home address"
+                                        />
+                                    </div>
+                                </TabsContent>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Height (cm)</Label>
-                                        <Input 
-                                            type="number"
-                                            placeholder="170"
-                                            value={formData.height} 
-                                            onChange={(e) => setFormData({...formData, height: e.target.value})}
-                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Weight (kg)</Label>
-                                        <Input 
-                                            type="number"
-                                            placeholder="60"
-                                            value={formData.weight} 
-                                            onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Club / Activities</Label>
-                                        <Input 
-                                            placeholder="E.g. Science Club"
-                                            value={formData.club} 
-                                            onChange={(e) => setFormData({...formData, club: e.target.value})}
-                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Favourite Colour</Label>
-                                        <Input 
-                                            placeholder="E.g. Blue"
-                                            value={formData.favouriteColour} 
-                                            onChange={(e) => setFormData({...formData, favouriteColour: e.target.value})}
-                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100/50 dark:border-indigo-800/50">
-                                    <div className="space-y-3 sm:col-span-2">
-                                        <h4 className="text-sm font-black italic uppercase text-indigo-900 dark:text-indigo-400 flex items-center gap-2">
-                                            <ShieldCheck size={18} /> Emergency / Guardian Contact
-                                        </h4>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Guardian Name</Label>
-                                        <Input 
-                                            placeholder="Full Name"
-                                            value={formData.guardianName} 
-                                            onChange={(e) => setFormData({...formData, guardianName: e.target.value})}
-                                            className="h-14 rounded-2xl bg-white dark:bg-slate-950 border-none ring-1 ring-indigo-200/50 dark:ring-indigo-800/50 font-bold focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Guardian Phone</Label>
-                                        <div className="relative group">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                <TabsContent value="attributes" className="space-y-5 mt-0 outline-none">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Height (cm)</Label>
                                             <Input 
-                                                placeholder="+1 (555) 000-0000"
-                                                value={formData.guardianPhone} 
-                                                onChange={(e) => setFormData({...formData, guardianPhone: e.target.value})}
-                                                className="h-14 pl-12 rounded-2xl bg-white dark:bg-slate-950 border-none ring-1 ring-indigo-200/50 dark:ring-indigo-800/50 font-bold focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                                type="number"
+                                                value={formData.height} 
+                                                onChange={(e) => setFormData({...formData, height: e.target.value})}
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                                placeholder="e.g. 170"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Weight (kg)</Label>
+                                            <Input 
+                                                type="number"
+                                                value={formData.weight} 
+                                                onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                                                placeholder="e.g. 60"
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                            />
+                                        </div>
+                                        
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Club / Activities</Label>
+                                            <Input 
+                                                value={formData.club} 
+                                                onChange={(e) => setFormData({...formData, club: e.target.value})}
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                                placeholder="e.g. Science Club"
+                                            />
+                                        </div>
+                                        
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Favourite Colour</Label>
+                                            <Input 
+                                                value={formData.favouriteColour} 
+                                                onChange={(e) => setFormData({...formData, favouriteColour: e.target.value})}
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                                placeholder="e.g. Blue"
                                             />
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                    
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-5">
+                                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Emergency Contact</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Guardian Name</Label>
+                                                <Input 
+                                                    value={formData.guardianName} 
+                                                    onChange={(e) => setFormData({...formData, guardianName: e.target.value})}
+                                                    className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                                    placeholder="Full Name"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Guardian Phone</Label>
+                                                <Input 
+                                                    value={formData.guardianPhone} 
+                                                    onChange={(e) => setFormData({...formData, guardianPhone: e.target.value})}
+                                                    className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent"
+                                                    placeholder="+1 555 000 0000"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </TabsContent>
 
-                            <div className="pt-6">
-                                <Button 
-                                    type="button"
-                                    onClick={handleSave}
-                                    disabled={updateProfile.isPending || formData.email !== profile.email || emailStep === 'verify'}
-                                    className="w-full rounded-[2rem] h-16 font-black text-lg gap-3 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-50 disabled:grayscale"
-                                >
-                                    {updateProfile.isPending ? <Loader2 className="animate-spin" /> : <Save size={20} />} 
-                                    Synchronize Records
-                                </Button>
-                            </div>
-                        </CardContent>
+                                <TabsContent value="visuals" className="space-y-5 mt-0 outline-none">
+                                    <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            <User size={16} className="text-slate-400" /> Profile Avatar
+                                        </div>
+                                        <ImageUpload 
+                                            label="Upload Avatar" 
+                                            value={formData.profileImage} 
+                                            onChange={(url) => setFormData({...formData, profileImage: url})} 
+                                            description="Recommended 400x400px (1:1)"
+                                            aspectRatio="square"
+                                        />
+                                    </div>
+                                    <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            <ImageIcon size={16} className="text-slate-400" /> Profile Banner
+                                        </div>
+                                        <ImageUpload 
+                                            label="Upload Banner" 
+                                            value={formData.bannerImage} 
+                                            onChange={(url) => setFormData({...formData, bannerImage: url})} 
+                                            description="Recommended 1200x400px (3:1)"
+                                            aspectRatio="video"
+                                        />
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="security" className="space-y-5 mt-0 outline-none">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Contact Email</Label>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <Input 
+                                                value={formData.email} 
+                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                disabled={emailStep !== 'input'}
+                                                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 disabled:bg-slate-50 dark:disabled:bg-slate-900 disabled:text-slate-500 bg-transparent flex-1"
+                                            />
+                                            {formData.email !== profile.email && emailStep === 'input' && (
+                                                <Button 
+                                                    type="button"
+                                                    onClick={handleRequestEmailChange}
+                                                    disabled={requestEmailUpdate.isPending}
+                                                    className="h-10 px-6 rounded-lg bg-pink-600 hover:bg-pink-700 text-white font-semibold text-sm shadow-sm"
+                                                >
+                                                    {requestEmailUpdate.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Verify"}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {emailStep === 'verify' && (
+                                        <div className="p-5 rounded-xl border border-pink-100 dark:border-pink-900 bg-pink-50 dark:bg-pink-950 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-pink-900 dark:text-pink-100">Verification Required</h4>
+                                                    <p className="text-xs text-pink-700 dark:text-pink-400 mt-1">We sent a code to {formData.email}</p>
+                                                </div>
+                                                <Button variant="ghost" size="sm" onClick={() => setEmailStep('input')} className="text-pink-500 hover:bg-pink-100 dark:hover:bg-pink-900 h-8 px-2 rounded-md">
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Input 
+                                                    placeholder="Enter code"
+                                                    value={verificationCode}
+                                                    onChange={(e) => setVerificationCode(e.target.value)}
+                                                    className="h-10 border-pink-200 dark:border-pink-700 bg-white dark:bg-slate-900 text-center tracking-widest font-semibold flex-1"
+                                                    maxLength={6}
+                                                />
+                                                <Button 
+                                                    type="button"
+                                                    onClick={handleVerifyEmail}
+                                                    disabled={verifyEmailUpdate.isPending}
+                                                    className="h-10 px-6 rounded-lg bg-pink-600 text-white hover:bg-pink-700 font-semibold text-sm shadow-sm"
+                                                >
+                                                    {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Confirm"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </TabsContent>
+                            </Tabs>
+                        </div>
+
+                        <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800 shrink-0 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/50">
+                            <Button variant="outline" onClick={() => setEditingTab(null)} className="h-10 rounded-lg border-slate-200 dark:border-slate-700 font-semibold">
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={handleSave}
+                                disabled={
+                                    updateProfile.isPending || 
+                                    (formData.email !== profile.email && emailStep !== 'input') || 
+                                    emailStep === 'verify'
+                                }
+                                className="h-10 px-6 rounded-lg bg-pink-600 text-white hover:bg-pink-700 font-semibold shadow-sm"
+                            >
+                                {updateProfile.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save size={16} className="mr-2" />} 
+                                Save Changes
+                            </Button>
+                        </div>
                     </Card>
                 </div>
             )}
@@ -552,53 +661,43 @@ export default function StudentProfilePage() {
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string, color: string }) {
     return (
-        <div className="shrink-0 w-[240px] md:w-auto p-6 md:p-8 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 transition-all hover:shadow-xl hover:scale-[1.02]">
-            <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", color)}>
+        <div className="bg-white dark:bg-slate-950 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0", color)}>
                 {icon}
             </div>
             <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</p>
-                <p className="text-lg font-black truncate">{value}</p>
+                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1 truncate">{label}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white truncate">{value}</p>
             </div>
         </div>
     );
 }
 
-function InfoItem({ icon, label, value, description }: { icon: React.ReactNode, label: string, value: string, description: string }) {
+function InfoItem({ label, value }: { label: string, value: string }) {
     return (
-        <div className="group flex gap-4 md:gap-6 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
-            <div className="h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all shadow-sm">
-                {icon}
-            </div>
-            <div className="space-y-1 min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                <div className="flex items-center gap-2">
-                    <p className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">{value}</p>
-                    <ChevronRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
-                </div>
-                <p className="text-[10px] font-bold text-slate-500 italic leading-none truncate">{description}</p>
-            </div>
+        <div className="flex flex-col">
+            <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">{label}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-slate-200 truncate">{value}</span>
         </div>
     );
 }
 
-function MobileQuickAction({ href, icon, label, status, color }: { href?: string, icon: React.ReactNode, label: string, status: string, color: string }) {
+function QuickActionItem({ href, icon, label, status, onClick, hoverColor }: { href?: string, icon: React.ReactNode, label: string, status: string, onClick?: () => void, hoverColor?: string }) {
     const Component = href ? Link : 'button';
     const props = href ? { href } : {};
-
+    
     return (
-        <Component {...props as any} className="w-full flex items-center justify-between p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-primary/20 transition-all group overflow-hidden relative">
-            <div className="flex items-center gap-4 relative z-10">
-                <div className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", color)}>
+        <Component {...props as any} onClick={onClick} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group text-left border border-transparent hover:border-slate-100 dark:hover:border-slate-800 block">
+            <div className="flex items-center gap-3">
+                <div className={cn("h-10 w-10 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-500 flex items-center justify-center transition-colors group-hover:scale-110", hoverColor)}>
                     {icon}
                 </div>
-                <div className="text-left">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-white italic">{status}</p>
+                <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-200">{label}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-slate-400">{status}</p>
                 </div>
             </div>
-            <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-colors relative z-10" />
-            <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ChevronRight size={16} className="text-gray-300 dark:text-slate-600 group-hover:text-pink-500 transition-colors" />
         </Component>
     );
 }

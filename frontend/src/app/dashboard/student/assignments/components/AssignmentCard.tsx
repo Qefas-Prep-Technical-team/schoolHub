@@ -88,15 +88,15 @@ export default function AssignmentCard({ assignment, viewMode, onClick, index }:
       <div className={`flex ${viewMode === 'list' ? 'flex-1' : 'w-full'} items-start justify-between`}>
         <div className="flex-1">
           <p className="text-sm font-medium text-primary">{assignment.subject}</p>
-          <h3 className={`font-bold text-gray-900 dark:text-white flex items-center gap-2 ${
+          <h3 className={`font-bold text-gray-900 dark:text-white flex items-center gap-3 ${
             viewMode === 'list' ? 'text-xl' : 'text-lg'
           }`}>
             {index !== undefined && (
-              <span className="shrink-0 flex items-center justify-center text-[10px] font-black bg-[#0856c8]/10 text-[#0856c8] dark:bg-blue-500/10 dark:text-blue-400 w-5 h-5 rounded-md">
+              <span className="shrink-0 flex items-center justify-center text-xs font-black bg-slate-900 text-white dark:bg-white dark:text-slate-900 w-7 h-7 rounded-full shadow-sm">
                 {index}
               </span>
             )}
-            <span>{assignment.title}</span>
+            <span className="line-clamp-2">{assignment.title}</span>
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400">{assignment.instructor}</p>
           

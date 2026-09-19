@@ -36,6 +36,9 @@ interface User {
   billingCycle?: string;
   subscriptionStatus?: string;
   subscriptionPlanId?: string;
+  require2FA?: boolean;
+  isTwoFactorEnabled?: boolean;
+  tempToken?: string;
 }
 
 interface AuthState {
@@ -46,11 +49,18 @@ interface AuthState {
   isInitialized: boolean;
   userType: UserType | null;
   isTransitioning: boolean;
+  isLoggingOut: boolean;
   transitionRole: string | null;
   transitionUserName: string | null;
   isLogoutModalOpen: boolean;
   setAuth: (user: User, token: string) => void;
-  setTransitioning: (isTransitioning: boolean, role?: string | null, userName?: string | null) => void;
+  setPending2FA: (user: User) => void;
+  setTransitioning: (
+    isTransitioning: boolean,
+    role?: string | null,
+    userName?: string | null,
+  ) => void;
+  setLoggingOut: (isLoggingOut: boolean) => void;
   setLogoutModalOpen: (isOpen: boolean) => void;
   setHasCompletedOnboarding: (value: boolean) => void;
   updateUser: (updates: Partial<User>) => void;
@@ -79,31 +89,51 @@ export const useAuthStore = create<AuthState>()(
       transitionUserName: null,
       isLogoutModalOpen: false,
 
+      isLoggingOut: false,
+
       setAuth: (user: User, token: string) => {
-        Cookies.set("token", token, {
-          expires: 1,
-          path: "/",
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-        });
+        // We no longer set the client-side 'token' cookie here because
+        // the backend sets it as HttpOnly. Attempting to set it here
+        // conflicts with the HttpOnly cookie and causes issues.
+
+        console.log(
+          "DEBUG: setAuth called with token:",
+          token ? "PRESENT" : "MISSING",
+        );
 
         set({
-          user,
+          user: normalizeUser(user),
           accessToken: token,
           isAuthenticated: true,
           userType: user.userType,
+          isLoggingOut: false, // Reset on login
+        });
+      },
+      setPending2FA: (user: User) => {
+        set({
+          user: normalizeUser(user),
+          isAuthenticated: false, // Ensure they are not fully authenticated yet!
+          isLoggingOut: false,
         });
       },
       setHasCompletedOnboarding: (value: boolean) => {
         set({ hasCompletedOnboarding: value });
       },
 
-      setTransitioning: (isTransitioning: boolean, role?: string | null, userName?: string | null) => {
-        set({ 
-          isTransitioning, 
-          transitionRole: role ?? null, 
-          transitionUserName: userName ?? null 
+      setTransitioning: (
+        isTransitioning: boolean,
+        role?: string | null,
+        userName?: string | null,
+      ) => {
+        set({
+          isTransitioning,
+          transitionRole: role ?? null,
+          transitionUserName: userName ?? null,
         });
+      },
+
+      setLoggingOut: (isLoggingOut: boolean) => {
+        set({ isLoggingOut });
       },
 
       setLogoutModalOpen: (isOpen: boolean) => {
@@ -113,7 +143,8 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (updates: Partial<User>) => {
         const state = get();
         if (!state.user) return;
-        set({ user: { ...state.user, ...updates } });
+        const nextUser = normalizeUser({ ...state.user, ...updates });
+        set({ user: nextUser });
       },
 
       setUserType: (userType: UserType) => {
@@ -132,7 +163,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           isAuthenticated: false,
           hasCompletedOnboarding: false,
-          userType: null,
+          isLoggingOut: true, // Flag that we are logging out
         });
       },
 
@@ -158,3 +189,9 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+const normalizeUser = (user: User) => {
+  const isTwoFactorEnabled =
+    user.isTwoFactorEnabled ?? user.require2FA ?? false;
+  return { ...user, require2FA: isTwoFactorEnabled, isTwoFactorEnabled };
+};

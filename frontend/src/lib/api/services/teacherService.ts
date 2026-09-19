@@ -151,7 +151,11 @@ export const teacherService = {
     const response = await apiClient.get("/teacher/subjects", {
       params: options,
     });
-    return response.data.data ?? [];
+    return (response.data.data ?? []).map((s: any) => ({
+      ...s,
+      teachersCount: s._count?.teacherSubjects || 0,
+      classesCount: s._count?.classes || 0
+    }));
   },
 
   /**
@@ -245,6 +249,24 @@ export const teacherService = {
     const response = await apiClient.patch(`/assignment/${assignmentId}/status`, { status }, {
       headers: schoolId ? { 'x-school-id': schoolId } : {}
     });
+    return response.data;
+  },
+
+  /**
+   * 2FA Setup
+   */
+  generate2FA: async () => {
+    const response = await apiClient.post("/auth/2fa/generate");
+    return response.data;
+  },
+
+  verify2FA: async (code: string) => {
+    const response = await apiClient.post("/auth/2fa/verify", { code });
+    return response.data;
+  },
+
+  disable2FA: async () => {
+    const response = await apiClient.post("/auth/2fa/disable");
     return response.data;
   }
 };

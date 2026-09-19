@@ -1,21 +1,28 @@
 import SchoolCard from "./components/SchoolCard";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 export default function SchoolPage() {
   return (
-    <div className="relative flex min-h-screen w-full flex-col gap-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-500">
-      <main className="flex-1 flex flex-col items-center justify-center pt-24 pb-8 px-4 sm:px-6 lg:px-8">
-        <div className="mt-8 mb-4 w-[95vw] lg:w-[75vw] max-w-[1000px] flex justify-start">
-          <Link href="/signup" className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Options
-          </Link>
-        </div>
-        <div className="w-[95vw] lg:w-[75vw] max-w-[1000px]">
-          <SchoolCard />
-        </div>
-      </main>
+    <div
+      className="min-h-screen w-full flex items-center justify-center p-6 lg:p-10 relative overflow-hidden transition-colors duration-300
+                 bg-[#e0e7ff] dark:bg-slate-950"
+    >
+      {/* Light mode — soft blue ambient blobs */}
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-[100px] opacity-40 pointer-events-none bg-blue-200 dark:bg-blue-900/30" />
+      <div className="absolute -bottom-40 -right-20 w-[400px] h-[400px] rounded-full blur-[120px] opacity-30 pointer-events-none bg-indigo-300 dark:bg-indigo-900/20" />
+
+      {/* Dark mode — subtle grid texture overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-0 dark:opacity-[0.03]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-[1180px]">
+        <SchoolCard />
+      </div>
     </div>
   );
 }

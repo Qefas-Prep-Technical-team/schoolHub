@@ -195,7 +195,7 @@ export default function ClassesOverviewPage() {
 
     return (
         <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 space-y-6">
-            <div className="max-w-[1400px] mx-auto space-y-6">
+            <div className="w-[95%] max-w-[1600px] mx-auto space-y-6">
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
@@ -430,6 +430,7 @@ export default function ClassesOverviewPage() {
                         totalItems={filteredClasses.length}
                         itemsPerPage={itemsPerPage}
                         onPageChange={setCurrentPage}
+                        theme="blue"
                     />
                 )}
 

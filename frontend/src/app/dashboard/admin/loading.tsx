@@ -3,8 +3,8 @@ import { Loader2 } from "lucide-react";
 
 export default function AdminLoading() {
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8">
-      <div className="max-w-[1400px] mx-auto space-y-6">
+    <div className="min-h-screen bg-transparent py-4 md:py-6 lg:py-8">
+      <div className="w-[90%] max-w-none mx-auto space-y-6">
 
         {/* Header Section */}
         <div>

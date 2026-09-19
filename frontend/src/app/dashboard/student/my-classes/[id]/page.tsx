@@ -13,7 +13,7 @@ import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
 
 import ClassHeader from './components/ClassHeader';
 import Breadcrumbs from './components/Breadcrumbs';
-import ClassOverview from './components/ClassOverview';
+import ClassBanner from './components/ClassBanner';
 import ClassStats from './components/ClassStats';
 import ClassTabs from './components/ClassTabs';
 import AssignmentsTable from './components/AssignmentsTable';
@@ -283,25 +283,23 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
+    <div className="w-[90%] mx-auto py-8 pb-32">
       <ClassHeader classItem={classItem!} />
       <Breadcrumbs classTitle={classItem!.title} />
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <ClassOverview
-            teachers={classItem!.teachers || []}
-            description={classItem!.description}
-          />
-        </div>
-        <div>
-          <ClassStats
-            attendance={classItem!.stats.attendance}
-            assignments={classItem!.stats.assignments}
-            grade={classItem!.stats.grade}
-            lastActivity={classItem!.stats.lastActivity}
-          />
-        </div>
+      <div className="mt-8 space-y-4">
+        <ClassBanner
+          title={classItem!.title}
+          description={classItem!.description}
+          onContactClick={() => console.log('Contact')}
+          onMaterialsClick={() => setActiveTab('materials')}
+        />
+        <ClassStats
+          attendance={classItem!.stats.attendance}
+          assignments={classItem!.stats.assignments}
+          grade={classItem!.stats.grade}
+          lastActivity={classItem!.stats.lastActivity}
+        />
       </div>
 
       <ClassTabs activeTab={activeTab} onTabChange={setActiveTab}>

@@ -21,6 +21,89 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Thursday, September 18, 2026
+
+- **Security Settings UI and Auditing (`/dashboard/admin/settings`)**:
+    - [x] Added a confirmation modal when disabling Two-Factor Authentication. The modal warns users of the security risk and requires them to manually type "DISABLE" to proceed.
+    - [x] Added a new `SecurityAuditLog` model to `schema.prisma` to securely track security events.
+    - [x] Updated the `disable2FA` controller to capture `deviceModel`, `osVersion`, and `ipAddress` from incoming requests and store them in the `SecurityAuditLog` table.
+
+- **Parent Settings Redesign (`/dashboard/parent/settings`)**:
+    - [x] Refactored the layout structure and tabs to match the UI language of the Admin Settings page (compact tabs, 80% container width).
+    - [x] Integrated `TwoFactorSetup` directly into the parent's Security tab, linking it with `updateUser` for seamless hydration.
+
+- **Security Settings Bug Fix (`/dashboard/admin/settings`)**:
+    - [x] Fixed the "Require 2FA" toggle not reflecting its state from the database upon page refresh. Updated `backend/src/modules/auth/auth.controller.ts` to include `require2FA: user.isTwoFactorEnabled` in the API response payload for `/auth/me`, `/auth/login`, and `/auth/login2FA` endpoints for all user roles (Admin, Teacher, Student, Parent). This ensures the frontend Zustand store hydrates correctly.
+
+- **Settings UI Polish (`/dashboard/admin/settings`)**:
+    - [x] Fixed an issue with the "Save Changes" button displaying duplicate loading indicators. Refactored the button's loading state to remove the extra spinner component and cleanly display "Saving..." text while the mutation is pending.
+
+- **Form UI Polish (`/dashboard/admin/school-profile/edit`)**:
+    - [x] Changed the "Save Changes" button in `FormActionBar.tsx` to use distinct Tailwind blue classes (`bg-blue-600 dark:bg-blue-500`) instead of the generic `bg-primary` variable. This ensures the button remains highly visible, distinct, and aesthetically pleasing in Dark Mode.
+
+- **Dynamic Verification Status (`/dashboard/admin/school-profile`)**:
+    - [x] Refactored the `Verification` badge in the Institutional Stats section to dynamically reflect the actual database status. It now checks the `verified` boolean of the school's admin account instead of being hardcoded to "Verified". It displays an amber "Unverified" badge if the email is not verified.
+
+- **School Profile View Fields Sync (`/dashboard/admin/school-profile`)**:
+    - [x] Added `Operating Hours` to the Connectivity sidebar block so it mirrors the edit form.
+    - [x] Added `Principal` to the Institutional Stats section so it properly reflects the data managed on the edit page.
+
+- **School Profile Layout Tweak (`/dashboard/admin/school-profile`)**:
+    - [x] Updated the main wrapper in `page.tsx` and `loading.tsx` to use `w-[90%] max-w-none` to match the exact 90% fluid width configuration requested.
+
+- **Admin Dashboard Loading Skeleton Tweak (`/dashboard/admin/loading.tsx`)**:
+    - [x] Changed the max-width constraint on the loading skeleton page wrapper from `1400px` to fluidly fill exactly 90% of the available screen space (`w-[90%] max-w-none`), matching the user's specific request.
+
+- **Email Templates Logo Fix (`backend/src/modules/auth/auth.service.ts`)**:
+    - [x] Hardcoded all 9 instances of the email logo `src` from using the local/env-based `FRONTEND_URL` to an absolute production URL (`https://qefashub.com/logo/favicon.svg`). This ensures the logo always renders correctly in users' email clients regardless of the environment the server is running in.
+
+- **Admin Dashboard Layout Tweak (`/dashboard/admin`)**:
+    - [x] Changed the max-width constraint on the main page wrapper from a hardcoded `1400px` to fluidly fill 95% of the available screen space (`w-[95%] max-w-none`).
+
+- **School Signup Page Polish (`/signup/school`)**:
+    - [x] **Subdomain Accordion**: Wrapped the "Subdomain" field inside the exact same expandable "Optional Information" accordion used by the other roles to ensure 100% structural consistency across all 4 signup forms.
+    - [x] **Cleanup**: Removed remaining obsolete legacy components (`SchoolHeader.tsx`, `SchoolSlider.tsx`) that were missed during the initial school redesign.
+
+- **Parent Signup Page Redesign (`/signup/parent`)**:
+    - [x] **`ParentCard.tsx` Full Redesign**: Replaced the fragmented component structure with a unified `ParentCard` matching the premium two-panel layout.
+    - [x] **Orange Theme Applied**: Used the parent role identity (orange colors `#ea580c`, `#f97316`) for gradients, badges, and interactive elements. Matches the parent login page palette.
+    - [x] **Role-Specific Fields**: Added an expandable "Optional Information" accordion containing the "Student Code".
+    - [x] **Full Dark Mode Support**: Integrated full dark mode consistently across the form, modals, and page wrapper.
+    - [x] **Page Wrapper Update**: Updated `page.tsx` to use the orange tinted background (`#fff7ed`) with light ambient blobs and a dark mode grid texture.
+    - [x] **Cleanup**: Removed unused obsolete components (`ParentForm.tsx`, `ParentHeader.tsx`, `ParentImage.tsx`). Updated `AuthModal` to point to new component.
+
+- **Student Signup Page Redesign (`/signup/student`)**:
+    - [x] **`StudentCard.tsx` Full Redesign**: Replaced the fragmented component structure with a unified `StudentCard` matching the premium two-panel layout established by `SchoolCard` and `TeacherCard`.
+    - [x] **Rose Theme Applied**: Used the student role identity (rose colors `#be123c`, `#e11d48`) for gradients, badges, and interactive elements. Matches the student login page palette.
+    - [x] **Role-Specific Fields**: Added an expandable "Optional Information" accordion containing "School Code", "Class Code", "Teacher Code", and "Parent Code".
+    - [x] **Full Dark Mode Support**: Integrated full dark mode (`dark:bg-slate-900`, `dark:border-slate-800`, etc.) consistently across the form, modals, and page wrapper.
+    - [x] **Page Wrapper Update**: Updated `page.tsx` to use the rose tinted background (`#fff1f2`) with light ambient blobs and a dark mode grid texture.
+    - [x] **Cleanup**: Removed unused obsolete components (`StudentRegisterForm.tsx`, `StudentRegisterImageSlider.tsx`). Updated `AuthModal` to point to new component.
+
+- **Teacher Signup Page Redesign (`/signup/teacher`)**:
+    - [x] **`TeacherCard.tsx` Full Redesign**: Replaced the fragmented 5-component structure (`TeacherRegisterForm`, `TeacherRegisterContainer`, `TeacherRegisterImage`, etc.) with a single, unified `TeacherCard` component matching the premium two-panel layout established by `SchoolCard`.
+    - [x] **Emerald Theme Applied**: Used the teacher role identity (emerald colors `#047857`, `#10b981`) for buttons, badges, gradients, and interactive elements.
+    - [x] **Role-Specific Fields**: Added an expandable "Optional Information" accordion containing "School Code", "Class Code", and "Student Code". Included the "Independent Account" checkbox which automatically disables/clears the School Code field when checked.
+    - [x] **Full Dark Mode Support**: Integrated full dark mode (`dark:bg-slate-900`, `dark:border-slate-800`, etc.) consistently across the form, modals, and page wrapper.
+    - [x] **Page Wrapper Update**: Updated `page.tsx` to use the emerald tinted background (`#e8f5e9`) with light ambient blobs and a dark mode grid texture.
+    - [x] **Cleanup**: Removed unused obsolete components (`TeacherRegisterContainer.tsx`, `TeacherRegisterDivider.tsx`, `TeacherRegisterForm.tsx`, `TeacherRegisterImage.tsx`, `TeacherRegisterInput.tsx`).
+
+- **School Signup Page Redesign (`/signup/school`)**:
+    - [x] **`SchoolCard.tsx` Full Redesign**: Completely rebuilt the school registration card with a premium two-panel layout (form left, visual right). See previous entry for details.
+    - [x] **Blue Theme Applied**: Switched colour palette from forest-green to the admin-role blue (`#1d4ed8` → `#3b82f6` gradient on the right panel). Matches the `/login/school-admin` page blue identity.
+    - [x] **Full Dark Mode Support**: Added `dark:` Tailwind variants on every element:
+        - Card: `bg-white dark:bg-slate-900`
+        - Inputs: `bg-slate-50 dark:bg-slate-800`, `border-slate-200 dark:border-slate-700`, `text-slate-800 dark:text-white`
+        - Labels / helper text: `dark:text-slate-300` / `dark:text-slate-400`
+        - Error text: `dark:text-red-400`
+        - Subdomain suffix: `dark:bg-slate-700 dark:border-slate-700`
+        - Eye-toggle buttons: `dark:text-slate-500 dark:hover:text-slate-300`
+        - Modals: `dark:bg-slate-900`, header `dark:bg-slate-800/50`, borders `dark:border-slate-800`
+        - Modal CTA: blue gradient (consistent light+dark)
+        - Card ring: `dark:ring-1 dark:ring-slate-800` (replaces box-shadow)
+    - [x] **`page.tsx` Dark Mode**: `bg-[#e0e7ff] dark:bg-slate-950` + blue ambient blobs light / subtle grid texture overlay dark.
+    - [x] **`getPasswordStrength` extraction**: Moved to `services/passwordStrength.ts`; updated `ParentForm.tsx`, `TeacherRegisterForm.tsx`, `StudentRegisterForm.tsx` imports.
+
 ### Saturday, September 12, 2026
 
 - **Teacher Exams & Quizzes Page (`/dashboard/teacher/exams&quizzes`) — UI Fixes & Features**:
@@ -1059,4 +1142,20 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
  
  F i x e d   c h i l d   l i n k a g e   c h e c k   t o   u s e   ' a c t i v e '   i n s t e a d   o f   ' A C T I V E '   s o   t h e   a s s i g n m e n t   d e t a i l s   e n d p o i n t   w o r k s   p r o p e r l y . 
  
+ # # #   S a t u r d a y ,   S e p t e m b e r   1 9 ,   2 0 2 6 
+ -   [ x ]   F i x e d   a u t h M i d d l e w a r e   b u g   i n c o r r e c t l y   l o o k i n g   f o r   ' a c t i v e S c h o o l I d '   a n d   ' p r i m a r y S c h o o l I d '   o n   t h e   T e a c h e r   m o d e l   i n s t e a d   o f   ' c u r r e n t S c h o o l I d '   a n d   ' s c h o o l I d ' 
+ -   [ x ]   F i x e d   v a l i d a t i o n   e r r o r   i n   v a l i d a t e Z o d R e q u e s t . t s 
+ -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   s c h o o l I d   r e s o l u t i o n   i n   u s e A u t h S t o r e   d a t a   b y   e x p a n d i n g   f a l l b a c k   t a r g e t s .  
+ -   [ x ]   A d d e d   e x c e p t i o n   t o   a u t h M i d d l e w a r e . t s   t o   a l l o w   i n d e p e n d e n t / u n l i n k e d   t e a c h e r s   t o   a c c e s s   t h e i r   s e s s i o n s ,   s e t t i n g s ,   a n d   p r o f i l e   r o u t e s   w i t h o u t   a   4 0 3   e r r o r  
+ -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   A d m i n   S c h o o l   P r o f i l e   v i e w   p a g e ,   m a t c h i n g   t h e   e d i t   p a g e   l a y o u t .  
+ -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   t o   s t r i c t l y   u s e   t h e   t e a c h e r   t h e m e   c o l o r   ( e m e r a l d )   i n s t e a d   o f   t h e   s c h o o l   s e t t i n g s   c o l o r  
+ -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   T e a c h e r   S c h o o l   P r o f i l e   v i e w   p a g e  
+ -   [ x ]   H o o k e d   u p   ' V i e w   I n s t i t u t i o n '   b u t t o n   o n   T e a c h e r   s e t t i n g s   p a g e   t o   r e d i r e c t   t o   t h e   s c h o o l   p r o f i l e   r o u t e  
+ -   [ x ]   F i x e d   R e f e r e n c e E r r o r   f o r   ' r o u t e r   i s   n o t   d e f i n e d '   o n   T e a c h e r   s e t t i n g s   p a g e  
+ -   [ x ]   U p d a t e d   A d m i n   C l a s s e s   p a g e   t o   f i t   9 5 %   o f   t h e   s c r e e n   w i d t h  
+ -   [ x ]   A d d e d   t h e m e   s u p p o r t   t o   P a g i n a t i o n   c o m p o n e n t   a n d   s e t   i t   t o   b l u e   f o r   t h e   A d m i n   C l a s s e s   p a g e  
+ -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   A s s e s s m e n t I t e m . t s x   r e l a t e d   t o   p o s s i b l y   u n d e f i n e d   d u r a t i o n M i n u t e s  
+ -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   m y - c l a s s e s / . . . / s u b j e c t s / p a g e . t s x   f o r   ' c o d e '   m i s s i n g   o n   s u b j e c t   t y p e  
+ -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   s t u d e n t   s e t t i n g s   p a g e   f o r   ' i s T w o F a c t o r E n a b l e d '   m i s s i n g   o n   S t u d e n t P r o f i l e  
+ -   [ x ]   F r o n t e n d   s u c c e s s f u l l y   b u i l t   w i t h   z e r o   T y p e S c r i p t   o r   c o m p i l a t i o n   e r r o r s  
  

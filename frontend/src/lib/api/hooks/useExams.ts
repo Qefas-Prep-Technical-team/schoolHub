@@ -33,6 +33,7 @@ export const useExam = (id: string) => {
     queryKey: examKeys.detail(id),
     queryFn: () => examService.getExamById(id),
     enabled: !!id,
+    retry: false,
   });
 };
 
@@ -194,6 +195,7 @@ export const useExamReview = (examId: string, studentId?: string) => {
     queryKey: [...examKeys.detail(examId), "review", studentId || "me"],
     queryFn: () => examService.getExamReview(examId, studentId),
     enabled: !!examId,
+    retry: false,
   });
 };
 
