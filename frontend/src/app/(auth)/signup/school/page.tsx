@@ -20,7 +20,7 @@ export default function SchoolPage() {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-[1180px]">
+      <div className="relative z-10 w-full max-w-[1180px] mt-24">
         <SchoolCard />
       </div>
     </div>

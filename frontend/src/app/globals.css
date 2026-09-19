@@ -132,9 +132,14 @@
   }
   html, body {
     @apply bg-background text-foreground;
-    scrollbar-gutter: stable;
     overflow-x: hidden;
     position: relative;
+  }
+  html {
+    /* Use overlay scrollbar so the scrollbar doesn't occupy layout space (removes right white gap) */
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100,116,139,0.4) transparent;
   }
   a, button, [role="button"] {
     @apply cursor-pointer;

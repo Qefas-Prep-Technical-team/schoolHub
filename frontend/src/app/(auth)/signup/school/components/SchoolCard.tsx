@@ -168,13 +168,7 @@ export default function SchoolCard() {
 
           {/* ── Heading ── */}
           <div className="mb-8">
-            <div
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.12em] uppercase px-3 py-1.5 rounded-full mb-4"
-              style={{ background: BLUE_LITE, color: BLUE_DARK }}
-            >
-              <span className="material-symbols-outlined text-[13px]">stars</span>
-              30-day free trial — no credit card
-            </div>
+
             <h1
               className="text-[2rem] font-bold leading-[1.15] mb-2 text-slate-900 dark:text-white"
             >

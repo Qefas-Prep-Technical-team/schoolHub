@@ -20,7 +20,7 @@ export default function ParentRegisterPage() {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-[1180px]">
+      <div className="relative z-10 w-full max-w-[1180px] mt-24">
         <ParentCard />
       </div>
     </div>
