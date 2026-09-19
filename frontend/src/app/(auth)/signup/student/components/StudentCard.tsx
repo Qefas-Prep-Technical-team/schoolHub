@@ -163,13 +163,7 @@ export default function StudentCard() {
 
           {/* ── Heading ── */}
           <div className="mb-8">
-            <div
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.12em] uppercase px-3 py-1.5 rounded-full mb-4"
-              style={{ background: ROSE_LITE, color: ROSE_DARK }}
-            >
-              <span className="material-symbols-outlined text-[13px]">school</span>
-              Start Learning
-            </div>
+
             <h1
               className="text-[2rem] font-bold leading-[1.15] mb-2 text-slate-900 dark:text-white"
             >
@@ -425,7 +419,7 @@ export default function StudentCard() {
               style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
             >
               <span className="w-2 h-2 rounded-full animate-pulse bg-rose-300" />
-              <span className="text-white text-[13px] font-medium">Your learning hub</span>
+              <span className="text-white text-[13px] font-medium">Your educational hub</span>
             </div>
           </div>
 

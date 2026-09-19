@@ -159,13 +159,7 @@ export default function ParentCard() {
 
           {/* ── Heading ── */}
           <div className="mb-8">
-            <div
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.12em] uppercase px-3 py-1.5 rounded-full mb-4"
-              style={{ background: ORANGE_LITE, color: ORANGE_DARK }}
-            >
-              <span className="material-symbols-outlined text-[13px]">escalator_warning</span>
-              Stay Connected
-            </div>
+
             <h1
               className="text-[2rem] font-bold leading-[1.15] mb-2 text-slate-900 dark:text-white"
             >
