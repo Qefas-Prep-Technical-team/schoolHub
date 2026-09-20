@@ -6,10 +6,11 @@ import { useSchoolProfile, useSchoolLandingPage, useUpdateSchoolLandingPage } fr
 import { toast } from "react-toastify";
 import Link from "next/link";
 import ImageUpload from "@/components/reusable/ImageUpload";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   LayoutDashboard, Layers, Plus, Settings, Eye, Save, ChevronLeft,
   MousePointer2, Trash2, MoveUp, MoveDown, Type, Image as ImageIcon,
-  LayoutTemplate, Check, Copy, ExternalLink, Award, BookOpen, Users, Palette, FileText, Globe
+  LayoutTemplate, Check, Copy, ExternalLink, Award, BookOpen, Users, Palette, FileText, Globe, Crown
 } from "lucide-react";
 
 type BlockType = "HERO" | "TEXT" | "GALLERY" | "FEATURE_GRID";
@@ -255,7 +256,44 @@ export default function ProBuilderPage() {
   const updateTestimonial = (index: number, key: string, value: string) => { const updated = [...testimonials]; updated[index][key] = value; setTestimonials(updated); };
   const removeTestimonial = (index: number) => setTestimonials(testimonials.filter((_, i) => i !== index));
 
-  if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  // Wait for schoolProfile to load to get the accurate plan from backend
+  if (isLoading || !schoolProfile) {
+    return (
+      <div className="space-y-8 pb-12 p-6 max-w-[1600px] mx-auto min-h-[calc(100vh-80px)]">
+        <Skeleton className="h-12 w-1/3 rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="lg:col-span-2 h-64 rounded-[2.5rem]" />
+          <Skeleton className="h-64 rounded-[2.5rem]" />
+        </div>
+      </div>
+    );
+  }
+
+  const planName = (schoolProfile?.plan || user?.plan || "FREE").toUpperCase().trim();
+  const isFreeOrBasic = planName.includes("FREE") || planName.includes("BASIC") || planName.includes("STARTER") || planName === "";
+  const isTopTier = !isFreeOrBasic;
+  
+  if (!isTopTier) {
+    return (
+      <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center text-center p-8 -m-6 rounded-3xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+        <div className="w-24 h-24 bg-amber-500/10 rounded-full flex items-center justify-center mb-6">
+          <Crown className="w-12 h-12 text-amber-500" />
+        </div>
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Pro Builder is a Premium Feature</h2>
+        <p className="text-slate-500 max-w-lg mb-8 leading-relaxed">
+          Upgrade to a top-tier subscription to unlock the Advanced Pro Builder. Take full control of your school's website with custom pages, advanced blocks, and bespoke layouts.
+        </p>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/admin/subdomain" className="px-6 py-3 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-xl font-semibold transition-colors">
+            Go Back
+          </Link>
+          <button className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-md shadow-amber-500/20 transition-colors flex items-center gap-2">
+            <Crown className="w-4 h-4" /> Upgrade Subscription
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-80px)] bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans -m-6 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800">

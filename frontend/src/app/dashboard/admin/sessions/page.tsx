@@ -60,8 +60,9 @@ export default function SessionsPage() {
   const primaryColor = settings?.themeColor || '#2563eb';
 
   const { data: sessions = [], isLoading, isError } = useQuery({
-    queryKey: ["sessions"],
-    queryFn: () => sessionService.getSessions(),
+    queryKey: ["sessions", schoolId],
+    queryFn: () => sessionService.getSessions(schoolId),
+    enabled: !!schoolId,
   });
 
   const activeSession = sessions.find(s => s.status === "ACTIVE");
@@ -72,7 +73,7 @@ export default function SessionsPage() {
     mutationFn: (id: string) => sessionService.archiveSession(id),
     onSuccess: () => {
       toast.success("Session archived successfully");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions", schoolId] });
     },
     onError: () => toast.error("Failed to archive session"),
   });
@@ -81,7 +82,7 @@ export default function SessionsPage() {
     mutationFn: (id: string) => sessionService.deleteSession(id),
     onSuccess: () => {
       toast.success("Session deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions", schoolId] });
     },
     onError: () => toast.error("Failed to delete session"),
   });
@@ -90,7 +91,7 @@ export default function SessionsPage() {
     mutationFn: (id: string) => sessionService.updateSession(id, { isActive: true }),
     onSuccess: () => {
       toast.success("Session marked as active");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions", schoolId] });
     },
     onError: () => toast.error("Failed to set session as active"),
   });

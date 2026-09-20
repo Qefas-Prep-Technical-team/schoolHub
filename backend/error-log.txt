@@ -44785,4 +44785,171 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientInitializationError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:47
+
+  2703   });
+  2704 }
+  2705 
+→ 2706 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:21)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:47
+
+  2703   });
+  2704 }
+  2705 
+→ 2706 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:21)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:47
+
+  2703   });
+  2704 }
+  2705 
+→ 2706 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:21)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:47
+
+  2703   });
+  2704 }
+  2705 
+→ 2706 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:21)PrismaClientKnownRequestError: 
+Invalid `t.admin.update()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\user-subscription.service.ts:108:23
+
+  105 };
+  106 
+  107 if (userType === UserRole.ADMIN) {
+→ 108   await t.admin.update(
+An operation failed because it depends on one or more records that were required but not found. No record was found for an update.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at execute (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\user-subscription.service.ts:108:9)
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:722:18)
+    at C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\admin\admin.controller.ts:191:7
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:722:18)
+    at registerAdminSelf (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\admin\admin.controller.ts:168:20)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:751:24
+
+  748   skip,
+  749   take: limit,
+  750 }),
+→ 751 prisma.transaction.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 2)
+    at getSchoolBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:743:7)
+    at getSchoolBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:373:18)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:47
+
+  2703   });
+  2704 }
+  2705 
+→ 2706 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:21)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:47
+
+  2703   });
+  2704 }
+  2705 
+→ 2706 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2706:21)

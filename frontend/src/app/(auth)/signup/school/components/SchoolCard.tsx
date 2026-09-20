@@ -8,8 +8,8 @@ import Image from 'next/image';
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { useRouter } from 'next/navigation';
-import { useSchoolRegistration } from '../../services/useRegistrationMutations';
-import { SchoolFormData, schoolSchema } from '../../services/regSchema';
+import { useSchoolRegistration, useAdminSelfRegistration } from '../../services/useRegistrationMutations';
+import { SchoolFormData, schoolSchema, AdminJoinFormData, adminJoinSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 
 /* ─── Design tokens — Admin / School = Blue ─── */
@@ -43,6 +43,7 @@ const trustBadges = [
 ];
 
 export default function SchoolCard() {
+  const [mode, setMode] = useState<'register' | 'join'>('register');
   const [showPassword,        setShowPassword]        = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showOverlay,         setShowOverlay]         = useState(false);
@@ -52,17 +53,22 @@ export default function SchoolCard() {
   const [activeFeature,       setActiveFeature]       = useState(0);
   const router = useRouter();
 
-  const { mutate: registerSchool, isPending } = useSchoolRegistration();
+  const { mutate: registerSchool, isPending: isRegistering } = useSchoolRegistration();
+  const { mutate: joinSchool, isPending: isJoining } = useAdminSelfRegistration();
+  
+  const isPending = mode === 'register' ? isRegistering : isJoining;
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: globalFeatures } = useGlobalFeatures('admin');
 
+  // --- REGISTER FORM ---
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    watch,
-    setValue,
+    register: registerForm,
+    handleSubmit: handleRegisterSubmit,
+    formState: { errors: registerErrors },
+    reset: resetRegister,
+    watch: watchRegister,
+    setValue: setRegisterValue,
   } = useForm<SchoolFormData>({
     resolver: yupResolver(schoolSchema) as any,
     mode: 'onBlur',
@@ -77,20 +83,38 @@ export default function SchoolCard() {
     },
   });
 
-  const schoolNameValue = watch('schoolName');
+  const schoolNameValue = watchRegister('schoolName');
 
   /* Auto-generate subdomain */
   useEffect(() => {
-    if (schoolNameValue && !watch('subdomain')) {
+    if (schoolNameValue && !watchRegister('subdomain')) {
       const suggested = schoolNameValue
         .toLowerCase()
         .replace(/[^a-zA-Z0-9]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
         .substring(0, 63);
-      if (suggested.length >= 3) setValue('subdomain', suggested);
+      if (suggested.length >= 3) setRegisterValue('subdomain', suggested);
     }
-  }, [schoolNameValue, setValue, watch]);
+  }, [schoolNameValue, setRegisterValue, watchRegister]);
+
+  // --- JOIN FORM ---
+  const {
+    register: joinForm,
+    handleSubmit: handleJoinSubmit,
+    formState: { errors: joinErrors },
+    reset: resetJoin,
+  } = useForm<AdminJoinFormData>({
+    resolver: yupResolver(adminJoinSchema) as any,
+    mode: 'onBlur',
+    defaultValues: {
+      name:            '',
+      email:           '',
+      password:        '',
+      confirmPassword: '',
+      schoolCode:      '',
+    },
+  });
 
   /* Rotate feature card every 3 s */
   useEffect(() => {
@@ -98,7 +122,7 @@ export default function SchoolCard() {
     return () => clearInterval(id);
   }, []);
 
-  const onSubmit = async (data: SchoolFormData) => {
+  const onRegisterSubmit = async (data: SchoolFormData) => {
     try {
       const backendData = {
         schoolName:      data.schoolName.trim(),
@@ -114,7 +138,7 @@ export default function SchoolCard() {
         onSuccess: (response: any) => {
           const email = response.data.data?.school?.email || data.email;
           setShowOverlay(true);
-          reset();
+          resetRegister();
           setTimeout(() => {
             router.push(
               `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true`
@@ -123,6 +147,33 @@ export default function SchoolCard() {
         },
         onError: (error: any) => {
           console.error('❌ School registration failed:', error);
+        },
+      });
+    } catch (error) {
+      console.error('❌ Unexpected error:', error);
+    }
+  };
+
+  const onJoinSubmit = async (data: AdminJoinFormData) => {
+    try {
+      const backendData = {
+        name:            data.name.trim(),
+        email:           data.email.toLowerCase().trim(),
+        password:        data.password,
+        confirmPassword: data.confirmPassword,
+        schoolCode:      data.schoolCode.trim(),
+      };
+
+      await joinSchool(backendData, {
+        onSuccess: () => {
+          setShowOverlay(true);
+          resetJoin();
+          setTimeout(() => {
+            router.push('/login/school-admin?message=pending_approval');
+          }, 2000);
+        },
+        onError: (error: any) => {
+          console.error('❌ Admin join failed:', error);
         },
       });
     } catch (error) {
@@ -166,188 +217,311 @@ export default function SchoolCard() {
             </button>
           </div>
 
+          {/* ── Mode Toggle ── */}
+          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6">
+            <button
+              type="button"
+              onClick={() => setMode('register')}
+              className={`flex-1 py-2 text-[14px] font-semibold rounded-lg transition-all ${
+                mode === 'register' 
+                  ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' 
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Register New School
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('join')}
+              className={`flex-1 py-2 text-[14px] font-semibold rounded-lg transition-all ${
+                mode === 'join' 
+                  ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' 
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Join Existing School
+            </button>
+          </div>
+
           {/* ── Heading ── */}
           <div className="mb-8">
-
-            <h1
-              className="text-[2rem] font-bold leading-[1.15] mb-2 text-slate-900 dark:text-white"
-            >
-              Set up your school<br />
-              <span style={{ color: BLUE }}>in minutes</span>
+            <h1 className="text-[2rem] font-bold leading-[1.15] mb-2 text-slate-900 dark:text-white">
+              {mode === 'register' ? (
+                <>Set up your school<br /><span style={{ color: BLUE }}>in minutes</span></>
+              ) : (
+                <>Join your team<br /><span style={{ color: BLUE }}>as an Admin</span></>
+              )}
             </h1>
             <p className="text-[14px] text-slate-400 dark:text-slate-500 leading-relaxed">
-              Join thousands of schools already managing with Qefas Hub.
+              {mode === 'register' 
+                ? 'Join thousands of schools already managing with Qefas Hub.'
+                : 'Enter your school code to request admin access.'}
             </p>
           </div>
 
           {/* ── Form ── */}
-          <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4">
+          {mode === 'register' ? (
+            <form onSubmit={handleRegisterSubmit(onRegisterSubmit)} className="flex-1 flex flex-col gap-4">
 
-            {/* Row 1: School Name + Admin Name */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="School Name" icon="apartment" error={errors.schoolName?.message}>
+              {/* Row 1: School Name + Admin Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="School Name" icon="apartment" error={registerErrors.schoolName?.message}>
+                  <input
+                    {...registerForm('schoolName')}
+                    placeholder="Green Valley High"
+                    disabled={isPending}
+                    className={inputCls(!!registerErrors.schoolName)}
+                  />
+                </Field>
+                <Field label="Your Name" icon="person" error={registerErrors.adminName?.message}>
+                  <input
+                    {...registerForm('adminName')}
+                    placeholder="Yasir Noori"
+                    disabled={isPending}
+                    className={inputCls(!!registerErrors.adminName)}
+                  />
+                </Field>
+              </div>
+
+              {/* Email */}
+              <Field label="Work Email" icon="mail" error={registerErrors.email?.message}>
                 <input
-                  {...register('schoolName')}
-                  placeholder="Green Valley High"
+                  {...registerForm('email')}
+                  type="email"
+                  placeholder="you@school.edu"
                   disabled={isPending}
-                  className={inputCls(!!errors.schoolName)}
+                  className={inputCls(!!registerErrors.email)}
                 />
               </Field>
-              <Field label="Your Name" icon="person" error={errors.adminName?.message}>
-                <input
-                  {...register('adminName')}
-                  placeholder="Yasir Noori"
-                  disabled={isPending}
-                  className={inputCls(!!errors.adminName)}
-                />
-              </Field>
-            </div>
 
-            {/* Email */}
-            <Field label="Work Email" icon="mail" error={errors.email?.message}>
-              <input
-                {...register('email')}
-                type="email"
-                placeholder="you@school.edu"
-                disabled={isPending}
-                className={inputCls(!!errors.email)}
-              />
-            </Field>
+              {/* Row 2: Password + Confirm */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Password" icon="lock" error={registerErrors.password?.message}>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      {...registerForm('password')}
+                      placeholder="••••••••"
+                      disabled={isPending}
+                      className={`${inputCls(!!registerErrors.password)} pr-11`}
+                    />
+                    <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
+                  </div>
+                </Field>
 
-            {/* Row 2: Password + Confirm */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Password" icon="lock" error={errors.password?.message}>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    placeholder="••••••••"
-                    disabled={isPending}
-                    className={`${inputCls(!!errors.password)} pr-11`}
-                  />
-                  <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
-                </div>
-              </Field>
+                <Field label="Confirm Password" icon="lock_reset" error={registerErrors.confirmPassword?.message}>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      {...registerForm('confirmPassword')}
+                      placeholder="••••••••"
+                      disabled={isPending}
+                      className={`${inputCls(!!registerErrors.confirmPassword)} pr-11`}
+                    />
+                    <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
+                  </div>
+                </Field>
+              </div>
 
-              <Field label="Confirm Password" icon="lock_reset" error={errors.confirmPassword?.message}>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    {...register('confirmPassword')}
-                    placeholder="••••••••"
-                    disabled={isPending}
-                    className={`${inputCls(!!errors.confirmPassword)} pr-11`}
-                  />
-                  <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
-                </div>
-              </Field>
-            </div>
-
-            {/* Optional Fields Accordion */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mt-2">
-              <button
-                type="button"
-                onClick={() => setShowOptional(!showOptional)}
-                className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              {/* Subdomain — always visible */}
+              <Field
+                label={<>Subdomain <span className="font-normal text-slate-400 dark:text-slate-500">(auto-generated if empty)</span></>}
+                icon="link"
               >
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[18px]">settings</span>
-                  <span className="text-[14px] font-medium text-slate-800 dark:text-slate-200">Optional Information</span>
+                <div className="flex rounded-xl overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-blue-500/40 transition-all">
+                  <input
+                    {...registerForm('subdomain')}
+                    placeholder="your-school"
+                    disabled={isPending}
+                    className="flex-1 h-11 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 bg-slate-50 dark:bg-slate-800 outline-none"
+                  />
+                  <div className="flex items-center px-3 bg-slate-100 dark:bg-slate-700 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap border-l border-slate-200 dark:border-slate-700">
+                    .qefashub.com
+                  </div>
                 </div>
-                <span className={`material-symbols-outlined text-slate-500 dark:text-slate-400 transition-transform duration-300 ${showOptional ? 'rotate-180' : ''}`}>
-                  expand_more
+              </Field>
+
+              {/* Terms — premium checkbox card */}
+              {(() => {
+                const isChecked = !!watchRegister('acceptTerms');
+                return (
+                  <label
+                    htmlFor="school-terms"
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
+                      registerErrors.acceptTerms
+                        ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/10'
+                        : isChecked
+                          ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-900/10'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/10'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      id="school-terms"
+                      {...registerForm('acceptTerms')}
+                      className="sr-only"
+                    />
+                    <div
+                      className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200"
+                      style={{
+                        borderColor: isChecked ? BLUE : '#cbd5e1',
+                        background: isChecked ? BLUE : 'transparent',
+                      }}
+                    >
+                      {isChecked && (
+                        <span className="material-symbols-outlined text-white leading-none" style={{ fontSize: '13px' }}>
+                          check
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed select-none">
+                      I agree to the{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
+                        className="font-semibold hover:underline underline-offset-2"
+                        style={{ color: BLUE }}
+                      >
+                        Terms of Service
+                      </button>
+                      {' '}and{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); setShowPrivacyModal(true); }}
+                        className="font-semibold hover:underline underline-offset-2"
+                        style={{ color: BLUE }}
+                      >
+                        Privacy Policy
+                      </button>
+                    </span>
+                  </label>
+                );
+              })()}
+              {registerErrors.acceptTerms && (
+                <p className="text-red-500 text-xs -mt-1 ml-1">{registerErrors.acceptTerms.message}</p>
+              )}
+
+
+
+              {/* CTA button */}
+              <button
+                type="submit"
+                disabled={isPending}
+                className="mt-2 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
+                style={{ background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_MID} 100%)`, height: '52px' }}
+              >
+                {/* hover shimmer */}
+                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative flex items-center gap-2">
+                  {isPending ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creating your account…
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
+                      Create School Account
+                    </>
+                  )}
                 </span>
               </button>
 
-              <div className={`transition-all duration-300 ease-in-out bg-white dark:bg-slate-900 ${showOptional ? 'max-h-[500px] opacity-100 p-4 border-t border-slate-200 dark:border-slate-700' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-                <div className="grid grid-cols-1 gap-4">
-                  <Field
-                    label={<>Subdomain <span className="font-normal text-slate-400 dark:text-slate-500">(auto-generated if empty)</span></>}
-                    icon="link"
-                  >
-                    <div className="flex rounded-xl overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-blue-500/40 transition-all">
-                      <input
-                        {...register('subdomain')}
-                        placeholder="your-school"
-                        disabled={isPending}
-                        className="flex-1 h-11 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 bg-slate-50 dark:bg-slate-800 outline-none"
-                      />
-                      <div className="flex items-center px-3 bg-slate-100 dark:bg-slate-700 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap border-l border-slate-200 dark:border-slate-700">
-                        .qefashub.com
-                      </div>
-                    </div>
-                  </Field>
-                </div>
+              {/* Footer */}
+              <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
+                <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">mail</span>
+                <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
               </div>
-            </div>
-
-            {/* Terms */}
-            <div className="flex items-start gap-2.5 pt-1">
-              <div className="relative mt-0.5">
+            </form>
+          ) : (
+            <form onSubmit={handleJoinSubmit(onJoinSubmit)} className="flex-1 flex flex-col gap-4">
+              
+              <Field label="School Code" icon="tag" error={joinErrors.schoolCode?.message}>
                 <input
-                  type="checkbox"
-                  id="school-terms"
-                  {...register('acceptTerms')}
-                  className="peer w-4 h-4 rounded appearance-none border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 transition-all cursor-pointer"
-                  style={{ accentColor: BLUE }}
+                  {...joinForm('schoolCode')}
+                  placeholder="SCH-1234"
+                  disabled={isPending}
+                  className={inputCls(!!joinErrors.schoolCode)}
                 />
-                {/* Custom checkmark overlay */}
-                <span
-                  className="absolute inset-0 rounded flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
-                  style={{ background: BLUE }}
-                >
-                  <span className="material-symbols-outlined text-white text-[11px] font-bold">check</span>
-                </span>
+              </Field>
+
+              <Field label="Your Name" icon="person" error={joinErrors.name?.message}>
+                <input
+                  {...joinForm('name')}
+                  placeholder="Yasir Noori"
+                  disabled={isPending}
+                  className={inputCls(!!joinErrors.name)}
+                />
+              </Field>
+
+              <Field label="Work Email" icon="mail" error={joinErrors.email?.message}>
+                <input
+                  {...joinForm('email')}
+                  type="email"
+                  placeholder="you@school.edu"
+                  disabled={isPending}
+                  className={inputCls(!!joinErrors.email)}
+                />
+              </Field>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Password" icon="lock" error={joinErrors.password?.message}>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      {...joinForm('password')}
+                      placeholder="••••••••"
+                      disabled={isPending}
+                      className={`${inputCls(!!joinErrors.password)} pr-11`}
+                    />
+                    <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
+                  </div>
+                </Field>
+
+                <Field label="Confirm Password" icon="lock_reset" error={joinErrors.confirmPassword?.message}>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      {...joinForm('confirmPassword')}
+                      placeholder="••••••••"
+                      disabled={isPending}
+                      className={`${inputCls(!!joinErrors.confirmPassword)} pr-11`}
+                    />
+                    <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
+                  </div>
+                </Field>
               </div>
-              <label htmlFor="school-terms" className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed cursor-pointer">
-                I agree to the{' '}
-                <button type="button" onClick={() => setShowTermsModal(true)}
-                  className="font-semibold hover:underline underline-offset-2"
-                  style={{ color: BLUE }}>
-                  Terms of Service
-                </button>
-                {' '}and{' '}
-                <button type="button" onClick={() => setShowPrivacyModal(true)}
-                  className="font-semibold hover:underline underline-offset-2"
-                  style={{ color: BLUE }}>
-                  Privacy Policy
-                </button>
-              </label>
-            </div>
-            {errors.acceptTerms && (
-              <p className="text-red-500 text-xs -mt-3">{errors.acceptTerms.message}</p>
-            )}
 
-            {/* CTA button */}
-            <button
-              type="submit"
-              disabled={isPending}
-              className="mt-2 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
-              style={{ background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_MID} 100%)`, height: '52px' }}
-            >
-              {/* hover shimmer */}
-              <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative flex items-center gap-2">
-                {isPending ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Creating your account…
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-                    Create School Account
-                  </>
-                )}
-              </span>
-            </button>
+              {/* CTA button */}
+              <button
+                type="submit"
+                disabled={isPending}
+                className="mt-6 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
+                style={{ background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_MID} 100%)`, height: '52px' }}
+              >
+                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative flex items-center gap-2">
+                  {isPending ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting Request…
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
+                      Request Admin Access
+                    </>
+                  )}
+                </span>
+              </button>
 
-            {/* Footer */}
-            <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
-              <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">mail</span>
-              <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
-            </div>
-          </form>
+              {/* Footer */}
+              <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
+                <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">info</span>
+                <span className="text-[12px] text-slate-400 dark:text-slate-500">Your request will be sent to the school's principal for approval.</span>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* ════════════════════════════════════

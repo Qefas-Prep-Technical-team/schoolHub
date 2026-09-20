@@ -291,3 +291,36 @@ export const schoolSchema = yup.object({
 });
 
 export type SchoolFormData = yup.InferType<typeof schoolSchema>;
+
+// Admin Join
+export const adminJoinSchema = yup.object({
+  name: yup
+    .string()
+    .required("Name is required")
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters"),
+
+  email: yup
+    .string()
+    .lowercase()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+
+  password: yup
+    .string()
+    .required("Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be less than 72 characters"),
+
+  confirmPassword: yup
+    .string()
+    .required("Please confirm your password")
+    .oneOf([yup.ref("password")], "Passwords must match"),
+
+  schoolCode: yup
+    .string()
+    .required("School code is required")
+    .min(3, "School code must be at least 3 characters"),
+});
+
+export type AdminJoinFormData = yup.InferType<typeof adminJoinSchema>;

@@ -4,7 +4,8 @@ import React from "react";
 import {
   useSchoolProfile,
   useSchoolLandingPage,
-  useUpdateSchoolLandingPage
+  useUpdateSchoolLandingPage,
+  useSchoolBilling
 } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
@@ -148,7 +149,12 @@ export default function SubdomainBuilderPage() {
 
   const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: landingData, isLoading } = useSchoolLandingPage(schoolId);
+  const { data: billingData } = useSchoolBilling(schoolId);
   const { mutate: updateLandingPage, isPending: isSaving } = useUpdateSchoolLandingPage();
+  
+  const currentPlanName = (billingData?.subscription?.plan || schoolProfile?.plan || user?.plan || "FREE").toUpperCase();
+  const isFreeOrBasic = currentPlanName.includes("FREE") || currentPlanName.includes("BASIC") || currentPlanName.includes("STARTER") || currentPlanName === "";
+  const isTopTierPlan = !isFreeOrBasic;
 
   const [activeTab, setActiveTab] = React.useState<"hero" | "about" | "highlights" | "testimonials" | "settings" | "templates" | "contact">("hero");
   const [previewDarkMode, setPreviewDarkMode] = React.useState(true);
@@ -436,6 +442,14 @@ export default function SubdomainBuilderPage() {
               <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
                 Live
               </span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider border flex items-center gap-1 ${
+                isTopTierPlan
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+              }`}>
+                {isTopTierPlan && <Crown className="w-3 h-3" />}
+                {currentPlanName.endsWith("PLAN") ? currentPlanName : `${currentPlanName} PLAN`}
+              </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Customize the look, branding, and copy of your public landing page.
@@ -471,13 +485,19 @@ export default function SubdomainBuilderPage() {
             </div>
           )}
 
-          <Link
-            href="/dashboard/admin/subdomain/pro-builder"
+          <button
+            onClick={() => {
+              if (!isTopTierPlan || !currentPlanName) {
+                toast.error("You must upgrade to the Institutional Growth plan to access the Pro Builder.");
+                return;
+              }
+              router.push("/dashboard/admin/subdomain/pro-builder");
+            }}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl text-xs font-bold transition-all duration-200 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
           >
             <Crown className="w-4 h-4" />
             Switch to Pro
-          </Link>
+          </button>
 
           <button
             onClick={handleSave}
@@ -986,7 +1006,7 @@ export default function SubdomainBuilderPage() {
         {/* Right Hand: Interactive Visual Live Preview Frame */}
         <div className="flex-1 bg-slate-100/50 dark:bg-slate-900/20 p-6 flex flex-col items-center overflow-y-auto">
           {/* Frame Header */}
-          <div className="w-full max-w-4xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded-t-2xl py-3 px-6 flex items-center justify-between shrink-0 shadow-xl">
+          <div className="w-[95%] max-w-none bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded-t-2xl py-3 px-6 flex items-center justify-between shrink-0 shadow-xl">
             <div className="flex items-center gap-2">
               <Eye className="w-4 h-4 text-blue-500" />
               <span className="text-xs font-bold text-slate-600 dark:text-slate-300">LIVE PREVIEW SCREEN</span>
@@ -1010,7 +1030,7 @@ export default function SubdomainBuilderPage() {
 
           {/* Actual Visual Frame Content mimicking public page layout */}
           <div
-            className={`w-full max-w-4xl border-x border-b border-slate-900 shadow-2xl transition-colors duration-300 min-h-[500px] flex flex-col relative rounded-b-2xl overflow-hidden ${
+            className={`w-[95%] max-w-none border-x border-b border-slate-900 shadow-2xl transition-colors duration-300 min-h-[500px] flex flex-col relative rounded-b-2xl overflow-hidden ${
               previewDarkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
             }`}
           >
@@ -1312,19 +1332,33 @@ export default function SubdomainBuilderPage() {
               </button>
               <button 
                 onClick={() => {
+                  if (selectedTemplate.isPro && ["FREE", "BASIC", "INSTITUTIONAL BASIC", "INSTITUTIONAL STARTER", ""].includes((schoolProfile?.plan || user?.plan || "FREE").toUpperCase().trim())) {
+                    toast.error("This is a Pro Builder template. Please upgrade to a top-tier subscription to use it.");
+                    return;
+                  }
                   if(window.confirm("Applying this template will replace any Pro Builder pages you currently have. Do you want to continue?")) {
                     handleApplyTemplate();
                   }
                 }}
                 disabled={isSaving}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md transition-colors flex items-center gap-2 disabled:opacity-50"
+                className={`px-5 py-2 rounded-xl text-sm font-semibold shadow-md transition-colors flex items-center gap-2 ${
+                  selectedTemplate.isPro && ["FREE", "BASIC", "INSTITUTIONAL BASIC", "INSTITUTIONAL STARTER", ""].includes((schoolProfile?.plan || user?.plan || "FREE").toUpperCase().trim())
+                    ? "bg-amber-500 hover:bg-amber-600 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                }`}
               >
                 {isSaving ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : selectedTemplate.isPro && ["FREE", "BASIC", "INSTITUTIONAL BASIC", "INSTITUTIONAL STARTER", ""].includes((schoolProfile?.plan || user?.plan || "FREE").toUpperCase().trim()) ? (
+                  <Crown className="w-4 h-4" />
                 ) : (
                   <CheckCircle className="w-4 h-4" />
                 )}
-                {isSaving ? "Applying..." : "Apply Template & Edit"}
+                {isSaving 
+                  ? "Applying..." 
+                  : selectedTemplate.isPro && ["FREE", "BASIC", "INSTITUTIONAL BASIC", "INSTITUTIONAL STARTER", ""].includes((schoolProfile?.plan || user?.plan || "FREE").toUpperCase().trim())
+                    ? "Upgrade to Unlock" 
+                    : "Apply Template & Edit"}
               </button>
             </div>
           </div>

@@ -85,4 +85,18 @@ export const registrationAPI = {
     );
     return response;
   },
+  // Admin Self registration (join existing school via code)
+  registerAdminSelf: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    schoolCode: string;
+  }) => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      "/admin/register/admin-self",
+      data,
+    );
+    return response;
+  },
 };

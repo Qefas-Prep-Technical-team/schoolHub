@@ -82,11 +82,77 @@ export default function AdminBillingPage() {
     };
     if (isLoading || financeLoading || isFeaturesLoading || analyticsLoading) {
         return (
-            <div className="space-y-8 pb-12 p-6">
-                <Skeleton className="h-12 w-1/3 rounded-xl" />
+            <div className="space-y-8 pb-20 max-w-[1600px] mx-auto min-h-screen">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 mt-4 md:mt-8">
+                    <div className="space-y-3">
+                        <Skeleton className="h-10 w-[400px] rounded-xl" />
+                        <Skeleton className="h-4 w-[350px] rounded-md" />
+                    </div>
+                    <Skeleton className="h-12 w-40 rounded-full" />
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Skeleton className="lg:col-span-2 h-64 rounded-[2.5rem]" />
-                    <Skeleton className="h-64 rounded-[2.5rem]" />
+                    {/* Main Banner Column */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Banner Card */}
+                        <div className="h-[380px] rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-900 dark:bg-slate-900 p-8 flex flex-col justify-between shadow-lg">
+                            <div className="space-y-4">
+                                <Skeleton className="h-6 w-32 rounded-md bg-slate-800" />
+                                <Skeleton className="h-12 w-64 rounded-xl bg-slate-800" />
+                                <Skeleton className="h-6 w-48 rounded-md bg-slate-800" />
+                            </div>
+                            <div className="flex justify-between items-end border-t border-slate-800 pt-6 mt-6">
+                                <div className="space-y-4">
+                                    <Skeleton className="h-4 w-32 rounded-md bg-slate-800" />
+                                    <Skeleton className="h-6 w-24 rounded-md bg-slate-800" />
+                                </div>
+                                <div className="space-y-4">
+                                    <Skeleton className="h-4 w-32 rounded-md bg-slate-800" />
+                                    <Skeleton className="h-6 w-40 rounded-md bg-slate-800" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Side Column */}
+                    <div className="space-y-6">
+                        {/* Next Payment Card */}
+                        <div className="h-[180px] rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-6 flex flex-col justify-between shadow-sm">
+                            <Skeleton className="size-12 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                            <div className="space-y-4">
+                                <Skeleton className="h-4 w-28 rounded-md bg-slate-200 dark:bg-slate-800" />
+                                <Skeleton className="h-8 w-32 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                                <Skeleton className="h-3 w-full rounded-md bg-slate-200 dark:bg-slate-800" />
+                            </div>
+                        </div>
+                        {/* Usage Limits Card */}
+                        <div className="h-[180px] rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-900 p-6 flex flex-col justify-between shadow-lg">
+                            <div className="space-y-4">
+                                <Skeleton className="h-6 w-32 rounded-md bg-slate-800" />
+                                <Skeleton className="h-2 w-full rounded-full bg-slate-800" />
+                                <Skeleton className="h-2 w-full rounded-full bg-slate-800" />
+                                <Skeleton className="h-2 w-full rounded-full bg-slate-800" />
+                            </div>
+                            <Skeleton className="h-10 w-full rounded-xl bg-slate-800" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Transaction History */}
+                <div className="pt-8">
+                    <div className="flex items-center gap-4 mb-6">
+                        <Skeleton className="size-10 rounded-lg" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-6 w-48 rounded-md" />
+                            <Skeleton className="h-4 w-64 rounded-md" />
+                        </div>
+                    </div>
+                    <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                        ))}
+                    </div>
                 </div>
             </div>
         );
@@ -376,7 +442,7 @@ export default function AdminBillingPage() {
                         <p className="text-slate-500 font-medium">Our support team is available 24/7 for any billing inquiries.</p>
                     </div>
                 </div>
-                <Button variant="outline" className="rounded-2xl font-bold border-2 px-8 h-12 hover:bg-slate-900 hover:text-white transition-all">
+                <Button onClick={() => router.push('/dashboard/admin/support')} variant="outline" className="rounded-2xl font-bold border-2 px-8 h-12 hover:bg-slate-900 hover:text-white transition-all">
                     Contact Support
                 </Button>
             </div>

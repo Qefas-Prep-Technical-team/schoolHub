@@ -961,3 +961,342 @@ export const sendSubscriptionExpiredEmail = async (email: string, planName: stri
     `,
   });
 };
+
+// ─── Admin Join Request Email ─────────────────────────────────────────────────
+// Sent to every SCHOOL_OWNER and PRINCIPAL when a new admin requests to join.
+export const sendAdminJoinRequestEmail = async (params: {
+  recipientEmail: string;
+  recipientName: string;
+  applicantName: string;
+  applicantEmail: string;
+  schoolName: string;
+  approvalUrl: string;
+}) => {
+  const { recipientEmail, recipientName, applicantName, applicantEmail, schoolName, approvalUrl } = params;
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : recipientEmail;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `New Admin Request for ${schoolName} — Action Required${isTest ? ` (Original: ${recipientEmail})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+        
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Staff Access Request</p>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.3px;">New Admin Registration Request</h3>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+          Hi <strong>${recipientName}</strong>, someone has requested to join <strong>${schoolName}</strong> as an administrator. 
+          Review their details below and assign them a role, or reject the request.
+        </p>
+
+        <!-- Applicant Card -->
+        <div style="margin: 20px 0; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
+          <p style="margin: 0 0 4px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Applicant Details</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px; width: 90px;">Name</td>
+              <td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${applicantName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">Email</td>
+              <td style="padding: 6px 0; color: #2563eb; font-size: 14px; font-weight: 600;">${applicantEmail}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">School</td>
+              <td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${schoolName}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin: 28px 0 24px;">
+          <a href="${approvalUrl}" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);">
+            Review Request →
+          </a>
+        </div>
+
+        <!-- Warning -->
+        <div style="padding: 14px 16px; background: #fffcf0; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
+          <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
+            <strong>Action required.</strong> Until you approve and assign a role, this person cannot log in or access the school dashboard.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from Qefas Hub. Do not reply.</p>
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${recipientEmail}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+// ─── Admin Approval Email ─────────────────────────────────────────────────────
+// Sent to the newly approved admin with their assigned role.
+export const sendAdminApprovalEmail = async (params: {
+  adminEmail: string;
+  adminName: string;
+  schoolName: string;
+  assignedRole: string;
+  loginUrl: string;
+}) => {
+  const { adminEmail, adminName, schoolName, assignedRole, loginUrl } = params;
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : adminEmail;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  // Format role name for display (e.g. SCHOOL_OWNER → School Owner)
+  const formattedRole = assignedRole
+    .replace(/_/g, ' ')
+    .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  const roleColors: Record<string, string> = {
+    SCHOOL_OWNER: '#1d4ed8',
+    PRINCIPAL:    '#7c3aed',
+    REGISTRAR:    '#0f766e',
+    ACCOUNTANT:   '#b45309',
+    SUPPORT:      '#0369a1',
+  };
+  const roleColor = roleColors[assignedRole] || '#2563eb';
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `You're approved! Welcome to ${schoolName} — ${formattedRole}${isTest ? ` (Original: ${adminEmail})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Approved</p>
+          </div>
+        </div>
+
+        <!-- Success Banner -->
+        <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; text-align: center;">
+          <div style="font-size: 36px; margin-bottom: 8px;">✅</div>
+          <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #065f46; letter-spacing: -0.3px;">You're In!</h3>
+          <p style="margin: 8px 0 0; color: #047857; font-size: 14px;">Your admin account has been approved.</p>
+        </div>
+
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+          Hi <strong>${adminName}</strong>, the administrators of <strong>${schoolName}</strong> have reviewed and approved your request. 
+          You've been granted access with the following role:
+        </p>
+
+        <!-- Role Badge -->
+        <div style="text-align: center; margin: 20px 0 28px;">
+          <span style="display: inline-block; background: ${roleColor}; color: #ffffff; font-size: 15px; font-weight: 700; padding: 10px 28px; border-radius: 100px; letter-spacing: 0.5px;">
+            ${formattedRole}
+          </span>
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin-bottom: 28px;">
+          <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);">
+            Log In to Dashboard →
+          </a>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+            Welcome to the team at ${schoolName}. This is an automated message from Qefas Hub.
+          </p>
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${adminEmail}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+// ─── New Admin Joined Notification Email ──────────────────────────────────────
+// Sent to existing active school admins when a new admin is approved.
+export const sendNewAdminJoinedEmail = async (params: {
+  recipientEmail: string;
+  recipientName: string;
+  newAdminName: string;
+  assignedRole: string;
+  schoolName: string;
+}) => {
+  const { recipientEmail, recipientName, newAdminName, assignedRole, schoolName } = params;
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : recipientEmail;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const formattedRole = assignedRole
+    .replace(/_/g, ' ')
+    .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `New Admin Joined ${schoolName} — ${formattedRole}${isTest ? ` (Original: ${recipientEmail})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+        
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Team Update</p>
+          </div>
+        </div>
+
+        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.3px;">New Admin Joined the Team</h3>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+          Hi <strong>${recipientName}</strong>, <strong>${newAdminName}</strong> has just been approved and joined the admin team at <strong>${schoolName}</strong> as a <strong>${formattedRole}</strong>.
+        </p>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from Qefas Hub. Do not reply.</p>
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${recipientEmail}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+// ─── Generic Welcome Email ────────────────────────────────────────────────────
+export const sendWelcomeEmail = async (params: {
+  email: string;
+  name: string;
+  role: string;
+  loginUrl: string;
+}) => {
+  const { email, name, role, loginUrl } = params;
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  // Format role name for display
+  const formattedRole = role
+    .replace(/_/g, ' ')
+    .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `Welcome to Qefas Hub! Your account is verified${isTest ? ` (Original: ${email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Verified</p>
+          </div>
+        </div>
+
+        <!-- Success Banner -->
+        <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; text-align: center;">
+          <div style="font-size: 36px; margin-bottom: 8px;">🎉</div>
+          <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #065f46; letter-spacing: -0.3px;">Welcome Aboard!</h3>
+          <p style="margin: 8px 0 0; color: #047857; font-size: 14px;">Your email has been successfully verified.</p>
+        </div>
+
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+          Hi <strong>${name}</strong>, welcome to Qefas Hub! Your account has been verified as a <strong>${formattedRole}</strong>. 
+          You can now log in to access your dashboard.
+        </p>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin-bottom: 28px;">
+          <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);">
+            Log In to Dashboard →
+          </a>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+            This is an automated message from Qefas Hub.
+          </p>
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+// ─── Admin Rejection Email ────────────────────────────────────────────────────
+// Sent to the rejected admin with an optional reason from the approver.
+export const sendAdminRejectionEmail = async (params: {
+  adminEmail: string;
+  adminName: string;
+  schoolName: string;
+  reason?: string;
+}) => {
+  const { adminEmail, adminName, schoolName, reason } = params;
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : adminEmail;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `Update on your admin request for ${schoolName}${isTest ? ` (Original: ${adminEmail})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Update</p>
+          </div>
+        </div>
+
+        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.3px;">Request Not Approved</h3>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+          Hi <strong>${adminName}</strong>, thank you for your interest in joining <strong>${schoolName}</strong> on Qefas Hub.
+          After review, your administrator access request was not approved at this time.
+        </p>
+
+        ${reason ? `
+        <!-- Reason Block -->
+        <div style="margin: 0 0 24px; padding: 16px 20px; background: #fef2f2; border-radius: 14px; border-left: 4px solid #ef4444;">
+          <p style="margin: 0 0 6px; color: #7f1d1d; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Reason Provided</p>
+          <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">${reason}</p>
+        </div>
+        ` : ''}
+
+        <!-- Support Note -->
+        <div style="padding: 14px 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+          <p style="margin: 0; color: #475569; font-size: 13px; line-height: 1.6;">
+            If you believe this was a mistake or would like to inquire further, please reach out to the school administrators directly or contact Qefas Hub support.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+            This is an automated message from Qefas Hub. Do not reply directly to this email.
+          </p>
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${adminEmail}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+

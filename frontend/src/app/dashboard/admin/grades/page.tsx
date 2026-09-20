@@ -113,8 +113,21 @@ export default function AdminGradesDashboard() {
   }, [exams]);
 
   const globalScoreAverage = useMemo(() => {
-    if (!exams || !Array.isArray(exams)) return 84;
-    return 78;
+    if (!exams || !Array.isArray(exams) || exams.length === 0) return 0;
+    
+    // Attempt to calculate based on exam average scores if provided by backend
+    let totalScore = 0;
+    let count = 0;
+    
+    exams.forEach((exam: any) => {
+        if (typeof exam.averageScore === 'number') {
+            totalScore += exam.averageScore;
+            count++;
+        }
+    });
+    
+    if (count === 0) return 0;
+    return Math.round(totalScore / count);
   }, [exams]);
 
   const filteredGradesForHub = useMemo(() => {

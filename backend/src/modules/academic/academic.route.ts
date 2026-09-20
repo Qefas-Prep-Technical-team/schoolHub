@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
+import { requireSchoolOwnerPrincipalOrRegistrar } from "../admin/admin.middleware";
 import {
   createSubject,
   getSubjects,
@@ -84,7 +85,7 @@ router.get("/teacher-subjects", authenticateToken, getTeacherSubjects);
 // Grade Routes
 router.get("/grades", authenticateToken, getStudentGrades);
 router.get("/grades/leaderboard/:classId", authenticateToken, getClassLeaderboard);
-router.get("/grades/admin", authenticateToken, getAllGrades);
-router.get("/grades/:id", authenticateToken, getGradeById);
+router.get("/grades/admin", authenticateToken, requireSchoolOwnerPrincipalOrRegistrar, getAllGrades);
+router.get("/grades/:id", authenticateToken, requireSchoolOwnerPrincipalOrRegistrar, getGradeById);
 
 export default router;

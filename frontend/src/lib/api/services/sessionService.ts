@@ -30,8 +30,9 @@ export interface CreateSessionDTO {
 }
 
 export const sessionService = {
-  getSessions: async () => {
-    const response = await apiClient.get<{ data: Session[] }>("/sessions");
+  getSessions: async (schoolId?: string) => {
+    const query = schoolId ? `?schoolId=${schoolId}` : "";
+    const response = await apiClient.get<{ data: Session[] }>(`/sessions${query}`);
     return response.data.data || [];
   },
 
@@ -40,8 +41,9 @@ export const sessionService = {
     return response.data.data;
   },
 
-  getActiveSession: async () => {
-    const response = await apiClient.get<{ data: Session }>("/sessions/active");
+  getActiveSession: async (schoolId?: string) => {
+    const query = schoolId ? `?schoolId=${schoolId}` : "";
+    const response = await apiClient.get<{ data: Session }>(`/sessions/active${query}`);
     return response.data.data;
   },
 

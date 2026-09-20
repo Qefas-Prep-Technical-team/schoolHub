@@ -124,6 +124,7 @@ model SchoolAdmin {
   school    School    @relation(fields: [schoolId], references: [id])
 
   @@unique([adminId, schoolId])
+  @@index([schoolId, role])
   @@map("school_admins")
 }
 
@@ -1158,6 +1159,7 @@ model Transaction {
   updatedAt          DateTime  @updatedAt
   billingCycle       String?
   plan               String?
+  expiryDate         DateTime?
   userId             String?
   userType           UserRole?
   school             School?   @relation(fields: [schoolId], references: [id])
@@ -1848,6 +1850,7 @@ enum AdminRole {
   REGISTRAR
   ACCOUNTANT
   SUPPORT
+  PENDING // Placeholder: assigned to new admins awaiting role assignment from school owner/principal
 }
 
 enum LinkEntityType {

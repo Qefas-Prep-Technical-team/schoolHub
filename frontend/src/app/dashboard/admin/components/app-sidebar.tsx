@@ -49,12 +49,13 @@ import {
     ExternalLink,
     Check,
     MailPlus,
-    LogOut
+    LogOut,
+    Shield
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
-import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey } from "./adminFeatureFlags"
+import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey, AdminRole, ROLE_NAV_PERMISSIONS } from "./adminFeatureFlags"
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
@@ -77,6 +78,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     // === CORE MANAGEMENT ===
     { icon: LayoutDashboard, label: "Overview", href: "/dashboard/admin", featureKey: "overview", section: "core" },
     { icon: Building2, label: "School Profile", href: "/dashboard/admin/school-profile", featureKey: "schoolProfile", section: "core" },
+    { icon: Shield, label: "Team", href: "/dashboard/admin/team", featureKey: "team", section: "core" },
     { icon: Users, label: "Teachers", href: "/dashboard/admin/teachers", featureKey: "teachers", section: "core" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/admin/students", featureKey: "students", section: "core" },
     { icon: MailPlus, label: "Invitations", href: "/dashboard/admin/invitations", featureKey: "invitations", section: "core" },
@@ -111,6 +113,7 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === SETTINGS ===
     { icon: Settings, label: "Settings", href: "/dashboard/admin/settings", featureKey: "settings", section: "settings" },
+    { icon: CreditCard, label: "Subscription", href: "/dashboard/admin/billing", featureKey: "billing", section: "settings" },
     { icon: MessageSquare, label: "Help & Support", href: "/dashboard/admin/support", featureKey: "support", section: "settings" },
 ];
 
@@ -174,12 +177,25 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
         toast.success("Code copied to clipboard")
     }
 
-    // Get filtered menu items grouped by section based on dynamic or static flags
+    // Get filtered menu items grouped by section based on dynamic or static flags + RBAC role
     const menuSections = useMemo(() => {
         if (isFeaturesLoading) return null;
         const currentFeatures = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
+        const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
 
-        const filtered = adminMenuItems.filter(item => !!(currentFeatures as any)[item.featureKey]);
+        const filtered = adminMenuItems.filter(item => {
+            // Check platform feature flag first
+            if (!(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
+
+            // SCHOOL_OWNER always sees everything
+            if (adminRole === 'SCHOOL_OWNER') return true;
+
+            // Check role-based nav permission — if no restriction defined, allow all roles
+            const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey];
+            if (!allowedRoles) return true;
+
+            return !!adminRole && allowedRoles.includes(adminRole);
+        });
 
         return {
             core: filtered.filter(item => item.section === 'core'),
@@ -189,7 +205,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             advanced: filtered.filter(item => item.section === 'advanced'),
             settings: filtered.filter(item => item.section === 'settings'),
         };
-    }, [dynamicFeatures, isFeaturesLoading]);
+    }, [dynamicFeatures, isFeaturesLoading, user?.adminRole, user?.role]);
 
     return (
         <Sidebar
@@ -368,20 +384,6 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
                                         </div>
                                     </DropdownMenuItem>
                                 )}
-                                <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2 mx-2" />
-                                <DropdownMenuItem asChild className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
-                                    <Link href="/dashboard/admin/school-profile" className="w-full flex items-center">
-                                        <Building2 className="mr-3 h-4 w-4" /> School Profile
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
-                                    <Link href="/dashboard/admin/billing" className="w-full flex items-center">
-                                        <CreditCard className="mr-3 h-4 w-4" /> Subscription
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
-                                    <Settings className="mr-3 h-4 w-4" /> System Settings
-                                </DropdownMenuItem>
                                 <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2 mx-2" />
                                 <DropdownMenuItem onClick={() => logout()} className="rounded-xl py-3 cursor-pointer hover:bg-red-500/10 font-bold text-red-500">
                                     <LogOut size={16} className="mr-3" /> Sign out

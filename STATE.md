@@ -15,13 +15,68 @@
 
 ## Blockers
 
+# Project State: Qefas Hub
+
+## Current Focus
+
+- Payment system is code-complete and pre-launch audit is resolved.
+- Remaining launch blockers are **manual only**: swap test → live Paystack keys, register production webhook URL in Paystack Dashboard.
+- Exam submission redesign — chunked, sequential per-paper submission with progress modal.
+- Monitor production environment telemetry logs.
+
+## Upcoming / Planning
+
+- Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).
+- Production deployment: swap `sk_test_` → `sk_live_` (Render/Railway secrets) and `pk_test_` → `pk_live_` (Vercel env vars).
+- Register `https://your-domain.com/api/v1/payment/webhook` in Paystack Dashboard → Settings → API Keys & Webhooks.
+
+## Blockers
+
 - None (code). Manual key swap and webhook registration required before go-live.
 
 ## Next Action
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Sunday, September 20, 2026
+
+- **Admin Approval UI & Notifications Refinements**:
+    - [x] **Frontend Redesign**: Redesigned the admin approval popup in `PendingRequestsTable.tsx` to use a blue-themed UI (`blue-100`, `blue-500`, `blue-600`) instead of the default generic styles.
+    - [x] **Backend Notifications**: Added `sendNewAdminJoinedEmail` in `auth.service.ts` to notify existing active admins when a new admin is approved.
+    - [x] **Backend Notifications**: Updated `approveAdmin` in `admin.controller.ts` to trigger the new email and also dispatch an in-app notification to all active admins.
+    - [x] **Role Restrictions**: Restricted `billing` to School Owner and Accountant. Restricted all academic modules from Accountant. Restricted `grades` to School Owner, Principal, and Registrar (with a new backend middleware `requireSchoolOwnerPrincipalOrRegistrar` and frontend layout guard).
+- **Onboarding Enhancements**:
+    - [x] **Dynamic Theming**: Refactored `/onboarding/page.tsx` to apply dynamic Tailwind colors based on `userType` (Admin=Blue, Teacher=Orange, Student=Pink, Parent=Green).
+    - [x] **Role-Specific Content**: Adjusted the tour step content dynamically so non-admins don't see admin-specific features like "Custom Subdomains".
+    - [x] **UI Polish**: Increased text sizes inside the onboarding step cards.
+    - [x] **Lottie & Redirection**: Replaced the static icon on the final step with the Lottie checkmark animation, and updated the final button to correctly route to `/dashboard/${userType.toLowerCase()}` to trigger their specific loading pages.
+
+### Friday, September 19, 2026
+
+- **Multi-Admin RBAC System (Full Implementation)**:
+    - [x] **Backend**: Fixed critical security bug — `approveAdmin`/`rejectAdmin` endpoints were unguarded. Added `requireSchoolOwnerOrPrincipal` middleware.
+    - [x] **Backend**: Added `PENDING` role state to `SchoolAdmin` in Prisma schema.
+    - [x] **Backend**: Fixed broken async chain in `requireAdminRole` middleware.
+    - [x] **Backend**: Replaced `console.log` email stubs with real Resend transactional emails for pending/approved/rejected events.
+    - [x] **Backend**: Updated `/auth/me` and `/auth/login` to return `adminRole` sub-role in the response payload.
+    - [x] **Frontend Auth Store**: Added `adminRole` field to the `User` interface in `auth-store.ts`.
+    - [x] **Frontend Registration**: Added `adminJoinSchema` to `regSchema.ts`, `registerAdminSelf` to `registration-api.ts`, `useAdminSelfRegistration` to `useRegistrationMutations.ts`.
+    - [x] **Frontend Registration UI**: Refactored `SchoolCard.tsx` with mode toggle (Register New School vs Join Existing School via school code).
+    - [x] **Frontend Team UI**: Created `/dashboard/admin/team/page.tsx` with two tabs (Active Members, Pending Requests) and live pending badge counter.
+    - [x] **Frontend Team UI**: Created `ActiveMembersTable.tsx` — shows role badges, Change Role dropdown, Transfer Ownership dialog (SCHOOL_OWNER only), Remove dialog.
+    - [x] **Frontend Team UI**: Created `PendingRequestsTable.tsx` — shows Approve (with role selector) and Reject (with reason textarea) dialogs for SCHOOL_OWNER/PRINCIPAL.
+    - [x] **Frontend Sidebar**: Added "Team" nav item to `app-sidebar.tsx` with `Shield` icon.
+    - [x] **Frontend Sidebar RBAC**: Added `ROLE_NAV_PERMISSIONS` map to `adminFeatureFlags.ts`. Sidebar `useMemo` now filters items by `user.adminRole` — SCHOOL_OWNER always sees everything, other roles see only their permitted items.
+    - [x] **Frontend Route Guards**: Created reusable `AdminRoleGuard.tsx` component (shows styled "Access Restricted" screen for unauthorised roles).
+    - [x] **Frontend Route Guards**: Added `layout.tsx` guards to Settings (owner only), Finance (owner/accountant), Billing (owner only), Team (owner/principal).
+    - [x] **API Service Layer**: Added `getSchoolAdmins`, `getPendingAdmins`, `approveAdmin`, `rejectAdmin`, `updateAdminRole`, `transferOwnership`, `removeAdmin` to `adminService.ts`.
+    - [x] **React Query Hooks**: Added corresponding hooks to `useAdmin.ts` with correct `staleTime` values per project rules.
+
+- **Current Focus**: Multi-admin RBAC system fully implemented. All type checks pass with zero errors.
+- **Next**: End-to-end manual testing, then production deployment key swap.
+
 ### Thursday, September 18, 2026
+
 
 - **Security Settings UI and Auditing (`/dashboard/admin/settings`)**:
     - [x] Added a confirmation modal when disabling Two-Factor Authentication. The modal warns users of the security risk and requires them to manually type "DISABLE" to proceed.

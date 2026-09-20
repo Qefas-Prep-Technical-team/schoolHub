@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
   sendVerificationEmail,
   sendSetupCompleteEmail,
+  sendWelcomeEmail,
   googleAuthService,
   send2FADisabledEmail,
 } from "./auth.service";
@@ -122,12 +123,12 @@ export const registerSchool = async (req: Request, res: Response) => {
         const freePlan = envPlanId
           ? await tx.subscriptionPlan.findUnique({ where: { id: envPlanId } })
           : await tx.subscriptionPlan.findFirst({
-            where: {
-              planScope: PlanScope.SCHOOL,
-              type: "free",
-              category: "schools",
-            },
-          });
+              where: {
+                planScope: PlanScope.SCHOOL,
+                type: "free",
+                category: "schools",
+              },
+            });
 
         if (!freePlan) {
           throw new Error(
@@ -1072,23 +1073,23 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
     });
     const teacher = !admin
       ? await prisma.teacher.findUnique({
-        where: { email },
-        select: { id: true },
-      })
+          where: { email },
+          select: { id: true },
+        })
       : null;
     const student =
       !admin && !teacher
         ? await prisma.student.findUnique({
-          where: { email },
-          select: { id: true },
-        })
+            where: { email },
+            select: { id: true },
+          })
         : null;
     const parent =
       !admin && !teacher && !student
         ? await prisma.parent.findUnique({
-          where: { email },
-          select: { id: true },
-        })
+            where: { email },
+            select: { id: true },
+          })
         : null;
 
     const userExists = !!(admin || teacher || student || parent);
@@ -1778,12 +1779,10 @@ export const login = async (req: Request, res: Response) => {
       else if (existingParent) detectedRole = "Parent";
 
       if (detectedRole) {
-        return res
-          .status(403)
-          .json({
-            success: false,
-            message: `This email is registered as a ${detectedRole}. Please login through the correct portal.`,
-          });
+        return res.status(403).json({
+          success: false,
+          message: `This email is registered as a ${detectedRole}. Please login through the correct portal.`,
+        });
       }
 
       return res
@@ -1804,20 +1803,16 @@ export const login = async (req: Request, res: Response) => {
           process.env.JWT_SECRET || "default_secret",
         ) as any;
         if (payload.userId !== user.id) {
-          return res
-            .status(401)
-            .json({
-              success: false,
-              message: "Invalid preAuth token mismatch",
-            });
+          return res.status(401).json({
+            success: false,
+            message: "Invalid preAuth token mismatch",
+          });
         }
       } catch (err) {
-        return res
-          .status(401)
-          .json({
-            success: false,
-            message: "Invalid or expired preAuth token",
-          });
+        return res.status(401).json({
+          success: false,
+          message: "Invalid or expired preAuth token",
+        });
       }
     } else {
       const validPassword = await comparePassword(password, user.password);
@@ -2000,6 +1995,7 @@ export const login = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          adminRole: user.schoolAdmins[0]?.role || null,
           require2FA: user.isTwoFactorEnabled || false,
 
           adminCode: user.adminCode,
@@ -2493,6 +2489,37 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         );
 
         const schoolCode = ownerSchool?.school?.schoolCode || null;
+
+        // Send email notification for new verified users
+        if (isNewUser && isSchoolOwner && ownerSchool) {
+          sendSetupCompleteEmail(user.email).catch(console.error);
+
+          createNotification({
+            recipientType: "ADMIN",
+            recipientId: user.id,
+            type: "GENERAL",
+            title: "Welcome to Qefas Hub",
+            message:
+              "Your school owner account has been successfully verified and activated. You can now start setting up your digital campus.",
+          }).catch(console.error);
+        } else if (isNewUser) {
+          sendWelcomeEmail({
+            email: user.email,
+            name: user.name,
+            role: userType,
+            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
+          }).catch(console.error);
+
+          createNotification({
+            recipientType: "ADMIN",
+            recipientId: user.id,
+            type: "GENERAL",
+            title: "Email Verified",
+            message:
+              "Your email has been verified. You are currently pending approval from your school owner.",
+          }).catch(console.error);
+        }
+
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -2528,6 +2555,25 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           user.id,
           UserRole.TEACHER,
         );
+
+        if (isNewUser) {
+          sendWelcomeEmail({
+            email: user.email,
+            name: user.name,
+            role: userType,
+            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
+          }).catch(console.error);
+
+          createNotification({
+            recipientType: "TEACHER",
+            recipientId: user.id,
+            type: "GENERAL",
+            title: "Account Verified",
+            message:
+              "Welcome to Qefas Hub! Your teacher account is verified and ready.",
+          }).catch(console.error);
+        }
+
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -2551,6 +2597,25 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           user.id,
           UserRole.STUDENT,
         );
+
+        if (isNewUser) {
+          sendWelcomeEmail({
+            email: user.email,
+            name: user.name,
+            role: userType,
+            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
+          }).catch(console.error);
+
+          createNotification({
+            recipientType: "STUDENT",
+            recipientId: user.id,
+            type: "GENERAL",
+            title: "Account Verified",
+            message:
+              "Welcome to Qefas Hub! Your student account is verified and ready to go.",
+          }).catch(console.error);
+        }
+
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -2574,6 +2639,25 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           user.id,
           UserRole.PARENT,
         );
+
+        if (isNewUser) {
+          sendWelcomeEmail({
+            email: user.email,
+            name: user.fullName || "Parent",
+            role: userType,
+            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
+          }).catch(console.error);
+
+          createNotification({
+            recipientType: "PARENT",
+            recipientId: user.id,
+            type: "GENERAL",
+            title: "Account Verified",
+            message:
+              "Welcome to Qefas Hub! Your parent account is now verified.",
+          }).catch(console.error);
+        }
+
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -3541,8 +3625,8 @@ export const getUserSessions = async (req: Request, res: Response) => {
     const currentToken = req.cookies.refreshToken;
     const currentSession = currentToken
       ? await prisma.refreshToken.findFirst({
-        where: { token: currentToken, userId },
-      })
+          where: { token: currentToken, userId },
+        })
       : null;
 
     const data = sessions.map((session) => ({
@@ -3633,6 +3717,7 @@ export const getMe = async (req: Request, res: Response) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          adminRole: user.schoolAdmins[0]?.role || null,
           require2FA: user.isTwoFactorEnabled || false,
 
           adminCode: user.adminCode,
@@ -3680,7 +3765,11 @@ export const getMe = async (req: Request, res: Response) => {
       });
       if (teacher) {
         // Normalize school reference for compatibility with frontend
-        const normalizedSchool = teacher.currentSchool || teacher.primarySchool || teacher.school || null;
+        const normalizedSchool =
+          teacher.currentSchool ||
+          teacher.primarySchool ||
+          teacher.school ||
+          null;
 
         responseData = {
           id: teacher.id,
@@ -3750,21 +3839,45 @@ export const generate2FA = async (req: Request, res: Response) => {
     // Fetch user email for the QR code label
     let userEmail = "user";
     if (userType === UserRole.ADMIN) {
-      const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
+      const admin = await prisma.admin.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
       if (admin?.email) userEmail = admin.email;
-      await prisma.admin.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+      await prisma.admin.update({
+        where: { id: userId },
+        data: { twoFactorSecret: secret.base32 },
+      });
     } else if (userType === UserRole.TEACHER) {
-      const teacher = await prisma.teacher.findUnique({ where: { id: userId }, select: { email: true } });
+      const teacher = await prisma.teacher.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
       if (teacher?.email) userEmail = teacher.email;
-      await prisma.teacher.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+      await prisma.teacher.update({
+        where: { id: userId },
+        data: { twoFactorSecret: secret.base32 },
+      });
     } else if (userType === UserRole.STUDENT) {
-      const student = await prisma.student.findUnique({ where: { id: userId }, select: { email: true } });
+      const student = await prisma.student.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
       if (student?.email) userEmail = student.email;
-      await prisma.student.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+      await prisma.student.update({
+        where: { id: userId },
+        data: { twoFactorSecret: secret.base32 },
+      });
     } else if (userType === UserRole.PARENT) {
-      const parent = await prisma.parent.findUnique({ where: { id: userId }, select: { email: true } });
+      const parent = await prisma.parent.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
       if (parent?.email) userEmail = parent.email;
-      await prisma.parent.update({ where: { id: userId }, data: { twoFactorSecret: secret.base32 } });
+      await prisma.parent.update({
+        where: { id: userId },
+        data: { twoFactorSecret: secret.base32 },
+      });
     }
 
     const issuer = "QefasHub";
@@ -3903,7 +4016,7 @@ export const disable2FA = async (req: Request, res: Response) => {
 
     if (updatedUser?.email) {
       await send2FADisabledEmail(updatedUser.email).catch((e) =>
-        console.error("Failed to send 2FA disabled email:", e)
+        console.error("Failed to send 2FA disabled email:", e),
       );
     }
 
@@ -4230,12 +4343,10 @@ export const send2FAEmail = async (req: Request, res: Response) => {
       console.log("Email sent successfully via Resend");
     } catch (emailErr: any) {
       console.error("Email Error sending via Resend:", emailErr);
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Email delivery error: " + emailErr.message,
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Email delivery error: " + emailErr.message,
+      });
     }
 
     res.status(200).json({
@@ -4244,12 +4355,10 @@ export const send2FAEmail = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Uncaught send2FAEmail error", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Internal Server Error",
-        stack: error.stack,
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+      stack: error.stack,
+    });
   }
 };

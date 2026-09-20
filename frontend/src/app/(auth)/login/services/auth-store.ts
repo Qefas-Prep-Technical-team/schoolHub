@@ -39,6 +39,7 @@ interface User {
   require2FA?: boolean;
   isTwoFactorEnabled?: boolean;
   tempToken?: string;
+  adminRole?: string; // Sub-role for admin users (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, etc.)
 }
 
 interface AuthState {

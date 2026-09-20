@@ -102,3 +102,23 @@ export const useSchoolRegistration = () => {
     },
   });
 };
+
+export const useAdminSelfRegistration = () => {
+  const authToast = useAuthToast();
+  const errorToast = useErrorToast();
+
+  return useMutation({
+    mutationFn: registrationAPI.registerAdminSelf,
+    onSuccess: () => {
+      authToast.registrationSuccess("Admin");
+      // Note: We don't log them in automatically because they are PENDING approval.
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.response?.data?.message || "Admin registration failed";
+      errorToast.show(errorMessage);
+      console.error("Admin self registration failed:", error);
+      throw error;
+    },
+  });
+};

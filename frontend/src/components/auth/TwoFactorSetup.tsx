@@ -160,7 +160,7 @@ export default function TwoFactorSetup({ isTwoFactorEnabled, onUpdate }: TwoFact
                     className="text-center font-mono text-lg tracking-widest h-12 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
-                <Button 
+                <Button
                   className={`w-full font-semibold ${themeClass}`}
                   onClick={verify2FA}
                   disabled={isLoading || code.length !== 6}
@@ -197,17 +197,17 @@ export default function TwoFactorSetup({ isTwoFactorEnabled, onUpdate }: TwoFact
                 className="mt-4 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
               />
             </div>
-            
+
             <div className="flex justify-end gap-3 pt-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setIsDisableOpen(false)}
                 disabled={isLoading}
                 className="border-slate-200 dark:border-slate-800"
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 variant="destructive"
                 className="bg-red-600 hover:bg-red-700 text-white font-semibold"
                 onClick={disable2FA}

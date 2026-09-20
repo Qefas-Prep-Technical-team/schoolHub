@@ -177,6 +177,8 @@ export const verifyPaymentService = async (
     // If it was pro-rated (isUpgrade = true), we should NOT reset the end date if it's already in the future.
 
     const planId = await getPlanId(userRole, verifiedPlan);
+    const dbPlan = await prisma.subscriptionPlan.findUnique({ where: { id: planId }, select: { name: true } });
+    const actualPlanName = dbPlan?.name || verifiedPlan;
 
     const updateData: {
       plan: string;
@@ -252,9 +254,10 @@ export const verifyPaymentService = async (
             schoolId,
             userId,
             userType: userRole as "ADMIN" | "TEACHER" | "STUDENT" | "PARENT",
-            plan,
+            plan: actualPlanName,
             planId,
             billingCycle: billingType,
+            expiryDate: updateData.subscriptionEnd,
         }
     });
 

@@ -3,56 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_llf7il.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_llf7il.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1784907505338,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd desktop",
-      "timestamp": 1784907507836,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd backend",
-      "timestamp": 1784907512354,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "npm run tauri dev",
-      "timestamp": 1784908149863,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\desktop"
-    },
-    {
-      "command": "cd ../",
-      "timestamp": 1784908179064,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\desktop"
-    },
-    {
-      "command": "cd frontend",
-      "timestamp": 1784908184413,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "npm run dev",
-      "timestamp": 1784908519304,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx prisma db push",
-      "timestamp": 1784908561446,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npm run dev",
-      "timestamp": 1784913258897,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx prisma db push",
-      "timestamp": 1784914448988,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
       "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_esmvtx.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_esmvtx.ps1\" -ErrorAction SilentlyContinue",
       "timestamp": 1784915223515,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
@@ -2501,7 +2451,57 @@
       "command": "git push origin",
       "timestamp": 1789831101423,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1789832318766,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"updated ogin ui 2\"",
+      "timestamp": 1789832336348,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1789832370771,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789836297395,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789853895493,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1789860745863,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789860753755,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npx prisma generate",
+      "timestamp": 1789860787953,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1789920833244,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "cd ../",
+      "timestamp": 1789920852348,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
     }
   ],
-  "lastUpdated": 1789831101423
+  "lastUpdated": 1789920852348
 }

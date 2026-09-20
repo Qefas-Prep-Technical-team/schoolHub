@@ -185,3 +185,98 @@ export const useUnassignTeacherFromSubject = (teacherId: string) => {
     },
   });
 };
+
+// === TEAM MANAGEMENT HOOKS ===
+
+export const useSchoolAdmins = (schoolId: string) => {
+  return useQuery({
+    queryKey: ['admin', 'team', schoolId],
+    queryFn: () => adminService.getSchoolAdmins(schoolId),
+    enabled: !!schoolId,
+    staleTime: 1000 * 60 * 5, // 5 mins per rules
+  });
+};
+
+export const usePendingAdmins = (schoolId: string) => {
+  return useQuery({
+    queryKey: ['admin', 'pending', schoolId],
+    queryFn: () => adminService.getPendingAdmins(schoolId),
+    enabled: !!schoolId,
+    staleTime: 1000 * 60 * 2, // 2 mins
+  });
+};
+
+export const useApproveAdmin = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ adminId, role }: { adminId: string; role: string }) => 
+      adminService.approveAdmin(adminId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pending', schoolId] });
+      toast.success("Admin approved successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to approve admin");
+    },
+  });
+};
+
+export const useRejectAdmin = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ adminId, reason }: { adminId: string; reason?: string }) => 
+      adminService.rejectAdmin(adminId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pending', schoolId] });
+      toast.success("Admin request rejected");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to reject admin request");
+    },
+  });
+};
+
+export const useUpdateAdminRole = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ adminId, role }: { adminId: string; role: string }) => 
+      adminService.updateAdminRole(adminId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
+      toast.success("Admin role updated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to update admin role");
+    },
+  });
+};
+
+export const useTransferOwnership = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (newOwnerId: string) => adminService.transferOwnership(newOwnerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
+      toast.success("School ownership transferred successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to transfer ownership");
+    },
+  });
+};
+
+export const useRemoveAdmin = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (adminId: string) => adminService.removeAdmin(adminId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
+      toast.success("Admin removed successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to remove admin");
+    },
+  });
+};
+

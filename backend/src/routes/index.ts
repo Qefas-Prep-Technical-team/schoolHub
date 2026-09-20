@@ -33,7 +33,7 @@ router.use("/subscription", subscriptionRoutes);
 router.use("/links", authenticateToken, checkSubscription, linkRoutes);
 router.use("/classes", authenticateToken, checkSubscription, classRoutes);
 router.use("/academic", authenticateToken, checkSubscription, academicRoutes);
-router.use("/admin", authenticateToken, adminRoutes);
+router.use("/admin", adminRoutes);
 router.use("/sessions", authenticateToken, checkSubscription, sessionRoutes);
 router.use("/exams", authenticateToken, checkSubscription, examRoutes);
 router.use("/assignment", authenticateToken, checkSubscription, assignmentRoutes);

@@ -22,7 +22,18 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
     const [timeRange, setTimeRange] = useState('Week');
 
     const attendanceData = useMemo(() => {
-        const total = stats?.students || 1944;
+        const total = stats?.totalStudents || 0;
+        
+        if (total === 0) {
+            return [
+                { day: 'Mon', present: 0, absent: 0 },
+                { day: 'Tue', present: 0, absent: 0 },
+                { day: 'Wed', present: 0, absent: 0 },
+                { day: 'Thu', present: 0, absent: 0 },
+                { day: 'Fri', present: 0, absent: 0 },
+            ];
+        }
+
         const basePresent = Math.floor(total * 0.9);
         
         // Helper to ensure values stay within 0 and total

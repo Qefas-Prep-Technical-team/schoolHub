@@ -6,10 +6,17 @@ import { updateAdminProfileService, createStudentService } from "./admin.service
 import { getSingleString } from "../../utils/request-utils";
 import { createStudentSchema } from "./admin.schema";
 import crypto from "crypto";
-import { sendStudentInvitationEmail } from "../auth/auth.service";
-
+import {
+  sendStudentInvitationEmail,
+  sendAdminJoinRequestEmail,
+  sendAdminApprovalEmail,
+  sendAdminRejectionEmail,
+  sendNewAdminJoinedEmail,
+} from "../auth/auth.service";
+import { createNotification } from "../notification/notification.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import { handleError } from "../../utils/error-handler";
+import { generateUniqueCode } from "../../utils/code-generator";
 
 // Step 1: Verify tenant ID and get school info
 export const verifyTenantId = async (req: Request, res: Response) => {
@@ -57,15 +64,52 @@ export const verifyTenantId = async (req: Request, res: Response) => {
   }
 };
 
-// Step 2: Admin self-registration
+// ─── Verify School Code (new user-friendly flow) ──────────────────────────────
+export const verifySchoolCode = async (req: Request, res: Response) => {
+  try {
+    const { schoolCode } = req.body;
+
+    if (!schoolCode || typeof schoolCode !== 'string' || !schoolCode.trim()) {
+      return res.status(400).json({ success: false, message: "School code is required" });
+    }
+
+    const school = await prisma.school.findFirst({
+      where: { schoolCode: schoolCode.trim().toLowerCase() },
+      select: {
+        id: true,
+        name: true,
+        tenantId: true,
+        subdomain: true,
+        schoolEmail: true,
+        address: true,
+        phone: true,
+      },
+    });
+
+    if (!school) {
+      return res.status(404).json({
+        success: false,
+        message: "No school found with that code. Please check and try again.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "School found",
+      data: { school },
+    });
+  } catch (error: any) {
+    return handleError(res, error, "admin.verifySchoolCode");
+  }
+};
+
+// ─── Admin Self-Registration (school-code based) ──────────────────────────────
 interface AdminSelfRegisterBody {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
-  role: AdminRole;
-  schoolId: string;
-  tenantId: string;
+  schoolCode: string;
 }
 
 export const registerAdminSelf = async (
@@ -73,19 +117,9 @@ export const registerAdminSelf = async (
   res: Response,
 ) => {
   try {
-    const { name, email, password, confirmPassword, role, schoolId, tenantId } =
-      req.body;
+    const { name, email, password, confirmPassword, schoolCode } = req.body;
 
-    // Validate required fields
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !role ||
-      !schoolId ||
-      !tenantId
-    ) {
+    if (!name || !email || !password || !confirmPassword || !schoolCode) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -99,97 +133,81 @@ export const registerAdminSelf = async (
       });
     }
 
-    // Validate AdminRole
-    const validAdminRoles = Object.values(AdminRole);
-    if (!validAdminRoles.includes(role)) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        message: "Invalid admin role",
+        message: "Password must be at least 8 characters",
       });
     }
 
-    // Verify school exists and tenantId matches
+    // Look up school by schoolCode
     const school = await prisma.school.findFirst({
-      where: {
-        id: schoolId,
-        tenantId: tenantId,
-      },
+      where: { schoolCode: schoolCode.trim().toLowerCase() },
     });
 
     if (!school) {
       return res.status(404).json({
         success: false,
-        message: "School not found or tenant ID mismatch",
+        message: "Invalid school code. Please verify and try again.",
       });
     }
 
-    // Check if admin email already exists
-    const existingAdmin = await prisma.admin.findUnique({
-      where: { email },
-    });
-
+    // Check if email already exists
+    const existingAdmin = await prisma.admin.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (existingAdmin) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: "Email already exists",
+        message: "An account with this email already exists",
       });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const adminCode = await generateUniqueCode(prisma, "admin", name);
 
-    // Create admin with PENDING status
+    // Create admin + SchoolAdmin in a transaction
     const result = await prisma.$transaction(async (tx) => {
-        // Create admin user with PENDING status
-        const admin = await tx.admin.create({
-          data: {
-            name: name.trim(),
-            email: email.toLowerCase().trim(),
-            password: hashedPassword,
-            role: UserRole.ADMIN,
-            tenantId: tenantId,
-            verified: false, // Not verified yet
-            status: "PENDING", // Waiting for approval
-            adminCode: `ADM${Math.floor(1000 + Math.random() * 9000)}`,
-          },
-        });
+      const admin = await tx.admin.create({
+        data: {
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          password: hashedPassword,
+          role: UserRole.ADMIN,
+          tenantId: school.tenantId,
+          verified: false,
+          status: "PENDING",
+          adminCode,
+        },
+      });
 
-        // Create school admin relationship (but admin is pending)
-        const schoolAdmin = await tx.schoolAdmin.create({
-          data: {
-            schoolId: schoolId,
-            adminId: admin.id,
-            role: role,
-          },
-        });
-        
-        await UserSubscriptionService.initializeFreePlan(admin.id, UserRole.ADMIN);
+      // Role is PENDING — will be assigned by approver
+      await tx.schoolAdmin.create({
+        data: {
+          schoolId: school.id,
+          adminId: admin.id,
+          role: AdminRole.PENDING,
+        },
+      });
 
-        return { admin, schoolAdmin, school };
-      },
-    );
+      await UserSubscriptionService.initializeFreePlan(admin.id, UserRole.ADMIN, tx);
 
-    // Send notification to school owner (you can implement email/notification service)
-    await notifySchoolOwner(school.id, result.admin);
+      return { admin };
+    });
+
+    // Notify all SCHOOL_OWNERs and PRINCIPALs via email + in-app notification
+    await notifyApprovers(school.id, school.name, result.admin);
 
     return res.status(201).json({
       success: true,
-      message:
-        "Registration submitted successfully! Waiting for approval from school owner.",
+      message: "Registration submitted. You will be notified once approved.",
       data: {
         admin: {
           id: result.admin.id,
           name: result.admin.name,
           email: result.admin.email,
-          role: result.admin.role,
           status: result.admin.status,
         },
-        school: {
-          id: result.school.id,
-          name: result.school.name,
-        },
-        nextSteps:
-          "You will receive an email once your account is approved by the school owner.",
+        school: { id: school.id, name: school.name },
       },
     });
   } catch (error: any) {
@@ -197,7 +215,50 @@ export const registerAdminSelf = async (
   }
 };
 
-// Step 3: Check registration status
+// ─── Internal: notify all approvers (SCHOOL_OWNER + PRINCIPAL) ───────────────
+const notifyApprovers = async (schoolId: string, schoolName: string, pendingAdmin: { id: string; name: string; email: string }) => {
+  try {
+    const approvers = await prisma.schoolAdmin.findMany({
+      where: {
+        schoolId,
+        active: true,
+        role: { in: [AdminRole.SCHOOL_OWNER, AdminRole.PRINCIPAL] },
+      },
+      include: { admin: { select: { id: true, email: true, name: true } } },
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://qefashub.com';
+    const approvalUrl = `${frontendUrl}/dashboard/admin/team?tab=pending`;
+
+    await Promise.allSettled(
+      approvers.map(async (approver) => {
+        // Email notification
+        await sendAdminJoinRequestEmail({
+          recipientEmail: approver.admin.email,
+          recipientName: approver.admin.name,
+          applicantName: pendingAdmin.name,
+          applicantEmail: pendingAdmin.email,
+          schoolName,
+          approvalUrl,
+        });
+
+        // In-app notification
+        await createNotification({
+          recipientType: 'ADMIN',
+          recipientId: approver.admin.id,
+          type: 'GENERAL',
+          title: 'New Admin Registration Request',
+          message: `${pendingAdmin.name} (${pendingAdmin.email}) has requested to join ${schoolName} as an administrator. Review and assign their role.`,
+        });
+      })
+    );
+  } catch (error) {
+    // Fire-and-forget — log but don't break the registration response
+    console.error("[admin.notifyApprovers] Error:", error);
+  }
+};
+
+// ─── Check Registration Status ────────────────────────────────────────────────
 export const checkAdminStatus = async (req: Request, res: Response) => {
   try {
     const email = req.params.email as string;
@@ -213,160 +274,199 @@ export const checkAdminStatus = async (req: Request, res: Response) => {
         createdAt: true,
         schoolAdmins: {
           include: {
-            school: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            school: { select: { id: true, name: true } },
           },
         },
       },
     });
 
     if (!admin) {
-      return res.status(404).json({
-        success: false,
-        message: "Admin not found",
-      });
+      return res.status(404).json({ success: false, message: "Admin not found" });
     }
 
     return res.status(200).json({
       success: true,
       message: "Status retrieved successfully",
-      data: admin,
+      data: {
+        ...admin,
+        adminRole: admin.schoolAdmins[0]?.role ?? null,
+      },
     });
   } catch (error: any) {
     return handleError(res, error, "admin.checkAdminStatus");
   }
 };
 
-// Helper function to notify school owner
-const notifySchoolOwner = async (schoolId: string, pendingAdmin: any) => {
-  try {
-    // Find school owner/admin to notify
-    const schoolOwner = await prisma.schoolAdmin.findFirst({
-      where: {
-        schoolId: schoolId,
-        role: AdminRole.SCHOOL_OWNER,
-      },
-      include: {
-        admin: true,
-        school: true,
-      },
-    });
-
-    if (schoolOwner) {
-      // Send email notification (implement your email service)
-      console.log(
-        `Notification sent to ${schoolOwner.admin.email}: New admin registration from ${pendingAdmin.name} (${pendingAdmin.email}) for ${schoolOwner.school.name}`,
-      );
-
-      // You can integrate with your email service here
-      // await sendEmailNotification(schoolOwner.admin.email, pendingAdmin, schoolOwner.school);
-    }
-  } catch (error) {
-    console.error("Error notifying school owner:", error);
-  }
-};
-
-// controllers/adminApproval.controller.ts
+// ─── Get Pending Admins ───────────────────────────────────────────────────────
 export const getPendingAdmins = async (req: Request, res: Response) => {
   try {
-    const schoolId = req.school?.id; // From auth middleware
+    const schoolId = req.school?.id;
 
     const pendingAdmins = await prisma.schoolAdmin.findMany({
       where: {
-        schoolId: schoolId,
-        admin: {
-          status: "PENDING",
-        },
+        schoolId,
+        admin: { status: "PENDING" },
       },
       include: {
         admin: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            createdAt: true,
-            status: true,
-          },
+          select: { id: true, name: true, email: true, createdAt: true, status: true },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
     return res.status(200).json({
       success: true,
       message: "Pending admins retrieved successfully",
-      data: pendingAdmins,
+      data: pendingAdmins.map((m) => ({
+        id: m.admin.id,
+        name: m.admin.name,
+        email: m.admin.email,
+        requestedAt: m.createdAt,
+        status: m.admin.status,
+      })),
     });
   } catch (error: any) {
     return handleError(res, error, "admin.getPendingAdmins");
   }
 };
 
+// ─── Approve Admin (with role assignment) ────────────────────────────────────
 export const approveAdmin = async (req: Request, res: Response) => {
   try {
     const adminId = req.params.adminId as string;
+    const { role } = req.body as { role?: AdminRole };
 
-    const updatedAdmin = await prisma.admin.update({
-      where: { id: adminId },
-      data: {
-        status: "APPROVED",
-        verified: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        status: true,
-        verified: true,
-      },
+    // role is required — approver must assign one
+    const assignableRoles: AdminRole[] = [
+      AdminRole.PRINCIPAL,
+      AdminRole.REGISTRAR,
+      AdminRole.ACCOUNTANT,
+      AdminRole.SUPPORT,
+    ];
+    if (!role || !assignableRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: `A role must be assigned. Valid roles: ${assignableRoles.join(", ")}.`,
+      });
+    }
+
+    // Verify the target admin belongs to the approver's school
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId, schoolId: req.school?.id },
+      include: { school: { select: { name: true } } },
     });
 
-    // Send approval notification email
-    await sendApprovalNotification(updatedAdmin.email, updatedAdmin.name);
+    if (!schoolAdmin) {
+      return res.status(404).json({ success: false, message: "Admin not found in your school" });
+    }
+
+    // Approve + assign role in a transaction
+    const [updatedAdmin] = await prisma.$transaction([
+      prisma.admin.update({
+        where: { id: adminId },
+        data: { status: "APPROVED", verified: true },
+        select: { id: true, name: true, email: true, status: true, verified: true },
+      }),
+      prisma.schoolAdmin.update({
+        where: { adminId_schoolId: { adminId, schoolId: req.school!.id } },
+        data: { role },
+      }),
+    ]);
+
+    // Send real approval email (fire-and-forget)
+    const frontendUrl = process.env.FRONTEND_URL || 'https://qefashub.com';
+    sendAdminApprovalEmail({
+      adminEmail: updatedAdmin.email,
+      adminName: updatedAdmin.name,
+      schoolName: schoolAdmin.school.name,
+      assignedRole: role,
+      loginUrl: `${frontendUrl}/login/school-admin`,
+    }).catch((e) => console.error("[approveAdmin] Email error:", e));
+
+    // Send in-app notification to the newly approved admin
+    createNotification({
+      recipientType: 'ADMIN',
+      recipientId: adminId,
+      type: 'GENERAL',
+      title: 'Admin Request Approved',
+      message: `Your request to join ${schoolAdmin.school.name} has been approved. You are now a ${role.replace(/_/g, ' ').replace(/\\w\\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())}.`,
+    }).catch((e) => console.error("[approveAdmin] Notification error:", e));
+
+    // Fetch all active admins for this school (excluding the newly approved one)
+    prisma.schoolAdmin.findMany({
+      where: {
+        schoolId: req.school!.id,
+        active: true,
+        adminId: { not: adminId },
+      },
+      include: {
+        admin: { select: { id: true, email: true, name: true } },
+      },
+    }).then(existingAdmins => {
+      existingAdmins.forEach((ea) => {
+        // Email
+        sendNewAdminJoinedEmail({
+          recipientEmail: ea.admin.email,
+          recipientName: ea.admin.name,
+          newAdminName: updatedAdmin.name,
+          assignedRole: role,
+          schoolName: schoolAdmin.school.name,
+        }).catch((e) => console.error("[approveAdmin] Email error:", e));
+
+        // In-app Notification
+        createNotification({
+          recipientType: 'ADMIN',
+          recipientId: ea.admin.id,
+          type: 'GENERAL',
+          title: 'New Admin Joined',
+          message: `${updatedAdmin.name} has joined the admin team as a ${role.replace(/_/g, ' ').replace(/\\w\\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())}.`,
+        }).catch((e) => console.error("[approveAdmin] Notification error:", e));
+      });
+    }).catch((e) => console.error("[approveAdmin] Fetch existing admins error:", e));
 
     return res.status(200).json({
       success: true,
-      message: "Admin approved successfully",
-      data: updatedAdmin,
+      message: `Admin approved and assigned role: ${role}`,
+      data: { ...updatedAdmin, adminRole: role },
     });
   } catch (error: any) {
     return handleError(res, error, "admin.approveAdmin");
   }
 };
 
+// ─── Reject Admin ─────────────────────────────────────────────────────────────
 export const rejectAdmin = async (req: Request, res: Response) => {
   try {
     const adminId = req.params.adminId as string;
-    const { reason } = req.body;
+    const { reason } = req.body as { reason?: string };
+
+    // Verify target admin belongs to approver's school
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId, schoolId: req.school?.id },
+      include: { school: { select: { name: true } } },
+    });
+
+    if (!schoolAdmin) {
+      return res.status(404).json({ success: false, message: "Admin not found in your school" });
+    }
 
     const updatedAdmin = await prisma.admin.update({
       where: { id: adminId },
-      data: {
-        status: "REJECTED",
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        status: true,
-      },
+      data: { status: "REJECTED" },
+      select: { id: true, name: true, email: true, status: true },
     });
 
-    // Send rejection notification email
-    await sendRejectionNotification(
-      updatedAdmin.email,
-      updatedAdmin.name,
+    // Send real rejection email (fire-and-forget)
+    sendAdminRejectionEmail({
+      adminEmail: updatedAdmin.email,
+      adminName: updatedAdmin.name,
+      schoolName: schoolAdmin.school.name,
       reason,
-    );
+    }).catch((e) => console.error("[rejectAdmin] Email error:", e));
 
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "Admin registration rejected",
       data: updatedAdmin,
     });
@@ -375,23 +475,181 @@ export const rejectAdmin = async (req: Request, res: Response) => {
   }
 };
 
-// Helper functions for notifications
-const sendApprovalNotification = async (email: string, name: string) => {
-  // Implement your email service
-  console.log(
-    `Approval email sent to ${email}: Welcome ${name}, your admin account has been approved!`,
-  );
+// ─── Get All School Admins (Team page) ───────────────────────────────────────
+export const getSchoolAdmins = async (req: Request, res: Response) => {
+  try {
+    const schoolId = req.school?.id;
+
+    const members = await prisma.schoolAdmin.findMany({
+      where: { 
+        schoolId, 
+        active: true,
+        role: { not: "PENDING" }
+      },
+      include: {
+        admin: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profileImage: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: members.map((m) => ({
+        id: m.admin.id,
+        name: m.admin.name,
+        email: m.admin.email,
+        profileImage: m.admin.profileImage,
+        status: m.admin.status,
+        adminRole: m.role,
+        joinedAt: m.createdAt,
+      })),
+    });
+  } catch (error: any) {
+    return handleError(res, error, "admin.getSchoolAdmins");
+  }
 };
 
-const sendRejectionNotification = async (
-  email: string,
-  name: string,
-  reason?: string,
-) => {
-  // Implement your email service
-  console.log(
-    `Rejection email sent to ${email}: Sorry ${name}, your admin registration was rejected. Reason: ${reason}`,
-  );
+// ─── Update Admin Role (SCHOOL_OWNER only) ───────────────────────────────────
+export const updateAdminRole = async (req: Request, res: Response) => {
+  try {
+    const targetAdminId = req.params.adminId as string;
+    const { role } = req.body as { role?: AdminRole };
+
+    const assignableRoles: AdminRole[] = [
+      AdminRole.PRINCIPAL,
+      AdminRole.REGISTRAR,
+      AdminRole.ACCOUNTANT,
+      AdminRole.SUPPORT,
+    ];
+    if (!role || !assignableRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid role. Valid roles: ${assignableRoles.join(", ")}.`,
+      });
+    }
+
+    // Cannot change own role
+    if (targetAdminId === req.user?.id) {
+      return res.status(400).json({ success: false, message: "You cannot change your own role" });
+    }
+
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId: targetAdminId, schoolId: req.school?.id, active: true },
+    });
+    if (!schoolAdmin) {
+      return res.status(404).json({ success: false, message: "Admin not found in your school" });
+    }
+    if (schoolAdmin.role === AdminRole.SCHOOL_OWNER) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot change the role of the school owner. Use Transfer Ownership instead.",
+      });
+    }
+
+    await prisma.schoolAdmin.update({
+      where: { adminId_schoolId: { adminId: targetAdminId, schoolId: req.school!.id } },
+      data: { role },
+    });
+
+    return res.status(200).json({ success: true, message: `Role updated to ${role}` });
+  } catch (error: any) {
+    return handleError(res, error, "admin.updateAdminRole");
+  }
+};
+
+// ─── Transfer Ownership (SCHOOL_OWNER only) ───────────────────────────────────
+export const transferOwnership = async (req: Request, res: Response) => {
+  try {
+    const targetAdminId = req.params.adminId as string;
+    const currentAdminId = req.user!.id;
+    const schoolId = req.school!.id;
+
+    if (targetAdminId === currentAdminId) {
+      return res.status(400).json({ success: false, message: "You are already the school owner" });
+    }
+
+    const targetSchoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId: targetAdminId, schoolId, active: true },
+      include: { admin: { select: { name: true, email: true } } },
+    });
+    if (!targetSchoolAdmin) {
+      return res.status(404).json({ success: false, message: "Admin not found in your school" });
+    }
+    if (targetSchoolAdmin.role === AdminRole.PENDING) {
+      return res.status(400).json({ success: false, message: "Cannot transfer ownership to a pending admin" });
+    }
+
+    // Swap roles in a transaction
+    await prisma.$transaction([
+      // Current owner → PRINCIPAL
+      prisma.schoolAdmin.update({
+        where: { adminId_schoolId: { adminId: currentAdminId, schoolId } },
+        data: { role: AdminRole.PRINCIPAL },
+      }),
+      // Target admin → SCHOOL_OWNER
+      prisma.schoolAdmin.update({
+        where: { adminId_schoolId: { adminId: targetAdminId, schoolId } },
+        data: { role: AdminRole.SCHOOL_OWNER },
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: `Ownership successfully transferred to ${targetSchoolAdmin.admin.name}. You are now a Principal.`,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "admin.transferOwnership");
+  }
+};
+
+// ─── Remove Admin from School (SCHOOL_OWNER only) ────────────────────────────
+export const removeAdmin = async (req: Request, res: Response) => {
+  try {
+    const targetAdminId = req.params.adminId as string;
+    const schoolId = req.school!.id;
+
+    if (targetAdminId === req.user?.id) {
+      return res.status(400).json({ success: false, message: "You cannot remove yourself" });
+    }
+
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId: targetAdminId, schoolId, active: true },
+    });
+    if (!schoolAdmin) {
+      return res.status(404).json({ success: false, message: "Admin not found in your school" });
+    }
+    if (schoolAdmin.role === AdminRole.SCHOOL_OWNER) {
+      return res.status(400).json({ success: false, message: "Cannot remove the school owner" });
+    }
+
+    // Deactivate school association + revoke all active sessions
+    await prisma.$transaction([
+      prisma.schoolAdmin.update({
+        where: { adminId_schoolId: { adminId: targetAdminId, schoolId } },
+        data: { active: false },
+      }),
+      prisma.refreshToken.updateMany({
+        where: { userId: targetAdminId, isValid: true },
+        data: { isValid: false },
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin removed from school and sessions revoked",
+    });
+  } catch (error: any) {
+    return handleError(res, error, "admin.removeAdmin");
+  }
 };
 
 export const getSchoolTeachers = async (req: Request, res: Response) => {

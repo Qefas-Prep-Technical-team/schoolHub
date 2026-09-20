@@ -52,6 +52,7 @@ export const useLoginMutation = () => {
           ...response.data.user,
           name: response.data.user?.name || response.data.user?.fullName || "User",
           userType: variables.userType,
+          schools: response.data.schools || response.data.user?.schools || [],
         };
 
         setAuth(userWithType, response.data.accessToken);
@@ -69,11 +70,7 @@ export const useLoginMutation = () => {
 
         if (isNewUser || isAdminWithoutPlan) {
           setHasCompletedOnboarding(false);
-          if (actualRole === 'ADMIN') {
-            router.replace(`/select-plan`);
-          } else {
-            router.replace(`/onboarding?type=${variables.userType}`);
-          }
+          router.replace(`/onboarding?type=${variables.userType}`);
         } else {
           setHasCompletedOnboarding(true);
           setTransitioning(true, actualRole, userWithType.name);

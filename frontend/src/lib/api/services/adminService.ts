@@ -195,4 +195,66 @@ export const adminService = {
     const response = await apiClient.post(`/admin/teachers/${teacherId}/resend-claim-email`, { email });
     return response.data;
   },
+
+  // === TEAM MANAGEMENT ===
+
+  /**
+   * Get all school admins (active and pending)
+   */
+  getSchoolAdmins: async (schoolId: string) => {
+    const response = await apiClient.get("/admin/team", {
+      params: { schoolId },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get pending admin join requests
+   */
+  getPendingAdmins: async (schoolId: string) => {
+    const response = await apiClient.get("/admin/pending", {
+      params: { schoolId },
+    });
+    return response.data;
+  },
+
+  /**
+   * Approve a pending admin
+   */
+  approveAdmin: async (adminId: string, role: string) => {
+    const response = await apiClient.put(`/admin/${adminId}/approve`, { role });
+    return response.data;
+  },
+
+  /**
+   * Reject a pending admin
+   */
+  rejectAdmin: async (adminId: string, reason?: string) => {
+    const response = await apiClient.put(`/admin/${adminId}/reject`, { reason });
+    return response.data;
+  },
+
+  /**
+   * Update an admin's role
+   */
+  updateAdminRole: async (adminId: string, role: string) => {
+    const response = await apiClient.patch(`/admin/team/${adminId}/role`, { role });
+    return response.data;
+  },
+
+  /**
+   * Transfer school ownership
+   */
+  transferOwnership: async (newOwnerId: string) => {
+    const response = await apiClient.post(`/admin/team/${newOwnerId}/transfer-ownership`);
+    return response.data;
+  },
+
+  /**
+   * Remove an admin
+   */
+  removeAdmin: async (adminId: string) => {
+    const response = await apiClient.delete(`/admin/team/${adminId}`);
+    return response.data;
+  },
 };

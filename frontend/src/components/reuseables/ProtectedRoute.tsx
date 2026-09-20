@@ -25,9 +25,9 @@ export default function ProtectedRoute({
     userTypes
   });
 
-  if (isChecking) {
-    return fallback || <LoadingDashboard />;
-  }
+  // if (isChecking) {
+  //   return fallback || <LoadingDashboard />;
+  // }
 
   return <>{children}</>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Hammer, Sparkles, MessageSquare } from "lucide-react";
+import { Hammer, Sparkles, MessageSquare, Mail, Phone } from "lucide-react";
 
 export default function SharedSupportCenter() {
   return (
@@ -20,9 +20,22 @@ export default function SharedSupportCenter() {
           <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />
         </div>
         
-        <p className="text-slate-500 font-medium max-w-md mx-auto text-lg leading-relaxed mb-8">
+        <p className="text-slate-500 font-medium max-w-md mx-auto text-lg leading-relaxed mb-6">
           We're currently building a world-class support center. Soon you'll be able to create tickets, chat with our team, and track your requests right here!
         </p>
+
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <p className="text-slate-600 dark:text-slate-300 font-bold">In the meantime, you can reach us at:</p>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <a href="mailto:admin@qefas.com" className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors font-bold border border-emerald-100 dark:border-emerald-500/20">
+              <Mail className="w-4 h-4" /> admin@qefas.com
+            </a>
+            <a href="https://wa.me/2348165246864" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors font-bold border border-emerald-100 dark:border-emerald-500/20">
+              <Phone className="w-4 h-4" /> +234 816 524 6864
+            </a>
+          </div>
+          <p className="text-xs text-slate-400">Available via Email, Call or WhatsApp</p>
+        </div>
 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
           <Hammer className="h-4 w-4 text-slate-500" />

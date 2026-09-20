@@ -78,7 +78,7 @@ export default function VerificationCard() {
                     sessionStorage.removeItem("preAuthToken");
                     setIsSuccess(true);
                     setTimeout(() => {
-                      router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+                      router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}${isNewUser ? '&new=true' : ''}`);
                     }, 1500);
                   },
                 }
@@ -87,7 +87,7 @@ export default function VerificationCard() {
               // No token found, fallback to manual login
               setIsSuccess(true);
               setTimeout(() => {
-                router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+                router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}${isNewUser ? '&new=true' : ''}`);
               }, 1500);
             }
           },
