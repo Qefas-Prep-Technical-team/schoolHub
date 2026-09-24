@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pickDepartment, updateStudentDepartmentByAdmin, getStudentProfile, getStudentById, getStudentAssignments, updateStudentProfile, requestEmailUpdate, confirmEmailUpdate, getStudentAttendance, updateStudentAttendance, pickLevel, updateStudentLevelByAdmin, exitStudent, getStudentHistory, assignPrefectRole, removePrefectRole, acknowledgePrefectCelebration } from "./student.controller";
 import { getStudentBehaviourProfile, upsertStudentBehaviourProfile } from "./behaviourProfile.controller";
+import { fetchEvaluation, createOrUpdateEvaluation } from "./termlyEvaluation.controller";
 import { authenticateToken } from "../../middleware/authMiddleware";
 
 const router = Router();
@@ -26,4 +27,6 @@ router.post("/:id/exit", exitStudent);
 router.post("/:id/prefect-role", assignPrefectRole);
 router.delete("/:id/prefect-role", removePrefectRole);
 router.post("/:id/prefect-role/acknowledge", acknowledgePrefectCelebration);
+router.get("/:id/termly-evaluation", fetchEvaluation);
+router.put("/:id/termly-evaluation", createOrUpdateEvaluation);
 export default router;

@@ -29,8 +29,11 @@ import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import { toast } from 'react-toastify'
 import { 
     useStudentBehaviourProfile, 
-    useUpdateStudentBehaviourProfile 
+    useUpdateStudentBehaviourProfile,
+    useTermlyEvaluation,
+    useUpsertTermlyEvaluation
 } from '@/lib/api/hooks/useStudent'
+import { useSessions } from '@/lib/api/hooks/useSessions'
 import {
     useClassBehaviourAlerts,
     useCreateBehaviourAlert,
@@ -254,6 +257,7 @@ const TABS = [
     { id: 'attendance', label: 'Attendance' },
     { id: 'timetable', label: 'Time Table' },
     { id: 'behaviour', label: 'Behaviour' },
+    { id: 'evaluation', label: 'Evaluation' },
     { id: 'history', label: 'History' },
 ]
 
@@ -283,6 +287,8 @@ export default function StudentProfilePage() {
         queryFn: () => studentService.getStudentHistory(studentId),
         enabled: !!studentId
     })
+
+    const { data: sessionsData } = useSessions(schoolId)
 
     const { data: settings } = useSchoolSettings(schoolId)
     const primaryColor = settings?.themeColor || '#2563eb'
@@ -448,6 +454,123 @@ export default function StudentProfilePage() {
     const [papersPage, setPapersPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
 
+    // ── Termly Evaluation State ──────────────────────────────────────────────
+    const [evaluationData, setEvaluationData] = useState({
+        attentiveness: 0,
+        honesty: 0,
+        neatness: 0,
+        politeness: 0,
+        punctuality: 0,
+        selfControl: 0,
+        obedience: 0,
+        reliability: 0,
+        responsibility: 0,
+        relationship: 0,
+        handlingTools: 0,
+        drawingPainting: 0,
+        handwriting: 0,
+        publicSpeaking: 0,
+        speechFluency: 0,
+        sportsGames: 0,
+        teacherRemark: '',
+        principalRemark: ''
+    });
+
+    const [isEditingEvaluation, setIsEditingEvaluation] = useState(false);
+    const [evaluationSession, setEvaluationSession] = useState('');
+    const [evaluationTerm, setEvaluationTerm] = useState('FIRST');
+
+    useEffect(() => {
+        const sessions = sessionsData?.data || [];
+        if (sessions.length > 0 && !evaluationSession) {
+            const active = sessions.find((s: any) => s.isActive) || sessions[0];
+            setEvaluationSession(active.id);
+            if (active.currentTerm) {
+                setEvaluationTerm(active.currentTerm);
+            }
+        }
+    }, [sessionsData, evaluationSession]);
+
+    const { data: serverEvaluation, isLoading: isEvaluationLoading } = useTermlyEvaluation(
+        studentId, 
+        classId, 
+        evaluationSession, 
+        evaluationTerm
+    );
+
+    useEffect(() => {
+        if (serverEvaluation) {
+            setEvaluationData({
+                attentiveness: serverEvaluation.attentiveness || 0,
+                honesty: serverEvaluation.honesty || 0,
+                neatness: serverEvaluation.neatness || 0,
+                politeness: serverEvaluation.politeness || 0,
+                punctuality: serverEvaluation.punctuality || 0,
+                selfControl: serverEvaluation.selfControl || 0,
+                obedience: serverEvaluation.obedience || 0,
+                reliability: serverEvaluation.reliability || 0,
+                responsibility: serverEvaluation.responsibility || 0,
+                relationship: serverEvaluation.relationship || 0,
+                handlingTools: serverEvaluation.handlingTools || 0,
+                drawingPainting: serverEvaluation.drawingPainting || 0,
+                handwriting: serverEvaluation.handwriting || 0,
+                publicSpeaking: serverEvaluation.publicSpeaking || 0,
+                speechFluency: serverEvaluation.speechFluency || 0,
+                sportsGames: serverEvaluation.sportsGames || 0,
+                teacherRemark: serverEvaluation.teacherRemark || '',
+                principalRemark: serverEvaluation.principalRemark || ''
+            });
+        } else {
+            // Reset if no data
+            setEvaluationData({
+                attentiveness: 0, honesty: 0, neatness: 0, politeness: 0, punctuality: 0,
+                selfControl: 0, obedience: 0, reliability: 0, responsibility: 0, relationship: 0,
+                handlingTools: 0, drawingPainting: 0, handwriting: 0, publicSpeaking: 0,
+                speechFluency: 0, sportsGames: 0, teacherRemark: '', principalRemark: ''
+            });
+        }
+    }, [serverEvaluation, evaluationSession, evaluationTerm]);
+
+    const upsertEvaluationMutation = useUpsertTermlyEvaluation(studentId);
+
+    const handleEvaluationChange = (field: string, value: any) => {
+        setEvaluationData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveEvaluation = async () => {
+        if (!classId) {
+            toast.error("Student must be enrolled in a class to receive an evaluation.");
+            return;
+        }
+        if (!evaluationSession) {
+            toast.error("An active academic session is required.");
+            return;
+        }
+
+        try {
+            // Convert 0s to nulls for the backend schema which expects 1-5 or null
+            const sanitizedData: any = {};
+            for (const [key, value] of Object.entries(evaluationData)) {
+                if (typeof value === 'number' && value === 0) {
+                    sanitizedData[key] = null;
+                } else {
+                    sanitizedData[key] = value;
+                }
+            }
+
+            await upsertEvaluationMutation.mutateAsync({
+                classId,
+                sessionId: evaluationSession,
+                term: evaluationTerm,
+                ...sanitizedData
+            });
+            toast.success("Termly Evaluation saved successfully!");
+            setIsEditingEvaluation(false);
+        } catch (error) {
+            // Error handling is inside the hook
+        }
+    };
+
     const [strengthsPage, setStrengthsPage] = useState(1);
     const [behaviourPage, setBehaviourPage] = useState(1);
     const STRENGTHS_PER_PAGE = 3;
@@ -569,9 +692,86 @@ export default function StudentProfilePage() {
     // ── Loading & Errors ─────────────────────────────────────────────────────
     if (isStudentLoading) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
-                <div className="size-14 rounded-full border-4 border-slate-100 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Student...</p>
+            <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-20">
+                {/* ── Top Actions ──────────────────────────────────────────────────── */}
+                <div className="w-full px-4 sm:px-6 lg:px-12 pt-6">
+                    <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                </div>
+
+                {/* ── Profile Header ─────────────────────── */}
+                <div className="w-full px-4 sm:px-6 lg:px-12 mt-6">
+                    <div className="rounded-[2rem] overflow-hidden p-8 md:p-12 shadow-xl border border-slate-100 dark:border-white/10 bg-slate-200 dark:bg-slate-800/50 animate-pulse">
+                        <div className="relative z-20 flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
+                            <div className="size-24 md:size-32 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" />
+                            <div className="flex-1 w-full space-y-4">
+                                <div className="flex flex-col md:flex-row justify-between gap-4">
+                                    <div className="space-y-3 w-full max-w-sm">
+                                        <div className="h-8 bg-slate-300 dark:bg-slate-700 rounded w-3/4" />
+                                        <div className="h-4 bg-slate-300 dark:bg-slate-700 rounded w-1/2" />
+                                        <div className="flex gap-4 pt-2">
+                                            <div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-lg" />
+                                            <div className="h-6 w-20 bg-slate-300 dark:bg-slate-700 rounded-lg" />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <div className="h-10 w-32 bg-slate-300 dark:bg-slate-700 rounded-xl" />
+                                        <div className="h-10 w-24 bg-slate-300 dark:bg-slate-700 rounded-xl" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Tabs ─────────────────────────────────────── */}
+                <div className="w-full px-4 sm:px-6 lg:px-12 mt-8">
+                    <div className="flex gap-6 border-b border-slate-200 dark:border-slate-800/50 pb-4">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+
+                {/* ── Overview Content ─────────────────────────────────────────────── */}
+                <div className="w-full px-4 sm:px-6 lg:px-12 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
+                    <div className="lg:col-span-2 space-y-6 md:space-y-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {[1, 2].map(i => (
+                                <div key={i} className="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 h-32 animate-pulse flex flex-col justify-between">
+                                    <div className="size-12 rounded-[14px] bg-slate-200 dark:bg-slate-800" />
+                                    <div className="space-y-2">
+                                        <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 rounded-2xl p-6 md:p-8 space-y-6 animate-pulse">
+                            <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="flex gap-4">
+                                        <div className="size-10 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                                        <div className="space-y-2 w-full">
+                                            <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                                            <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-6">
+                        <div className="bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 rounded-2xl p-6 md:p-8 space-y-6 animate-pulse h-64">
+                            <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="space-y-4">
+                                <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-4 w-5/6 bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-4 w-4/6 bg-slate-200 dark:bg-slate-800 rounded" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -1486,6 +1686,200 @@ export default function StudentProfilePage() {
                             currentDate={scheduleDate}
                         />
                      </SectionCard>
+                </main>
+            )}
+
+            {/* ── Evaluation Tab ────────────────────────────────────────────── */}
+            {activeTab === 'evaluation' && (
+                <main className="w-full px-4 sm:px-6 lg:px-12 mt-10 pb-20 space-y-8">
+                    {/* Header / Edit Controls */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="space-y-1">
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Termly Evaluation</h2>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {isEditingEvaluation ? 'Editing Mode' : 'Review Mode'}
+                            </p>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-3">
+                            <select 
+                                value={evaluationSession} 
+                                onChange={(e) => setEvaluationSession(e.target.value)}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-bold focus:outline-none focus:border-primary transition-all bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300"
+                                )}
+                                style={{ '--tw-border-opacity': 1, '--primary': primaryColor } as any}
+                            >
+                                {(sessionsData?.data || []).map((s: any) => (
+                                    <option key={s.id} value={s.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{s.name}</option>
+                                ))}
+                            </select>
+                            <select 
+                                value={evaluationTerm} 
+                                onChange={(e) => setEvaluationTerm(e.target.value)}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-bold focus:outline-none focus:border-primary transition-all bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300"
+                                )}
+                                style={{ '--tw-border-opacity': 1, '--primary': primaryColor } as any}
+                            >
+                                <option value="FIRST" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">First Term</option>
+                                <option value="SECOND" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Second Term</option>
+                                <option value="THIRD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Third Term</option>
+                            </select>
+
+                            {!isEditingEvaluation && (
+                                <button
+                                    onClick={() => setIsEditingEvaluation(true)}
+                                    className="px-6 py-2.5 rounded-xl text-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 ml-2"
+                                    style={{ backgroundColor: primaryColor }}
+                                >
+                                    <Edit2 size={14} /> Edit Evaluation
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Affective Domain */}
+                        <SectionCard title="Affective Domain (Character)">
+                            <div className="space-y-4">
+                                {['attentiveness', 'honesty', 'neatness', 'politeness', 'punctuality', 'selfControl', 'obedience', 'reliability', 'responsibility', 'relationship'].map((trait) => (
+                                    <div key={trait} className={cn(
+                                        "flex items-center justify-between p-4 rounded-xl border transition-all",
+                                        isEditingEvaluation ? "bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5" : "bg-transparent border-transparent"
+                                    )}>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">{trait.replace(/([A-Z])/g, ' $1').trim()}</p>
+                                        <div className="flex gap-1">
+                                            {[1, 2, 3, 4, 5].map((rating) => (
+                                                <button
+                                                    key={rating}
+                                                    onClick={() => isEditingEvaluation && handleEvaluationChange(trait, rating)}
+                                                    disabled={!isEditingEvaluation}
+                                                    className={cn(
+                                                        "size-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
+                                                        (evaluationData as any)[trait] === rating
+                                                            ? "text-white shadow-md border-transparent"
+                                                            : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-400",
+                                                        isEditingEvaluation && (evaluationData as any)[trait] === rating && "scale-110",
+                                                        !isEditingEvaluation && (evaluationData as any)[trait] !== rating && "opacity-30",
+                                                        !isEditingEvaluation && "cursor-default"
+                                                    )}
+                                                    style={(evaluationData as any)[trait] === rating ? { backgroundColor: primaryColor } : {}}
+                                                >
+                                                    {rating}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+                        <div className="space-y-8">
+                            {/* Psychomotor Skills */}
+                            <SectionCard title="Psychomotor Skills">
+                                <div className="space-y-4">
+                                    {['handlingTools', 'drawingPainting', 'handwriting', 'publicSpeaking', 'speechFluency', 'sportsGames'].map((trait) => (
+                                        <div key={trait} className={cn(
+                                            "flex items-center justify-between p-4 rounded-xl border transition-all",
+                                            isEditingEvaluation ? "bg-slate-50 dark:bg-white/[0.02] border-slate-100 dark:border-white/5" : "bg-transparent border-transparent"
+                                        )}>
+                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">{trait.replace(/([A-Z])/g, ' $1').trim()}</p>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3, 4, 5].map((rating) => (
+                                                    <button
+                                                        key={rating}
+                                                        onClick={() => isEditingEvaluation && handleEvaluationChange(trait, rating)}
+                                                        disabled={!isEditingEvaluation}
+                                                        className={cn(
+                                                            "size-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
+                                                            (evaluationData as any)[trait] === rating
+                                                                ? "text-white shadow-md border-transparent"
+                                                                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-400",
+                                                            isEditingEvaluation && (evaluationData as any)[trait] === rating && "scale-110",
+                                                            !isEditingEvaluation && (evaluationData as any)[trait] !== rating && "opacity-30",
+                                                            !isEditingEvaluation && "cursor-default"
+                                                        )}
+                                                        style={(evaluationData as any)[trait] === rating ? { backgroundColor: primaryColor } : {}}
+                                                    >
+                                                        {rating}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </SectionCard>
+
+                            {/* Remarks */}
+                            <SectionCard title="Remarks">
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Class Teacher's Remark</label>
+                                        <textarea
+                                            rows={3}
+                                            value={evaluationData.teacherRemark}
+                                            onChange={(e) => isEditingEvaluation && handleEvaluationChange('teacherRemark', e.target.value)}
+                                            readOnly={!isEditingEvaluation}
+                                            placeholder={isEditingEvaluation ? "Enter remark here..." : "No remark"}
+                                            className={cn(
+                                                "w-full p-4 rounded-xl text-sm resize-none transition-all",
+                                                isEditingEvaluation 
+                                                    ? "bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1" 
+                                                    : "bg-transparent border-transparent px-0 py-2 text-slate-700 dark:text-slate-300 cursor-default focus:outline-none"
+                                            )}
+                                            style={isEditingEvaluation ? { '--tw-ring-color': primaryColor } as any : {}}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Principal's Remark</label>
+                                        <textarea
+                                            rows={3}
+                                            value={evaluationData.principalRemark}
+                                            onChange={(e) => isEditingEvaluation && handleEvaluationChange('principalRemark', e.target.value)}
+                                            readOnly={!isEditingEvaluation}
+                                            placeholder={isEditingEvaluation ? "Enter remark here..." : "No remark"}
+                                            className={cn(
+                                                "w-full p-4 rounded-xl text-sm resize-none transition-all",
+                                                isEditingEvaluation 
+                                                    ? "bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1" 
+                                                    : "bg-transparent border-transparent px-0 py-2 text-slate-700 dark:text-slate-300 cursor-default focus:outline-none"
+                                            )}
+                                            style={isEditingEvaluation ? { '--tw-ring-color': primaryColor } as any : {}}
+                                        />
+                                    </div>
+                                </div>
+                            </SectionCard>
+
+                            {/* Save Button */}
+                            {isEditingEvaluation && (
+                                <div className="flex justify-end gap-4">
+                                    <button
+                                        onClick={() => setIsEditingEvaluation(false)}
+                                        disabled={upsertEvaluationMutation.isPending}
+                                        className="px-6 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[11px] transition-colors disabled:opacity-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveEvaluation}
+                                        disabled={upsertEvaluationMutation.isPending}
+                                        className="px-8 py-4 rounded-2xl text-white font-black uppercase tracking-widest text-[11px] shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{ backgroundColor: primaryColor }}
+                                    >
+                                        {upsertEvaluationMutation.isPending ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            "Save Evaluation"
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </main>
             )}
 

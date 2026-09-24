@@ -27,6 +27,7 @@ export default function Dashboard() {
         departmentId: 'all',
         status: 'all',
         category: 'all',
+        searchQuery: '',
     });
 
     const [pageStates, setPageStates] = useState({
@@ -37,8 +38,8 @@ export default function Dashboard() {
     });
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-
-    const LIMIT = 6;
+    
+    const LIMIT = 10;
 
     const commonParams = {
         schoolId,
@@ -47,6 +48,7 @@ export default function Dashboard() {
         classId: filters.classId === 'all' ? undefined : filters.classId,
         departmentIds: filters.departmentId === 'all' ? undefined : [filters.departmentId],
         status: filters.status === 'all' ? undefined : filters.status,
+        search: filters.searchQuery || undefined,
     };
 
     // Exams
@@ -175,7 +177,7 @@ export default function Dashboard() {
     );
 
     return (
-        <main className="w-full px-6 md:px-12 lg:px-16 py-4 md:py-6">
+        <main className="w-[95%] max-w-none mx-auto py-4 md:py-6">
             <Header />
             
             <StatsCards 

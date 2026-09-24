@@ -35,7 +35,7 @@ import { createNotification } from "../notification/notification.service";
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
   try {
-    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category, page, limit, availableForStudentId } = req.query;
+    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category, page, limit, availableForStudentId, search } = req.query;
 
     const isPersonal = (schoolId as string) === req.user?.id;
     const effectiveSchoolId = isPersonal ? undefined : ((schoolId as string) || req.user?.schoolId);
@@ -54,6 +54,7 @@ export const getExams = async (req: Request, res: Response) => {
     if (status) filters.status = status as any;
     if (term) filters.term = term as any;
     if (category) filters.category = category as any;
+    if (search) filters.search = search as string;
     
     if (page) filters.page = Number(page);
     if (limit) filters.limit = Number(limit);
@@ -208,7 +209,7 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const createSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const { subjectId, teacherId: bodyTeacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId, creationMode } = req.body;
+    const { subjectId, teacherId: bodyTeacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId, creationMode, category } = req.body;
     
     const isPersonal = (bodySchoolId as string) === req.user?.id;
     const schoolId = isPersonal ? null : (bodySchoolId || req.user?.schoolId);
@@ -270,6 +271,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
       durationMinutes,
       readingContent,
       creationMode,
+      category,
     });
 
     return res.status(201).json({
@@ -285,7 +287,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
 export const updateSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { paperId } = req.params;
-    const { title, instructions, durationMinutes, readingContent, subjectId, teacherId, images, imageLabels } = req.body;
+    const { title, instructions, durationMinutes, readingContent, subjectId, teacherId, images, imageLabels, category } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Authentication required" });
@@ -313,6 +315,7 @@ export const updateSubjectPaper = async (req: Request, res: Response) => {
       teacherId,
       images,
       imageLabels,
+      category,
     });
 
     return res.status(200).json({
@@ -738,7 +741,7 @@ export const deleteExam = async (req: Request, res: Response) => {
 
 export const getSubjectPapers = async (req: Request, res: Response) => {
   try {
-    const { unlinkedOnly, schoolId, sessionId, term, classId, departmentId, departmentIds, status, page, limit } = req.query;
+    const { unlinkedOnly, schoolId, sessionId, term, classId, departmentId, departmentIds, status, page, limit, subjectId, search } = req.query;
     
     const isPersonal = schoolId === req.user?.id;
     const filters: any = {
@@ -748,6 +751,7 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
     };
 
     if (sessionId) filters.sessionId = sessionId as string;
+    if (subjectId) filters.subjectId = subjectId as string;
     if (term) filters.term = term as any;
     if (classId) filters.classId = classId as string;
     if (departmentIds) {
@@ -756,6 +760,7 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
       filters.departmentIds = [departmentId as string];
     }
     if (status) filters.status = status as string;
+    if (search) filters.search = search as string;
     if (page) filters.page = Number(page);
     if (limit) filters.limit = Number(limit);
 

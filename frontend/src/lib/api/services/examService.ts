@@ -384,7 +384,7 @@ export const examService = {
     return response.data.data;
   },
 
-  getSubjectPapers: async (params?: { unlinkedOnly?: boolean }) => {
+  getSubjectPapers: async (params?: { unlinkedOnly?: boolean; subjectId?: string; [key: string]: any }) => {
     const response = await apiClient.get<{ data: SubjectPaper[] }>(
       "/exams/papers/all",
       { params },

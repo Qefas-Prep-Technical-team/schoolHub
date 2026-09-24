@@ -68,6 +68,16 @@ export default function CreateExamForm() {
     
   const [activeStep, setActiveStep] = React.useState(0);
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
+  const [canSubmit, setCanSubmit] = React.useState(false);
+
+  React.useEffect(() => {
+    if (activeStep === steps.length - 1) {
+      setCanSubmit(false);
+      const timer = setTimeout(() => setCanSubmit(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [activeStep, steps.length]);
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -229,30 +239,42 @@ export default function CreateExamForm() {
 
       // 2. If SINGLE_SUBJECT, create Subject Paper and link it
       if (defaultMode === "SINGLE_SUBJECT") {
-        const paperPayload = {
-          subjectId: data.subjectId || null,
-          teacherId: data.teacherId || null,
-          title: data.title,
-          instructions: data.description || "",
-          durationMinutes: data.durationMinutes || 60,
-          passMark: data.passMark || 50,
-          schoolId: data.schoolId,
-          creationMode: data.creationMode,
-        };
-        const createdPaper = await examService.createSubjectPaper(createdExam.id, paperPayload);
-        return { createdExam, createdPaper, isSingle: true };
+        let createdPaper = null;
+        let paperFailed = false;
+        try {
+          const paperPayload = {
+            subjectId: data.subjectId || null,
+            teacherId: data.teacherId || null,
+            title: data.title,
+            instructions: data.description || "",
+            durationMinutes: data.durationMinutes || 60,
+            passMark: data.passMark || 50,
+            schoolId: data.schoolId,
+            creationMode: data.creationMode,
+            category: data.category,
+          };
+          createdPaper = await examService.createSubjectPaper(createdExam.id, paperPayload);
+        } catch (paperError: any) {
+          console.error('[CreateExamForm] Paper creation failed:', paperError);
+          paperFailed = true;
+        }
+        return { createdExam, createdPaper, isSingle: true, paperFailed };
       }
       
       return { createdExam, isSingle: false };
     },
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
+      setIsRedirecting(true);
+      setExamContext(result.createdExam.id, result.createdExam.schoolId, result.createdExam.sessionId || "");
       if (result.isSingle && result.createdPaper) {
         toast.success(`${typeLabel} and Subject Paper created successfully!`);
-        setExamContext(result.createdExam.id, result.createdExam.schoolId, result.createdExam.sessionId || "");
         router.push(`/dashboard/admin/exams/papers/${result.createdPaper.id}`);
       } else {
-        toast.success(`${typeLabel} created successfully!`);
-        setExamContext(result.createdExam.id, result.createdExam.schoolId, result.createdExam.sessionId || "");
+        if (result.paperFailed) {
+          toast.warn(`Assessment created, but the default subject paper could not be created.`, { autoClose: 6000 });
+        } else {
+          toast.success(`${typeLabel} created successfully!`);
+        }
         router.push(`/dashboard/admin/exams/${result.createdExam.id}/papers`);
       }
     },
@@ -266,7 +288,7 @@ export default function CreateExamForm() {
 
 
   return (
-    <Box sx={{ width: '100%' }} className="max-w-4xl mx-auto space-y-8 pb-20">
+    <Box sx={{ width: '100%' }} className="max-w-6xl mx-auto space-y-8 pb-20">
       <Stepper 
         nonLinear 
         activeStep={activeStep} 
@@ -284,7 +306,7 @@ export default function CreateExamForm() {
       >
         {steps.map((label, index) => (
           <Step key={label} completed={completed[index]}>
-            <StepButton color="inherit" onClick={handleStep(index)}>
+            <StepButton type="button" color="inherit" onClick={handleStep(index)}>
               <span className="text-slate-800 dark:text-slate-200 font-LexendMedium">
                 {label}
               </span>
@@ -610,10 +632,10 @@ export default function CreateExamForm() {
           ) : (
             <Button
               type="submit"
-              disabled={isPending || !watchedSchoolId}
+              disabled={isPending || isRedirecting || !watchedSchoolId || !canSubmit}
               className="w-full sm:w-auto px-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none"
             >
-              {isPending ? "Creating..." : `Create ${typeLabel}`}
+              {isPending ? "Creating..." : isRedirecting ? "Redirecting..." : `Create ${typeLabel}`}
             </Button>
           )}
         </div>

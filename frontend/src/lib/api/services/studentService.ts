@@ -75,10 +75,10 @@ export interface StudentProfile extends Student {
 }
 
 export const studentService = {
-  getSchoolStudents: async (schoolId: string, filters: Record<string, string | boolean | undefined> = {}) => {
+  getSchoolStudents: async (schoolId: string, filters: Record<string, string | number | boolean | undefined> = {}) => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== "") {
+      if (value !== undefined && value !== null && value !== "") {
         params.append(key, String(value));
       }
     });
@@ -199,6 +199,16 @@ export const studentService = {
   acknowledgePrefectCelebration: async (studentId: string) => {
     const response = await apiClient.post(`/students/${studentId}/prefect-role/acknowledge`);
     return response.data.data;
+  },
+
+  getTermlyEvaluation: async (studentId: string, classId: string, sessionId: string, term: string) => {
+    const response = await apiClient.get<{ data: any }>(`/students/${studentId}/termly-evaluation?classId=${classId}&sessionId=${sessionId}&term=${term}`);
+    return response.data.data ?? null;
+  },
+
+  upsertTermlyEvaluation: async (studentId: string, data: any) => {
+    const response = await apiClient.put<{ data: any }>(`/students/${studentId}/termly-evaluation`, data);
+    return response.data.data ?? null;
   },
 };
 

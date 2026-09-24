@@ -10,6 +10,7 @@ export const ADMIN_FEATURE_FLAGS = {
   classes: true,
   sessions: true,
   subdomain: true,
+  records: true,
 
   // === ACADEMICS ===
   grades: true,
@@ -80,6 +81,9 @@ export const ROLE_NAV_PERMISSIONS: Partial<Record<AdminFeatureFlagKey, AdminRole
 
   // Invitations: owner, principal, registrar
   invitations: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR"],
+
+  // Records: owner, principal, registrar
+  records: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR"],
 
   // Sessions: owner, principal
   sessions: ["SCHOOL_OWNER", "PRINCIPAL"],

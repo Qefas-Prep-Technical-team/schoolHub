@@ -117,6 +117,7 @@ export const getExamsService = async (filters: {
   availableForStudentId?: string;
   teacherId?: string;
   isPersonal?: boolean;
+  search?: string;
   page?: number;
   limit?: number;
   teacherClassesOnly?: string;
@@ -134,6 +135,9 @@ export const getExamsService = async (filters: {
   if (filters.sessionId) where.sessionId = filters.sessionId;
   if (filters.term) where.term = filters.term;
   if (filters.category) where.category = filters.category;
+  if (filters.search) {
+    where.title = { contains: filters.search, mode: "insensitive" };
+  }
   
   // For students, we strictly enforce PUBLISHED status and multi-criteria targeting
   if (studentId) {
@@ -567,8 +571,18 @@ export const getSubjectPapersService = async (filters: {
   limit?: number,
   teacherClassesOnly?: string,
   currentTeacherId?: string,
+  subjectId?: string,
+  search?: string,
 }) => {
   const where: any = {};
+  
+  if (filters.subjectId) {
+    where.subjectId = filters.subjectId;
+  }
+  
+  if (filters.search) {
+    where.title = { contains: filters.search, mode: "insensitive" };
+  }
   
   // 1. Filter by teacher (creator OR assigned via subject)
   if (filters.teacherId) {
@@ -621,15 +635,20 @@ export const getSubjectPapersService = async (filters: {
   if (filters.unlinkedOnly) {
     where.exams = { none: {} };
   } else if (filters.sessionId || filters.term || filters.classId || (filters.departmentIds && filters.departmentIds.length > 0)) {
-    const examFilters: any = {};
-    if (filters.sessionId) examFilters.sessionId = filters.sessionId;
-    if (filters.term) examFilters.term = filters.term;
-    if (filters.classId) examFilters.classId = filters.classId;
-    if (filters.departmentIds && filters.departmentIds.length > 0) {
-      examFilters.departments = {
-        some: { departmentId: { in: filters.departmentIds } }
-      };
+    const examConditions: any[] = [];
+    if (filters.sessionId) {
+      examConditions.push({ OR: [{ sessionId: filters.sessionId }, { sessionId: null }] });
     }
+    if (filters.term) {
+      examConditions.push({ OR: [{ term: filters.term }, { term: null }] });
+    }
+    if (filters.classId) {
+      examConditions.push({ OR: [{ classId: filters.classId }, { scope: 'SCHOOL' }, { scope: 'DEPARTMENT' }] });
+    }
+    if (filters.departmentIds && filters.departmentIds.length > 0) {
+      examConditions.push({ departments: { some: { departmentId: { in: filters.departmentIds } } } });
+    }
+    const examFilters = examConditions.length > 0 ? { AND: examConditions } : {};
 
     if (filters.classId) {
       const classSubjects = await prisma.classSubject.findMany({
@@ -638,10 +657,16 @@ export const getSubjectPapersService = async (filters: {
       });
       const classSubjectIds = classSubjects.map((cs: any) => cs.subjectId);
 
-      where.OR = [
-        { subjectId: { in: classSubjectIds } },
-        { exams: { some: { exam: examFilters } } }
-      ];
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { 
+            subjectId: { in: classSubjectIds },
+            exams: { none: {} } 
+          },
+          { exams: { some: { exam: examFilters } } }
+        ]
+      });
     } else {
       // Advanced filtering via linked exams
       where.exams = {
@@ -895,6 +920,7 @@ export const createSubjectPaperService = async ({
   images,
   imageLabels,
   creationMode,
+  category,
 }: {
   examId?: string;
   subjectId?: string;
@@ -907,6 +933,7 @@ export const createSubjectPaperService = async ({
   images?: string[];
   imageLabels?: string[];
   creationMode?: "MANUAL" | "AI" | "OMR";
+  category?: string;
 }) => {
   return prisma.subjectExamPaper.create({
     data: {
@@ -920,6 +947,7 @@ export const createSubjectPaperService = async ({
       images: images || [],
       imageLabels: imageLabels || [],
       creationMode: (creationMode || "MANUAL") as any,
+      category: category as any || "EXAM",
       exams: examId && examId !== 'none' ? {
         create: {
           examId
@@ -946,6 +974,7 @@ export const updateSubjectPaperService = async (paperId: string, data: {
   imageLabels?: string[];
   subjectId?: string;
   teacherId?: string;
+  category?: string;
 }) => {
   return prisma.subjectExamPaper.update({
     where: { id: paperId },
@@ -958,6 +987,7 @@ export const updateSubjectPaperService = async (paperId: string, data: {
       imageLabels: data.imageLabels !== undefined ? data.imageLabels : undefined,
       subjectId: data.subjectId === "" ? null : (data.subjectId || undefined),
       teacherId: data.teacherId === "" ? null : (data.teacherId || undefined),
+      category: data.category as any || undefined,
       updatedAt: new Date(),
     },
   });

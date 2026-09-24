@@ -6,7 +6,7 @@ import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings } from 
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import { Users, GraduationCap, CheckCircle2, CreditCard, ClipboardList } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import AdminLoading from './loading';
+import AdminLoading from './loading.bak';
 
 // Existing Dashboard Components (to be restyled)
 import ExamStatus from './components/dashboard/ExamStatus';

@@ -270,7 +270,7 @@ export const processGradeOCRService = async (imageUrl: string) => {
       messages: [
         {
           role: "system",
-          content: "Act as a data entry clerk. Extract the student names and their corresponding numerical scores from this image. Return the data as a JSON object with a 'grades' key containing an array: { \"grades\": [{ \"studentName\": \"string\", \"score\": number }] }. If a score is illegible, mark it as null."
+          content: "Act as a data entry clerk. Extract the student names and their corresponding numerical scores from this image. Look for any of the following score columns: score (general), assignment, quiz or test, ca (continuous assessment), and exam. Return the data as a JSON object with a 'grades' key containing an array: { \"grades\": [{ \"studentName\": \"string\", \"score\": number, \"assignment\": number, \"quiz\": number, \"ca\": number, \"exam\": number }] }. Only include the keys that are present in the image. If a score is missing or illegible, mark it as null."
         },
         {
           role: "user",

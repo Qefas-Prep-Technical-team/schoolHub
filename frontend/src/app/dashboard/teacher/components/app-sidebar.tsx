@@ -88,6 +88,7 @@ export const menuGroups = [
             { icon: BookOpen, label: "Subjects", href: "/dashboard/teacher/subjects", featureKey: "subjects" },
             { icon: ClipboardList, label: "Assignments", href: "/dashboard/teacher/assignments", featureKey: "assignments" },
             { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
+            { icon: FileCheck2, label: "Final Result", href: "/dashboard/teacher/records", featureKey: "records" },
             { icon: FileCheck2, label: "Exams & Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },
             { icon: CalendarClock, label: "Timetable", href: "/dashboard/teacher/timetable", featureKey: "timetable" },
             { icon: BarChart3, label: "Performance Reports", href: "/dashboard/teacher/reports", featureKey: "reports" },

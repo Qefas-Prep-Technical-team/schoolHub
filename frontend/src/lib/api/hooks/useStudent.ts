@@ -71,11 +71,17 @@ export const useVerifyEmailUpdate = () => {
   });
 };
 
-export const useStudents = (schoolId: string, filters: Record<string, string | boolean | undefined> = {}) => {
+export const useStudents = (
+  schoolId: string,
+  filters: Record<string, string | number | boolean | undefined> = {},
+  options: { enabled?: boolean } = {}
+) => {
+  const { enabled: extraEnabled = true } = options;
   return useQuery({
     queryKey: [...studentKeys.all, schoolId, filters],
     queryFn: () => studentService.getSchoolStudents(schoolId, filters),
-    enabled: !!schoolId,
+    enabled: !!schoolId && extraEnabled,
+    staleTime: 1000 * 60 * 2,
   });
 };
 
@@ -165,6 +171,31 @@ export const useAcknowledgePrefectCelebration = (studentId: string) => {
     },
     onError: (error: AxiosError<{ message?: string }>) => {
       console.error("Failed to acknowledge celebration", error);
+    },
+  });
+};
+
+export const useTermlyEvaluation = (studentId: string, classId: string, sessionId: string, term: string) => {
+  return useQuery({
+    queryKey: [...studentKeys.all, studentId, "termly-evaluation", classId, sessionId, term],
+    queryFn: () => studentService.getTermlyEvaluation(studentId, classId, sessionId, term),
+    enabled: !!studentId && !!classId && !!sessionId && !!term,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useUpsertTermlyEvaluation = (studentId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => studentService.upsertTermlyEvaluation(studentId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: [...studentKeys.all, studentId, "termly-evaluation", variables.classId, variables.sessionId, variables.term] 
+      });
+      toast.success("Evaluation saved successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to save evaluation");
     },
   });
 };

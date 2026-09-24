@@ -22,6 +22,7 @@ import platformRoutes from "../modules/platform";
 import parentRoutes from "../modules/parent/parent.route";
 import supportRoutes from "../modules/support/support.route";
 import aiComplaintRoutes from "../modules/ai-complaint/ai-complaint.route";
+import recordsRoutes from "../modules/records/records.route";
 
 const router = Router();
 
@@ -47,5 +48,6 @@ router.use("/finance", financeRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/support", supportRoutes);
 router.use("/ai-complaints", aiComplaintRoutes);
+router.use("/records", authenticateToken, checkSubscription, recordsRoutes);
 
 export default router;

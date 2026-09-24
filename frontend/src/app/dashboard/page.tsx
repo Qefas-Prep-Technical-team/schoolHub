@@ -37,6 +37,11 @@ export default function DashboardPage() {
       const fallbackUserType = user.role || "PARENT";
       // console.log(`🔄 Redirecting with fallback: /dashboard/${fallbackUserType.toLowerCase()}`);
       router.replace(`/dashboard/${fallbackUserType.toLowerCase()}`);
+    } else {
+      // Authenticated but user is null (e.g. corrupted persisted state)
+      // Clear the invalid state and redirect to login
+      useAuthStore.getState().clearAuth();
+      router.replace("/login");
     }
   }, [user, isAuthenticated, userType, router, isInitialized, isRedirecting]);
 

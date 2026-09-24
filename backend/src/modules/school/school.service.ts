@@ -92,6 +92,7 @@ export const getSchoolStudentsService = async (
   schoolId: string,
   filters: {
     classId?: string;
+    departmentId?: string;
     gender?: any;
     verified?: boolean;
     search?: string;
@@ -148,6 +149,12 @@ export const getSchoolStudentsService = async (
     });
   }
 
+  if (filters.departmentId) {
+    where.AND.push({
+      departmentId: filters.departmentId,
+    });
+  }
+
   if (filters.gender) {
     where.AND.push({ gender: filters.gender });
   }
@@ -187,6 +194,7 @@ export const getSchoolStudentsService = async (
           },
         },
         department: true,
+        departmentId: true,
       },
       orderBy: {
         name: "asc",

@@ -2,21 +2,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  const questions = await prisma.assignmentQuestion.findMany({
-    where: { assignmentId: '9bf8f095-71ca-4f71-8fed-5477b0d3964e' },
-    select: { id: true, marks: true }
-  });
-  console.log(questions);
-  
-  const answers = await prisma.assignmentAnswer.findMany({
-    where: { 
-        submission: {
-            assignmentId: '9bf8f095-71ca-4f71-8fed-5477b0d3964e'
-        }
-    },
-    select: { id: true, score: true, questionId: true }
-  });
-  console.log(answers);
+  const exams = await prisma.exam.findMany({ select: { title: true, category: true } });
+  console.log("EXAMS:", exams);
+
+  const papers = await prisma.subjectExamPaper.findMany({ select: { title: true, category: true } });
+  console.log("PAPERS:", papers);
 }
 
-main().finally(() => prisma.$disconnect());
+main().catch(console.error).finally(() => prisma.$disconnect());

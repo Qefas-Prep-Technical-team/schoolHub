@@ -447,21 +447,21 @@ export default function ExamPapersPage() {
         </div>
 
         {/* Setup card */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-lg">
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-3xl">
             {/* Header */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-4xl mb-4">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center h-20 w-20 rounded-[28px] bg-primary/10 text-5xl mb-6 shadow-sm dark:bg-primary/20 dark:shadow-primary/10">
                 {cat.icon}
               </div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">{cat.label} Setup</h1>
-              <p className="text-slate-400 text-sm mt-2 font-medium">
+              <h1 className="text-3xl font-black text-slate-900 dark:text-white">{cat.label} Setup</h1>
+              <p className="text-slate-500 dark:text-slate-400 text-base mt-3 font-medium">
                 Configure your <span className="text-primary font-bold">{cat.label}</span> paper. You can always edit these details later.
               </p>
             </div>
 
             {/* Form card */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm space-y-5">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] p-8 lg:p-10 space-y-7">
               {/* Title */}
               <div className="space-y-1.5">
                 <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
@@ -487,10 +487,10 @@ export default function ExamPapersPage() {
                     <button
                       key={mins}
                       onClick={() => setQuickSetupDuration(mins)}
-                      className={`flex-1 h-10 rounded-xl border text-xs font-black transition-all ${
+                      className={`flex-1 h-10 rounded-xl border text-xs font-bold transition-all ${
                         quickSetupDuration === mins
-                          ? 'bg-primary border-primary text-white shadow-md shadow-primary/25'
-                          : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary/50 hover:text-primary'
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary'
                       }`}
                     >
                       {mins}
@@ -504,7 +504,7 @@ export default function ExamPapersPage() {
                     min={1}
                     value={quickSetupDuration}
                     onChange={e => setQuickSetupDuration(parseInt(e.target.value) || 60)}
-                    className="w-24 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3 text-sm font-bold outline-none focus:border-primary transition-all"
+                    className="w-24 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3 text-sm font-bold outline-none focus:border-primary dark:focus:border-primary transition-all"
                   />
                   <span className="text-xs text-slate-400 font-medium">minutes</span>
                 </div>
@@ -519,7 +519,7 @@ export default function ExamPapersPage() {
                   rows={3}
                   value={quickSetupInstructions}
                   onChange={e => setQuickSetupInstructions(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-primary dark:focus:border-primary transition-all resize-none"
                 />
               </div>
 
@@ -527,7 +527,7 @@ export default function ExamPapersPage() {
               <button
                 onClick={() => autoCreatePaperMutation.mutate()}
                 disabled={autoCreatePaperMutation.isPending}
-                className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/25 transition-all active:scale-[0.98] disabled:opacity-70"
+                className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70"
               >
                 {autoCreatePaperMutation.isPending ? (
                   <><Loader2 size={16} className="animate-spin" /> Creating paper…</>

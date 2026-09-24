@@ -38,6 +38,17 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Monday, September 21, 2026
+
+- **Records & Results Data Entry**:
+    - [x] **Backend**: Added `getClassSubjectResultById`, `getStudentSubjectResults`, and `bulkUpsertStudentSubjectResults` in `records.service.ts` and `records.controller.ts`.
+    - [x] **Backend**: Registered new endpoints in `records.route.ts` and ensured they are protected by the `restrictTo("SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR")` RBAC middleware.
+    - [x] **Backend**: Fixed a TypeScript bug in `termlyEvaluation.controller.ts` to ensure successful compilation.
+    - [x] **Frontend Hooks**: Created React Query hooks `useClassSubjectResult`, `useStudentSubjectResults`, and `useBulkSaveStudentSubjectResults` in `useRecords.ts`.
+    - [x] **Frontend API**: Added service methods `getClassSubjectResultById`, `getStudentSubjectResults`, and `bulkUpsertStudentSubjectResults` in `recordService.ts`.
+    - [x] **Frontend UI**: Completely rewrote the Data Entry Page (`/dashboard/admin/records/new/page.tsx`) to pull actual students dynamically using `useAdminStudents`, merge existing marks with `useStudentSubjectResults`, and save changes in bulk using the new upsert endpoint.
+    - [x] **Frontend UI**: Built the Summary Cards logic on the Data Entry page to dynamically calculate Total Students, Scores Entered, Pending Entry, and Class Average.
+
 ### Sunday, September 20, 2026
 
 - **Admin Approval UI & Notifications Refinements**:

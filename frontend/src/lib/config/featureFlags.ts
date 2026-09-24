@@ -7,6 +7,7 @@ export const FEATURE_FLAGS_TEACHERS = {
   assignments: false,
   exams: true,
   grades: true,
+  records: true,
   parents: false,
   documents: false,
   students: true,

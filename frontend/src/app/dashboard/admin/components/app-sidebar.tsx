@@ -50,7 +50,8 @@ import {
     Check,
     MailPlus,
     LogOut,
-    Shield
+    Shield,
+    Folder
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -87,6 +88,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: CalendarDays, label: "Session Management", href: "/dashboard/admin/sessions", featureKey: "sessions", section: "core" },
     { icon: Globe, label: "Sub Domain", href: "/dashboard/admin/subdomain", featureKey: "subdomain", section: "core" },
     { icon: MessageSquare, label: "Inquiries", href: "/dashboard/admin/inquiries", featureKey: "subdomain", section: "core" },
+    { icon: Folder, label: "Final Result", href: "/dashboard/admin/records", featureKey: "records", section: "core" },
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },

@@ -9,91 +9,94 @@ datasource db {
 }
 
 model School {
-  id                       String               @id @default(uuid())
-  name                     String
-  subdomain                String?              @unique
-  tenantId                 String               @unique
-  schoolCode               String               @unique
-  address                  String?
-  phone                    String?
-  schoolEmail              String?
-  motto                    String?
-  logo                     String?
-  foundedYear              Int?
-  principal                String?
-  schoolType               String?
-  website                  String?
-  description              String?
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime             @updatedAt
-  bannerImage              String?
-  favicon                  String?
-  mapLocation              String?
-  operatingHours           String?
-  socialLinks              Json?
-  isTrialActive            Boolean              @default(false)
-  lastPaymentDate          DateTime?
-  paystackCustomerCode     String?
-  plan                     String               @default("FREE")
-  subscriptionEnd          DateTime?
-  subscriptionStatus       String               @default("INACTIVE")
-  trialEndsAt              DateTime?
-  trialPlan                String?
-  trialUsed                Boolean              @default(false)
-  accountName              String?
-  accountNumber            String?
-  bankName                 String?
-  billingCycle             String               @default("monthly")
-  maxClassesOverride       Int?
-  maxExamsOverride         Int?
-  maxStorageGbOverride     Float?
-  maxStudentsOverride      Int?
-  paystackSubaccountCode   String?
-  paystackSubaccountStatus String               @default("pending")
-  percentageCharge         Float?               @default(0)
-  planId                   String?
-  subscriptionPlanId       String?
-  profileCompleted         Boolean              @default(false)
-  registrationSource       String?              @default("STANDARD")
-  maxAiUsageOverride       Int?
-  maxParentsOverride       Int?
-  maxTeachersOverride      Int?
-  levels                   String[]             @default([])
-  storageUsedBytes         Float                @default(0)
-  subscriptionPlan         SubscriptionPlan?    @relation(fields: [subscriptionPlanId], references: [id])
-  settings                 SchoolSetting?
-  originalStudents         Student[]            @relation("OriginalSchool")
-  students                 Student[]
-  activeTeachers           Teacher[]            @relation("ActiveSchool")
-  currentTeachers          Teacher[]            @relation("CurrentSchool")
-  primaryTeachers          Teacher[]            @relation("PrimarySchool")
-  teachers                 Teacher[]
-  classes                  Class[]
-  emailLogs                EmailLog[]
-  exams                    Exam[]               @relation("SchoolContext")
-  fileRecords              FileRecord[]
-  grades                   Grade[]
-  gradeAuditLogs           GradeAuditLog[]
-  inquiries                Inquiry[]
-  requesterLinkRequests    LinkRequest[]        @relation("RequesterSchool")
-  linkRequests             LinkRequest[]        @relation("SchoolContext")
-  targetLinkRequests       LinkRequest[]        @relation("TargetSchool")
-  payments                 Payment[]
-  quizzes                  Quiz[]
-  relationshipLinks        RelationshipLink[]
-  admins                   SchoolAdmin[]
-  landingPage              SchoolLandingPage?
-  schoolSubscriptions      SchoolSubscription?
-  sessions                 Session[]
-  settlementAccounts       SettlementAccount[]
-  studentEnrollments       StudentEnrollment[]
-  studentHistories         StudentHistory[]
-  subjectExamPapers        SubjectExamPaper[]
-  subjects                 Subject[]
-  teacherAttendances       TeacherAttendance[]
-  teacherSubjects          TeacherSubject[]
-  transactionHistory       TransactionHistory[]
-  transactions             Transaction[]
+  id                        String                     @id @default(uuid())
+  name                      String
+  subdomain                 String?                    @unique
+  tenantId                  String                     @unique
+  schoolCode                String                     @unique
+  address                   String?
+  phone                     String?
+  schoolEmail               String?
+  motto                     String?
+  logo                      String?
+  foundedYear               Int?
+  principal                 String?
+  schoolType                String?
+  website                   String?
+  description               String?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  bannerImage               String?
+  favicon                   String?
+  mapLocation               String?
+  operatingHours            String?
+  socialLinks               Json?
+  isTrialActive             Boolean                    @default(false)
+  lastPaymentDate           DateTime?
+  paystackCustomerCode      String?
+  plan                      String                     @default("FREE")
+  subscriptionEnd           DateTime?
+  subscriptionStatus        String                     @default("INACTIVE")
+  trialEndsAt               DateTime?
+  trialPlan                 String?
+  trialUsed                 Boolean                    @default(false)
+  accountName               String?
+  accountNumber             String?
+  bankName                  String?
+  billingCycle              String                     @default("monthly")
+  maxClassesOverride        Int?
+  maxExamsOverride          Int?
+  maxStorageGbOverride      Float?
+  maxStudentsOverride       Int?
+  paystackSubaccountCode    String?
+  paystackSubaccountStatus  String                     @default("pending")
+  percentageCharge          Float?                     @default(0)
+  planId                    String?
+  subscriptionPlanId        String?
+  profileCompleted          Boolean                    @default(false)
+  registrationSource        String?                    @default("STANDARD")
+  maxAiUsageOverride        Int?
+  maxParentsOverride        Int?
+  maxTeachersOverride       Int?
+  levels                    String[]                   @default([])
+  storageUsedBytes          Float                      @default(0)
+  subscriptionPlan          SubscriptionPlan?          @relation(fields: [subscriptionPlanId], references: [id])
+  settings                  SchoolSetting?
+  originalStudents          Student[]                  @relation("OriginalSchool")
+  students                  Student[]
+  activeTeachers            Teacher[]                  @relation("ActiveSchool")
+  currentTeachers           Teacher[]                  @relation("CurrentSchool")
+  primaryTeachers           Teacher[]                  @relation("PrimarySchool")
+  teachers                  Teacher[]
+  classes                   Class[]
+  emailLogs                 EmailLog[]
+  exams                     Exam[]                     @relation("SchoolContext")
+  fileRecords               FileRecord[]
+  grades                    Grade[]
+  gradeAuditLogs            GradeAuditLog[]
+  inquiries                 Inquiry[]
+  requesterLinkRequests     LinkRequest[]              @relation("RequesterSchool")
+  linkRequests              LinkRequest[]              @relation("SchoolContext")
+  targetLinkRequests        LinkRequest[]              @relation("TargetSchool")
+  payments                  Payment[]
+  quizzes                   Quiz[]
+  relationshipLinks         RelationshipLink[]
+  admins                    SchoolAdmin[]
+  landingPage               SchoolLandingPage?
+  schoolSubscriptions       SchoolSubscription?
+  sessions                  Session[]
+  settlementAccounts        SettlementAccount[]
+  studentEnrollments        StudentEnrollment[]
+  studentHistories          StudentHistory[]
+  subjectExamPapers         SubjectExamPaper[]
+  subjects                  Subject[]
+  teacherAttendances        TeacherAttendance[]
+  teacherSubjects           TeacherSubject[]
+  transactionHistory        TransactionHistory[]
+  transactions              Transaction[]
+  classSubjectResults       ClassSubjectResult[]
+  studentTermResults        StudentTermResult[]
+  studentSubjectTermResults StudentSubjectTermResult[]
 }
 
 model SchoolSetting {
@@ -253,23 +256,23 @@ model Teacher {
 }
 
 model Student {
-  id                        String                   @id @default(uuid())
+  id                        String                     @id @default(uuid())
   name                      String
-  email                     String                   @unique
+  email                     String                     @unique
   password                  String?
   twoFactorSecret           String?
-  isTwoFactorEnabled        Boolean                  @default(false)
-  studentCode               String                   @unique
-  googleId                  String?                  @unique
-  authProvider              String                   @default("EMAIL")
+  isTwoFactorEnabled        Boolean                    @default(false)
+  studentCode               String                     @unique
+  googleId                  String?                    @unique
+  authProvider              String                     @default("EMAIL")
   gradeLevel                String?
   dateOfBirth               DateTime?
   role                      UserRole
   schoolId                  String?
   originalSchoolId          String?
-  verified                  Boolean                  @default(false)
-  createdAt                 DateTime                 @default(now())
-  updatedAt                 DateTime                 @updatedAt
+  verified                  Boolean                    @default(false)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
   gender                    Gender?
   departmentId              String?
   termAverage               Float?
@@ -278,21 +281,21 @@ model Student {
   pendingEmail              String?
   bannerImage               String?
   profileImage              String?
-  isTrialActive             Boolean                  @default(false)
+  isTrialActive             Boolean                    @default(false)
   lastPaymentDate           DateTime?
-  plan                      String                   @default("FREE")
+  plan                      String                     @default("FREE")
   subscriptionEnd           DateTime?
-  subscriptionStatus        String                   @default("INACTIVE")
-  tenantId                  String                   @default("default-tenant-id")
+  subscriptionStatus        String                     @default("INACTIVE")
+  tenantId                  String                     @default("default-tenant-id")
   trialEndsAt               DateTime?
   trialPlan                 String?
-  trialUsed                 Boolean                  @default(false)
-  billingCycle              String                   @default("monthly")
+  trialUsed                 Boolean                    @default(false)
+  billingCycle              String                     @default("monthly")
   paystackCustomerCode      String?
   paystackSubaccountCode    String?
   planId                    String?
   subscriptionPlanId        String?
-  acceptedTerms             Boolean                  @default(false)
+  acceptedTerms             Boolean                    @default(false)
   termsAcceptedAt           DateTime?
   maxAiUsageOverride        Int?
   maxClassesOverride        Int?
@@ -306,30 +309,32 @@ model Student {
   height                    Float?
   weight                    Float?
   level                     String?
-  invitationToken           String?                  @unique
-  isClaimed                 Boolean                  @default(false)
+  invitationToken           String?                    @unique
+  isClaimed                 Boolean                    @default(false)
   guardianName              String?
   guardianPhone             String?
-  hasSeenPrefectCelebration Boolean                  @default(true)
+  hasSeenPrefectCelebration Boolean                    @default(true)
   prefectRole               String?
   address                   String?
-  department                Department?              @relation(fields: [departmentId], references: [id])
-  originalSchool            School?                  @relation("OriginalSchool", fields: [originalSchoolId], references: [id])
-  school                    School?                  @relation(fields: [schoolId], references: [id])
-  subscriptionPlan          SubscriptionPlan?        @relation(fields: [subscriptionPlanId], references: [id])
+  department                Department?                @relation(fields: [departmentId], references: [id])
+  originalSchool            School?                    @relation("OriginalSchool", fields: [originalSchoolId], references: [id])
+  school                    School?                    @relation(fields: [schoolId], references: [id])
+  subscriptionPlan          SubscriptionPlan?          @relation(fields: [subscriptionPlanId], references: [id])
   attendances               Attendance[]
   behaviourAlerts           BehaviourAlert[]
   classes                   ClassEnrollment[]
   examAttempts              ExamAttempt[]
   grades                    Grade[]
-  requestedLinkRequests     LinkRequest[]            @relation("RequesterStudent")
-  targetLinkRequests        LinkRequest[]            @relation("TargetStudent")
+  requestedLinkRequests     LinkRequest[]              @relation("RequesterStudent")
+  targetLinkRequests        LinkRequest[]              @relation("TargetStudent")
   parentLinks               ParentChildLink[]
   payments                  Payment[]
   behaviourProfile          StudentBehaviourProfile?
   enrollments               StudentEnrollment[]
   histories                 StudentHistory[]
   termlyEvaluations         TermlyEvaluation[]
+  studentTermResults        StudentTermResult[]
+  studentSubjectTermResults StudentSubjectTermResult[]
 }
 
 model Parent {
@@ -402,34 +407,37 @@ model ParentChildLink {
 }
 
 model Class {
-  id                String             @id @default(uuid())
-  name              String
-  section           String?
-  schoolId          String?
-  classCode         String             @unique
-  scope             ClassScope
-  status            ClassStatus        @default(PENDING)
-  createdById       String?
-  createdByType     LinkEntityType?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  session           String?
-  term              String?
-  level             String?
-  attendances       Attendance[]
-  behaviourAlerts   BehaviourAlert[]
-  departments       ClassDepartment[]
-  enrollments       ClassEnrollment[]
-  subjects          ClassSubject[]
-  teachers          ClassTeacher[]
-  school            School?            @relation(fields: [schoolId], references: [id])
-  exams             Exam[]
-  grades            Grade[]
-  linkRequests      LinkRequest[]
-  quizzes           Quiz[]
-  relationshipLinks RelationshipLink[]
-  termlyEvaluations TermlyEvaluation[]
-  timetablePeriods  TimetablePeriod[]
+  id                        String                     @id @default(uuid())
+  name                      String
+  section                   String?
+  schoolId                  String?
+  classCode                 String                     @unique
+  scope                     ClassScope
+  status                    ClassStatus                @default(PENDING)
+  createdById               String?
+  createdByType             LinkEntityType?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  session                   String?
+  term                      String?
+  level                     String?
+  attendances               Attendance[]
+  behaviourAlerts           BehaviourAlert[]
+  departments               ClassDepartment[]
+  enrollments               ClassEnrollment[]
+  subjects                  ClassSubject[]
+  teachers                  ClassTeacher[]
+  school                    School?                    @relation(fields: [schoolId], references: [id])
+  exams                     Exam[]
+  grades                    Grade[]
+  linkRequests              LinkRequest[]
+  quizzes                   Quiz[]
+  relationshipLinks         RelationshipLink[]
+  termlyEvaluations         TermlyEvaluation[]
+  timetablePeriods          TimetablePeriod[]
+  classSubjectResults       ClassSubjectResult[]
+  studentTermResults        StudentTermResult[]
+  studentSubjectTermResults StudentSubjectTermResult[]
 
   @@unique([schoolId, name, section])
   @@map("classes")
@@ -462,12 +470,12 @@ model VerificationCode {
 }
 
 model RefreshToken {
-  id           String   @id @default(uuid())
-  token        String   @unique
-  userId       String
-  userType     UserRole
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  userType  UserRole
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   // Device Tracking fields
   deviceType   String?
@@ -529,6 +537,7 @@ model Grade {
   subjectPaper         SubjectExamPaper?   @relation(fields: [subjectPaperId], references: [id])
   teacher              Teacher?            @relation(fields: [teacherId], references: [id])
   auditLogs            GradeAuditLog[]
+
   @@unique([studentId, examId, subjectPaperId])
   @@index([studentId])
   @@map("grades")
@@ -670,47 +679,50 @@ model Notification {
 }
 
 model Subject {
-  id                String                 @id @default(uuid())
-  name              String
-  code              String
-  description       String?
-  schoolId          String?
-  teacherId         String?
-  scope             AcademicOwnershipScope
-  isArchived        Boolean                @default(false)
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  classes           ClassSubject[]
-  departments       DepartmentSubject[]
-  exams             Exam[]
-  quizzes           Quiz[]
-  subjectExamPapers SubjectExamPaper[]
-  school            School?                @relation(fields: [schoolId], references: [id])
-  teacher           Teacher?               @relation(fields: [teacherId], references: [id])
-  teacherSubjects   TeacherSubject[]
-  timetablePeriods  TimetablePeriod[]
+  id                        String                     @id @default(uuid())
+  name                      String
+  code                      String
+  description               String?
+  schoolId                  String?
+  teacherId                 String?
+  scope                     AcademicOwnershipScope
+  isArchived                Boolean                    @default(false)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  classes                   ClassSubject[]
+  departments               DepartmentSubject[]
+  exams                     Exam[]
+  quizzes                   Quiz[]
+  subjectExamPapers         SubjectExamPaper[]
+  school                    School?                    @relation(fields: [schoolId], references: [id])
+  teacher                   Teacher?                   @relation(fields: [teacherId], references: [id])
+  teacherSubjects           TeacherSubject[]
+  timetablePeriods          TimetablePeriod[]
+  classSubjectResults       ClassSubjectResult[]
+  studentSubjectTermResults StudentSubjectTermResult[]
 
   @@unique([schoolId, code])
   @@map("subjects")
 }
 
 model Department {
-  id          String                 @id @default(uuid())
-  name        String
-  code        String                 @unique
-  description String?
-  schoolId    String?
-  teacherId   String?
-  scope       AcademicOwnershipScope
-  isArchived  Boolean                @default(false)
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  students    Student[]
-  assignments Assignment[]
-  classes     ClassDepartment[]
-  subjects    DepartmentSubject[]
-  exams       ExamDepartment[]
-  quizzes     Quiz[]
+  id                  String                 @id @default(uuid())
+  name                String
+  code                String                 @unique
+  description         String?
+  schoolId            String?
+  teacherId           String?
+  scope               AcademicOwnershipScope
+  isArchived          Boolean                @default(false)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  students            Student[]
+  assignments         Assignment[]
+  classes             ClassDepartment[]
+  subjects            DepartmentSubject[]
+  exams               ExamDepartment[]
+  quizzes             Quiz[]
+  classSubjectResults ClassSubjectResult[]
 
   @@map("departments")
 }
@@ -871,6 +883,7 @@ model SubjectExamPaper {
   instructions    String?
   durationMinutes Int?
   totalMarks      Float                  @default(0)
+  category        ExamCategory           @default(EXAM)
   status          SubjectPaperStatus     @default(DRAFT)
   validatedAt     DateTime?
   validatedById   String?
@@ -948,21 +961,24 @@ model TeacherSubject {
 }
 
 model Session {
-  id                String             @id @default(uuid())
-  name              String
-  schoolId          String?
-  startDate         DateTime
-  endDate           DateTime
-  isActive          Boolean            @default(false)
-  isClosed          Boolean            @default(false)
-  currentTerm       Term               @default(FIRST)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  exams             Exam[]
-  grades            Grade[]
-  school            School?            @relation(fields: [schoolId], references: [id])
-  termPeriods       TermPeriod[]
-  termlyEvaluations TermlyEvaluation[]
+  id                        String                     @id @default(uuid())
+  name                      String
+  schoolId                  String?
+  startDate                 DateTime
+  endDate                   DateTime
+  isActive                  Boolean                    @default(false)
+  isClosed                  Boolean                    @default(false)
+  currentTerm               Term                       @default(FIRST)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  exams                     Exam[]
+  grades                    Grade[]
+  school                    School?                    @relation(fields: [schoolId], references: [id])
+  termPeriods               TermPeriod[]
+  termlyEvaluations         TermlyEvaluation[]
+  classSubjectResults       ClassSubjectResult[]
+  studentTermResults        StudentTermResult[]
+  studentSubjectTermResults StudentSubjectTermResult[]
 
   @@unique([schoolId, name])
   @@map("sessions")
@@ -1153,7 +1169,7 @@ model Transaction {
   reference          String    @unique
   authorizationToken String?
   paymentMethod      String?
-  paymentReusable    Boolean?  // true = card token stored (auto-renewal eligible), false = transfer/USSD
+  paymentReusable    Boolean? // true = card token stored (auto-renewal eligible), false = transfer/USSD
   paidAt             DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -1841,6 +1857,7 @@ enum ExamCategory {
   EXAM
   QUIZ
   CA
+  ASSIGNMENT
 }
 
 enum AdminRole {
@@ -1995,21 +2012,21 @@ enum AssignmentSubmissionStatus {
 }
 
 model GradeAuditLog {
-  id              String       @id @default(uuid())
-  gradeId         String
-  schoolId        String
-  changedById     String
-  changedByType   UserRole
-  previousScore   Float?
-  newScore        Float?
-  previousStatus  GradeStatus?
-  newStatus       GradeStatus?
-  reason          String?
-  createdAt       DateTime     @default(now())
+  id             String       @id @default(uuid())
+  gradeId        String
+  schoolId       String
+  changedById    String
+  changedByType  UserRole
+  previousScore  Float?
+  newScore       Float?
+  previousStatus GradeStatus?
+  newStatus      GradeStatus?
+  reason         String?
+  createdAt      DateTime     @default(now())
 
-  grade           Grade        @relation(fields: [gradeId], references: [id], onDelete: Cascade)
-  school          School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  
+  grade  Grade  @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@index([gradeId])
   @@index([schoolId])
   @@index([changedById])
@@ -2041,4 +2058,101 @@ model SecurityAuditLog {
 
   @@index([userId])
   @@map("security_audit_logs")
+}
+
+enum ResultStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model ClassSubjectResult {
+  id           String  @id @default(uuid())
+  schoolId     String
+  classId      String
+  subjectId    String
+  sessionId    String
+  term         Term
+  departmentId String?
+
+  // Configuration fields
+  name               String    @default("Final Result")
+  revealDate         DateTime?
+  releaseDate        DateTime?
+  assignmentSourceId String?
+  quizSourceId       String?
+  caSourceId         String?
+  examSourceId       String?
+  assignmentMax      Float?    @default(10)
+  quizMax            Float?    @default(10)
+  caMax              Float?    @default(20)
+  examMax            Float?    @default(60)
+  paperLinks         Json? // { exam: string[], subjectPaper: string[], ca: string[], assignment: string[] }
+
+  status      ResultStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  school     School      @relation(fields: [schoolId], references: [id])
+  class      Class       @relation(fields: [classId], references: [id])
+  subject    Subject     @relation(fields: [subjectId], references: [id])
+  session    Session     @relation(fields: [sessionId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  @@unique([classId, subjectId, sessionId, term])
+  @@map("class_subject_results")
+}
+
+model StudentTermResult {
+  id           String       @id @default(uuid())
+  studentId    String
+  schoolId     String
+  classId      String
+  sessionId    String
+  term         Term
+  averageScore Float?
+  totalScore   Float?
+  position     Int?
+  status       ResultStatus @default(DRAFT)
+  publishedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+  school  School  @relation(fields: [schoolId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@unique([studentId, classId, sessionId, term])
+  @@map("student_term_results")
+}
+
+model StudentSubjectTermResult {
+  id        String @id @default(uuid())
+  studentId String
+  schoolId  String
+  classId   String
+  subjectId String
+  sessionId String
+  term      Term
+
+  assignmentScore Float?
+  quizScore       Float?
+  caScore         Float?
+  examScore       Float?
+  totalScore      Float?
+  scoreSources    Json?
+
+  status    ResultStatus @default(DRAFT)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+  school  School  @relation(fields: [schoolId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@unique([studentId, subjectId, sessionId, term])
+  @@map("student_subject_term_results")
 }

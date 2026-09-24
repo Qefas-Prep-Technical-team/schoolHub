@@ -17,6 +17,7 @@ interface SearchFiltersProps {
         departmentId: string;
         status: string;
         category: string;
+        searchQuery?: string;
     };
     onFilterChange: (newFilters: Partial<SearchFiltersProps['filters']>) => void;
     hideCategoryFilter?: boolean;
@@ -106,6 +107,8 @@ export default function SearchFilters({ filters, onFilterChange, hideCategoryFil
                 <Input
                     placeholder="Search assessments..."
                     className="h-10 pl-10 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium w-full focus:ring-2 focus:ring-blue-500/20"
+                    value={filters.searchQuery || ''}
+                    onChange={(val) => onFilterChange({ searchQuery: val })}
                 />
             </div>
             

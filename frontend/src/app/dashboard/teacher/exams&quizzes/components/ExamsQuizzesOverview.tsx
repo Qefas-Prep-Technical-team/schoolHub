@@ -195,7 +195,7 @@ export default function ExamsQuizzesOverview() {
   }, [data, filters.class, filters.subject, filters.date, activeTab, isPersonal, subjectsData, user?.id]);
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[90%] mx-auto">
+    <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[95%] mx-auto">
       <div className="flex flex-col flex-1">
         <PageHeader 
           title="Assessments" 

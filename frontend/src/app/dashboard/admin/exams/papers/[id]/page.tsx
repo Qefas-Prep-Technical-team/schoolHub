@@ -21,6 +21,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import SubjectPaperReport from './components/SubjectPaperReport';
+import Pagination from "../../components/Pagination";
 
 export default function StandalonePaperDetailPage() {
   const params = useParams();
@@ -37,6 +38,7 @@ export default function StandalonePaperDetailPage() {
 
   const paper = paperData as any;
   const [isMounted, setIsMounted] = useState(false);
+  const [gradesPage, setGradesPage] = useState(1);
 
   useEffect(() => {
     setIsMounted(true);
@@ -147,19 +149,44 @@ export default function StandalonePaperDetailPage() {
 
   if (isLoadingPaper) {
     return (
-      <div className="max-w-[106rem] mx-auto p-6 md:p-8 space-y-8">
-        <div className="flex items-center gap-4">
+      <div className="w-[95%] max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="flex items-center gap-4 mb-8">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-8 w-1/3" />
         </div>
-        <Skeleton className="h-64 w-full rounded-xl" />
+        
+        {/* Tabs Skeleton */}
+        <div className="w-full max-w-md h-12 bg-gray-100 dark:bg-gray-800 rounded-xl mb-8 p-1 flex">
+          <Skeleton className="h-full flex-1 rounded-lg mr-1" />
+          <Skeleton className="h-full flex-1 rounded-lg" />
+        </div>
+
+        {/* Content Skeleton matching the table layout */}
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between">
+             <Skeleton className="h-4 w-1/4" />
+             <Skeleton className="h-4 w-1/4" />
+             <Skeleton className="h-4 w-1/4" />
+          </div>
+          <div className="divide-y divide-gray-50 dark:divide-gray-800 p-6 space-y-4">
+             {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex justify-between items-center py-2">
+                   <Skeleton className="h-4 w-12" />
+                   <Skeleton className="h-4 w-1/4" />
+                   <Skeleton className="h-4 w-1/6" />
+                   <Skeleton className="h-6 w-12 rounded-full" />
+                   <Skeleton className="h-4 w-1/6" />
+                </div>
+             ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (isErrorPaper || !paper) {
     return (
-      <div className="max-w-[106rem] mx-auto p-6 md:p-8 text-center">
+      <div className="w-[95%] max-w-none mx-auto p-6 md:p-8 text-center">
         <h2 className="text-xl font-bold text-red-600 mb-2">Paper Not Found</h2>
         <p className="text-gray-500 mb-6">The subject paper you are looking for does not exist or has been removed.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
@@ -169,7 +196,7 @@ export default function StandalonePaperDetailPage() {
 
   if (!canAccess) {
     return (
-      <div className="max-w-[106rem] mx-auto p-6 md:p-8 text-center">
+      <div className="w-[95%] max-w-none mx-auto p-6 md:p-8 text-center">
         <h2 className="text-xl font-bold text-amber-600 mb-2">Access Denied</h2>
         <p className="text-gray-500 mb-6">You do not have permission to manage this subject paper.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
@@ -180,7 +207,7 @@ export default function StandalonePaperDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="max-w-[106rem] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-[95%] max-w-none mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
             <Button 
                 variant="ghost" 
@@ -297,7 +324,7 @@ export default function StandalonePaperDetailPage() {
         </div>
       </div>
 
-      <main className="max-w-[106rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-[95%] max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-8 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl w-full max-w-md">
             <TabsTrigger value="questions" className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all">
@@ -342,6 +369,11 @@ export default function StandalonePaperDetailPage() {
 
               const allResults = [...onlineResults, ...manualResults];
               const hasResults = allResults.length > 0;
+
+              // Pagination logic
+              const limit = 10;
+              const totalPages = Math.ceil(allResults.length / limit);
+              const paginatedResults = allResults.slice((gradesPage - 1) * limit, gradesPage * limit);
 
               // Statistics
               const avgScore = hasResults 
@@ -414,6 +446,7 @@ export default function StandalonePaperDetailPage() {
                       <table className="w-full">
                         <thead>
                           <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-16">#</th>
                             <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Student</th>
                             <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Code</th>
                             <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Score</th>
@@ -423,11 +456,14 @@ export default function StandalonePaperDetailPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                           {hasResults ? (
-                            allResults.map((result: any) => {
+                            paginatedResults.map((result: any, index: number) => {
                               const percentage = (result.score / result.maxMarks) * 100;
                               const isPass = percentage >= (paper.passMark || 40);
                               return (
                                 <tr key={result.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                                  <td className="px-6 py-4 text-center font-bold text-gray-400 text-xs">
+                                    {(gradesPage - 1) * limit + index + 1}
+                                  </td>
                                   <td className="px-6 py-4">
                                     <div className="font-bold text-gray-900 dark:text-white capitalize">
                                       {result.studentName}
@@ -507,6 +543,21 @@ export default function StandalonePaperDetailPage() {
                       </table>
                     </div>
                   </div>
+
+                  {/* Pagination */}
+                  {hasResults && totalPages > 1 && (
+                    <div className="mt-6 flex justify-center">
+                      <Pagination
+                        pagination={{
+                          page: gradesPage,
+                          pages: totalPages,
+                          total: allResults.length,
+                          limit: limit
+                        }}
+                        onPageChange={setGradesPage}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })()}

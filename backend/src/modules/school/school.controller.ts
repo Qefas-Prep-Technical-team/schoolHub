@@ -81,7 +81,7 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
 export const getSchoolStudents = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
-    const { classId, gender, status, search } = req.query;
+    const { classId, departmentId, gender, status, search } = req.query;
 
     if (!schoolId) {
       return res.status(400).json({
@@ -99,7 +99,8 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     }
 
     const filters: any = {};
-    if (classId) filters.classId = classId as string;
+    if (classId && classId !== "null") filters.classId = classId as string;
+    if (departmentId && departmentId !== "null") filters.departmentId = departmentId as string;
     if (gender) filters.gender = gender as string;
     if (status) {
       filters.verified = status === "Verified";
