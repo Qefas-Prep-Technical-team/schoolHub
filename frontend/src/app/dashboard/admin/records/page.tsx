@@ -404,6 +404,7 @@ export default function RecordsPage() {
               <thead>
                 <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
                   <th className="px-6 py-3 w-12">#</th>
+                  <th className="px-4 py-3">NAME</th>
                   <th className="px-4 py-3">SESSION & TERM</th>
                   <th className="px-4 py-3">CLASS</th>
                   <th className="px-4 py-3">SUBJECT</th>
@@ -417,6 +418,7 @@ export default function RecordsPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
+                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
                       <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
                       <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
                       <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
@@ -437,6 +439,7 @@ export default function RecordsPage() {
                     return (
                       <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
                         <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
+                        <td className="px-4 py-4 font-semibold text-slate-900 dark:text-slate-100">{res.name}</td>
                         <td className="px-4 py-4">
                           <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
                           <span className="text-xs text-slate-400">{res.term}</span>

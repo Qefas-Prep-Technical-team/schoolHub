@@ -10,9 +10,10 @@ interface SummaryPanelProps {
   config: any;
   subjectPapers: any[];
   assignments: any[];
+  hidePapers?: boolean;
 }
 
-export function SummaryPanel({ students, config, subjectPapers, assignments }: SummaryPanelProps) {
+export function SummaryPanel({ students, config, subjectPapers, assignments, hidePapers }: SummaryPanelProps) {
   const summary = useMemo(() => {
     const totalStudents = students.length;
     if (totalStudents === 0) return null;
@@ -54,9 +55,19 @@ export function SummaryPanel({ students, config, subjectPapers, assignments }: S
     const getPapers = (ids: string[], type: "paper" | "assignment") => {
       if (!ids || ids.length === 0) return [];
       if (type === "paper") {
-        return ids.map(id => ({ id, title: subjectPapers.find(p => p.id === id)?.title || "Unknown Paper", type }));
+        return ids.map(id => {
+          const title = config?.paperLinkDetails?.papers?.find((p:any) => p.id === id)?.title 
+            || subjectPapers.find(p => p.id === id)?.title 
+            || "Linked Paper";
+          return { id, title, type };
+        });
       } else {
-        return ids.map(id => ({ id, title: assignments.find(a => a.id === id)?.title || "Unknown Assignment", type }));
+        return ids.map(id => {
+          const title = config?.paperLinkDetails?.assignments?.find((a:any) => a.id === id)?.title 
+            || assignments.find(a => a.id === id)?.title 
+            || "Linked Assignment";
+          return { id, title, type };
+        });
       }
     };
 
@@ -123,6 +134,7 @@ export function SummaryPanel({ students, config, subjectPapers, assignments }: S
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
         {/* Linked Papers Summary */}
+        {!hidePapers && (
         <div className="col-span-1 md:col-span-2 lg:col-span-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/50">
           <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-emerald-500" />
@@ -147,6 +159,7 @@ export function SummaryPanel({ students, config, subjectPapers, assignments }: S
             </div>
           </div>
         </div>
+        )}
 
         {/* Academic Stats */}
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/50 flex flex-col justify-center">

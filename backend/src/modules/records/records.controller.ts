@@ -3,7 +3,50 @@ import { handleError } from "../../utils/error-handler";
 import * as recordsService from "./records.service";
 import * as recordsSchema from "./records.schema";
 import prisma from "../../config/database";
+import { UserRole } from "@prisma/client";
 
+const checkEditPermission = async (req: Request, classSubjectResultId?: string, bulkData?: any): Promise<boolean> => {
+  let result;
+  if (classSubjectResultId) {
+    result = await prisma.classSubjectResult.findUnique({
+      where: { id: classSubjectResultId }
+    });
+  } else if (bulkData) {
+    result = await prisma.classSubjectResult.findFirst({
+      where: {
+        classId: bulkData.classId,
+        subjectId: bulkData.subjectId,
+        sessionId: bulkData.sessionId,
+        term: bulkData.term,
+        schoolId: (req.user as any)?.schoolId
+      }
+    });
+  }
+
+  if (req.user?.userType === UserRole.ADMIN) {
+    let adminRole = (req as any).adminRole || (req.user as any)?.adminRole || req.user?.schoolAdmins?.[0]?.role;
+    
+    if (!adminRole && req.user?.id && (req.user as any)?.schoolId) {
+      const schoolAdmin = await prisma.schoolAdmin.findFirst({
+        where: { adminId: req.user.id, schoolId: (req.user as any)?.schoolId }
+      });
+      adminRole = schoolAdmin?.role;
+    }
+
+    if (adminRole === "SCHOOL_OWNER" || adminRole === "PRINCIPAL" || adminRole === "REGISTRAR" || adminRole === "SUPER_ADMIN") {
+      return true;
+    }
+  }
+
+  // Teachers are currently allowed if they belong to the same school (we can refine this later if needed)
+  if (req.user?.userType === UserRole.TEACHER) {
+    if (result && result.schoolId === (req.user as any)?.schoolId) {
+      return true;
+    }
+  }
+
+  return false;
+};
 export const getClassSubjectResults = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const schoolId = (req.user as any)?.schoolId;
@@ -32,7 +75,47 @@ export const getClassSubjectResults = async (req: Request, res: Response, next: 
   }
 };
 
+export const getMyPublishedResults = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const studentId = req.user?.id;
+
+    // Students store school as an object in JWT: user.school.id
+    // Teachers/admins store it as a flat schoolId string
+    const schoolId =
+      (req.user as any)?.schoolId ||
+      (req.user as any)?.school?.id ||
+      (req.user as any)?.tenantId;
+
+    if (!studentId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    if (!schoolId) {
+      // Final fallback: look up the student's school from DB
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { schoolId: true },
+      });
+      if (!student?.schoolId) {
+        return res.status(400).json({ success: false, message: "School not found for your account" });
+      }
+      const results = await recordsService.getMyPublishedResults(studentId, student.schoolId);
+      return res.status(200).json({ success: true, data: results });
+    }
+
+    const results = await recordsService.getMyPublishedResults(studentId, schoolId);
+
+    res.status(200).json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    handleError(res, error, "records.controller.ts -> getMyPublishedResults");
+  }
+};
+
 export const getStudentTermResults = async (req: Request, res: Response, next: NextFunction) => {
+
   try {
     const schoolId = (req.user as any)?.schoolId;
     if (!schoolId) {
@@ -62,7 +145,9 @@ export const createClassSubjectResult = async (req: Request, res: Response, next
     const { body } = recordsSchema.createClassSubjectResultSchema.parse({ body: req.body });
 
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
-    const result = await recordsService.createClassSubjectResult(schoolId, { ...body, createdById: userId } as any);
+    const userType = req.user?.userType;
+    const userName = (req.user as any)?.name;
+    const result = await recordsService.createClassSubjectResult(schoolId, { ...body, createdById: userId } as any, userType, userName);
 
     res.status(201).json({
       success: true,
@@ -110,6 +195,10 @@ export const updateClassSubjectResult = async (req: Request, res: Response, next
       body: req.body 
     });
 
+    if (!(await checkEditPermission(req, params.id))) {
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
+    }
+
     const result = await recordsService.updateClassSubjectResult(schoolId, params.id, body as any);
 
     res.status(200).json({
@@ -151,6 +240,10 @@ export const bulkUpsertStudentSubjectResults = async (req: Request, res: Respons
 
     const { body } = recordsSchema.bulkUpsertStudentSubjectResultsSchema.parse({ body: req.body });
 
+    if (!(await checkEditPermission(req, undefined, body))) {
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
+    }
+
     await recordsService.bulkUpsertStudentSubjectResults(schoolId, body as any);
 
     res.status(200).json({
@@ -178,6 +271,10 @@ export const updatePaperLinks = async (req: Request, res: Response, next: NextFu
       return res.status(400).json({ success: false, message: "paperLinks object is required" });
     }
 
+    if (!(await checkEditPermission(req, id))) {
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
+    }
+
     const result = await recordsService.updateClassSubjectResultPaperLinks(schoolId, id, paperLinks);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
@@ -199,6 +296,10 @@ export const calculatePaperSync = async (req: Request, res: Response, next: Next
     }
     if (!studentIds || !Array.isArray(studentIds)) {
       return res.status(400).json({ success: false, message: "studentIds array is required" });
+    }
+
+    if (!(await checkEditPermission(req, id))) {
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
     }
 
     const result = await recordsService.calculatePaperSync(schoolId, id, studentIds, category);
@@ -240,6 +341,15 @@ export const publishClassSubjectResult = async (req: Request, res: Response, nex
       return res.status(400).json({ success: false, message: "Result ID is required" });
     }
 
+    if (!(await checkEditPermission(req, id))) {
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
+    }
+
+    if (req.user?.userType === "TEACHER") {
+      await recordsService.requestPublishApproval(schoolId, id, req.user!.id);
+      return res.status(200).json({ success: true, message: "A request has been sent to admins for approval to publish this result." });
+    }
+
     const result = await recordsService.publishClassSubjectResult(schoolId, id);
     res.status(200).json({ success: true, message: "Result published successfully", data: result });
   } catch (error) {
@@ -257,6 +367,15 @@ export const unpublishClassSubjectResult = async (req: Request, res: Response, n
     
     if (!id) {
       return res.status(400).json({ success: false, message: "Result ID is required" });
+    }
+
+    if (!(await checkEditPermission(req, id))) {
+      return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
+    }
+
+    if (req.user?.userType === "TEACHER") {
+      await recordsService.requestUnpublishApproval(schoolId, id, req.user!.id);
+      return res.status(200).json({ success: true, message: "A request has been sent to admins for approval to unpublish this result." });
     }
 
     const result = await recordsService.unpublishClassSubjectResult(schoolId, id);

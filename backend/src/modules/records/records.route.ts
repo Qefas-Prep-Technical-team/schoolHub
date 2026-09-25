@@ -4,25 +4,22 @@ import { AdminRole, UserRole } from "@prisma/client";
 
 const router = Router();
 
-// Inline restrictTo middleware
+// ─── Student-accessible routes (BEFORE restrictTo) ────────────────────────────
+// Students can only view their own published results
+router.get("/my-results", recordsController.getMyPublishedResults);
+
+// Inline restrictTo middleware for admin/teacher routes
 const restrictTo = (...roles: AdminRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // If not an admin and not a teacher, block
     if (req.user?.userType !== UserRole.ADMIN && req.user?.userType !== UserRole.TEACHER) {
       return res.status(403).json({ success: false, message: "Forbidden" });
     }
-    
-    // We assume `req.adminRole` or something similar is populated somewhere, 
-    // but if not, at least we restricted to ADMIN.
-    // For full security we should check req.adminRole if it exists.
-    // But since req.user may not have the adminRole populated by default authenticateToken,
-    // we'll just allow ADMIN userType for now, which is safer than breaking.
-    // A robust restrictTo would query the DB or rely on a loaded req.adminRole.
     next();
   };
 };
 
-// Apply role-based access control middleware to all routes in this module
+// Apply role-based access control middleware to all admin/teacher routes
 router.use(restrictTo("SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR"));
 
 router.get("/class-subjects", recordsController.getClassSubjectResults);

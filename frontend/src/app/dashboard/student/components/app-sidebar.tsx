@@ -66,6 +66,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
     { icon: BarChart3, label: "Grades", href: "/dashboard/student/grades", featureKey: "results", section: "core" },
+    { icon: School, label: "Final Results", href: "/dashboard/student/result/termly", featureKey: "results", section: "core" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/student/exams&quizzes", featureKey: "exams", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/student/attendance", featureKey: "attendance", section: "core" },
     { icon: FileText, label: "Documents", href: "/dashboard/student/documents", featureKey: "documents", section: "core" },

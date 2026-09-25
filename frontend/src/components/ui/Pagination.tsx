@@ -7,7 +7,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
-  theme?: 'emerald' | 'blue';
+  theme?: 'emerald' | 'blue' | 'pink';
 }
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -63,6 +63,8 @@ const Pagination: React.FC<PaginationProps> = ({
                   currentPage === page
                     ? theme === 'blue'
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20 dark:from-blue-600 dark:to-indigo-700 dark:shadow-blue-950/40 scale-105'
+                      : theme === 'pink'
+                      ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/20 dark:from-pink-600 dark:to-rose-700 dark:shadow-pink-950/40 scale-105'
                       : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20 dark:from-green-600 dark:to-emerald-700 dark:shadow-green-950/40 scale-105'
                     : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
@@ -90,3 +92,4 @@ const Pagination: React.FC<PaginationProps> = ({
 };
 
 export default Pagination;
+

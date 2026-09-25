@@ -38,6 +38,23 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, September 24, 2026
+
+- **Records & Results — Permission Bug Fix**:
+    - [x] **Backend**: Fixed `checkEditPermission` in `records.controller.ts` — removed reference to non-existent `createdById` field on `ClassSubjectResult`; now fetches `SchoolAdmin` role from DB if not present in JWT payload, and allows any SCHOOL_OWNER / PRINCIPAL / REGISTRAR admin to edit.
+
+- **Student Final Results Flow — Full Implementation**:
+    - [x] **Backend**: Added `getMyPublishedResults` service in `records.service.ts` — queries `StudentSubjectTermResult` (the table that IS written to on publish), checks `releaseDate` to gate card visibility, checks `revealDate` to gate score visibility, groups results by `sessionId + term`, and returns `scoresRevealed`, `revealDate`, and `subjectCount` per group.
+    - [x] **Backend**: Added `getMyPublishedResults` controller in `records.controller.ts`.
+    - [x] **Backend**: Added `/records/my-results` route in `records.route.ts` **before** the `restrictTo` middleware so students can access it (all other routes remain admin/teacher only).
+    - [x] **Frontend Service**: Added `getMyPublishedResults()` in `recordService.ts` hitting `/records/my-results`.
+    - [x] **Frontend Hook**: Added `useMyPublishedResults()` in `useRecords.ts` with `staleTime: 2min`.
+    - [x] **Frontend UI**: Replaced `termly/page.tsx` with a **card grid** — shows class name, session, term badge, subject count, and published/reveal-pending status. No scores shown on this page. Clicking a card navigates to the detail page.
+    - [x] **Frontend UI**: Created `termly/view/page.tsx` — dedicated full result sheet page using `?sessionId=&term=` query params. Shows hero header with avg/highest/lowest stats, full subject table with Assignment / CA / Exam / Total / Grade columns, N/A + lock icon masking when `scoresRevealed = false`, amber countdown banner if revealDate is pending, and a summary footer.
+
+- **TypeScript Fix**:
+    - [x] Fixed `Type 'string' is not assignable to type 'ToastIcon | undefined'` in `teacher/records/preview/page.tsx` by wrapping emoji in `<span>`.
+
 ### Monday, September 21, 2026
 
 - **Records & Results Data Entry**:

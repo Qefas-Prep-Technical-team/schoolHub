@@ -2099,7 +2099,7 @@ model ClassSubjectResult {
   session    Session     @relation(fields: [sessionId], references: [id])
   department Department? @relation(fields: [departmentId], references: [id])
 
-  @@unique([classId, subjectId, sessionId, term])
+  @@unique([classId, subjectId, sessionId, term, departmentId])
   @@map("class_subject_results")
 }
 

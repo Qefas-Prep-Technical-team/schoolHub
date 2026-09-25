@@ -19,9 +19,22 @@ export const useStudentTermResults = (params?: Record<string, any>) => {
   });
 };
 
+export const useMyPublishedResults = () => {
+  return useQuery({
+    queryKey: ["myPublishedResults"],
+    queryFn: () => recordService.getMyPublishedResults(),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    retry: 1,
+  });
+};
+
 export const useCreateClassSubjectResult = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, any>) => recordService.createClassSubjectResult(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["classSubjectResults"] });
+    },
   });
 };
 
@@ -55,8 +68,12 @@ export const useStudentSubjectResults = (params: Record<string, any>) => {
 };
 
 export const useBulkSaveStudentSubjectResults = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, any>) => recordService.bulkUpsertStudentSubjectResults(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["studentSubjectResults"] });
+    }
   });
 };
 
@@ -107,3 +124,4 @@ export const useUnpublishClassSubjectResult = () => {
     },
   });
 };
+

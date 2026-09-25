@@ -44,7 +44,7 @@ export default function RecordsPage() {
 
   const { mutate: createResult, isPending: isCreating } = useCreateClassSubjectResult();
   
-  const effectiveSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const effectiveSchoolId = (user as any)?.schoolId || (user as any)?.school?.id || user?.schools?.[0]?.schoolId || user?.tenantId || "";
 
   // Data hooks for dropdowns
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(effectiveSchoolId);
@@ -134,7 +134,7 @@ export default function RecordsPage() {
                 Add Final Result
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] dark:bg-[#1a1b2e] dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[600px] dark:bg-[#1a1b2e] dark:border-slate-800 max-h-[90vh] overflow-visible">
               <DialogHeader>
                 <DialogTitle className="text-slate-900 dark:text-white">Add New Final Result</DialogTitle>
                 <DialogDescription className="text-slate-500">
@@ -603,3 +603,4 @@ export default function RecordsPage() {
     </div>
   );
 }
+

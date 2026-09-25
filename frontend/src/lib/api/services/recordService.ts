@@ -15,6 +15,11 @@ export const recordService = {
     return response.data.data;
   },
 
+  getMyPublishedResults: async () => {
+    const response = await apiClient.get<{ success: boolean; data: any[] }>("/records/my-results");
+    return response.data.data;
+  },
+
   createClassSubjectResult: async (data: Record<string, any>) => {
     const response = await apiClient.post<{ success: boolean; data: any; message: string }>("/records/class-subjects", data);
     return response.data;

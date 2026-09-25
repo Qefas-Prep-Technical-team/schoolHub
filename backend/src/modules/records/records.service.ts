@@ -42,6 +42,117 @@ export const getStudentTermResults = async (
   });
 };
 
+export const getMyPublishedResults = async (studentId: string, schoolId: string) => {
+  const now = new Date();
+
+  // 1. Fetch all published student subject results
+  const subjectResults = await prisma.studentSubjectTermResult.findMany({
+    where: { studentId, schoolId, status: "PUBLISHED" },
+    include: {
+      subject: { select: { id: true, name: true } },
+      class:   { select: { id: true, name: true } },
+      session: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (subjectResults.length === 0) return [];
+
+  // 2. Load the ClassSubjectResult config for each unique (class, subject, session, term) combination
+  const configKeys = [
+    ...new Set(
+      subjectResults.map((r) => `${r.classId}|${r.subjectId}|${r.sessionId}|${r.term}`)
+    ),
+  ];
+
+  const rawConfigs = await Promise.all(
+    configKeys.map((key) => {
+      const [classId, subjectId, sessionId, term] = key.split("|");
+      return prisma.classSubjectResult.findFirst({
+        where: { schoolId, classId, subjectId, sessionId, term: term as any, status: "PUBLISHED" },
+        select: { classId: true, subjectId: true, sessionId: true, term: true, revealDate: true, releaseDate: true, name: true },
+      });
+    })
+  );
+
+  const configMap = new Map<string, (typeof rawConfigs)[number]>();
+  configKeys.forEach((key, i) => configMap.set(key, rawConfigs[i]));
+
+  // 3. Apply per-subject visibility rules:
+  //    • revealDate not set OR not passed     → HIDDEN (skip entirely)
+  //    • revealDate passed, releaseDate not   → VISIBLE subject, grades = N/A  (scoresRevealed: false)
+  //    • releaseDate passed                   → FULLY VISIBLE (scoresRevealed: true)
+  //    releaseDate overrides revealDate if both are set and releaseDate has passed.
+
+  type EnrichedResult = (typeof subjectResults)[number] & { scoresRevealed: boolean, resultName?: string };
+  const visible: EnrichedResult[] = [];
+
+  for (const r of subjectResults) {
+    const cfgKey = `${r.classId}|${r.subjectId}|${r.sessionId}|${r.term}`;
+    const cfg = configMap.get(cfgKey);
+    if (!cfg) continue; // No published config = skip
+
+    const revealDate  = cfg.revealDate  ? new Date(cfg.revealDate)  : null;
+    const releaseDate = cfg.releaseDate ? new Date(cfg.releaseDate) : null;
+
+    const releasePassed = !!releaseDate && releaseDate <= now;
+    const revealPassed  = !!revealDate  && revealDate  <= now;
+
+    if (releasePassed) {
+      // Full access — releaseDate overrides everything
+      visible.push({ ...r, scoresRevealed: true, resultName: cfg.name });
+    } else if (revealPassed) {
+      // Subject visible but grades hidden until releaseDate
+      visible.push({ ...r, scoresRevealed: false, resultName: cfg.name });
+    }
+    // else: neither passed or revealDate not set → skip (don't expose to student)
+  }
+
+  if (visible.length === 0) return [];
+
+  // 4. Group by sessionId + term
+  const grouped = new Map<
+    string,
+    {
+      sessionId: string;
+      session: { id: string; name: string } | null;
+      classId: string;
+      class: { id: string; name: string } | null;
+      term: string;
+      subjectCount: number;
+      revealedCount: number;
+      subjectResults: EnrichedResult[];
+    }
+  >();
+
+  for (const r of visible) {
+    const groupKey = `${r.sessionId}|${r.term}`;
+    if (!grouped.has(groupKey)) {
+      grouped.set(groupKey, {
+        sessionId: r.sessionId,
+        session:   r.session ?? null,
+        classId:   r.classId,
+        class:     r.class   ?? null,
+        term:      r.term,
+        subjectCount:  0,
+        revealedCount: 0,
+        subjectResults: [],
+      });
+    }
+    const grp = grouped.get(groupKey)!;
+    grp.subjectResults.push(r);
+  }
+
+  // Compute counts
+  for (const grp of grouped.values()) {
+    grp.subjectCount  = grp.subjectResults.length;
+    grp.revealedCount = grp.subjectResults.filter((r) => r.scoresRevealed).length;
+  }
+
+  return Array.from(grouped.values());
+};
+
+
 export const createClassSubjectResult = async (
   schoolId: string,
   data: {
@@ -57,9 +168,26 @@ export const createClassSubjectResult = async (
     quizMax?: number | null;
     caMax?: number | null;
     examMax?: number | null;
-  }
+    createdById?: string;
+  },
+  userType?: string,
+  userName?: string
 ) => {
-  return await prisma.classSubjectResult.create({
+  const existing = await prisma.classSubjectResult.findFirst({
+    where: {
+      classId: data.classId,
+      subjectId: data.subjectId,
+      sessionId: data.sessionId,
+      term: data.term,
+      departmentId: data.departmentId || null,
+    }
+  });
+
+  if (existing) {
+    throw new Error("A final result configuration for this Class, Subject, Session, Term, and Department already exists!");
+  }
+
+  const newResult = await prisma.classSubjectResult.create({
     data: {
       schoolId,
       name: data.name,
@@ -73,16 +201,28 @@ export const createClassSubjectResult = async (
       assignmentMax: data.assignmentMax,
       quizMax: data.quizMax,
       caMax: data.caMax,
-      examMax: data.examMax,
+      examMax: data.examMax
     },
   });
+
+  if (userType === "TEACHER") {
+    await createNotification({
+      recipientType: "SCHOOL",
+      recipientId: schoolId,
+      type: "ACADEMIC",
+      title: "Approval Required: Final Result",
+      message: `Teacher ${userName || ''} has configured a new final result for ${data.name}. It requires your approval to be published.`,
+    });
+  }
+
+  return newResult;
 };
 
 export const getClassSubjectResultById = async (
   schoolId: string,
   id: string
 ) => {
-  return await prisma.classSubjectResult.findFirst({
+  const result = await prisma.classSubjectResult.findFirst({
     where: {
       id,
       schoolId,
@@ -94,6 +234,32 @@ export const getClassSubjectResultById = async (
       department: { select: { name: true } },
     },
   });
+
+  if (!result) return null;
+
+  try {
+    const paperLinks = result.paperLinks as any || {};
+    const paperIds = [
+      ...(paperLinks.exam || []),
+      ...(paperLinks.subjectPaper || []),
+      ...(paperLinks.ca || [])
+    ];
+    const assignmentIds = paperLinks.assignment || [];
+
+    const [papers, assignments] = await Promise.all([
+      paperIds.length > 0 ? prisma.subjectExamPaper.findMany({ where: { id: { in: paperIds } }, select: { id: true, title: true } }) : Promise.resolve([]),
+      assignmentIds.length > 0 ? prisma.assignment.findMany({ where: { id: { in: assignmentIds } }, select: { id: true, title: true } }) : Promise.resolve([])
+    ]);
+
+    (result as any).paperLinkDetails = {
+      papers,
+      assignments
+    };
+  } catch (e) {
+    console.error("Failed to fetch paper link details", e);
+  }
+
+  return result;
 };
 
 export const updateClassSubjectResult = async (
@@ -549,4 +715,62 @@ export const unpublishClassSubjectResult = async (
   });
 
   return { success: true };
+};
+
+export const requestPublishApproval = async (schoolId: string, resultId: string, teacherId: string) => {
+  const result = await prisma.classSubjectResult.findFirst({
+    where: { id: resultId, schoolId },
+    include: { subject: true, class: true }
+  });
+  if (!result) return;
+  
+  const teacher = await prisma.teacher.findFirst({ where: { id: teacherId } });
+  const teacherName = teacher ? teacher.name : "A teacher";
+
+  const adminsToNotify = await prisma.schoolAdmin.findMany({
+    where: {
+      schoolId,
+      active: true,
+      role: { in: ['SCHOOL_OWNER', 'PRINCIPAL', 'REGISTRAR'] }
+    }
+  });
+
+  for (const admin of adminsToNotify) {
+    await createNotification({
+      recipientType: "ADMIN",
+      recipientId: admin.adminId,
+      type: "ACADEMIC",
+      title: "Publish Approval Request",
+      message: `${teacherName} has requested approval to publish the final result for ${result.class?.name} - ${result.subject?.name}.`
+    });
+  }
+};
+
+export const requestUnpublishApproval = async (schoolId: string, resultId: string, teacherId: string) => {
+  const result = await prisma.classSubjectResult.findFirst({
+    where: { id: resultId, schoolId },
+    include: { subject: true, class: true }
+  });
+  if (!result) return;
+  
+  const teacher = await prisma.teacher.findFirst({ where: { id: teacherId } });
+  const teacherName = teacher ? teacher.name : "A teacher";
+
+  const adminsToNotify = await prisma.schoolAdmin.findMany({
+    where: {
+      schoolId,
+      active: true,
+      role: { in: ['SCHOOL_OWNER', 'PRINCIPAL', 'REGISTRAR'] }
+    }
+  });
+
+  for (const admin of adminsToNotify) {
+    await createNotification({
+      recipientType: "ADMIN",
+      recipientId: admin.adminId,
+      type: "ACADEMIC",
+      title: "Unpublish Approval Request",
+      message: `${teacherName} has requested approval to unpublish the final result for ${result.class?.name} - ${result.subject?.name}.`
+    });
+  }
 };

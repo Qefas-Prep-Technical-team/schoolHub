@@ -80,6 +80,7 @@ export const bulkUpsertStudentSubjectResultsSchema = z.object({
         quizScore: z.number().optional().nullable(),
         caScore: z.number().optional().nullable(),
         examScore: z.number().optional().nullable(),
+        scoreSources: z.any().optional(),
       })
     ).min(1, "At least one score entry is required"),
   }),

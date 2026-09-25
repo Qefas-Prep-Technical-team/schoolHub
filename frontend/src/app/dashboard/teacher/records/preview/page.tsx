@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Save, Search, Download, Loader2, Settings, Pencil, Check, UploadCloud, PenLine, Users, CheckCircle2, Clock, TrendingUp, MoreVertical } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import ResultRecordUploadModal, { UploadCategory } from "./components/ResultRecordUploadModal";
 import { EditConfigModal } from "./components/EditConfigModal";
 import { ScoreBreakdownModal } from "./components/ScoreBreakdownModal";
@@ -11,7 +11,7 @@ import { SyncProgressModal } from "./components/SyncProgressModal";
 import { SummaryPanel } from "./components/SummaryPanel";
 import { useClassSubjectResult, useStudentSubjectResults, useBulkSaveStudentSubjectResults, useUpdatePaperLinks, useCalculatePaperSync, usePublishClassSubjectResult, useUnpublishClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useSubjectPapers } from "@/lib/api/hooks/useExams";
-import { useAdminAssignments } from "@/lib/api/hooks/useAssignments";
+import { useTeacherAssignments } from "@/lib/api/hooks/useAssignments";
 import { useStudents } from "@/lib/api/hooks/useStudent";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
@@ -19,13 +19,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 export default function NewFinalResultDataEntryPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const id = searchParams.get("id");
   const { user } = useAuthStore();
-  const effectiveSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
-
   // Data Hooks
   const { data: config, isLoading: isLoadingConfig } = useClassSubjectResult(id || undefined);
+  const effectiveSchoolId = config?.schoolId || user?.schools?.[0]?.schoolId || (user as any)?.school?.id || user?.tenantId || "";
   
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
@@ -92,7 +90,7 @@ export default function NewFinalResultDataEntryPage() {
     ? subjectPapersResult 
     : (subjectPapersResult as any)?.data || [];
 
-  const { data: assignmentsResult, isLoading: isLoadingAssignments } = useAdminAssignments(effectiveSchoolId);
+  const { data: assignmentsResult, isLoading: isLoadingAssignments } = useTeacherAssignments(effectiveSchoolId);
   const assignments: any[] = assignmentsResult?.assignments || [];
 
   // Load existing paperLinks from config when it arrives
@@ -279,7 +277,28 @@ export default function NewFinalResultDataEntryPage() {
   const paginatedStudents = filteredStudents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const toggleEdit = (id: string) => {
-    return toast.info("This is a preview mode. Editing is disabled.");
+    if (config?.status === "PUBLISHED") return toast.info("Cannot edit published results");
+    setEditingIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        // Validate total score
+        const student = students.find(s => s.id === id);
+        if (student) {
+          const total = (parseFloat(student.assignment) || 0) + 
+                        (parseFloat(student.quiz) || 0) + 
+                        (parseFloat(student.ca) || 0) + 
+                        (parseFloat(student.exam) || 0);
+          if (total > 100) {
+            toast.error(`Total score cannot exceed 100 marks! Current total is ${total}.`);
+            return prev; // keep editing
+          }
+        }
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const handleSearchChange = (q: string) => {
@@ -303,7 +322,7 @@ export default function NewFinalResultDataEntryPage() {
   const classAverage = studentsWithScores > 0 ? (totalClassScore / studentsWithScores).toFixed(1) : "0";
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-[#f0fdf4] dark:bg-[#0f1015] min-h-screen">
+    <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-[#f8f9fa] dark:bg-[#0f1015] min-h-screen">
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -331,44 +350,10 @@ export default function NewFinalResultDataEntryPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => toast.info("Settings configuration coming soon")}
-            className="flex items-center justify-center p-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
-            title="Configuration Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
           <button className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50">
             <Download className="w-4 h-4" />
             Export data
           </button>
-          <button 
-            onClick={handleSave}
-            disabled={true}
-            className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isSaving ? "Saving..." : "Save Results"}
-          </button>
-          {config?.status !== "PUBLISHED" ? (
-            <button 
-              onClick={() => setIsPublishModalOpen(true)}
-              disabled={true}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70"
-            >
-              {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Publish
-            </button>
-          ) : (
-            <button 
-              onClick={() => setIsUnpublishModalOpen(true)}
-              disabled={true}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70"
-            >
-              {isUnpublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
-              Unpublish
-            </button>
-          )}
         </div>
       </div>
 
@@ -455,34 +440,34 @@ export default function NewFinalResultDataEntryPage() {
               onClick={() => setActiveTab("academic")}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
                 activeTab === "academic"
-                  ? "text-[#10b981]"
+                  ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               Academic Scores
-              {activeTab === "academic" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
+              {activeTab === "academic" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("evaluation")}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
                 activeTab === "evaluation"
-                  ? "text-[#10b981]"
+                  ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               Behavioral Evaluations & Remarks
-              {activeTab === "evaluation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
+              {activeTab === "evaluation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("details")}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
                 activeTab === "details"
-                  ? "text-[#10b981]"
+                  ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               Configuration Details
-              {activeTab === "details" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
+              {activeTab === "details" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
           </div>
 
@@ -499,33 +484,10 @@ export default function NewFinalResultDataEntryPage() {
                   placeholder="Search students..." 
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full bg-[#f0fdf4] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#10b981] transition-all"
+                  className="w-full bg-[#f8f9fa] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#5B5CE6] transition-all"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setIsUploadModalOpen(true)}
-                  disabled={true}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <UploadCloud className="w-4 h-4" />
-                  Upload Grades
-                </button>
-                <button 
-                  onClick={() => {
-                    if (!config?.id) return;
-                    const studentIds = paginatedStudents.map(s => s.id);
-                    if (studentIds.length === 0) return;
-                    setIsSyncModalOpen(true);
-                  }}
-                  disabled={true}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Sync Papers
-                </button>
               </div>
             </div>
 
@@ -542,16 +504,15 @@ export default function NewFinalResultDataEntryPage() {
                     {config?.caMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">CA<br/><span className="text-[9px] font-medium opacity-70">(Max {config.caMax})</span></th>}
                     {config?.examMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Exam<br/><span className="text-[9px] font-medium opacity-70">(Max {config.examMax})</span></th>}
                     <th className="px-6 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
-                    <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-6 py-8 text-center text-slate-500">No students found.</td>
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">No students found.</td>
                     </tr>
                   ) : paginatedStudents.map((student, idx) => {
-                    const isEditing = editingIds.has(student.id);
+                    
                     const assignNum = parseFloat(student.assignment) || 0;
                     const quizNum = parseFloat(student.quiz) || 0;
                     const caNum = parseFloat(student.ca) || 0;
@@ -560,7 +521,7 @@ export default function NewFinalResultDataEntryPage() {
                     const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
                     
                     return (
-                      <tr key={student.id} className={`group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isEditing ? "bg-slate-50 dark:bg-slate-800/30" : ""}`}>
+                      <tr key={student.id} className="group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30">
                         <td className="px-6 py-4 text-center text-slate-400 font-normal text-sm">{String(globalIdx + 1).padStart(2, '0')}</td>
                         <td className="px-4 py-4 flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700">
@@ -584,70 +545,30 @@ export default function NewFinalResultDataEntryPage() {
                         <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
                         {config?.assignmentMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
-                            <input 
-                              type="number" 
-                              value={student.assignment}
-                              onChange={(e) => handleScoreChange(student.id, "assignment", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.assignment || <span className="text-slate-300">-</span>}
+                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.assignment !== "" && student.assignment != null ? student.assignment : <span className="text-slate-300">-</span>}
                             </button>
-                          )}
                         </td>
                         )}
                         {config?.quizMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
-                            <input 
-                              type="number" 
-                              value={student.quiz}
-                              onChange={(e) => handleScoreChange(student.id, "quiz", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.quiz || <span className="text-slate-300">-</span>}
+                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.quiz !== "" && student.quiz != null ? student.quiz : <span className="text-slate-300">-</span>}
                             </button>
-                          )}
                         </td>
                         )}
                         {config?.caMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
-                            <input 
-                              type="number" 
-                              value={student.ca}
-                              onChange={(e) => handleScoreChange(student.id, "ca", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.ca || <span className="text-slate-300">-</span>}
+                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.ca !== "" && student.ca != null ? student.ca : <span className="text-slate-300">-</span>}
                             </button>
-                          )}
                         </td>
                         )}
                         {config?.examMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
-                            <input 
-                              type="number" 
-                              value={student.exam}
-                              onChange={(e) => handleScoreChange(student.id, "exam", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.exam || <span className="text-slate-300">-</span>}
+                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.exam !== "" && student.exam != null ? student.exam : <span className="text-slate-300">-</span>}
                             </button>
-                          )}
                         </td>
                         )}
                         <td className="px-6 py-4 text-center">
@@ -656,14 +577,6 @@ export default function NewFinalResultDataEntryPage() {
                           ) : (
                             <span className="text-slate-300">-</span>
                           )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <button
-                            onClick={() => toggleEdit(student.id)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-                          >
-                            {isEditing ? <Check className="w-4 h-4 text-emerald-500" /> : <Pencil className="w-4 h-4" />}
-                          </button>
                         </td>
                       </tr>
                     );
@@ -692,7 +605,7 @@ export default function NewFinalResultDataEntryPage() {
                       onClick={() => setCurrentPage(page)}
                       className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${
                         page === currentPage 
-                          ? "bg-[#10b981] text-white" 
+                          ? "bg-[#5B5CE6] text-white" 
                           : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -726,7 +639,7 @@ export default function NewFinalResultDataEntryPage() {
                   placeholder="Search students..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all"
                 />
               </div>
             </div>
@@ -763,7 +676,7 @@ export default function NewFinalResultDataEntryPage() {
                           <select 
                             value={student.politeness}
                             onChange={(e) => handleScoreChange(student.id, "politeness", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -777,7 +690,7 @@ export default function NewFinalResultDataEntryPage() {
                           <select 
                             value={student.punctuality}
                             onChange={(e) => handleScoreChange(student.id, "punctuality", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -791,7 +704,7 @@ export default function NewFinalResultDataEntryPage() {
                           <select 
                             value={student.handwriting}
                             onChange={(e) => handleScoreChange(student.id, "handwriting", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -807,7 +720,7 @@ export default function NewFinalResultDataEntryPage() {
                             value={student.teacherRemark}
                             onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
                             placeholder="Add remark..."
-                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
+                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
                           />
                         </td>
                         <td className="px-4 py-3">
@@ -816,7 +729,7 @@ export default function NewFinalResultDataEntryPage() {
                             value={student.principalRemark}
                             onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
                             placeholder="Add remark..."
-                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
+                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
                           />
                         </td>
                       </tr>
@@ -897,9 +810,9 @@ export default function NewFinalResultDataEntryPage() {
                       <span className="text-[10px] uppercase text-slate-400 font-bold mb-1">CA Max</span>
                       <span className="text-lg font-black text-slate-700 dark:text-slate-300">{config.caMax || "-"}</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center p-2 bg-[#10b981]/10 rounded shadow-sm border border-[#10b981]/20">
-                      <span className="text-[10px] uppercase text-[#10b981] font-bold mb-1">Exam Max</span>
-                      <span className="text-lg font-black text-[#10b981]">{config.examMax || "-"}</span>
+                    <div className="flex flex-col items-center justify-center p-2 bg-[#5B5CE6]/10 rounded shadow-sm border border-[#5B5CE6]/20">
+                      <span className="text-[10px] uppercase text-[#5B5CE6] font-bold mb-1">Exam Max</span>
+                      <span className="text-lg font-black text-[#5B5CE6]">{config.examMax || "-"}</span>
                     </div>
                   </div>
 
@@ -918,137 +831,6 @@ export default function NewFinalResultDataEntryPage() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Subject Paper Assignments */}
-              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/50">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Subject Paper Assignments</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Select one or more papers per assessment category. Changes are saved manually.</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (!id) return;
-                      savePaperLinks(
-                        { id, paperLinks: paperAssignments },
-                        {
-                          onSuccess: () => toast.success("Paper assignments saved!"),
-                          onError: () => toast.error("Failed to save paper assignments"),
-                        }
-                      );
-                    }}
-                    disabled={true}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#4a4bd4] text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                  >
-                    {isSavingLinks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    Save Links
-                  </button>
-                </div>
-
-
-
-                {(isLoadingPapers || isLoadingAssignments) ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1,2,3,4].map(i => <div key={i} className="h-32 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-xl" />)}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {([
-                      { key: "exam" as const,         label: "Exam Papers",           category: "EXAM",       borderColor: "border-[#10b981]/40",    headerBg: "bg-[#10b981]/10",  dotColor: "bg-[#10b981]",  textColor: "text-[#10b981]",  checkColor: "accent-[#10b981]" },
-                      { key: "subjectPaper" as const, label: "Subject Paper (Quiz)",  category: "QUIZ",       borderColor: "border-amber-300/60",    headerBg: "bg-amber-50 dark:bg-amber-500/10",  dotColor: "bg-amber-500",  textColor: "text-amber-600 dark:text-amber-400",  checkColor: "accent-amber-500" },
-                      { key: "ca" as const,           label: "CA Papers",             category: "CA",         borderColor: "border-emerald-300/60",  headerBg: "bg-emerald-50 dark:bg-emerald-500/10",  dotColor: "bg-emerald-500",  textColor: "text-emerald-600 dark:text-emerald-400",  checkColor: "accent-emerald-500" },
-                      { key: "assignment" as const,   label: "Assignment Papers",     category: "ASSIGNMENT", borderColor: "border-rose-300/60",     headerBg: "bg-rose-50 dark:bg-rose-500/10",  dotColor: "bg-rose-500",  textColor: "text-rose-600 dark:text-rose-400",  checkColor: "accent-rose-500" },
-                    ]).map(({ key, label, category, borderColor, headerBg, dotColor, textColor, checkColor }) => {
-                      const selected = paperAssignments[key];
-                      const searchKey = paperSearch[key];
-                      const sourceList = key === "assignment" ? assignments : subjectPapers;
-                      const filteredPapers = sourceList.filter((p: any) => {
-                        const matchesSearch = !searchKey || (p.title || "").toLowerCase().includes(searchKey.toLowerCase());
-                        
-                        if (key === "assignment") {
-                          const matchesClass = p.classId === config?.classId;
-                          const matchesSubject = p.subjectId === config?.subjectId;
-                          return matchesClass && matchesSubject && matchesSearch;
-                        }
-
-                        const hasExamConnections = p.exams && p.exams.length > 0;
-                        
-                        if (hasExamConnections) {
-                          const isConnectedToThisCategory = p.exams.some((e: any) => e.exam?.category === category);
-                          return isConnectedToThisCategory && matchesSearch;
-                        }
-                        
-                        return p.category === category && matchesSearch;
-                      });
-                      const togglePaper = (paperId: string) => {
-                        setPaperAssignments(prev => {
-                          const cur = prev[key];
-                          return {
-                            ...prev,
-                            [key]: cur.includes(paperId) ? cur.filter(x => x !== paperId) : [...cur, paperId],
-                          };
-                        });
-                      };
-                      return (
-                        <div key={key} className={`rounded-xl border ${borderColor} overflow-hidden flex flex-col h-72`}>
-                          <div className={`${headerBg} px-4 py-2.5 flex items-center justify-between flex-shrink-0`}>
-                            <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                              <span className={`text-xs font-bold uppercase tracking-wide ${textColor}`}>{label}</span>
-                            </div>
-                            <span className={`text-[10px] font-semibold ${textColor}`}>
-                              {selected.length} selected
-                            </span>
-                          </div>
-                          
-                          <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/30 flex-shrink-0">
-                            <div className="relative">
-                              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                              <input
-                                type="text"
-                                placeholder={`Search ${label}...`}
-                                value={searchKey}
-                                onChange={(e) => setPaperSearch(prev => ({ ...prev, [key]: e.target.value }))}
-                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#10b981]/50 transition-all"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50 bg-white dark:bg-transparent">
-                            {filteredPapers.length === 0 ? (
-                              <p className="text-xs text-slate-400 text-center py-4">No papers match your search.</p>
-                            ) : filteredPapers.map((p: any) => {
-                              const isChecked = selected.includes(p.id);
-                              return (
-                                <label
-                                  key={p.id}
-                                  className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isChecked ? "bg-slate-50 dark:bg-slate-900/50" : "hover:bg-slate-50/50 dark:hover:bg-slate-900/20"}`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => togglePaper(p.id)}
-                                    className={`mt-0.5 w-4 h-4 rounded ${checkColor} flex-shrink-0`}
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
-                                      {p.title || "Untitled Paper"}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400">
-                                      {p.totalMarks ? `${p.totalMarks} marks` : "—"} · <span className={p.status === "PUBLISHED" ? "text-emerald-500" : "text-amber-500"}>{p.status}</span>
-                                    </p>
-                                  </div>
-                                  {isChecked && <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -1095,7 +877,7 @@ export default function NewFinalResultDataEntryPage() {
         onComplete={(results) => {
           toast.success("Sync complete! Please remember to click 'Save Results' to persist your changes.", {
             autoClose: 6000,
-            icon: "💾"
+            icon: <span>💾</span>
           });
           setStudents(prev => prev.map(student => {
             const syncedData = results.find((r: any) => r.studentId === student.id);

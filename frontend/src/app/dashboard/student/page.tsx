@@ -204,6 +204,19 @@ export default function StudentHomeDashboard() {
             </div>
           </div>
 
+          {/* Result Banner */}
+          <div className="bg-emerald-600 dark:bg-emerald-700 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Final Results Available!</h2>
+              <p className="text-emerald-100 font-medium">Your published academic results are ready to view.</p>
+            </div>
+            <Link href="/dashboard/student/result/termly">
+               <Button className="bg-white text-emerald-600 hover:bg-slate-50 font-bold rounded-xl h-12 px-8 shadow-sm">
+                 View Final Result
+               </Button>
+            </Link>
+          </div>
+
           {/* Stat Cards Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <StatCard 

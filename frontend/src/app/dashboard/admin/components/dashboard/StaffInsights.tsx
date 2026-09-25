@@ -4,6 +4,7 @@ import { Users, UserX, Building, AlertTriangle, TrendingUp, TrendingDown, Landma
 import { useState, useMemo } from 'react';
 import ProgressBar from './ui/ProgressBar';
 import { useSchoolDashboardSummary } from '@/lib/api/hooks/useSchool';
+import { useNotifications } from '@/lib/api/hooks/useNotifications';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,8 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
 
   const { data: summary, isLoading } = useSchoolDashboardSummary(schoolId);
+  const { data: notificationsData } = useNotifications({ limit: 10, isRead: false });
+  const notifications = Array.isArray(notificationsData) ? notificationsData : (notificationsData as any)?.data || [];
 
   const insights = useMemo<StaffInsight[]>(() => {
     if (!summary) return [];
@@ -77,7 +80,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
 
     const hasData = (summary.unassignedCount > 0) || (summary.classesSummary.length > 0) || (summary.classesSummary.some(c => c.teacherCount > 0));
 
-    if (list.length === 0 && hasData) {
+    if (list.length === 0 && hasData && (!notifications || notifications.filter((n: any) => n.title.includes('Approval')).length === 0)) {
       list.push({
         id: 'healthy',
         title: 'Staffing Stable',
@@ -90,8 +93,29 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
       });
     }
 
+    // Add approval notifications
+    if (notifications && notifications.length > 0) {
+      notifications
+        .filter((n: any) => n.title.includes('Approval'))
+        .forEach((n: any) => {
+          list.push({
+            id: n.id,
+            title: n.title,
+            description: n.message,
+            icon: AlertTriangle,
+            iconColor: 'text-amber-600',
+            iconBg: 'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30',
+            severity: 'medium',
+            action: {
+              label: 'Review',
+              onClick: () => window.location.href = '/dashboard/admin/records',
+            },
+          });
+        });
+    }
+
     return list;
-  }, [summary, primaryColor]);
+  }, [summary, primaryColor, notifications]);
 
   const workload = useMemo(() => {
     if (!summary || summary.classesSummary.length === 0) return 0;

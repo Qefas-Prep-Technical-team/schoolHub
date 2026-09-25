@@ -45342,4 +45342,664 @@ Unknown field `teacher` for include statement on model `ClassSubject`. Available
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at Object.publishClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:481:25)
-    at publishClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:233:20)
+    at publishClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:233:20)PrismaClientKnownRequestError: 
+Invalid `prisma.classSubjectResult.create()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:62:42
+
+  59     examMax?: number | null;
+  60   }
+  61 ) => {
+→ 62   return await prisma.classSubjectResult.create(
+Unique constraint failed on the fields: (`classId`,`subjectId`,`sessionId`,`term`)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:62:10)
+    at createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:100:20)PrismaClientKnownRequestError: 
+Invalid `prisma.classSubjectResult.create()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:62:42
+
+  59     examMax?: number | null;
+  60   }
+  61 ) => {
+→ 62   return await prisma.classSubjectResult.create(
+Unique constraint failed on the fields: (`classId`,`subjectId`,`sessionId`,`term`)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:62:10)
+    at createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:100:20)Error: A final result configuration for this Class, Subject, Session, and Term already exists!
+    at Object.createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:74:11)
+    at createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:100:20)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:11:38
+
+   8 export const resolveSchoolId = async (
+   9   schoolId: string,
+  10 ): Promise<string | null> => {
+→ 11   const school = await prisma.school.findFirst(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at resolveSchoolId (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:11:18)
+    at getSchoolStatsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:210:22)
+    at async Promise.all (index 0)
+    at getSchoolBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:751:7)
+    at getSchoolBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:374:18)PrismaClientKnownRequestError: 
+Invalid `prisma.department.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\academic\department.service.ts:150:30
+
+  147 }) => {
+  148   if (currentUserType === UserRole.ADMIN) {
+  149     if (!schoolId) return [];
+→ 150     return prisma.department.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getDepartments (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\academic\department.controller.ts:59:25)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:10:38
+
+   7  */
+   8 export const getSchoolUsageService = async (schoolId: string) => {
+   9   // 1. Fetch the school base data
+→ 10   const school = await prisma.school.findFirst(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:10:18)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)PrismaClientKnownRequestError: 
+Invalid `prisma.classSubjectResult.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:217:50
+
+  214   schoolId: string,
+  215   id: string
+  216 ) => {
+→ 217   const result = await prisma.classSubjectResult.findFirst(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getClassSubjectResultById (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:217:18)
+    at getClassSubjectResultById (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:154:20)PrismaClientKnownRequestError: 
+Invalid `prisma.subjectExamPaper.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.service.ts:684:48
+
+  681   where.status = filters.status;
+  682 }
+  683 
+→ 684 const papers = await prisma.subjectExamPaper.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSubjectPapersService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.service.ts:684:18)
+    at getSubjectPapers (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.controller.ts:774:20)PrismaClientKnownRequestError: 
+Invalid `prisma.relationshipLink.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:105:47
+
+  102 if (!resolvedId) return { data: [], total: 0 };
+  103 
+  104 // Find active school-student links from RelationshipLink
+→ 105 const links = await prisma.relationshipLink.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolStudentsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:105:17)
+    at getSchoolStudents (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:110:20)PrismaClientKnownRequestError: 
+Invalid `prisma.relationshipLink.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:105:47
+
+  102 if (!resolvedId) return { data: [], total: 0 };
+  103 
+  104 // Find active school-student links from RelationshipLink
+→ 105 const links = await prisma.relationshipLink.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolStudentsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:105:17)
+    at getSchoolStudents (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:110:20)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:373:30
+
+  370 const resolvedId = await resolveSchoolId(schoolId);
+  371 if (!resolvedId) return null;
+  372 
+→ 373 return await prisma.school.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolProfileService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:373:10)
+    at getSchoolProfile (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:213:18)PrismaClientKnownRequestError: 
+Invalid `prisma.exam.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:280:21
+
+  277 
+  278 const [examCount, classCount, storageMetric, studentCount] = await Promise.all([
+  279   role === 'TEACHER'
+→ 280     ? prisma.exam.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getUserUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:278:64)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:22:16)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:47
+
+  2697   });
+  2698 }
+  2699 
+→ 2700 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:21)Error: schoolId is required for admin class listing
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:274:13)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:196:41)
+    at Layer.handleRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\route.js:157:13)
+    at authenticateToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\middleware\authMiddleware.ts:157:5)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:47
+
+  2697   });
+  2698 }
+  2699 
+→ 2700 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:21)PrismaClientUnknownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:47
+
+  2697   });
+  2698 }
+  2699 
+→ 2700 const dbToken = await prisma.refreshToken.findFirst(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:21)PrismaClientUnknownRequestError: 
+Invalid `prisma.fileMetric.aggregate()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:291:23
+
+  288   : role === 'STUDENT'
+  289     ? prisma.classEnrollment.count({ where: { studentId: userId } })
+  290     : Promise.resolve(0),
+→ 291 prisma.fileMetric.aggregate(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 2)
+    at getUserUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:278:64)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:22:16)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.admin.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1704:37
+
+  1701 console.log(`Fetching user for role: ${role}, email: [${email}]`);
+  1702 switch (role) {
+  1703   case UserRole.ADMIN:
+→ 1704     return await prisma.admin.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1704:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:73:22)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1756:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.admin.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1704:37
+
+  1701 console.log(`Fetching user for role: ${role}, email: [${email}]`);
+  1702 switch (role) {
+  1703   case UserRole.ADMIN:
+→ 1704     return await prisma.admin.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1704:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:73:22)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1756:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1732:39
+
+  1729   return teacher;
+  1730 }
+  1731 case UserRole.STUDENT:
+→ 1732   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1732:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:73:22)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1756:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1732:39
+
+  1729   return teacher;
+  1730 }
+  1731 case UserRole.STUDENT:
+→ 1732   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1732:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:73:22)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1756:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientUnknownRequestError: 
+Invalid `prisma.admin.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1704:37
+
+  1701 console.log(`Fetching user for role: ${role}, email: [${email}]`);
+  1702 switch (role) {
+  1703   case UserRole.ADMIN:
+→ 1704     return await prisma.admin.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1704:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:73:22)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1756:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientValidationError: 
+Invalid `prisma.classSubjectResult.create()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:190:53
+
+  187   throw new Error("A final result configuration for this Class, Subject, Session, Term, and Department already exists!");
+  188 }
+  189 
+→ 190 const newResult = await prisma.classSubjectResult.create({
+        data: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          name: "government 2026 result ",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          subjectId: "5a3f1e7e-cb27-476d-8820-2aad1ae8f322",
+          sessionId: "93a9e22f-9043-4927-b819-43e8e6c8dbb0",
+          term: "FIRST",
+          departmentId: "4238f480-68d1-4b91-8d55-b144ab3c3033",
+          revealDate: new Date("2026-09-25T00:00:00.000Z"),
+          releaseDate: null,
+          assignmentMax: 10,
+          quizMax: 10,
+          caMax: 20,
+          examMax: 60,
+          createdById: "28f8bf7a-821d-4eee-b00d-4e15350ea3a0",
+          ~~~~~~~~~~~
+      ?   id?: String,
+      ?   assignmentSourceId?: String | Null,
+      ?   quizSourceId?: String | Null,
+      ?   caSourceId?: String | Null,
+      ?   examSourceId?: String | Null,
+      ?   paperLinks?: NullableJsonNullValueInput | Json,
+      ?   status?: ResultStatus,
+      ?   publishedAt?: DateTime | Null,
+      ?   createdAt?: DateTime,
+      ?   updatedAt?: DateTime
+        }
+      })
+
+Unknown argument `createdById`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:190:21)
+    at createClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:150:20)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:727:40
+
+  724 });
+  725 if (!result) return;
+  726 
+→ 727 const teacher = await prisma.teacher.findFirst({
+        where: {
+          teacherId: "28f8bf7a-821d-4eee-b00d-4e15350ea3a0",
+          ~~~~~~~~~
+      ?   AND?: TeacherWhereInput | TeacherWhereInput[],
+      ?   OR?: TeacherWhereInput[],
+      ?   NOT?: TeacherWhereInput | TeacherWhereInput[],
+      ?   id?: StringFilter | String,
+      ?   name?: StringFilter | String,
+      ?   email?: StringNullableFilter | String | Null,
+      ?   password?: StringNullableFilter | String | Null,
+      ?   twoFactorSecret?: StringNullableFilter | String | Null,
+      ?   isTwoFactorEnabled?: BoolFilter | Boolean,
+      ?   phone?: StringNullableFilter | String | Null,
+      ?   isClaimed?: BoolFilter | Boolean,
+      ?   invitationToken?: StringNullableFilter | String | Null,
+      ?   role?: EnumUserRoleFilter | UserRole,
+      ?   teacherCode?: StringFilter | String,
+      ?   googleId?: StringNullableFilter | String | Null,
+      ?   authProvider?: StringFilter | String,
+      ?   subject?: StringNullableFilter | String | Null,
+      ?   department?: StringNullableFilter | String | Null,
+      ?   highestQualification?: StringNullableFilter | String | Null,
+      ?   yearsOfExperience?: IntNullableFilter | Int | Null,
+      ?   address?: StringNullableFilter | String | Null,
+      ?   verified?: BoolFilter | Boolean,
+      ?   createdAt?: DateTimeFilter | DateTime,
+      ?   updatedAt?: DateTimeFilter | DateTime,
+      ?   gender?: EnumGenderNullableFilter | Gender | Null,
+      ?   emailVerificationCode?: StringNullableFilter | String | Null,
+      ?   emailVerificationExpiry?: DateTimeNullableFilter | DateTime | Null,
+      ?   pendingEmail?: StringNullableFilter | String | Null,
+      ?   bannerImage?: StringNullableFilter | String | Null,
+      ?   profileImage?: StringNullableFilter | String | Null,
+      ?   activeSchoolId?: StringNullableFilter | String | Null,
+      ?   isTrialActive?: BoolFilter | Boolean,
+      ?   lastPaymentDate?: DateTimeNullableFilter | DateTime | Null,
+      ?   plan?: StringFilter | String,
+      ?   primarySchoolId?: StringNullableFilter | String | Null,
+      ?   subscriptionEnd?: DateTimeNullableFilter | DateTime | Null,
+      ?   subscriptionStatus?: StringFilter | String,
+      ?   tenantId?: StringFilter | String,
+      ?   trialEndsAt?: DateTimeNullableFilter | DateTime | Null,
+      ?   trialPlan?: StringNullableFilter | String | Null,
+      ?   trialUsed?: BoolFilter | Boolean,
+      ?   billingCycle?: StringFilter | String,
+      ?   paystackCustomerCode?: StringNullableFilter | String | Null,
+      ?   paystackSubaccountCode?: StringNullableFilter | String | Null,
+      ?   planId?: StringNullableFilter | String | Null,
+      ?   currentSchoolId?: StringNullableFilter | String | Null,
+      ?   schoolId?: StringNullableFilter | String | Null,
+      ?   settings?: JsonNullableFilter,
+      ?   subscriptionPlanId?: StringNullableFilter | String | Null,
+      ?   acceptedTerms?: BoolFilter | Boolean,
+      ?   isIndependent?: BoolFilter | Boolean,
+      ?   termsAcceptedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?   maxAiUsageOverride?: IntNullableFilter | Int | Null,
+      ?   maxClassesOverride?: IntNullableFilter | Int | Null,
+      ?   maxExamsOverride?: IntNullableFilter | Int | Null,
+      ?   maxParentsOverride?: IntNullableFilter | Int | Null,
+      ?   maxStorageGbOverride?: FloatNullableFilter | Float | Null,
+      ?   maxStudentsOverride?: IntNullableFilter | Int | Null,
+      ?   maxTeachersOverride?: IntNullableFilter | Int | Null,
+      ?   activeSchool?: SchoolNullableScalarRelationFilter | SchoolWhereInput | Null,
+      ?   currentSchool?: SchoolNullableScalarRelationFilter | SchoolWhereInput | Null,
+      ?   primarySchool?: SchoolNullableScalarRelationFilter | SchoolWhereInput | Null,
+      ?   school?: SchoolNullableScalarRelationFilter | SchoolWhereInput | Null,
+      ?   subscriptionPlan?: SubscriptionPlanNullableScalarRelationFilter | SubscriptionPlanWhereInput | Null,
+      ?   classTeachers?: ClassTeacherListRelationFilter,
+      ?   exams?: ExamListRelationFilter,
+      ?   grades?: GradeListRelationFilter,
+      ?   requestedLinkRequests?: LinkRequestListRelationFilter,
+      ?   targetLinkRequests?: LinkRequestListRelationFilter,
+      ?   subjectExamPapers?: SubjectExamPaperListRelationFilter,
+      ?   subjects?: SubjectListRelationFilter,
+      ?   teacherAttendances?: TeacherAttendanceListRelationFilter,
+      ?   teacherSubjects?: TeacherSubjectListRelationFilter,
+      ?   timetablePeriods?: TimetablePeriodListRelationFilter
+        }
+      })
+
+Unknown argument `teacherId`. Did you mean `teacherCode`? Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.requestPublishApproval (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:727:19)
+    at publishClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:349:7)

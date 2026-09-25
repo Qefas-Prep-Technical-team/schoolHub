@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Save, Search, Download, Loader2, Settings, Pencil, Check, UploadCloud, PenLine, Users, CheckCircle2, Clock, TrendingUp, MoreVertical } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import ResultRecordUploadModal, { UploadCategory } from "./components/ResultRecordUploadModal";
 import { EditConfigModal } from "./components/EditConfigModal";
 import { ScoreBreakdownModal } from "./components/ScoreBreakdownModal";
@@ -19,14 +19,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 export default function NewFinalResultDataEntryPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const id = searchParams.get("id");
   const { user } = useAuthStore();
-  const effectiveSchoolId = (user as any)?.schoolId || (user as any)?.school?.id || user?.schools?.[0]?.schoolId || user?.tenantId || "";
-  const canEditPrincipalRemark = user?.userType === "ADMIN" && (user?.adminRole === "SCHOOL_OWNER" || user?.adminRole === "PRINCIPAL");
-
   // Data Hooks
   const { data: config, isLoading: isLoadingConfig } = useClassSubjectResult(id || undefined);
+  const effectiveSchoolId = config?.schoolId || user?.schools?.[0]?.schoolId || (user as any)?.school?.id || user?.tenantId || "";
   
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
@@ -129,11 +126,11 @@ export default function NewFinalResultDataEntryPage() {
           ca: mark?.caScore ?? "",
           exam: mark?.examScore ?? "",
           scoreSources: mark?.scoreSources || {},
-          politeness: (mark?.scoreSources as any)?.behavior?.politeness || "0",
-          punctuality: (mark?.scoreSources as any)?.behavior?.punctuality || "0",
-          handwriting: (mark?.scoreSources as any)?.behavior?.handwriting || "0",
-          teacherRemark: (mark?.scoreSources as any)?.behavior?.teacherRemark || "",
-          principalRemark: (mark?.scoreSources as any)?.behavior?.principalRemark || ""
+          politeness: "0",
+          punctuality: "0",
+          handwriting: "0",
+          teacherRemark: "",
+          principalRemark: ""
         };
       });
       setStudents(merged);
@@ -141,7 +138,6 @@ export default function NewFinalResultDataEntryPage() {
   }, [rawStudents, existingMarks, config]);
 
   const handleScoreChange = (id: string, field: string, value: string) => {
-    if (field === "principalRemark" && !canEditPrincipalRemark) { toast.error("Only Principal and School Owner can edit the principal remark"); return; }
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, [field]: value, scoreSources: { ...(s.scoreSources || {}), [field]: "MANUAL" } } : s))
     );
@@ -226,22 +222,12 @@ export default function NewFinalResultDataEntryPage() {
       subjectId: config.subjectId,
       sessionId: config.sessionId,
       term: config.term,
-            scores: students.map(s => ({
+      scores: students.map(s => ({
         studentId: s.id,
         assignmentScore: parseScore(s.assignment),
         quizScore: parseScore(s.quiz),
         caScore: parseScore(s.ca),
         examScore: parseScore(s.exam),
-        scoreSources: {
-          ...(s.scoreSources || {}),
-          behavior: {
-            politeness: s.politeness,
-            punctuality: s.punctuality,
-            handwriting: s.handwriting,
-            teacherRemark: s.teacherRemark,
-            principalRemark: s.principalRemark
-          }
-        }
       }))
     };
 
@@ -258,7 +244,8 @@ export default function NewFinalResultDataEntryPage() {
   const handlePublish = () => {
     if (!config?.id) return;
     publishResult(config.id, {
-      onSuccess: (data: any) => { toast.success(data?.message || "Result published successfully!");
+      onSuccess: () => {
+        toast.success("Result published successfully!");
         setIsPublishModalOpen(false);
       },
       onError: (err: any) => {
@@ -270,7 +257,8 @@ export default function NewFinalResultDataEntryPage() {
   const handleUnpublish = () => {
     if (!config?.id) return;
     unpublishResult(config.id, {
-      onSuccess: (data: any) => { toast.success(data?.message || "Result unpublished successfully!");
+      onSuccess: () => {
+        toast.success("Result unpublished successfully!");
         setIsUnpublishModalOpen(false);
       },
       onError: (err: any) => {
@@ -289,38 +277,10 @@ export default function NewFinalResultDataEntryPage() {
   const paginatedStudents = filteredStudents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const toggleEdit = (id: string) => {
-    if (config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)) return toast.info(config?.status === "PUBLISHED" ? "Cannot edit published results" : "You can only edit final results that you created.");
+    if (config?.status === "PUBLISHED") return toast.info("Cannot edit published results");
     setEditingIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        const student = students.find(s => s.id === id);
-        if (student && config) {
-          const assignment = parseFloat(student.assignment) || 0;
-          const quiz = parseFloat(student.quiz) || 0;
-          const ca = parseFloat(student.ca) || 0;
-          const exam = parseFloat(student.exam) || 0;
-
-          if (config.assignmentMax && assignment > config.assignmentMax) {
-            toast.error(`Assignment score (${assignment}) exceeds maximum allocation (${config.assignmentMax})`);
-            return prev;
-          }
-          if (config.quizMax && quiz > config.quizMax) {
-            toast.error(`Quiz score (${quiz}) exceeds maximum allocation (${config.quizMax})`);
-            return prev;
-          }
-          if (config.caMax && ca > config.caMax) {
-            toast.error(`CA score (${ca}) exceeds maximum allocation (${config.caMax})`);
-            return prev;
-          }
-          if (config.examMax && exam > config.examMax) {
-            toast.error(`Exam score (${exam}) exceeds maximum allocation (${config.examMax})`);
-            return prev;
-          }
-        }
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -346,12 +306,12 @@ export default function NewFinalResultDataEntryPage() {
   const classAverage = studentsWithScores > 0 ? (totalClassScore / studentsWithScores).toFixed(1) : "0";
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-[#f0fdf4] dark:bg-[#0f1015] min-h-screen">
+    <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-[#f8f9fa] dark:bg-[#0f1015] min-h-screen">
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link 
-            href="/dashboard/teacher/records" 
+            href="/dashboard/admin/records" 
             className="p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -364,7 +324,7 @@ export default function NewFinalResultDataEntryPage() {
               {config ? (
                 <>
                   <span>{config.class?.name || "Class"}</span>
-                  <span>•</span>
+                  <span>â€¢</span>
                   <span>{config.session?.name || "Session"}</span>
                 </>
               ) : (
@@ -387,8 +347,8 @@ export default function NewFinalResultDataEntryPage() {
           </button>
           <button 
             onClick={handleSave}
-            disabled={isSaving || isLoading || config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={isSaving || isLoading || config?.status === "PUBLISHED"}
+            className="flex items-center gap-2 px-4 py-2 bg-[#5B5CE6] hover:bg-[#4a4be5] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isSaving ? "Saving..." : "Save Results"}
@@ -498,34 +458,34 @@ export default function NewFinalResultDataEntryPage() {
               onClick={() => setActiveTab("academic")}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
                 activeTab === "academic"
-                  ? "text-[#10b981]"
+                  ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               Academic Scores
-              {activeTab === "academic" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
+              {activeTab === "academic" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("evaluation")}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
                 activeTab === "evaluation"
-                  ? "text-[#10b981]"
+                  ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               Behavioral Evaluations & Remarks
-              {activeTab === "evaluation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
+              {activeTab === "evaluation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("details")}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
                 activeTab === "details"
-                  ? "text-[#10b981]"
+                  ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               Configuration Details
-              {activeTab === "details" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
+              {activeTab === "details" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
           </div>
 
@@ -542,13 +502,13 @@ export default function NewFinalResultDataEntryPage() {
                   placeholder="Search students..." 
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full bg-[#f0fdf4] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#10b981] transition-all"
+                  className="w-full bg-[#f8f9fa] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#5B5CE6] transition-all"
                 />
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setIsUploadModalOpen(true)}
-                  disabled={config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)}
+                  disabled={config?.status === "PUBLISHED"}
                   className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <UploadCloud className="w-4 h-4" />
@@ -561,7 +521,7 @@ export default function NewFinalResultDataEntryPage() {
                     if (studentIds.length === 0) return;
                     setIsSyncModalOpen(true);
                   }}
-                  disabled={config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)}
+                  disabled={config?.status === "PUBLISHED"}
                   className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -633,11 +593,11 @@ export default function NewFinalResultDataEntryPage() {
                               value={student.assignment}
                               onChange={(e) => handleScoreChange(student.id, "assignment", e.target.value)}
                               placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#5B5CE6] focus:border-[#5B5CE6] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
                             />
                           ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.assignment || <span className="text-slate-300">-</span>}
+                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.assignment !== "" && student.assignment != null ? student.assignment : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -650,11 +610,11 @@ export default function NewFinalResultDataEntryPage() {
                               value={student.quiz}
                               onChange={(e) => handleScoreChange(student.id, "quiz", e.target.value)}
                               placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#5B5CE6] focus:border-[#5B5CE6] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
                             />
                           ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.quiz || <span className="text-slate-300">-</span>}
+                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.quiz !== "" && student.quiz != null ? student.quiz : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -667,11 +627,11 @@ export default function NewFinalResultDataEntryPage() {
                               value={student.ca}
                               onChange={(e) => handleScoreChange(student.id, "ca", e.target.value)}
                               placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#5B5CE6] focus:border-[#5B5CE6] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
                             />
                           ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.ca || <span className="text-slate-300">-</span>}
+                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.ca !== "" && student.ca != null ? student.ca : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -684,11 +644,11 @@ export default function NewFinalResultDataEntryPage() {
                               value={student.exam}
                               onChange={(e) => handleScoreChange(student.id, "exam", e.target.value)}
                               placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#5B5CE6] focus:border-[#5B5CE6] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
                             />
                           ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.exam || <span className="text-slate-300">-</span>}
+                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                              {student.exam !== "" && student.exam != null ? student.exam : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -719,7 +679,7 @@ export default function NewFinalResultDataEntryPage() {
             {totalPages > 1 && (
               <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
                 <span className="text-xs text-slate-400 font-medium">
-                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}â€“{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
                 </span>
                 <div className="flex items-center gap-1">
                   <button
@@ -735,7 +695,7 @@ export default function NewFinalResultDataEntryPage() {
                       onClick={() => setCurrentPage(page)}
                       className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${
                         page === currentPage 
-                          ? "bg-[#10b981] text-white" 
+                          ? "bg-[#5B5CE6] text-white" 
                           : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
                       }`}
                     >
@@ -769,7 +729,7 @@ export default function NewFinalResultDataEntryPage() {
                   placeholder="Search students..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all"
                 />
               </div>
             </div>
@@ -797,21 +757,8 @@ export default function NewFinalResultDataEntryPage() {
                       <tr key={student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group">
                         <td className="px-6 py-5 text-center text-slate-400 font-normal">{String(idx + 1).padStart(2, '0')}</td>
                         <td className="px-4 py-5 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
-                            {student.profileImage ? (
-                              <img 
-                                src={student.profileImage} 
-                                alt={student.name} 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.onerror = null;
-                                  target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}&backgroundColor=e2e8f0`;
-                                }}
-                              />
-                            ) : (
-                              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}&backgroundColor=e2e8f0`} alt={student.name} className="w-full h-full object-cover" />
-                            )}
+                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}&backgroundColor=e2e8f0`} alt={student.name} className="w-full h-full object-cover" />
                           </div>
                           <span className="text-slate-800 dark:text-slate-100">{student.name}</span>
                         </td>
@@ -819,7 +766,7 @@ export default function NewFinalResultDataEntryPage() {
                           <select 
                             value={student.politeness}
                             onChange={(e) => handleScoreChange(student.id, "politeness", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -833,7 +780,7 @@ export default function NewFinalResultDataEntryPage() {
                           <select 
                             value={student.punctuality}
                             onChange={(e) => handleScoreChange(student.id, "punctuality", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -847,7 +794,7 @@ export default function NewFinalResultDataEntryPage() {
                           <select 
                             value={student.handwriting}
                             onChange={(e) => handleScoreChange(student.id, "handwriting", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -863,7 +810,7 @@ export default function NewFinalResultDataEntryPage() {
                             value={student.teacherRemark}
                             onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
                             placeholder="Add remark..."
-                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
+                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
                           />
                         </td>
                         <td className="px-4 py-3">
@@ -872,7 +819,7 @@ export default function NewFinalResultDataEntryPage() {
                             value={student.principalRemark}
                             onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
                             placeholder="Add remark..."
-                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
+                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
                           />
                         </td>
                       </tr>
@@ -953,9 +900,9 @@ export default function NewFinalResultDataEntryPage() {
                       <span className="text-[10px] uppercase text-slate-400 font-bold mb-1">CA Max</span>
                       <span className="text-lg font-black text-slate-700 dark:text-slate-300">{config.caMax || "-"}</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center p-2 bg-[#10b981]/10 rounded shadow-sm border border-[#10b981]/20">
-                      <span className="text-[10px] uppercase text-[#10b981] font-bold mb-1">Exam Max</span>
-                      <span className="text-lg font-black text-[#10b981]">{config.examMax || "-"}</span>
+                    <div className="flex flex-col items-center justify-center p-2 bg-[#5B5CE6]/10 rounded shadow-sm border border-[#5B5CE6]/20">
+                      <span className="text-[10px] uppercase text-[#5B5CE6] font-bold mb-1">Exam Max</span>
+                      <span className="text-lg font-black text-[#5B5CE6]">{config.examMax || "-"}</span>
                     </div>
                   </div>
 
@@ -995,7 +942,7 @@ export default function NewFinalResultDataEntryPage() {
                       );
                     }}
                     disabled={isSavingLinks || !id}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#4a4bd4] text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B5CE6] hover:bg-[#4a4bd4] text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
                   >
                     {isSavingLinks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     Save Links
@@ -1011,7 +958,7 @@ export default function NewFinalResultDataEntryPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {([
-                      { key: "exam" as const,         label: "Exam Papers",           category: "EXAM",       borderColor: "border-[#10b981]/40",    headerBg: "bg-[#10b981]/10",  dotColor: "bg-[#10b981]",  textColor: "text-[#10b981]",  checkColor: "accent-[#10b981]" },
+                      { key: "exam" as const,         label: "Exam Papers",           category: "EXAM",       borderColor: "border-[#5B5CE6]/40",    headerBg: "bg-[#5B5CE6]/10",  dotColor: "bg-[#5B5CE6]",  textColor: "text-[#5B5CE6]",  checkColor: "accent-[#5B5CE6]" },
                       { key: "subjectPaper" as const, label: "Subject Paper (Quiz)",  category: "QUIZ",       borderColor: "border-amber-300/60",    headerBg: "bg-amber-50 dark:bg-amber-500/10",  dotColor: "bg-amber-500",  textColor: "text-amber-600 dark:text-amber-400",  checkColor: "accent-amber-500" },
                       { key: "ca" as const,           label: "CA Papers",             category: "CA",         borderColor: "border-emerald-300/60",  headerBg: "bg-emerald-50 dark:bg-emerald-500/10",  dotColor: "bg-emerald-500",  textColor: "text-emerald-600 dark:text-emerald-400",  checkColor: "accent-emerald-500" },
                       { key: "assignment" as const,   label: "Assignment Papers",     category: "ASSIGNMENT", borderColor: "border-rose-300/60",     headerBg: "bg-rose-50 dark:bg-rose-500/10",  dotColor: "bg-rose-500",  textColor: "text-rose-600 dark:text-rose-400",  checkColor: "accent-rose-500" },
@@ -1066,7 +1013,7 @@ export default function NewFinalResultDataEntryPage() {
                                 placeholder={`Search ${label}...`}
                                 value={searchKey}
                                 onChange={(e) => setPaperSearch(prev => ({ ...prev, [key]: e.target.value }))}
-                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#10b981]/50 transition-all"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#5B5CE6]/50 transition-all"
                               />
                             </div>
                           </div>
@@ -1092,7 +1039,7 @@ export default function NewFinalResultDataEntryPage() {
                                       {p.title || "Untitled Paper"}
                                     </p>
                                     <p className="text-[10px] text-slate-400">
-                                      {p.totalMarks ? `${p.totalMarks} marks` : "—"} · <span className={p.status === "PUBLISHED" ? "text-emerald-500" : "text-amber-500"}>{p.status}</span>
+                                      {p.totalMarks ? `${p.totalMarks} marks` : "â€”"} Â· <span className={p.status === "PUBLISHED" ? "text-emerald-500" : "text-amber-500"}>{p.status}</span>
                                     </p>
                                   </div>
                                   {isChecked && <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />}
@@ -1150,7 +1097,8 @@ export default function NewFinalResultDataEntryPage() {
         studentIds={paginatedStudents.map(s => s.id)}
         onComplete={(results) => {
           toast.success("Sync complete! Please remember to click 'Save Results' to persist your changes.", {
-            autoClose: 6000
+            autoClose: 6000,
+            icon: "ðŸ’¾"
           });
           setStudents(prev => prev.map(student => {
             const syncedData = results.find((r: any) => r.studentId === student.id);
@@ -1225,7 +1173,3 @@ export default function NewFinalResultDataEntryPage() {
     </div>
   );
 }
-
-
-
-

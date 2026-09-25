@@ -22,6 +22,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useStudentExamAttempts, useExamResult } from '@/lib/api/hooks/useExams';
 import { useGrades, useClassLeaderboard } from '@/lib/api/hooks/useGrades';
+import { useMyPublishedResults } from '@/lib/api/hooks/useRecords';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -81,12 +82,14 @@ function getWAECGradeAndRemark(score: number): { grade: string, remark: string }
 export default function StudentGradesPage() {
   const router = useRouter();
   const [expandedExamId, setExpandedExamId] = useState<string | null>(null);
-  const [activeTab, setActiveTab ] = useState<'exams' | 'assessments' | 'transcript'>('exams');
+  const [selectedFinalResult, setSelectedFinalResult] = useState<any>(null);
+  const [activeTab, setActiveTab ] = useState<'exams' | 'assessments' | 'transcript' | 'final'>('exams');
   const [caTab, setCaTab] = useState<'ALL' | 'CA' | 'ASSIGNMENT' | 'TEST/QUIZ' | 'SUBJECT PAPER'>('ALL');
   const [selectedTerm, setSelectedTerm] = useState<string>('ALL');
   const [selectedSession, setSelectedSession] = useState<string>('ALL');
   const [examsPage, setExamsPage] = useState(1);
   const [gradesPage, setGradesPage] = useState(1);
+  const [finalPage, setFinalPage] = useState(1);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
@@ -102,9 +105,11 @@ export default function StudentGradesPage() {
 
   const { data: allAttemptsRes } = useStudentExamAttempts({ limit: 1000 });
   const { data: allGradesRes } = useGrades(undefined, { limit: 1000 });
+  const { data: finalResultsRes, isLoading: isLoadingFinalResults } = useMyPublishedResults();
 
   const allAttempts = allAttemptsRes?.attempts || [];
   const allGrades = allGradesRes?.grades || [];
+  const finalResults = finalResultsRes || [];
 
   const availableTerms = ['ALL', 'FIRST', 'SECOND', 'THIRD'];
 
@@ -130,6 +135,37 @@ export default function StudentGradesPage() {
     return filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [allGrades, selectedTerm, selectedSession]);
 
+  
+  const filteredFinalResults = useMemo(() => {
+    // backend returns an array of groups: { sessionId, term, subjectResults: [] }
+    // Flatten them out
+    let allSubjects: any[] = [];
+    (finalResults || []).forEach((group: any) => {
+      if (group && group.subjectResults) {
+        allSubjects.push(...group.subjectResults);
+      }
+    });
+
+    let filtered = allSubjects;
+    if (selectedSession !== 'ALL') {
+      filtered = filtered.filter((r: any) => r.sessionId === selectedSession);
+    }
+    if (selectedTerm !== 'ALL') {
+      filtered = filtered.filter((r: any) => r.term === selectedTerm);
+    }
+    return filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [finalResults, selectedTerm, selectedSession]);
+
+  const finalPagination = {
+    total: filteredFinalResults.length,
+    totalPages: Math.ceil(filteredFinalResults.length / itemsPerPage)
+  };
+
+  const paginatedFinalResults = useMemo(() => {
+    const startIndex = (finalPage - 1) * itemsPerPage;
+    return filteredFinalResults.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredFinalResults, finalPage, itemsPerPage]);
+  
   const paginatedAttempts = useMemo(() => {
     const startIndex = (examsPage - 1) * itemsPerPage;
     return filteredAllAttempts.slice(startIndex, startIndex + itemsPerPage);
@@ -397,7 +433,7 @@ export default function StudentGradesPage() {
                   <span className="text-sm font-semibold text-slate-500">Session:</span>
                   <select
                     value={selectedSession}
-                    onChange={(e) => { setSelectedSession(e.target.value); setExamsPage(1); setGradesPage(1); }}
+                    onChange={(e) => { setSelectedSession(e.target.value); setExamsPage(1); setGradesPage(1); setFinalPage(1); }}
                     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg px-4 py-2 text-sm font-medium outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 cursor-pointer"
                   >
                     <option value="ALL">All Sessions</option>
@@ -411,7 +447,7 @@ export default function StudentGradesPage() {
                   <span className="text-sm font-semibold text-slate-500">Term:</span>
                   <select
                     value={selectedTerm}
-                    onChange={(e) => { setSelectedTerm(e.target.value); setExamsPage(1); setGradesPage(1); }}
+                    onChange={(e) => { setSelectedTerm(e.target.value); setExamsPage(1); setGradesPage(1); setFinalPage(1); }}
                     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg px-4 py-2 text-sm font-medium outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 cursor-pointer"
                   >
                     {availableTerms.map(term => (
@@ -426,15 +462,15 @@ export default function StudentGradesPage() {
 
         {/* 4 Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-lg shadow-blue-500/20 flex flex-col justify-between text-white">
-            <span className="text-sm font-semibold text-blue-100">Overall GPA</span>
+          <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-6 shadow-lg shadow-pink-500/20 flex flex-col justify-between text-white">
+            <span className="text-sm font-semibold text-pink-100">Overall GPA</span>
             <div className="mt-4 flex items-baseline gap-2">
               {(isLoadingAttempts || isLoadingGrades) ? (
-                <Skeleton className="h-10 w-24 bg-blue-400/50" />
+                <Skeleton className="h-10 w-24 bg-pink-400/50" />
               ) : (
                 <>
                   <span className="text-4xl font-bold">{gpa}</span>
-                  <span className="text-sm font-medium text-blue-200">/ 4.0</span>
+                  <span className="text-sm font-medium text-pink-200">/ 4.0</span>
                 </>
               )}
             </div>
@@ -442,9 +478,9 @@ export default function StudentGradesPage() {
 
           <div 
             onClick={() => setIsLeaderboardOpen(true)}
-            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-lg shadow-purple-500/20 flex flex-col justify-between text-white cursor-pointer hover:shadow-xl hover:shadow-purple-500/30 transition-shadow"
+            className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-6 shadow-lg shadow-rose-500/20 flex flex-col justify-between text-white cursor-pointer hover:shadow-xl hover:shadow-rose-500/30 transition-shadow"
           >
-            <span className="text-sm font-semibold text-purple-100">Distinction Track</span>
+            <span className="text-sm font-semibold text-rose-100">Distinction Track</span>
             <div className="mt-4 flex items-center gap-4">
               <div className="flex-1">
                 <p className="text-4xl font-bold">{progressPercent}%</p>
@@ -452,19 +488,19 @@ export default function StudentGradesPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl p-6 shadow-lg shadow-orange-500/20 flex flex-col justify-between text-white">
-            <span className="text-sm font-semibold text-orange-100">Exams Taken</span>
+          <div className="bg-gradient-to-br from-fuchsia-400 to-fuchsia-500 rounded-2xl p-6 shadow-lg shadow-fuchsia-500/20 flex flex-col justify-between text-white">
+            <span className="text-sm font-semibold text-fuchsia-100">Exams Taken</span>
             <div className="mt-4 flex items-baseline gap-2">
               <span className="text-4xl font-bold">{filteredAllAttempts.length}</span>
-              <span className="text-sm font-medium text-orange-200">recorded</span>
+              <span className="text-sm font-medium text-fuchsia-200">recorded</span>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 shadow-lg shadow-emerald-500/20 flex flex-col justify-between text-white">
-            <span className="text-sm font-semibold text-emerald-100">Assessments</span>
+          <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-6 shadow-lg shadow-violet-500/20 flex flex-col justify-between text-white">
+            <span className="text-sm font-semibold text-violet-100">Assessments</span>
             <div className="mt-4 flex items-baseline gap-2">
               <span className="text-4xl font-bold">{gradesFilteredForUI.length}</span>
-              <span className="text-sm font-medium text-emerald-200">recorded</span>
+              <span className="text-sm font-medium text-violet-200">recorded</span>
             </div>
           </div>
         </div>
@@ -472,18 +508,18 @@ export default function StudentGradesPage() {
         {/* Tabs and Content Section */}
         <div className="flex flex-col gap-6 mt-4">
           <div className="flex gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 w-fit overflow-x-auto shadow-sm">
-            {['exams', 'assessments', 'transcript'].map(tab => (
+            {['exams', 'assessments', 'transcript', 'final'].map(tab => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
                 className={cn(
                   "px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all whitespace-nowrap", 
                   activeTab === tab 
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md" 
-                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    ? "bg-pink-600 text-white shadow-md shadow-pink-500/20" 
+                    : "text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20"
                 )}
               >
-                {tab === 'exams' ? 'Main Examinations' : tab}
+                {tab === 'exams' ? 'Main Examinations' : tab === 'final' ? 'Final Result Grades' : tab}
               </button>
             ))}
           </div>
@@ -517,7 +553,7 @@ export default function StudentGradesPage() {
                         else if (scorePercent < 50) { grade = "F"; color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
                         const isExpanded = expandedExamId === attempt.examId;
                         return (
-                          <Fragment key={attempt.id}>
+                          <React.Fragment key={attempt.id}>
                             <tr onClick={() => router.push(`/dashboard/student/grades/view/exam/${attempt.examId}`)} className={cn("hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer group", isExpanded && "bg-slate-50 dark:bg-slate-800/30")}>
                               <td className="px-6 py-5 text-sm font-semibold text-slate-400">
                                 <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">{(examsPage - 1) * itemsPerPage + index + 1}</span>
@@ -576,7 +612,7 @@ export default function StudentGradesPage() {
                                 </td>
                               </tr>
                             )}
-                          </Fragment>
+                          </React.Fragment>
                         );
                       })}
                     </tbody>
@@ -584,7 +620,7 @@ export default function StudentGradesPage() {
                 </div>
                 {examPagination && (
                   <div className="p-4 flex justify-center border-t border-slate-100 dark:border-slate-800 mt-auto">
-                    <Pagination currentPage={examsPage} totalPages={examPagination.totalPages} totalItems={examPagination.total} itemsPerPage={itemsPerPage} onPageChange={setExamsPage} />
+                    <Pagination theme="pink" currentPage={examsPage} totalPages={examPagination.totalPages} totalItems={examPagination.total} itemsPerPage={itemsPerPage} onPageChange={setExamsPage} />
                   </div>
                 )}
               </div>
@@ -638,7 +674,104 @@ export default function StudentGradesPage() {
                 </div>
                 {gradePagination && gradePagination.total > 0 && (
                   <div className="p-4 flex justify-center border-t border-slate-100 dark:border-slate-800 mt-auto bg-white dark:bg-slate-900">
-                    <Pagination currentPage={gradesPage} totalPages={gradePagination.totalPages} totalItems={gradePagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} />
+                    <Pagination theme="pink" currentPage={gradesPage} totalPages={gradePagination.totalPages} totalItems={gradePagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            
+            {activeTab === 'final' && (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center flex-wrap gap-4">
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white">Final Result Grades</h3>
+                </div>
+                
+                <div className="flex-1 overflow-x-auto p-4">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                        <th className="px-6 py-4 pb-4 w-16">#</th>
+                        <th className="px-6 py-4 pb-4">Subject</th>
+                        <th className="px-6 py-4 pb-4">Class</th>
+                        <th className="px-6 py-4 pb-4">Term</th>
+                        <th className="px-6 py-4 pb-4 text-center">Score</th>
+                        <th className="px-6 py-4 pb-4">Behavior</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                      {isLoadingFinalResults ? (
+                        <tr><td colSpan={6} className="p-6"><Skeleton className="h-10 w-full rounded-xl" /></td></tr>
+                      ) : paginatedFinalResults.length === 0 ? (
+                        <tr><td colSpan={6} className="p-8 text-center text-slate-500 font-medium">No published final results found.</td></tr>
+                      ) : paginatedFinalResults.map((result: any, index: number) => {
+                        const scoreSources = result.scoreSources || {};
+                        const behavior = scoreSources.behavior || {};
+                        
+                        const isRevealed = result.scoresRevealed;
+                        
+                        let totalScore: number | string = '-';
+                        let percent: number | string = '-';
+                        let grade = "-";
+                        let remark = "-";
+                        let color = "text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400"; 
+                        
+                        if (isRevealed) {
+                          totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
+                          percent = result.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
+                          
+                          const waec = getWAECGradeAndRemark(Number(percent));
+                          grade = waec.grade;
+                          remark = waec.remark;
+                          
+                          if (Number(percent) >= 75) { color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
+                          else if (Number(percent) >= 65) { color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
+                          else if (Number(percent) >= 50) { color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; }
+                          else { color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                        }
+
+                        return (
+                          <tr key={result.id} onClick={() => setSelectedFinalResult({ ...result, grade, remark, totalScore, percent, behavior, isRevealed })} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer">
+                            <td className="px-6 py-5 text-sm font-semibold text-slate-400">
+                              <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">{index + 1}</span>
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="font-bold text-slate-800 dark:text-white text-base line-clamp-1">{result.resultName || result.subject?.name || 'Unknown'}</div>
+                              <div className="text-xs font-medium text-slate-400 mt-0.5">{result.subject?.name} • {result.subject?.code}</div>
+                            </td>
+                            <td className="px-6 py-5 text-sm font-medium text-slate-600 dark:text-slate-300">
+                              {result.class?.name || 'Unknown'}
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="font-semibold text-slate-700 dark:text-slate-200">{result.term} TERM</div>
+                              <div className="text-xs text-slate-400">{result.session?.name}</div>
+                            </td>
+                            <td className="px-6 py-5 text-center">
+                              <div className="inline-flex flex-col items-center">
+                                <span className={cn("w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm mb-1", color)}>
+                                  {grade}
+                                </span>
+                                {isRevealed ? (
+                                  <span className="font-bold text-slate-800 dark:text-white">{totalScore}%</span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full mt-1">Pending</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-5 text-xs text-slate-500 space-y-1">
+                              <div>Politeness: <span className="font-semibold text-slate-700 dark:text-slate-300">{isRevealed ? (behavior.politeness || '-') : '-'}</span>/5</div>
+                              <div>Punctuality: <span className="font-semibold text-slate-700 dark:text-slate-300">{isRevealed ? (behavior.punctuality || '-') : '-'}</span>/5</div>
+                              <div>Handwriting: <span className="font-semibold text-slate-700 dark:text-slate-300">{isRevealed ? (behavior.handwriting || '-') : '-'}</span>/5</div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {finalPagination.totalPages > 1 && (
+                  <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-center">
+                    <Pagination theme="pink" currentPage={finalPage} totalPages={finalPagination.totalPages} totalItems={finalPagination.total} itemsPerPage={itemsPerPage} onPageChange={setFinalPage} />
                   </div>
                 )}
               </div>
@@ -732,6 +865,90 @@ export default function StudentGradesPage() {
           </div>
         </div>
       )}
+
+      {/* Final Result Distribution Modal */}
+      {selectedFinalResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedFinalResult(null)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{selectedFinalResult.resultName || selectedFinalResult.subject?.name}</h3>
+                <p className="text-sm font-medium text-slate-500 mt-1">{selectedFinalResult.subject?.name} • {selectedFinalResult.term} TERM • {selectedFinalResult.session?.name}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full flex flex-col items-center justify-center text-pink-600 bg-pink-50 dark:bg-pink-900/30 font-black text-lg border border-pink-100 dark:border-pink-900/50">
+                {selectedFinalResult.isRevealed ? selectedFinalResult.grade : '-'}
+              </div>
+            </div>
+            
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Score Distribution</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Assignment</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedFinalResult.isRevealed ? (selectedFinalResult.assignmentScore || 0) : '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Quiz</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedFinalResult.isRevealed ? (selectedFinalResult.quizScore || 0) : '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Continuous Assessment</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedFinalResult.isRevealed ? (selectedFinalResult.caScore || 0) : '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Examination</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedFinalResult.isRevealed ? (selectedFinalResult.examScore || 0) : '-'}</span>
+                  </div>
+                  <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <span className="text-slate-800 dark:text-slate-200 font-bold">Total Score</span>
+                    <span className="font-black text-pink-600 text-lg">{selectedFinalResult.isRevealed ? selectedFinalResult.totalScore + '%' : 'Pending'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-pink-50/50 dark:bg-pink-900/10 rounded-xl p-4 border border-pink-100/50 dark:border-pink-900/20">
+                <h4 className="text-xs font-bold text-pink-500 uppercase tracking-widest mb-3">Behavior & Remarks</h4>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="bg-white dark:bg-slate-900 rounded-lg p-2 text-center shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Politeness</div>
+                    <div className="font-bold text-slate-700 dark:text-slate-300">{selectedFinalResult.isRevealed ? (selectedFinalResult.behavior?.politeness || '-') : '-'}</div>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 rounded-lg p-2 text-center shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Punctuality</div>
+                    <div className="font-bold text-slate-700 dark:text-slate-300">{selectedFinalResult.isRevealed ? (selectedFinalResult.behavior?.punctuality || '-') : '-'}</div>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 rounded-lg p-2 text-center shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Handwriting</div>
+                    <div className="font-bold text-slate-700 dark:text-slate-300">{selectedFinalResult.isRevealed ? (selectedFinalResult.behavior?.handwriting || '-') : '-'}</div>
+                  </div>
+                </div>
+                {selectedFinalResult.isRevealed && selectedFinalResult.behavior?.teacherRemark && (
+                  <div className="mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Teacher's Remark</span>
+                    <p className="text-sm italic text-slate-700 dark:text-slate-300">"{selectedFinalResult.behavior.teacherRemark}"</p>
+                  </div>
+                )}
+                {selectedFinalResult.isRevealed && selectedFinalResult.behavior?.principalRemark && (
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Principal's Remark</span>
+                    <p className="text-sm italic text-slate-700 dark:text-slate-300">"{selectedFinalResult.behavior.principalRemark}"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setSelectedFinalResult(null)}
+              className="mt-6 w-full py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              Close Details
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

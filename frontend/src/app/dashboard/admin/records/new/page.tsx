@@ -21,10 +21,9 @@ export default function NewFinalResultDataEntryPage() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const { user } = useAuthStore();
-  const effectiveSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
-
   // Data Hooks
   const { data: config, isLoading: isLoadingConfig } = useClassSubjectResult(id || undefined);
+  const effectiveSchoolId = config?.schoolId || user?.schools?.[0]?.schoolId || (user as any)?.school?.id || user?.tenantId || "";
   
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
@@ -117,6 +116,22 @@ export default function NewFinalResultDataEntryPage() {
 
       const merged = filteredRaw.map((student: any) => {
         const mark = Array.isArray(existingMarks) ? existingMarks.find(m => m.studentId === student.id) : undefined;
+        const scoreSources = mark?.scoreSources || {};
+        
+        let politeness = "0";
+        let punctuality = "0";
+        let handwriting = "0";
+        let teacherRemark = "";
+        let principalRemark = "";
+
+        if (scoreSources.behavior) {
+          politeness = scoreSources.behavior.politeness || "0";
+          punctuality = scoreSources.behavior.punctuality || "0";
+          handwriting = scoreSources.behavior.handwriting || "0";
+          teacherRemark = scoreSources.behavior.teacherRemark || "";
+          principalRemark = scoreSources.behavior.principalRemark || "";
+        }
+
         return {
           id: student.id,
           name: student.name,
@@ -127,11 +142,11 @@ export default function NewFinalResultDataEntryPage() {
           ca: mark?.caScore ?? "",
           exam: mark?.examScore ?? "",
           scoreSources: mark?.scoreSources || {},
-          politeness: "0",
-          punctuality: "0",
-          handwriting: "0",
-          teacherRemark: "",
-          principalRemark: ""
+          politeness,
+          punctuality,
+          handwriting,
+          teacherRemark,
+          principalRemark
         };
       });
       setStudents(merged);
@@ -229,6 +244,16 @@ export default function NewFinalResultDataEntryPage() {
         quizScore: parseScore(s.quiz),
         caScore: parseScore(s.ca),
         examScore: parseScore(s.exam),
+        scoreSources: {
+          ...s.scoreSources,
+          behavior: {
+            politeness: s.politeness,
+            punctuality: s.punctuality,
+            handwriting: s.handwriting,
+            teacherRemark: s.teacherRemark,
+            principalRemark: s.principalRemark
+          }
+        }
       }))
     };
 
@@ -281,7 +306,23 @@ export default function NewFinalResultDataEntryPage() {
     if (config?.status === "PUBLISHED") return toast.info("Cannot edit published results");
     setEditingIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) {
+        // Validate total score
+        const student = students.find(s => s.id === id);
+        if (student) {
+          const total = (parseFloat(student.assignment) || 0) + 
+                        (parseFloat(student.quiz) || 0) + 
+                        (parseFloat(student.ca) || 0) + 
+                        (parseFloat(student.exam) || 0);
+          if (total > 100) {
+            toast.error(`Total score cannot exceed 100 marks! Current total is ${total}.`);
+            return prev; // keep editing
+          }
+        }
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -598,7 +639,7 @@ export default function NewFinalResultDataEntryPage() {
                             />
                           ) : (
                             <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.assignment || <span className="text-slate-300">-</span>}
+                              {student.assignment !== "" && student.assignment != null ? student.assignment : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -615,7 +656,7 @@ export default function NewFinalResultDataEntryPage() {
                             />
                           ) : (
                             <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.quiz || <span className="text-slate-300">-</span>}
+                              {student.quiz !== "" && student.quiz != null ? student.quiz : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -632,7 +673,7 @@ export default function NewFinalResultDataEntryPage() {
                             />
                           ) : (
                             <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.ca || <span className="text-slate-300">-</span>}
+                              {student.ca !== "" && student.ca != null ? student.ca : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -649,7 +690,7 @@ export default function NewFinalResultDataEntryPage() {
                             />
                           ) : (
                             <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.exam || <span className="text-slate-300">-</span>}
+                              {student.exam !== "" && student.exam != null ? student.exam : <span className="text-slate-300">-</span>}
                             </button>
                           )}
                         </td>
@@ -1098,8 +1139,7 @@ export default function NewFinalResultDataEntryPage() {
         studentIds={paginatedStudents.map(s => s.id)}
         onComplete={(results) => {
           toast.success("Sync complete! Please remember to click 'Save Results' to persist your changes.", {
-            autoClose: 6000,
-            icon: "💾"
+            autoClose: 6000
           });
           setStudents(prev => prev.map(student => {
             const syncedData = results.find((r: any) => r.studentId === student.id);
@@ -1174,3 +1214,4 @@ export default function NewFinalResultDataEntryPage() {
     </div>
   );
 }
+
