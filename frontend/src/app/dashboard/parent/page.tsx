@@ -9,7 +9,7 @@ import Link from 'next/link';
 export default function Home() {
   return (
     <div className="p-4 md:p-0">
-      <div className="max-w-[1600px] mx-auto flex flex-col gap-10">
+      <div className="w-[95%] mx-auto flex flex-col gap-10">
         {/* Top Section: Student Profile Hero */}
         <StudentHero />
         

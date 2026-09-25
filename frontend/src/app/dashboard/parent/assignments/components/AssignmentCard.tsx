@@ -94,23 +94,23 @@ export default function AssignmentCard({
 
   return (
     <div
-      className={`group bg-white dark:bg-slate-800 rounded-2xl border-l-4 ${config.borderColor} border-y border-r border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-all flex ${
+      className={`group bg-white dark:bg-slate-900 rounded-[20px] border-l-4 ${config.borderColor} border-y border-r border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow flex ${
         viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'
-      } ${status === 'graded' ? 'opacity-80 hover:opacity-100' : ''}`}
+      } ${status === 'graded' ? 'opacity-90 hover:opacity-100' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={`flex items-center gap-4 ${viewMode === 'grid' ? 'w-full' : ''}`}>
         {/* Index */}
         {index !== undefined && (
-          <div className="flex-shrink-0 w-8 text-center text-slate-400 dark:text-slate-500 font-bold text-lg">
+          <div className="flex-shrink-0 w-8 text-center text-slate-400 dark:text-slate-500 font-semibold text-lg">
             {index}.
           </div>
         )}
         {/* Icon */}
-        <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-3 shrink-0">
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 shrink-0">
           <div className="size-10 flex items-center justify-center">
-            {IconComponent && <IconComponent className="text-slate-600 dark:text-slate-300 size-8" />}
+            {IconComponent && <IconComponent className="text-slate-500 size-6" />}
           </div>
         </div>
       </div>
@@ -119,11 +119,11 @@ export default function AssignmentCard({
       <div className="flex-1 min-w-0">
         {/* Subject & Teacher */}
         <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             {subject}
           </span>
           <span className="size-1 bg-slate-300 rounded-full"></span>
-          <span className="text-xs text-slate-400">{teacher}</span>
+          <span className="text-xs font-medium text-slate-400">{teacher}</span>
         </div>
 
         {/* Title */}
@@ -133,10 +133,10 @@ export default function AssignmentCard({
 
         {/* Due Date */}
         <div className="flex items-center gap-4 mt-2">
-          <div className={`flex items-center gap-1.5 text-sm font-medium px-2 py-0.5 rounded-md ${
-            config.dueBg ? config.dueBg : ''
+          <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md ${
+            config.dueBg ? config.dueBg : 'bg-slate-50 dark:bg-slate-800'
           } ${config.dueColor}`}>
-            <DueIcon className="size-4" />
+            <DueIcon className="size-3.5" />
             <span>{dueDate}</span>
           </div>
         </div>
@@ -147,13 +147,13 @@ export default function AssignmentCard({
         {/* Score (for graded assignments) */}
         {score && (
           <div className="text-right mr-2 hidden md:block">
-            <p className="text-xs text-slate-400 font-medium uppercase">Score</p>
+            <p className="text-[11px] text-slate-400 font-medium">Score</p>
             <p className="text-lg font-bold text-green-600 dark:text-green-400">{score}</p>
           </div>
         )}
 
         {/* Status Badge */}
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${config.badge.bg} ${config.badge.border}`}>
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border ${config.badge.bg} ${config.badge.border}`}>
           {config.badge.text}
         </span>
 
@@ -161,7 +161,11 @@ export default function AssignmentCard({
         href={`/dashboard/parent/assignments/details/${id}`}
         >
         
-        <button className={`text-sm font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors whitespace-nowrap ${config.button}`}>
+        <button className={`text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer transition-colors whitespace-nowrap ${
+          status === 'graded' || status === 'late'
+          ? config.button 
+          : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-orange-500 text-slate-700 dark:text-slate-300 hover:text-orange-600'
+        }`}>
           {status === 'graded' ? 'View Feedback' : 'View Details'}
         </button>
         </Link>
@@ -169,7 +173,7 @@ export default function AssignmentCard({
 
       {/* Mobile Score View (for graded assignments) */}
       {score && (
-        <div className="flex md:hidden justify-between w-full pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex md:hidden justify-between w-full pt-4 border-t border-slate-100 dark:border-slate-800">
           <span className="text-sm font-medium text-slate-500">Score</span>
           <span className="text-sm font-bold text-green-600 dark:text-green-400">{score}</span>
         </div>

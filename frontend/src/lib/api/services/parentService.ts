@@ -83,6 +83,11 @@ export const parentService = {
     return response.data.data;
   },
 
+  getChildResults: async (childId: string) => {
+    const response = await apiClient.get<{ success: boolean; data: any[] }>(`/parents/children/${childId}/results`);
+    return response.data.data;
+  },
+
   updateProfile: async (data: {
     name?: string;
     email?: string;

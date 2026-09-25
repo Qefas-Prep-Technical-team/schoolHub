@@ -154,7 +154,7 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
       grades: {
         where: { status: GradeStatus.PUBLISHED },
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 100,
         include: {
           exam: true,
           subjectPaper: {

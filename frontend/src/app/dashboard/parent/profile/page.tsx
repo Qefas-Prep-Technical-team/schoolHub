@@ -113,7 +113,7 @@ export default function ParentProfilePage() {
     : placeholderUrl;
 
   return (
-    <div className="space-y-12 pb-12 p-4 md:p-0 animate-in fade-in duration-700">
+    <div className="w-[95%] mx-auto py-8 animate-in fade-in duration-700">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -123,131 +123,117 @@ export default function ParentProfilePage() {
         onChange={handleImageChange}
       />
 
-      {/* Console Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-2">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">
             <span>Parent Portal</span>
-            <ChevronRight size={10} className="text-orange-500" />
-            <span className="text-orange-600">Profile</span>
+            <ChevronRight size={14} className="text-orange-500" />
+            <span className="text-orange-600 font-bold">Profile</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-600 rounded-2xl shadow-2xl shadow-orange-600/30">
-              <User size={24} className="text-white fill-current" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
-              My Profile
-            </h1>
-          </div>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 font-bold tracking-tight max-w-xl leading-relaxed">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            My Profile
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Overview of your personal details, security settings, and linked children.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button
-            className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-600/20 transition-all font-black text-xs uppercase tracking-widest active:scale-95 group cursor-pointer"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            <Settings className="mr-3 group-hover:rotate-90 transition-transform duration-500" size={18} />
-            Edit Profile
-          </Button>
-        </div>
+        <Button
+          className="h-10 px-6 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-sm transition-colors cursor-pointer"
+          onClick={() => setIsEditModalOpen(true)}
+        >
+          <Settings className="mr-2" size={16} />
+          Edit Profile
+        </Button>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card (Left) */}
-        <div className="lg:col-span-1 space-y-8">
-          <Card className="rounded-[3.5rem] border-none shadow-2xl overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl relative group">
-            <div className="absolute inset-0 bg-gradient-to-b from-orange-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-
-            <CardContent className="p-10 flex flex-col items-center text-center relative z-10">
-              <div className="relative mb-10 group/avatar">
+        <div className="lg:col-span-1 space-y-6">
+          <Card className="rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+            <CardContent className="p-8 flex flex-col items-center text-center">
+              <div className="relative mb-6 group/avatar">
                 <div
                   onClick={handleImageClick}
                   className={cn(
-                    "size-52 p-2 bg-gradient-to-tr from-orange-600 to-orange-400 rounded-[3rem] shadow-2xl transition-all duration-700 group-hover/avatar:rotate-3 relative overflow-hidden",
+                    "size-32 rounded-full shadow-sm relative overflow-hidden border border-slate-200 dark:border-slate-700",
                     (isUploading || isUpdating) ? "cursor-not-allowed" : "cursor-pointer"
                   )}
                 >
-                  <div className="size-full rounded-[2.5rem] overflow-hidden border-8 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-800 relative">
-                    <Image
-                      src={displayImage}
-                      alt={user.name}
-                      fill
-                      className={cn("object-cover transition-opacity duration-500", (isUploading || isUpdating) ? "opacity-30" : "opacity-100")}
-                      onError={() => setImgError(true)}
-                      unoptimized={displayImage.includes('api.dicebear.com')}
-                    />
-                    {(isUploading || isUpdating) && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[2px]">
-                        <Loader2 className="w-12 h-12 text-white animate-spin mb-2" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Processing</span>
-                      </div>
-                    )}
-                  </div>
-                  {/* Hover Overlay */}
+                  <Image
+                    src={displayImage}
+                    alt={user.name}
+                    fill
+                    className={cn("object-cover transition-opacity duration-300", (isUploading || isUpdating) ? "opacity-50" : "opacity-100")}
+                    onError={() => setImgError(true)}
+                    unoptimized={displayImage.includes('api.dicebear.com')}
+                  />
+                  {(isUploading || isUpdating) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 backdrop-blur-[1px]">
+                      <Loader2 className="w-6 h-6 text-slate-700 animate-spin" />
+                    </div>
+                  )}
                   {!(isUploading || isUpdating) && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm rounded-[3rem]">
-                      <Camera className="text-white w-12 h-12" />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera className="text-white w-8 h-8" />
                     </div>
                   )}
                 </div>
                 <button
                   onClick={handleImageClick}
                   disabled={isUploading || isUpdating}
-                  className="absolute -bottom-2 -right-2 size-14 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border-4 border-slate-50 dark:border-slate-900 flex items-center justify-center text-orange-600 hover:scale-110 active:scale-90 transition-all z-20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute bottom-0 right-0 size-10 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 hover:text-orange-500 transition-colors z-20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Camera size={20} />
+                  <Camera size={16} />
                 </button>
               </div>
 
-              <div className="space-y-4 mb-10 w-full">
-                <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">
+              <div className="space-y-2 mb-8 w-full">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   {user.name || 'N/A'}
                 </h2>
-                <div className="flex flex-col items-center gap-3">
-                  <span className="text-[10px] font-black text-orange-600 uppercase tracking-[0.3em] bg-orange-600/10 px-5 py-2 rounded-full border border-orange-500/10">
+                <div className="flex flex-col items-center gap-2">
+                  <Badge className="bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-500/10 dark:border-orange-500/20 hover:bg-orange-100 rounded-lg px-3 py-1 font-semibold">
                     Primary Guardian
-                  </span>
-                  <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                    <ShieldCheck size={12} className="text-orange-500" />
+                  </Badge>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                    <ShieldCheck size={14} className="text-slate-400" />
                     <span>ID: {user.parentCode || 'PAR-HUB-XXXX'}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="bg-white dark:bg-white/5 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Family Size</h4>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{children.length} {children.length === 1 ? 'Child' : 'Children'}</p>
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Family Size</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{children.length} {children.length === 1 ? 'Child' : 'Children'}</p>
                 </div>
-                <div className="bg-white dark:bg-white/5 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Status</h4>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Active</p>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Status</p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">Active</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Security Card */}
-          <Card className="rounded-[3rem] border-none shadow-2xl bg-slate-900 text-white p-10 relative group overflow-hidden">
-            <div className="absolute -right-8 -top-8 w-40 h-40 bg-orange-600/30 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
-            <div className="relative z-10 space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-white/10 rounded-[1.5rem] backdrop-blur-md border border-white/10">
-                  <Lock className="text-orange-500" size={28} />
+          <Card className="rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                  <Lock className="text-slate-600 dark:text-slate-300" size={20} />
                 </div>
                 <div>
-                  <h4 className="text-xl font-black uppercase tracking-tight">Security Settings</h4>
-                  <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mt-0.5">Account Protected</p>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Security Settings</h4>
+                  <p className="text-xs text-green-600 font-semibold mt-0.5">Account Protected</p>
                 </div>
               </div>
-              <p className="text-xs text-white/60 font-bold leading-relaxed uppercase tracking-widest italic border-l-2 border-orange-600 pl-4">
+              <p className="text-sm text-slate-500 leading-relaxed">
                 Your account is secure. Keep your password confidential and review your privacy settings.
               </p>
-              <Button onClick={() => window.location.href = '/dashboard/parent/settings'} className="w-full h-16 rounded-[1.5rem] bg-orange-600 text-white font-black uppercase tracking-widest text-[11px] hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/20 active:scale-95 group cursor-pointer">
-                <Shield className="mr-3 group-hover:rotate-12 transition-transform" size={18} />
+              <Button onClick={() => window.location.href = '/dashboard/parent/settings'} className="w-full h-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors shadow-sm cursor-pointer">
+                <Shield className="mr-2" size={16} />
                 Manage Security
               </Button>
             </div>
@@ -255,52 +241,52 @@ export default function ParentProfilePage() {
         </div>
 
         {/* Account Details (Right) */}
-        <div className="lg:col-span-2 space-y-8">
-          <Card className="rounded-[4rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl relative overflow-hidden h-full">
-            <CardHeader className="p-12 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-              <div className="flex items-center gap-5">
-                <div className="p-3 bg-slate-900 dark:bg-orange-600 rounded-2xl shadow-xl">
-                  <ShieldCheck size={24} className="text-white" />
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden h-full">
+            <CardHeader className="px-8 py-6 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-orange-50 dark:bg-orange-500/10 rounded-lg border border-orange-100 dark:border-orange-500/20">
+                  <User size={20} className="text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Personal Details</h3>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Your Contact Information</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Personal Details</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Your Contact Information</p>
                 </div>
               </div>
             </CardHeader>
 
-            <CardContent className="p-12 space-y-16">
-              {/* Contact mapping */}
-              <div className="space-y-10">
-                <div className="flex items-center gap-4">
-                  <Mail className="text-orange-500" size={18} />
-                  <h4 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">
+            <CardContent className="p-8 space-y-10">
+              {/* Contact Information */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <Mail className="text-slate-400" size={16} />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                     Contact Information
                   </h4>
-                  <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/10" />
+                  <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <InfoRow icon={<Mail size={20} />} label="Email Address" value={user.email} />
-                  <InfoRow icon={<Smartphone size={20} />} label="Phone Number" value={user.phone} />
-                  <InfoRow icon={<Globe size={20} />} label="Language" value="English" />
-                  <InfoRow icon={<MapPin size={20} />} label="Location" value="Nigeria" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InfoRow icon={<Mail size={18} />} label="Email Address" value={user.email} />
+                  <InfoRow icon={<Smartphone size={18} />} label="Phone Number" value={user.phone} />
+                  <InfoRow icon={<Globe size={18} />} label="Language" value="English" />
+                  <InfoRow icon={<MapPin size={18} />} label="Location" value="Nigeria" />
                 </div>
               </div>
 
               {/* Subscription Details - Only show if subscription is enforced */}
               {isSubscriptionEnforced && (
-                <div className="space-y-10">
-                  <div className="flex items-center gap-4">
-                    <Wallet className="text-orange-500" size={18} />
-                    <h4 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="text-slate-400" size={16} />
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                       Subscription Details
                     </h4>
-                    <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/10" />
+                    <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <InfoRow icon={<CreditCard size={20} />} label="Current Plan" value={user.plan?.toUpperCase() || 'FREE TRIAL'} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoRow icon={<CreditCard size={18} />} label="Current Plan" value={user.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1) : 'Free Trial'} />
                     <InfoRow
-                      icon={<History size={20} />}
+                      icon={<History size={18} />}
                       label="Renewal Date"
                       value={user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "N/A"}
                     />
@@ -309,41 +295,29 @@ export default function ParentProfilePage() {
               )}
 
               {/* Family Summary Highlight */}
-              <div className="pt-4">
-                <div className="bg-slate-900 dark:bg-white/[0.03] rounded-[3.5rem] p-12 text-white dark:text-slate-100 relative overflow-hidden group border border-white/5">
-                  <div className="absolute right-0 bottom-0 p-12 opacity-5 -rotate-12 group-hover:scale-110 transition-transform duration-1000">
-                    <Users size={200} />
-                  </div>
-                  <div className="relative z-10 space-y-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                      <div className="space-y-3">
-                        <Badge className="bg-orange-600 text-white font-black uppercase tracking-widest text-[9px] px-3 py-1 border-none">
-                          Family Members
-                        </Badge>
-                        <h4 className="text-3xl font-black uppercase tracking-tight">Linked Children</h4>
-                        <p className="text-white/40 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Children currently linked to your account</p>
-                      </div>
-                      <div className="p-6 bg-orange-600 rounded-[2rem] shadow-2xl shadow-orange-600/30">
-                        <Users size={32} className="text-white" />
-                      </div>
-                    </div>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <Users className="text-slate-400" size={16} />
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Linked Children
+                  </h4>
+                  <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
+                </div>
 
-                    <div className="flex flex-wrap gap-8">
-                      {children.length > 0 ? children.map((child, i) => (
-                        <div key={i} className="flex items-center gap-3 bg-white/10 dark:bg-white/5 p-3 pr-6 rounded-2xl backdrop-blur-md border border-white/5">
-                          <div className="size-10 rounded-xl overflow-hidden relative border-2 border-white/10">
-                            <Image src={child.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(child.name)}&background=ea580c&color=fff`} alt={child.name} fill className="object-cover" />
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-black uppercase tracking-tight">{child.name || 'N/A'}</p>
-                            <p className="text-[9px] text-orange-500 font-black uppercase tracking-widest">{child.studentCode || 'N/A'}</p>
-                          </div>
-                        </div>
-                      )) : (
-                        <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-xs italic">No children linked to this account.</p>
-                      )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {children.length > 0 ? children.map((child, i) => (
+                    <div key={i} className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[16px] border border-slate-100 dark:border-slate-800 transition-colors hover:border-orange-200 dark:hover:border-orange-500/30">
+                      <div className="size-12 rounded-full overflow-hidden relative border border-slate-200 dark:border-slate-700 shrink-0">
+                        <Image src={child.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(child.name)}&background=ea580c&color=fff`} alt={child.name} fill className="object-cover" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{child.name || 'N/A'}</p>
+                        <p className="text-xs font-semibold text-orange-500 mt-0.5 truncate">{child.studentCode || 'N/A'}</p>
+                      </div>
                     </div>
-                  </div>
+                  )) : (
+                    <p className="text-slate-500 font-medium text-sm">No children linked to this account.</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -369,15 +343,15 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode, label: string,
   const displayValue = (!value || value === "null" || value === "") ? "N/A" : value;
 
   return (
-    <div className="flex items-center gap-6 group">
-      <div className="w-14 h-14 bg-slate-50 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 group-hover:scale-110 transition-all border border-slate-100 dark:border-white/10 shadow-sm">
+    <div className="flex items-center gap-4 group">
+      <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:bg-orange-50 dark:group-hover:bg-orange-500/10 transition-colors border border-slate-100 dark:border-slate-800 shrink-0">
         {icon}
       </div>
-      <div className="space-y-2">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</p>
+      <div className="space-y-0.5">
+        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p>
         <p className={cn(
-          "text-[16px] font-black uppercase tracking-tight leading-none transition-colors",
-          displayValue === "N/A" ? "text-slate-300 dark:text-slate-700" : "text-slate-900 dark:text-white group-hover:text-orange-600"
+          "text-sm font-bold transition-colors",
+          displayValue === "N/A" ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-white"
         )}>
           {displayValue}
         </p>

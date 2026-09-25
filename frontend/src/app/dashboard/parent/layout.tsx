@@ -13,7 +13,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         // <ProtectedParentRoute>
         <SidebarProvider
             style={{
-                "--sidebar-width": "280px",
+                "--sidebar-width": "224px",
                 "--sidebar-width-icon": "64px",
             } as React.CSSProperties}
         >

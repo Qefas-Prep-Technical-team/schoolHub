@@ -8,8 +8,8 @@ export default function ChildrenPage() {
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 transition-colors duration-200">      
-      <main className="flex-1 w-full px-4 md:px-10 py-8">
-        <div className="max-w-[1280px] mx-auto flex flex-col gap-8">
+      <main className="flex-1 w-full px-4 md:px-0 py-8">
+        <div className="w-[95%] mx-auto flex flex-col gap-8">
           <PageHeading />
           <ChildrenGrid />
         </div>

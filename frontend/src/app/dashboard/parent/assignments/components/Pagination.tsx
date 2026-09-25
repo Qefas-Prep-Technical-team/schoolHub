@@ -30,10 +30,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`size-9 rounded-lg font-medium text-sm transition-colors ${
+            className={`size-9 rounded-lg text-sm transition-colors ${
               currentPage === page
-                ? 'bg-primary text-white font-bold'
-                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                ? 'bg-slate-900 dark:bg-orange-500 text-white font-bold shadow-sm'
+                : 'font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
             }`}
           >
             {page}

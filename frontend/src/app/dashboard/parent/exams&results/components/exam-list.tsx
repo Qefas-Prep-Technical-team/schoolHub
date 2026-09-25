@@ -23,6 +23,7 @@ interface Exam {
   icon: string
   iconBgColor: string
   iconColor: string
+  assessmentType: string
 }
 
 export default function ExamList() {
@@ -30,6 +31,7 @@ export default function ExamList() {
   const [selectedSubject, setSelectedSubject] = useState('all')
   const [selectedTerm, setSelectedTerm] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [activeTab, setActiveTab] = useState<'ALL' | 'EXAM' | 'CA' | 'ASSIGNMENT' | 'TEST/QUIZ'>('ALL')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -41,7 +43,7 @@ export default function ExamList() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, selectedSubject, selectedTerm, selectedStatus])
+  }, [search, selectedSubject, selectedTerm, selectedStatus, activeTab])
 
   if (isLoading) {
     return (
@@ -70,7 +72,8 @@ export default function ExamList() {
     accentColor: 'bg-green-500',
     icon: 'grade',
     iconBgColor: 'bg-green-50 dark:bg-green-900/20',
-    iconColor: 'text-green-600 dark:text-green-400'
+    iconColor: 'text-green-600 dark:text-green-400',
+    assessmentType: grade.assessmentType || grade.category || 'EXAM'
   }))
 
   // Map Upcoming Exams to pending
@@ -88,7 +91,8 @@ export default function ExamList() {
     accentColor: 'bg-orange-400',
     icon: 'event',
     iconBgColor: 'bg-orange-50 dark:bg-orange-900/20',
-    iconColor: 'text-orange-600 dark:text-orange-400'
+    iconColor: 'text-orange-600 dark:text-orange-400',
+    assessmentType: 'EXAM'
   }))
 
   const allExams = [...pendingExams, ...completedExams]
@@ -99,7 +103,15 @@ export default function ExamList() {
     const matchesSearch = titleMatch || subjectMatch;
     const matchesSubject = selectedSubject === 'all' || exam.subject.toLowerCase() === selectedSubject.toLowerCase()
     const matchesStatus = selectedStatus === 'all' || exam.status === selectedStatus
-    return matchesSearch && matchesSubject && matchesStatus
+    
+    let matchesTab = true;
+    if (activeTab !== 'ALL') {
+      const type = exam.assessmentType.toUpperCase();
+      if (activeTab === 'TEST/QUIZ') matchesTab = type === 'TEST' || type === 'QUIZ' || type === 'TEST/QUIZ';
+      else matchesTab = type === activeTab;
+    }
+
+    return matchesSearch && matchesSubject && matchesStatus && matchesTab
   })
 
 
@@ -159,6 +171,23 @@ export default function ExamList() {
         </div>
       </div>
 
+      {/* Type Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+        {['ALL', 'EXAM', 'CA', 'ASSIGNMENT', 'TEST/QUIZ'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+              activeTab === tab
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20'
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-col lg:flex-row gap-4 justify-between items-center bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 rounded-[2rem] border border-slate-200 dark:border-white/10 shadow-sm">
         {/* Search */}
@@ -199,135 +228,106 @@ export default function ExamList() {
         </div>
       </div>
 
-      {/* Exam Cards List */}
-      <div className="flex flex-col gap-4">
-        {/* Header Row for Desktop */}
-        <div className="hidden lg:grid grid-cols-12 gap-4 px-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-          <div className="col-span-4">Exam Details</div>
+      {/* Exam List Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        
+        {/* Table Header */}
+        <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="col-span-1 flex items-center justify-center"></div>
+          <div className="col-span-4">Assessment Details</div>
           <div className="col-span-2 text-center">Score / Grade</div>
-          <div className="col-span-3">Performance vs Class</div>
+          <div className="col-span-2 text-center">Date</div>
           <div className="col-span-2 text-center">Status</div>
-          <div className="col-span-1 text-right">View</div>
+          <div className="col-span-1 text-right">Actions</div>
         </div>
 
-        {/* Exam Cards */}
-        {filteredExams.length === 0 ? (
-          <div className="bg-white/50 dark:bg-white/5 rounded-[2rem] p-20 text-center border border-dashed border-slate-200 dark:border-white/10">
-            <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-700 mb-4">search_off</span>
-            <p className="text-slate-500 dark:text-slate-400 font-bold">No exams found matching your criteria</p>
+        {/* Table Body */}
+        <div className="flex flex-col">
+          {filteredExams.length === 0 ? (
+             <div className="p-16 text-center">
+                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">search_off</span>
+                <p className="text-slate-500 font-medium">No assessments found matching your criteria</p>
+             </div>
+          ) : paginatedExams.map((exam, index) => {
+             const statusStyles = getStatusStyles(exam.status)
+             return (
+               <div key={exam.id} className={`flex flex-col lg:grid lg:grid-cols-12 gap-4 px-6 py-4 lg:items-center border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group ${index % 2 === 0 ? 'bg-transparent' : 'bg-slate-50/30 dark:bg-slate-900/20'}`}>
+                  {/* Icon */}
+                  <div className="hidden lg:flex col-span-1 justify-center">
+                     <div className={`w-10 h-10 rounded-full ${exam.iconBgColor} ${exam.iconColor} flex items-center justify-center`}>
+                        <span className="material-symbols-outlined text-[20px]">{exam.icon}</span>
+                     </div>
+                  </div>
+                  
+                  {/* Details */}
+                  <div className="col-span-4 flex items-center gap-4 lg:block">
+                     <div className={`lg:hidden w-10 h-10 rounded-full ${exam.iconBgColor} ${exam.iconColor} flex items-center justify-center shrink-0`}>
+                        <span className="material-symbols-outlined text-[20px]">{exam.icon}</span>
+                     </div>
+                     <div>
+                       <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{exam.title}</h4>
+                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{exam.subject} • {exam.teacher}</p>
+                     </div>
+                  </div>
+
+                  {/* Score */}
+                  <div className="col-span-2 lg:text-center flex justify-between lg:justify-center items-center">
+                     <span className="lg:hidden text-xs text-slate-400 font-bold uppercase">Score</span>
+                     {exam.score !== null ? (
+                       <div className="flex lg:flex-col items-center gap-2 lg:gap-0">
+                         <span className="text-sm font-black text-slate-800 dark:text-slate-200">{exam.score}/{exam.totalScore}</span>
+                         {exam.grade && <span className="text-[10px] font-bold text-orange-600 bg-orange-50 dark:bg-orange-500/10 px-2 py-0.5 rounded-full lg:mt-1">Grade {exam.grade}</span>}
+                       </div>
+                     ) : (
+                       <span className="text-xs font-bold text-slate-400">TBD</span>
+                     )}
+                  </div>
+
+                  {/* Date */}
+                  <div className="col-span-2 lg:text-center flex justify-between lg:justify-center items-center text-xs font-medium text-slate-600 dark:text-slate-400">
+                     <span className="lg:hidden text-xs text-slate-400 font-bold uppercase">Date</span>
+                     {exam.date}
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-2 flex justify-between lg:justify-center items-center">
+                     <span className="lg:hidden text-xs text-slate-400 font-bold uppercase">Status</span>
+                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusStyles.bg} ${statusStyles.text}`}>
+                        {exam.status}
+                     </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="col-span-1 flex justify-end mt-4 lg:mt-0">
+                     {exam.status === 'completed' ? (
+                       <Link href={`/dashboard/parent/exams&results/details?id=${exam.id}`} className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 dark:hover:bg-slate-800 transition-colors">
+                          <span className="material-symbols-outlined text-[16px]">more_horiz</span>
+                       </Link>
+                     ) : (
+                       <div className="w-8 h-8 rounded-full border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-300">
+                          <span className="material-symbols-outlined text-[16px]">lock</span>
+                       </div>
+                     )}
+                  </div>
+               </div>
+             )
+          })}
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <p className="text-[11px] font-medium text-slate-500">
+             Showing {filteredExams.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredExams.length)} of {filteredExams.length}
+          </p>
+          <div className="flex items-center gap-2">
+             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="text-xs font-medium text-slate-500 hover:text-slate-800 disabled:opacity-50 px-2 py-1 transition-colors">
+                &lt; Previous
+             </button>
+             <span className="text-xs font-bold text-slate-700 bg-white dark:bg-slate-800 px-3 py-1 rounded-md border border-slate-200 dark:border-slate-700">Page {currentPage} of {totalPages}</span>
+             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="text-xs font-medium text-slate-500 hover:text-slate-800 disabled:opacity-50 px-2 py-1 transition-colors">
+                Next &gt;
+             </button>
           </div>
-        ) : paginatedExams.map((exam) => {
-          const statusStyles = getStatusStyles(exam.status)
-          const performanceDiff = exam.score ? exam.score - exam.classAverage : 0
-          
-          return (
-            <Link
-              href={exam.status === 'completed' ? `/dashboard/parent/exams&results/details?id=${exam.id}` : '#'}
-              key={exam.id}
-              className="group bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 lg:grid lg:grid-cols-12 lg:items-center lg:gap-4 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden"
-            >
-              {/* Left Accent */}
-              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${exam.accentColor} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-
-              {/* Subject & Title */}
-              <div className="col-span-4 flex items-center gap-5 mb-6 lg:mb-0">
-                <div className={`size-14 rounded-2xl ${exam.iconBgColor} ${exam.iconColor} flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-500`}>
-                  <span className="material-symbols-outlined text-[28px]">{exam.icon}</span>
-                </div>
-                <div>
-                  <h3 className="text-slate-900 dark:text-white font-black text-lg tracking-tight group-hover:text-orange-600 transition-colors">
-                    {exam.title}
-                  </h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-[12px] font-bold uppercase tracking-widest mt-1">
-                    {exam.subject} • {exam.teacher} • {exam.date}
-                  </p>
-                </div>
-              </div>
-
-              {/* Score */}
-              <div className="col-span-2 flex flex-col items-center justify-center gap-1 mb-6 lg:mb-0 bg-slate-50 dark:bg-white/5 py-4 rounded-2xl border border-slate-100 dark:border-white/5">
-                {exam.score !== null ? (
-                  <>
-                    <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                      {exam.score}
-                      <span className="text-[14px] text-slate-400 font-bold">/{exam.totalScore}</span>
-                    </div>
-                    {exam.grade && (
-                      <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">
-                        Grade {exam.grade}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-xl font-black text-slate-300 dark:text-slate-700 tracking-widest uppercase">TBD</div>
-                )}
-              </div>
-
-              {/* Comparison */}
-              <div className="col-span-3 mb-6 lg:mb-0 px-4">
-                {exam.score !== null ? (
-                  <>
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                      <span>Avg: {exam.classAverage}%</span>
-                      <span className={`${performanceDiff >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {performanceDiff >= 0 ? '↑' : '↓'} {Math.abs(performanceDiff)}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden relative">
-                      <div 
-                        className="absolute top-0 bottom-0 w-1 bg-slate-300 dark:bg-slate-600 z-10" 
-                        style={{ left: `${exam.classAverage}%` }}
-                      ></div>
-                      <div 
-                        className={`h-full rounded-full ${performanceDiff >= 0 ? 'bg-orange-600' : 'bg-amber-500'} transition-all duration-1000`}
-                        style={{ width: `${(exam.score / exam.totalScore) * 100}%` }}
-                      ></div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-[11px] font-bold text-slate-400 italic text-center uppercase tracking-widest">Awaiting Results</p>
-                )}
-              </div>
-
-              {/* Status */}
-              <div className="col-span-2 mb-6 lg:mb-0 flex justify-center">
-                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${statusStyles.bg} ${statusStyles.text} ${statusStyles.border}`}>
-                  <span className={`size-2 rounded-full ${statusStyles.dot} ${exam.status === 'pending' ? 'animate-pulse' : ''}`}></span>
-                  {exam.status}
-                </span>
-              </div>
-
-              {/* Action */}
-              <div className="col-span-1 flex justify-end">
-                <div className="size-11 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-orange-600 group-hover:text-white transition-all duration-300">
-                  <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-                </div>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 px-4">
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-          Showing <span className="text-slate-900 dark:text-white">
-            {filteredExams.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, filteredExams.length)}
-          </span> of <span className="text-slate-900 dark:text-white">{filteredExams.length}</span> assessments
-        </p>
-        <div className="flex gap-3">
-          <button 
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-30">
-            Previous
-          </button>
-          <button 
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="px-6 py-2.5 rounded-xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 hover:bg-orange-700 transition-all disabled:opacity-30">
-            Next Page
-          </button>
         </div>
       </div>
     </div>

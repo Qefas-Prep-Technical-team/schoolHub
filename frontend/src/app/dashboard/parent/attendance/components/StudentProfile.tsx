@@ -52,7 +52,7 @@ export default function StudentProfile({ student, lastUpdated }: StudentProfileP
           </span>
         </div>
         
-        <button className="flex items-center gap-2 px-4 h-10 rounded-xl bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm font-bold text-gray-700 dark:text-gray-200">
+        <button className="flex items-center gap-2 px-4 h-10 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-shadow text-sm font-semibold text-slate-700 dark:text-slate-200">
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Report</span>
         </button>

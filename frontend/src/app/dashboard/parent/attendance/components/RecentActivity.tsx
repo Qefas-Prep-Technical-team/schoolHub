@@ -47,7 +47,7 @@ export default function RecentActivity({
     };
 
     return (
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col h-full">
+        <div className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col h-full">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-base font-bold text-gray-900 dark:text-white">
                     {title}

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { getParentChildrenService, getChildDetailsService, getChildAssignmentDetailsService, getParentDashboardService, updateParentProfileService, updateChildProfileService } from "./parent.service";
 import { getStudentAssignmentsService } from "../assignment/assignment.service";
+import { getMyPublishedResults } from "../records/records.service";
 import { handleError } from "../../utils/error-handler";
+import prisma from "../../config/database";
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
@@ -98,5 +100,30 @@ export const updateChildProfile = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, message: "Child profile updated successfully", data: updatedChild });
   } catch (error: any) {
     return handleError(res, error, "parent.updateChildProfile");
+  }
+};
+
+export const getChildResults = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const parentId = req.user.id;
+    const childId = req.params.childId as string;
+
+    // Verify the parent is linked to this child
+    const link = await prisma.parentChildLink.findFirst({
+      where: { parentId, studentId: childId, status: "active" },
+      include: { student: { select: { id: true, schoolId: true } } }
+    });
+
+    if (!link) {
+      return res.status(403).json({ success: false, message: "Child not found or not connected to this parent" });
+    }
+
+    const results = await getMyPublishedResults(link.student.id, link.student.schoolId || '');
+    return res.status(200).json({ success: true, data: results });
+  } catch (error: any) {
+    return handleError(res, error, "parent.getChildResults");
   }
 };

@@ -6,6 +6,7 @@ export const PARENT_FEATURE_FLAGS = {
   classes: false,
   assignments: false,
   results: true,
+  grades: true,
   performance: true,
   attendance: true,
   

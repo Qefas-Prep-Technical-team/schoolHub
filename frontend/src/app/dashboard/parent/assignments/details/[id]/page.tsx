@@ -27,14 +27,14 @@ export default function AssignmentDetailPage() {
     if (isLoading) {
         return (
             <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 h-full scroll-smooth">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 animate-pulse">
+                <div className="w-[95%] mx-auto py-8 flex flex-col gap-8 animate-pulse">
                     <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl h-48 border border-slate-200 dark:border-slate-700"></div>
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] h-48 border border-slate-100 dark:border-slate-800 shadow-sm"></div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-6">
-                            <div className="bg-white dark:bg-slate-800 rounded-3xl h-64 border border-slate-200 dark:border-slate-700"></div>
+                            <div className="bg-white dark:bg-slate-900 rounded-[20px] h-64 border border-slate-100 dark:border-slate-800 shadow-sm"></div>
                         </div>
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl h-96 border border-slate-200 dark:border-slate-700"></div>
+                        <div className="bg-white dark:bg-slate-900 rounded-[20px] h-96 border border-slate-100 dark:border-slate-800 shadow-sm"></div>
                     </div>
                 </div>
             </div>
@@ -47,11 +47,11 @@ export default function AssignmentDetailPage() {
                 <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-6 w-fit font-medium">
                     <ArrowLeft className="size-4" /> Back to Assignments
                 </button>
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Assignment Not Found</h2>
+                <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm p-10 text-center">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Assignment Not Found</h2>
                     <p className="text-slate-500 mb-6">We couldn't find the details for this assignment. It may have been removed.</p>
                     <Link href="/dashboard/parent/assignments">
-                        <span className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors">Return to Overview</span>
+                        <span className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm">Return to Overview</span>
                     </Link>
                 </div>
             </div>
@@ -78,29 +78,29 @@ export default function AssignmentDetailPage() {
 
     return (
         <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 h-full scroll-smooth">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+            <div className="w-[95%] mx-auto py-8 flex flex-col gap-8">
                 {/* Header Navigation */}
                 <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors w-fit font-medium">
                     <ArrowLeft className="size-4" /> Back to Assignments
                 </button>
 
                 {/* Main Hero Card */}
-                <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
                     
                     <div className="p-8 md:p-10 flex flex-col md:flex-row gap-8 justify-between items-start md:items-center">
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-4">
-                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider rounded-lg">
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 text-[11px] font-semibold uppercase tracking-wider rounded-md border border-slate-200 dark:border-slate-700">
                                     {detailedAssignment.subject?.name || 'Subject'}
                                 </span>
                                 {isGraded && (
-                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded-lg border border-green-200 dark:border-green-800/50">
+                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 text-[11px] font-semibold rounded-md border border-green-200 dark:border-green-800/50">
                                         <CheckCircle className="size-3.5" /> Graded
                                     </span>
                                 )}
                             </div>
-                            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
+                            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">
                                 {detailedAssignment.title}
                             </h1>
                             <div className="flex flex-wrap gap-6 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -119,9 +119,9 @@ export default function AssignmentDetailPage() {
 
                         {/* Score Circle */}
                         {isGraded && (
-                            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center min-w-[160px]">
+                            <div className="shrink-0 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center min-w-[160px]">
                                 <Award className="size-8 text-yellow-500 mb-2" />
-                                <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                <div className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
                                     {percentage}%
                                 </div>
                                 <div className="text-sm font-medium text-slate-500 mt-1">
@@ -136,9 +136,9 @@ export default function AssignmentDetailPage() {
                     {/* Left Column: Details & Instructions */}
                     <div className="lg:col-span-2 flex flex-col gap-8">
                         {/* Assignment Details (Moved to top) */}
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8">
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                <FileText className="size-5 text-primary" />
+                        <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
+                            <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                                <FileText className="size-5 text-orange-500" />
                                 Instructions & Details
                             </h3>
                             <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -157,17 +157,17 @@ export default function AssignmentDetailPage() {
 
                         {/* Teacher Feedback (Only show if graded) */}
                         {isGraded && submission?.feedback && (
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-3xl border border-indigo-100 dark:border-indigo-800/50 p-8 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-8 opacity-10">
-                                    <MessageSquare className="size-32 text-indigo-500" />
+                            <div className="bg-orange-50 dark:bg-orange-900/10 rounded-[20px] border border-orange-100 dark:border-orange-800/30 p-8 relative overflow-hidden shadow-sm">
+                                <div className="absolute top-0 right-0 p-8 opacity-5">
+                                    <MessageSquare className="size-32 text-orange-500" />
                                 </div>
                                 <div className="relative z-10">
-                                    <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2 mb-4">
+                                    <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-400 flex items-center gap-2 mb-4">
                                         <MessageSquare className="size-5" />
                                         Teacher's Feedback
                                     </h3>
-                                    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md rounded-2xl p-6 border border-white/50 dark:border-slate-700/50 shadow-sm">
-                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg italic">
+                                    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-xl p-6 border border-white/50 dark:border-slate-700/50 shadow-sm">
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-base italic">
                                             "{submission.feedback}"
                                         </p>
                                     </div>
@@ -178,9 +178,9 @@ export default function AssignmentDetailPage() {
                         {/* Question and Answers Section */}
                         {isSubmitted ? (
                             detailedAssignment?.questions?.length > 0 && (
-                                <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8">
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                        <HelpCircle className="size-5 text-primary" />
+                                <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
+                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                                        <HelpCircle className="size-5 text-orange-500" />
                                         Quiz Questions & Answers
                                     </h3>
                                     <div className="space-y-6">
@@ -229,10 +229,10 @@ export default function AssignmentDetailPage() {
                                                                 </div>
                                                             )}
                                                             
-                                                            {/* Text Answer */}
+                                                                                            {/* Text Answer */}
                                                             {question.type !== 'MULTIPLE_CHOICE' && (
                                                                 <div className="mb-4">
-                                                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Student's Answer</span>
+                                                                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2">Student's Answer</span>
                                                                     <div className="px-4 py-3 rounded-xl border bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 min-h-[60px]">
                                                                         {studentAnswer?.answer || <span className="text-slate-400 italic">No answer provided</span>}
                                                                     </div>
@@ -281,10 +281,10 @@ export default function AssignmentDetailPage() {
                                 </div>
                             )
                         ) : (
-                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-800/50 p-8 flex items-start gap-4">
+                            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-[20px] border border-blue-100 dark:border-blue-800/30 p-8 flex items-start gap-4 shadow-sm">
                                 <AlertCircle className="size-6 text-blue-500 shrink-0 mt-0.5" />
                                 <div>
-                                    <h3 className="text-lg font-bold text-blue-900 dark:text-blue-300 mb-1">Questions Hidden</h3>
+                                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-1">Questions Hidden</h3>
                                     <p className="text-blue-800/80 dark:text-blue-400 leading-relaxed">
                                         The quiz questions and options are currently hidden because your child has not yet submitted this assignment.
                                     </p>
@@ -297,22 +297,22 @@ export default function AssignmentDetailPage() {
 
                     {/* Right Column: Context & Resources */}
                     <div className="flex flex-col gap-6">
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6">
-                            <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm p-6">
+                            <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <BookOpen className="size-4 text-slate-500" />
                                 Study Context
                             </h3>
                             <ul className="space-y-4">
                                 <li>
-                                    <p className="text-xs uppercase font-bold text-slate-400 mb-1">Topic/Unit</p>
+                                    <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Topic/Unit</p>
                                     <p className="font-medium text-slate-700 dark:text-slate-300">Term Assessment</p>
                                 </li>
                                 <li>
-                                    <p className="text-xs uppercase font-bold text-slate-400 mb-1">Max Marks Available</p>
+                                    <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Max Marks Available</p>
                                     <p className="font-medium text-slate-700 dark:text-slate-300">{detailedAssignment.totalMarks} Points</p>
                                 </li>
                                 <li>
-                                    <p className="text-xs uppercase font-bold text-slate-400 mb-1">Questions</p>
+                                    <p className="text-xs uppercase font-semibold text-slate-400 mb-1">Questions</p>
                                     <p className="font-medium text-slate-700 dark:text-slate-300">{detailedAssignment.questions?.length || 0} Questions to answer</p>
                                 </li>
                             </ul>
@@ -320,9 +320,9 @@ export default function AssignmentDetailPage() {
 
                         {/* Reference Materials */}
                         {(detailedAssignment.videoUrl || detailedAssignment.referenceUrl) && (
-                            <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-6">
+                            <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col gap-6">
                                 <div>
-                                    <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                         <FileText className="size-4 text-slate-500" />
                                         Reference Links
                                     </h3>
@@ -344,27 +344,29 @@ export default function AssignmentDetailPage() {
                                                     <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                                                         <ExternalLink className="size-4" />
                                                     </div>
-                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Reference Link</span>
-                                                </div>
-                                                <ExternalLink className="size-4 text-slate-400" />
-                                            </a>
-                                        )}
-                                    </div>
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Reference Link</span>
+                                            </div>
+                                            <ExternalLink className="size-4 text-slate-400" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
-                        )}
-
-                        {/* Parent Tips Card */}
-                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-lg">
-                            <h3 className="font-bold mb-2">How to help your child?</h3>
-                            <p className="text-blue-100 text-sm leading-relaxed mb-4">
-                                Review the teacher's feedback together. Focus on the positive remarks first, then discuss how they can improve on the constructive criticism.
-                            </p>
-                            <button disabled className="w-full bg-white/20 text-white/80 font-bold py-2 rounded-xl text-sm backdrop-blur-sm cursor-not-allowed">
-                                Message Teacher (Coming Soon)
-                            </button>
                         </div>
+                    )}
+
+                    {/* Parent Tips Card */}
+                    <div className="bg-orange-500 rounded-[20px] p-6 text-white shadow-sm border border-orange-600">
+                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                           How to help your child?
+                        </h3>
+                        <p className="text-orange-50 text-sm leading-relaxed mb-4 font-medium">
+                            Review the teacher's feedback together. Focus on the positive remarks first, then discuss how they can improve on the constructive criticism.
+                        </p>
+                        <button disabled className="w-full bg-white/20 text-white/90 font-semibold py-2 rounded-lg text-sm transition-colors cursor-not-allowed">
+                            Message Teacher (Coming Soon)
+                        </button>
                     </div>
+                </div>
                 </div>
             </div>
         </main>

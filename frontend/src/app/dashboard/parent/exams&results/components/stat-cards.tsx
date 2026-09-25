@@ -52,27 +52,32 @@ export default function StatCards() {
       value: `${avg}%`,
       description: `Grade: ${gradeLabel(avg)}`,
       icon: 'analytics',
-      accentColor: 'bg-orange-500'
+      iconColor: 'bg-orange-500',
+      trend: { value: 'View Details', isPositive: true }
     },
     {
       title: 'Attendance',
       value: `${stats?.attendanceRate ?? 0}%`,
       description: 'Term Presence',
       icon: 'calendar_today',
-      progress: stats?.attendanceRate ?? 0
+      iconColor: 'bg-amber-500',
+      trend: { value: 'View Details', isPositive: true }
     },
     {
       title: 'Current Class',
       value: child?.currentClass?.name || 'N/A',
       description: child?.currentClass?.section ? `Section: ${child.currentClass.section}` : 'Academic Session',
       icon: 'school',
+      iconColor: 'bg-red-500',
+      trend: { value: 'View Details', isPositive: true }
     },
     {
       title: 'Recent Grades',
       value: child?.recentGrades?.length.toString() || '0',
       description: 'Latest assessments',
       icon: 'grade',
-      iconColor: 'text-orange-500'
+      iconColor: 'bg-yellow-500',
+      trend: { value: 'View Details', isPositive: true }
     }
   ]
 
@@ -93,52 +98,27 @@ export default function StatCards() {
         <Link
           href={`${handleLink(stat.title)}`}
           key={index}
-          className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-44 relative overflow-hidden group"
+          className="bg-white dark:bg-slate-900 rounded-[20px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[160px] group"
         >
-          {/* Accent bar */}
-          {stat.accentColor && (
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${stat.accentColor}`}></div>
-          )}
-          
-          {/* Background icon */}
-          <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <span className="material-symbols-outlined text-8xl text-orange-600">
-              {stat.icon}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-start z-10">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{stat.title}</p>
+          <div className="flex justify-between items-start">
+            <div className={`w-12 h-12 rounded-full ${stat.iconColor} flex items-center justify-center text-white shadow-md`}>
+              <span className="material-symbols-outlined text-[24px]">
+                {stat.icon}
+              </span>
+            </div>
             {stat.trend && (
-              <span className={`${
-                stat.trend.isPositive 
-                  ? 'bg-green-500/10 text-green-600' 
-                  : 'bg-red-500/10 text-red-600'
-              } text-[10px] font-black px-2 py-1 rounded-lg flex items-center gap-1 uppercase tracking-tight`}>
+              <span className="text-[11px] font-semibold text-green-500 bg-green-50 dark:bg-green-500/10 px-2.5 py-1 rounded-full">
                 {stat.trend.value}
               </span>
             )}
-            {stat.iconColor && !stat.trend && (
-              <span className={`material-symbols-outlined text-[20px] ${stat.iconColor}`}>
-                {stat.icon}
-              </span>
-            )}
           </div>
 
-          <div className="z-10">
-            <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
-              {stat.value}
-            </p>
-            <p className="text-[12px] font-bold text-slate-500 dark:text-slate-400 mt-1">{stat.description}</p>
-            
-            {stat.progress !== undefined && (
-              <div className="w-full bg-slate-100 dark:bg-white/5 h-1.5 rounded-full mt-3 overflow-hidden">
-                <div 
-                  className="bg-orange-600 h-full rounded-full transition-all duration-1000" 
-                  style={{ width: `${stat.progress}%` }}
-                ></div>
-              </div>
-            )}
+          <div className="mt-4">
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{stat.title}</p>
+            <div className="flex items-end gap-3">
+              <h3 className="text-3xl font-black text-slate-800 dark:text-slate-100">{stat.value}</h3>
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">{stat.description}</p>
+            </div>
           </div>
         </Link>
       ))}

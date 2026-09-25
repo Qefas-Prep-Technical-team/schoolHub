@@ -153,13 +153,13 @@ export default function ParentSettingsPage() {
 
         {/* PROFILE TAB */}
         <TabsContent value="profile" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="w-[80%] mx-auto">
+          <div className="w-full max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 h-full">
+                <Card className="rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 h-full">
                 <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <div className="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
                       <User className="text-orange-600 dark:text-orange-500" size={24} />
                     </div>
                     <div>
@@ -178,7 +178,7 @@ export default function ParentSettingsPage() {
                           <Input 
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
+                            className="h-11 pl-11 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
                       </div>
@@ -190,7 +190,7 @@ export default function ParentSettingsPage() {
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
                             type="email"
-                            className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
+                            className="h-11 pl-11 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
                       </div>
@@ -201,7 +201,7 @@ export default function ParentSettingsPage() {
                           <Input 
                             value={formData.phone}
                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                            className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
+                            className="h-11 pl-11 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
                       </div>
@@ -216,7 +216,7 @@ export default function ParentSettingsPage() {
                             toast.success.show("Default child updated");
                           }}
                         >
-                          <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-orange-500">
+                          <SelectTrigger className="h-11 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-orange-500">
                             <SelectValue placeholder="Select Default Child" />
                           </SelectTrigger>
                           <SelectContent>
@@ -231,7 +231,7 @@ export default function ParentSettingsPage() {
                     <div className="pt-4">
                       <Button 
                         disabled={isUpdating}
-                        className="h-12 px-8 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold transition-all"
+                        className="h-11 px-8 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition-all"
                       >
                         {isUpdating ? (
                           <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving...</span>
@@ -246,7 +246,7 @@ export default function ParentSettingsPage() {
             </div>
             
             <div className="space-y-6">
-              <Card className="rounded-3xl border border-green-200 dark:border-green-900/50 shadow-sm bg-green-50 dark:bg-green-900/10 p-8 relative overflow-hidden">
+              <Card className="rounded-[20px] border border-green-200 dark:border-green-900/50 shadow-sm bg-green-50 dark:bg-green-900/10 p-8 relative overflow-hidden">
                 <div className="relative z-10 space-y-3">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="text-green-600 dark:text-green-500" size={28} />
@@ -259,10 +259,10 @@ export default function ParentSettingsPage() {
               </Card>
               
               <div 
-                className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:border-orange-200 dark:hover:border-orange-900/50 transition-all shadow-sm group" 
+                className="p-6 rounded-[20px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:border-orange-200 dark:hover:border-orange-900/50 transition-all shadow-sm group" 
                 onClick={() => window.location.href = '/dashboard/parent/profile'}
               >
-                <div className="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform">
+                <div className="size-12 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform">
                   <UserCircle size={24} />
                 </div>
                 <div className="flex-1">
@@ -272,7 +272,7 @@ export default function ParentSettingsPage() {
                 <ChevronRight size={20} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
               </div>
 
-              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+              <div className="p-6 rounded-[20px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-slate-500">Subscription</h4>
                   <span className="text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-3 py-1 rounded-full">Active</span>
@@ -291,11 +291,11 @@ export default function ParentSettingsPage() {
 
         {/* APPEARANCE TAB */}
         <TabsContent value="appearance" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="w-[80%] mx-auto">
-            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="w-full max-w-6xl mx-auto">
+            <Card className="rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
                     <Palette className="text-orange-600 dark:text-orange-500" size={24} />
                   </div>
                   <div>
@@ -309,12 +309,12 @@ export default function ParentSettingsPage() {
                   <div 
                     onClick={() => setTheme('light')}
                     className={cn(
-                      "p-6 rounded-2xl border-2 transition-all cursor-pointer relative",
+                      "p-6 rounded-[16px] border-2 transition-all cursor-pointer relative",
                       theme === 'light' ? "border-orange-600 bg-orange-50 dark:bg-orange-900/10 shadow-md" : "border-slate-200 dark:border-slate-800 hover:border-orange-300"
                     )}
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <div className="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">
+                      <div className="size-12 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">
                         <Sun size={24} />
                       </div>
                       {theme === 'light' && <CheckCircle2 className="text-orange-600" size={24} />}
@@ -326,12 +326,12 @@ export default function ParentSettingsPage() {
                   <div 
                     onClick={() => setTheme('dark')}
                     className={cn(
-                      "p-6 rounded-2xl border-2 transition-all cursor-pointer relative",
+                      "p-6 rounded-[16px] border-2 transition-all cursor-pointer relative",
                       theme === 'dark' ? "border-orange-600 bg-slate-800 shadow-md" : "border-slate-200 dark:border-slate-800 hover:border-orange-300"
                     )}
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <div className="size-12 rounded-xl bg-slate-700 flex items-center justify-center text-slate-200">
+                      <div className="size-12 rounded-lg bg-slate-700 flex items-center justify-center text-slate-200">
                         <Moon size={24} />
                       </div>
                       {theme === 'dark' && <CheckCircle2 className="text-orange-600" size={24} />}
@@ -341,9 +341,9 @@ export default function ParentSettingsPage() {
                   </div>
                 </div>
 
-                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
+                <div className="p-6 rounded-[16px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
                    <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                      <div className="size-12 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                         <Monitor size={24} />
                       </div>
                       <div>
@@ -363,11 +363,11 @@ export default function ParentSettingsPage() {
 
         {/* SECURITY TAB */}
         <TabsContent value="security" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="w-[80%] mx-auto space-y-8">
-            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="w-full max-w-6xl mx-auto space-y-8">
+            <Card className="rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
                     <Lock className="text-orange-600 dark:text-orange-500" size={24} />
                   </div>
                   <div>
@@ -377,13 +377,13 @@ export default function ParentSettingsPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-8">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4 rounded-[16px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
                   <div className="space-y-1">
                     <h4 className="text-base font-bold text-slate-900 dark:text-white">Account Password</h4>
                     <p className="text-sm text-slate-500">Update your password to keep your account secure.</p>
                   </div>
                   <ChangePasswordModal>
-                    <Button className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl">
+                    <Button className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-lg">
                       Change Password
                     </Button>
                   </ChangePasswordModal>
@@ -404,12 +404,12 @@ export default function ParentSettingsPage() {
 
         {/* NOTIFICATIONS TAB */}
         <TabsContent value="notifications" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="w-[80%] mx-auto">
-            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="w-full max-w-6xl mx-auto">
+            <Card className="rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <div className="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
                       <Bell className="text-orange-600 dark:text-orange-500" size={24} />
                     </div>
                     <div>
@@ -475,7 +475,7 @@ export default function ParentSettingsPage() {
                         size="sm"
                         disabled={page === 1}
                         onClick={() => setPage(p => Math.max(1, p - 1))}
-                        className="rounded-xl border-slate-200 dark:border-slate-700"
+                        className="rounded-lg border-slate-200 dark:border-slate-700"
                       >
                         Previous
                       </Button>
@@ -485,7 +485,7 @@ export default function ParentSettingsPage() {
                         size="sm"
                         disabled={notifications.length < ITEMS_PER_PAGE}
                         onClick={() => setPage(p => p + 1)}
-                        className="rounded-xl border-slate-200 dark:border-slate-700"
+                        className="rounded-lg border-slate-200 dark:border-slate-700"
                       >
                         Next
                       </Button>

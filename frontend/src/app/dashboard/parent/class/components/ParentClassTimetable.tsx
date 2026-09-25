@@ -120,31 +120,31 @@ export default function ParentClassTimetable({ classId, schoolId = "" }: ParentC
 
   if (isLoading) {
     return (
-      <div className="h-[400px] w-full rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 animate-pulse flex items-center justify-center">
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Schedule...</span>
+      <div className="h-[400px] w-full rounded-[20px] border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 animate-pulse flex items-center justify-center">
+        <span className="text-sm font-semibold text-slate-400">Loading Schedule...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-orange-100 dark:bg-orange-500/10 rounded-xl">
-          <CalendarDays className="text-orange-600" size={20} />
+        <div className="p-2.5 bg-orange-50 dark:bg-orange-500/10 rounded-xl">
+          <CalendarDays className="text-orange-600 dark:text-orange-400" size={24} />
         </div>
         <div>
-          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Class Schedule</h3>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Weekly Timetable</p>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Class Schedule</h3>
+          <p className="text-xs font-medium text-slate-500">Weekly Timetable</p>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none">
+      <div className="overflow-x-auto rounded-[20px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         <div
           className="grid w-full min-w-[800px]"
           style={{ gridTemplateColumns: `minmax(90px, auto) repeat(${days.length}, minmax(140px, 1fr))` }}
         >
           {/* Headers */}
-          <div className="p-4 text-left text-slate-500 dark:text-slate-400 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800">
+          <div className="p-4 text-left text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
             Period
           </div>
           {days.map((day) => {
@@ -152,13 +152,13 @@ export default function ParentClassTimetable({ classId, schoolId = "" }: ParentC
             return (
               <div
                 key={day}
-                className={`p-4 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 flex items-center justify-between ${
-                  isToday ? 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' : 'text-slate-500 dark:text-slate-400'
+                className={`p-4 text-xs font-semibold uppercase tracking-wider border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 flex items-center justify-between ${
+                  isToday ? 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' : 'text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/20'
                 }`}
               >
                 <span>{day}</span>
                 {isToday && (
-                  <span className="w-2 h-2 rounded-full bg-orange-600 animate-pulse block shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
+                  <span className="w-2 h-2 rounded-full bg-orange-600 animate-pulse block" />
                 )}
               </div>
             );
@@ -167,7 +167,7 @@ export default function ParentClassTimetable({ classId, schoolId = "" }: ParentC
           {/* Rows */}
           {periods.map((period) => (
             <React.Fragment key={period.id}>
-              <div className="p-4 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 text-center">
+              <div className="p-4 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs font-medium border-b border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 text-center">
                 {formatSlotTo12Hour(period.timeSlot)}
               </div>
 
@@ -179,37 +179,37 @@ export default function ParentClassTimetable({ classId, schoolId = "" }: ParentC
                   <div
                     key={`${period.id}-${day}`}
                     className={`p-3 border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 transition-all duration-300 relative ${
-                      isCurrent ? 'bg-orange-50/50 dark:bg-orange-500/5 z-10' : ''
+                      isCurrent ? 'bg-orange-50/30 dark:bg-orange-500/5' : ''
                     }`}
                   >
                     {isCurrent && (
-                      <div className="absolute top-2 left-2 z-50 bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md animate-pulse shadow-[0_0_10px_rgba(234,88,12,0.5)]">
+                      <div className="absolute top-2 left-2 z-10 bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">
                         Now
                       </div>
                     )}
 
                     {subject ? (
                       subject.isBreak ? (
-                        <div className="h-full min-h-[90px] p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 flex flex-col items-center justify-center">
-                          <p className="text-[10px] text-amber-700 dark:text-amber-400 font-black uppercase tracking-widest text-center">
+                        <div className="h-full min-h-[90px] p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-center">
                             {subject.name || 'Break'}
                           </p>
                         </div>
                       ) : (
-                        <div className="group relative h-full min-h-[90px] p-3 rounded-2xl flex flex-col justify-between bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-lg hover:border-orange-500/30">
+                        <div className="group relative h-full min-h-[90px] p-3 rounded-xl flex flex-col justify-between bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-md hover:border-orange-300">
                           <div className="flex flex-col gap-1 pr-2">
-                            <h4 className="text-[11px] font-black leading-tight line-clamp-2 uppercase tracking-wide text-slate-900 dark:text-white">
+                            <h4 className="text-[13px] font-bold leading-tight line-clamp-2 text-slate-900 dark:text-white">
                               {subject.name}
                             </h4>
-                            <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
                               <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
                               {subject.teacher}
                             </p>
                           </div>
                           {subject.room && (
-                            <div className="mt-2 flex items-center gap-1 w-fit px-2 py-1 rounded-md border bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
-                              <MapPin size={8} className="text-orange-500" />
-                              <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            <div className="mt-2 flex items-center gap-1 w-fit px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700">
+                              <MapPin size={10} className="text-orange-500" />
+                              <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                                 {subject.room}
                               </span>
                             </div>
@@ -217,12 +217,12 @@ export default function ParentClassTimetable({ classId, schoolId = "" }: ParentC
                         </div>
                       )
                     ) : (
-                      <div className={`h-full min-h-[90px] rounded-2xl flex items-center justify-center transition-colors ${
+                      <div className={`h-full min-h-[90px] rounded-xl flex items-center justify-center transition-colors ${
                         isCurrent
-                          ? 'border-2 border-dashed border-orange-500/30 bg-white dark:bg-slate-900'
+                          ? 'bg-white dark:bg-slate-900'
                           : 'border border-dashed border-slate-200 dark:border-slate-800'
                       }`}>
-                        <span className="text-[10px] text-slate-300 dark:text-slate-600 font-black uppercase tracking-widest">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
                           Free
                         </span>
                       </div>

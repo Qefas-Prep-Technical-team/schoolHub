@@ -14,18 +14,18 @@ export default function QuickContact({
     onButtonClick = () => console.log('Report absence'),
 }: QuickContactProps) {
     return (
-        <div className="bg-gradient-to-br from-[#356fe3] to-[#2557c0] dark:from-indigo-600 dark:to-indigo-900 rounded-xl p-6 shadow-md text-white">
+        <div className="bg-orange-500 rounded-[20px] p-6 shadow-sm border border-orange-600 text-white">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                    <h3 className="text-base font-bold mb-1">{title}</h3>
-                    <p className="text-blue-100 text-xs mb-4">{description}</p>
+                    <h3 className="text-base font-semibold mb-1">{title}</h3>
+                    <p className="text-orange-50 text-xs mb-4">{description}</p>
                 </div>
                 <CalendarEdit className="h-8 w-8 opacity-50" />
             </div>
 
             <button
                 onClick={onButtonClick}
-                className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/20 text-white rounded-lg py-2.5 text-sm font-bold transition-colors"
+                className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/20 text-white rounded-lg py-2.5 text-sm font-semibold transition-colors"
             >
                 {buttonText}
             </button>

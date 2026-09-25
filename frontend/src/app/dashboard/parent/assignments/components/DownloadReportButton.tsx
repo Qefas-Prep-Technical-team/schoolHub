@@ -204,9 +204,9 @@ export default function DownloadReportButton({ student, stats }: DownloadReportB
     <button
       onClick={handleDownload}
       disabled={isDownloading}
-      className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm justify-center disabled:opacity-50"
+      className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg font-semibold transition-shadow hover:shadow-sm justify-center disabled:opacity-50 text-sm"
     >
-      <Download className="size-5" />
+      <Download className="size-4" />
       <span className="hidden sm:inline">
         {isDownloading ? "Generating..." : "Download Report"}
       </span>

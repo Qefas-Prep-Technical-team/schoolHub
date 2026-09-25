@@ -338,7 +338,7 @@ const GradesOverview: React.FC = () => {
 
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-slate-50/50 dark:bg-slate-950/50">
-      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[80%] mx-auto">
+      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[95%] mx-auto">
         <div className="flex flex-col flex-1">
           
           {/* Header Section */}

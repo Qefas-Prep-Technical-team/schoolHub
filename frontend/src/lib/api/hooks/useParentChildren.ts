@@ -34,3 +34,16 @@ export const useChildDetails = (childId: string | null) => {
         staleTime: 2 * 60 * 1000, // 2 minutes
     });
 };
+
+export const useChildResults = (childId: string | null) => {
+    return useQuery({
+        queryKey: ["child-results", childId],
+        queryFn: async () => {
+            if (!childId) return [];
+            return await parentService.getChildResults(childId);
+        },
+        enabled: !!childId,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        retry: 1,
+    });
+};

@@ -46002,4 +46002,45 @@ Unknown argument `teacherId`. Did you mean `teacherCode`? Available options are 
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at Object.requestPublishApproval (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:727:19)
-    at publishClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:349:7)
+    at publishClassSubjectResult (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:349:7)Error: schoolId is required for admin class listing
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:274:13)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:196:41)
+    at Layer.handleRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\route.js:157:13)
+    at authenticateToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\middleware\authMiddleware.ts:157:5)Error: You are not allowed to view classes
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:334:9)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:196:41)
+    at Layer.handleRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\route.js:157:13)
+    at authenticateToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\middleware\authMiddleware.ts:157:5)PrismaClientKnownRequestError: 
+Invalid `prisma.studentSubjectTermResult.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:49:64
+
+  46 const now = new Date();
+  47 
+  48 // 1. Fetch all published student subject results
+→ 49 const subjectResults = await prisma.studentSubjectTermResult.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getMyPublishedResults (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.service.ts:49:26)
+    at getMyPublishedResults (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\records\records.controller.ts:106:21)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:47
+
+  2697   });
+  2698 }
+  2699 
+→ 2700 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2700:21)

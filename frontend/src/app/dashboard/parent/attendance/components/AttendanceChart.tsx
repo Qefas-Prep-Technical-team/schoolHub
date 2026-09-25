@@ -22,7 +22,7 @@ export default function AttendanceChart({
     onViewDetails,
 }: AttendanceChartProps) {
     return (
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
             {/* Decorative Icon */}
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <Shield className="text-[150px]" />

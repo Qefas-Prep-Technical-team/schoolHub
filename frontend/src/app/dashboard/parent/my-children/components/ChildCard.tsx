@@ -10,12 +10,12 @@ import {
   User, 
   ChevronRight, 
   GraduationCap, 
-  Calendar, 
   MoreVertical, 
   Layout, 
   Edit3,
   ExternalLink,
-  ShieldCheck
+  MapPin,
+  Hash
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +81,7 @@ export default function ChildCard({ child }: ChildCardProps) {
   }
 
   const getAttendanceColor = (percentage: number) => {
-    if (percentage >= 95) return 'bg-green-500'
+    if (percentage >= 95) return 'bg-emerald-500'
     if (percentage >= 85) return 'bg-orange-500'
     return 'bg-red-500'
   }
@@ -92,128 +92,112 @@ export default function ChildCard({ child }: ChildCardProps) {
     : placeholderUrl;
 
   return (
-    <article className="group relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-[3rem] border border-slate-200 dark:border-white/5 overflow-hidden shadow-2xl hover:shadow-orange-600/10 transition-all duration-700 animate-in fade-in zoom-in-95">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      
-      {/* Card Header */}
-      <div className="p-10 pb-0">
-        <div className="flex justify-between items-start">
-          <div className="relative">
-            <div className="size-28 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl bg-slate-100 dark:bg-slate-800 relative group-hover:scale-105 transition-transform duration-700">
+    <>
+      <article className="bg-white dark:bg-slate-900 rounded-[20px] shadow-sm border border-slate-100 dark:border-slate-800 p-6 flex flex-col hover:shadow-md transition-shadow">
+        
+        {/* Card Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative size-16 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800 shrink-0">
               <Image
                 src={displayImage}
                 alt={child.name}
                 fill
                 className="object-cover"
-                sizes="112px"
+                sizes="64px"
                 onError={() => setImgError(true)}
                 unoptimized
               />
             </div>
             
-            {child.status === 'active' && (
-              <div className="absolute -bottom-2 -right-2 size-10 bg-orange-600 rounded-2xl border-4 border-white dark:border-slate-900 flex items-center justify-center text-white shadow-lg animate-bounce-slow">
-                <ShieldCheck size={18} />
+            <div className="flex flex-col">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                {child.name}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] font-medium text-slate-500">
+                <Hash size={12} className="text-slate-400" />
+                <span>{child.studentId}</span>
               </div>
-            )}
+            </div>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-orange-600/10 hover:text-orange-600 transition-all">
-                <MoreVertical size={20} />
+              <Button variant="ghost" size="icon" className="size-8 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <MoreVertical size={16} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 p-2 rounded-[1.5rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-slate-200 dark:border-white/5 shadow-2xl">
+            <DropdownMenuContent align="end" className="w-56 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-lg">
               <DropdownMenuItem 
                 onClick={(e) => handleViewChildDetails(e as any)}
-                className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer focus:bg-orange-600 focus:text-white transition-all"
+                className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-medium cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
-                <ExternalLink size={14} /> View Node Intelligence
+                <ExternalLink size={14} className="text-slate-500" /> View Details
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setIsEditModalOpen(true)}
-                className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer focus:bg-orange-600 focus:text-white transition-all"
+                className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-medium cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
-                <Edit3 size={14} /> Modify Protocol (Edit)
+                <Edit3 size={14} className="text-slate-500" /> Edit Info
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 my-1" />
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-1" />
               <DropdownMenuItem 
                 onClick={handleViewDashboard}
-                className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer text-orange-600 focus:bg-orange-600 focus:text-white transition-all"
+                className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-medium cursor-pointer text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
               >
-                <Layout size={14} /> View Child
+                <Layout size={14} /> Open Dashboard
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <div className="mt-8 space-y-2">
-          <div className="flex items-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-[0.2em]">
-            <span>STU-CODE: {child.studentId}</span>
-          </div>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-tight group-hover:text-orange-600 transition-colors">
-            {child.name}
-          </h3>
-          <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 font-bold text-xs">
-            <span className="flex items-center gap-1.5"><GraduationCap size={14} /> {child.class}</span>
-            <span className="size-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
-            <span className="flex items-center gap-1.5"><User size={14} /> Age {child.age || 'N/A'}</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Visual Analytics */}
-      <div className="p-10 pt-8 space-y-8">
-        <div className="grid grid-cols-2 gap-6">
-          <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 group/stat hover:bg-white dark:hover:bg-white/5 transition-all">
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <div className="size-1.5 rounded-full bg-orange-500" /> Academic Level
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{child.gradeValue}</span>
-              <span className="text-[10px] font-black text-orange-600">{child.gradePercentage}</span>
-            </div>
-          </div>
-          
-          <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 group/stat hover:bg-white dark:hover:bg-white/5 transition-all">
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <div className="size-1.5 rounded-full bg-green-500" /> Presence Rate
-            </div>
-            <div className="flex flex-col gap-3">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{child.attendance}%</span>
-              <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+        {/* Visual Analytics */}
+        <div className="flex flex-col gap-4 mb-6">
+           <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/50">
+             <div className="flex flex-col">
+               <span className="text-[11px] text-slate-500 font-medium">Class</span>
+               <span className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{child.class}</span>
+             </div>
+             <div className="flex flex-col items-end">
+               <span className="text-[11px] text-slate-500 font-medium">Avg Grade</span>
+               <div className="flex items-baseline gap-1 mt-0.5">
+                 <span className="text-sm font-semibold text-slate-900 dark:text-white">{child.gradePercentage}</span>
+               </div>
+             </div>
+           </div>
+
+           <div className="flex flex-col p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] text-slate-500 font-medium">Attendance</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white">{child.attendance}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div 
-                  className={cn("h-full transition-all duration-1000", getAttendanceColor(child.attendance))}
+                  className={cn("h-full rounded-full transition-all duration-1000", getAttendanceColor(child.attendance))}
                   style={{ width: `${child.attendance}%` }}
                 />
               </div>
-            </div>
-          </div>
+           </div>
         </div>
 
         <Button 
           onClick={handleViewDashboard}
-          className="w-full h-16 rounded-[1.5rem] bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-orange-600 dark:hover:bg-orange-600 dark:hover:text-white transition-all shadow-xl hover:shadow-orange-600/30 active:scale-95 group/btn"
+          className="w-full h-11 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 font-semibold text-sm transition-colors mt-auto"
         >
-          View Child
-          <ChevronRight size={18} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
+          View Dashboard
         </Button>
-      </div>
+      </article>
 
+      {/* Edit Modal */}
       <EditChildModal 
-        isOpen={isEditModalOpen} 
-        onOpenChange={setIsEditModalOpen} 
-        child={{ id: child.id, name: child.name, imageUrl: child.imageUrl }} 
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        child={{
+          id: child.id,
+          name: child.name,
+          imageUrl: child.imageUrl
+        }}
       />
-
-      {selectedChild && (
-        <ChildDetailsDrawer
-          isOpen={isOpen}
-          onClose={closeDrawer}
-          child={selectedChild}
-        />
-      )}
-    </article>
+    </>
   )
 }

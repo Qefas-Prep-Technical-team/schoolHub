@@ -72,6 +72,7 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: School, label: "Class", href: "/dashboard/parent/class", featureKey: "classes" as ParentFeatureFlagKey, section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/dashboard/parent/exams&results", featureKey: "results", section: "core" },
+    { icon: School, label: "Final Results", href: "/dashboard/parent/result/termly", featureKey: "results", section: "core" },
     { icon: BarChart3, label: "Performance", href: "/dashboard/parent/performance", featureKey: "performance", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/parent/attendance", featureKey: "attendance", section: "core" },
 
@@ -148,8 +149,11 @@ export function ParentSidebar() {
             className="border-r border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out"
         >
             {/* Header */}
-            <SidebarHeader className="h-20 flex flex-row items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 relative">
-                <Link href="/" className="flex items-center gap-3 overflow-hidden">
+            <SidebarHeader className={cn(
+                "h-20 flex flex-row items-center border-b border-slate-100 dark:border-white/5 relative",
+                isCollapsed ? "justify-center px-0" : "justify-between px-4"
+            )}>
+                <Link href="/" className={cn("flex items-center overflow-hidden", isCollapsed ? "justify-center" : "gap-3")}>
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 transition-transform duration-500 group-hover:scale-105">
                         <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>
@@ -218,7 +222,8 @@ export function ParentSidebar() {
                                                 asChild
                                                 isActive={isActive}
                                                 className={cn(
-                                                    "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
+                                                    "relative flex items-center h-11 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
+                                                    isCollapsed ? "justify-center px-0 !w-full" : "px-3 gap-3 w-full",
                                                     isDisabled
                                                         ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
                                                         : isActive
@@ -267,7 +272,10 @@ export function ParentSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton 
                             onClick={() => logout()}
-                            className="flex items-center gap-3 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50"
+                            className={cn(
+                                "flex items-center h-14 rounded-2xl transition-all duration-300 py-2 group cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50",
+                                isCollapsed ? "justify-center px-0 !w-full" : "px-2 gap-3 w-full"
+                            )}
                         >
                             <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-slate-200 dark:ring-white/10 group-hover:ring-rose-500/30 transition-all duration-500 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                 <UserCircle className="h-5 w-5 text-slate-500 group-hover:text-rose-500 transition-colors" />

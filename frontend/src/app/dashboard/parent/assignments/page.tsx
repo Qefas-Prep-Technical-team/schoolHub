@@ -37,12 +37,12 @@ export default function ParentAssignmentsPage() {
       <main className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
-          <div className="max-w-6xl mx-auto flex flex-col gap-8">
+          <div className="w-[95%] mx-auto flex flex-col gap-8">
             {/* Page Heading & Controls */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
               <div className="flex flex-col gap-4 w-full lg:w-auto">
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                     Assignments Overview
                   </h2>
                   <p className="text-slate-500 dark:text-slate-400 mt-1">
@@ -53,28 +53,28 @@ export default function ParentAssignmentsPage() {
               
               <div className="flex items-center gap-3 w-full lg:w-auto">
                 {/* View Toggle */}
-                <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+                <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={`p-1.5 rounded-md transition-shadow ${
                       viewMode === 'list'
-                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
                     }`}
                     aria-label="List view"
                   >
-                    <List className="size-5" />
+                    <List className="size-4" />
                   </button>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={`p-1.5 rounded-md transition-shadow ${
                       viewMode === 'grid'
-                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
                     }`}
                     aria-label="Grid view"
                   >
-                    <LayoutGrid className="size-5" />
+                    <LayoutGrid className="size-4" />
                   </button>
                 </div>
 

@@ -13,17 +13,17 @@ export default function FilterToolbar() {
   const [selectedSort, setSelectedSort] = useState('Sort by: Due Date')
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm">
       {/* Subject Filters */}
       <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
         {subjects.map((subject) => (
           <button
             key={subject}
             onClick={() => setActiveSubject(subject)}
-            className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeSubject === subject
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                : 'bg-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
           >
             {subject}
@@ -38,7 +38,7 @@ export default function FilterToolbar() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="w-full sm:w-40 appearance-none bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg py-2 pl-3 pr-8 focus:ring-primary focus:border-primary"
+            className="w-full sm:w-40 appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg py-2 pl-3 pr-8 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-shadow hover:border-slate-300"
           >
             {statusOptions.map((option) => (
               <option key={option} value={option}>
@@ -46,7 +46,7 @@ export default function FilterToolbar() {
               </option>
             ))}
           </select>
-          <Filter className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4 pointer-events-none" />
+          <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 size-4 pointer-events-none" />
         </div>
 
         {/* Sort Filter */}
@@ -54,7 +54,7 @@ export default function FilterToolbar() {
           <select
             value={selectedSort}
             onChange={(e) => setSelectedSort(e.target.value)}
-            className="w-full sm:w-40 appearance-none bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg py-2 pl-3 pr-8 focus:ring-primary focus:border-primary"
+            className="w-full sm:w-40 appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg py-2 pl-3 pr-8 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-shadow hover:border-slate-300"
           >
             {sortOptions.map((option) => (
               <option key={option} value={option}>
@@ -62,7 +62,7 @@ export default function FilterToolbar() {
               </option>
             ))}
           </select>
-          <Sort className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4 pointer-events-none" />
+          <Sort className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 size-4 pointer-events-none" />
         </div>
       </div>
     </div>
