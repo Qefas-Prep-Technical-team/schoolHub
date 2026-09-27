@@ -161,7 +161,7 @@ const KeyBenefits = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-3xl md:text-5xl font-black text-[#1a1a2b] tracking-tight leading-[1.12] mb-4"
+              className="text-4xl md:text-6xl font-black text-[#1a1a2b] dark:text-white tracking-tight leading-[1.12] mb-4"
               style={{ letterSpacing: '-0.02em' }}
             >
               Simplifying Your{' '}
@@ -169,7 +169,7 @@ const KeyBenefits = () => {
                 Institution&apos;s Journey
               </span>
             </motion.h2>
-            <p className="text-[#45464c] dark:text-slate-400 text-lg font-light max-w-2xl mx-auto leading-relaxed">
+            <p className="text-[#45464c] dark:text-slate-400 text-xl font-light max-w-2xl mx-auto leading-relaxed">
               Everything your school needs to run smoothly — from classroom to boardroom — in one
               beautifully designed platform.
             </p>
@@ -192,8 +192,8 @@ const KeyBenefits = () => {
                       <Icon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-[#1a1a2b] dark:text-white text-base mb-1">{title}</h3>
-                      <p className="text-sm text-[#45464c] dark:text-slate-400 font-light leading-relaxed">{desc}</p>
+                      <h3 className="font-bold text-[#1a1a2b] dark:text-white text-lg mb-1">{title}</h3>
+                      <p className="text-base text-[#45464c] dark:text-slate-400 font-light leading-relaxed">{desc}</p>
                       {badges && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {badges.map((b) => (

@@ -300,7 +300,8 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
                                                         "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
                                                         isActive
                                                             ? "bg-primary/10 text-primary"
-                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
+                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100",
+                                                        isCollapsed && "justify-center mx-auto"
                                                     )}
                                                     style={isActive ? { boxShadow: `0 4px 6px -1px ${primaryColor}20` } : {}}
                                                     disabled={isDisabled}

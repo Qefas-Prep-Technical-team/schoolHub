@@ -156,7 +156,7 @@ function DowngradeModal({ isOpen, planName, billingCycle, newPrice, lostFeatures
 
 // ─── Main Card ─────────────────────────────────────────────────────────────────
 const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
-    id, name, description, pricing, type, features, isPopular,
+    id, name, description, pricing, type, features, isPopular, index,
     currentPlan, currentPlanId, currentBillingCycle, currentPlanPrice, lastPaymentDate
 }) => {
     const { billingType } = useBillingStore();
@@ -235,146 +235,78 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
             />
 
             <motion.div
-                whileHover={(!isCurrentPlanAndCycle && !isDeactivated) ? { y: -12, scale: 1.02 } : {}}
-                onClick={handleAction}
-                className={`group relative flex flex-col rounded-[3rem] border-2 transition-all duration-500 w-full h-full min-h-[650px] ${
+                whileHover={(!isCurrentPlanAndCycle && !isDeactivated) ? { y: -5 } : {}}
+                className={`relative flex flex-col bg-white dark:bg-slate-900 border rounded-xl overflow-hidden transition-all duration-300 w-full h-full min-h-[500px] ${
                     isCurrentPlanAndCycle
-                        ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 opacity-70 grayscale-[0.5] cursor-not-allowed pointer-events-none'
+                        ? 'border-slate-200 dark:border-slate-800 opacity-60 grayscale-[0.5] cursor-not-allowed'
                         : isDeactivated
-                            ? 'border-slate-100 dark:border-slate-800/30 bg-slate-100/20 dark:bg-slate-900/10 opacity-40 grayscale cursor-not-allowed pointer-events-none'
-                            : isDowngrade
-                                ? 'border-amber-200 dark:border-amber-800/50 bg-white dark:bg-slate-900 shadow-xl shadow-amber-100/50 dark:shadow-amber-900/20 cursor-pointer'
-                                : isPopular
-                                    ? 'border-blue-600 dark:border-blue-500 bg-white dark:bg-slate-900 shadow-2xl cursor-pointer'
-                                    : 'border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl cursor-pointer'
+                            ? 'border-slate-200 dark:border-slate-800 opacity-40 grayscale cursor-not-allowed'
+                            : 'border-slate-100 dark:border-slate-800 hover:shadow-xl'
                 }`}
             >
-                {/* Active badge */}
-                {isCurrentPlanAndCycle && (
-                    <div className="absolute top-8 right-8 z-30">
-                        <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
-                            Active
-                        </div>
-                    </div>
-                )}
+                {/* Colored Top Border Strip */}
+                <div className={`h-1 w-full ${
+                    index === 0 ? 'bg-slate-300 dark:bg-slate-600' :
+                    index === 1 ? 'bg-blue-600 dark:bg-blue-500' :
+                    'bg-amber-400 dark:bg-amber-500'
+                }`} />
 
-                {/* Downgrade badge */}
-                {isDowngrade && (
-                    <div className="absolute top-8 left-8 z-30">
-                        <div className="flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200 dark:border-amber-800">
-                            <TrendingDown className="w-3 h-3" />
-                            Downgrade
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex-grow p-10 relative z-10 flex flex-col">
+                <div className="flex-grow p-8 flex flex-col">
                     {/* Header */}
-                    <div className="flex flex-col gap-6 mb-10">
-                        <div className={`w-14 h-14 flex items-center justify-center rounded-2xl ${
-                            isDowngrade
-                                ? 'bg-amber-100 dark:bg-amber-900/30'
-                                : isPopular
-                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                        }`}>
-                            {isDowngrade ? <TrendingDown className="w-6 h-6 text-amber-600" /> : getIcon()}
-                        </div>
-                        <div>
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white capitalize mb-2 tracking-tight">
-                                {name || type}
-                            </h3>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm leading-relaxed line-clamp-2">
-                                {description}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Pricing */}
-                    <div className="mb-10 bg-slate-50/50 dark:bg-slate-800/30 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800/50">
-                        <div className="flex items-baseline gap-2 mb-1">
-                            <span className="text-sm font-black text-slate-400">₦</span>
-                            <span className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white">
+                    <div className="mb-6">
+                        <h3 className="text-[15px] font-medium text-slate-800 dark:text-slate-200 capitalize mb-4">
+                            {name || type}
+                        </h3>
+                        
+                        {/* Pricing */}
+                        <div className="flex items-baseline gap-1 mb-4">
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">₦</span>
+                            <span className="text-4xl md:text-5xl font-medium tracking-tight text-slate-900 dark:text-white">
                                 {isDowngrade ? (amount || 0).toLocaleString() : proRata.amount.toLocaleString()}
                             </span>
-                            <span className="text-sm font-bold text-slate-500">
-                                /{billingType === 'monthly' ? 'mo' : 'yr'}
+                            <span className="text-xs text-slate-500">
+                                /{billingType === 'monthly' ? 'month' : 'year'}
                             </span>
                         </div>
-                        {isDowngrade ? (
-                            <div className="flex items-start gap-2 mt-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3">
-                                <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                                <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
-                                    Takes effect at period end · No charge now
-                                </p>
-                            </div>
-                        ) : proRata.isUpgrade ? (
-                            <div className="flex items-center gap-2 mt-2">
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-black rounded-lg uppercase tracking-widest animate-pulse">Pro-rated</span>
-                                <span className="text-[10px] font-bold text-slate-400">Credit applied</span>
-                            </div>
-                        ) : isCurrentPlanAndCycle ? (
-                            <div className="text-[10px] font-bold text-blue-500 mt-2 flex items-center gap-2">
-                                <Sparkles className="w-3 h-3" />
-                                <span>Your current active price</span>
-                            </div>
-                        ) : (
-                            <div className="text-[10px] font-bold text-slate-400 mt-2">Full price · Billing resets</div>
-                        )}
-                    </div>
 
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                            {description || 'Perfect for Small Teams, Startups, and Growing Businesses'}
+                        </p>
+
+                        <button
+                            onClick={handleAction}
+                            disabled={isLoading || isCurrentPlanAndCycle || isDeactivated}
+                            className={`w-full py-3 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+                                (isCurrentPlanAndCycle || isDeactivated)
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                                    : 'bg-[#111827] dark:bg-white text-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-100'
+                            }`}
+                        >
+                            {isLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <span>
+                                    {isCurrentPlanAndCycle ? 'Active Plan'
+                                        : isDeactivated ? 'Unavailable'
+                                        : isDowngrade ? 'Schedule Downgrade'
+                                        : 'Learn more'}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                     {/* Features */}
-                    <div className="space-y-4 mb-10">
-                        {features?.slice(0, 5).map((feature) => (
+                    <div className="space-y-4">
+                        <p className="text-xs text-slate-700 dark:text-slate-300 mb-4">Features:</p>
+                        {features?.map((feature) => (
                             <div key={feature} className="flex items-start gap-3">
-                                <CheckCircle2 className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                                    isDowngrade ? 'text-amber-400' : isPopular ? 'text-blue-500' : 'text-slate-400'
-                                }`} />
-                                <span className="text-slate-700 dark:text-slate-300 font-bold text-sm leading-snug">
+                                <div className="w-4 h-4 rounded-full bg-slate-900 dark:bg-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <CheckCircle2 className="w-3 h-3 text-white dark:text-slate-900" />
+                                </div>
+                                <span className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                                     {feature}
                                 </span>
                             </div>
                         ))}
-                    </div>
-
-                    {/* CTA */}
-                    <div className="mt-auto pt-8 border-t border-slate-100 dark:border-slate-800/50">
-                        <button
-                            onClick={handleAction}
-                            disabled={isLoading || isCurrentPlanAndCycle || isDeactivated}
-                            className={`w-full py-5 rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 ${
-                                (isCurrentPlanAndCycle || isDeactivated)
-                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                                    : isDowngrade
-                                        ? 'bg-amber-500 text-white shadow-xl shadow-amber-500/30 hover:bg-amber-600 ring-2 ring-amber-300 dark:ring-amber-700 ring-offset-2'
-                                        : isPopular
-                                            ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700'
-                                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-[1.02]'
-                            }`}
-                        >
-                            {isLoading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <>
-                                    <span>
-                                        {isCurrentPlanAndCycle ? 'Active Plan'
-                                            : isDeactivated ? 'Plan Unavailable'
-                                            : isDowngrade ? 'Schedule Downgrade'
-                                            : 'Select This Plan'}
-                                    </span>
-                                    {!isCurrentPlanAndCycle && !isDeactivated && (
-                                        isDowngrade
-                                            ? <TrendingDown className="w-5 h-5" />
-                                            : <ArrowRight className="w-5 h-5" />
-                                    )}
-                                </>
-                            )}
-                        </button>
-                        {isDowngrade && (
-                            <p className="text-center text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-3">
-                                ✓ No charge today · Click to review details
-                            </p>
-                        )}
                     </div>
                 </div>
             </motion.div>

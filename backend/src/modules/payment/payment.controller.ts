@@ -18,6 +18,8 @@ const initializePaymentSchema = z.object({
 
 const verifyPaymentSchema = z.object({
   reference: z.string().min(1, "Transaction reference is required"),
+  /** Flutterwave-only: the numeric transaction_id from the redirect callback query param */
+  transaction_id: z.string().optional(),
   plan: z.string().optional(),
   billingType: z.enum(["monthly", "yearly"] as const).optional().default("monthly"),
 });
@@ -41,8 +43,10 @@ export const initializePayment = async (req: Request, res: Response) => {
 
     const { amount, email, plan, planCode, metadata } = validation.data;
 
+    const resolvedUserId = userId || (metadata?.userId as string) || "";
+
     const data = await paymentService.initializePaymentService({
-      userId: userId || "",
+      userId: resolvedUserId,
       amount,
       email,
       plan,
@@ -72,16 +76,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    const { reference, plan, billingType } = validation.data;
+    const { reference, transaction_id, plan, billingType } = validation.data;
 
-    // Identify user: either via Auth Token or via Paystack Metadata
+    // Identify user: either via Auth Token or via Gateway Metadata
     let userId = (req as Request & { user?: { id: string; userType?: string } }).user?.id;
     let userRole = (req as Request & { user?: { id: string; userType?: string } }).user?.userType;
 
     // If guest, we verify the transaction first to extract the metadata we sent from the frontend
     if (!userId || !userRole) {
         console.log(`[PaymentController] Guest verification for ref: ${reference}`);
-        const { userId: metadataId, userRole: metadataRole } = await paymentService.getMetadataFromReference(reference);
+        const { userId: metadataId, userRole: metadataRole } = await paymentService.getMetadataFromReference(reference, transaction_id);
         userId = metadataId;
         userRole = metadataRole;
     }
@@ -95,7 +99,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
       userId,
       userRole,
       plan || "",
-      billingType
+      billingType,
+      transaction_id
     );
 
     return res.status(200).json({
@@ -238,21 +243,33 @@ export const getPricingFAQ = async (_req: Request, res: Response) => {
 };
 
 /**
- * Handle Paystack Webhook (Subscription Auto-Renewals)
+ * Handle Gateway Webhook (Flutterwave or Paystack auto-renewals)
+ *
+ * IMPORTANT: express.raw() must be applied to this route BEFORE json() so that
+ * req.rawBody is available for HMAC / verif-hash validation.
+ * Responds 200 immediately before processing to prevent gateway retries.
  */
 export const paystackWebhook = async (req: Request, res: Response) => {
+  // Always respond 200 first — prevents both FLW and Paystack from retrying
+  res.sendStatus(200);
+
   try {
-    const signature = req.headers['x-paystack-signature'] as string;
+    // The raw body string is needed for HMAC (Paystack) and plain-hash (FLW) validation.
+    // It is available as req.rawBody when the route uses express.raw() middleware.
+    const rawBody: string =
+      (req as Request & { rawBody?: string }).rawBody ??
+      JSON.stringify(req.body);
 
-    if (!signature) {
-      return res.status(400).send('Missing Paystack signature header');
-    }
+    const headers = req.headers as Record<string, string>;
 
-    // Pass payload as an object — JSON.stringify is handled inside the service
-    await paymentService.paystackWebhookService(signature, req.body);
-
-    return res.status(200).send('Webhook received successfully');
+    await paymentService.paystackWebhookService(
+      '', // legacy param — no longer used; adapter reads headers directly
+      req.body, // legacy param — no longer used
+      rawBody,
+      headers
+    );
   } catch (error) {
-    return handleError(res, error, "payment.paystackWebhook");
+    // Log only — 200 already sent, do NOT re-throw
+    console.error('[WebhookController] Async processing error:', error);
   }
 };

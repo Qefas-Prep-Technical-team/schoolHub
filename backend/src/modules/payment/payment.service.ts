@@ -1,5 +1,3 @@
-import axios from "axios";
-import crypto from "crypto";
 import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
 import { sendPaymentReceiptEmail } from "../auth/auth.service";
@@ -7,8 +5,7 @@ import { SubscriptionType, UserRole } from "@prisma/client";
 import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import { FinanceService } from "../finance/finance.service";
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "sk_test_placeholder";
+import { getPaymentGateway } from "./gateway.factory";
 
 const getPlanId = async (userType: string, plan: string) => {
   const categoryMap: Record<string, string> = {
@@ -36,7 +33,7 @@ const getPlanId = async (userType: string, plan: string) => {
 };
 
 /**
- * Initialize payment with Paystack
+ * Initialize a payment via the active gateway (Flutterwave or Paystack).
  */
 export const initializePaymentService = async (params: {
   userId: string;
@@ -46,37 +43,24 @@ export const initializePaymentService = async (params: {
   planCode?: string;
   metadata?: Record<string, unknown>;
 }) => {
-  try {
-    const payload: Record<string, unknown> = {
-      email: params.email,
-      amount: params.amount * 100, // Paystack works in kobo/cents
-      metadata: {
-        ...params.metadata,
-        userId: params.userId,
-        plan: params.plan,
-      },
-    };
+  const gateway = getPaymentGateway();
+  const result = await gateway.initialize({
+    userId: params.userId,
+    email: params.email,
+    amount: params.amount,
+    plan: params.plan,
+    metadata: {
+      ...params.metadata,
+      planCode: params.planCode,
+    },
+  });
 
-    if (params.planCode) {
-      payload.plan = params.planCode;
-    }
-
-    const response = await axios.post(
-      "https://api.paystack.co/transaction/initialize",
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return response.data.data;
-  } catch (error: unknown) {
-    const err = error as { response?: { data?: { message?: string } } };
-    throw new Error(err.response?.data?.message || "Paystack initialization failed");
-  }
+  // Return a shape the controller and frontend already understand
+  return {
+    authorization_url: result.checkoutUrl,
+    access_code: result.accessCode,
+    reference: result.txRef,
+  };
 };
 
 /**
@@ -87,64 +71,60 @@ export const verifyPaymentService = async (
   userId: string,
   userRoleRaw: string,
   plan: string,
-  billingType: 'monthly' | 'yearly'
+  billingType: 'monthly' | 'yearly',
+  /** FLW-only: numeric transaction_id from the redirect callback query param */
+  flwTransactionId?: string
 ) => {
   const userRole = userRoleRaw.toUpperCase();
   console.log(`[PaymentService] Verifying payment for user: ${userId}, role: ${userRole}, reference: ${reference}`);
 
   try {
     // --- IDEMPOTENCY GUARD ---
-    // Prevent the same Paystack reference from being processed more than once.
+    // Prevent the same reference from being processed more than once.
     const existingTransaction = await prisma.transaction.findUnique({
       where: { reference }
     });
     if (existingTransaction) {
       console.log(`[PaymentService] Reference ${reference} already processed. Skipping.`);
-      // Return a success-like payload so the frontend still transitions to SUCCESS state
       return { alreadyProcessed: true, reference };
     }
 
-    let response;
-    try {
-      response = await axios.get(
-        `https://api.paystack.co/transaction/verify/${reference}`,
-        {
-          headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          },
+    // Delegate verification to the active gateway adapter
+    const gateway = getPaymentGateway();
+    const verified = await gateway.verify(reference, flwTransactionId);
+
+    const paystackAmount = verified.amountNaira; // Already in Naira from adapter
+    const paystackRef = verified.reference;
+    const channel = verified.channel;
+    const authCode = verified.authorizationToken;
+
+    // SECURITY: Extract Plan and Billing from gateway-normalised metadata (Source of Truth)
+    const metadataPlan = verified.meta.plan;
+    const metadataBilling = verified.meta.billing;
+    const isUpgrade = verified.meta.isUpgrade ?? false;
+    // Frontend passes isTrial but we MUST verify it server-side — never trust the client.
+    const isTrial = await (async () => {
+      const claimedTrial = verified.meta.isTrial ?? false;
+      if (!claimedTrial) return false; // Not even claiming trial — fast path
+
+      // Look up the actual user record to check trialUsed
+      const tableMap: Record<string, string> = { ADMIN: 'admin', TEACHER: 'teacher', STUDENT: 'student', PARENT: 'parent' };
+      const table = tableMap[userRole] || 'admin';
+      try {
+        const dbUser = await (prisma as unknown as Record<string, { findUnique: (a: { where: { id: string }; select: { trialUsed: boolean } }) => Promise<{ trialUsed: boolean } | null> }>)[table].findUnique({
+          where: { id: userId },
+          select: { trialUsed: true },
+        });
+        if (dbUser?.trialUsed) {
+          console.warn(`[PaymentSecurity] User ${userId} already used their trial. Denying isTrial claim.`);
+          return false; // Trial already used — reject the claim silently (full price applies)
         }
-      );
-    } catch (axiosError: any) {
-      console.error("[PaymentService] Paystack API Error:", axiosError.response?.data || axiosError.message);
-      throw new Error(axiosError.response?.data?.message || "Failed to contact Paystack for verification. Check your API keys.");
-    }
-
-    const {
-        status: paystackStatus,
-        amount: paystackAmount,
-        reference: paystackRef,
-        channel,
-        authorization,
-        metadata
-    } = response.data.data;
-
-    const authCode = authorization?.authorization_code;
-
-    if (paystackStatus !== "success") {
-      throw new Error("Payment was not successful");
-    }
-
-    // SECURITY: Extract Plan and Billing from Metadata (Source of Truth)
-    // This prevents users from spoofing a different plan in the request body
-    let metadataObj = metadata;
-    if (typeof metadataObj === 'string') {
-        try { metadataObj = JSON.parse(metadataObj); } catch(e) { console.warn("[PaymentService] Failed to parse metadata string"); }
-    }
-    const customFields = metadataObj?.custom_fields || [];
-    const metadataPlan = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'plan')?.value;
-    const metadataBilling = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'billing')?.value;
-    const isUpgrade = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'is_upgrade')?.value === 'true';
-    const isTrial = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'is_trial')?.value === 'true';
+        return true;
+      } catch {
+        console.warn(`[PaymentSecurity] Could not verify trialUsed for user ${userId} — defaulting isTrial=false.`);
+        return false;
+      }
+    })();
 
     // Prioritize metadata, fallback to provided params (for backward compatibility if needed)
     const verifiedPlan = metadataPlan || plan;
@@ -155,7 +135,12 @@ export const verifyPaymentService = async (
     }
 
     // Calculate subscription end date
-    const durationMonths = verifiedBilling === 'yearly' ? 12 : 1;
+    // `months` is set by the frontend when the user buys multiple months at once.
+    // Falls back to 1 for a normal single-month payment (backward compatible).
+    const metadataMonths = typeof verified.meta.months === 'number' && verified.meta.months > 0
+      ? verified.meta.months
+      : 1;
+    const durationMonths = verifiedBilling === 'yearly' ? 12 : metadataMonths;
     let subscriptionEnd = new Date();
 
     if (isTrial) {
@@ -245,7 +230,7 @@ export const verifyPaymentService = async (
     await prisma.transaction.create({
         data: {
             reference: paystackRef,
-            amount: paystackAmount / 100,
+            amount: paystackAmount,
             currency: "NGN",
             status: "SUCCESS",
             paymentMethod: channel,
@@ -258,6 +243,8 @@ export const verifyPaymentService = async (
             planId,
             billingCycle: billingType,
             expiryDate: updateData.subscriptionEnd,
+            gateway: gateway.name,
+            gatewayRef: verified.gatewayRef,
         }
     });
 
@@ -277,9 +264,9 @@ export const verifyPaymentService = async (
                 planId: updateData.planId,
                 type: subType,
                 durationDays,
-                amountPaid: paystackAmount / 100,
+                amountPaid: paystackAmount,
                 paymentReference: paystackRef,
-                note: `Payment via Paystack (${channel})`,
+                note: `Payment via ${gateway.name} (${channel})`,
                 isTrial,
                 trialPlan: verifiedPlan,
                 trialEndsAt: subscriptionEnd
@@ -301,9 +288,9 @@ export const verifyPaymentService = async (
                 planId: updateData.planId,
                 type: subType,
                 durationDays,
-                amountPaid: paystackAmount / 100,
+                amountPaid: paystackAmount,
                 paymentReference: paystackRef,
-                note: `Payment via Paystack (${channel})`,
+                note: `Payment via ${gateway.name} (${channel})`,
                 isTrial,
                 trialPlan: verifiedPlan,
                 trialEndsAt: subscriptionEnd
@@ -316,9 +303,9 @@ export const verifyPaymentService = async (
                     planId: updateData.planId,
                     type: subType,
                     durationDays,
-                    amountPaid: paystackAmount / 100,
+                    amountPaid: paystackAmount,
                     paymentReference: paystackRef,
-                    note: `Institutional Payment via Paystack (${channel})`,
+                    note: `Institutional Payment via ${gateway.name} (${channel})`,
                     isTrial,
                     trialPlan: verifiedPlan,
                     trialEndsAt: subscriptionEnd,
@@ -343,7 +330,7 @@ export const verifyPaymentService = async (
         if (userEmail) {
             await sendPaymentReceiptEmail({
                 email: userEmail,
-                amount: paystackAmount / 100,
+                amount: paystackAmount,
                 date: new Date(),
                 method: channel || 'Card',
                 plan: plan,
@@ -356,7 +343,12 @@ export const verifyPaymentService = async (
         // Don't throw here as the payment was successful
     }
 
-    return response.data.data;
+    return { 
+        reference: paystackRef, 
+        gateway: gateway.name,
+        paymentMethod: channel,
+        expiryDate: updateData.subscriptionEnd
+    };
   } catch (error: any) {
     console.error("[PaymentService] Error during verification:", error);
     // Extract Prisma errors or nested messages safely
@@ -591,30 +583,28 @@ export const getPaymentHistoryService = async (userId: string) => {
 };
 
 /**
- * Extract metadata from a Paystack reference (Used for guest checkout verification)
+ * Extract metadata from a payment reference (Used for guest checkout verification).
+ * Tries the active gateway first; for FLW this falls back to the DB since metadata
+ * is embedded in the tx_ref stored at initialization time.
  */
-export const getMetadataFromReference = async (reference: string) => {
+export const getMetadataFromReference = async (reference: string, flwTransactionId?: string) => {
     try {
-        const response = await axios.get(
-            `https://api.paystack.co/transaction/verify/${reference}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-                },
-            }
-        );
-
-        let metadataObj = response.data.data.metadata;
-        if (typeof metadataObj === 'string') {
-            try { metadataObj = JSON.parse(metadataObj); } catch(e) {}
+        const gateway = getPaymentGateway();
+        const verified = await gateway.verify(reference, flwTransactionId);
+        return {
+            userId: verified.meta.userId,
+            userRole: verified.meta.userRole,
+        };
+    } catch {
+        // Fallback: look up a previously stored Transaction record by reference
+        const tx = await prisma.transaction.findUnique({
+            where: { reference },
+            select: { userId: true, userType: true }
+        });
+        if (tx?.userId && tx?.userType) {
+            return { userId: tx.userId, userRole: tx.userType };
         }
-        const metadata = metadataObj?.custom_fields || [];
-        const userId = metadata.find((f: { variable_name: string; value: string }) => f.variable_name === 'user_id')?.value;
-        const userRole = metadata.find((f: { variable_name: string; value: string }) => f.variable_name === 'user_role')?.value;
-
-        return { userId, userRole };
-    } catch (error: unknown) {
-        console.error(`[PaymentService] Error fetching metadata for ref: ${reference}`, error);
+        console.error(`[PaymentService] Could not extract metadata for ref: ${reference}`);
         throw new Error("Failed to retrieve transaction metadata");
     }
 };
@@ -653,7 +643,7 @@ const extendSubscriptionOnRenewal = async (params: {
         durationDays,
         amountPaid,
         paymentReference,
-        note: `Auto-renewal via Paystack (${channel})`,
+        note: `Auto-renewal via gateway (${channel})`,
       });
       break;
 
@@ -672,7 +662,7 @@ const extendSubscriptionOnRenewal = async (params: {
         durationDays,
         amountPaid,
         paymentReference,
-        note: `Auto-renewal via Paystack (${channel})`,
+        note: `Auto-renewal via gateway (${channel})`,
       });
 
       if (schoolId) {
@@ -683,7 +673,7 @@ const extendSubscriptionOnRenewal = async (params: {
           durationDays,
           amountPaid,
           paymentReference,
-          note: `Institutional Auto-renewal via Paystack (${channel})`,
+          note: `Institutional Auto-renewal via gateway (${channel})`,
           assignedBy: userId,
         });
       }
@@ -818,49 +808,40 @@ const resolveUserFromChargeData = async (data: {
 };
 
 /**
- * Handle Paystack Webhook Events
+ * Handle Gateway Webhook Events (Flutterwave or Paystack)
  *
- * This is the UNIFIED, single webhook endpoint registered in the Paystack Dashboard.
+ * This is the UNIFIED, single webhook endpoint registered in the active payment gateway.
  * It handles:
  *   1. charge.success → Subscription auto-renewals (via extendSubscriptionOnRenewal)
  *   2. charge.success where paymentType === "SCHOOL_FEES" → School fee payments (via FinanceService)
  *   3. subaccount.update → Subaccount status changes (via FinanceService)
  *
- * Only ONE webhook URL should be registered in Paystack:
+ * Only ONE webhook URL should be registered:
  *   Production: https://your-domain.com/api/v1/payment/webhook
  */
-export const paystackWebhookService = async (signature: string, payload: {
-  event: string;
-  data: {
-    reference?: string;
-    amount?: number;
-    channel?: string;
-    customer?: { email?: string };
-    authorization?: { authorization_code?: string };
-    metadata?: {
-      custom_fields?: Array<{ variable_name: string; value: string }>;
-      paymentType?: string;
-    };
-    subaccount_code?: string;
-    status?: string;
-  };
-}) => {
-  // 1. Verify Paystack HMAC-512 Signature
-  const hash = crypto.createHmac('sha512', PAYSTACK_SECRET_KEY).update(JSON.stringify(payload)).digest('hex');
-  if (hash !== signature) {
-    throw new Error('Invalid signature');
+export const paystackWebhookService = async (
+  _signature: string,
+  _payload: unknown,
+  rawBody: string,
+  headers: Record<string, string>
+) => {
+  const gateway = getPaymentGateway();
+
+  // Delegate signature verification and event parsing to the active adapter
+  const result = await gateway.handleWebhook(rawBody, headers);
+
+  if (!result.valid) {
+    throw new Error('Invalid webhook signature');
   }
 
-  const event = payload.event;
-  const data = payload.data;
+  const { event, data } = result;
 
   // ─── Branch A: charge.success ─────────────────────────────────────────────
   if (event === 'charge.success') {
     const reference = data.reference;
-    const amountKobo = data.amount || 0;
-    const amountNaira = amountKobo / 100;
+    const amountNaira = data.amountNaira || 0;
     const channel = data.channel || 'card';
-    const paymentType = data.metadata?.paymentType;
+    const paymentType = data.paymentType;
 
     if (!reference) {
       console.warn('[Webhook] charge.success received with no reference. Ignoring.');
@@ -883,14 +864,41 @@ export const paystackWebhookService = async (signature: string, payload: {
     }
 
     // Resolve which user and plan this charge belongs to
-    const resolved = await resolveUserFromChargeData(data);
+    // Normalized meta from the adapter already contains userId / userRole
+    let resolved: { userId: string; userRole: string; planId: string; planName: string; billingCycle: string } | null = null;
+
+    if (data.meta?.['userId'] && data.meta?.['user_role'] && data.meta?.['plan']) {
+      try {
+        const planId = await getPlanId(data.meta['user_role'], data.meta['plan']);
+        resolved = {
+          userId: data.meta['userId'],
+          userRole: data.meta['user_role'].toUpperCase(),
+          planId,
+          planName: data.meta['plan'],
+          billingCycle: data.meta['billing'] || 'monthly',
+        };
+      } catch {
+        console.warn('[Webhook] Could not resolve planId from webhook meta fields.');
+      }
+    }
+
+    if (!resolved) {
+      // Fallback: try to resolve from DB using authorizationToken or email
+      resolved = await resolveUserFromChargeData({
+        customer: { email: data.email },
+        authorization: { authorization_code: data.authorizationToken },
+        metadata: {
+          custom_fields: data.meta
+            ? Object.entries(data.meta).map(([k, v]) => ({ variable_name: k, value: v }))
+            : [],
+        },
+      });
+    }
 
     if (!resolved) {
       console.error(
-        `[Webhook] Could not resolve user for charge.success reference: ${reference}, email: ${data.customer?.email}`
+        `[Webhook] Could not resolve user for charge.success reference: ${reference}`
       );
-      // Return success to Paystack regardless — we don't want Paystack to keep retrying
-      // for charges we legitimately cannot map to a user.
       return { success: true };
     }
 
@@ -908,7 +916,7 @@ export const paystackWebhookService = async (signature: string, payload: {
       billingCycle,
       amountPaid: amountNaira,
       paymentReference: reference,
-      authorizationToken: data.authorization?.authorization_code,
+      authorizationToken: data.authorizationToken,
       channel,
     });
 
@@ -918,17 +926,17 @@ export const paystackWebhookService = async (signature: string, payload: {
 
   // ─── Branch B: subaccount.update ──────────────────────────────────────────
   if (event === 'subaccount.update') {
-    const { subaccount_code, status } = data;
-    if (subaccount_code && status) {
-      console.log(`[Webhook] Subaccount update: ${subaccount_code} → ${status}`);
-      await FinanceService.updateSubaccountStatusByCode(subaccount_code, status);
+    const { subaccountCode, status } = data;
+    if (subaccountCode && status) {
+      console.log(`[Webhook] Subaccount update: ${subaccountCode} → ${status}`);
+      await FinanceService.updateSubaccountStatusByCode(subaccountCode, status);
     } else {
-      console.warn('[Webhook] subaccount.update received without subaccount_code or status. Ignoring.');
+      console.warn('[Webhook] subaccount.update received without subaccountCode or status. Ignoring.');
     }
     return { success: true };
   }
 
-  // All other events — acknowledge to Paystack without processing
+  // All other events — acknowledge without processing
   console.log(`[Webhook] Unhandled event type: ${event}. Acknowledging without processing.`);
   return { success: true };
 };

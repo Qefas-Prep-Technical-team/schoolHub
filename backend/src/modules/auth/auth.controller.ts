@@ -1093,6 +1093,20 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
         : null;
 
     const userExists = !!(admin || teacher || student || parent);
+    let actualRole: UserRole | null = null;
+    if (admin) actualRole = UserRole.ADMIN;
+    else if (teacher) actualRole = UserRole.TEACHER;
+    else if (student) actualRole = UserRole.STUDENT;
+    else if (parent) actualRole = UserRole.PARENT;
+
+    // GUARD: If user exists, they MUST request a code for their registered role
+    if (userExists && actualRole !== normalizedRole) {
+      return res.status(403).json({
+        success: false,
+        message: `Email already registered as a ${actualRole}. Cannot request code for ${normalizedRole}.`,
+      });
+    }
+
     const emailType = userExists ? "confirmation" : "welcome";
 
     // Send email via Resend

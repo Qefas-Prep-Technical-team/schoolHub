@@ -30,7 +30,8 @@ import {
     Terminal,
     PieChart,
     UserCheck,
-    Wrench
+    Wrench,
+    Tag
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
@@ -43,6 +44,7 @@ export const consoleMenuItems = [
     { icon: Users, label: "Parents", href: "/console/parents" },
     { icon: Wrench, label: "System Architecture", href: "/console/features" },
     { icon: CreditCard, label: "Revenue Architecture", href: "/console/billing/pricing" },
+    { icon: Tag, label: "Coupon Codes", href: "/console/billing/coupons" },
     { icon: PieChart, label: "Global Revenue", href: "/console/transactions" },
     { icon: MessageSquare, label: "Support Center", href: "/console/support" },
     { icon: Activity, label: "Monitoring", href: "/console/monitoring" },

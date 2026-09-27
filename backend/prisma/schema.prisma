@@ -1178,6 +1178,9 @@ model Transaction {
   expiryDate         DateTime?
   userId             String?
   userType           UserRole?
+  // Gateway tracking fields (additive — existing rows default to PAYSTACK)
+  gateway            String    @default("PAYSTACK") // "PAYSTACK" | "FLUTTERWAVE"
+  gatewayRef         String?   // Raw gateway transaction ID (flw_ref or ps ref)
   school             School?   @relation(fields: [schoolId], references: [id])
 
   @@map("transactions")
@@ -1249,8 +1252,14 @@ model TransactionHistory {
 model SettlementAccount {
   id                       String               @id @default(uuid())
   schoolId                 String
+  // Paystack fields (preserved for backward compat — read-only after cutover)
   paystackSubaccountCode   String?
   paystackSubaccountStatus String               @default("pending")
+  // Flutterwave fields (new — populated on cutover)
+  flwSubaccountId          String?              // FLW internal ID
+  flwSubaccountCode        String?              // FLW subaccount_code for splits
+  flwAccountStatus         String?              // "active" | "pending" etc.
+  // Shared fields
   bankName                 String?
   accountNumber            String?
   accountName              String?
@@ -1264,6 +1273,49 @@ model SettlementAccount {
   transactionHistories     TransactionHistory[]
 
   @@map("settlement_accounts")
+}
+
+model Coupon {
+  id              String        @id @default(uuid())
+  code            String        @unique
+  description     String?
+  // Discount type: PERCENTAGE (e.g. 20 = 20% off) or FIXED (e.g. 500 = ₦500 off)
+  discountType    String        @default("PERCENTAGE") // "PERCENTAGE" | "FIXED"
+  discountValue   Float
+  // Optional cap on a percentage discount (e.g. max ₦1000 off)
+  maxDiscountNaira Float?
+  // Eligibility
+  minAmountNaira  Float?        // minimum cart amount to apply this coupon
+  applicablePlans String?       // JSON array of plan names, null = all plans
+  applicableRoles String?       // JSON array of roles e.g. ["ADMIN","TEACHER"], null = all
+  // Limits
+  maxUses         Int?          // total redemptions allowed, null = unlimited
+  maxUsesPerUser  Int           @default(1)
+  currentUses     Int           @default(0)
+  // Lifecycle
+  isActive        Boolean       @default(true)
+  startsAt        DateTime      @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       String?       // admin user ID
+  usages          CouponUsage[]
+
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String
+  userId    String
+  userEmail String
+  discount  Float    // actual discount amount in Naira applied
+  reference String?  // payment reference this was used for
+  usedAt    DateTime @default(now())
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+
+  @@unique([couponId, userId])   // one redemption per user per coupon (unless maxUsesPerUser > 1)
+  @@map("coupon_usages")
 }
 
 model SubscriptionPlan {

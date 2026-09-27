@@ -131,7 +131,7 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-[1.08] text-white mb-6"
+              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[1.06] text-white mb-6"
               style={{ letterSpacing: '-0.02em' }}
             >
               Education management,{' '}
@@ -145,7 +145,7 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-base md:text-lg text-slate-300 leading-relaxed mb-10 max-w-xl font-light"
+              className="text-lg md:text-xl text-slate-300 leading-relaxed mb-10 max-w-xl font-light"
             >
               One platform for your entire institution. Manage students, teachers, attendance,
               grades, and parent communication — all without switching between tools.
@@ -160,14 +160,14 @@ const IntroSection: FC = () => {
             >
               <Link href="/signup" className="w-full sm:w-auto">
                 <button
-                  className="w-full sm:w-auto px-8 py-4 bg-white text-[#111827] text-base font-semibold rounded-full hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-white/10 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 bg-white text-[#111827] text-lg font-bold rounded-full hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-white/10 flex items-center justify-center gap-2"
                 >
                   Start Your Journey →
                 </button>
               </Link>
               <Link href="/contact" className="w-full sm:w-auto">
                 <button
-                  className="w-full sm:w-auto px-8 py-4 bg-white/10 border-white/20 border text-white text-base font-semibold rounded-full hover:bg-white/20 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 backdrop-blur-sm"
+                  className="w-full sm:w-auto px-8 py-4 bg-white/10 border-white/20 border text-white text-lg font-bold rounded-full hover:bg-white/20 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 backdrop-blur-sm"
                 >
                   <PlayCircle className="w-5 h-5 text-blue-400" />
                   Request a Demo
@@ -199,7 +199,7 @@ const IntroSection: FC = () => {
                 <div className="flex text-amber-400 mb-0.5">
                   {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
                 </div>
-                <p className="text-xs text-slate-300 font-medium">Trusted by schools across Nigeria</p>
+                <p className="text-sm text-slate-300 font-medium">Trusted by schools across Nigeria</p>
               </div>
             </motion.div>
           </div>

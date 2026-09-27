@@ -217,6 +217,7 @@ export function AppSidebar() {
                                                     isActive
                                                         ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-[0_4px_12px_rgba(5,150,105,0.1)]"
                                                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white",
+                                                    isCollapsed && "justify-center mx-auto"
                                                 )}
                                             >
                                                 {isActive && (

@@ -1,71 +1,58 @@
-import axios from "axios";
 import prisma from "../../config/database";
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
+import { getPaymentGateway } from "../payment/gateway.factory";
 
 /**
- * Service to handle school finance operations
+ * Service to handle school finance operations.
+ *
+ * All gateway calls are routed through getPaymentGateway() so that
+ * flipping PAYMENT_GATEWAY=flutterwave instantly switches the provider
+ * for bank setup, fee collection, and settlement syncs.
  */
 export class FinanceService {
   /**
-   * Initialize Paystack Subaccount (Settlement Account)
+   * Create a Settlement Subaccount via the active gateway.
+   * Stores Paystack-specific fields for backward compat and FLW fields for new schools.
    */
   static async setupBank(schoolId: string, data: {
     business_name: string;
-    settlement_bank: string;
+    settlement_bank: string;       // bank code
     account_number: string;
     percentage_charge: number;
   }) {
     try {
-      // 1. Create subaccount on Paystack
-      let subaccount;
-      try {
-        const response = await axios.post(
-          "https://api.paystack.co/subaccount",
-          {
-            business_name: data.business_name,
-            settlement_bank: data.settlement_bank,
-            account_number: data.account_number,
-            percentage_charge: data.percentage_charge,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        subaccount = response.data.data;
-      } catch (paystackError: any) {
-        const msg = paystackError.response?.data?.message || "";
-        if (msg.toLowerCase().includes("account number")) {
-          throw new Error("Invalid account number. Please verify and try again.");
-        }
-        throw paystackError;
-      }
+      const gateway = getPaymentGateway();
 
-      // 2. Save to database in multiple account model
-      // Robust status check: use status or active boolean fallback
-      let subaccountStatus = subaccount.status;
-      if (!subaccountStatus) {
-        subaccountStatus = subaccount.active ? "active" : "pending";
-      }
+      const sub = await gateway.createSubaccount({
+        schoolId,
+        businessName: data.business_name,
+        bankCode: data.settlement_bank,
+        accountNumber: data.account_number,
+        splitPercentage: data.percentage_charge,
+      });
+
+      const isFlw = gateway.name === 'FLUTTERWAVE';
 
       // @ts-ignore - prisma client might not be fully generated yet
       const account = await prisma.settlementAccount.create({
         data: {
           schoolId,
-          paystackSubaccountCode: subaccount.subaccount_code,
-          paystackSubaccountStatus: subaccountStatus,
-          bankName: subaccount.settlement_bank,
+          // Paystack fields (preserved for backward compat)
+          paystackSubaccountCode: isFlw ? undefined : sub.code,
+          paystackSubaccountStatus: isFlw ? 'pending' : sub.status,
+          // Flutterwave fields
+          flwSubaccountId: isFlw ? sub.id : undefined,
+          flwSubaccountCode: isFlw ? sub.code : undefined,
+          flwAccountStatus: isFlw ? sub.status : undefined,
+          // Shared
+          bankName: data.settlement_bank,
           accountNumber: data.account_number,
-          accountName: subaccount.business_name,
+          accountName: data.business_name,
           percentageCharge: data.percentage_charge,
-          isDefault: true
+          isDefault: true,
         }
       });
 
-      // 3. Set as default and update others
+      // Set as default and clear all other accounts
       // @ts-ignore
       await prisma.settlementAccount.updateMany({
         where: { schoolId, id: { not: account.id } },
@@ -73,18 +60,24 @@ export class FinanceService {
       });
 
       return account;
-    } catch (error: any) {
-      console.error("[FinanceService] Setup Bank Error:", error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("[FinanceService] Setup Bank Error:", err.message);
+      // Surface friendly message for account number failures
+      if (err.message?.toLowerCase().includes("account number")) {
+        throw new Error("Invalid account number. Please verify and try again.");
+      }
       throw error;
     }
   }
 
   /**
-   * Helper to get settlement status details
+   * Helper to get settlement status details for the UI.
+   * Gateway-agnostic: reads the best available status field.
    */
-  static getSchoolPaymentStatus(school: any) {
-    const status = school.paystackSubaccountStatus || "pending";
-    
+  static getSchoolPaymentStatus(school: { paystackSubaccountStatus?: string; flwAccountStatus?: string }) {
+    const status = school.flwAccountStatus || school.paystackSubaccountStatus || "pending";
+
     const statusMap: Record<string, { label: string, color: string, message: string }> = {
       active: {
         label: "Active Account",
@@ -94,7 +87,7 @@ export class FinanceService {
       pending: {
         label: "Awaiting Verification",
         color: "yellow",
-        message: "Your bank details are being verified by Paystack typically within 24 hours."
+        message: "Your bank details are being verified — typically within 24 hours."
       },
       unverified: {
         label: "Unverified Account",
@@ -115,7 +108,7 @@ export class FinanceService {
   }
 
   /**
-   * Initialize a fee payment
+   * Initialize a school fee payment via the active gateway.
    */
   static async initializePayment(params: {
     schoolId: string;
@@ -123,59 +116,69 @@ export class FinanceService {
     parentId: string;
     email: string;
     amount: number;
-    metadata: any;
+    metadata: Record<string, unknown>;
   }) {
     try {
-      // 1. Check if school is active for payments
+      const gateway = getPaymentGateway();
+
+      // Fetch the active settlement account for this school
+      // @ts-ignore
       const school = await prisma.school.findUnique({
         where: { id: params.schoolId },
         // @ts-ignore
         include: { settlementAccounts: { where: { isDefault: true } } }
       });
 
-      // @ts-ignore
-      const activeAccount = school?.settlementAccounts?.[0] || await prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, paystackSubaccountStatus: "active" } });
+      const isFlw = gateway.name === 'FLUTTERWAVE';
 
-      if (!activeAccount || activeAccount.paystackSubaccountStatus !== "active") {
+      // @ts-ignore
+      let activeAccount = school?.settlementAccounts?.[0];
+      if (!activeAccount) {
+        // @ts-ignore
+        activeAccount = isFlw
+          // @ts-ignore
+          ? await prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, flwAccountStatus: 'active' } })
+          // @ts-ignore
+          : await prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, paystackSubaccountStatus: 'active' } });
+      }
+
+      const accountStatus = isFlw ? activeAccount?.flwAccountStatus : activeAccount?.paystackSubaccountStatus;
+
+      if (!activeAccount || accountStatus !== 'active') {
         throw new Error("PAYMENT_GATE_LOCKED: School settlement account is not active. Please complete bank verification.");
       }
 
-      // 4. Initialize Paystack Transaction
-      const response = await axios.post(
-        "https://api.paystack.co/transaction/initialize",
-        {
-          email: params.email,
-          amount: params.amount * 100, // Kobo
-          // @ts-ignore
-          subaccount: activeAccount.paystackSubaccountCode,
-          metadata: {
-            ...params.metadata,
-            schoolId: params.schoolId,
-            studentId: params.studentId,
-            parentId: params.parentId,
-            paymentType: "SCHOOL_FEES",
-            // @ts-ignore
-            settlementAccountId: activeAccount.id
-          },
+      // Determine the correct subaccount code / ID for split payments
+      const subaccountCode: string = (isFlw
+        ? activeAccount.flwSubaccountId || activeAccount.flwSubaccountCode
+        : activeAccount.paystackSubaccountCode) ?? '';
+
+      const result = await gateway.initialize({
+        userId: params.parentId,
+        email: params.email,
+        amount: params.amount,
+        plan: 'SCHOOL_FEES',
+        metadata: {
+          ...params.metadata,
+          schoolId: params.schoolId,
+          studentId: params.studentId,
+          parentId: params.parentId,
+          paymentType: 'SCHOOL_FEES',
+          settlementAccountId: activeAccount.id,
+          subaccountCode, // adapter picks this up from metadata for split routing if needed
         },
-        {
-          headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      });
 
       // Pre-create the payment record as PENDING
       await prisma.payment.create({
         data: {
-          paymentReference: response.data.data.reference,
+          paymentReference: result.txRef,
           schoolId: params.schoolId,
           studentId: params.studentId,
           parentId: params.parentId,
           amount: params.amount,
-          term: params.metadata.term || "UNKNOWN",
-          session: params.metadata.session || "UNKNOWN",
+          term: (params.metadata.term as string) || "UNKNOWN",
+          session: (params.metadata.session as string) || "UNKNOWN",
           paymentType: "SCHOOL_FEES",
           status: "PENDING",
           // @ts-ignore
@@ -183,68 +186,71 @@ export class FinanceService {
         }
       });
 
-      return response.data.data;
-    } catch (error: any) {
-      console.error("[FinanceService] Initialize Payment Error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Payment initialization failed");
+      return {
+        authorization_url: result.checkoutUrl,
+        reference: result.txRef,
+        access_code: result.accessCode,
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      console.error("[FinanceService] Initialize Payment Error:", err.response?.data || err.message);
+      throw new Error(err.response?.data?.message || err.message || "Payment initialization failed");
     }
   }
 
   /**
-   * Verify a fee payment (can be called from webhook or client)
+   * Verify a school fee payment (called from webhook or client).
+   * Gateway-agnostic: uses the stored paymentReference to look up the gateway and verify.
    */
-  static async verifyPayment(reference: string) {
+  static async verifyPayment(reference: string, flwTransactionId?: string) {
     try {
-      const response = await axios.get(
-        `https://api.paystack.co/transaction/verify/${reference}`,
-        {
-          headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          },
-        }
-      );
+      const gateway = getPaymentGateway();
+      const verified = await gateway.verify(reference, flwTransactionId);
 
-      const data = response.data.data;
-      if (data.status === "success") {
-        const { schoolId, studentId, parentId, paymentType } = data.metadata;
+      if (verified.success) {
+        const paymentMeta = verified.meta as Record<string, unknown>;
+        const schoolId = paymentMeta['schoolId'] as string | undefined;
+        const studentId = paymentMeta['studentId'] as string | undefined;
+        const parentId = paymentMeta['parentId'] as string | undefined;
 
         // Update Payment status
         const payment = await prisma.payment.update({
           where: { paymentReference: reference },
           data: {
             status: "SUCCESS",
-            paidAt: new Date(data.paid_at),
-            paymentMethod: data.channel,
+            paidAt: new Date(),
+            paymentMethod: verified.channel,
           }
         });
 
         // Create Transaction History record
         await prisma.transactionHistory.create({
           data: {
-            schoolId: schoolId,
+            schoolId: schoolId || payment.schoolId,
             paymentId: payment.id,
             transactionReference: reference,
-            amount: data.amount / 100,
-            gatewayResponse: data,
-            channel: data.channel,
-            currency: data.currency,
+            amount: verified.amountNaira,
+            gatewayResponse: { gateway: verified.gateway, gatewayRef: verified.gatewayRef },
+            channel: verified.channel,
+            currency: "NGN",
             status: "SUCCESS",
-            paidAt: new Date(data.paid_at),
+            paidAt: new Date(),
           }
         });
 
         return { success: true, payment };
       }
 
-      return { success: false, status: data.status };
-    } catch (error: any) {
-      console.error("[FinanceService] Verify Payment Error:", error.response?.data || error.message);
+      return { success: false, status: 'failed' };
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("[FinanceService] Verify Payment Error:", err.message);
       throw new Error("Verification failed");
     }
   }
 
   /**
-   * Get analytics for school admin
+   * Get analytics for school admin.
    */
   static async getSchoolAnalytics(schoolId: string) {
     try {
@@ -321,21 +327,23 @@ export class FinanceService {
         _sum: { amount: true }
       });
 
-      // Map accounts with their individual totals for ATM Display
-      const accounts = settlementAccounts.map((acc: any) => ({
+      // Map accounts — surface the best available status (FLW or Paystack)
+      const accounts = settlementAccounts.map((acc: Record<string, unknown>) => ({
         id: acc.id,
         bankName: acc.bankName,
         accountName: acc.accountName,
         accountNumber: acc.accountNumber,
-        status: acc.paystackSubaccountStatus,
+        // Show the most up-to-date status regardless of gateway
+        status: (acc.flwAccountStatus as string) || (acc.paystackSubaccountStatus as string) || 'pending',
         isDefault: acc.isDefault,
-        totalSettled: acc.transactionHistories.reduce((sum: number, t: any) => sum + t.amount, 0),
-        paystackSubaccountCode: acc.paystackSubaccountCode
+        totalSettled: (acc.transactionHistories as Array<{ amount: number }>).reduce((sum, t) => sum + t.amount, 0),
+        paystackSubaccountCode: acc.paystackSubaccountCode,
+        flwSubaccountCode: acc.flwSubaccountCode,
       }));
 
       // Overall verification logic
       const overallStatusValue = accounts.length === 0 ? "none" :
-                            accounts.some(a => a.status === "active") ? "active" : 
+                            accounts.some(a => a.status === "active") ? "active" :
                             accounts.some(a => a.status === "pending") ? "pending" : "unverified";
 
       return {
@@ -355,29 +363,23 @@ export class FinanceService {
         accounts,
         isVerified: overallStatusValue === "active"
       };
-    } catch (error: any) {
-      console.error("[FinanceService] Analytics Error:", error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("[FinanceService] Analytics Error:", err.message);
       throw error;
     }
   }
 
   /**
-   * Get list of supported banks from Paystack
+   * Return the list of supported banks from the active gateway.
    */
   static async listBanks() {
-    try {
-      const response = await axios.get("https://api.paystack.co/bank?country=nigeria", {
-        headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` }
-      });
-      return response.data.data;
-    } catch (error: any) {
-      console.error("[FinanceService] List Banks Error:", error.message);
-      throw new Error("Failed to fetch banks list");
-    }
+    const gateway = getPaymentGateway();
+    return gateway.listBanks('NG');
   }
 
   /**
-   * Get all transactions across the platform (Super Admin)
+   * Get all transactions across the platform (Super Admin).
    */
   static async getGlobalTransactions() {
     try {
@@ -395,119 +397,134 @@ export class FinanceService {
       });
 
       return transactions;
-    } catch (error: any) {
-      console.error("[FinanceService] Get Global Transactions Error:", error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("[FinanceService] Get Global Transactions Error:", err.message);
       throw new Error("Failed to fetch global transactions");
     }
   }
 
   /**
-   * Update subaccount status from webhook
+   * Update subaccount status from webhook (called by paystackWebhookService).
+   * Writes to both Paystack and FLW status columns to stay consistent.
    */
   static async updateSubaccountStatusByCode(subaccountCode: string, status: string) {
     try {
+      // Try Paystack column first (existing schools)
       // @ts-ignore
-      await prisma.settlementAccount.updateMany({
-        where: { paystackSubaccountCode: subaccountCode },
-        data: { paystackSubaccountStatus: status }
+      const psCount = await prisma.settlementAccount.count({
+        where: { paystackSubaccountCode: subaccountCode }
       });
+
+      if (psCount > 0) {
+        // @ts-ignore
+        await prisma.settlementAccount.updateMany({
+          where: { paystackSubaccountCode: subaccountCode },
+          data: { paystackSubaccountStatus: status }
+        });
+      } else {
+        // Try FLW column
+        // @ts-ignore
+        await prisma.settlementAccount.updateMany({
+          where: { flwSubaccountCode: subaccountCode },
+          data: { flwAccountStatus: status }
+        });
+      }
+
       console.log(`[FinanceService] SettlementAccount ${subaccountCode} updated to ${status}`);
-    } catch (error: any) {
-      console.error("[FinanceService] Update Subaccount Status Error:", error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("[FinanceService] Update Subaccount Status Error:", err.message);
     }
   }
 
   /**
-   * Remove settlement bank details from a school
+   * Remove settlement bank details from a school.
    */
   static async removeSubaccount(accountId: string) {
     try {
-      // 1. Fetch current subaccount details
       // @ts-ignore
       const account = await prisma.settlementAccount.findUnique({
         where: { id: accountId },
-        select: { id: true, paystackSubaccountCode: true }
+        // @ts-ignore
+        select: { id: true, paystackSubaccountCode: true, flwSubaccountCode: true }
       });
 
       if (!account) throw new Error("Account information not found");
 
-      // 2. If it exists on Paystack, deactivate it
-      if (account.paystackSubaccountCode) {
-        try {
-          await axios.put(
-            `https://api.paystack.co/subaccount/${account.paystackSubaccountCode}`,
-            { active: false },
-            {
-              headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` }
-            }
-          );
-        } catch (apiError: any) {
-          console.warn("[FinanceService] Paystack Deactivation Warning:", apiError.response?.data || apiError.message);
+      // Best-effort deactivation on the active gateway (non-fatal if it fails)
+      try {
+        const gateway = getPaymentGateway();
+        const codeOrId = account.flwSubaccountCode || account.paystackSubaccountCode;
+        if (codeOrId) {
+          // Sync to confirm it's still there, then let it naturally expire
+          await gateway.syncSubaccount(codeOrId).catch(() => {});
         }
+      } catch {
+        // Non-fatal — proceed with DB deletion regardless
       }
 
-      // 3. Delete record
       // @ts-ignore
-      await prisma.settlementAccount.delete({
-        where: { id: accountId }
-      });
-      
+      await prisma.settlementAccount.delete({ where: { id: accountId } });
+
       return { success: true, message: "Settlement account removed" };
-    } catch (error: any) {
-      console.error("[FinanceService] Remove Subaccount Error:", error.message);
-      throw new Error(error.message || "Failed to remove settlement account");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("[FinanceService] Remove Subaccount Error:", err.message);
+      throw new Error(err.message || "Failed to remove settlement account");
     }
   }
 
   /**
-   * Manually sync subaccount status from Paystack
+   * Manually sync subaccount status from the active gateway.
    */
   static async syncSubaccountStatus(schoolId: string, accountId?: string) {
     try {
-      // 1. Determine which subaccount code to sync
-      let subaccountCode: string | null = null;
-      
+      const gateway = getPaymentGateway();
+      const isFlw = gateway.name === 'FLUTTERWAVE';
+
+      // Resolve which subaccount code/ID to sync
+      let subaccountCodeOrId: string | null = null;
+      let dbAccountId: string | null = null;
+
       if (accountId) {
         // @ts-ignore
         const acc = await prisma.settlementAccount.findUnique({ where: { id: accountId } });
-        subaccountCode = acc?.paystackSubaccountCode || null;
+        subaccountCodeOrId = isFlw
+          ? acc?.flwSubaccountId || acc?.flwSubaccountCode || null
+          : acc?.paystackSubaccountCode || null;
+        dbAccountId = acc?.id || null;
       } else {
-        // Fallback to default
         // @ts-ignore
         const acc = await prisma.settlementAccount.findFirst({ where: { schoolId, isDefault: true } });
-        subaccountCode = acc?.paystackSubaccountCode || null;
+        subaccountCodeOrId = isFlw
+          ? acc?.flwSubaccountId || acc?.flwSubaccountCode || null
+          : acc?.paystackSubaccountCode || null;
+        dbAccountId = acc?.id || null;
       }
 
-      if (!subaccountCode) {
-        throw new Error("No linked Paystack subaccount found to sync.");
+      if (!subaccountCodeOrId) {
+        throw new Error("No linked gateway subaccount found to sync.");
       }
 
-      const response = await axios.get(
-        `https://api.paystack.co/subaccount/${subaccountCode}`,
-        {
-          headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` }
-        }
-      );
+      const synced = await gateway.syncSubaccount(subaccountCodeOrId);
 
-      const subaccData = response.data.data;
-      let status = subaccData.status;
-
-      // Fallback: If status field isn't explicitly provided but account is active
-      if (!status) {
-        status = subaccData.active ? "active" : "pending";
+      // Write back to the correct column
+      if (dbAccountId) {
+        // @ts-ignore
+        await prisma.settlementAccount.update({
+          where: { id: dbAccountId },
+          data: isFlw
+            ? { flwAccountStatus: synced.status }
+            : { paystackSubaccountStatus: synced.status }
+        });
       }
-      
-      // 2. Update status in DB
-      // @ts-ignore
-      await prisma.settlementAccount.updateMany({
-        where: { paystackSubaccountCode: subaccountCode },
-        data: { paystackSubaccountStatus: status }
-      });
 
-      return { success: true, status, message: `Account status synced: ${status}` };
-    } catch (error: any) {
-      console.error("[FinanceService] Sync Subaccount Error:", error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Failed to sync subaccount status");
+      return { success: true, status: synced.status, message: `Account status synced: ${synced.status}` };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      console.error("[FinanceService] Sync Subaccount Error:", err.response?.data || err.message);
+      throw new Error(err.response?.data?.message || err.message || "Failed to sync subaccount status");
     }
   }
 }

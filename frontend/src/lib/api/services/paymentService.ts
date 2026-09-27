@@ -15,12 +15,15 @@ export const paymentService = {
   },
 
   /**
-   * Verify a payment
+   * Verify a payment.
+   * @param transaction_id - Flutterwave-only: the numeric transaction_id from the redirect callback.
    */
-  verify: async (data: { 
-    reference: string; 
-    plan: string; 
-    billingType: 'monthly' | 'yearly' 
+  verify: async (data: {
+    reference: string;
+    plan: string;
+    billingType: 'monthly' | 'yearly';
+    /** FLW-only: numeric transaction_id from the redirect callback query param */
+    transaction_id?: string;
   }) => {
     const response = await apiClient.post("/payment/verify", data);
     return response.data;

@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Noto_Sans, Roboto, Lexend } from "next/font/google";
+import { Lexend } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/reusable/NavBar";
 import { ThemeClientProvider } from "@/context/ThemeClientProvider";
@@ -11,16 +11,6 @@ import AppInitializer from "@/utils/AppInitializer";
 import AuthModal from "@/components/reusable/AuthModal";
 import AIChatWidget from "@/components/Home/AIChatWidget";
 import { GlobalLogoutModal } from "@/components/ui/GlobalLogoutModal";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://qefashub.com'),
@@ -36,27 +26,6 @@ export const metadata: Metadata = {
     images: ['/meta-image.png'],
   },
 };
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
-
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "700", "900"],
-});
-
-const roboto = Roboto({
-  variable: "--font-roboto",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "700"],
-});
 
 const lexend = Lexend({
   variable: "--font-lexend",
@@ -109,12 +78,7 @@ export default function RootLayout({
       </head>
       <body
         className={`
-          ${inter.variable} 
-          ${notoSans.variable} 
-          ${roboto.variable} 
           ${lexend.variable}
-          ${geistSans.variable} 
-          ${geistMono.variable} 
           antialiased
           `}
         suppressHydrationWarning

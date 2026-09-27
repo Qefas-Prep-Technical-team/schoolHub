@@ -34,6 +34,16 @@ import {
     cancelDowngrade
 } from "./payment.controller";
 
+import {
+    validateCoupon,
+    createCoupon,
+    listCoupons,
+    getCoupon,
+    updateCoupon,
+    deactivateCoupon,
+    deleteCoupon
+} from "./coupon.controller";
+
 /**
  * @route   GET /api/v1/payment/plans
  * @desc    Get all pricing plans
@@ -73,6 +83,13 @@ router.post("/verify", paymentVerifyLimiter, verifyPayment);
  */
 router.post("/webhook", paystackWebhook);
 
+/**
+ * @route   POST /api/v1/payment/coupon/validate
+ * @desc    Validate a coupon code and return discount info (no usage recorded)
+ * @access  Public
+ */
+router.post("/coupon/validate", validateCoupon);
+
 // Authentication required for the following routes
 router.use(authenticateToken);
 
@@ -103,5 +120,13 @@ router.delete("/schedule-downgrade", cancelDowngrade);
  * @access  Private
  */
 router.get("/history", getPaymentHistory);
+
+// ─── Coupon Admin Routes (authenticated) ─────────────────────
+router.get("/coupon", listCoupons);
+router.get("/coupon/:id", getCoupon);
+router.post("/coupon", createCoupon);
+router.put("/coupon/:id", updateCoupon);
+router.patch("/coupon/:id/deactivate", deactivateCoupon);
+router.delete("/coupon/:id", deleteCoupon);
 
 export default router;

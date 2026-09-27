@@ -209,6 +209,9 @@ export default function AdminBillingPage() {
         features: (subscription?.features && subscription.features.length > 0) ? subscription.features : (activePlanData?.features || [])
     };
 
+    const latestTxn = transactions?.find((t: any) => t.status === 'SUCCESS');
+    const storageUsedGB = ((billingData?.usage?.storageBytes || 0) / (1024 * 1024 * 1024)).toFixed(1);
+
     return (
         <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
             <motion.div
@@ -288,92 +291,121 @@ export default function AdminBillingPage() {
                 </motion.div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
-                    <CardHeader className="bg-slate-900 dark:bg-black p-10 text-white relative overflow-hidden">
-                        <div className="absolute -top-10 -right-10 w-60 h-60 bg-primary/20 rounded-full blur-[80px]" />
-                        <div className="flex justify-between items-start relative z-10">
-                            <div className="space-y-4">
-                                <Badge className="bg-primary/20 text-primary border-none px-4 py-1.5 font-black uppercase tracking-[0.2em] text-[10px]">
-                                    Current Plan
-                                </Badge>
-                                <div className="space-y-1">
-                                    <CardTitle className="text-5xl font-black capitalize tracking-tighter italic">
-                                        {subscriptionInfo.plan}
-                                    </CardTitle>
-                                    <p className="text-2xl font-black text-primary tracking-tighter">
-                                        ₦{subscriptionInfo.amount.toLocaleString()} <span className="text-sm opacity-60 font-bold uppercase tracking-widest">/ {subscriptionInfo.billingCycle}</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="h-16 w-16 bg-white/10 p-4 rounded-2xl backdrop-blur-md flex items-center justify-center border border-white/10">
-                                <ShieldCheck className="w-8 h-8 text-white" />
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Subscription Status</p>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full ${subscriptionInfo.status === 'ACTIVE' ? 'bg-green-500 animate-pulse' : subscriptionInfo.status === 'EXPIRED' ? 'bg-red-500' : subscriptionInfo.status === 'INACTIVE' ? 'bg-red-500 animate-pulse' : 'bg-blue-500 animate-pulse'}`} />
-                                        <span className={`text-xl font-bold capitalize ${subscriptionInfo.status === 'EXPIRED' ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
-                                            {subscriptionInfo.status === 'TRIAL' ? 'Free Trial' : subscriptionInfo.status === 'EXPIRED' ? 'Expired' : subscriptionInfo.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Next Billing Date</p>
-                                    <div className="flex items-center gap-3">
-                                        <Calendar className="w-5 h-5 text-slate-400" />
-                                        <span className="text-xl font-bold text-slate-900 dark:text-white">{isBasicTier ? '----' : subscriptionInfo.renewalDate}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Plan Highlights</p>
-                                <ul className="space-y-3">
-                                    {subscriptionInfo.features.map((feature: string, i: number) => (
-                                        <li key={i} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-medium">
-                                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                            <span>{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* 1. Current subscription plan (Blue Gradient) */}
+                <Card className="rounded-2xl border-none shadow-sm bg-gradient-to-br from-[#6C5CE7] to-[#74B9FF] text-white p-6 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+                    <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-[#55EFC4]/40 rounded-full blur-xl"></div>
+                    <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-[#FF7675]/40 rounded-full blur-xl"></div>
+                    <div className="relative z-10">
+                        <p className="text-sm font-medium opacity-90 mb-1">Current subscription plan</p>
+                        <h2 className="text-5xl font-bold uppercase mt-2">{subscriptionInfo.plan}</h2>
+                    </div>
+                    <div className="relative z-10 mt-8">
+                        <p className="text-sm font-medium mb-3 opacity-90">Need extra features?</p>
+                        <Button onClick={() => router.push('/dashboard/admin/billing/pricing')} className="bg-white text-[#6C5CE7] hover:bg-slate-50 font-bold rounded-lg px-6 h-10">
+                            Upgrade
+                        </Button>
+                    </div>
                 </Card>
 
-                <div className="space-y-6">
-                    <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-primary text-primary-foreground p-10 relative group">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform pointer-events-none">
-                            <Zap size={100} />
+                {/* 2. Your Purpose plan */}
+                <Card className="rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col justify-between min-h-[220px] bg-white dark:bg-slate-900">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1 uppercase tracking-wide">Your {subscriptionInfo.plan} plan</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white capitalize">{subscriptionInfo.plan}</h3>
                         </div>
-                        <div className="mb-10 flex justify-between items-start relative z-10">
-                            <div className="w-14 h-14 bg-primary-foreground/10 rounded-2xl flex items-center justify-center border border-primary-foreground/10 backdrop-blur-md">
-                                <Zap className="w-7 h-7 text-primary-foreground" />
+                        <div className="text-right">
+                            <span className="text-3xl font-black text-slate-900 dark:text-white">
+                                {subscriptionInfo.amount === 0 ? 'Free' : `₦${subscriptionInfo.amount.toLocaleString()}`}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold block mt-1">per {subscriptionInfo.billingCycle === 'monthly' ? 'month' : 'year'}</span>
+                        </div>
+                    </div>
+                    <div className="flex gap-4 my-4">
+                        {subscriptionInfo.features.slice(0, 2).map((feature: string, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                                <CheckCircle2 className="w-4 h-4 text-[#55EFC4]" /> 
+                                <span className="truncate max-w-[120px]">{feature}</span>
                             </div>
-                            <Button size="sm" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-none rounded-xl text-[9px] font-black uppercase tracking-widest">
-                                Details
-                            </Button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg px-4 py-2.5 flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium text-sm flex-1">
+                            <ShieldCheck className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                            <span>1 School</span>
                         </div>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Next Payment</h4>
-                        <div className="flex items-baseline gap-2 mb-6 relative z-10">
-                            <span className="text-5xl font-black tracking-tighter italic">₦{subscriptionInfo.amount.toLocaleString()}</span>
-                            <span className="text-xs font-bold opacity-70 uppercase tracking-widest">/ {subscriptionInfo.billingCycle}</span>
-                        </div>
-                        <p className="text-xs opacity-70 font-medium leading-relaxed relative z-10">
-                            {subscriptionInfo.status === 'ACTIVE'
-                                ? "Your plan will renew automatically. Please ensure your payment method is up to date."
-                                : "Subscribe to a plan to unlock premium features for your school."}
-                        </p>
-                    </Card>
+                    </div>
+                </Card>
 
-                    <UsageLimitsCard />
-                </div>
+                {/* 3. Payment methods (Spans 2 rows) */}
+                <Card className="rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 lg:row-span-2 flex flex-col bg-white dark:bg-slate-900">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Payment method</h3>
+                    </div>
+                    <div className="space-y-4 flex-1">
+                        {latestTxn ? (
+                            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 flex gap-4 items-center">
+                                <div className="w-14 h-9 bg-slate-900 dark:bg-black rounded-md flex items-center justify-center relative shadow-sm overflow-hidden">
+                                    {latestTxn.paymentMethod?.toLowerCase().includes('transfer') ? (
+                                        <div className="w-full h-full bg-[#192A56] flex items-center justify-center text-[10px] font-bold text-white tracking-widest">TRF</div>
+                                    ) : (
+                                        <>
+                                            <div className="w-4 h-4 bg-[#FF7675] rounded-full absolute left-2.5 opacity-90 mix-blend-screen" />
+                                            <div className="w-4 h-4 bg-[#FDCB6E] rounded-full absolute left-5 opacity-90 mix-blend-screen" />
+                                        </>
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white capitalize">
+                                        {latestTxn.paymentMethod?.replace('_', ' ') || 'Card'}
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Last used: {new Date(latestTxn.createdAt).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="h-full flex items-center justify-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-xl">
+                                <p className="text-xs font-semibold text-slate-400">No payment method found</p>
+                            </div>
+                        )}
+                    </div>
+                    <Button 
+                        onClick={() => router.push('/dashboard/admin/billing/upgrade')}
+                        className="w-full bg-[#6C5CE7] hover:bg-[#5A4BCC] text-white rounded-lg mt-6 py-6 font-semibold"
+                    >
+                        Update payment method
+                    </Button>
+                </Card>
+
+                {/* 4. API Used (Usage / Analytics summary) */}
+                <Card className="rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col justify-center bg-white dark:bg-slate-900 min-h-[120px]">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-red-50 dark:bg-[#FF7675]/10 rounded-lg flex items-center justify-center text-[#FF7675]">
+                            <TrendingDown className="w-4 h-4" />
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Storage Used</p>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{storageUsedGB}</h3>
+                        <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">of {subscriptionInfo.plan.toLowerCase() === 'pro' ? '50.0' : '10.0'} GB</span>
+                    </div>
+                </Card>
+
+                {/* 5. Plan Renewal */}
+                <Card className="rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col justify-center bg-white dark:bg-slate-900 min-h-[120px]">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-green-50 dark:bg-[#55EFC4]/10 rounded-lg flex items-center justify-center text-[#55EFC4]">
+                            <Calendar className="w-4 h-4" />
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Your plan will renew</p>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{isBasicTier ? 'N/A' : subscriptionInfo.renewalDate}</h3>
+                </Card>
+            </div>
+
+            {/* Usage Limits Section */}
+            <div className="mt-12">
+                <UsageLimitsCard role="ADMIN" />
             </div>
 
             {analytics?.accounts && analytics.accounts.length > 0 && (

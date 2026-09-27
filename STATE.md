@@ -19,16 +19,17 @@
 
 ## Current Focus
 
-- Payment system is code-complete and pre-launch audit is resolved.
-- Remaining launch blockers are **manual only**: swap test → live Paystack keys, register production webhook URL in Paystack Dashboard.
-- Exam submission redesign — chunked, sequential per-paper submission with progress modal.
-- Monitor production environment telemetry logs.
+- **Checkout page redesigned** — two-column cart-style layout with dark indigo header, plan card, step form, order summary + coupon input.
+- **Coupon system COMPLETE** — backend (Coupon + CouponUsage models, service, controller, routes) + admin management page at `/console/billing/coupons`.
+- **Flutterwave migration COMPLETE** — gateway adapter pattern, finance.service.ts, payment callback page all live.
+- Exam submission redesign — still pending.
 
 ## Upcoming / Planning
 
-- Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).
-- Production deployment: swap `sk_test_` → `sk_live_` (Render/Railway secrets) and `pk_test_` → `pk_live_` (Vercel env vars).
-- Register `https://your-domain.com/api/v1/payment/webhook` in Paystack Dashboard → Settings → API Keys & Webhooks.
+- Test coupon codes on the live checkout (create one in the console first).
+- Test FLW checkout flow end-to-end (set env vars, try test card 4187427415564246).
+- Add coupon usage recording in `verifyPaymentService` (read couponId from payment metadata and call `CouponService.recordUsage`).
+- Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features.
 
 ## Blockers
 

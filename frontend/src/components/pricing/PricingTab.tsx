@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import EachPriceCard from './EachPriceCard';
+import PlanComparisonTable from './PlanComparisonTable';
 import { useFetchPricing } from './query';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -167,6 +168,9 @@ export default function PricingTab({ isSetupMode = false }: PricingTabProps) {
                 </motion.div>
             </AnimatePresence>
 
+            {!isSettingsLoading && !isLoading && filteredData?.tabs && filteredData.tabs.length > 0 && (
+                <PlanComparisonTable plans={filteredData.tabs as any} />
+            )}
         </Box>
     );
 }

@@ -48,10 +48,10 @@ const StatsSection = () => {
               >
                 {value}
               </p>
-              <p className="text-sm font-semibold text-blue-300 mb-3 uppercase tracking-[0.1em]">
+              <p className="text-base font-semibold text-blue-300 mb-3 uppercase tracking-[0.1em]">
                 {label}
               </p>
-              <p className="text-[#76777d] text-sm font-light leading-relaxed max-w-[200px]">
+              <p className="text-[#76777d] text-base font-light leading-relaxed max-w-[220px]">
                 {desc}
               </p>
             </motion.div>

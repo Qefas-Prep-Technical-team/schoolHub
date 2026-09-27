@@ -38,11 +38,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     
                     <SidebarInset className="relative flex-1 h-screen overflow-hidden bg-transparent pb-[4.5rem] md:pb-0">
                         <TopNavBar isCollapsed={isCollapsed} primaryColor={primaryColor} />
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8">
-                            <TrialBanner />
-                            <FeatureGuard role="admin">
-                                {children}
-                            </FeatureGuard>
+                        <div className="flex-1 overflow-y-auto">
+                            <div className="py-4 md:py-6 lg:py-8 w-[98%] mx-auto animate-in fade-in duration-500">
+                                <TrialBanner />
+                                <FeatureGuard role="admin">
+                                    {children}
+                                </FeatureGuard>
+                            </div>
                         </div>
                     </SidebarInset>
                 </div>

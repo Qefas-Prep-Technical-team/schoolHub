@@ -3,6 +3,7 @@ import React from 'react';
 import UpgradeExplanation from './UpgradeExplanation';
 import { motion } from 'framer-motion';
 import UpgradePriceCard from './UpgradePriceCard';
+import PlanComparisonTable from './PlanComparisonTable';
 import { useFetchPricing } from './query';
 import { useBillingStore } from '@/utils/PricingPage';
 
@@ -31,20 +32,17 @@ export default function PlanUpgradeDisplay({
     return (
         <div className="w-full">
             {/* Header section specifically for upgrades */}
-            <div className="mb-14 text-center md:text-left">
-                <span className="px-5 py-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[10px] font-black rounded-full uppercase tracking-[0.3em] mb-6 inline-block shadow-sm">
-                    Upgrade Selection
+            <div className="mb-16 text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 inline-block">
+                    PRICING
                 </span>
-                <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tighter leading-none">
-                    Power up your school with a better plan
+                <h2 className="text-4xl md:text-[2.5rem] font-medium text-slate-900 dark:text-white mb-4 tracking-tight leading-none">
+                    Simple, Transparent Pricing
                 </h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium text-lg max-w-3xl leading-relaxed">
-                    Choose an upgrade that fits your growing needs. We&apos;ve simplified the transition with our pro-rated pricing model, ensuring you only pay for what you value.
+                <p className="text-slate-500 dark:text-slate-400 text-sm max-w-2xl mx-auto leading-relaxed">
+                    Choose a plan that fits your business needs and budget. No hidden fees, no surprises—just straightforward pricing for powerful financial management.
                 </p>
             </div>
-
-            {/* Explanation Component */}
-            <UpgradeExplanation />
 
             {/* Billing Toggle */}
             <div className="flex justify-center md:justify-start mb-12">
@@ -69,12 +67,12 @@ export default function PlanUpgradeDisplay({
                 </div>
             </div>
 
-            {/* Horizontal Scroll Area for Upgrade Cards - Semi-Stacked Version */}
-            <div className="relative w-full overflow-visible py-20 px-4">
+            {/* Horizontal Scroll Area for Upgrade Cards */}
+            <div className="relative w-full max-w-6xl mx-auto pb-20">
                 {isLoading ? (
                     <div className="flex gap-4 justify-center">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="w-[420px] h-[650px] rounded-[3rem] bg-slate-100 dark:bg-slate-800 animate-pulse border-2 border-slate-200 dark:border-slate-800" />
+                            <div key={i} className="w-full max-w-sm h-[500px] rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse border border-slate-200 dark:border-slate-800" />
                         ))}
                     </div>
                 ) : (
@@ -108,6 +106,9 @@ export default function PlanUpgradeDisplay({
                     <div className="w-12 h-px bg-slate-200 dark:bg-slate-800" />
                 </div>
             </div>
+
+            {/* Detailed Feature Comparison Table */}
+            <PlanComparisonTable plans={filteredData?.tabs || []} />
         </div>
     );
 }

@@ -219,7 +219,8 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                                         "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
                                                         isActive
                                                             ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 shadow-sm shadow-pink-600/5"
-                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
+                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100",
+                                                        isCollapsed && "justify-center mx-auto"
                                                     )}
                                                 >
                                                     <Icon className={cn(
