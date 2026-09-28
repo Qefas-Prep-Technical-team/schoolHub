@@ -1300,3 +1300,15 @@ export const sendAdminRejectionEmail = async (params: {
   });
 };
 
+export const sendAdminLimitReachedEmail = async (params: { recipientEmail: string; recipientName: string; applicantName: string; applicantEmail: string; schoolName: string; }) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.recipientEmail;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `Admin Slot Filled: ${params.applicantName} tried to join ${params.schoolName}`,
+    html: `<p>Hi ${params.recipientName},</p><p>${params.applicantName} (${params.applicantEmail}) is trying to join ${params.schoolName} as an administrator.</p><p>However, there is no longer space on your tier. Please upgrade to a higher tier to allow them to join.</p>`
+  });
+};
+

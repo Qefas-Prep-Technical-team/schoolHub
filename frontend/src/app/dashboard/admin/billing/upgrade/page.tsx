@@ -25,9 +25,48 @@ export default function UpgradePlanPage() {
 
     if (isLoading) {
         return (
-            <div className="p-8 md:p-12 space-y-8">
-                <Skeleton className="h-12 w-64 rounded-xl" />
-                <Skeleton className="h-96 w-full rounded-[3rem]" />
+            <div className="min-h-screen pb-20">
+                {/* Back Header */}
+                <div className="mb-6 flex items-center gap-4">
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => router.back()}
+                        className="rounded-full w-12 h-12 p-0 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                            Change Your Plan
+                        </h1>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                            Dashboard / Billing / Change Plan
+                        </p>
+                    </div>
+                </div>
+                
+                {/* Skeleton for PlanUpgradeDisplay */}
+                <div className="mt-8 w-full max-w-6xl mx-auto">
+                    {/* Header Skeletons */}
+                    <div className="mb-16 flex flex-col items-center">
+                        <Skeleton className="h-3 w-16 mb-4 rounded-md" />
+                        <Skeleton className="h-10 md:h-12 w-[300px] md:w-[400px] mb-4 rounded-xl" />
+                        <Skeleton className="h-4 w-[280px] md:w-[500px] rounded-md" />
+                        <Skeleton className="h-4 w-[240px] md:w-[450px] mt-2 rounded-md" />
+                    </div>
+
+                    {/* Toggle Skeleton */}
+                    <div className="flex justify-center md:justify-start mb-12">
+                        <Skeleton className="h-14 w-64 rounded-2xl" />
+                    </div>
+
+                    {/* Cards Skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+                        {[1, 2, 3].map(i => (
+                            <Skeleton key={i} className="w-full h-[600px] rounded-3xl" />
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }

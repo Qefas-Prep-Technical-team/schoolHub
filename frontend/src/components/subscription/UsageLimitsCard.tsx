@@ -26,6 +26,7 @@ interface PlanFeature {
   label: string;
   enabled: boolean;
   limit: number;
+  usageCount?: number;
 }
 
 interface Metric {
@@ -127,10 +128,10 @@ export default function UsageLimitsCard({
       .filter((f) => f.enabled && f.limit > 0)
       .map((f) => ({
         id: f.name,
-        label: f.label,
-        count: 0, 
+        label: f.name,
+        count: f.usageCount || 0, 
         limit: f.limit,
-        percent: 0,
+        percent: Math.min(Math.round(((f.usageCount || 0) / f.limit) * 100), 100) || 0,
         color: "bg-slate-500",
       }))
   );

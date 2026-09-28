@@ -63,17 +63,19 @@ export const getSchoolUsageService = async (schoolId: string) => {
     aiUsage: (isExpired ? undefined : school.maxAiUsageOverride) ?? baseLimits.maxAiUsage,
   };
 
-  // 4. Resolve Feature-Specific Access and Limits
+  // 4. Resolve Feature-Specific Access and Limits (usageCount populated below)
   const planFeatures = isExpired ? [] : (subscriptionPlan?.featureAccess?.filter((fa: any) => fa.enabled).map((fa: any) => ({
     name: fa.feature.name,
+    tag: fa.feature.featureKey || fa.feature.tag,
     label: fa.feature.label,
     enabled: fa.enabled,
     limit: fa.limitValue,
-    isUnlimited: fa.enabled && (fa.limitValue === null || fa.limitValue === undefined || fa.limitValue <= 0)
+    isUnlimited: fa.enabled && (fa.limitValue === null || fa.limitValue === undefined || fa.limitValue <= 0),
+    usageCount: 0
   })) || []);
 
   // 3. Fetch robust real-time usage stats (Aligning with school.service.ts)
-  const [studentLinks, studentEnrollments, teacherLinks, examCount, classCount, storageMetric] = await Promise.all([
+  const [studentLinks, studentEnrollments, teacherLinks, examCount, classCount, storageMetric, adminCount] = await Promise.all([
     // A. Student Links
     prisma.relationshipLink.findMany({
       where: {
@@ -104,6 +106,7 @@ export const getSchoolUsageService = async (schoolId: string) => {
       where: { schoolId: school.id },
       _sum: { fileSize: true },
     }),
+    prisma.schoolAdmin.count({ where: { schoolId: school.id, active: true } }),
   ]);
 
   // Robust Student Count
@@ -167,6 +170,13 @@ export const getSchoolUsageService = async (schoolId: string) => {
     storage: Math.min(Math.round((usage.storageGb / limits.storageGb) * 100), 100),
     aiUsage: Math.min(Math.round((usage.aiUsage / limits.aiUsage) * 100), 100),
   };
+  // Populate dynamic usage counts for features
+  planFeatures.forEach((pf: any) => {
+    if (pf.tag === 'linkingHub') {
+      // "admins minus school owner"
+      pf.usageCount = Math.max(0, adminCount - 1);
+    }
+  });
 
   return {
     planName,

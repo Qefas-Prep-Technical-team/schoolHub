@@ -62,46 +62,66 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             const legacyFeatures = plan.features || []
             const relationalAccess = plan.featureAccess || []
             
-            // 1. Identify which legacy features are actually linked to manifest tags
-            const linkedTags = new Set(relationalAccess.map((ra: Record<string, any>) => ra.feature?.tag))
-            
-            // 2. Build the linkedFeatures array (manifest-backed items)
-            // We want to map what's in the DB to our internal editing state
-            const linked = relationalAccess.map((ra: Record<string, any>) => ({
-                name: ra.name || ra.feature?.name || ra.feature?.tag,
-                tag: ra.tag || ra.feature?.tag,
-                enabled: ra.enabled
-            }))
+            let combinedLinkedFeatures: any[] = [];
+            let remainingMarketingFeatures: string[] = [];
 
-            // 3. Build the marketingFeatures array (purely visual items)
-            // A feature is "marketing-only" if it's in the features array but NOT linked to a tag
-            const marketingOnly = legacyFeatures.filter((f: string) => {
-                // Check if this string is a name or tag of a relational access
-                const isLinked = relationalAccess.some((ra: Record<string, any>) => 
-                    ra.feature?.name === f || ra.feature?.tag === f
-                )
-                return !isLinked
-            })
+            if (manifestFeatures) {
+                // 1. Map any manifest feature that is EITHER in relationalAccess OR in legacyFeatures
+                manifestFeatures.forEach((mf: any) => {
+                    const fromRelational = relationalAccess.find((ra: any) => ra.featureId === mf.id || ra.feature?.tag === mf.tag || ra.tag === mf.tag);
+                    const fromLegacy = legacyFeatures.includes(mf.name) || legacyFeatures.includes(mf.tag) || legacyFeatures.includes(mf.marketingLabel);
+                    
+                    if (fromRelational) {
+                        combinedLinkedFeatures.push({
+                            featureId: fromRelational.featureId || mf.id,
+                            name: fromRelational.name || mf.name,
+                            tag: fromRelational.tag || mf.tag,
+                            enabled: fromRelational.enabled,
+                            limitValue: fromRelational.limitValue ?? "",
+                            setupLimit: fromRelational.meta?.setupLimit ?? "",
+                            showLabel: fromRelational.meta?.showLabel ?? true
+                        });
+                    } else if (fromLegacy) {
+                        combinedLinkedFeatures.push({
+                            featureId: mf.id,
+                            name: mf.name,
+                            tag: mf.tag,
+                            enabled: true,
+                            limitValue: "",
+                            setupLimit: "",
+                            showLabel: true
+                        });
+                    }
+                });
+
+                // 2. Identify remaining legacy features that are purely marketing (not in manifest)
+                remainingMarketingFeatures = legacyFeatures.filter((f: string) => {
+                    const isInManifest = manifestFeatures.some((mf: any) => mf.name === f || mf.tag === f || mf.marketingLabel === f);
+                    return !isInManifest;
+                });
+            } else {
+                // Fallback if manifest is not loaded yet
+                combinedLinkedFeatures = relationalAccess.map((ra: Record<string, any>) => ({
+                    featureId: ra.featureId || ra.feature?.id,
+                    name: ra.name !== null && ra.name !== undefined ? ra.name : (ra.feature?.name || ra.feature?.tag),
+                    tag: ra.tag || ra.feature?.tag,
+                    enabled: ra.enabled,
+                    limitValue: ra.limitValue ?? "",
+                    setupLimit: ra.meta?.setupLimit ?? "",
+                    showLabel: ra.meta?.showLabel ?? true
+                }));
+                
+                remainingMarketingFeatures = legacyFeatures.filter((f: string) => {
+                    return !relationalAccess.some((ra: any) => ra.feature?.name === f || ra.feature?.tag === f);
+                });
+            }
 
             setFormData({
                 ...plan,
                 monthlyPrice: plan.pricing?.monthly ?? plan.monthlyPrice ?? '',
                 yearlyPrice: plan.pricing?.yearly ?? plan.yearlyPrice ?? '',
-                linkedFeatures: relationalAccess.map((ra: Record<string, any>) => {
-                    const manifestName = (ra.name !== null && ra.name !== undefined) ? ra.name : (ra.feature?.name || ra.feature?.tag);
-                    const existsInMarketing = plan.features?.includes(manifestName);
-                    
-                    return {
-                        featureId: ra.featureId || ra.feature?.id,
-                        name: manifestName,
-                        tag: ra.tag || ra.feature?.tag,
-                        enabled: ra.enabled,
-                        limitValue: ra.limitValue ?? "",
-                        setupLimit: ra.meta?.setupLimit ?? "",
-                        showLabel: ra.meta?.showLabel ?? existsInMarketing ?? true
-                    };
-                }),
-                features: marketingOnly, // Purely visual ad-hoc labels
+                linkedFeatures: combinedLinkedFeatures,
+                features: remainingMarketingFeatures,
                 maxStudents: plan.maxStudents ?? '',
                 maxTeachers: plan.maxTeachers ?? '',
                 maxClasses: plan.maxClasses ?? '',
@@ -113,6 +133,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                 description: plan.description ?? '',
                 isPopular: plan.isPopular ?? false,
                 hasTrial: plan.hasTrial ?? false
+
             })
         }
     }, [plan, manifestFeatures])
@@ -476,21 +497,39 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                         </div>
 
                                         {isEnabled && (
-                                            <div className="pt-2 border-t border-emerald-100 dark:border-emerald-500/10">
-                                                <Label className="text-[8px] font-black uppercase text-emerald-600 dark:text-emerald-400 ml-1">Custom Marketing Label (Edit for Pricing Page)</Label>
-                                                <Input 
-                                                    placeholder={mf.marketingLabel || mf.name}
-                                                    value={linked?.name || ""}
-                                                    onChange={(e) => {
-                                                        const current = [...(formData.linkedFeatures || [])];
-                                                        const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
-                                                        if (idx > -1) {
-                                                            current[idx] = { ...current[idx], name: e.target.value };
-                                                            setFormData({ ...formData, linkedFeatures: current });
-                                                        }
-                                                    }}
-                                                    className="h-9 rounded-xl border-emerald-200 dark:border-emerald-500/30 bg-white/80 dark:bg-slate-950/80 font-bold text-xs"
-                                                />
+                                            <div className="pt-2 border-t border-emerald-100 dark:border-emerald-500/10 space-y-3">
+                                                <div>
+                                                    <Label className="text-[8px] font-black uppercase text-emerald-600 dark:text-emerald-400 ml-1">Custom Marketing Label (Edit for Pricing Page)</Label>
+                                                    <Input 
+                                                        placeholder={mf.marketingLabel || mf.name}
+                                                        value={linked?.name || ""}
+                                                        onChange={(e) => {
+                                                            const current = [...(formData.linkedFeatures || [])];
+                                                            const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
+                                                            if (idx > -1) {
+                                                                current[idx] = { ...current[idx], name: e.target.value };
+                                                                setFormData({ ...formData, linkedFeatures: current });
+                                                            }
+                                                        }}
+                                                        className="h-9 rounded-xl border-emerald-200 dark:border-emerald-500/30 bg-white/80 dark:bg-slate-950/80 font-bold text-xs"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-[8px] font-black uppercase text-emerald-600 dark:text-emerald-400 ml-1">Programmatic Limit (Numeric Value)</Label>
+                                                    <Input 
+                                                        placeholder="e.g. 5 or Unlimited"
+                                                        value={linked?.setupLimit || ""}
+                                                        onChange={(e) => {
+                                                            const current = [...(formData.linkedFeatures || [])];
+                                                            const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
+                                                            if (idx > -1) {
+                                                                current[idx] = { ...current[idx], setupLimit: e.target.value };
+                                                                setFormData({ ...formData, linkedFeatures: current });
+                                                            }
+                                                        }}
+                                                        className="h-9 rounded-xl border-emerald-200 dark:border-emerald-500/30 bg-white/80 dark:bg-slate-950/80 font-bold text-xs"
+                                                    />
+                                                </div>
                                             </div>
                                         )}
                                     </div>

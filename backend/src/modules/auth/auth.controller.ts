@@ -30,6 +30,7 @@ import {
   enforceStudentLimit,
   enforceTeacherLimit,
 } from "../subscription/quota.helpers";
+import { getSchoolUsageService } from "../subscription/quota.service";
 import { handleError } from "../../utils/error-handler";
 
 // Simple slugify helper (no extra package)
@@ -1834,6 +1835,31 @@ export const login = async (req: Request, res: Response) => {
         return res
           .status(401)
           .json({ success: false, message: "Invalid email or password" });
+      }
+    }
+
+    // Check admin plan limit to block non-owners if limit reached/expired
+    if (actualRole === UserRole.ADMIN) {
+      const schoolAdmin = user.schoolAdmins?.[0]; // Usually an admin belongs to one school
+      
+      if (schoolAdmin) {
+        const isAdminOwner = schoolAdmin.role === 'SCHOOL_OWNER';
+  
+        if (!isAdminOwner) {
+          try {
+            const schoolUsage = await getSchoolUsageService(schoolAdmin.schoolId);
+            const linkingFeature = schoolUsage.planFeatures.find((f: any) => f.tag === 'linkingHub');
+  
+            if (!linkingFeature || !linkingFeature.enabled || linkingFeature.limit === 0) {
+              return res.status(403).json({
+                success: false,
+                message: "School subscription expired or plan does not support multiple admins. Only the School Owner can log in."
+              });
+            }
+          } catch (e) {
+            console.error("Error checking plan limit during login:", e);
+          }
+        }
       }
     }
 

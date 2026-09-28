@@ -46274,4 +46274,32 @@ C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment
 → 230 await prisma.transaction.create(
 Unique constraint failed on the fields: (`reference`)
     at Object.verifyPaymentService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:351:11)
-    at verifyPayment (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:97:18)
+    at verifyPayment (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:97:18)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2740:47
+
+  2737   });
+  2738 }
+  2739 
+→ 2740 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2740:21)PrismaClientInitializationError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Error opening a TLS connection: An existing connection was forcibly closed by the remote host. (os error 10054)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)

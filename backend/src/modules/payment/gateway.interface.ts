@@ -42,6 +42,7 @@ export interface VerifyResult {
     billing?: string;
     isUpgrade?: boolean;
     isTrial?: boolean;
+    months?: number;
   };
   /** Which gateway processed this transaction */
   gateway: 'PAYSTACK' | 'FLUTTERWAVE';

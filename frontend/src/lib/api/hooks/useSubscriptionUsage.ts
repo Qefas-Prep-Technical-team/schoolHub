@@ -33,6 +33,7 @@ interface SubscriptionUsageData {
     enabled: boolean;
     limit: number | null;
     isUnlimited: boolean;
+    usageCount?: number;
   }>;
   isTrial: boolean;
   subscriptionStatus: string;

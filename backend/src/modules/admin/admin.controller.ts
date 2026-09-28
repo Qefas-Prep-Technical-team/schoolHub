@@ -12,9 +12,11 @@ import {
   sendAdminApprovalEmail,
   sendAdminRejectionEmail,
   sendNewAdminJoinedEmail,
+  sendAdminLimitReachedEmail,
 } from "../auth/auth.service";
 import { createNotification } from "../notification/notification.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
+import { getSchoolUsageService } from "../subscription/quota.service";
 import { handleError } from "../../utils/error-handler";
 import { generateUniqueCode } from "../../utils/code-generator";
 
@@ -161,6 +163,22 @@ export const registerAdminSelf = async (
       });
     }
 
+    // Check plan limit for admins
+    const schoolUsage = await getSchoolUsageService(school.id);
+    const linkingFeature = schoolUsage.planFeatures.find((f: any) => f.tag === 'linkingHub');
+    
+    // If the feature exists, has a limit (not unlimited), and usage is >= limit
+    if (linkingFeature && linkingFeature.enabled && !linkingFeature.isUnlimited && linkingFeature.limit !== null) {
+      if (linkingFeature.usageCount >= linkingFeature.limit) {
+        // Send email and notification to existing admins
+        await notifyLimitReached(school.id, school.name, name, email);
+        return res.status(403).json({
+          success: false,
+          message: "Admin slot filled, contact the school for assistance",
+        });
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     const adminCode = await generateUniqueCode(prisma, "admin", name);
@@ -255,6 +273,44 @@ const notifyApprovers = async (schoolId: string, schoolName: string, pendingAdmi
   } catch (error) {
     // Fire-and-forget — log but don't break the registration response
     console.error("[admin.notifyApprovers] Error:", error);
+  }
+};
+
+// ─── Internal: notify all approvers that limit was reached ───────────────
+const notifyLimitReached = async (schoolId: string, schoolName: string, applicantName: string, applicantEmail: string) => {
+  try {
+    const approvers = await prisma.schoolAdmin.findMany({
+      where: {
+        schoolId,
+        active: true,
+        role: { in: [AdminRole.SCHOOL_OWNER, AdminRole.PRINCIPAL] },
+      },
+      include: { admin: { select: { id: true, email: true, name: true } } },
+    });
+
+    await Promise.allSettled(
+      approvers.map(async (approver) => {
+        // Email notification
+        await sendAdminLimitReachedEmail({
+          recipientEmail: approver.admin.email,
+          recipientName: approver.admin.name,
+          applicantName,
+          applicantEmail,
+          schoolName,
+        });
+
+        // In-app notification
+        await createNotification({
+          recipientType: 'ADMIN',
+          recipientId: approver.admin.id,
+          type: 'GENERAL',
+          title: 'Admin Registration Blocked - Limit Reached',
+          message: `${applicantName} (${applicantEmail}) tried to join as an admin, but your plan's Admin Linking slot is filled. Upgrade to a higher tier to add more admins.`,
+        });
+      })
+    );
+  } catch (error) {
+    console.error("[admin.notifyLimitReached] Error:", error);
   }
 };
 
@@ -359,6 +415,19 @@ export const approveAdmin = async (req: Request, res: Response) => {
 
     if (!schoolAdmin) {
       return res.status(404).json({ success: false, message: "Admin not found in your school" });
+    }
+
+    // Check plan limit for admins
+    const schoolUsage = await getSchoolUsageService(req.school!.id);
+    const linkingFeature = schoolUsage.planFeatures.find((f: any) => f.tag === 'linkingHub');
+    
+    if (linkingFeature && linkingFeature.enabled && !linkingFeature.isUnlimited && linkingFeature.limit !== null) {
+      if (linkingFeature.usageCount >= linkingFeature.limit) {
+        return res.status(403).json({
+          success: false,
+          message: "Approval blocked: Admin slot filled on your current plan. Please upgrade to add more admins.",
+        });
+      }
     }
 
     // Approve + assign role in a transaction
@@ -484,7 +553,8 @@ export const getSchoolAdmins = async (req: Request, res: Response) => {
       where: { 
         schoolId, 
         active: true,
-        role: { not: "PENDING" }
+        role: { not: "PENDING" },
+        admin: { status: { not: "PENDING" } }
       },
       include: {
         admin: {
