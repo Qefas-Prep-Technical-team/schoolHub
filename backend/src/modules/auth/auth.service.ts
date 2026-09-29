@@ -368,6 +368,87 @@ export const sendPaymentReceiptEmail = async (params: {
   });
 };
 
+export const sendPaymentFailedEmail = async (params: {
+  email: string;
+  amount: number;
+  date: Date;
+  method: string;
+  plan: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : params.email;
+
+  const formattedAmount = new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+  }).format(params.amount);
+
+  const formattedDate = params.date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return await resend.emails.send({
+    from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
+    to: recipient,
+    subject: `Payment Failed: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Payment Notice</p>
+          </div>
+        </div>
+        
+        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Payment Failed</h3>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Unfortunately, your recent payment attempt was unsuccessful. No charges were made to your account. Below are the details of the failed attempt.</p>
+        
+        <div style="background: #fcf5f5; border-radius: 24px; padding: 32px; margin-bottom: 32px; border: 1px solid #fee2e2;">
+          <div style="text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #fecaca;">
+            <p style="margin: 0; color: #b91c1c; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Attempted Amount</p>
+            <h1 style="margin: 8px 0 0 0; color: #7f1d1d; font-size: 36px; font-weight: 900;">${formattedAmount}</h1>
+          </div>
+          
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 10px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Plan Name</td>
+              <td style="padding: 10px 0; text-align: right; color: #7f1d1d; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.plan}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Attempt Date</td>
+              <td style="padding: 10px 0; text-align: right; color: #7f1d1d; font-size: 14px; font-weight: 700;">${formattedDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Payment Method</td>
+              <td style="padding: 10px 0; text-align: right; color: #7f1d1d; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.method}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div style="padding: 24px; background: #fffbeb; border-radius: 16px; border-left: 4px solid #f59e0b; margin-bottom: 32px;">
+          <p style="margin: 0; color: #b45309; font-size: 14px; line-height: 1.5; font-weight: 500;">
+            <b>Next Steps:</b> Please ensure you have sufficient funds and that your card details are correct, then try again.
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '').startsWith('http') ? '' : 'https://'}${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/pricing" style="display: inline-block; background: #dc2626; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Try Payment Again</a>
+        </div>
+        
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
+          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${params.email}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
 // Login function
 export const loginUser = async (email: string, password: string) => {
   // Check student first

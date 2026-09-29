@@ -1,6 +1,6 @@
 import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
-import { sendPaymentReceiptEmail } from "../auth/auth.service";
+import { sendPaymentReceiptEmail, sendPaymentFailedEmail } from "../auth/auth.service";
 import { SubscriptionType, UserRole } from "@prisma/client";
 import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
@@ -113,6 +113,30 @@ export const verifyPaymentService = async (
           }
         });
         console.error(`[PaymentService] Tracked failed payment for reference: ${reference}`);
+
+        try {
+          let userEmail: string | undefined;
+          if (userRole === "ADMIN") {
+              const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
+              userEmail = admin?.email;
+          } else {
+              userEmail = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { email: boolean } }) => Promise<{ email: string } | null> }>)[userRole.toLowerCase()].findUnique({ where: { id: userId }, select: { email: true } }).then(u => u?.email);
+          }
+
+          if (userEmail) {
+              await sendPaymentFailedEmail({
+                  email: userEmail,
+                  amount: 0, // Since it failed during verification, the actual amount might be unknown from gateway, but we can pass 0 or a placeholder.
+                  date: new Date(),
+                  method: gateway.name,
+                  plan: plan
+              });
+              console.log(`[PaymentService] Failed payment email sent to ${userEmail}`);
+          }
+        } catch (emailError) {
+          console.error("[PaymentService] Could not send failed payment email:", emailError);
+        }
+
       } catch (dbError) {
         console.error("[PaymentService] Could not track failed payment:", dbError);
       }
