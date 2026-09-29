@@ -116,7 +116,7 @@ export default function CheckoutPage() {
   const planDisplayName = selectedPlanName || (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)}` : "Standard");
   // Allow trial if: plan has trial AND (unauthenticated user OR user on FREE plan with no trial used)
   // Note: Users upgrading FROM free to paid still qualify for trial on their first time
-  const canUseTrial = hasPlanTrial && (!isAuthenticated || (user?.plan?.toUpperCase() === "FREE" && !user?.trialUsed));
+  const canUseTrial = hasPlanTrial && !isUpgrade && (!isAuthenticated || !user?.trialUsed);
   const isDowngrade = !isUpgrade && discountedAmount === 0 && !!plan;
   const baseAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
   const couponDiscount = appliedCoupon?.discountNaira || 0;
