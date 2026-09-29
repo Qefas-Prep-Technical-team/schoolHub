@@ -41,6 +41,9 @@ export interface VerifyResult {
     plan?: string;
     billing?: string;
     isUpgrade?: boolean;
+    is_upgrade?: boolean;
+    resetCycle?: boolean;
+    reset_cycle?: boolean;
     isTrial?: boolean;
     months?: number;
   };

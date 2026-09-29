@@ -857,6 +857,8 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     const gender = getSingleString(req.query.gender as string | string[] | undefined);
     const status = getSingleString(req.query.status as string | string[] | undefined);
     const isClaimed = getSingleString(req.query.isClaimed as string | string[] | undefined);
+    const departmentId = getSingleString(req.query.departmentId as string | string[] | undefined);
+    const subjectId = getSingleString(req.query.subjectId as string | string[] | undefined);
     const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
     const page = getSingleString(req.query.page as string | string[] | undefined) || "1";
     const limit = getSingleString(req.query.limit as string | string[] | undefined) || "10";
@@ -907,6 +909,16 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
         some: {
           classId: classId,
         }
+      };
+    }
+
+    if (departmentId) {
+      where.departmentId = departmentId;
+    }
+
+    if (subjectId) {
+      where.studentSubjectTermResults = {
+        some: { subjectId }
       };
     }
 

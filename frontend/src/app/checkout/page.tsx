@@ -39,7 +39,7 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, isAuthenticated, updateUser, hasCompletedOnboarding } = useAuthStore();
-  const { plan, billing: initialBilling, role, discountedAmount, isUpgrade, clearCheckout } = useCheckoutStore();
+  const { plan, billing: initialBilling, role, discountedAmount, isUpgrade, resetCycle, clearCheckout } = useCheckoutStore();
   const queryClient = useQueryClient();
 
   // Local billing cycle — user can toggle this on the checkout page
@@ -286,7 +286,7 @@ export default function CheckoutPage() {
         email,
         plan,
         metadata: {
-          billing, months: billing === "monthly" ? monthQty : 1, is_trial: canUseTrial, is_upgrade: isUpgrade,
+          billing, months: billing === "monthly" ? monthQty : 1, is_trial: canUseTrial, is_upgrade: isUpgrade, reset_cycle: resetCycle,
           user_role: role, name: user?.name || email, userId,
           couponId: appliedCoupon?.couponId,
           couponCode: appliedCoupon?.code,

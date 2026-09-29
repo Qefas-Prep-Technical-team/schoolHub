@@ -209,6 +209,7 @@ export class UserSubscriptionService {
           trialUsed: isTrial ? true : undefined,
           trialPlan: isTrial ? trialPlan : undefined,
           trialEndsAt: isTrial ? trialEndsAt : undefined,
+          billingCycle: (durationDays && durationDays >= 365) ? 'yearly' : 'monthly',
         }
       });
 

@@ -7,6 +7,7 @@ interface CheckoutState {
   role: string;
   discountedAmount?: number;
   isUpgrade?: boolean;
+  resetCycle?: boolean;
   redirectBackUrl?: string;
   setCheckoutDetails: (details: { 
       plan: string; 
@@ -14,6 +15,7 @@ interface CheckoutState {
       role: string;
       discountedAmount?: number;
       isUpgrade?: boolean;
+      resetCycle?: boolean;
       redirectBackUrl?: string;
   }) => void;
   clearCheckout: () => void;
@@ -27,9 +29,10 @@ export const useCheckoutStore = create<CheckoutState>()(
       role: 'STUDENT',
       discountedAmount: undefined,
       isUpgrade: false,
+      resetCycle: false,
       redirectBackUrl: undefined,
       setCheckoutDetails: (details) => set(details),
-      clearCheckout: () => set({ plan: '', billing: 'monthly', role: 'STUDENT', discountedAmount: undefined, isUpgrade: false, redirectBackUrl: undefined }),
+      clearCheckout: () => set({ plan: '', billing: 'monthly', role: 'STUDENT', discountedAmount: undefined, isUpgrade: false, resetCycle: false, redirectBackUrl: undefined }),
     }),
     {
       name: 'checkout-storage',

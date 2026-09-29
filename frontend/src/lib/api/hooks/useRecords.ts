@@ -19,10 +19,10 @@ export const useStudentTermResults = (params?: Record<string, any>) => {
   });
 };
 
-export const useMyPublishedResults = () => {
+export const useMyPublishedResults = (studentId?: string) => {
   return useQuery({
-    queryKey: ["myPublishedResults"],
-    queryFn: () => recordService.getMyPublishedResults(),
+    queryKey: ["myPublishedResults", studentId],
+    queryFn: () => recordService.getMyPublishedResults(studentId),
     staleTime: 1000 * 60 * 2, // 2 minutes
     retry: 1,
   });

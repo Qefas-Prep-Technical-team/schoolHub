@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSchoolInquiries } from "@/lib/api/hooks/useSchool";
+import { useSchoolInquiries, useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { 
   MessageSquare, 
@@ -16,7 +16,8 @@ import {
   MoreVertical,
   ExternalLink,
   Trash2,
-  Loader2
+  Loader2,
+  Download
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -42,6 +43,7 @@ export default function AdminInquiriesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const { data: response, isLoading } = useSchoolInquiries(schoolId, { page, limit });
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
   const rawInquiries = response?.data || [];
   const pagination = response?.pagination;
 
@@ -109,16 +111,183 @@ export default function AdminInquiriesPage() {
     setIsDeleteDialogOpen(false);
   };
 
+  const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
+  const handleExport = async (exportFormat: 'csv' | 'pdf') => {
+    setIsExporting(exportFormat);
+    try {
+      if (inquiries.length === 0) {
+        toast.info("No inquiries to export.");
+        return;
+      }
+      
+      const headers = ["#", "Name", "Email", "Phone", "Message", "Status", "Date"];
+      const rows = inquiries.map((iq: any, index: number) => [
+        (index + 1).toString(),
+        iq.name || "N/A",
+        iq.email || "N/A",
+        iq.phone || "N/A",
+        iq.message || "",
+        iq.status || "UNREAD",
+        format(new Date(iq.createdAt), "yyyy-MM-dd HH:mm:ss")
+      ]);
+
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
+      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileNameBase = `${sanitizedSchoolName}_inquiries_export_${dateStr}`;
+
+      if (exportFormat === 'csv') {
+        const csvContent = [];
+        
+        csvContent.push(`"${schoolName.toUpperCase()}"`);
+        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
+        if (schoolProfile?.address) csvContent.push(`"${schoolProfile.address}"`);
+        if (schoolProfile?.phone || schoolProfile?.schoolEmail) csvContent.push(`"${[schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ')}"`);
+        csvContent.push("");
+        csvContent.push(`"Website Inquiries Report"`);
+        csvContent.push(`"Generated on: ${dateStr}"`);
+        csvContent.push("");
+        
+        const csvRows = inquiries.map((iq: any, index: number) => [
+          index + 1,
+          `"${(iq.name || "").replace(/"/g, '""')}"`,
+          `"${(iq.email || "").replace(/"/g, '""')}"`,
+          `="${iq.phone || ""}"`, // Wrap phone in ="" to force Excel to treat it as text
+          `"${(iq.message || "").replace(/"/g, '""')}"`,
+          iq.status || "UNREAD",
+          `="${format(new Date(iq.createdAt), "yyyy-MM-dd HH:mm:ss")}"` // Force string to stop ### in Excel
+        ]);
+        
+        csvContent.push(headers.join(","));
+        csvRows.forEach((r: any[]) => csvContent.push(r.join(",")));
+
+        const csv = csvContent.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileNameBase}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        const { jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
+        
+        const doc = new jsPDF('landscape');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        
+        let startY = 15;
+
+        // Try adding the logo
+        if (schoolProfile?.logo) {
+          try {
+            // Top left corner logo
+            doc.addImage(schoolProfile.logo, 'PNG', 14, 15, 25, 25);
+          } catch (error) {
+            console.error("Could not load logo for PDF:", error);
+          }
+        }
+
+        // Proper School Heading
+        doc.setFontSize(22);
+        doc.setTextColor(30, 41, 59); // text-slate-800
+        doc.text(schoolName.toUpperCase(), pageWidth / 2, startY, { align: 'center' });
+        startY += 8;
+
+        if (schoolProfile?.motto) {
+          doc.setFontSize(12);
+          doc.setTextColor(71, 85, 105); // text-slate-600
+          doc.text(schoolProfile.motto, pageWidth / 2, startY, { align: 'center', renderingMode: 'fill' });
+          startY += 6;
+        }
+
+        if (schoolProfile?.address) {
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // text-slate-500
+          doc.text(schoolProfile.address, pageWidth / 2, startY, { align: 'center' });
+          startY += 5;
+        }
+
+        if (schoolProfile?.phone || schoolProfile?.schoolEmail) {
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // text-slate-500
+          const contactStr = [schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ');
+          doc.text(contactStr, pageWidth / 2, startY, { align: 'center' });
+          startY += 5;
+        }
+        
+        // Ensure startY clears the logo if it's placed on the left
+        if (startY < 45 && schoolProfile?.logo) {
+          startY = 45;
+        } else {
+          startY += 6;
+        }
+
+        doc.setFontSize(16);
+        doc.setTextColor(30, 41, 59); // text-slate-800
+        doc.text("Website Inquiries Report", pageWidth / 2, startY, { align: 'center' });
+        startY += 6;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Generated on: ${dateStr}`, pageWidth / 2, startY, { align: 'center' });
+        startY += 8;
+
+        autoTable(doc, {
+          head: [headers],
+          body: rows,
+          startY: startY,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+          headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] },
+          columnStyles: {
+            4: { cellWidth: 80 } // Make the message column wider
+          }
+        });
+
+        doc.save(`${fileNameBase}.pdf`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Failed to export inquiries as ${exportFormat.toUpperCase()}.`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
   return (
     <div className="p-6 w-[90%] max-w-[90%] mx-auto min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-          <MessageSquare className="w-8 h-8 text-blue-600 dark:text-blue-500" />
-          Website Inquiries
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-2 text-sm">
-          Manage and respond to messages submitted through your public school landing page.
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <MessageSquare className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            Website Inquiries
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2 text-sm">
+            Manage and respond to messages submitted through your public school landing page.
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleExport('csv')}
+            disabled={isExporting !== null || inquiries.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+          >
+            {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export CSV
+          </button>
+          <button
+            onClick={() => handleExport('pdf')}
+            disabled={isExporting !== null || inquiries.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+          >
+            {isExporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export PDF
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

@@ -15,8 +15,10 @@ export const recordService = {
     return response.data.data;
   },
 
-  getMyPublishedResults: async () => {
-    const response = await apiClient.get<{ success: boolean; data: any[] }>("/records/my-results");
+  getMyPublishedResults: async (studentId?: string) => {
+    const response = await apiClient.get<{ success: boolean; data: any[] }>("/records/my-results", {
+      params: studentId ? { studentId } : undefined
+    });
     return response.data.data;
   },
 

@@ -1943,15 +1943,25 @@ export const login = async (req: Request, res: Response) => {
     // device check for them. They are trusted via the x-device-type header.
     // Web clients still go through the full device cookie + refreshToken validation.
     const isMobileClient = req.headers["x-device-type"] === "mobile";
-    const isDeviceVerified =
-      isMobileClient ||
-      req.cookies?.deviceVerified === "true" ||
-      !!preAuthToken;
+    let isDeviceVerified = isMobileClient || !!preAuthToken;
+
+    if (!isDeviceVerified && req.cookies?.deviceVerified) {
+      try {
+        const payload = jwt.verify(req.cookies.deviceVerified, process.env.JWT_SECRET || "default_secret") as any;
+        if (payload.userId === user.id) {
+          isDeviceVerified = true;
+        }
+      } catch (e) {
+        // Invalid or old "true" token
+      }
+    }
+
     if (!isDeviceVerified) {
       const validDevice = await prisma.refreshToken.findFirst({
         where: {
           userId: user.id,
           deviceModel: deviceInfo.deviceModel,
+          osVersion: deviceInfo.osVersion,
           isValid: true,
         },
       });
@@ -2012,6 +2022,20 @@ export const login = async (req: Request, res: Response) => {
       sameSite: "strict",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // Give them a persistent device token
+    const deviceToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET || "default_secret",
+      { expiresIn: "365d" }
+    );
+    res.cookie("deviceVerified", deviceToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 365 * 24 * 60 * 60 * 1000,
     });
 
     // ===== Build response data =====
@@ -2468,12 +2492,21 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
     let isSchoolOwner = false;
     let isNewUser = false;
 
-    // Set cookie to remember this device was just verified
-    res.cookie("deviceVerified", "true", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
+    // Helper to set cookie once user is found
+    const setDeviceVerifiedCookie = (userId: string) => {
+      const deviceToken = jwt.sign(
+        { userId },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "365d" }
+      );
+      res.cookie("deviceVerified", deviceToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+      });
+    };
 
     switch (userType) {
       case UserRole.ADMIN:
@@ -2501,20 +2534,22 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           include: { schoolAdmins: { include: { school: true } } },
         });
 
-        // Initialize Admin Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(
-          user.id,
-          UserRole.ADMIN,
-        );
-
-        // If School Owner, also initialize School Subscription
-        const ownerAdmin = user.schoolAdmins.find(
-          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
-        );
-        if (ownerAdmin) {
-          await SchoolSubscriptionService.initializeFreePlan(
-            ownerAdmin.school.id,
+        // Initialize Admin Subscription upon verification ONLY for new users
+        if (isNewUser) {
+          await UserSubscriptionService.initializeFreePlan(
+            user.id,
+            UserRole.ADMIN,
           );
+
+          // If School Owner, also initialize School Subscription
+          const ownerAdmin = user.schoolAdmins.find(
+            (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
+          );
+          if (ownerAdmin) {
+            await SchoolSubscriptionService.initializeFreePlan(
+              ownerAdmin.school.id,
+            );
+          }
         }
 
         const schools = user.schoolAdmins.map((sa: any) => ({
@@ -2560,6 +2595,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           }).catch(console.error);
         }
 
+        setDeviceVerifiedCookie(user.id);
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -2591,10 +2627,12 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           data: { verified: true },
         });
         // Initialize Teacher Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(
-          user.id,
-          UserRole.TEACHER,
-        );
+        if (isNewUser) {
+          await UserSubscriptionService.initializeFreePlan(
+            user.id,
+            UserRole.TEACHER,
+          );
+        }
 
         if (isNewUser) {
           sendWelcomeEmail({
@@ -2614,6 +2652,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           }).catch(console.error);
         }
 
+        setDeviceVerifiedCookie(user.id);
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -2633,10 +2672,12 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           data: { verified: true },
         });
         // Initialize Student Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(
-          user.id,
-          UserRole.STUDENT,
-        );
+        if (isNewUser) {
+          await UserSubscriptionService.initializeFreePlan(
+            user.id,
+            UserRole.STUDENT,
+          );
+        }
 
         if (isNewUser) {
           sendWelcomeEmail({
@@ -2656,6 +2697,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           }).catch(console.error);
         }
 
+        setDeviceVerifiedCookie(user.id);
         return res.status(200).json({
           success: true,
           isNewUser,
@@ -2675,10 +2717,12 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           data: { verified: true },
         });
         // Initialize Parent Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(
-          user.id,
-          UserRole.PARENT,
-        );
+        if (isNewUser) {
+          await UserSubscriptionService.initializeFreePlan(
+            user.id,
+            UserRole.PARENT,
+          );
+        }
 
         if (isNewUser) {
           sendWelcomeEmail({
@@ -2698,6 +2742,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           }).catch(console.error);
         }
 
+        setDeviceVerifiedCookie(user.id);
         return res.status(200).json({
           success: true,
           isNewUser,

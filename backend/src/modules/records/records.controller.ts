@@ -77,7 +77,11 @@ export const getClassSubjectResults = async (req: Request, res: Response, next: 
 
 export const getMyPublishedResults = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const studentId = req.user?.id;
+    let studentId = req.user?.id;
+    
+    if (req.query.studentId && (req.user?.userType === "ADMIN" || req.user?.userType === "TEACHER")) {
+      studentId = req.query.studentId as string;
+    }
 
     // Students store school as an object in JWT: user.school.id
     // Teachers/admins store it as a flat schoolId string

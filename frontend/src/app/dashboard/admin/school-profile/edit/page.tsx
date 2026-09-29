@@ -20,7 +20,9 @@ import {
   X,
   Plus,
   Info,
-  ChevronLeft
+  ChevronLeft,
+  Percent,
+  Trash2
 } from 'lucide-react';
 
 export default function EditSchoolProfilePage() {
@@ -56,7 +58,8 @@ export default function EditSchoolProfilePage() {
           : (school.socialLinks || { facebook: '', twitter: '', instagram: '', linkedin: '', youtube: '' }),
         operatingHours: school.operatingHours || 'Mon - Fri: 8:00 AM - 4:00 PM',
         mapLocation: school.mapLocation || '',
-        levels: school.levels || []
+        levels: school.levels || [],
+        gradingSystem: school.gradingSystem || []
       });
     }
   }, [school]);
@@ -362,6 +365,86 @@ export default function EditSchoolProfilePage() {
                         <Plus size={16} /> Add Level
                     </button>
                     </div>
+                </div>
+            </div>
+
+            {/* Grading System Card */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 shadow-sm space-y-8">
+                <SectionHeader title="Grading System Configuration" desc="Set up custom score ranges and their corresponding letter grades." icon={Percent} />
+                
+                <div className="space-y-6">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Grade Boundaries</label>
+                        <p className="text-xs text-slate-500 font-medium">Define the minimum and maximum score for each grade (e.g. A = 70 to 100).</p>
+                    </div>
+
+                    <div className="space-y-3">
+                        {(!schoolData.gradingSystem || schoolData.gradingSystem.length === 0) && (
+                            <div className="text-sm text-slate-500 italic px-2 py-4 bg-slate-50 dark:bg-slate-800 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700">
+                                No grading boundaries defined yet.
+                            </div>
+                        )}
+                        {(schoolData.gradingSystem || []).map((gradeRow: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <input
+                                    type="text"
+                                    placeholder="Grade (e.g. A)"
+                                    value={gradeRow.grade}
+                                    onChange={(e) => {
+                                        const newSys = [...schoolData.gradingSystem];
+                                        newSys[idx].grade = e.target.value.toUpperCase();
+                                        handleChange('gradingSystem', newSys);
+                                    }}
+                                    className="w-24 h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold text-center focus:ring-2 focus:ring-primary/20 outline-none"
+                                />
+                                <span className="text-sm font-medium text-slate-400">Min:</span>
+                                <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={gradeRow.min}
+                                    onChange={(e) => {
+                                        const newSys = [...schoolData.gradingSystem];
+                                        newSys[idx].min = parseInt(e.target.value) || 0;
+                                        handleChange('gradingSystem', newSys);
+                                    }}
+                                    className="w-20 h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-center focus:ring-2 focus:ring-primary/20 outline-none"
+                                />
+                                <span className="text-sm font-medium text-slate-400">Max:</span>
+                                <input
+                                    type="number"
+                                    placeholder="100"
+                                    value={gradeRow.max}
+                                    onChange={(e) => {
+                                        const newSys = [...schoolData.gradingSystem];
+                                        newSys[idx].max = parseInt(e.target.value) || 0;
+                                        handleChange('gradingSystem', newSys);
+                                    }}
+                                    className="w-20 h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-center focus:ring-2 focus:ring-primary/20 outline-none"
+                                />
+                                <div className="flex-1"></div>
+                                <button
+                                    onClick={() => {
+                                        const newSys = schoolData.gradingSystem.filter((_: any, i: number) => i !== idx);
+                                        handleChange('gradingSystem', newSys);
+                                    }}
+                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            const currentSys = schoolData.gradingSystem || [];
+                            handleChange('gradingSystem', [...currentSys, { grade: '', min: 0, max: 0 }]);
+                        }}
+                        className="h-11 px-6 w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+                    >
+                        <Plus size={16} /> Add Grade Range
+                    </button>
                 </div>
             </div>
 

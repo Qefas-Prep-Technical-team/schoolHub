@@ -4,8 +4,9 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { apiClient } from '@/lib/api/client'
-import { useSchoolTeachers, useSchoolSettings } from '@/lib/api/hooks/useSchool'
+import { useSchoolTeachers, useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool'
 import { useMarkBulkTeacherAttendance, useSchoolTeacherAttendanceByDate, useSchoolTeacherAttendanceTrend } from '@/lib/api/hooks/useAdmin'
+import { useSessions } from '@/lib/api/hooks/useSessions'
 import { AddTeacherModal } from './components/AddTeacherModal'
 import { BulkAttendanceModal, TeacherAttendanceRecord } from './components/BulkAttendanceModal'
 import { BulkAttendanceModeModal } from './components/BulkAttendanceModeModal'
@@ -32,6 +33,12 @@ export default function ManageTeachersPage() {
     const [isAttendanceSwipeModalOpen, setIsAttendanceSwipeModalOpen] = useState(false)
     const [attendanceTargetDate, setAttendanceTargetDate] = useState<string>(new Date().toISOString().split('T')[0])
     const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+    const [exportStartDate, setExportStartDate] = useState<string>(new Date().toISOString().split('T')[0])
+    const [exportEndDate, setExportEndDate] = useState<string>(new Date().toISOString().split('T')[0])
+    const [exportRangeMode, setExportRangeMode] = useState<'custom' | 'term'>('custom')
+    const [exportFormatMode, setExportFormatMode] = useState<'detailed' | 'summary'>('summary')
+    const [selectedTermPeriod, setSelectedTermPeriod] = useState<string>('')
+    const [exportingFormat, setExportingFormat] = useState<'csv' | 'pdf' | null>(null)
     const [editingTeacher, setEditingTeacher] = useState<any>(null)
     const itemsPerPage = 10
     const router = useRouter()
@@ -42,8 +49,10 @@ export default function ManageTeachersPage() {
     const { mutate: markBulkAttendance, isPending: isSavingAttendance } = useMarkBulkTeacherAttendance(schoolId)
     const { data: existingAttendance } = useSchoolTeacherAttendanceByDate(schoolId, attendanceTargetDate)
     const { data: settings } = useSchoolSettings(schoolId)
+    const { data: schoolProfile } = useSchoolProfile(schoolId)
     const { data: subUsage } = useSubscriptionUsage()
     const { data: rawTrendData } = useSchoolTeacherAttendanceTrend(schoolId, 5)
+    const { data: sessionsData } = useSessions(schoolId)
     const primaryColor = settings?.themeColor || '#6366f1'
 
     const attendanceTrend = useMemo(() => {
@@ -103,17 +112,167 @@ export default function ManageTeachersPage() {
         setIsExportModalOpen(false)
     }
 
-    const exportTeacherProfiles = () => {
-        const headers = ['#', 'Name', 'Email', 'Faculty ID', 'Subjects', 'Classes', 'Status']
-        const csvContent = [headers.join(','), ...filteredTeachers.map((t, i) => [i + 1, `"${t.name}"`, `"${t.email}"`, `"${t.teacherCode || 'UNASSIGNED'}"`, `"${t.subjects.join(', ')}"`, `"${t.classes.join(', ')}"`, `"${t.status}"`].join(','))].join('\n')
-        downloadCsv(csvContent, `teachers_profiles_${new Date().toISOString().split('T')[0]}.csv`)
+    const generatePDFHeaderAndFooter = async (doc: any, title: string, orientation: 'portrait' | 'landscape' = 'portrait') => {
+        const logo = schoolProfile?.logo || user?.schools?.[0]?.name ? '' : ''; // Safely check logo
+        const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || 'Qefas Prep School';
+        const address = schoolProfile?.address || 'School Address Not Provided';
+        const motto = schoolProfile?.motto || '';
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+        
+        // Add decorative background elements
+        doc.setFillColor(241, 245, 249); // slate-100
+        doc.circle(pageWidth, 0, 40, 'F');
+        doc.setFillColor(226, 232, 240); // slate-200
+        doc.circle(pageWidth, 0, 25, 'F');
+        doc.setFillColor(248, 250, 252); // slate-50
+        doc.circle(0, pageHeight, 60, 'F');
+        
+        // Header
+        if (schoolProfile?.logo) {
+            try {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.src = schoolProfile.logo;
+                await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
+                doc.addImage(img, 'PNG', pageWidth - 45, 10, 30, 30);
+            } catch(e) {}
+        }
+        
+        let yPos = 22;
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42); // slate-900
+        doc.text(schoolName, 14, yPos);
+        yPos += 7;
+        
+        if (motto) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(100, 116, 139); // slate-500
+            doc.text(`"${motto}"`, 14, yPos);
+            yPos += 6;
+        }
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139); // slate-500
+        doc.text(address, 14, yPos);
+        yPos += 8;
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139); // slate-500
+        doc.text(title.toUpperCase(), 14, yPos);
+        yPos += 7;
+        
+        // Horizontal line
+        doc.setDrawColor(15, 23, 42);
+        doc.setLineWidth(0.8);
+        doc.line(14, yPos, pageWidth - 14, yPos);
+        
+        return yPos + 10; // startY for table
     }
 
-    const exportAttendanceData = () => {
-        const headers = ['Name', 'Teacher ID', 'Date', 'Status', 'Time In', 'Time Out', 'Remarks']
-        const records = existingAttendance?.data || []
-        const csvContent = [headers.join(','), ...records.map((r: any) => [`"${r.teacher?.name || ''}"`, `"${r.teacher?.teacherCode || ''}"`, `"${new Date(r.date).toLocaleDateString()}"`, `"${r.status}"`, `"${r.timeIn || 'N/A'}"`, `"${r.timeOut || 'N/A'}"`, `"${r.remarks || ''}"`].join(','))].join('\n')
-        downloadCsv(csvContent, `teachers_attendance_${attendanceTargetDate}.csv`)
+    const addSignatureBlock = (doc: any, finalY: number) => {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        
+        const yPos = finalY + 30;
+        doc.text('_________________________________', 14, yPos);
+        doc.text('Authorized Signature', 14, yPos + 6);
+        
+        const dateStr = new Date().toLocaleDateString();
+        doc.text(`Date Generated: ${dateStr}`, doc.internal.pageSize.width - 14, yPos + 6, { align: 'right' });
+    }
+
+    const exportTeacherProfiles = (format: 'csv' | 'pdf') => {
+        const headers = ['#', 'Name', 'Email', 'Faculty ID', 'Subjects', 'Classes', 'Status']
+        const rows = filteredTeachers.map((t, i) => [i + 1, t.name, t.email, t.teacherCode || 'UNASSIGNED', t.subjects.join(', '), t.classes.join(', '), t.status])
+        
+        if (format === 'csv') {
+            const csvContent = [headers.join(','), ...rows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(','))].join('\n')
+            downloadCsv(csvContent, `teachers_profiles_${new Date().toISOString().split('T')[0]}.csv`)
+        } else {
+            import('jspdf').then(({ jsPDF }) => {
+                import('jspdf-autotable').then(async ({ default: autoTable }) => {
+                    const doc = new jsPDF('landscape')
+                    const startY = await generatePDFHeaderAndFooter(doc, 'TEACHER PROFILES', 'landscape')
+                    autoTable(doc, { head: [headers], body: rows, startY, theme: 'grid', styles: { lineColor: [150, 150, 150], lineWidth: 0.3 }, headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], lineColor: [150, 150, 150], lineWidth: 0.3 } })
+                    addSignatureBlock(doc, (doc as any).lastAutoTable.finalY)
+                    doc.save(`teachers_profiles_${new Date().toISOString().split('T')[0]}.pdf`)
+                    setIsExportModalOpen(false)
+                })
+            })
+        }
+    }
+
+    const exportAttendanceData = async (format: 'csv' | 'pdf') => {
+        setExportingFormat(format);
+        try {
+            const { adminService } = await import('@/lib/api/services/adminService');
+            
+            // Determine actual start/end dates
+            let start = exportStartDate;
+            let end = exportEndDate;
+            let dateTitle = exportStartDate === exportEndDate ? exportStartDate : `${exportStartDate} to ${exportEndDate}`;
+
+            if (exportRangeMode === 'term' && selectedTermPeriod) {
+                const [tsStart, tsEnd, termName] = selectedTermPeriod.split('|');
+                start = tsStart;
+                end = tsEnd;
+                dateTitle = termName;
+            }
+            
+            const result = await adminService.getSchoolTeacherAttendanceByDate(schoolId, undefined, start, end);
+            const rawRecords = Array.isArray(result) ? result : (result?.data || []);
+            
+            let headers: string[] = [];
+            let rows: any[] = [];
+
+            if (exportFormatMode === 'detailed') {
+                headers = ['Name', 'Teacher ID', 'Date', 'Status', 'Time In', 'Time Out', 'Remarks'];
+                rows = rawRecords.map((r: any) => [r.teacher?.name || '', r.teacher?.teacherCode || '', new Date(r.date).toLocaleDateString(), r.status, r.timeIn || 'N/A', r.timeOut || 'N/A', r.remarks || '']);
+            } else {
+                headers = ['Name', 'Teacher ID', 'Present', 'Absent', 'Late', 'Excused', 'Total Days'];
+                const summary: Record<string, any> = {};
+                rawRecords.forEach((r: any) => {
+                    const tId = r.teacherId;
+                    if (!summary[tId]) {
+                        summary[tId] = { name: r.teacher?.name || '', code: r.teacher?.teacherCode || '', present: 0, absent: 0, late: 0, excused: 0, total: 0 };
+                    }
+                    summary[tId].total++;
+                    if (r.status === 'present') summary[tId].present++;
+                    else if (r.status === 'absent') summary[tId].absent++;
+                    else if (r.status === 'late') summary[tId].late++;
+                    else if (r.status === 'excused') summary[tId].excused++;
+                });
+                rows = Object.values(summary).map(s => [s.name, s.code, s.present, s.absent, s.late, s.excused, s.total]);
+            }
+
+            const fileNameDate = dateTitle.replace(/\s/g, '_').replace(/\|/g, '_');
+
+            if (format === 'csv') {
+                const csvContent = [headers.join(','), ...rows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(','))].join('\n')
+                downloadCsv(csvContent, `teachers_attendance_${exportFormatMode}_${fileNameDate}.csv`)
+                setIsExportModalOpen(false)
+            } else {
+                const { jsPDF } = await import('jspdf');
+                const { default: autoTable } = await import('jspdf-autotable');
+                const doc = new jsPDF()
+                const title = `TEACHERS ATTENDANCE ${exportFormatMode === 'summary' ? 'SUMMARY' : 'LOGS'} - ${dateTitle.toUpperCase()}`;
+                const startY = await generatePDFHeaderAndFooter(doc, title, 'portrait')
+                autoTable(doc, { head: [headers], body: rows, startY, theme: 'grid', styles: { lineColor: [150, 150, 150], lineWidth: 0.3 }, headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], lineColor: [150, 150, 150], lineWidth: 0.3 } })
+                addSignatureBlock(doc, (doc as any).lastAutoTable.finalY)
+                doc.save(`teachers_attendance_${exportFormatMode}_${fileNameDate}.pdf`)
+                setIsExportModalOpen(false)
+            }
+        } catch (error) {
+            toast.error("Failed to fetch attendance data for export");
+        } finally {
+            setExportingFormat(null);
+        }
     }
 
     const handleSaveBulkAttendance = (records: TeacherAttendanceRecord[], date: string) => {
@@ -411,18 +570,83 @@ export default function ManageTeachersPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-white/10">
                             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Export Data</h2>
-                            <p className="text-sm text-gray-500 mb-5">Select a dataset to download as CSV.</p>
+                            <p className="text-sm text-gray-500 mb-5">Select a dataset and format to export.</p>
                             <div className="space-y-3">
-                                <button onClick={exportTeacherProfiles} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 transition-all text-left group">
-                                    <div><p className="font-semibold text-gray-900 dark:text-white text-sm">Teacher Profiles</p><p className="text-xs text-gray-400 mt-0.5">Names, subjects, and status</p></div>
-                                    <Download size={16} className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
-                                </button>
-                                <button onClick={exportAttendanceData} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 transition-all text-left group">
-                                    <div><p className="font-semibold text-gray-900 dark:text-white text-sm">Attendance</p><p className="text-xs text-gray-400 mt-0.5">Daily logs, time-in, and remarks</p></div>
-                                    <Download size={16} className="text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                                </button>
+                                <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800">
+                                    <div>
+                                        <p className="font-semibold text-gray-900 dark:text-white text-sm">Teacher Profiles</p>
+                                        <p className="text-xs text-gray-400 mt-0.5 mb-3">Names, subjects, and status</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => exportTeacherProfiles('csv')} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-xs font-semibold transition-colors">
+                                            <Download size={14} /> CSV
+                                        </button>
+                                        <button onClick={() => exportTeacherProfiles('pdf')} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-500/20 text-xs font-semibold transition-colors">
+                                            <Download size={14} /> PDF
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800">
+                                    <div className="mb-4">
+                                        <p className="font-semibold text-gray-900 dark:text-white text-sm">Attendance</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">Export detailed daily logs or summary counts</p>
+                                    </div>
+                                    
+                                    <div className="space-y-3 mb-4">
+                                        <div>
+                                            <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Format</label>
+                                            <div className="flex bg-white dark:bg-slate-900 rounded-lg p-1 border border-gray-200 dark:border-white/10">
+                                                <button onClick={() => setExportFormatMode('summary')} className={cn("flex-1 text-xs py-1.5 rounded-md font-medium transition-colors", exportFormatMode === 'summary' ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5")}>Summary Counts</button>
+                                                <button onClick={() => setExportFormatMode('detailed')} className={cn("flex-1 text-xs py-1.5 rounded-md font-medium transition-colors", exportFormatMode === 'detailed' ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5")}>Detailed Logs</button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Date Range Options</label>
+                                            <div className="flex bg-white dark:bg-slate-900 rounded-lg p-1 border border-gray-200 dark:border-white/10 mb-2">
+                                                <button onClick={() => setExportRangeMode('term')} className={cn("flex-1 text-xs py-1.5 rounded-md font-medium transition-colors", exportRangeMode === 'term' ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5")}>By Term</button>
+                                                <button onClick={() => setExportRangeMode('custom')} className={cn("flex-1 text-xs py-1.5 rounded-md font-medium transition-colors", exportRangeMode === 'custom' ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5")}>Custom Range</button>
+                                            </div>
+
+                                            {exportRangeMode === 'term' ? (
+                                                <select value={selectedTermPeriod} onChange={(e) => setSelectedTermPeriod(e.target.value)} className="w-full h-8 px-2 text-xs border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-emerald-500/50">
+                                                    <option value="" disabled>Select a term...</option>
+                                                    {sessionsData?.data?.map((session: any) => (
+                                                        <optgroup key={session.id} label={`${session.name} Session`}>
+                                                            {session.termPeriods?.map((tp: any) => (
+                                                                <option key={tp.id} value={`${new Date(tp.startDate).toISOString().split('T')[0]}|${new Date(tp.endDate).toISOString().split('T')[0]}|${session.name} ${tp.term} Term`}>
+                                                                    {tp.term} Term ({new Date(tp.startDate).toLocaleDateString()} - {new Date(tp.endDate).toLocaleDateString()})
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1">
+                                                        <label className="text-[9px] text-gray-400 block mb-0.5">Start</label>
+                                                        <input type="date" value={exportStartDate} onChange={e => setExportStartDate(e.target.value)} className="w-full h-8 px-2 text-xs border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-emerald-500/50" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="text-[9px] text-gray-400 block mb-0.5">End</label>
+                                                        <input type="date" value={exportEndDate} onChange={e => setExportEndDate(e.target.value)} className="w-full h-8 px-2 text-xs border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-emerald-500/50" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button onClick={() => exportAttendanceData('csv')} disabled={exportingFormat !== null || (exportRangeMode === 'term' && !selectedTermPeriod)} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-xs font-semibold transition-colors disabled:opacity-50">
+                                            {exportingFormat === 'csv' ? <span className="animate-spin h-3 w-3 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full" /> : <Download size={14} />} CSV
+                                        </button>
+                                        <button onClick={() => exportAttendanceData('pdf')} disabled={exportingFormat !== null || (exportRangeMode === 'term' && !selectedTermPeriod)} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-500/20 text-xs font-semibold transition-colors disabled:opacity-50">
+                                            {exportingFormat === 'pdf' ? <span className="animate-spin h-3 w-3 border-2 border-rose-500/30 border-t-rose-500 rounded-full" /> : <Download size={14} />} PDF
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <Button variant="outline" className="w-full mt-5 rounded-xl font-semibold text-sm" onClick={() => setIsExportModalOpen(false)}>Cancel</Button>
+                            <Button variant="outline" className="w-full mt-5 rounded-xl font-semibold text-sm" onClick={() => setIsExportModalOpen(false)} disabled={exportingFormat !== null}>Cancel</Button>
                         </motion.div>
                     </div>
                 )}

@@ -101,7 +101,9 @@ export const verifyPaymentService = async (
     // SECURITY: Extract Plan and Billing from gateway-normalised metadata (Source of Truth)
     const metadataPlan = verified.meta.plan;
     const metadataBilling = verified.meta.billing;
-    const isUpgrade = verified.meta.isUpgrade ?? false;
+    const isUpgrade = verified.meta.isUpgrade ?? verified.meta.is_upgrade ?? false;
+    const resetCycle = verified.meta.resetCycle ?? verified.meta.reset_cycle ?? false;
+
     // Frontend passes isTrial but we MUST verify it server-side — never trust the client.
     const isTrial = await (async () => {
       const claimedTrial = verified.meta.isTrial ?? false;
@@ -134,13 +136,29 @@ export const verifyPaymentService = async (
         console.warn(`[PaymentSecurity] Plan mismatch detected! Request: ${plan}, Metadata: ${metadataPlan}. Using Metadata.`);
     }
 
-    // Calculate subscription end date
-    // `months` is set by the frontend when the user buys multiple months at once.
-    // Falls back to 1 for a normal single-month payment (backward compatible).
+    // Calculate duration in months
     const metadataMonths = typeof verified.meta.months === 'number' && verified.meta.months > 0
       ? verified.meta.months
       : 1;
     const durationMonths = verifiedBilling === 'yearly' ? 12 : metadataMonths;
+    
+    // Find existing subscription end to preserve it if upgrading, or extend if renewing
+    let existingEnd: Date | null = null;
+    if (userRole === "ADMIN") {
+        const schoolAdmin = await prisma.schoolAdmin.findFirst({
+            where: { adminId: userId },
+            include: { school: { select: { subscriptionEnd: true } } }
+        });
+        existingEnd = schoolAdmin?.school?.subscriptionEnd || null;
+    } else {
+        const user = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { subscriptionEnd: boolean } }) => Promise<{ subscriptionEnd: Date | null } | null> }>)[userRole.toLowerCase()].findUnique({
+            where: { id: userId },
+            select: { subscriptionEnd: true }
+        });
+        existingEnd = user?.subscriptionEnd || null;
+    }
+
+    // Calculate subscription end date
     let subscriptionEnd = new Date();
 
     if (isTrial) {
@@ -152,14 +170,25 @@ export const verifyPaymentService = async (
 
         subscriptionEnd.setDate(subscriptionEnd.getDate() + trialDays);
     } else {
-        subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
+        if (isUpgrade && !resetCycle) {
+            // Prorated upgrade: keep existing end date
+            if (existingEnd && existingEnd > new Date()) {
+                subscriptionEnd = new Date(existingEnd.getTime());
+            } else {
+                subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
+            }
+        } else {
+            // Full cycle renewal or upgrade with resetCycle
+            if (existingEnd && existingEnd > new Date()) {
+                // Add new months to the current future expiry date so they don't lose days
+                subscriptionEnd = new Date(existingEnd.getTime());
+                subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
+            } else {
+                // Expired or brand new: start from today
+                subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
+            }
+        }
     }
-
-    // < 15 days -> continues from where previous starts from.
-    // >= 15 days -> starts from payment point.
-
-    // We'll trust the frontend's decision on whether this was a pro-rated upgrade.
-    // If it was pro-rated (isUpgrade = true), we should NOT reset the end date if it's already in the future.
 
     const planId = await getPlanId(userRole, verifiedPlan);
     const dbPlan = await prisma.subscriptionPlan.findUnique({ where: { id: planId }, select: { name: true } });
@@ -188,34 +217,8 @@ export const verifyPaymentService = async (
         trialEndsAt: isTrial ? subscriptionEnd : undefined,
         trialPlan: isTrial ? verifiedPlan : undefined, // Requirement: Set trial plan name if trialing
         billingCycle: verifiedBilling,
-        subscriptionEnd, // default; may be overridden below
+        subscriptionEnd,
     };
-
-    if (isUpgrade) {
-        // Find existing subscription end to preserve it
-        let existingEnd: Date | null = null;
-        if (userRole === "ADMIN") {
-            const schoolAdmin = await prisma.schoolAdmin.findFirst({
-                where: { adminId: userId },
-                include: { school: { select: { subscriptionEnd: true } } }
-            });
-            existingEnd = schoolAdmin?.school?.subscriptionEnd || null;
-        } else {
-            const user = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { subscriptionEnd: boolean } }) => Promise<{ subscriptionEnd: Date | null } | null> }>)[userRole.toLowerCase()].findUnique({
-                where: { id: userId },
-                select: { subscriptionEnd: true }
-            });
-            existingEnd = user?.subscriptionEnd || null;
-        }
-
-        if (existingEnd && existingEnd > new Date()) {
-            updateData.subscriptionEnd = existingEnd;
-        } else {
-            updateData.subscriptionEnd = subscriptionEnd;
-        }
-    } else {
-        updateData.subscriptionEnd = subscriptionEnd;
-    }
 
     // Save transaction record
     let schoolId: string | undefined;

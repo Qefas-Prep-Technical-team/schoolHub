@@ -26,6 +26,7 @@ import { TranscriptModal } from './components/TranscriptModal'
 import { ExitStudentModal } from '../components/ExitStudentModal'
 import { StudentHistoryTimeline } from '../components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
+import StudentFinalResultsTab from '../components/StudentFinalResultsTab'
 import { toast } from 'react-toastify'
 import { 
     useStudentBehaviourProfile, 
@@ -258,6 +259,7 @@ const TABS = [
     { id: 'timetable', label: 'Time Table' },
     { id: 'behaviour', label: 'Behaviour' },
     { id: 'evaluation', label: 'Evaluation' },
+    { id: 'final', label: 'Final Result' },
     { id: 'history', label: 'History' },
 ]
 
@@ -1881,6 +1883,10 @@ export default function StudentProfilePage() {
                         </div>
                     </div>
                 </main>
+            )}
+
+            {activeTab === 'final' && (
+                <StudentFinalResultsTab studentId={studentId} primaryColor={primaryColor} />
             )}
 
             <TranscriptModal

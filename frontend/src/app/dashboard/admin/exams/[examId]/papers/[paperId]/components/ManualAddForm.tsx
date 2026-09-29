@@ -311,7 +311,7 @@ export default function ManualAddForm({
 
   const handleCancel = () => {
     if (sessionUploads.length > 0) {
-      Promise.all(sessionUploads.map(url => imageService.deleteFromSupabaseByUrl(url)))
+      Promise.all(sessionUploads.map(url => imageService.deleteByUrl(url)))
         .catch(err => console.error("Failed to cleanup session uploads on cancel:", err));
     }
     onCancel();
@@ -332,7 +332,7 @@ export default function ManualAddForm({
     const allKnownImages = [...(initialData?.images || []), ...sessionUploads];
     const removedImages = allKnownImages.filter(url => !images.includes(url));
     if (removedImages.length > 0) {
-      Promise.all(removedImages.map(url => imageService.deleteFromSupabaseByUrl(url)))
+      Promise.all(removedImages.map(url => imageService.deleteByUrl(url)))
         .catch(err => console.error("Failed to cleanup removed images:", err));
     }
 

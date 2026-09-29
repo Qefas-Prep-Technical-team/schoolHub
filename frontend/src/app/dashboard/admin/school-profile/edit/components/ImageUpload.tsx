@@ -109,7 +109,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         {value && !isUploading && (
           <button 
             type="button"
-            onClick={() => onChange('')}
+            onClick={async () => {
+              toast.info('Removing image...');
+              await imageService.deleteByUrl(value);
+              onChange('');
+              toast.success('Image removed from storage.');
+            }}
             className="px-4 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-500 hover:bg-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors border border-rose-100 dark:border-rose-500/20"
           >
             <X size={14} /> Remove {label}

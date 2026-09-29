@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { handleError } from "../../utils/error-handler";
-import { uploadBufferToBunnyService, getS3PresignedUrlService, confirmS3UploadService, deleteS3FileService, deleteBunnyFileService, getUploadHistoryService, cleanupUnusedImagesService } from "./upload.service";
+import { uploadBufferToBunnyService, getS3PresignedUrlService, confirmS3UploadService, deleteS3FileService, deleteBunnyFileService, getUploadHistoryService, cleanupUnusedImagesService, deleteFileByUrlService } from "./upload.service";
 
 /**
  * Legacy - No longer supported. Use /upload/proxy instead.
@@ -144,6 +144,23 @@ export const deleteBunnyFile = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, message: "File deleted successfully from Bunny.net" });
   } catch (error: any) {
     return handleError(res, error, "upload.deleteBunnyFile");
+  }
+};
+
+export const deleteFileByUrl = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ success: false, message: "File URL is required" });
+    }
+
+    await deleteFileByUrlService(url, user.schoolId);
+
+    return res.status(200).json({ success: true, message: "File deleted successfully" });
+  } catch (error: any) {
+    return handleError(res, error, "upload.deleteFileByUrl");
   }
 };
 

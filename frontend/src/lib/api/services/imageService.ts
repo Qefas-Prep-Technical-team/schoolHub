@@ -86,26 +86,26 @@ export const imageService = {
   },
 
   /**
-   * Delete file from Supabase Storage by its public URL
+   * Delete file from backend database and Supabase Storage by its public URL
    */
-  deleteFromSupabaseByUrl: async (url: string, bucket: string = "school-assets") => {
+  deleteByUrl: async (url: string, bucket: string = "school-assets") => {
     try {
-      if (!url.includes(bucket)) return false;
-      const parts = url.split(`${bucket}/`);
-      if (parts.length < 2) return false;
-      
-      // Handle potential query params in the URL (e.g. ?t=123)
-      const filePath = parts[1].split('?')[0];
-      const supabase = getSupabase();
-      
-      const { error } = await supabase.storage.from(bucket).remove([filePath]);
-      if (error) {
-        console.error("Failed to delete from Supabase:", error);
-        return false;
+      // 1. Delete from Supabase first
+      if (url.includes(bucket)) {
+        const parts = url.split(`${bucket}/`);
+        if (parts.length >= 2) {
+          const filePath = parts[1].split('?')[0];
+          const supabase = getSupabase();
+          await supabase.storage.from(bucket).remove([filePath]);
+        }
       }
+      
+      // 2. Delete from Backend DB to decrement quota
+      await apiClient.delete(`/upload/by-url`, { data: { url } });
+      
       return true;
     } catch (err) {
-      console.error("Error deleting from Supabase:", err);
+      console.error("Error deleting image:", err);
       return false;
     }
   },
@@ -127,7 +127,7 @@ export const imageService = {
     
     if (deletedUrls && deletedUrls.length > 0) {
       // Bulk delete the returned unused URLs from Supabase
-      Promise.all(deletedUrls.map((url: string) => imageService.deleteFromSupabaseByUrl(url)))
+      Promise.all(deletedUrls.map((url: string) => imageService.deleteByUrl(url)))
         .catch(err => console.error("Failed to delete unused images from Supabase:", err));
     }
     

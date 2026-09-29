@@ -368,6 +368,36 @@ export const getUploadHistoryService = async (schoolId: string, userId: string, 
   return { records, total, page, limit };
 };
 
+export const deleteFileByUrlService = async (url: string, schoolId: string) => {
+  const fileRecord = await prisma.fileRecord.findFirst({
+    where: { fileUrl: url, schoolId: schoolId }
+  });
+
+  if (!fileRecord) {
+    throw new Error("File not found or unauthorized.");
+  }
+
+  // Determine storage provider and delete
+  if (fileRecord.fileUrl.includes("storage.bunnycdn.com") || fileRecord.fileUrl.includes("b-cdn.net")) {
+    await deleteBunnyFileService(fileRecord.id, schoolId);
+  } else if (fileRecord.fileUrl.includes("amazonaws.com")) {
+    await deleteS3FileService(fileRecord.id, schoolId);
+  } else {
+    // Fallback: just delete from DB if we don't know the provider
+    await prisma.$transaction(async (tx) => {
+      await tx.fileRecord.delete({ where: { id: fileRecord.id } });
+      const school = await tx.school.findUnique({ where: { id: schoolId } });
+      const newStorage = Math.max(0, (school?.storageUsedBytes || 0) - fileRecord.fileSize);
+      await tx.school.update({
+        where: { id: schoolId },
+        data: { storageUsedBytes: newStorage }
+      });
+    });
+  }
+
+  return { success: true };
+};
+
 export const cleanupUnusedImagesService = async (schoolId: string, userId: string) => {
   // 1. Fetch all user's FileRecords
   const fileRecords = await prisma.fileRecord.findMany({

@@ -35,7 +35,8 @@ import {
   History,
   Link as LinkIcon,
   Loader2,
-  Share2
+  Share2,
+  Percent
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -388,6 +389,38 @@ export default function SchoolProfilePage() {
                     >
                     <GraduationCap size={14} className="text-slate-400" />
                     {level}
+                    </motion.div>
+                ))}
+                </div>
+            </div>
+          )}
+
+          {/* Grading System Display */}
+          {school?.gradingSystem && school.gradingSystem.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-slate-800 dark:text-white">Grading System Configuration</h2>
+                <Badge variant="secondary" className="rounded-xl px-2 py-0.5 text-[10px] font-semibold">
+                    {school.gradingSystem.length} Grades
+                </Badge>
+                </div>
+                <p className="text-sm text-slate-500 mb-6">Standardized academic grade boundaries applied across assessments.</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {school.gradingSystem.map((sys: any, idx: number) => (
+                    <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30"
+                    >
+                    <span className="text-2xl font-bold text-slate-800 dark:text-white mb-1">{sys.grade}</span>
+                    <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                        <span>{sys.min}%</span>
+                        <span className="text-slate-300 dark:text-slate-600">-</span>
+                        <span>{sys.max}%</span>
+                    </div>
                     </motion.div>
                 ))}
                 </div>

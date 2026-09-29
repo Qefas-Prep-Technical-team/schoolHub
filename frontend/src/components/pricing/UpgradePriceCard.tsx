@@ -184,7 +184,7 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
     // Must be before isDowngrade
     const proRata = amount && currentPlanPrice
         ? calculateProRatedAmount(currentPlanPrice, amount, lastPaymentDate || null)
-        : { amount: amount || 0, isUpgrade: false };
+        : { amount: amount || 0, isUpgrade: false, resetCycle: true };
 
     const isDowngrade = !isCurrentPlanAndCycle && !isDeactivated
         && amount !== undefined && currentPlanPrice !== undefined
@@ -197,6 +197,7 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
             role: 'ADMIN',
             discountedAmount: isDowngrade ? 0 : proRata.amount,
             isUpgrade: isDowngrade ? false : proRata.isUpgrade,
+            resetCycle: isDowngrade ? true : proRata.resetCycle,
         });
         setIsLoading(true);
         router.push('/checkout');

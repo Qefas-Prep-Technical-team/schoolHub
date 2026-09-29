@@ -11,11 +11,12 @@ import { SyncProgressModal } from "./components/SyncProgressModal";
 import { SummaryPanel } from "./components/SummaryPanel";
 import { useClassSubjectResult, useStudentSubjectResults, useBulkSaveStudentSubjectResults, useUpdatePaperLinks, useCalculatePaperSync, usePublishClassSubjectResult, useUnpublishClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useSubjectPapers } from "@/lib/api/hooks/useExams";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAdminAssignments } from "@/lib/api/hooks/useAssignments";
 import { useStudents } from "@/lib/api/hooks/useStudent";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 
 export default function NewFinalResultDataEntryPage() {
   const searchParams = useSearchParams();
@@ -347,6 +348,283 @@ export default function NewFinalResultDataEntryPage() {
   });
   const classAverage = studentsWithScores > 0 ? (totalClassScore / studentsWithScores).toFixed(1) : "0";
 
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId || "");
+
+  // Export states
+  const [isExportPopupOpen, setIsExportPopupOpen] = useState(false);
+  const [exportTargetFormat, setExportTargetFormat] = useState<'excel' | 'pdf'>('excel');
+  const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
+
+  const calculateGrade = (total: number, settings?: any) => {
+    if (total >= 70) return 'A';
+    if (total >= 60) return 'B';
+    if (total >= 50) return 'C';
+    if (total >= 45) return 'D';
+    if (total >= 40) return 'E';
+    return 'F';
+  };
+
+  const handleExport = async () => {
+    setIsExporting(exportTargetFormat);
+    try {
+      if (filteredStudents.length === 0) {
+        toast.info("No records to export.");
+        return;
+      }
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
+      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileNameBase = `${sanitizedSchoolName}_result_entry_${config?.subject?.name?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'subject'}_${dateStr}`;
+
+      // Helper to calculate ordinal suffix
+      const getOrdinalSuffix = (i: number) => {
+        const j = i % 10, k = i % 100;
+        if (j === 1 && k !== 11) return i + "st";
+        if (j === 2 && k !== 12) return i + "nd";
+        if (j === 3 && k !== 13) return i + "rd";
+        return i + "th";
+      };
+
+      // Calculate positions (Standard Competition Ranking)
+      const scoresWithIds = filteredStudents.map(s => {
+        const total = (parseFloat(s.assignment) || 0) + (parseFloat(s.quiz) || 0) + (parseFloat(s.ca) || 0) + (parseFloat(s.exam) || 0);
+        return { id: s.id, total };
+      });
+      scoresWithIds.sort((a, b) => b.total - a.total);
+      
+      const positionMap = new Map<string, string>();
+      let currentRank = 1;
+      for (let i = 0; i < scoresWithIds.length; i++) {
+        if (i > 0 && scoresWithIds[i].total < scoresWithIds[i - 1].total) {
+          currentRank = i + 1;
+        }
+        positionMap.set(scoresWithIds[i].id, getOrdinalSuffix(currentRank));
+      }
+
+      // Section 1: Configuration
+      const configHeaders = ["Configuration Property", "Value"];
+      const configRows = [
+        ["Subject", config?.subject?.name || "N/A"],
+        ["Class", config?.class?.name || "N/A"],
+        ["Session", config?.session?.name || "N/A"],
+        ["Term", config?.term || "N/A"],
+        ["Max Assignment Score", (config?.assignmentMax ?? "N/A").toString()],
+        ["Max Quiz Score", (config?.quizMax ?? "N/A").toString()],
+        ["Max CA Score", (config?.caMax ?? "N/A").toString()],
+        ["Max Exam Score", (config?.examMax ?? "N/A").toString()],
+      ];
+
+      // Section 2: Academic
+      const academicHeaders = [
+        "#", "Student Name", "Class ID",
+        ...(config?.assignmentMax != null ? ["Assignment"] : []),
+        ...(config?.quizMax != null ? ["Quiz"] : []),
+        ...(config?.caMax != null ? ["CA"] : []),
+        ...(config?.examMax != null ? ["Exam"] : []),
+        "Total Score", "Grade", "Position"
+      ];
+      
+      const academicRows = filteredStudents.map((s, idx) => {
+        const total = (parseFloat(s.assignment) || 0) + (parseFloat(s.quiz) || 0) + (parseFloat(s.ca) || 0) + (parseFloat(s.exam) || 0);
+        const grade = calculateGrade(total, schoolProfile?.settings);
+        const position = positionMap.get(s.id) || "N/A";
+        const row = [
+          (idx + 1).toString(),
+          s.name || "N/A",
+          s.code || "N/A"
+        ];
+        if (config?.assignmentMax != null) row.push(s.assignment || "0");
+        if (config?.quizMax != null) row.push(s.quiz || "0");
+        if (config?.caMax != null) row.push(s.ca || "0");
+        if (config?.examMax != null) row.push(s.exam || "0");
+        row.push(total.toString());
+        row.push(grade);
+        row.push(position);
+        return row;
+      });
+
+      // Section 3: Behavioral & Remarks
+      const behaviorHeaders = [
+        "#", "Student Name", "Politeness", "Punctuality", "Handwriting", "Teacher Remark", "Principal Remark"
+      ];
+      
+      const behaviorRows = filteredStudents.map((s, idx) => [
+        (idx + 1).toString(),
+        s.name || "N/A",
+        s.politeness || "0",
+        s.punctuality || "0",
+        s.handwriting || "0",
+        s.teacherRemark || "N/A",
+        s.principalRemark || "N/A"
+      ]);
+
+      if (exportTargetFormat === 'excel') {
+        const { utils, writeFile } = await import('xlsx');
+        
+        const wb = utils.book_new();
+
+        // 1. Configuration Sheet
+        const wsConfig = utils.aoa_to_sheet([
+          [schoolName.toUpperCase()],
+          [schoolProfile?.motto || ""],
+          [schoolProfile?.address || ""],
+          [[schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ')],
+          [],
+          ["Result Data Entry Report"],
+          [`Generated on: ${dateStr}`],
+          [],
+          configHeaders,
+          ...configRows
+        ]);
+        utils.book_append_sheet(wb, wsConfig, "Configuration");
+
+        // 2. Academic Scores Sheet
+        const wsAcademic = utils.aoa_to_sheet([
+          [schoolName.toUpperCase()],
+          ["Academic Scores"],
+          [],
+          academicHeaders,
+          ...academicRows
+        ]);
+        utils.book_append_sheet(wb, wsAcademic, "Academic Scores");
+
+        // 3. Behavioral & Remarks Sheet
+        const wsBehavior = utils.aoa_to_sheet([
+          [schoolName.toUpperCase()],
+          ["Behavioral Evaluations & Remarks"],
+          [],
+          behaviorHeaders,
+          ...behaviorRows
+        ]);
+        utils.book_append_sheet(wb, wsBehavior, "Behavioral & Remarks");
+
+        writeFile(wb, `${fileNameBase}.xlsx`);
+      } else {
+        const { jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
+        
+        const doc = new jsPDF('landscape');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        
+        let startY = 15;
+
+        // Try adding the logo
+        if (schoolProfile?.logo) {
+          try {
+            // Top left corner logo
+            doc.addImage(schoolProfile.logo, 'PNG', 14, 15, 25, 25);
+          } catch (error) {
+            console.error("Could not load logo for PDF:", error);
+          }
+        }
+
+        // Proper School Heading
+        doc.setFontSize(22);
+        doc.setTextColor(30, 41, 59); // text-slate-800
+        doc.text(schoolName.toUpperCase(), pageWidth / 2, startY, { align: 'center' });
+        startY += 8;
+
+        if (schoolProfile?.motto) {
+          doc.setFontSize(12);
+          doc.setTextColor(71, 85, 105); // text-slate-600
+          doc.text(schoolProfile.motto, pageWidth / 2, startY, { align: 'center', renderingMode: 'fill' });
+          startY += 6;
+        }
+
+        if (schoolProfile?.address) {
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // text-slate-500
+          doc.text(schoolProfile.address, pageWidth / 2, startY, { align: 'center' });
+          startY += 5;
+        }
+
+        if (schoolProfile?.phone || schoolProfile?.schoolEmail) {
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // text-slate-500
+          const contactStr = [schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ');
+          doc.text(contactStr, pageWidth / 2, startY, { align: 'center' });
+          startY += 5;
+        }
+        
+        // Ensure startY clears the logo if it's placed on the left
+        if (startY < 45 && schoolProfile?.logo) {
+          startY = 45;
+        } else {
+          startY += 6;
+        }
+
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139); // text-slate-500
+        doc.text(`Result Data Entry Report`, pageWidth / 2, startY, { align: 'center' });
+        startY += 6;
+        
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${dateStr}`, pageWidth / 2, startY, { align: 'center' });
+        startY += 8;
+
+        let finalY = startY;
+
+        // Section 1: Configuration Details
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text("1. Configuration Details", 14, finalY);
+        autoTable(doc, {
+          head: [configHeaders],
+          body: configRows,
+          startY: finalY + 5,
+          theme: 'grid',
+          styles: { fontSize: 9, cellPadding: 3 },
+          headStyles: { fillColor: [91, 92, 230], textColor: [255, 255, 255] },
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 } },
+        });
+        
+        finalY = (doc as any).lastAutoTable.finalY + 15;
+
+        // Section 2: Academic Scores
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text("2. Academic Scores", 14, finalY);
+        autoTable(doc, {
+          head: [academicHeaders],
+          body: academicRows,
+          startY: finalY + 5,
+          theme: 'grid',
+          styles: { fontSize: 9, cellPadding: 3 },
+          headStyles: { fillColor: [91, 92, 230], textColor: [255, 255, 255] }
+        });
+        
+        finalY = (doc as any).lastAutoTable.finalY + 15;
+
+        if (finalY > doc.internal.pageSize.getHeight() - 40) {
+          doc.addPage();
+          finalY = 20;
+        }
+
+        // Section 3: Behavioral Evaluations & Remarks
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text("3. Behavioral Evaluations & Remarks", 14, finalY);
+        autoTable(doc, {
+          head: [behaviorHeaders],
+          body: behaviorRows,
+          startY: finalY + 5,
+          theme: 'grid',
+          styles: { fontSize: 9, cellPadding: 3 },
+          headStyles: { fillColor: [91, 92, 230], textColor: [255, 255, 255] }
+        });
+
+        doc.save(`${fileNameBase}.pdf`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Failed to export data as ${exportTargetFormat.toUpperCase()}.`);
+    } finally {
+      setIsExporting(null);
+      setIsExportPopupOpen(false);
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-[#f8f9fa] dark:bg-[#0f1015] min-h-screen">
       {/* Header section */}
@@ -383,10 +661,42 @@ export default function NewFinalResultDataEntryPage() {
           >
             <Settings className="w-4 h-4" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50">
-            <Download className="w-4 h-4" />
-            Export data
-          </button>
+          
+          <Dialog open={isExportPopupOpen} onOpenChange={setIsExportPopupOpen}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50">
+                <Download className="w-4 h-4" />
+                Export data
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] dark:bg-[#1a1b2e] dark:border-slate-800">
+              <DialogHeader>
+                <DialogTitle className="text-slate-900 dark:text-white">Export Data</DialogTitle>
+                <DialogDescription className="text-slate-500">
+                  Choose the format you want to export the results in.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 py-4">
+                <button
+                  onClick={() => { setExportTargetFormat('excel'); handleExport(); }}
+                  disabled={isExporting !== null}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Download Excel
+                </button>
+                <button
+                  onClick={() => { setExportTargetFormat('pdf'); handleExport(); }}
+                  disabled={isExporting !== null}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isExporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Download PDF
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <button 
             onClick={handleSave}
             disabled={isSaving || isLoading || config?.status === "PUBLISHED"}

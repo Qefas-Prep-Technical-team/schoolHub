@@ -157,11 +157,11 @@ export const adminService = {
   },
 
   /**
-   * Get school teacher attendance by date
+   * Get school teacher attendance by date or date range
    */
-  getSchoolTeacherAttendanceByDate: async (schoolId: string, date: string) => {
+  getSchoolTeacherAttendanceByDate: async (schoolId: string, date?: string, startDate?: string, endDate?: string) => {
     const response = await apiClient.get(`/admin/teachers/attendance/by-date`, {
-      params: { schoolId, date }
+      params: { schoolId, date, startDate, endDate }
     });
     return response.data.data;
   },

@@ -68,6 +68,7 @@ import { downloadIndividualResultsAsZip } from './utils/batchPDFDownloader';
 import InstitutionReportModal from './components/InstitutionReportModal';
 import GradeHub from './components/GradeHub';
 import Pagination from './components/Pagination';
+import FinalResultsTab from './components/FinalResultsTab';
 import { useGradeHub } from '@/lib/api/hooks/useGrades';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,7 +84,7 @@ export default function AdminGradesDashboard() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedPaperId, setSelectedPaperId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers' | 'ca' | 'assignment' | 'test'>('exams');
+  const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers' | 'ca' | 'assignment' | 'test' | 'final'>('exams');
   const [searchTerm, setSearchTerm] = useState('');
   const [isInstitutionReportModalOpen, setIsInstitutionReportModalOpen] = useState(false);
 
@@ -378,6 +379,18 @@ export default function AdminGradesDashboard() {
                 >
                     All Grades
                 </button>
+                <button 
+                    onClick={() => setActiveTab('final')}
+                    className={cn(
+                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        activeTab === 'final' 
+                          ? "font-bold text-slate-900 dark:text-white" 
+                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                    style={{ borderBottomColor: activeTab === 'final' ? primaryColor : 'transparent' }}
+                >
+                    Final Results
+                </button>
             </div>
         </div>
 
@@ -467,6 +480,29 @@ export default function AdminGradesDashboard() {
                   setActiveTab('exams');
                 }}
               />
+            </motion.section>
+          ) : activeTab === 'final' ? (
+            <motion.section 
+              key="final"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
+                  <TrendingUp size={24} />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                    Final Student Results
+                  </h2>
+                  <p className="text-sm font-medium text-slate-500">
+                    Comprehensive final result summaries across the institution
+                  </p>
+                </div>
+              </div>
+              <FinalResultsTab schoolId={schoolId} primaryColor={primaryColor} />
             </motion.section>
           ) : (
             <motion.section 

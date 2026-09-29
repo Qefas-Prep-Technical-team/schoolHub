@@ -36,6 +36,17 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     letterSpacing: -0.5,
   },
+  schoolMotto: {
+    fontSize: 12,
+    color: '#475569',
+    marginBottom: 4,
+    fontStyle: 'italic',
+  },
+  schoolContact: {
+    fontSize: 10,
+    color: '#64748B',
+    marginBottom: 12,
+  },
   reportTitle: {
     fontSize: 16,
     color: '#64748B',
@@ -121,12 +132,13 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontWeight: 'medium',
   },
-  colExam: { width: '30%' },
-  colCategory: { width: '15%', textAlign: 'left' },
+  colSN: { width: '5%', textAlign: 'center' },
+  colExam: { width: '40%' },
   colDate: { width: '15%', textAlign: 'center' },
-  colStudents: { width: '12%', textAlign: 'center' },
-  colAvg: { width: '14%', textAlign: 'center' },
-  colPass: { width: '14%', textAlign: 'center' },
+  colStudents: { width: '10%', textAlign: 'center' },
+  colAvg: { width: '10%', textAlign: 'center' },
+  colGrade: { width: '10%', textAlign: 'center' },
+  colPass: { width: '10%', textAlign: 'center' },
   
   footer: {
     position: 'absolute',
@@ -143,31 +155,83 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#94A3B8',
   },
-  topPerformers: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+  topPerformersList: {
+    marginTop: 5,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
     marginBottom: 30,
   },
-  performerCard: {
-    width: '31%',
-    padding: 12,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8,
-    borderLeft: 4,
-    borderLeftColor: '#3B82F6',
+  performerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  performerName: {
+  performerRank: {
+    width: 25,
     fontSize: 12,
     fontWeight: 'black',
-    color: '#0F172A',
-    marginBottom: 4,
+    color: '#334155',
   },
-  performerDetail: {
-    fontSize: 8,
+  performerName: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: 'black',
+    color: '#0F172A',
+    textTransform: 'uppercase',
+  },
+  performerScore: {
+    width: 80,
+    fontSize: 11,
+    fontWeight: 'black',
+    color: '#10B981',
+    textAlign: 'right',
+  },
+  performerClass: {
+    width: 150,
+    fontSize: 10,
     color: '#64748B',
+    textAlign: 'right',
+  },
+  signatureContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 30,
+    marginBottom: 20,
+    paddingHorizontal: 40,
+  },
+  signatureBlock: {
+    alignItems: 'center',
+    width: 200,
+  },
+  signatureLine: {
+    width: 180,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0F172A',
+    marginBottom: 8,
+  },
+  signatureTitle: {
+    fontSize: 10,
+    fontWeight: 'black',
+    color: '#0F172A',
+    textTransform: 'uppercase',
   },
 });
+
+const getGrade = (score: number) => {
+  if (score >= 90) return 'A+';
+  if (score >= 80) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 60) return 'C';
+  if (score >= 50) return 'D';
+  if (score >= 40) return 'E';
+  return 'F';
+};
 
 interface InstitutionComprehensiveReportProps {
   school: any;
@@ -223,13 +287,30 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
     ? 'All Classes'
     : classes?.find(c => c.id === filters.classId)?.name || 'Specified Class';
 
+  const contactStr = [school?.phone, school?.schoolEmail].filter(Boolean).join(' | ');
+
+  const examsByCategory: Record<string, typeof exams> = {};
+  exams.forEach(exam => {
+      let cat = (exam.assessmentType || exam.category || 'OTHER').toUpperCase().trim();
+      if (cat === 'MIDTERM' || cat.includes('CONTINUOUS')) cat = 'CA';
+      else if (cat.includes('PROJECT') || cat.includes('HOMEWORK') || cat.includes('CLASSWORK')) cat = 'ASSIGNMENT';
+      else if (cat.includes('TEST')) cat = 'QUIZ';
+      
+      if (!examsByCategory[cat]) examsByCategory[cat] = [];
+      examsByCategory[cat].push(exam);
+  });
+
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.schoolInfo}>
             <Text style={styles.schoolName}>{school?.name || 'Academic Institution'}</Text>
+            {school?.motto && <Text style={styles.schoolMotto}>{school.motto}</Text>}
+            {school?.address && <Text style={styles.schoolContact}>{school.address}</Text>}
+            {contactStr && <Text style={styles.schoolContact}>{contactStr}</Text>}
+            
             <Text style={styles.reportTitle}>Institution-Wide Academic Report</Text>
             <Text style={{ fontSize: 9, color: '#94A3B8', marginTop: 4 }}>
               {selectedSessionName} • {filters.term === 'all' ? 'Full Session' : `${filters.term} Term`} • {selectedClassName}
@@ -252,7 +333,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Mean Aggregate</Text>
-            <Text style={styles.summaryValue}>{avgScore}%</Text>
+            <Text style={styles.summaryValue}>{avgScore}% ({getGrade(parseFloat(avgScore))})</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Gross Pass Rate</Text>
@@ -260,61 +341,79 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
           </View>
         </View>
 
-        {/* Exam-wise Performance Breakdown */}
-        <Text style={styles.sectionTitle}>Examination Cohort Performance</Text>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerText, styles.colExam]}>Examination Title</Text>
-            <Text style={[styles.headerText, styles.colCategory]}>Type</Text>
-            <Text style={[styles.headerText, styles.colDate]}>Date</Text>
-            <Text style={[styles.headerText, styles.colStudents]}>Students</Text>
-            <Text style={[styles.headerText, styles.colAvg]}>Mean %</Text>
-            <Text style={[styles.headerText, styles.colPass]}>Pass %</Text>
-          </View>
+        {/* Exam-wise Performance Breakdown Sectioned by Type */}
+        <Text style={[styles.sectionTitle, { borderBottomWidth: 0, marginBottom: 0 }]}>Cohort Performance by Assessment Type</Text>
+        
+        {Object.entries(examsByCategory).map(([catName, catExams]) => (
+            <View key={catName} style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#334155', marginBottom: 8 }}>{catName} SECTION</Text>
+                <View style={[styles.table, { marginBottom: 10 }]}>
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.headerText, styles.colSN]}>S/N</Text>
+                    <Text style={[styles.headerText, styles.colExam]}>Examination Title</Text>
+                    <Text style={[styles.headerText, styles.colDate]}>Date</Text>
+                    <Text style={[styles.headerText, styles.colStudents]}>Students</Text>
+                    <Text style={[styles.headerText, styles.colAvg]}>Mean %</Text>
+                    <Text style={[styles.headerText, styles.colGrade]}>Grade</Text>
+                    <Text style={[styles.headerText, styles.colPass]}>Pass %</Text>
+                  </View>
 
-          {exams.length === 0 ? (
-            <View style={styles.tableRow}>
-                <Text style={[styles.rowText, { width: '100%', textAlign: 'center' }]}>No data matching selected filters.</Text>
+                  {catExams.map((exam, index) => {
+                    const eAttempts = exam.attempts || [];
+                    const eAvgScore = eAttempts.length > 0 
+                        ? (eAttempts.reduce((sum: number, a: any) => sum + (a.totalScore / a.totalMarks) * 100, 0) / eAttempts.length)
+                        : 0;
+                    const eAvg = eAvgScore.toFixed(1);
+                    const ePass = eAttempts.length > 0
+                        ? ((eAttempts.filter((a: any) => (a.totalScore / a.totalMarks) >= 0.4).length / eAttempts.length) * 100).toFixed(0)
+                        : '0';
+
+                    return (
+                      <View 
+                        key={exam.id} 
+                        style={[styles.tableRow, index % 2 === 1 ? styles.evenRow : {}]}
+                      >
+                        <Text style={[styles.rowText, styles.colSN]}>{index + 1}.</Text>
+                        <Text style={[styles.rowText, styles.colExam]}>{exam.title}</Text>
+                        <Text style={[styles.rowText, styles.colDate]}>{new Date(exam.startDate || exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                        <Text style={[styles.rowText, styles.colStudents]}>{eAttempts.length}</Text>
+                        <Text style={[styles.rowText, styles.colAvg]}>{eAvg}%</Text>
+                        <Text style={[styles.rowText, styles.colGrade, { fontWeight: 'bold', color: '#10B981' }]}>{getGrade(eAvgScore)}</Text>
+                        <Text style={[styles.rowText, styles.colPass]}>{ePass}%</Text>
+                      </View>
+                    );
+                  })}
+                </View>
             </View>
-          ) : exams.map((exam, index) => {
-            const eAttempts = exam.attempts || [];
-            const eAvg = eAttempts.length > 0 
-                ? (eAttempts.reduce((sum: number, a: any) => sum + (a.totalScore / a.totalMarks) * 100, 0) / eAttempts.length).toFixed(1)
-                : '0';
-            const ePass = eAttempts.length > 0
-                ? ((eAttempts.filter((a: any) => (a.totalScore / a.totalMarks) >= 0.4).length / eAttempts.length) * 100).toFixed(0)
-                : '0';
-
-            return (
-              <View 
-                key={exam.id} 
-                style={[styles.tableRow, index % 2 === 1 ? styles.evenRow : {}]}
-              >
-                <Text style={[styles.rowText, styles.colExam]}>{exam.title}</Text>
-                <Text style={[styles.rowText, styles.colCategory]}>{exam.category}</Text>
-                <Text style={[styles.rowText, styles.colDate]}>{new Date(exam.startDate || exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                <Text style={[styles.rowText, styles.colStudents]}>{eAttempts.length}</Text>
-                <Text style={[styles.rowText, styles.colAvg]}>{eAvg}%</Text>
-                <Text style={[styles.rowText, styles.colPass]}>{ePass}%</Text>
-              </View>
-            );
-          })}
-        </View>
+        ))}
 
         {topStudents.length > 0 && (
           <View>
             <Text style={styles.sectionTitle}>High Performing Candidates (Across Filtered Range)</Text>
-            <View style={styles.topPerformers}>
+            <View style={styles.topPerformersList}>
               {topStudents.map((student: any, i: number) => (
-                <View key={i} style={styles.performerCard}>
+                <View key={i} style={[styles.performerRow, i % 2 === 1 ? styles.evenRow : {}]}>
+                  <Text style={styles.performerRank}>{i + 1}.</Text>
                   <Text style={styles.performerName}>{student.name}</Text>
-                  <Text style={[styles.performerDetail, { fontWeight: 'black', color: '#0F172A' }]}>{student.score.toFixed(1)}% Score</Text>
-                  <Text style={styles.performerDetail}>{student.class || 'Unknown Class'}</Text>
+                  <Text style={styles.performerClass}>{student.class || 'Unknown Class'}</Text>
+                  <Text style={styles.performerScore}>{student.score.toFixed(1)}% ({getGrade(student.score)})</Text>
                 </View>
               ))}
             </View>
           </View>
         )}
+
+        {/* Signature Block */}
+        <View style={styles.signatureContainer}>
+          <View style={styles.signatureBlock}>
+            <View style={styles.signatureLine}></View>
+            <Text style={styles.signatureTitle}>Principal's Signature</Text>
+          </View>
+          <View style={styles.signatureBlock}>
+            <View style={styles.signatureLine}></View>
+            <Text style={styles.signatureTitle}>Proprietor's Signature</Text>
+          </View>
+        </View>
 
         {/* Disclaimer / Key */}
         <View style={{ marginTop: 'auto', padding: 15, backgroundColor: '#F8FAFC', borderRadius: 8 }}>
@@ -336,4 +435,3 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
 };
 
 export default InstitutionComprehensiveReport;
-

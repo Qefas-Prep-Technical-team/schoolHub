@@ -170,9 +170,9 @@ export const BulkAttendanceSwipeModal: React.FC<BulkAttendanceSwipeModalProps> =
                 <p className="text-sm text-slate-500 mt-1">Review the attendance before saving.</p>
               </div>
 
-              <div className="flex-1 overflow-y-auto w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-3 max-h-[220px]">
+              <div className="flex-1 overflow-y-auto w-full bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-3 max-h-[220px]">
                 {attendanceRecords.map(record => (
-                  <div key={record.teacherId} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div key={record.teacherId} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 shadow-sm">
                     <div>
                       <p className="font-bold text-sm text-slate-900 dark:text-white">{record.teacherName}</p>
                       <p className="text-xs text-slate-500 font-mono">{record.teacherCode}</p>
@@ -198,7 +198,7 @@ export const BulkAttendanceSwipeModal: React.FC<BulkAttendanceSwipeModalProps> =
             <button
               onClick={handleSubmit}
               disabled={isSaving}
-              className="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 bg-primary text-white text-sm font-bold leading-normal hover:bg-primary/95 transition-all shadow-lg shadow-blue-500/10 disabled:opacity-80"
+              className="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 bg-primary dark:bg-indigo-600 text-white text-sm font-bold leading-normal hover:bg-primary/95 dark:hover:bg-indigo-500 transition-all shadow-lg shadow-blue-500/10 dark:shadow-indigo-500/20 disabled:opacity-80 border border-transparent dark:border-indigo-500/30"
             >
               {isSaving ? (
                 <>

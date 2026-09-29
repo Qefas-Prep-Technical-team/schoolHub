@@ -2,28 +2,42 @@
 
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AdminRole } from "../components/adminFeatureFlags";
-import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp } from "lucide-react";
+import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
+import { format } from "date-fns";
 
 import { useClassSubjectResults, useStudentTermResults, useCreateClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useClasses } from "@/lib/api/hooks/useClasses";
 import { useSessions } from "@/lib/api/hooks/useSessions";
-import { useSchoolSubjects, useSchoolDepartments } from "@/lib/api/hooks/useSchool";
+import { useSchoolSubjects, useSchoolDepartments, useSchoolProfile } from "@/lib/api/hooks/useSchool";
 
 export default function RecordsPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"subject" | "student">("subject");
+  const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
   
   // Pagination state
   const [subjectPage, setSubjectPage] = useState(1);
   const [studentPage, setStudentPage] = useState(1);
+
+  // Filter state
+  const [filterClass, setFilterClass] = useState("");
+  const [filterSession, setFilterSession] = useState("");
+  const [filterTerm, setFilterTerm] = useState("");
   const PAGE_SIZE = 10;
+
+  // Export popup state
+  const [isExportPopupOpen, setIsExportPopupOpen] = useState(false);
+  const [exportTargetFormat, setExportTargetFormat] = useState<'csv' | 'pdf'>('csv');
+  const [exportFilterClass, setExportFilterClass] = useState("");
+  const [exportFilterSession, setExportFilterSession] = useState("");
+  const [exportFilterTerm, setExportFilterTerm] = useState("");
 
   // Popup form state
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -45,6 +59,7 @@ export default function RecordsPage() {
   const { mutate: createResult, isPending: isCreating } = useCreateClassSubjectResult();
   
   const effectiveSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   // Data hooks for dropdowns
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(effectiveSchoolId);
@@ -60,16 +75,31 @@ export default function RecordsPage() {
   const { data: subjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
   const { data: studentResults, isLoading: isLoadingStudents } = useStudentTermResults();
 
+  // Filter logic
+  const filteredSubjectResults = subjectResults?.filter((res: any) => {
+    if (filterClass && res.classId !== filterClass) return false;
+    if (filterSession && res.sessionId !== filterSession) return false;
+    if (filterTerm && res.term !== filterTerm) return false;
+    return true;
+  }) || [];
+
+  const filteredStudentResults = studentResults?.filter((res: any) => {
+    if (filterClass && res.classId !== filterClass) return false;
+    if (filterSession && res.sessionId !== filterSession) return false;
+    if (filterTerm && res.term !== filterTerm) return false;
+    return true;
+  }) || [];
+
   // Compute summary stats dynamically
-  const totalRecords = activeTab === "student" ? (studentResults?.length || 0) : (subjectResults?.length || 0);
+  const totalRecords = activeTab === "student" ? filteredStudentResults.length : filteredSubjectResults.length;
   const completedRecords = activeTab === "student" 
-    ? (studentResults?.filter((r: any) => r.status === "PUBLISHED").length || 0)
-    : (subjectResults?.filter((r: any) => r.status === "PUBLISHED").length || 0);
+    ? filteredStudentResults.filter((r: any) => r.status === "PUBLISHED").length
+    : filteredSubjectResults.filter((r: any) => r.status === "PUBLISHED").length;
   const pendingRecords = totalRecords - completedRecords;
   const completionRate = totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 100) : 0;
   
   // Compute average score only from student results
-  const validScores = studentResults?.filter((r: any) => r.averageScore != null).map((r: any) => r.averageScore) || [];
+  const validScores = filteredStudentResults.filter((r: any) => r.averageScore != null).map((r: any) => r.averageScore);
   const averageScore = validScores.length > 0 
     ? (validScores.reduce((a: number, b: number) => a + b, 0) / validScores.length).toFixed(1)
     : "0.0";
@@ -135,6 +165,192 @@ export default function RecordsPage() {
       }
     );
   };
+  
+  const handleExport = async () => {
+    setIsExporting(exportTargetFormat);
+    try {
+      const rawData = activeTab === "subject" ? subjectResults : studentResults;
+      const dataToExport = rawData?.filter((res: any) => {
+        if (exportFilterClass && res.classId !== exportFilterClass) return false;
+        if (exportFilterSession && res.sessionId !== exportFilterSession) return false;
+        if (exportFilterTerm && res.term !== exportFilterTerm) return false;
+        return true;
+      }) || [];
+      
+      if (!dataToExport || dataToExport.length === 0) {
+        toast.info("No records to export with the selected filters.");
+        return;
+      }
+      
+      const exportFormat = exportTargetFormat;
+      
+      let headers: string[] = [];
+      let rows: string[][] = [];
+      
+      if (activeTab === "subject") {
+        headers = ["#", "Name", "Session", "Term", "Class", "Subject", "Status", "Date Saved"];
+        rows = dataToExport.map((res: any, index: number) => [
+          (index + 1).toString(),
+          res.name || "N/A",
+          res.session?.name || "N/A",
+          res.term || "N/A",
+          res.class?.name || "N/A",
+          res.subject?.name || "N/A",
+          res.status || "DRAFT",
+          format(new Date(res.createdAt), "yyyy-MM-dd")
+        ]);
+      } else {
+        headers = ["#", "Student Name", "Class", "Session", "Term", "Average", "Position", "Status"];
+        rows = dataToExport.map((res: any, index: number) => [
+          (index + 1).toString(),
+          res.student?.name || "N/A",
+          res.class?.name || "N/A",
+          res.session?.name || "N/A",
+          res.term || "N/A",
+          res.averageScore ? `${res.averageScore}%` : "N/A",
+          res.position ? res.position.toString() : "N/A",
+          res.status || "DRAFT"
+        ]);
+      }
+
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const tabName = activeTab === "subject" ? "subjects" : "students";
+      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
+      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileNameBase = `${sanitizedSchoolName}_records_${tabName}_export_${dateStr}`;
+
+      if (exportFormat === 'csv') {
+        const csvContent = [];
+        
+        csvContent.push(`"${schoolName.toUpperCase()}"`);
+        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
+        if (schoolProfile?.address) csvContent.push(`"${schoolProfile.address}"`);
+        if (schoolProfile?.phone || schoolProfile?.schoolEmail) csvContent.push(`"${[schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ')}"`);
+        csvContent.push("");
+        csvContent.push(`"Records Report - ${tabName.charAt(0).toUpperCase() + tabName.slice(1)} View"`);
+        csvContent.push(`"Generated on: ${dateStr}"`);
+        csvContent.push("");
+
+        let csvRows: string[][] = [];
+        if (activeTab === "subject") {
+          csvRows = dataToExport.map((res: any, index: number) => [
+            (index + 1).toString(),
+            `"${(res.name || "").replace(/"/g, '""')}"`,
+            `"${(res.session?.name || "").replace(/"/g, '""')}"`,
+            `"${(res.term || "").replace(/"/g, '""')}"`,
+            `"${(res.class?.name || "").replace(/"/g, '""')}"`,
+            `"${(res.subject?.name || "").replace(/"/g, '""')}"`,
+            res.status || "DRAFT",
+            `="${format(new Date(res.createdAt), "yyyy-MM-dd")}"`
+          ]);
+        } else {
+          csvRows = dataToExport.map((res: any, index: number) => [
+            (index + 1).toString(),
+            `"${(res.student?.name || "").replace(/"/g, '""')}"`,
+            `"${(res.class?.name || "").replace(/"/g, '""')}"`,
+            `"${(res.session?.name || "").replace(/"/g, '""')}"`,
+            `"${(res.term || "").replace(/"/g, '""')}"`,
+            res.averageScore ? `${res.averageScore}%` : "N/A",
+            res.position ? res.position.toString() : "N/A",
+            res.status || "DRAFT"
+          ]);
+        }
+        
+        csvContent.push(headers.join(","));
+        csvRows.forEach(r => csvContent.push(r.join(",")));
+
+        const csv = csvContent.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileNameBase}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        const { jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
+        
+        const doc = new jsPDF('landscape');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        
+        let startY = 15;
+
+        // Try adding the logo
+        if (schoolProfile?.logo) {
+          try {
+            // Top left corner logo
+            doc.addImage(schoolProfile.logo, 'PNG', 14, 15, 25, 25);
+          } catch (error) {
+            console.error("Could not load logo for PDF:", error);
+          }
+        }
+
+        // Proper School Heading
+        doc.setFontSize(22);
+        doc.setTextColor(30, 41, 59); // text-slate-800
+        doc.text(schoolName.toUpperCase(), pageWidth / 2, startY, { align: 'center' });
+        startY += 8;
+
+        if (schoolProfile?.motto) {
+          doc.setFontSize(12);
+          doc.setTextColor(71, 85, 105); // text-slate-600
+          doc.text(schoolProfile.motto, pageWidth / 2, startY, { align: 'center', renderingMode: 'fill' });
+          startY += 6;
+        }
+
+        if (schoolProfile?.address) {
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // text-slate-500
+          doc.text(schoolProfile.address, pageWidth / 2, startY, { align: 'center' });
+          startY += 5;
+        }
+
+        if (schoolProfile?.phone || schoolProfile?.schoolEmail) {
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139); // text-slate-500
+          const contactStr = [schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ');
+          doc.text(contactStr, pageWidth / 2, startY, { align: 'center' });
+          startY += 5;
+        }
+        
+        // Ensure startY clears the logo if it's placed on the left
+        if (startY < 45 && schoolProfile?.logo) {
+          startY = 45;
+        } else {
+          startY += 6;
+        }
+
+        doc.setFontSize(16);
+        doc.setTextColor(30, 41, 59); // text-slate-800
+        doc.text(`Records Report - ${tabName.charAt(0).toUpperCase() + tabName.slice(1)} View`, pageWidth / 2, startY, { align: 'center' });
+        startY += 6;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Generated on: ${dateStr}`, pageWidth / 2, startY, { align: 'center' });
+        startY += 8;
+
+        autoTable(doc, {
+          head: [headers],
+          body: rows,
+          startY: startY,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+          headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }
+        });
+
+        doc.save(`${fileNameBase}.pdf`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Failed to export records as ${exportTargetFormat.toUpperCase()}.`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-slate-50/50 dark:bg-[#0f1015] min-h-screen">
@@ -147,10 +363,68 @@ export default function RecordsPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
-            <Download className="w-4 h-4" />
-            Export data
-          </button>
+          <Dialog open={isExportPopupOpen} onOpenChange={setIsExportPopupOpen}>
+            <DialogTrigger asChild>
+              <button
+                disabled={totalRecords === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                Export Data
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] dark:bg-[#1a1b2e] dark:border-slate-800">
+              <DialogHeader>
+                <DialogTitle className="text-slate-900 dark:text-white">Export Data</DialogTitle>
+                <DialogDescription className="text-slate-500">
+                  Filter the records you want to export.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class (Optional)</label>
+                  <select value={exportFilterClass} onChange={(e) => setExportFilterClass(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                    <option value="">All Classes</option>
+                    {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session (Optional)</label>
+                  <select value={exportFilterSession} onChange={(e) => setExportFilterSession(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                    <option value="">All Sessions</option>
+                    {sessions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term (Optional)</label>
+                  <select value={exportFilterTerm} onChange={(e) => setExportFilterTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                    <option value="">All Terms</option>
+                    <option value="FIRST">First Term</option>
+                    <option value="SECOND">Second Term</option>
+                    <option value="THIRD">Third Term</option>
+                  </select>
+                </div>
+              </div>
+              <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
+                <button
+                  onClick={() => { setExportTargetFormat('csv'); handleExport(); }}
+                  disabled={isExporting !== null}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Download CSV
+                </button>
+                <button
+                  onClick={() => { setExportTargetFormat('pdf'); handleExport(); }}
+                  disabled={isExporting !== null}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isExporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Download PDF
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
             <DialogTrigger asChild>
               <button className="flex items-center gap-2 px-4 py-2 bg-[#5B5CE6] hover:bg-[#4a4be5] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
@@ -381,22 +655,54 @@ export default function RecordsPage() {
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Subject Final Results</h2>
             <div className="flex flex-wrap items-center gap-3">
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                <option>All Classes</option>
-                <option>JSS 1 A</option>
-                <option>JSS 1 B</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                <option>All Sessions</option>
-                <option>2023/2024</option>
-                <option>2024/2025</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                <option>All Terms</option>
-                <option>First Term</option>
-                <option>Second Term</option>
-                <option>Third Term</option>
-              </select>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Filter Results
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] dark:bg-[#1a1b2e] dark:border-slate-800">
+                  <DialogHeader>
+                    <DialogTitle className="text-slate-900 dark:text-white">Filter Subject Results</DialogTitle>
+                    <DialogDescription className="text-slate-500">
+                      Narrow down the results by class, session, or term.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class</label>
+                      <select value={filterClass} onChange={(e) => {setFilterClass(e.target.value); setSubjectPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                        <option value="">All Classes</option>
+                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session</label>
+                      <select value={filterSession} onChange={(e) => {setFilterSession(e.target.value); setSubjectPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                        <option value="">All Sessions</option>
+                        {sessions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term</label>
+                      <select value={filterTerm} onChange={(e) => {setFilterTerm(e.target.value); setSubjectPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                        <option value="">All Terms</option>
+                        <option value="FIRST">First Term</option>
+                        <option value="SECOND">Second Term</option>
+                        <option value="THIRD">Third Term</option>
+                      </select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <button className="px-4 py-2 bg-[#5B5CE6] hover:bg-[#4a4be5] text-white rounded-lg text-sm font-semibold transition-colors">
+                        Apply Filters
+                      </button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -427,14 +733,14 @@ export default function RecordsPage() {
                       <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
                     </tr>
                   ))
-                ) : subjectResults?.length === 0 ? (
+                ) : filteredSubjectResults.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
                       No subject results found.
                     </td>
                   </tr>
                 ) : (
-                  subjectResults?.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
+                  filteredSubjectResults.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
                     const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
                     return (
                       <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
@@ -473,10 +779,10 @@ export default function RecordsPage() {
           </div>
           
           {/* Pagination Controls */}
-          {subjectResults && subjectResults.length > PAGE_SIZE && (
+          {filteredSubjectResults && filteredSubjectResults.length > PAGE_SIZE && (
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/10">
               <span className="text-xs text-slate-500">
-                Showing {(subjectPage - 1) * PAGE_SIZE + 1} - {Math.min(subjectPage * PAGE_SIZE, subjectResults.length)} of {subjectResults.length}
+                Showing {(subjectPage - 1) * PAGE_SIZE + 1} - {Math.min(subjectPage * PAGE_SIZE, filteredSubjectResults.length)} of {filteredSubjectResults.length}
               </span>
               <div className="flex items-center gap-1">
                 <button 
@@ -487,11 +793,11 @@ export default function RecordsPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <div className="px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Page {subjectPage} of {Math.ceil(subjectResults.length / PAGE_SIZE)}
+                  Page {subjectPage} of {Math.ceil(filteredSubjectResults.length / PAGE_SIZE)}
                 </div>
                 <button 
-                  onClick={() => setSubjectPage(p => Math.min(Math.ceil(subjectResults.length / PAGE_SIZE), p + 1))}
-                  disabled={subjectPage === Math.ceil(subjectResults.length / PAGE_SIZE)}
+                  onClick={() => setSubjectPage(p => Math.min(Math.ceil(filteredSubjectResults.length / PAGE_SIZE), p + 1))}
+                  disabled={subjectPage === Math.ceil(filteredSubjectResults.length / PAGE_SIZE)}
                   className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -507,22 +813,54 @@ export default function RecordsPage() {
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Students Final Results</h2>
             <div className="flex flex-wrap items-center gap-3">
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                <option>All Classes</option>
-                <option>JSS 1 A</option>
-                <option>JSS 1 B</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                <option>All Sessions</option>
-                <option>2023/2024</option>
-                <option>2024/2025</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                <option>All Terms</option>
-                <option>First Term</option>
-                <option>Second Term</option>
-                <option>Third Term</option>
-              </select>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Filter Results
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] dark:bg-[#1a1b2e] dark:border-slate-800">
+                  <DialogHeader>
+                    <DialogTitle className="text-slate-900 dark:text-white">Filter Student Results</DialogTitle>
+                    <DialogDescription className="text-slate-500">
+                      Narrow down the results by class, session, or term.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class</label>
+                      <select value={filterClass} onChange={(e) => {setFilterClass(e.target.value); setStudentPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                        <option value="">All Classes</option>
+                        {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session</label>
+                      <select value={filterSession} onChange={(e) => {setFilterSession(e.target.value); setStudentPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                        <option value="">All Sessions</option>
+                        {sessions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term</label>
+                      <select value={filterTerm} onChange={(e) => {setFilterTerm(e.target.value); setStudentPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                        <option value="">All Terms</option>
+                        <option value="FIRST">First Term</option>
+                        <option value="SECOND">Second Term</option>
+                        <option value="THIRD">Third Term</option>
+                      </select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <button className="px-4 py-2 bg-[#5B5CE6] hover:bg-[#4a4be5] text-white rounded-lg text-sm font-semibold transition-colors">
+                        Apply Filters
+                      </button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -553,14 +891,14 @@ export default function RecordsPage() {
                       <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
                     </tr>
                   ))
-                ) : studentResults?.length === 0 ? (
+                ) : filteredStudentResults.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
                       No student results found.
                     </td>
                   </tr>
                 ) : (
-                  studentResults?.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
+                  filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
                     const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
                     return (
                       <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
@@ -598,10 +936,10 @@ export default function RecordsPage() {
           </div>
           
           {/* Pagination Controls */}
-          {studentResults && studentResults.length > PAGE_SIZE && (
+          {filteredStudentResults && filteredStudentResults.length > PAGE_SIZE && (
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/10">
               <span className="text-xs text-slate-500">
-                Showing {(studentPage - 1) * PAGE_SIZE + 1} - {Math.min(studentPage * PAGE_SIZE, studentResults.length)} of {studentResults.length}
+                Showing {(studentPage - 1) * PAGE_SIZE + 1} - {Math.min(studentPage * PAGE_SIZE, filteredStudentResults.length)} of {filteredStudentResults.length}
               </span>
               <div className="flex items-center gap-1">
                 <button 
@@ -612,11 +950,11 @@ export default function RecordsPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <div className="px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Page {studentPage} of {Math.ceil(studentResults.length / PAGE_SIZE)}
+                  Page {studentPage} of {Math.ceil(filteredStudentResults.length / PAGE_SIZE)}
                 </div>
                 <button 
-                  onClick={() => setStudentPage(p => Math.min(Math.ceil(studentResults.length / PAGE_SIZE), p + 1))}
-                  disabled={studentPage === Math.ceil(studentResults.length / PAGE_SIZE)}
+                  onClick={() => setStudentPage(p => Math.min(Math.ceil(filteredStudentResults.length / PAGE_SIZE), p + 1))}
+                  disabled={studentPage === Math.ceil(filteredStudentResults.length / PAGE_SIZE)}
                   className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />

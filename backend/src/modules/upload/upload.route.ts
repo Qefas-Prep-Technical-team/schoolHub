@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { authenticateToken } from "../../middleware/authMiddleware";
-import { getCloudflareUploadUrl, proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, getUploadHistory, cleanupUnusedImages } from "./upload.controller";
+import { getCloudflareUploadUrl, proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, getUploadHistory, cleanupUnusedImages, deleteFileByUrl } from "./upload.controller";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
@@ -61,7 +61,15 @@ router.delete("/:id", deleteS3File);
 router.get("/history", getUploadHistory);
 
 /**
+ * @route   DELETE /api/v1/upload/by-url
+ * @desc    Delete a file by its URL
+ * @access  Private
+ */
+router.delete("/by-url", deleteFileByUrl);
+
+/**
  * @route   POST /api/v1/upload/cleanup
+
  * @desc    Cleanup all unused images uploaded by the current user
  * @access  Private
  */

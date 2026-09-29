@@ -1098,22 +1098,44 @@ export const getSchoolTeacherAttendanceByDate = async (
     const date = getSingleString(
       req.query.date as string | string[] | undefined,
     );
+    const startDate = getSingleString(
+      req.query.startDate as string | string[] | undefined,
+    );
+    const endDate = getSingleString(
+      req.query.endDate as string | string[] | undefined,
+    );
 
-    if (!schoolId || !date) {
+    if (!schoolId) {
       return res
         .status(400)
-        .json({ success: false, message: "Missing required fields" });
+        .json({ success: false, message: "Missing schoolId" });
     }
 
-    const parsedDate = new Date(date);
-    const startOfDay = new Date(parsedDate);
-    startOfDay.setUTCHours(0, 0, 0, 0);
+    let whereClause: any = { schoolId };
+
+    if (date) {
+      const parsedDate = new Date(date);
+      const startOfDay = new Date(parsedDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      whereClause.date = startOfDay;
+    } else if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setUTCHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      whereClause.date = { gte: start, lte: end };
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Provide either date or startDate and endDate" });
+    }
 
     const attendance = await prisma.teacherAttendance.findMany({
-      where: {
-        schoolId,
-        date: startOfDay,
+      where: whereClause,
+      include: {
+        teacher: { select: { name: true, teacherCode: true } }
       },
+      orderBy: { date: 'asc' }
     });
 
     return res.status(200).json({ success: true, data: attendance });

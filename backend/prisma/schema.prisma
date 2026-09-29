@@ -60,6 +60,7 @@ model School {
   maxTeachersOverride       Int?
   levels                    String[]                   @default([])
   storageUsedBytes          Float                      @default(0)
+  gradingSystem             Json?
   subscriptionPlan          SubscriptionPlan?          @relation(fields: [subscriptionPlanId], references: [id])
   settings                  SchoolSetting?
   originalStudents          Student[]                  @relation("OriginalSchool")
@@ -2207,4 +2208,32 @@ model StudentSubjectTermResult {
 
   @@unique([studentId, subjectId, sessionId, term])
   @@map("student_subject_term_results")
+}
+
+model NewsEvent {
+  id               String       @id @default(uuid())
+  ticker           String
+  catalystType     CatalystType
+  headline         String
+  summary          String
+  novelty          Novelty
+  confirmingSignal Boolean      @default(false)
+  score            Float
+  sourceUrl        String
+  createdAt        DateTime     @default(now())
+
+  @@unique([ticker, createdAt])
+}
+
+enum CatalystType {
+  PARTNERSHIP
+  PROTOCOL_UPGRADE
+  INSTITUTIONAL_ADOPTION
+  NETWORK_ACTIVITY
+  MARKET_WIDE
+}
+
+enum Novelty {
+  NEW
+  RECYCLED
 }

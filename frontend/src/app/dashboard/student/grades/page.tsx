@@ -620,7 +620,7 @@ export default function StudentGradesPage() {
                 </div>
                 {examPagination && (
                   <div className="p-4 flex justify-center border-t border-slate-100 dark:border-slate-800 mt-auto">
-                    <Pagination theme="pink" currentPage={examsPage} totalPages={examPagination.totalPages} totalItems={examPagination.total} itemsPerPage={itemsPerPage} onPageChange={setExamsPage} />
+                    <Pagination currentPage={examsPage} totalPages={examPagination.totalPages} totalItems={examPagination.total} itemsPerPage={itemsPerPage} onPageChange={setExamsPage} />
                   </div>
                 )}
               </div>
@@ -674,7 +674,7 @@ export default function StudentGradesPage() {
                 </div>
                 {gradePagination && gradePagination.total > 0 && (
                   <div className="p-4 flex justify-center border-t border-slate-100 dark:border-slate-800 mt-auto bg-white dark:bg-slate-900">
-                    <Pagination theme="pink" currentPage={gradesPage} totalPages={gradePagination.totalPages} totalItems={gradePagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} />
+                    <Pagination currentPage={gradesPage} totalPages={gradePagination.totalPages} totalItems={gradePagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} />
                   </div>
                 )}
               </div>
@@ -771,7 +771,7 @@ export default function StudentGradesPage() {
                 </div>
                 {finalPagination.totalPages > 1 && (
                   <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-center">
-                    <Pagination theme="pink" currentPage={finalPage} totalPages={finalPagination.totalPages} totalItems={finalPagination.total} itemsPerPage={itemsPerPage} onPageChange={setFinalPage} />
+                    <Pagination currentPage={finalPage} totalPages={finalPagination.totalPages} totalItems={finalPagination.total} itemsPerPage={itemsPerPage} onPageChange={setFinalPage} />
                   </div>
                 )}
               </div>
