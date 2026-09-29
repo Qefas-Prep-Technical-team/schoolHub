@@ -169,28 +169,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       initialize: () => {
-        const token = Cookies.get("token");
         const state = get();
 
-        // If there's a token AND a persisted user, ensure auth state is restored
-        if (token && state.user && !state.isAuthenticated) {
+        // Since the 'token' cookie is HttpOnly, we cannot reliably check its existence via Cookies.get("token").
+        // We must rely on the persisted 'accessToken' and 'isAuthenticated' state.
+        // If the session is actually expired, the next API call will return 401 and trigger handleSessionExpiry().
+        
+        if (state.accessToken && state.user && !state.isAuthenticated) {
           console.log("🔄 Restoring auth state from persisted storage");
           set({
             isAuthenticated: true,
-            accessToken: token,
-          });
-        }
-
-        // If there's no token but isAuthenticated is true, clear auth (session expired)
-        if (!token && state.isAuthenticated) {
-          console.log(
-            "🔄 Token missing but isAuthenticated was true - clearing auth",
-          );
-          set({
-            user: null,
-            accessToken: null,
-            isAuthenticated: false,
-            hasCompletedOnboarding: false,
           });
         }
 

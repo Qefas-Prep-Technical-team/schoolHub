@@ -8,6 +8,9 @@ import { handleError } from "../../../utils/error-handler";
 export const listAllTransactions = async (req: Request, res: Response) => {
   try {
     const { status, schoolId, startDate, endDate } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status) where.status = status;
@@ -18,16 +21,29 @@ export const listAllTransactions = async (req: Request, res: Response) => {
       if (endDate) where.createdAt.lte = new Date(endDate as string);
     }
 
-    const transactions = await prisma.transactionHistory.findMany({
-      where,
-      include: {
-        school: { select: { name: true, tenantId: true } }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100 // Limit for performance
-    });
+    const [transactions, total] = await Promise.all([
+      prisma.transactionHistory.findMany({
+        where,
+        include: {
+          school: { select: { name: true, tenantId: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.transactionHistory.count({ where })
+    ]);
 
-    return res.status(200).json({ success: true, data: transactions });
+    return res.status(200).json({ 
+      success: true, 
+      data: transactions,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     return handleError(res, error, "finance.listAllTransactions");
   }
@@ -38,10 +54,15 @@ export const listAllTransactions = async (req: Request, res: Response) => {
  */
 export const getPlatformRevenue = async (req: Request, res: Response) => {
   try {
-    const successfulTransactions = await prisma.transactionHistory.findMany({
-      where: { status: 'SUCCESS' },
-      select: { amount: true, createdAt: true }
-    });
+    const [successfulTransactions, totalTransactions, failedTransactions, activeSchools] = await Promise.all([
+      prisma.transactionHistory.findMany({
+        where: { status: 'SUCCESS' },
+        select: { amount: true, createdAt: true }
+      }),
+      prisma.transactionHistory.count(),
+      prisma.transactionHistory.count({ where: { status: 'FAILED' } }),
+      prisma.school.count()
+    ]);
 
     // Group by month
     const revenueByMonth = successfulTransactions.reduce((acc: any, curr) => {
@@ -56,6 +77,9 @@ export const getPlatformRevenue = async (req: Request, res: Response) => {
       success: true,
       data: {
         totalVolume,
+        totalTransactions,
+        failedTransactions,
+        activeSchools,
         revenueByMonth: Object.entries(revenueByMonth).map(([name, total]) => ({ name, total })),
         currency: "NGN"
       }

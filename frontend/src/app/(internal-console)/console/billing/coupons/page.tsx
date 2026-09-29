@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api/client";
+import { platformClient } from "@/lib/api/platformClient";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tag, Plus, X, CheckCircle2, XCircle, Loader2,
@@ -41,7 +41,7 @@ interface Coupon {
 
 // ─── Fetch helpers ────────────────────────────────────────────
 const fetchCoupons = async (): Promise<Coupon[]> => {
-  const res = await apiClient.get("/payment/coupon");
+  const res = await platformClient.get("/platform/billing/coupon");
   return res.data.data;
 };
 
@@ -90,7 +90,7 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
         startsAt: data.startsAt ? new Date(data.startsAt).toISOString() : undefined,
         expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : undefined,
       };
-      const res = await apiClient.post("/payment/coupon", payload);
+      const res = await platformClient.post("/platform/billing/coupon", payload);
       return res.data.data;
     },
     onSuccess: () => {
@@ -241,12 +241,12 @@ function CouponRow({ coupon }: { coupon: Coupon }) {
   const [expanded, setExpanded] = useState(false);
 
   const deactivate = useMutation({
-    mutationFn: () => apiClient.patch(`/payment/coupon/${coupon.id}/deactivate`),
+    mutationFn: () => platformClient.patch(`/platform/billing/coupon/${coupon.id}/deactivate`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["coupons"] }); toast.success("Coupon deactivated"); },
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => apiClient.delete(`/payment/coupon/${coupon.id}`),
+    mutationFn: () => platformClient.delete(`/platform/billing/coupon/${coupon.id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["coupons"] }); toast.success("Coupon deleted"); },
     onError: () => toast.error("Failed to delete"),
   });

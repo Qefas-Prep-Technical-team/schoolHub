@@ -35,13 +35,7 @@ import {
 } from "./payment.controller";
 
 import {
-    validateCoupon,
-    createCoupon,
-    listCoupons,
-    getCoupon,
-    updateCoupon,
-    deactivateCoupon,
-    deleteCoupon
+    validateCoupon
 } from "./coupon.controller";
 
 /**
@@ -120,13 +114,5 @@ router.delete("/schedule-downgrade", cancelDowngrade);
  * @access  Private
  */
 router.get("/history", getPaymentHistory);
-
-// ─── Coupon Admin Routes (authenticated) ─────────────────────
-router.get("/coupon", listCoupons);
-router.get("/coupon/:id", getCoupon);
-router.post("/coupon", createCoupon);
-router.put("/coupon/:id", updateCoupon);
-router.patch("/coupon/:id/deactivate", deactivateCoupon);
-router.delete("/coupon/:id", deleteCoupon);
 
 export default router;

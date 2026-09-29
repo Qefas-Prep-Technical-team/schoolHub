@@ -45,7 +45,7 @@ export const consoleMenuItems = [
     { icon: Wrench, label: "System Architecture", href: "/console/features" },
     { icon: CreditCard, label: "Revenue Architecture", href: "/console/billing/pricing" },
     { icon: Tag, label: "Coupon Codes", href: "/console/billing/coupons" },
-    { icon: PieChart, label: "Global Revenue", href: "/console/transactions" },
+    { icon: PieChart, label: "Global Revenue", href: "/console/finance" },
     { icon: MessageSquare, label: "Support Center", href: "/console/support" },
     { icon: Activity, label: "Monitoring", href: "/console/monitoring" },
     { icon: UserCheck, label: "Staff Accounts", href: "/console/staff" },

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { listPlans, updatePlan, assignSchoolToPlan, listSchoolSubscriptions, resetSchoolSubscription, resetStudentSubscription, resetTeacherSubscription, resetParentSubscription } from "./billing.controller";
 import { authenticatePlatformStaff, authorizePlatformRole } from "../../../middleware/platformAuthMiddleware";
+import { createCoupon, listCoupons, getCoupon, updateCoupon, deactivateCoupon, deleteCoupon } from "../../payment/coupon.controller";
 
 const router = Router();
 
@@ -33,5 +34,13 @@ router.post("/reset", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADM
 router.post("/reset-student", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetStudentSubscription);
 router.post("/reset-teacher", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetTeacherSubscription);
 router.post("/reset-parent", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetParentSubscription);
+
+// ─── Coupons ──────────────────────────────────────────────────
+router.get("/coupon", listCoupons);
+router.get("/coupon/:id", getCoupon);
+router.post("/coupon", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), createCoupon);
+router.put("/coupon/:id", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), updateCoupon);
+router.patch("/coupon/:id/deactivate", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), deactivateCoupon);
+router.delete("/coupon/:id", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), deleteCoupon);
 
 export default router;

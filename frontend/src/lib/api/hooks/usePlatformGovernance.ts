@@ -26,13 +26,28 @@ export interface PlatformAuditLogResponse {
     };
 }
 
-export const usePlatformFinance = () => {
+export const usePlatformFinance = (page: number = 1, limit: number = 10) => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
-        queryKey: ["platform-finance"],
+        queryKey: ["platform-finance", page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, unknown>[] }>("/platform/finance/transactions", {
+            const { data } = await platformClient.get<{ data: Record<string, unknown>[], meta: any }>(`/platform/finance/transactions?page=${page}&limit=${limit}`, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        enabled: !!platform_token,
+    })
+}
+
+export const usePlatformRevenue = () => {
+    const { platform_token } = usePlatformStaffStore()
+
+    return useQuery({
+        queryKey: ["platform-revenue"],
+        queryFn: async () => {
+            const { data } = await platformClient.get<{ data: any }>("/platform/finance/revenue", {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -40,7 +55,6 @@ export const usePlatformFinance = () => {
         enabled: !!platform_token,
     })
 }
-
 export const usePlatformSettings = () => {
     const { platform_token } = usePlatformStaffStore()
 

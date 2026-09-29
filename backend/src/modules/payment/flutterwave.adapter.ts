@@ -116,6 +116,12 @@ export class FlutterwaveAdapter implements PaymentGateway {
       const meta = tx.meta || {};
       console.log("[Flutterwave Adapter] Raw verify metadata:", JSON.stringify(meta));
 
+      // Flutterwave is notorious for changing metadata key casings.
+      // Build a case-insensitive map.
+      const lowerMeta: Record<string, string> = {};
+      for (const [k, v] of Object.entries(meta)) {
+        lowerMeta[k.toLowerCase()] = String(v);
+      }
 
       return {
         success: true,
@@ -125,12 +131,12 @@ export class FlutterwaveAdapter implements PaymentGateway {
         channel: tx.payment_type,
         authorizationToken: tx.card?.token,   // Stored for recurring charge eligibility
         meta: {
-          userId: meta['userId'] || meta['userid'],
-          userRole: meta['user_role'] || meta['userrole'],
-          plan: meta['plan'],
-          billing: meta['billing'],
-          isUpgrade: meta['is_upgrade'] === 'true',
-          isTrial: meta['is_trial'] === 'true',
+          userId: lowerMeta['userid'] || lowerMeta['user_id'] || "",
+          userRole: lowerMeta['userrole'] || lowerMeta['user_role'] || lowerMeta['role'] || "",
+          plan: lowerMeta['plan'] || "",
+          billing: lowerMeta['billing'] || "",
+          isUpgrade: lowerMeta['is_upgrade'] === 'true' || lowerMeta['isupgrade'] === 'true',
+          isTrial: lowerMeta['is_trial'] === 'true' || lowerMeta['istrial'] === 'true',
         },
         gateway: 'FLUTTERWAVE',
       };

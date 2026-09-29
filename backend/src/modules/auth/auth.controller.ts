@@ -3467,12 +3467,50 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
       },
     );
 
+    // Generate tokens to log the user in automatically
+    const accessToken = generateAccessToken(result.id, result.role);
+    const deviceInfo = {
+      deviceType: "desktop",
+      deviceModel: "Checkout Session",
+      osVersion: "Unknown",
+    };
+    const refreshToken = await generateRefreshToken(
+      result.id,
+      result.role,
+      deviceInfo
+    );
+
+    res.cookie("token", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     // Send confirmation email
     await sendSetupCompleteEmail(email);
 
     return res.status(200).json({
       success: true,
       message: "Account setup finalized and confirmation email sent.",
+      token: accessToken,
+      user: {
+        id: result.id,
+        email: result.email,
+        name: result.fullName || result.name || "User",
+        role: result.role,
+        userType: result.role,
+        tenantId: result.tenantId,
+      }
     });
   } catch (error: any) {
     return handleError(res, error, "auth.finalizeCheckoutSetup");

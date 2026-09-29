@@ -1,16 +1,18 @@
 "use client"
 
-import { usePlatformFinance } from "@/lib/api/hooks/usePlatformGovernance"
+import { usePlatformFinance, usePlatformRevenue } from "@/lib/api/hooks/usePlatformGovernance"
 import { 
     DollarSign, 
     TrendingUp, 
     CreditCard, 
     ArrowUpRight, 
-    ArrowDownRight,
     Download,
     Filter,
     Search,
-    PieChart
+    PieChart,
+    ChevronLeft,
+    ChevronRight,
+    Activity
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
@@ -25,15 +27,46 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 
 export default function PlatformFinancePage() {
-    const { data: transactions, isLoading } = usePlatformFinance()
+    const [page, setPage] = useState(1)
+    const { data: transactionsData, isLoading } = usePlatformFinance(page, 15)
+    const { data: revenueData } = usePlatformRevenue()
+
+    const transactions = transactionsData?.data || []
+    const meta = transactionsData?.meta
+    const totalPages = meta?.totalPages || 1
 
     const financeMetrics = [
-        { title: "Gross Platform Revenue", value: "₦12,450,000", icon: DollarSign, trend: "+12.5%", color: "text-emerald-500" },
-        { title: "Active Subscriptions", value: "142", icon: CreditCard, trend: "+4", color: "text-blue-500" },
-        { title: "Pending Payouts", value: "₦420,000", icon: TrendingUp, trend: "Nominal", color: "text-amber-500" },
-        { title: "Churn Rate", value: "2.4%", icon: PieChart, trend: "-0.5%", color: "text-indigo-500" },
+        { 
+            title: "Gross Platform Revenue", 
+            value: revenueData ? `₦${revenueData.totalVolume.toLocaleString()}` : "₦0", 
+            icon: DollarSign, 
+            trend: "Total", 
+            color: "text-emerald-500" 
+        },
+        { 
+            title: "Total Transactions", 
+            value: revenueData ? revenueData.totalTransactions.toLocaleString() : "0", 
+            icon: Activity, 
+            trend: "All Time", 
+            color: "text-blue-500" 
+        },
+        { 
+            title: "Failed Transactions", 
+            value: revenueData ? revenueData.failedTransactions.toLocaleString() : "0", 
+            icon: TrendingUp, 
+            trend: "Requires Review", 
+            color: "text-amber-500" 
+        },
+        { 
+            title: "Active Schools", 
+            value: revenueData ? revenueData.activeSchools.toLocaleString() : "0", 
+            icon: CreditCard, 
+            trend: "Subscribed", 
+            color: "text-indigo-500" 
+        },
     ]
 
     return (
@@ -63,11 +96,10 @@ export default function PlatformFinancePage() {
                             <div className="flex items-center gap-2 mt-1">
                                 <span className={cn(
                                     "text-[10px] font-bold flex items-center",
-                                    card.trend.startsWith('+') ? "text-emerald-400" : "text-slate-400"
+                                    card.trend === 'Requires Review' ? "text-amber-400" : "text-emerald-400"
                                 )}>
                                     {card.trend} {card.trend.includes('%') && <ArrowUpRight size={10} className="ml-0.5" />}
                                 </span>
-                                <span className="text-[10px] text-slate-600 font-medium tracking-tight">Performance Index</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -146,6 +178,31 @@ export default function PlatformFinancePage() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between px-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    Showing Page <span className="text-emerald-600 dark:text-emerald-400">{page}</span> of <span className="text-slate-900 dark:text-white">{totalPages}</span>
+                </p>
+                <div className="flex items-center gap-2">
+                    <Button 
+                        variant="outline" 
+                        disabled={page === 1}
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl h-10 px-4 gap-2 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white"
+                    >
+                        <ChevronLeft size={14} /> Prev
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        disabled={page >= totalPages}
+                        onClick={() => setPage(p => p + 1)}
+                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl h-10 px-4 gap-2 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white"
+                    >
+                        Next <ChevronRight size={14} />
+                    </Button>
+                </div>
             </div>
         </div>
     )

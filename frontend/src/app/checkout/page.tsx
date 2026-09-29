@@ -243,12 +243,15 @@ export default function CheckoutPage() {
     if (!acceptTerms) return toast.error("Please accept the terms to continue");
     setIsLoading(true);
     try {
-      await apiClient.post("/auth/finalize-checkout-setup", { email, userType: role, password, planId: plan, billingCycle: billing, acceptTerms });
+      const res = await apiClient.post("/auth/finalize-checkout-setup", { email, userType: role, password, planId: plan, billingCycle: billing, acceptTerms });
+      if (res.data.token && res.data.user) {
+        useAuthStore.getState().setAuth(res.data.user, res.data.token);
+      }
       toast.success("Account ready!");
       setStep("PAYMENT_READY");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "Setup failed");
+      toast.error(err?.response?.data?.message || "Failed to set up account");
     } finally { setIsLoading(false); }
   };
 

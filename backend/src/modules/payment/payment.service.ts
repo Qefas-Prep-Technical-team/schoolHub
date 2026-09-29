@@ -91,7 +91,33 @@ export const verifyPaymentService = async (
 
     // Delegate verification to the active gateway adapter
     const gateway = getPaymentGateway();
-    const verified = await gateway.verify(reference, flwTransactionId);
+    let verified;
+    try {
+      verified = await gateway.verify(reference, flwTransactionId);
+    } catch (error) {
+      // TRACK FAILED PAYMENT
+      try {
+        await prisma.transaction.upsert({
+          where: { reference },
+          create: {
+            reference,
+            userId: userId || "unknown",
+            userType: (userRole as UserRole) || "ADMIN",
+            amount: 0,
+            status: "FAILED",
+            gateway: gateway.name || "UNKNOWN"
+          },
+          update: {
+            status: "FAILED",
+            userId: userId || undefined,
+          }
+        });
+        console.error(`[PaymentService] Tracked failed payment for reference: ${reference}`);
+      } catch (dbError) {
+        console.error("[PaymentService] Could not track failed payment:", dbError);
+      }
+      throw error;
+    }
 
     const paystackAmount = verified.amountNaira; // Already in Naira from adapter
     const paystackRef = verified.reference;

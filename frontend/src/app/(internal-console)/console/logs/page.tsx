@@ -109,7 +109,14 @@ export default function PlatformLogsPage() {
                             </TableRow>
                         ) : (
                             logs?.data?.map((log: PlatformAuditLog) => (
-                                <TableRow key={log.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
+                                <TableRow 
+                                    key={log.id} 
+                                    className="border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedLog(log)
+                                        setIsInspectOpen(true)
+                                    }}
+                                >
                                     <TableCell className="pl-8 py-5">
                                         <div className="flex items-center gap-3">
                                             <div className={cn(
