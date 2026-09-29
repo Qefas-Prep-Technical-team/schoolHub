@@ -116,7 +116,7 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
@@ -173,7 +173,7 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
@@ -210,7 +210,7 @@ export const sendSetupCompleteEmail = async (email: string) => {
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
@@ -251,7 +251,7 @@ export const send2FADisabledEmail = async (email: string) => {
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Security</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Security Alert</p>
@@ -313,7 +313,7 @@ export const sendPaymentReceiptEmail = async (params: {
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Payment Confirmation</p>
@@ -458,7 +458,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
           <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Password Reset Request</p>
         </div>
@@ -516,7 +516,7 @@ export const sendTeacherInvitationEmail = async (email: string, token: string, s
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
           <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
         </div>
@@ -569,7 +569,7 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
           <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
         </div>
@@ -861,7 +861,7 @@ export const sendPaymentFailureEmail = async (params: {
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Payment Alert</p>
@@ -931,7 +931,7 @@ export const sendSubscriptionExpiredEmail = async (email: string, planName: stri
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Subscription Expired</p>
@@ -986,7 +986,7 @@ export const sendAdminJoinRequestEmail = async (params: {
         
         <!-- Header -->
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Staff Access Request</p>
@@ -1080,7 +1080,7 @@ export const sendAdminApprovalEmail = async (params: {
 
         <!-- Header -->
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Approved</p>
@@ -1152,7 +1152,7 @@ export const sendNewAdminJoinedEmail = async (params: {
         
         <!-- Header -->
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Team Update</p>
@@ -1200,7 +1200,7 @@ export const sendWelcomeEmail = async (params: {
 
         <!-- Header -->
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Verified</p>
@@ -1260,7 +1260,7 @@ export const sendAdminRejectionEmail = async (params: {
 
         <!-- Header -->
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
+          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Update</p>

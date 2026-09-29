@@ -72,22 +72,37 @@ export default function VerificationCard() {
                 {
                   onSuccess: () => {
                     sessionStorage.removeItem("preAuthToken");
+                    // Redirect to onboarding for new users
+                    if (isNewUser) {
+                      setIsSuccess(true);
+                      setTimeout(() => {
+                        router.push('/onboarding');
+                      }, 1500);
+                    }
                   },
                   onError: () => {
-                    // If auto-login fails, redirect to sign in
+                    // If auto-login fails, redirect to onboarding for new users or sign in for existing
                     sessionStorage.removeItem("preAuthToken");
                     setIsSuccess(true);
                     setTimeout(() => {
-                      router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}${isNewUser ? '&new=true' : ''}`);
+                      if (isNewUser) {
+                        router.push('/onboarding');
+                      } else {
+                        router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+                      }
                     }, 1500);
                   },
                 }
               );
             } else {
-              // No token found, fallback to manual login
+              // No token found, redirect to onboarding for new users or login for existing users
               setIsSuccess(true);
               setTimeout(() => {
-                router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}${isNewUser ? '&new=true' : ''}`);
+                if (isNewUser) {
+                  router.push('/onboarding');
+                } else {
+                  router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+                }
               }, 1500);
             }
           },

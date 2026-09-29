@@ -5,19 +5,23 @@ import { useRouter } from "next/navigation"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 
 export function PlatformStaffGuard({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, staff } = usePlatformStaffStore()
+    const { isAuthenticated, isHydrated } = usePlatformStaffStore()
     const router = useRouter()
-    const [isChecking, setIsChecking] = useState(true)
+    const [isCheckComplete, setIsCheckComplete] = useState(false)
 
     useEffect(() => {
+        // Wait for hydration to complete before checking auth
+        if (!isHydrated) return
+
         if (!isAuthenticated) {
             router.push("/auth/login?type=platform")
         } else {
-            setIsChecking(false)
+            setIsCheckComplete(true)
         }
-    }, [isAuthenticated, router])
+    }, [isHydrated, isAuthenticated, router])
 
-    if (isChecking) {
+    // Show loading while hydrating or checking auth
+    if (!isHydrated || !isCheckComplete) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-slate-950">
                 <div className="flex flex-col items-center gap-4">

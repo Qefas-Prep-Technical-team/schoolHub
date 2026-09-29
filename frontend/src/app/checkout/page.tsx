@@ -114,7 +114,9 @@ export default function CheckoutPage() {
   }
 
   const planDisplayName = selectedPlanName || (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)}` : "Standard");
-  const canUseTrial = hasPlanTrial && !isUpgrade && (!isAuthenticated || (user?.plan?.toUpperCase() === "FREE" && !user?.trialUsed));
+  // Allow trial if: plan has trial AND (unauthenticated user OR user on FREE plan with no trial used)
+  // Note: Users upgrading FROM free to paid still qualify for trial on their first time
+  const canUseTrial = hasPlanTrial && (!isAuthenticated || (user?.plan?.toUpperCase() === "FREE" && !user?.trialUsed));
   const isDowngrade = !isUpgrade && discountedAmount === 0 && !!plan;
   const baseAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
   const couponDiscount = appliedCoupon?.discountNaira || 0;
@@ -601,20 +603,18 @@ export default function CheckoutPage() {
                 <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
                   <button
                     onClick={() => { setSelectedBilling("monthly"); setAppliedCoupon(null); }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                      selectedBilling === "monthly"
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedBilling === "monthly"
                         ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
                         : "text-slate-500 hover:text-slate-700"
-                    }`}>
+                      }`}>
                     Monthly
                   </button>
                   <button
                     onClick={() => { setSelectedBilling("yearly"); setAppliedCoupon(null); setMonthQty(1); }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                      selectedBilling === "yearly"
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${selectedBilling === "yearly"
                         ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
                         : "text-slate-500 hover:text-slate-700"
-                    }`}>
+                      }`}>
                     Yearly
                     {monthlyPrice > 0 && yearlyPrice > 0 && (
                       <span className="px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-black rounded-full">

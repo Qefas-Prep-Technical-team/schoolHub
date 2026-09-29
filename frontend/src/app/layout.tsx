@@ -80,6 +80,7 @@ export default function RootLayout({
         className={`
           ${lexend.variable}
           antialiased
+          text-[14.5px]
           `}
         suppressHydrationWarning
       >

@@ -172,8 +172,26 @@ export const useAuthStore = create<AuthState>()(
         const token = Cookies.get("token");
         const state = get();
 
-        if (token && !state.isAuthenticated) {
-          // console.log("🔄 Re-initializing auth state from token");
+        // If there's a token AND a persisted user, ensure auth state is restored
+        if (token && state.user && !state.isAuthenticated) {
+          console.log("🔄 Restoring auth state from persisted storage");
+          set({
+            isAuthenticated: true,
+            accessToken: token,
+          });
+        }
+
+        // If there's no token but isAuthenticated is true, clear auth (session expired)
+        if (!token && state.isAuthenticated) {
+          console.log(
+            "🔄 Token missing but isAuthenticated was true - clearing auth",
+          );
+          set({
+            user: null,
+            accessToken: null,
+            isAuthenticated: false,
+            hasCompletedOnboarding: false,
+          });
         }
 
         set({ isInitialized: true });
