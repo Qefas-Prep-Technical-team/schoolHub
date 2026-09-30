@@ -31,7 +31,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
-    "multer": "^2.1.1",
+    "multer": "^2.3.0",
     "node-cron": "^4.3.0",
     "openai": "^6.32.0",
     "prisma": "^6.19.0",
@@ -68,6 +68,9 @@
     "deepmerge-ts": "^8.0.0",
     "ip-address": "^10.3.1",
     "socket.io-parser": "^4.2.7",
-    "brace-expansion": "^1.1.21"
+    "brace-expansion": "^1.1.21",
+    "postcss": "^8.5.18",
+    "nanoid": "^3.3.18",
+    "engine.io": "^6.6.10"
   }
 }
