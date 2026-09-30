@@ -12,6 +12,8 @@ import { UserSubscriptionService } from "../subscription/user-subscription.servi
 import { SubscriptionComplianceService } from "../subscription/subscription-compliance.service";
 import { getSingleString } from "../../utils/request-utils";
 import { handleError } from "../../utils/error-handler";
+import { buildEmail, ctaButton, secondaryLink, otpBox, infoCard, receiptRow } from "../../utils/email-template";
+
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -113,38 +115,17 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
     from: sender,
     to: recipient,
     subject: `ACTION REQUIRED: Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
-          </div>
-        </div>
-        
-        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.3px;">Verify Your New Email</h3>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">To complete the update of your institutional contact records, please use the secure verification code below.</p>
-        
-        <div style="margin: 24px 0; padding: 24px 16px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; text-align: center;">
-          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
-          <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #1e293b; font-family: 'Courier New', Courier, monospace; word-break: break-all;">
-            ${code}
-          </div>
-        </div>
-        
-        <div style="padding: 16px; background: #fffcf0; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
-          <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5; font-weight: 500;">
-            <b>Security Note:</b> This code will expire in <b>10 minutes</b>. If you did not initiate this request, please contact your system administrator immediately.
-          </p>
-        </div>
-        
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'verification',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Verify Your New Email,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">To complete the update of your institutional contact records, please use the secure verification code below.</p>
+        ${otpBox(code, 10)}
+        ${infoCard('If you did not initiate this request, please contact your system administrator immediately.', 'warning')}
+      `,
+    }),
   });
 };
 
@@ -162,7 +143,7 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     : "Please use the secure verification code below to confirm your identity and proceed with your request.";
 
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
-  
+
   console.log('[RESEND DEBUG] RESEND_TEST raw:', JSON.stringify(process.env.RESEND_TEST));
   console.log('[RESEND DEBUG] isTest:', isTest, '| from:', sender, '| to:', recipient);
 
@@ -170,34 +151,19 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     from: sender,
     to: recipient,
     subject: subject,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
-          </div>
-        </div>
-        
-        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.3px;">${title}</h3>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">${description}</p>
-        
-        <div style="margin: 24px 0; padding: 24px 16px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; text-align: center;">
-          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
-          <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #1e293b; font-family: 'Courier New', Courier, monospace; word-break: break-all;">
-            ${code}
-          </div>
-        </div>
-        
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'verification',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">${title},</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">${description}</p>
+        ${otpBox(code, 10)}
+      `,
+    }),
   });
 };
+
 
 export const sendSetupCompleteEmail = async (email: string) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
@@ -207,35 +173,18 @@ export const sendSetupCompleteEmail = async (email: string) => {
     from: isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Your Account is Ready - Qefas Hub ${isTest ? `(Original: ${email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
-          </div>
-        </div>
-        
-        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Account Fully Setup</h3>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Welcome to the fleet! Your institutional identity has been successfully established and your password is now active.</p>
-        
-        <div style="padding: 24px; background: #f0fdf4; border-radius: 16px; border-left: 4px solid #10b981; margin-bottom: 32px;">
-          <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5; font-weight: 500;">
-            <b>Deployment Success:</b> You can now proceed to your dashboard or complete your payment/trial initialization if you haven't already.
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '').startsWith('http') ? '' : 'https://'}${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/auth/login" style="display: inline-block; background: #2563eb; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Access Your Dashboard</a>
-        </div>
-        
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Account Fully Setup,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Welcome to the fleet! Your institutional identity has been successfully established and your password is now active.</p>
+        ${infoCard('Deployment Success: You can now proceed to your dashboard or complete your payment/trial initialization if you have not already.', 'success')}
+        ${ctaButton('Access Your Dashboard', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/auth/login`)}
+        ${secondaryLink('Go to website', process.env.FRONTEND_URL || 'https://qefashub.com')}
+      `,
+    }),
   });
 };
 
@@ -248,31 +197,17 @@ export const send2FADisabledEmail = async (email: string) => {
     from: sender,
     to: recipient,
     subject: `Security Alert: Two-Factor Authentication Disabled ${isTest ? `(Original: ${email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Security</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Security Alert</p>
-          </div>
-        </div>
-        
-        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.3px;">Two-Factor Authentication Disabled</h3>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">This email is to confirm that Two-Factor Authentication (2FA) has been successfully disabled on your account.</p>
-        
-        <div style="padding: 16px; background: #fffcf0; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
-          <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5; font-weight: 500;">
-            <b>Security Recommendation:</b> We strongly suggest leaving 2FA enabled to provide a stronger layer of security for your institutional data. You can re-enable it at any time from your account settings.
-          </p>
-        </div>
-        
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px;">If you did not make this change, please contact your system administrator immediately.</p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'security',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">2FA Has Been Disabled,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This email is to confirm that Two-Factor Authentication (2FA) has been successfully disabled on your Qefas Hub account.</p>
+        ${infoCard('Security Recommendation: We strongly suggest leaving 2FA enabled for stronger institutional data protection. You can re-enable it at any time from your account settings.', 'warning')}
+        ${infoCard('If you did not make this change, please contact your system administrator immediately.', 'danger')}
+      `,
+    }),
   });
 };
 
@@ -310,63 +245,29 @@ export const sendPaymentReceiptEmail = async (params: {
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Payment Receipt: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Payment Confirmation</p>
-          </div>
-        </div>
-        
-        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Payment Receipt</h3>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Thank you for your payment. Your subscription is now active. Below are your transaction details.</p>
-        
-        <div style="background: #f8fafc; border-radius: 24px; padding: 32px; margin-bottom: 32px; border: 1px solid #e2e8f0;">
-          <div style="text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0;">
-            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Amount Paid</p>
-            <h1 style="margin: 8px 0 0 0; color: #0f172a; font-size: 36px; font-weight: 900;">${formattedAmount}</h1>
-          </div>
-          
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">Plan Name</td>
-              <td style="padding: 10px 0; text-align: right; color: #0f172a; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.plan}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">Payment Date</td>
-              <td style="padding: 10px 0; text-align: right; color: #0f172a; font-size: 14px; font-weight: 700;">${formattedDate}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">Payment Method</td>
-              <td style="padding: 10px 0; text-align: right; color: #0f172a; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.method}</td>
-            </tr>
-            <tr>
-              <td style="padding: 20px 0 0 0; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px; font-weight: 600;">Access Expires On</td>
-              <td style="padding: 20px 0 0 0; border-top: 1px solid #e2e8f0; text-align: right; color: #059669; font-size: 14px; font-weight: 800;">${formattedExpiry}</td>
-            </tr>
+    html: buildEmail({
+      illustration: 'payment',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Payment confirmed, thank you!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We've successfully processed your payment, and your <strong>${params.plan}</strong> subscription is all set. Thank you for choosing Qefas Hub.</p>
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Plan', params.plan)}
+            ${receiptRow('Amount paid', formattedAmount, true)}
+            ${receiptRow('Date', formattedDate)}
+            ${receiptRow('Payment method', params.method)}
           </table>
         </div>
-        
-        <div style="padding: 24px; background: #eff6ff; border-radius: 16px; border-left: 4px solid #2563eb; margin-bottom: 32px;">
-          <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5; font-weight: 500;">
-            <b>Pro Tip:</b> You can download a PDF version of this receipt and view your full billing history in your dashboard.
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '').startsWith('http') ? '' : 'https://'}${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard" style="display: inline-block; background: #0f172a; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Go to Dashboard</a>
-        </div>
-        
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${params.email}</div>` : ''}
-        </div>
-      </div>
-    `,
+        ${ctaButton('View Billing Dashboard →', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/dashboard`)}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">If anything looks off, or you have questions about your subscription, just reach out to us at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a> and we'll be glad to help.</p>
+      `,
+    }),
   });
 };
+
 
 export const sendPaymentFailedEmail = async (params: {
   email: string;
@@ -374,6 +275,7 @@ export const sendPaymentFailedEmail = async (params: {
   date: Date;
   method: string;
   plan: string;
+  reason?: string;
 }) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : params.email;
@@ -395,59 +297,29 @@ export const sendPaymentFailedEmail = async (params: {
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Payment Failed: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Payment Notice</p>
-          </div>
-        </div>
-        
-        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Payment Failed</h3>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Unfortunately, your recent payment attempt was unsuccessful. No charges were made to your account. Below are the details of the failed attempt.</p>
-        
-        <div style="background: #fcf5f5; border-radius: 24px; padding: 32px; margin-bottom: 32px; border: 1px solid #fee2e2;">
-          <div style="text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #fecaca;">
-            <p style="margin: 0; color: #b91c1c; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Attempted Amount</p>
-            <h1 style="margin: 8px 0 0 0; color: #7f1d1d; font-size: 36px; font-weight: 900;">${formattedAmount}</h1>
-          </div>
-          
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 10px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Plan Name</td>
-              <td style="padding: 10px 0; text-align: right; color: #7f1d1d; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.plan}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Attempt Date</td>
-              <td style="padding: 10px 0; text-align: right; color: #7f1d1d; font-size: 14px; font-weight: 700;">${formattedDate}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Payment Method</td>
-              <td style="padding: 10px 0; text-align: right; color: #7f1d1d; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.method}</td>
-            </tr>
+    html: buildEmail({
+      illustration: 'payment-failed',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">We couldn't process your payment</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We tried to renew your <strong>${params.plan}</strong> subscription, but the payment didn't go through. No worries, this is easy to fix.</p>
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Plan', params.plan)}
+            ${receiptRow('Amount', formattedAmount)}
+            ${receiptRow('Reason', params.reason || 'Transaction declined')}
           </table>
         </div>
-        
-        <div style="padding: 24px; background: #fffbeb; border-radius: 16px; border-left: 4px solid #f59e0b; margin-bottom: 32px;">
-          <p style="margin: 0; color: #b45309; font-size: 14px; line-height: 1.5; font-weight: 500;">
-            <b>Next Steps:</b> Please ensure you have sufficient funds and that your card details are correct, then try again.
-          </p>
-        </div>
-        
-        <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '').startsWith('http') ? '' : 'https://'}${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/pricing" style="display: inline-block; background: #dc2626; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Try Payment Again</a>
-        </div>
-        
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${params.email}</div>` : ''}
-        </div>
-      </div>
-    `,
+        <p style="margin:0 0 24px 0;color:#475569;font-size:15px;line-height:1.7;">To keep your Premium features running without interruption, please update your payment method or try again with a different card.</p>
+        ${ctaButton('Update Payment Method →', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/pricing`, '#dc2626')}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">Need a hand? Our team is happy to help at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a>.</p>
+      `,
+    }),
   });
 };
+
 
 // Login function
 export const loginUser = async (email: string, password: string) => {
@@ -534,51 +406,25 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
 
   return await resend.emails.send({
     from: process.env.NODE_ENV === 'test' ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
-    to: email, // Changed from [email] to email to match working OTP flow
+    to: email,
     subject: "Reset Your Qefas Hub Password",
-    html: `
-      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
-          <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
-          <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Password Reset Request</p>
-        </div>
-        
-        <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <h2 style="color: #1f2937; margin-top: 0;">Reset Your Password</h2>
-          
-          <p>You requested to reset your password for your Qefas Hub account. Click the button below to create a new password:</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetLink}" 
-               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
-              Reset Your Password
-            </a>
-          </div>
-
-          <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
-            Or copy and paste this link in your browser:
-          </p>
-          
-          <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; word-break: break-all; font-size: 14px; color: #374151;">
-            ${resetLink}
-          </div>
-          
-          <p style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 25px;">
-            This reset link will expire in 15 minutes.<br>
-            If you didn't request this reset, please ignore this email.
-          </p>
-        </div>
-        
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-          <p>© 2025 Qefas Hub. All rights reserved.</p>
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'reset',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Reset your password</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We received a request to reset the password for your Qefas Hub account. No problem, let's get you back in. Just click the button below to choose a new one.</p>
+        ${ctaButton('Reset Password →', resetLink)}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">For your security, this link will expire in 15 minutes.</p>
+        <p style="margin:16px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">If you didn't request this, you can safely ignore this email. Your password won't change unless you use the link above. If you're worried someone else is trying to access your account, contact us at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a>.</p>
+        <p style="margin:24px 0 4px 0;color:#94a3b8;font-size:12px;text-align:center;">If the button doesn't work, copy and paste this link into your browser:</p>
+        <div style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;word-break:break-all;font-size:12px;color:#374151;text-align:center;margin-bottom:8px;">${resetLink}</div>
+      `,
+    }),
   });
 };
+
+
 
 export const sendTeacherInvitationEmail = async (email: string, token: string, schoolName: string, teacherName: string) => {
   let baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
@@ -594,41 +440,18 @@ export const sendTeacherInvitationEmail = async (email: string, token: string, s
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Invitation to join ${schoolName} on Qefas Hub`,
-    html: `
-      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
-          <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
-          <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
-        </div>
-        
-        <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <h2 style="color: #1f2937; margin-top: 0;">Hello ${teacherName},</h2>
-          
-          <p>You have been invited to join <strong>${schoolName}</strong> as a teacher on Qefas Hub.</p>
-          <p>Your account has been pre-registered by the school administrator. Please click the button below to claim your account, set up your password, and access your dashboard.</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${claimLink}" 
-               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
-              Claim Your Account
-            </a>
-          </div>
-
-          <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
-            Or copy and paste this link in your browser:
-          </p>
-          
-          <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; word-break: break-all; font-size: 14px; color: #374151;">
-            ${claimLink}
-          </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-          <p>© 2025 Qefas Hub. All rights reserved.</p>
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'invite',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Hello ${teacherName},</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">You have been invited to join <strong>${schoolName}</strong> as a teacher on Qefas Hub. Your account has been pre-registered by the school administrator.</p>
+        ${infoCard('Your institutional account is ready. Click the button below to set up your password and access your dashboard.', 'info')}
+        ${ctaButton('Claim Your Account', claimLink)}
+        ${secondaryLink('Go to website', process.env.FRONTEND_URL || 'https://qefashub.com')}
+      `,
+    }),
   });
 };
 
@@ -647,43 +470,22 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Invitation to join ${schoolName} on Qefas Hub`,
-    html: `
-      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
-          <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
-          <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
-        </div>
-        
-        <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <h2 style="color: #1f2937; margin-top: 0;">Hello ${studentName},</h2>
-          
-          <p>You have been invited to join <strong>${schoolName}</strong> as a student on Qefas Hub.</p>
-          <p>Your account has been pre-registered by your school. Please click the button below to claim your account, set up your password, and access your dashboard.</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${claimLink}" 
-               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
-              Claim Your Account
-            </a>
-          </div>
-
-          <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
-            Or copy and paste this link in your browser:
-          </p>
-          
-          <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; word-break: break-all; font-size: 14px; color: #374151;">
-            ${claimLink}
-          </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-          <p>© 2025 Qefas Hub. All rights reserved.</p>
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'invite',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Hello ${studentName},</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">You have been invited to join <strong>${schoolName}</strong> as a student on Qefas Hub. Your account has been pre-registered by your school.</p>
+        ${infoCard('Your student account is ready. Click the button below to set up your password and access your learning dashboard.', 'info')}
+        ${ctaButton('Claim Your Account', claimLink)}
+        ${secondaryLink('Go to website', process.env.FRONTEND_URL || 'https://qefashub.com')}
+      `,
+    }),
   });
 };
+
+
 
 export const googleAuthService = async (
   supabaseToken: string,
@@ -767,7 +569,7 @@ export const googleAuthService = async (
   if (existingUser) {
     // Check if they exist in the exact role they are trying to log in as
     let foundInRequestedRole = false;
-    
+
     if (userRole === UserRole.STUDENT && existingStudent) {
       user = existingStudent;
       foundInRequestedRole = true;
@@ -789,7 +591,7 @@ export const googleAuthService = async (
       else if (existingTeacher) detectedRole = "Teacher";
       else if (existingStudent) detectedRole = "Student";
       else if (existingParent) detectedRole = "Parent";
-      
+
       throw new Error(`This email is registered as a ${detectedRole}. Please login through the correct portal.`);
     }
 
@@ -939,63 +741,24 @@ export const sendPaymentFailureEmail = async (params: {
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Action Required: Payment Failed for ${params.plan} Plan — Qefas Hub${isTest ? ` (Original: ${params.email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Payment Alert</p>
-          </div>
-        </div>
-
-        <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 20px; padding: 24px; margin-bottom: 28px; text-align: center;">
-          <p style="margin: 0 0 8px 0; font-size: 32px;">⚠️</p>
-          <h3 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #b91c1c; letter-spacing: -0.5px;">Payment Failed</h3>
-          <p style="margin: 0; color: #dc2626; font-size: 15px; font-weight: 600;">We were unable to renew your <strong>${params.plan}</strong> plan subscription.</p>
-        </div>
-
-        <div style="background: #f8fafc; border-radius: 20px; padding: 28px; margin-bottom: 28px; border: 1px solid #e2e8f0;">
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Plan</td>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${params.plan}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Amount</td>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${formattedAmount}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Date</td>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${formattedDate}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Method</td>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${params.method}</td>
-            </tr>
-            ${params.reason ? `<tr>
-              <td style="padding: 10px 0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Reason</td>
-              <td style="padding: 10px 0; color: #dc2626; font-size: 14px; font-weight: 700; text-align: right;">${params.reason}</td>
-            </tr>` : ''}
-          </table>
-        </div>
-
-        <p style="color: #475569; font-size: 15px; line-height: 1.7; margin-bottom: 24px;">
-          To keep your subscription active and avoid losing access to premium features, please update your payment method in your billing dashboard as soon as possible.
-        </p>
-
-        <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
-            Update Payment Method →
-          </a>
-        </div>
-
-        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0; line-height: 1.6;">
-          If you believe this is an error or need help, please contact our support team.<br/>
-          <strong style="color: #64748b;">Qefas Hub</strong> — Your Institutional Management Platform
-        </p>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'payment-failed',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Payment Failed,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We were unable to renew your <strong>${params.plan}</strong> plan subscription. Please update your payment method to keep your access active.</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+          ${receiptRow('Plan', params.plan)}
+          ${receiptRow('Amount', formattedAmount)}
+          ${receiptRow('Date', formattedDate)}
+          ${receiptRow('Method', params.method)}
+          ${params.reason ? receiptRow('Reason', params.reason) : ''}
+        </table>
+        ${infoCard('To keep your subscription active and avoid losing access to premium features, please update your payment method in your billing dashboard as soon as possible.', 'danger')}
+        ${ctaButton('Update Payment Method', dashboardUrl, '#6366f1')}
+      `,
+    }),
   });
 };
 
@@ -1009,39 +772,22 @@ export const sendSubscriptionExpiredEmail = async (email: string, planName: stri
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Subscription Expired: ${planName} Plan — Qefas Hub${isTest ? ` (Original: ${email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Subscription Expired</p>
-          </div>
-        </div>
-
-        <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 20px; padding: 24px; margin-bottom: 28px; text-align: center;">
-          <h3 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #b91c1c; letter-spacing: -0.5px;">Your Subscription Has Expired</h3>
-          <p style="margin: 0; color: #dc2626; font-size: 15px; font-weight: 600;">Your <strong>${planName}</strong> premium access has ended and your account has been transitioned to the Free tier.</p>
-        </div>
-
-        <p style="color: #475569; font-size: 15px; line-height: 1.7; margin-bottom: 24px;">
-          To regain access to your premium features and limits, please renew your subscription.
-        </p>
-
-        <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
-            Renew Subscription →
-          </a>
-        </div>
-
-        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0; line-height: 1.6;">
-          If you believe this is an error or need help, please contact our support team.<br/>
-          <strong style="color: #64748b;">Qefas Hub</strong> — Your Institutional Management Platform
-        </p>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'payment-failed',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Your Subscription Has Expired,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Your <strong>${planName}</strong> premium access has ended and your account has been transitioned to the Free tier.</p>
+        ${infoCard('To regain access to your premium features and limits, please renew your subscription from your billing dashboard.', 'danger')}
+        ${ctaButton('Renew Subscription', dashboardUrl, '#6366f1')}
+      `,
+    }),
   });
 };
+
+
+// ─── Admin Join Request Email
 
 // ─── Admin Join Request Email ─────────────────────────────────────────────────
 // Sent to every SCHOOL_OWNER and PRINCIPAL when a new admin requests to join.
@@ -1062,67 +808,32 @@ export const sendAdminJoinRequestEmail = async (params: {
     from: sender,
     to: recipient,
     subject: `New Admin Request for ${schoolName} — Action Required${isTest ? ` (Original: ${recipientEmail})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-        
-        <!-- Header -->
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Staff Access Request</p>
-          </div>
-        </div>
-
-        <!-- Title -->
-        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.3px;">New Admin Registration Request</h3>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-          Hi <strong>${recipientName}</strong>, someone has requested to join <strong>${schoolName}</strong> as an administrator. 
-          Review their details below and assign them a role, or reject the request.
-        </p>
-
-        <!-- Applicant Card -->
-        <div style="margin: 20px 0; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
-          <p style="margin: 0 0 4px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Applicant Details</p>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
-            <tr>
-              <td style="padding: 6px 0; color: #64748b; font-size: 13px; width: 90px;">Name</td>
-              <td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${applicantName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">Email</td>
-              <td style="padding: 6px 0; color: #2563eb; font-size: 14px; font-weight: 600;">${applicantEmail}</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; color: #64748b; font-size: 13px;">School</td>
-              <td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${schoolName}</td>
-            </tr>
+    html: buildEmail({
+      illustration: 'invite',
+      testMode: isTest,
+      originalRecipient: recipientEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">New administrator request for ${schoolName}</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi ${recipientName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Someone has asked to join <strong>${schoolName}</strong> as an administrator on Qefas Hub, and they're waiting on you.</p>
+        <div style="background:#f8fafc;border-radius:14px;padding:18px;margin-bottom:20px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Applicant Details</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Name', applicantName)}
+            ${receiptRow('Email', applicantEmail)}
           </table>
         </div>
-
-        <!-- CTA -->
-        <div style="text-align: center; margin: 28px 0 24px;">
-          <a href="${approvalUrl}" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);">
-            Review Request →
-          </a>
-        </div>
-
-        <!-- Warning -->
-        <div style="padding: 14px 16px; background: #fffcf0; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
-          <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
-            <strong>Action required.</strong> Until you approve and assign a role, this person cannot log in or access the school dashboard.
-          </p>
-        </div>
-
-        <!-- Footer -->
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from Qefas Hub. Do not reply.</p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${recipientEmail}</div>` : ''}
-        </div>
-      </div>
-    `,
+        ${infoCard("<strong>Action required:</strong> This person won't be able to log in until you approve their request and assign them a role.", 'warning')}
+        ${ctaButton('Review Request →', approvalUrl)}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">If you don't recognize this person, you can simply decline the request.</p>
+      `,
+    }),
   });
 };
+
+// ─── Admin Approval Email ─────────────────────────────────────────────
+// Sent to the newly approved admin with their assigned role.
+
 
 // ─── Admin Approval Email ─────────────────────────────────────────────────────
 // Sent to the newly approved admin with their assigned role.
@@ -1145,10 +856,10 @@ export const sendAdminApprovalEmail = async (params: {
 
   const roleColors: Record<string, string> = {
     SCHOOL_OWNER: '#1d4ed8',
-    PRINCIPAL:    '#7c3aed',
-    REGISTRAR:    '#0f766e',
-    ACCOUNTANT:   '#b45309',
-    SUPPORT:      '#0369a1',
+    PRINCIPAL: '#7c3aed',
+    REGISTRAR: '#0f766e',
+    ACCOUNTANT: '#b45309',
+    SUPPORT: '#0369a1',
   };
   const roleColor = roleColors[assignedRole] || '#2563eb';
 
@@ -1156,55 +867,28 @@ export const sendAdminApprovalEmail = async (params: {
     from: sender,
     to: recipient,
     subject: `You're approved! Welcome to ${schoolName} — ${formattedRole}${isTest ? ` (Original: ${adminEmail})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-
-        <!-- Header -->
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Approved</p>
-          </div>
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: adminEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">You're in, ${adminName}!</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Great news: the administrators of <strong>${schoolName}</strong> have approved your request, and your access is ready.</p>
+        <div style="margin:20px 0;">
+          <span style="font-size:15px;color:#475569;margin-right:8px;">Your role:</span>
+          <span style="display:inline-block;background:${roleColor};color:#ffffff;font-size:13px;font-weight:700;padding:6px 16px;border-radius:100px;letter-spacing:0.5px;">${formattedRole}</span>
         </div>
-
-        <!-- Success Banner -->
-        <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; text-align: center;">
-          <div style="font-size: 36px; margin-bottom: 8px;">✅</div>
-          <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #065f46; letter-spacing: -0.3px;">You're In!</h3>
-          <p style="margin: 8px 0 0; color: #047857; font-size: 14px;">Your admin account has been approved.</p>
-        </div>
-
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-          Hi <strong>${adminName}</strong>, the administrators of <strong>${schoolName}</strong> have reviewed and approved your request. 
-          You've been granted access with the following role:
-        </p>
-
-        <!-- Role Badge -->
-        <div style="text-align: center; margin: 20px 0 28px;">
-          <span style="display: inline-block; background: ${roleColor}; color: #ffffff; font-size: 15px; font-weight: 700; padding: 10px 28px; border-radius: 100px; letter-spacing: 0.5px;">
-            ${formattedRole}
-          </span>
-        </div>
-
-        <!-- CTA -->
-        <div style="text-align: center; margin-bottom: 28px;">
-          <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);">
-            Log In to Dashboard →
-          </a>
-        </div>
-
-        <!-- Footer -->
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-            Welcome to the team at ${schoolName}. This is an automated message from Qefas Hub.
-          </p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${adminEmail}</div>` : ''}
-        </div>
-      </div>
-    `,
+        <p style="margin:0 0 24px 0;color:#475569;font-size:15px;line-height:1.7;">You can now log in and start managing your school on Qefas Hub.</p>
+        ${ctaButton('Log In to Dashboard →', loginUrl)}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">Welcome to the team.</p>
+      `,
+    }),
   });
 };
+
+// ─── New Admin Joined Notification Email ────────────────────────────────────────────
+// Sent to existing active school admins when a new admin is approved.
+
 
 // ─── New Admin Joined Notification Email ──────────────────────────────────────
 // Sent to existing active school admins when a new admin is approved.
@@ -1228,32 +912,20 @@ export const sendNewAdminJoinedEmail = async (params: {
     from: sender,
     to: recipient,
     subject: `New Admin Joined ${schoolName} — ${formattedRole}${isTest ? ` (Original: ${recipientEmail})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-        
-        <!-- Header -->
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Team Update</p>
-          </div>
-        </div>
-
-        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.3px;">New Admin Joined the Team</h3>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-          Hi <strong>${recipientName}</strong>, <strong>${newAdminName}</strong> has just been approved and joined the admin team at <strong>${schoolName}</strong> as a <strong>${formattedRole}</strong>.
-        </p>
-
-        <!-- Footer -->
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from Qefas Hub. Do not reply.</p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${recipientEmail}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: recipientEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">New Admin Joined the Team,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Hi <strong>${recipientName}</strong>, <strong>${newAdminName}</strong> has just been approved and joined the admin team at <strong>${schoolName}</strong> as a <strong>${formattedRole}</strong>.</p>
+        ${infoCard('This is just an informational notification. No action is required from you.', 'info')}
+      `,
+    }),
   });
 };
+
+// ─── Generic Welcome Email
 
 // ─── Generic Welcome Email ────────────────────────────────────────────────────
 export const sendWelcomeEmail = async (params: {
@@ -1276,48 +948,23 @@ export const sendWelcomeEmail = async (params: {
     from: sender,
     to: recipient,
     subject: `Welcome to Qefas Hub! Your account is verified${isTest ? ` (Original: ${email})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-
-        <!-- Header -->
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Verified</p>
-          </div>
-        </div>
-
-        <!-- Success Banner -->
-        <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; text-align: center;">
-          <div style="font-size: 36px; margin-bottom: 8px;">🎉</div>
-          <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #065f46; letter-spacing: -0.3px;">Welcome Aboard!</h3>
-          <p style="margin: 8px 0 0; color: #047857; font-size: 14px;">Your email has been successfully verified.</p>
-        </div>
-
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-          Hi <strong>${name}</strong>, welcome to Qefas Hub! Your account has been verified as a <strong>${formattedRole}</strong>. 
-          You can now log in to access your dashboard.
-        </p>
-
-        <!-- CTA -->
-        <div style="text-align: center; margin-bottom: 28px;">
-          <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);">
-            Log In to Dashboard →
-          </a>
-        </div>
-
-        <!-- Footer -->
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-            This is an automated message from Qefas Hub.
-          </p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Hi ${name}, I'm Ola from Qefas Hub. Welcome!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">You've just joined one of the most exciting platforms for education management, and we're so glad you're here.</p>
+        <p style="margin:0 0 16px 0;color:#0f172a;font-size:16px;font-weight:800;letter-spacing:-0.3px;">Education management, reimagined.</p>
+        <p style="margin:0 0 24px 0;color:#475569;font-size:15px;line-height:1.7;">Qefas Hub brings your entire institution together in one place. Manage your students, teachers, attendance, grades, and parent communication without ever juggling multiple tools. Everything you need is right here, working together.</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Ready to get started? We'd love to have you on board.</p>
+        ${ctaButton('Start Your Journey →', loginUrl)}
+      `,
+    }),
   });
 };
+
+// ─── Admin Rejection Email
 
 // ─── Admin Rejection Email ────────────────────────────────────────────────────
 // Sent to the rejected admin with an optional reason from the approver.
@@ -1336,50 +983,24 @@ export const sendAdminRejectionEmail = async (params: {
     from: sender,
     to: recipient,
     subject: `Update on your admin request for ${schoolName}${isTest ? ` (Original: ${adminEmail})` : ''}`,
-    html: `
-      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-
-        <!-- Header -->
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://qefashub.com/logo/favicon.png" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
-          <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Admin Portal</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Account Update</p>
-          </div>
-        </div>
-
-        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.3px;">Request Not Approved</h3>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-          Hi <strong>${adminName}</strong>, thank you for your interest in joining <strong>${schoolName}</strong> on Qefas Hub.
-          After review, your administrator access request was not approved at this time.
-        </p>
-
-        ${reason ? `
-        <!-- Reason Block -->
-        <div style="margin: 0 0 24px; padding: 16px 20px; background: #fef2f2; border-radius: 14px; border-left: 4px solid #ef4444;">
-          <p style="margin: 0 0 6px; color: #7f1d1d; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Reason Provided</p>
-          <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">${reason}</p>
-        </div>
-        ` : ''}
-
-        <!-- Support Note -->
-        <div style="padding: 14px 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
-          <p style="margin: 0; color: #475569; font-size: 13px; line-height: 1.6;">
-            If you believe this was a mistake or would like to inquire further, please reach out to the school administrators directly or contact Qefas Hub support.
-          </p>
-        </div>
-
-        <!-- Footer -->
-        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-            This is an automated message from Qefas Hub. Do not reply directly to this email.
-          </p>
-          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${adminEmail}</div>` : ''}
-        </div>
-      </div>
-    `,
+    html: buildEmail({
+      illustration: 'security',
+      testMode: isTest,
+      originalRecipient: adminEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Update on your request</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi ${adminName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Thank you for your interest in joining <strong>${schoolName}</strong> on Qefas Hub. After reviewing your administrator access request, the school's administrators weren't able to approve it this time.</p>
+        ${reason ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+          <span style="font-size:14px;color:#475569;font-weight:600;">Reason provided:</span> <span style="font-size:14px;color:#0f172a;">${reason}</span>
+        </div>` : ''}
+        ${reason && reason.toLowerCase().includes('school') ? `<p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This is often an easy fix. If you meant to join a different school, you're welcome to submit a new request and select the right one.</p>` : ''}
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">If you think this decision was made in error, please reach out to the school administrators directly and they'll be happy to help.</p>
+      `,
+    }),
   });
 };
+
 
 export const sendAdminLimitReachedEmail = async (params: { recipientEmail: string; recipientName: string; applicantName: string; applicantEmail: string; schoolName: string; }) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
@@ -1389,7 +1010,102 @@ export const sendAdminLimitReachedEmail = async (params: { recipientEmail: strin
     from: sender,
     to: recipient,
     subject: `Admin Slot Filled: ${params.applicantName} tried to join ${params.schoolName}`,
-    html: `<p>Hi ${params.recipientName},</p><p>${params.applicantName} (${params.applicantEmail}) is trying to join ${params.schoolName} as an administrator.</p><p>However, there is no longer space on your tier. Please upgrade to a higher tier to allow them to join.</p>`
+    html: buildEmail({
+      illustration: 'invite',
+      testMode: isTest,
+      originalRecipient: params.recipientEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Admin Limit Reached,</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Hi <strong>${params.recipientName}</strong>, <strong>${params.applicantName}</strong> (${params.applicantEmail}) tried to join <strong>${params.schoolName}</strong> as an administrator, but your current plan's admin slot limit has been reached.</p>
+        ${infoCard('Please upgrade to a higher tier to allow additional administrators to join your school.', 'warning')}
+        ${ctaButton('Upgrade Plan', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/dashboard/billing`, '#6366f1')}
+      `,
+    }),
   });
 };
 
+export const sendNewDeviceAlertEmail = async (params: {
+  email: string;
+  name: string;
+  deviceName: string;
+  location: string;
+  time: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `New login to your Qefas Hub account${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: 'new-device',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">New device sign-in</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi ${params.name},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We noticed a new sign-in to your Qefas Hub account. If this was you, you don't need to do anything. If not, please secure your account immediately.</p>
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Device', params.deviceName)}
+            ${receiptRow('Location', params.location)}
+            ${receiptRow('Time', params.time)}
+          </table>
+        </div>
+        ${ctaButton('Secure My Account →', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/auth/forgot-password`, '#dc2626')}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">Need a hand? Our team is happy to help at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a>.</p>
+      `,
+    }),
+  });
+};
+
+export const sendDeviceVerificationCodeEmail = async (params: {
+  email: string;
+  name: string;
+  code: string;
+  deviceName?: string;
+  location?: string;
+  time?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await resend.emails.send({
+    from: sender,
+    to: recipient,
+    subject: `Device Verification Code: ${params.code}${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: 'device-code',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Verify your new device</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi ${params.name},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We noticed a login attempt to your Qefas Hub account from a device we don't recognize. To continue, enter the verification code below on your login screen.</p>
+        
+        ${params.deviceName ? `
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Device', params.deviceName)}
+            ${params.location ? receiptRow('Location', params.location) : ''}
+            ${params.time ? receiptRow('Time', params.time) : ''}
+          </table>
+        </div>
+        ` : ''}
+
+        <div style="background:#f8fafc;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;border:1px dashed #cbd5e1;">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Your verification code</div>
+          <div style="font-size:36px;font-weight:900;color:#0f172a;letter-spacing:4px;">${params.code}</div>
+        </div>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">This code expires in 10 minutes.</p>
+        <p style="margin:0 0 24px 0;color:#475569;font-size:14px;line-height:1.6;font-weight:600;">Never share this code with anyone. Qefas Hub will never ask you for it.</p>
+
+        <hr style="border:0;border-top:1px solid #e2e8f0;margin:24px 0;" />
+        <p style="margin:0 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">Didn't try to log in? Someone may have your password. Please reset it right away and contact us at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a> so we can help secure your account.</p>
+      `,
+    }),
+  });
+};

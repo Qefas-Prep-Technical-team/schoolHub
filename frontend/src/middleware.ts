@@ -15,12 +15,16 @@ export function middleware(req: NextRequest) {
 
   // 2. Extract subdomain
   let subdomain = "";
+
+  // System-level subdomains that are NOT school tenants
+  const SYSTEM_SUBDOMAINS = new Set(["www", "flexiti", "localhost", "lvh", "schoolhub", "staging", "api", "cdn", "mail"]);
+
+  // Known staging/preview apex patterns (e.g. myschool.staging.qefas.com)
+  const STAGING_APEX_SUFFIXES = ["staging.qefas.com", "preview.qefas.com"];
+
   if (host.includes("localhost") || host.includes("lvh.me")) {
     const parts = host.split(".");
     if (parts.length > 1) {
-      // pop localhost:3000 or lvh.me:3000
-      // wait, lvh.me has two parts: lvh and me.
-      // So if host is subdomain.lvh.me:3000 -> parts: ["subdomain", "lvh", "me:3000"]
       if (host.includes("lvh.me")) {
         parts.pop(); // me:3000
         parts.pop(); // lvh
@@ -30,12 +34,20 @@ export function middleware(req: NextRequest) {
       subdomain = parts.join(".");
     }
   } else {
-    // production: e.g. subdomain.qefas.com or subdomain.schoolhub.com
-    const parts = host.split(".");
-    if (parts.length > 2) {
-      parts.pop(); // com
-      parts.pop(); // qefas or main domain
-      subdomain = parts.join(".");
+    // Check for staging/preview apex environments first
+    // e.g. myschool.staging.qefas.com  →  subdomain = "myschool"
+    const matchedStagingApex = STAGING_APEX_SUFFIXES.find(apex => host === apex || host.endsWith(`.${apex}`));
+    if (matchedStagingApex) {
+      const withoutApex = host.slice(0, host.length - matchedStagingApex.length - 1); // strip ".staging.qefas.com"
+      subdomain = withoutApex; // e.g. "myschool"
+    } else {
+      // Normal production: subdomain.qefas.com
+      const parts = host.split(".");
+      if (parts.length > 2) {
+        parts.pop(); // com
+        parts.pop(); // qefas (or main domain)
+        subdomain = parts.join(".");
+      }
     }
   }
 
@@ -44,16 +56,8 @@ export function middleware(req: NextRequest) {
     subdomain = subdomain.substring(4);
   }
 
-  // 3. Exclude main domain and system subdomains
-  if (
-    !subdomain ||
-    subdomain === "www" ||
-    subdomain === "flexiti" ||
-    subdomain === "localhost" ||
-    subdomain === "lvh" ||
-    subdomain === "schoolhub" ||
-    subdomain === "staging"
-  ) {
+  // 3. Exclude main domain and system subdomains (but NOT school tenants on staging)
+  if (!subdomain || SYSTEM_SUBDOMAINS.has(subdomain)) {
     return NextResponse.next();
   }
 

@@ -22,7 +22,7 @@ export const listAllTransactions = async (req: Request, res: Response) => {
     }
 
     const [transactions, total] = await Promise.all([
-      prisma.transactionHistory.findMany({
+      prisma.transaction.findMany({
         where,
         include: {
           school: { select: { name: true, tenantId: true } }
@@ -31,7 +31,7 @@ export const listAllTransactions = async (req: Request, res: Response) => {
         skip,
         take: limit
       }),
-      prisma.transactionHistory.count({ where })
+      prisma.transaction.count({ where })
     ]);
 
     return res.status(200).json({ 
@@ -55,12 +55,12 @@ export const listAllTransactions = async (req: Request, res: Response) => {
 export const getPlatformRevenue = async (req: Request, res: Response) => {
   try {
     const [successfulTransactions, totalTransactions, failedTransactions, activeSchools] = await Promise.all([
-      prisma.transactionHistory.findMany({
+      prisma.transaction.findMany({
         where: { status: 'SUCCESS' },
         select: { amount: true, createdAt: true }
       }),
-      prisma.transactionHistory.count(),
-      prisma.transactionHistory.count({ where: { status: 'FAILED' } }),
+      prisma.transaction.count(),
+      prisma.transaction.count({ where: { status: 'FAILED' } }),
       prisma.school.count()
     ]);
 

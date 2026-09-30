@@ -31,7 +31,8 @@ import {
     PieChart,
     UserCheck,
     Wrench,
-    Tag
+    Tag,
+    Mail
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
@@ -51,6 +52,7 @@ export const consoleMenuItems = [
     { icon: UserCheck, label: "Staff Accounts", href: "/console/staff" },
     { icon: Terminal, label: "Activity Logs", href: "/console/logs" },
     { icon: Settings, label: "Platform Settings", href: "/console/settings" },
+    { icon: Mail, label: "Email Templates", href: "/console/email-templates" },
 ]
 
 interface ConsoleSidebarProps {

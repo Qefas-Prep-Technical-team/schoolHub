@@ -10,6 +10,7 @@ import platformSettingsRoutes from "./settings/settings.route";
 import platformLogsRoutes from "./logs/logs.route";
 import platformPricingRoutes from "./billing/pricing.routes";
 import platformConfigRoutes from "./support/public.route";
+import platformEmailRoutes from "./email/email.route";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use("/settings", platformSettingsRoutes);
 router.use("/logs", platformLogsRoutes);
 router.use("/pricing", platformPricingRoutes);
 router.use("/config", platformConfigRoutes);
+router.use("/email", platformEmailRoutes);
 
 export default router;
