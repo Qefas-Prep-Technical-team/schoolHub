@@ -66,6 +66,8 @@
   "overrides": {
     "extract-zip": "^2.0.1",
     "deepmerge-ts": "^8.0.0",
-    "ip-address": "^10.3.1"
+    "ip-address": "^10.3.1",
+    "socket.io-parser": "^4.2.7",
+    "brace-expansion": "^1.1.21"
   }
 }
