@@ -81,7 +81,7 @@
     "swiper": "^12.1.4",
     "tailwind-merge": "^3.4.0",
     "tailwind-variants": "^3.1.1",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz",
     "yup": "^1.7.1",
     "zod": "^4.1.13",
     "zustand": "^5.0.8"
@@ -116,7 +116,8 @@
     "workbox-build": "^7.1.0",
     "workbox-webpack-plugin": "^7.1.0",
     "next": "$next",
-    "axios": "$axios",
+    "axios": "^1.18.0",
+    "nanoid": "^3.3.18",
     "postcss": "^8.5.10"
   }
 }

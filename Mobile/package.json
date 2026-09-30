@@ -85,8 +85,8 @@
   "overrides": {
     "postcss": "^8.5.10",
     "@xmldom/xmldom": "^0.8.15",
-    "image-size": "^1.2.0",
-    "nanoid": "^3.3.8",
+    "image-size": "^2.0.3",
+    "nanoid": "^3.3.18",
     "ws": "^8.18.0"
   }
 }
