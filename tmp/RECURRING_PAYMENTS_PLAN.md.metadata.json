@@ -1,0 +1,5 @@
+{
+  "summary": "Comprehensive plan for recurring/auto-charge payments on Qefas Hub. Covers: what's already in place (auth tokens captured from Paystack/Flutterwave, cron infrastructure), and everything that needs building — authorization token storage/security, auto-charge cron job with retry logic, pre-charge and post-charge email templates, in-app notifications, card management UI, consent/cancellation flows, idempotency, failed payment handling, webhook integration, and a phased implementation roadmap.",
+  "updatedAt": "2026-09-30T10:29:44.300719Z",
+  "userFacing": true
+}

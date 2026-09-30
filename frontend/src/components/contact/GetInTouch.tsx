@@ -3,6 +3,7 @@
 import React, { FC, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/lib/hooks/useToast';
+import { submitContactForm } from '@/app/actions/contact';
 
 const GetInTouch: FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,15 +15,9 @@ const GetInTouch: FC = () => {
         setIsSubmitting(true);
         
         const formData = new FormData(form);
-        formData.append("access_key", "7cea7f38-a2cb-44a3-97de-eb15b294e1e0");
 
         try {
-            const response = await fetch("https://api.web3forms.com/submit", {
-                method: "POST",
-                body: formData
-            });
-
-            const data = await response.json();
+            const data = await submitContactForm(formData);
             
             if (data.success) {
                 success.show("Message sent successfully!");
