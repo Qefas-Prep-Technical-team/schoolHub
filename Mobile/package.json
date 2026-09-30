@@ -87,6 +87,9 @@
     "@xmldom/xmldom": "^0.8.15",
     "image-size": "^2.0.3",
     "nanoid": "^3.3.18",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "undici": "^6.28.0",
+    "browserslist": "^4.28.7",
+    "brace-expansion": "^2.1.4"
   }
 }
