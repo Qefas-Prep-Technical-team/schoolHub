@@ -62,5 +62,9 @@
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2"
+  },
+  "overrides": {
+    "extract-zip": "^2.0.1",
+    "deepmerge-ts": "^7.1.3"
   }
 }
