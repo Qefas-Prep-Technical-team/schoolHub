@@ -125,6 +125,7 @@
     "fast-uri": "^3.1.8",
     "postcss": "^8.5.23",
     "tar": "^7.5.22",
-    "@humanfs/node": "^0.16.8"
+    "@humanfs/node": "^0.16.8",
+    "jspdf": "$jspdf"
   }
 }
