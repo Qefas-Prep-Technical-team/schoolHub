@@ -1,75 +1,96 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const MissionVision: React.FC = () => {
     return (
-        <section className="py-24 bg-white dark:bg-slate-950 font-['Lexend'] overflow-hidden">
-            <div className="max-w-7xl mx-auto px-8">
-                <div className="grid md:grid-cols-12 gap-8">
-                    {/* Mission */}
+        <section className="py-24 bg-[#FDFBF7] dark:bg-slate-950 font-['Lexend'] overflow-hidden">
+            <div className="max-w-[1440px] mx-auto px-6">
+                
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
+                    <div className="max-w-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="material-symbols-outlined text-sm">star</span>
+                            <span className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Our Approach</span>
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white leading-tight">
+                            Essential pillars for modern school success
+                        </h2>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-sm text-sm font-medium leading-relaxed">
+                        Explore integrated school management approaches to improve processes, increase productivity, and support long-term educational development.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                    {/* Card 1 - White */}
                     <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="md:col-span-7 bg-slate-50 dark:bg-slate-900/50 p-12 rounded-[3.5rem] border border-slate-200/60 dark:border-slate-800 flex flex-col justify-between group hover:shadow-2xl transition-all duration-700 shadow-sm"
+                        className="bg-white dark:bg-slate-900 p-10 rounded-[2rem] shadow-sm flex flex-col justify-between group hover:shadow-xl transition-all h-[400px]"
                     >
                         <div>
-                            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-8 group-hover:rotate-6 transition-transform">
-                                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl font-light">target</span>
+                            <div className="mb-6">
+                                <span className="material-symbols-outlined text-4xl text-slate-700 dark:text-slate-300">school</span>
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6">Our Mission</h2>
-                            <p className="text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                                Empowering schools to focus on teaching by simplifying administration. We strip away the complexity of logistics, data silos, and paperwork, replacing them with fluid, automated systems that work silently in the background.
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Our Mission</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
+                                Empowering schools to focus on teaching by simplifying administration. We replace complex logistics with fluid, automated systems.
                             </p>
                         </div>
-                        <div className="mt-12 flex items-center gap-4 border-t border-slate-200 dark:border-slate-800 pt-8">
-                            <div className="flex -space-x-3">
-                                {[
-                                    "https://lh3.googleusercontent.com/aida-public/AB6AXuAzEGeDYNv99dHw7ckwcqcD2TxTpLz-q-6lLRzEeUVs2AB0ux6X1AFa0QOIHGm2zWOiJgiRg9pxvY9-FWppPhbkSxTcW1gUrgE7BX65uzgnqm9bNZ6emrZnu-6uYylTYc1-zMqIrYl2KIYEIEc9LmI6gKdgjQUtVRiN6HMo6gwrzomILg21CADUG0niYywsbLBaSDzU3NRG-EMv5ERB21QbSl1iJC2RCn9ROqiiGRIsQLfPV0-aZf-ox6FpYRVrgQYhRMbsuXIRUuE",
-                                    "https://lh3.googleusercontent.com/aida-public/AB6AXuDB9OECR3HVcmbs8An73CjPu9fW1IA0bnuubmrxgqsIpj8G39vLPATg6IOuPHiCIm71j7SDzdu9Q6D5aWACRLeQYm7-VNrZFRvXekRDU3jw2Vd2hg0sA8IvJNJZ2Jdaz1KFo0Ao-vbkc1rokl1V-5_gkd8va_7Cr99MoXVAwlIJLw9VJWaNfmWaXdUP25WKkrePVIxZsRGBlyl5olcrj52nzzeGn3HoCWe7Za1oWfj8JzU-kiMJfjzc21BO7vDdE8yarAIjoYWN1VI",
-                                    "https://lh3.googleusercontent.com/aida-public/AB6AXuBbh4oF9X2zOYGBGCFumnsW7pl9uPzYhQMyuBexQ41jhNSNm-XqeQgpX_S-rcUYzHmyqewz7iXXNCDVuSK1XqIWJHzEWEnTC3jECGgx8pLb64PCg6I5jD_Sy26yKGabD2G9R6tnT_1sMYV_BpR87T1hLgalYBbw7I2Ew5bV2Xzfum_Y7OYBbBQRe_c-QdB15MQih_JD61Gpt0fOEETAL5w4HXgxKjPKlwbUPruvx43UNfjjymCGjMHtHsDrw9BF2QNZwfnKtSAtHFo"
-                                ].map((src, i) => (
-                                    <img key={i} src={src} alt="Team" className="w-12 h-12 rounded-full border-4 border-white dark:border-slate-800 object-cover" />
-                                ))}
-                            </div>
-                            <span className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Built by educators, for educators.</span>
-                        </div>
+                        <Link href="/about/mission" className="inline-flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-full w-fit text-sm font-bold hover:bg-slate-100 transition-colors">
+                            Explore More <span className="material-symbols-outlined text-sm">chevron_right</span>
+                        </Link>
                     </motion.div>
 
-                    {/* Vision */}
+                    {/* Card 2 - Light Blue */}
                     <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="md:col-span-5 bg-blue-600 p-12 rounded-[3.5rem] shadow-2xl shadow-blue-600/20 flex flex-col justify-center relative overflow-hidden group"
+                        className="bg-blue-500 p-10 rounded-[2rem] shadow-sm flex flex-col justify-between group hover:shadow-xl transition-all h-[400px] relative overflow-hidden"
                     >
-                        <div className="z-10">
-                            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-8 border border-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-white text-3xl font-light">visibility</span>
+                        <div className="absolute -bottom-20 -right-20 w-64 h-64 border-[40px] border-white/20 rounded-full"></div>
+                        <div className="relative z-10">
+                            <div className="mb-6">
+                                <span className="material-symbols-outlined text-4xl text-blue-950">visibility</span>
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-black text-white mb-6">Our Vision</h2>
-                            <p className="text-lg text-white/90 font-medium leading-relaxed">
-                                A unified ecosystem where schools, teachers, parents, and students thrive in a seamless digital continuum, fostering a culture of academic excellence and lifelong learning.
+                            <h3 className="text-2xl font-bold text-blue-950 mb-4">Our Vision</h3>
+                            <p className="text-blue-950/80 text-sm font-medium leading-relaxed">
+                                A unified ecosystem where schools, teachers, parents, and students thrive in a seamless digital continuum, fostering a culture of academic excellence.
                             </p>
-                            <div className="mt-12">
-                                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <motion.div 
-                                        initial={{ width: 0 }}
-                                        whileInView={{ width: "75%" }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 1.5, delay: 0.5 }}
-                                        className="h-full bg-white"
-                                    ></motion.div>
-                                </div>
-                                <p className="mt-4 text-sm text-white/70 font-bold italic tracking-wide">75% through our 2030 Global Literacy Initiative</p>
-                            </div>
                         </div>
-                        {/* Static shape */}
-                        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+                        <Link href="/about/vision" className="relative z-10 inline-flex items-center gap-2 bg-blue-950/10 px-4 py-2 rounded-full w-fit text-sm font-bold text-blue-950 hover:bg-blue-950/20 transition-colors">
+                            Explore More <span className="material-symbols-outlined text-sm">chevron_right</span>
+                        </Link>
+                    </motion.div>
+
+                    {/* Card 3 - Dark Blue */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-blue-950 p-10 rounded-[2rem] shadow-sm flex flex-col justify-between group hover:shadow-xl transition-all h-[400px]"
+                    >
+                        <div>
+                            <div className="mb-6">
+                                <span className="material-symbols-outlined text-4xl text-blue-500">handshake</span>
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-4">School Process Improvement</h3>
+                            <p className="text-white/70 text-sm font-medium leading-relaxed">
+                                Optimize workflows to increase efficiency, productivity, and performance across every department of your educational institution.
+                            </p>
+                        </div>
+                        <Link href="/features" className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full w-fit text-sm font-bold text-white hover:bg-white/20 transition-colors">
+                            Explore More <span className="material-symbols-outlined text-sm">chevron_right</span>
+                        </Link>
                     </motion.div>
                 </div>
+
             </div>
         </section>
     );

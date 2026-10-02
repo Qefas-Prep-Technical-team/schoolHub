@@ -42,7 +42,7 @@ const Features: FC = () => {
 
     return (
         <section className="py-24 px-6 overflow-hidden bg-white dark:bg-[#0a0f1e]">
-            <div className="max-w-[1280px] mx-auto">
+            <div className="max-w-[1440px] mx-auto">
 
                 {/* ── Section header ─────────────────────────────────── */}
                 <div className="text-center mb-16 relative">

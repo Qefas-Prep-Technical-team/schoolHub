@@ -43,11 +43,11 @@ export const generateRefreshToken = async (
 ) => {
   console.log("DEBUG: jwt.sign refresh token for", userId);
   const token = jwt.sign({ userId, userType }, getRefreshSecret(), {
-    expiresIn: "7d",
+    expiresIn: "30d",
   });
 
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+  expiresAt.setDate(expiresAt.getDate() + 30);
 
   if (deviceInfo && deviceInfo.deviceModel) {
     const existingSession = await prisma.refreshToken.findFirst({

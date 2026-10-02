@@ -5,6 +5,7 @@ import { useBillingStore } from '@/utils/PricingPage';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import {
     CheckCircle2, Zap, Shield, Rocket, Loader2,
     Cloud, ArrowRight, Star, BadgeCheck
@@ -22,7 +23,7 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
     isPopular, category, index = 0, storage, isSetupMode = false
 }) => {
     const { billingType } = useBillingStore();
-    const { user, isAuthenticated } = useAuthStore();
+    const { user, isAuthenticated, userType } = useAuthStore();
     const { setCheckoutDetails } = useCheckoutStore();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +52,11 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
         else if (lowerCategory === 'teachers') role = 'TEACHER';
         else if (lowerCategory === 'parents') role = 'PARENT';
         else if (lowerCategory === 'individuals' && lowerType.includes('parent')) role = 'PARENT';
+
+        if (isAuthenticated && userType && userType !== role) {
+            toast.error(`Only ${role.toLowerCase()} accounts can purchase this plan.`);
+            return;
+        }
 
         // Custom redirection for Free plans for unauthenticated users
         if (lowerType === 'free' && !isAuthenticated) {

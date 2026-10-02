@@ -21,6 +21,6 @@
   },
   {
     "question": "Is Qefas Hub secure and compliant with Nigerian data regulations?",
-    "answer": "Absolutely. All data is encrypted at rest and in transit. We follow strict access controls with role-based permissions, and our infrastructure is hosted on enterprise-grade servers with regular security audits."
+    "answer": "Absolutely. All data is encrypted at rest and in transit. We follow strict access controls compliant with the NDPR (Nigerian Data Protection Regulation), and our infrastructure is hosted securely with regular audits."
   }
 ]

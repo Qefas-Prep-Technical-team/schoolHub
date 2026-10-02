@@ -4,7 +4,7 @@ import React, { FC } from 'react';
 
 const page: FC = () => {
     return (
-        <main className="flex h-full w-full items-center justify-center flex-col gap-8 px-4 sm:px-6 lg:px-8">
+        <main className="w-full min-h-screen pt-32 bg-[#FAFAFA] dark:bg-slate-950 transition-colors">
             <GetInTouch />
             <OurLocation />
         </main>

@@ -22,29 +22,33 @@ const CoreValues: React.FC = () => {
     ];
 
     return (
-        <section className="py-24 bg-white dark:bg-slate-950 font-['Lexend'] overflow-hidden">
-            <div className="max-w-7xl mx-auto px-8">
-                <div className="text-center mb-20">
+        <section className="py-24 bg-[#FDFBF7] dark:bg-slate-950 font-['Lexend'] overflow-hidden">
+            <div className="max-w-[1440px] mx-auto px-6">
+                <div className="flex flex-col items-center text-center mb-16">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="material-symbols-outlined text-sm">diamond</span>
+                        <span className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Our Services</span>
+                    </div>
                     <motion.h2 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-6"
+                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6"
                     >
-                        Core Values
+                        Experienced best modern <br /> core values
                     </motion.h2>
                     <motion.p 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium"
+                        className="text-slate-600 dark:text-slate-400 max-w-2xl font-medium"
                     >
                         The principles that guide every feature we build and every partnership we form.
                     </motion.p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-10">
+                <div className="grid md:grid-cols-3 gap-8">
                     {values.map((value, idx) => (
                         <motion.div 
                             key={idx}
@@ -52,23 +56,21 @@ const CoreValues: React.FC = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: idx * 0.15 }}
-                            className="bg-slate-50 dark:bg-slate-900/50 p-12 rounded-[3.5rem] border border-slate-200/50 dark:border-slate-800 hover:shadow-2xl hover:shadow-blue-600/10 transition-all duration-500 transform hover:-translate-y-4 group relative overflow-hidden"
+                            className="bg-white dark:bg-slate-900 p-10 rounded-[2rem] shadow-sm hover:shadow-xl transition-all group relative overflow-hidden flex flex-col"
                         >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
-                            
-                            <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-10 shadow-lg group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 transform group-hover:rotate-12 border border-slate-100 dark:border-slate-700">
-                                <span className="material-symbols-outlined text-4xl font-light">{value.icon}</span>
+                            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-8 shadow-sm">
+                                <span className="material-symbols-outlined text-2xl text-blue-950 font-bold">{value.icon}</span>
                             </div>
                             
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 group-hover:text-blue-500 transition-colors">
                                 {value.title}
                             </h3>
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8 flex-1">
                                 {value.description}
                             </p>
                             
-                            <div className="mt-10 flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
-                                <span>Learn our process</span>
+                            <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-sm hover:text-blue-500 transition-colors cursor-pointer w-fit">
+                                <span>Read More</span>
                                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </div>
                         </motion.div>

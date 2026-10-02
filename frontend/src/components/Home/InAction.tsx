@@ -39,7 +39,7 @@ const InAction: FC = () => {
     };
 
     return (
-        <section className="py-32 px-6 max-w-7xl mx-auto overflow-hidden">
+        <section className="py-32 px-6 max-w-[1440px] mx-auto overflow-hidden">
             <div className="text-center mb-20">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -66,7 +66,7 @@ const InAction: FC = () => {
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="relative aspect-video max-w-5xl mx-auto rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(37,99,235,0.2)] dark:shadow-[0_20px_50px_rgba(37,99,235,0.1)] border-4 border-slate-100 dark:border-slate-800 bg-slate-900"
+                className="relative aspect-video max-w-[1440px] mx-auto rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(37,99,235,0.2)] dark:shadow-[0_20px_50px_rgba(37,99,235,0.1)] border-4 border-slate-100 dark:border-slate-800 bg-slate-900"
             >
                 {playing && embedUrl ? (
                     <>

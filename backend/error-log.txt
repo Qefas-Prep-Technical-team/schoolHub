@@ -46575,4 +46575,21 @@ Unknown field `user` for include statement on model `TransactionHistory`. Availa
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at async Promise.all (index 0)
-    at listAllTransactions (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\finance\finance.controller.ts:24:35)
+    at listAllTransactions (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\finance\finance.controller.ts:24:35)PrismaClientInitializationError: 
+Invalid `prisma.subscriptionPlan.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:11:37
+
+   8  */
+   9 static async resolveAllPlans() {
+  10     const [dbPlans, settings] = await Promise.all([
+→ 11         prisma.subscriptionPlan.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at PricingService.resolveAllPlans (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:10:37)
+    at getPricingPlans (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:229:23)

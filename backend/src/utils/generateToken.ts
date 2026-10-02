@@ -5,7 +5,7 @@ export const generateToken = (payload: object) => {
   if (!secret) throw new Error("JWT_SECRET not set");
 
   const options: SignOptions = {
-    expiresIn: "30" as unknown as import("ms").StringValue, // ✅ cast to ms.StringValue
+    expiresIn: "30d",
   };
 
   return jwt.sign(payload, secret, options);

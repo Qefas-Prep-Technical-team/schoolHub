@@ -71,7 +71,7 @@ export default function CheckoutPage() {
   const isPaymentInFlight = React.useRef(false);
 
   // Pricing
-  const { data: pricingData } = useFetchPricing();
+  const { data: pricingData, isLoading: isPricingLoading } = useFetchPricing();
   let amount = 0;
   let monthlyPrice = 0;
   let yearlyPrice = 0;
@@ -313,6 +313,15 @@ export default function CheckoutPage() {
   const visibleSteps = isReturningUser ? 3 : 4;
 
   // ─── Render ──────────────────────────────────────────────────
+  if (isPricingLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+        <p className="text-white/50 text-sm font-medium animate-pulse">Loading checkout details...</p>
+      </div>
+    );
+  }
+
   if (step === "VERIFYING_PAYMENT") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
@@ -743,14 +752,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* CTA button */}
-            {step === "PAYMENT_READY" && !isDowngrade && (
-              <button onClick={handlePayment} disabled={isLoading}
-                className="w-full py-4 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-base hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-xl disabled:opacity-60">
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span>{canUseTrial ? "Start Free Trial" : `Pay ₦${checkoutAmount.toLocaleString()}`}</span><ArrowRight className="w-5 h-5" /></>}
-              </button>
-            )}
-
             {/* Payment icons */}
             <div className="flex items-center justify-center gap-3 mt-5">
               {["Visa", "Mastercard", "Verve"].map((b) => (
@@ -767,7 +768,7 @@ export default function CheckoutPage() {
 
           {/* Help card */}
           <div className="bg-white/5 rounded-2xl p-4 text-center">
-            <p className="text-white/40 text-sm">Need help? <Link href="/support" className="text-indigo-400 hover:text-indigo-300 font-semibold">Contact support →</Link></p>
+            <p className="text-white/40 text-sm">Need help? <Link href="/contact" className="text-indigo-400 hover:text-indigo-300 font-semibold">Contact support →</Link></p>
           </div>
         </div>
       </div>

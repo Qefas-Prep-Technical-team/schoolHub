@@ -16,7 +16,7 @@ const Footer: FC = () => {
             const host = window.location.hostname;
             let hasSub = false;
             
-            const rootDomains = ["schoolhub.flexitistudio.com", "qefashub.com", "localhost", "127.0.0.1"];
+            const rootDomains = ["schoolhub.flexitistudio.com", "qefashub.com", "staging.qefashub.com", "localhost", "127.0.0.1"];
             const isRoot = rootDomains.some(domain => 
                 host === domain || host === `www.${domain}`
             );

@@ -1472,7 +1472,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 //       secure: process.env.NODE_ENV === "production",
 //       sameSite: "strict",
 //       path: "/",
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
+//       maxAge: 30 * 24 * 60 * 60 * 1000,
 //     });
 
 //     return res.status(200).json({
@@ -1667,7 +1667,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 //       secure: process.env.NODE_ENV === "production",
 //       sameSite: "strict",
 //       path: "/",
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
+//       maxAge: 30 * 24 * 60 * 60 * 1000,
 //     });
 
 //     return res.status(200).json({
@@ -2021,7 +2021,7 @@ export const login = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     // Give them a persistent device token
@@ -2826,7 +2826,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     const newAccessToken = generateAccessToken(
@@ -3493,7 +3493,7 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     // Send confirmation email
@@ -4283,7 +4283,7 @@ export const login2FA = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     // ===== Build response data =====

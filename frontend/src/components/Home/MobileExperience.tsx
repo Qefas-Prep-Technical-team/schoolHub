@@ -11,7 +11,7 @@ import { Bolt, WifiOff, Bell } from 'lucide-react';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DeviceMockup = () => (
-  <div className="relative w-full max-w-[280px] mx-auto">
+  <div className="relative w-full max-w-[280px] mx-auto scale-[1.15] md:scale-[1.3] origin-center my-8 md:my-12">
     {/* Blue glow */}
     <div className="absolute inset-0 bg-blue-200/40 rounded-[3rem] blur-3xl scale-90 -z-10" />
 

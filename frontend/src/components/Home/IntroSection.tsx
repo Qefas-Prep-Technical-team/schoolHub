@@ -14,7 +14,7 @@ import { CheckCircle, PlayCircle, Star, BarChart2, Bell, CalendarCheck, Clipboar
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DashboardMockup: FC = () => (
-  <div className="relative w-full max-w-lg mx-auto">
+  <div className="relative w-full max-w-lg mx-auto scale-[0.85] sm:scale-100 md:scale-[1.3] origin-center my-8 lg:my-0">
     {/* Floating glow behind tablet */}
     <div className="absolute inset-0 bg-blue-200/40 rounded-[2.5rem] blur-3xl -z-10 scale-95" />
 
@@ -131,7 +131,7 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[1.06] text-white mb-6"
+              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-[1.06] text-white mb-6"
               style={{ letterSpacing: '-0.02em' }}
             >
               Education management,{' '}

@@ -1,77 +1,119 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const OurStory: React.FC = () => {
     return (
-        <section className="py-24 bg-slate-100/50 dark:bg-slate-900/30 overflow-hidden font-['Lexend']">
-            <div className="max-w-7xl mx-auto px-8">
-                <div className="grid lg:grid-cols-2 gap-20 items-center">
-                    <motion.div 
-                        initial={{ opacity: 0, x: -50 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="order-2 lg:order-1 relative group"
-                    >
-                        <div className="absolute -inset-8 bg-blue-600/5 rounded-[4rem] group-hover:scale-105 transition-transform duration-700"></div>
-                        <div className="relative rounded-[3rem] overflow-hidden shadow-2xl border border-white dark:border-slate-800">
-                            <img 
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFpehStNLL0Nnl7rXBeQBY5ONL0mZOfhcVCCe9lUyqXNg5TW-AwyjeVVYOnTfO7OpFLH7cEEWc3rxke-V0_itfWFAzEJ797cEXLS-IMv-oVMxTqC2KII7hB_Ine_3Z3Ed39ku_89tF5l5PLNReQpv7i7svtgZh--K6pkuH9QJgJZKJQrhsacSXL9iJtGHG_Rz3Qsz_GiCn4H1_j5LJNKfJDF4PL0M448E2AoRP0DsDd55QYwEknKvrwHi8mzUSZFKdYT5n9gqGvQM" 
-                                alt="Team meeting" 
-                                className="w-full h-[650px] object-cover hover:scale-110 transition-transform duration-[2s]"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
-                        </div>
-                    </motion.div>
-
-                    <div className="order-1 lg:order-2">
-                        <motion.span 
-                            initial={{ opacity: 0, y: 10 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-blue-600 dark:text-blue-400 font-black uppercase tracking-[0.2em] text-xs mb-4 block"
-                        >
-                            Since 2012
-                        </motion.span>
-                        <motion.h2 
+        <section className="py-24 bg-white dark:bg-slate-950 overflow-hidden font-['Lexend']">
+            <div className="max-w-[1440px] mx-auto px-6">
+                <div className="grid lg:grid-cols-2 gap-16 items-center">
+                    
+                    {/* Left: Bento Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-8 leading-tight"
+                            className="col-span-2 rounded-[2rem] overflow-hidden h-[300px]"
                         >
-                            Our Story & <br />
-                            <span className="text-blue-600">Commitment</span>
-                        </motion.h2>
+                            <img 
+                                src="/about/classrooom 2.jpeg" 
+                                alt="Teachers meeting" 
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                            />
+                        </motion.div>
+                        
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: 0.1 }}
-                            className="space-y-6 text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed"
+                            className="bg-blue-500 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center h-[240px]"
                         >
-                            <p>Qefas Hub began in a small university lab with a simple observation: administrators were spending 40% of their time on repetitive manual data entry instead of supporting students.</p>
-                            <p>We started with a single module for grade tracking. Ten years later, we have evolved into a comprehensive platform that manages everything from enrollment and curriculum planning to parent-teacher communication and financial reporting.</p>
-                            <p>Our commitment remains unchanged: to provide the most reliable, innovative, and user-centric management tools in the education sector. We believe that when administration is easy, excellence is inevitable.</p>
+                            <div className="w-10 h-10 bg-blue-950 rounded-full flex items-center justify-center mb-4">
+                                <span className="material-symbols-outlined text-blue-500 text-sm">check</span>
+                            </div>
+                            <h3 className="text-4xl font-bold text-blue-950 mb-2">5K+</h3>
+                            <p className="text-blue-950/80 text-sm font-semibold max-w-[120px]">Active Schools Enrolled</p>
                         </motion.div>
 
-                        <div className="mt-12 grid grid-cols-2 gap-12 border-t border-slate-200 dark:border-slate-800 pt-12">
-                            {[
-                                { value: "12+", label: "Years of Innovation" },
-                                { value: "99.9%", label: "Uptime Reliability" }
-                            ].map((stat, i) => (
-                                <motion.div 
-                                    key={i}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: 0.3 + i * 0.1 }}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="rounded-[2rem] overflow-hidden h-[240px]"
+                        >
+                            <img 
+                                src="/about/about user 1.jpeg" 
+                                alt="Students" 
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                            />
+                        </motion.div>
+                    </div>
+
+                    {/* Right: Text and Content */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="material-symbols-outlined text-sm">star</span>
+                            <span className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Who We are?</span>
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-[1.1]">
+                            Comprehensive solution for educational excellence
+                        </h2>
+                        <p className="text-slate-600 dark:text-slate-400 mb-10 text-base font-medium leading-relaxed">
+                            Discover innovative management strategies that help schools improve operations, increase profitability, and achieve long-term growth in a competitive academic landscape all over the world.
+                        </p>
+                        
+                        <div className="flex flex-wrap items-center gap-6 mb-12">
+                            <Link href="/about/story">
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="border-2 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white pl-6 pr-2 py-2 rounded-full font-bold transition-all flex items-center gap-4 group"
                                 >
-                                    <p className="text-4xl md:text-5xl font-black text-blue-600 dark:text-blue-400 mb-2">{stat.value}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{stat.label}</p>
-                                </motion.div>
-                            ))}
+                                    More About Us
+                                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-blue-950 group-hover:rotate-45 transition-transform">
+                                        <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                                    </div>
+                                </motion.button>
+                            </Link>
+                            
+                            <div className="flex items-center gap-3">
+                                <img src="/about/about user 2.jpeg" alt="CEO" className="w-12 h-12 rounded-full object-cover" />
+                                <div>
+                                    <p className="text-slate-900 dark:text-white font-bold">Idris O. Sadiq</p>
+                                    <p className="text-slate-500 text-xs font-semibold">CEO at Qefas</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-[#FDFBF7] dark:bg-slate-900 rounded-[1.5rem] p-6">
+                                <div className="flex text-yellow-400 text-sm mb-2">
+                                    {[1,2,3,4,5].map(i => <span key={i}>★</span>)}
+                                </div>
+                                <div className="flex items-end gap-1 mb-2">
+                                    <h4 className="text-4xl font-bold text-slate-900 dark:text-white leading-none">4.9</h4>
+                                    <span className="text-sm text-slate-500 font-bold">/5.0</span>
+                                </div>
+                                <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Avg. clients ratings</p>
+                            </div>
+                            
+                            <div className="bg-[#FDFBF7] dark:bg-slate-900 rounded-[1.5rem] p-6">
+                                <p className="text-sm font-bold text-slate-900 dark:text-white mb-4">Premium features</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {["ADVISING", "GRADING", "TIMETABLES", "PAYMENTS"].map((skill, i) => (
+                                        <span key={i} className="text-[10px] font-bold text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded">
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </section>

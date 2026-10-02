@@ -14,7 +14,7 @@ const FinalCTA = () => {
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="max-w-6xl mx-auto rounded-3xl md:rounded-[3.5rem] bg-[#020617] text-white p-8 md:p-24 relative overflow-hidden text-center border border-white/10 transition-colors duration-500"
+                className="max-w-[1440px] mx-auto rounded-3xl md:rounded-[3.5rem] bg-[#020617] text-white p-8 md:p-24 relative overflow-hidden text-center border border-white/10 transition-colors duration-500"
             >
                 {/* Vibrant Background Gradients */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-slate-950 to-indigo-900/40 z-0 transition-colors duration-500" />

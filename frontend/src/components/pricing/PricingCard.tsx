@@ -10,7 +10,7 @@ const PricingCard: FC = () => {
     const { billingType, setBillingType } = useBillingStore();
 
     return (
-        <Box className="container mx-auto md:p-6 pb-24 relative z-20">
+        <Box className="container mx-auto px-4 sm:px-6 md:p-6 pb-24 relative z-20">
             {/* Billing Toggle - Modernized */}
 
             {/* Billing Toggle */}

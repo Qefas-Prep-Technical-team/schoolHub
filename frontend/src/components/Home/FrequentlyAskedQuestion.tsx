@@ -13,7 +13,7 @@ const FrequentlyAskedQuestion: FC = () => {
     const { data } = useFetchFrequentlyAsked();
 
     return (
-        <section className="py-24 px-6 max-w-4xl mx-auto">
+        <section className="py-24 px-6 max-w-[1152px] mx-auto">
             <div className="text-center mb-16">
                 <motion.h2 
                     initial={{ opacity: 0, y: 20 }}

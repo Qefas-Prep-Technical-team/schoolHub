@@ -20,7 +20,7 @@ const FrequentlyAskedQuestions: FC = () => {
                 <div className="absolute bottom-[20%] right-[5%] w-[30%] h-[30%] bg-indigo-600/5 rounded-full blur-[100px]" />
             </div>
 
-            <Box className="max-w-4xl mx-auto w-full">
+            <Box className="max-w-[1152px] mx-auto w-full">
                 <div className="text-center mb-16 space-y-4">
                     <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                         Common Questions
@@ -76,10 +76,9 @@ const FrequentlyAskedQuestions: FC = () => {
                 </div>
             </Box>
 
-            {/* CTA Section */}
             <motion.div 
                 whileHover={{ y: -5 }}
-                className="mt-40 max-w-5xl mx-auto p-12 rounded-[3.5rem] bg-slate-900 dark:bg-blue-600 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 group"
+                className="mt-40 max-w-[1152px] mx-auto p-8 md:p-12 rounded-[2rem] md:rounded-[3.5rem] bg-slate-900 dark:bg-blue-600 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 group"
             >
                 {/* Background Pattern */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)] pointer-events-none" />

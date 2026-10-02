@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+    <html lang="en" suppressHydrationWarning className="scroll-smooth" data-scroll-behavior="smooth">
       <head>
         {/* <!-- Primary Meta Tags --> */}
         {/* <link rel="icon" href="/favicon.ico" /> */}
@@ -79,6 +79,7 @@ export default function RootLayout({
       <body
         className={`
           ${lexend.variable}
+          font-sans
           antialiased
           text-[14.5px]
           `}
