@@ -1147,7 +1147,14 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
                 const geoip = require('geoip-lite');
                 const geo = geoip.lookup(ipAddress);
                 if (geo) {
-                    location = `${geo.city || 'Unknown City'}, ${geo.country || 'Unknown Country'}`;
+                    const cityPart = geo.city || geo.region;
+                    if (cityPart && geo.country) {
+                        location = `${cityPart}, ${geo.country}`;
+                    } else if (geo.country) {
+                        location = geo.country;
+                    } else if (cityPart) {
+                        location = cityPart;
+                    }
                 }
             } catch (e) {
                 console.error("GeoIP lookup failed", e);
@@ -2670,7 +2677,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
               "Your email has been verified. You are currently pending approval from your school owner.",
           }).catch(console.error);
         } else {
-          sendEmailVerifiedEmail(user.email).catch(console.error);
+          // Device verification for existing user: do not send email verified email.
+          // The /login route will handle sending the New Device alert.
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2729,7 +2737,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
               "Welcome to Qefas Hub! Your teacher account is verified and ready.",
           }).catch(console.error);
         } else {
-          sendEmailVerifiedEmail(user.email).catch(console.error);
+          // Device verification for existing user
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2776,7 +2784,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
               "Welcome to Qefas Hub! Your student account is verified and ready to go.",
           }).catch(console.error);
         } else {
-          sendEmailVerifiedEmail(user.email).catch(console.error);
+          // Device verification for existing user
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2823,7 +2831,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
               "Welcome to Qefas Hub! Your parent account is now verified.",
           }).catch(console.error);
         } else {
-          sendEmailVerifiedEmail(user.email).catch(console.error);
+          // Device verification for existing user
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -3847,7 +3855,14 @@ export const getUserSessions = async (req: Request, res: Response) => {
           try {
               const geo = geoip.lookup(session.ipAddress);
               if (geo) {
-                  location = `${geo.city || 'Unknown City'}, ${geo.country || 'Unknown Country'}`;
+                  const cityPart = geo.city || geo.region;
+                  if (cityPart && geo.country) {
+                      location = `${cityPart}, ${geo.country}`;
+                  } else if (geo.country) {
+                      location = geo.country;
+                  } else if (cityPart) {
+                      location = cityPart;
+                  }
               }
           } catch (e) {
               console.error("GeoIP lookup failed", e);
