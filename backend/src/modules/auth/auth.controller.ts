@@ -13,6 +13,8 @@ import {
   sendWelcomeEmail,
   googleAuthService,
   send2FADisabledEmail,
+  sendNewDeviceLoginEmail,
+  sendEmailVerifiedEmail,
 } from "./auth.service";
 import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
@@ -1108,13 +1110,66 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       });
     }
 
-    const emailType = userExists ? "confirmation" : "welcome";
+    const isDeviceVerification = req.body.isDeviceVerification === true;
+    let emailType: "welcome" | "confirmation" | "device-verification" = userExists ? "confirmation" : "welcome";
+    let deviceInfo: any = undefined;
+
+    if (isDeviceVerification && userExists) {
+        emailType = "device-verification";
+        
+        const userAgent = req.headers["user-agent"] || "";
+        const UAParserClass = UAParser as any;
+        const parser = new UAParserClass(userAgent);
+        const result = parser.getResult();
+        
+        let deviceModel = (req.headers["x-device-model"] as string);
+        if (!deviceModel) {
+            if (result.device.model) {
+                deviceModel = result.device.model;
+            } else if (result.os.name === 'iOS') {
+                deviceModel = 'iPhone';
+            } else if (result.os.name === 'Android') {
+                deviceModel = 'Android Device';
+            } else if (result.os.name === 'Windows') {
+                deviceModel = 'Windows PC';
+            } else if (result.os.name === 'Mac OS') {
+                deviceModel = 'Mac';
+            } else {
+                deviceModel = result.browser.name || "Unknown Device";
+            }
+        }
+        
+        const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim() || "Unknown IP";
+        
+        let location = "Unknown Location";
+        if (ipAddress !== "Unknown IP") {
+            try {
+                const geoip = require('geoip-lite');
+                const geo = geoip.lookup(ipAddress);
+                if (geo) {
+                    location = `${geo.city || 'Unknown City'}, ${geo.country || 'Unknown Country'}`;
+                }
+            } catch (e) {
+                console.error("GeoIP lookup failed", e);
+            }
+        }
+        
+        deviceInfo = {
+            deviceModel,
+            location,
+            time: new Date().toLocaleString()
+        };
+    }
 
     // Send email via Resend
-    const result = await sendVerificationEmail(mainEmail, code, emailType);
+    const result = await sendVerificationEmail(mainEmail, code, emailType, deviceInfo);
     if (result.error) {
       // This will print the specific reason (e.g., "Missing required field", "Unauthorized")
       console.log("RESEND ERROR:", result.error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send verification email. Please try again later.",
+      });
     } else {
       console.log("RESEND SUCCESS:", result.data);
     }
@@ -1916,16 +1971,29 @@ export const login = async (req: Request, res: Response) => {
     const parser = new UAParserClass(userAgent);
     const result = parser.getResult();
 
+    let finalDeviceModel = (req.headers["x-device-model"] as string);
+    if (!finalDeviceModel) {
+        if (result.device.model) {
+            finalDeviceModel = result.device.model;
+        } else if (result.os.name === 'iOS') {
+            finalDeviceModel = 'iPhone';
+        } else if (result.os.name === 'Android') {
+            finalDeviceModel = 'Android Device';
+        } else if (result.os.name === 'Windows') {
+            finalDeviceModel = 'Windows PC';
+        } else if (result.os.name === 'Mac OS') {
+            finalDeviceModel = 'Mac';
+        } else {
+            finalDeviceModel = result.browser.name || "Unknown Device";
+        }
+    }
+
     const deviceInfo = {
       deviceType:
         (req.headers["x-device-type"] as string) ||
         result.device.type ||
         "desktop",
-      deviceModel:
-        (req.headers["x-device-model"] as string) ||
-        result.device.model ||
-        result.browser.name ||
-        "Unknown Browser",
+      deviceModel: finalDeviceModel,
       osVersion:
         (req.headers["x-os-version"] as string) ||
         (result.os.name
@@ -1992,13 +2060,21 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (existingDeviceCount === 0) {
-      await createNotification({
-        recipientType: actualRole as any,
-        recipientId: user.id,
-        type: "GENERAL",
-        title: "New Device Login Detected",
-        message: `We detected a new login to your account from a ${deviceInfo.deviceModel} on ${deviceInfo.osVersion}. If this wasn't you, please secure your account immediately by changing your password.`,
+      // Only alert if the user has logged in before (skip the very first login)
+      const totalPriorSessions = await prisma.refreshToken.count({
+        where: { userId: user.id },
       });
+
+      if (totalPriorSessions > 0) {
+        await createNotification({
+          recipientType: actualRole as any,
+          recipientId: user.id,
+          type: "GENERAL",
+          title: "New Device Login Detected",
+          message: `We detected a new login to your account from a ${deviceInfo.deviceModel} on ${deviceInfo.osVersion}. If this wasn't you, please secure your account immediately by changing your password.`,
+        });
+        sendNewDeviceLoginEmail(user.email, deviceInfo).catch(console.error);
+      }
     }
 
     const refreshToken = await generateRefreshToken(
@@ -2593,6 +2669,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
             message:
               "Your email has been verified. You are currently pending approval from your school owner.",
           }).catch(console.error);
+        } else {
+          sendEmailVerifiedEmail(user.email).catch(console.error);
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2650,6 +2728,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
             message:
               "Welcome to Qefas Hub! Your teacher account is verified and ready.",
           }).catch(console.error);
+        } else {
+          sendEmailVerifiedEmail(user.email).catch(console.error);
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2695,6 +2775,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
             message:
               "Welcome to Qefas Hub! Your student account is verified and ready to go.",
           }).catch(console.error);
+        } else {
+          sendEmailVerifiedEmail(user.email).catch(console.error);
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2740,6 +2822,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
             message:
               "Welcome to Qefas Hub! Your parent account is now verified.",
           }).catch(console.error);
+        } else {
+          sendEmailVerifiedEmail(user.email).catch(console.error);
         }
 
         setDeviceVerifiedCookie(user.id);
@@ -2954,6 +3038,10 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
           result.error,
         );
       }
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send reset email. Please try again later.",
+      });
     } else {
       console.log("RESEND PASSWORD RESET SUCCESS:", result.data);
     }
@@ -3752,10 +3840,25 @@ export const getUserSessions = async (req: Request, res: Response) => {
         })
       : null;
 
-    const data = sessions.map((session) => ({
-      ...session,
-      isCurrentDevice: currentSession?.id === session.id,
-    }));
+    const geoip = require('geoip-lite');
+    const data = sessions.map((session) => {
+      let location = "Unknown Location";
+      if (session.ipAddress && session.ipAddress !== "Unknown IP") {
+          try {
+              const geo = geoip.lookup(session.ipAddress);
+              if (geo) {
+                  location = `${geo.city || 'Unknown City'}, ${geo.country || 'Unknown Country'}`;
+              }
+          } catch (e) {
+              console.error("GeoIP lookup failed", e);
+          }
+      }
+      return {
+        ...session,
+        location,
+        isCurrentDevice: currentSession?.id === session.id,
+      };
+    });
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {

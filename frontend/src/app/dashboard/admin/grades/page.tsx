@@ -169,8 +169,8 @@ export default function AdminGradesDashboard() {
   }, [standaloneGrades]);
 
   return (
-    <div className="min-h-screen bg-transparent pb-20 font-sans">
-      <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 pb-20 font-sans">
+      <div className="w-[95%] max-w-[1600px] mx-auto space-y-6">
         
         {/* Header */}
         <header className="pb-4">
@@ -203,16 +203,16 @@ export default function AdminGradesDashboard() {
         </header>
 
         {/* Overview Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {/* Card 1: Total Exams */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-blue-500 p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-lg">Total Exams</span>
+                <div className="bg-blue-500 p-3 sm:p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-sm sm:text-lg">Total Exams</span>
                     <Trophy size={18} className="opacity-80" />
                 </div>
-                <div className="p-6 flex items-center justify-between">
+                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
                     <div className="space-y-1">
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                             {isLoadingExams ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
@@ -232,13 +232,13 @@ export default function AdminGradesDashboard() {
 
             {/* Card 2: Subject Papers */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-purple-500 p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-lg">Subject Papers</span>
+                <div className="bg-purple-500 p-3 sm:p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-sm sm:text-lg">Subject Papers</span>
                     <Layers size={18} className="opacity-80" />
                 </div>
-                <div className="p-6 flex items-center justify-between">
+                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
                     <div className="space-y-1">
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                             {isLoadingPapers ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
@@ -255,13 +255,13 @@ export default function AdminGradesDashboard() {
 
             {/* Card 3: Graded Students */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-rose-500 p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-lg">Students Graded</span>
+                <div className="bg-rose-500 p-3 sm:p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-sm sm:text-lg">Students Graded</span>
                     <Users size={18} className="opacity-80" />
                 </div>
-                <div className="p-6 flex items-center justify-between">
+                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
                     <div className="space-y-1">
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                             {isLoadingExams ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
@@ -281,13 +281,13 @@ export default function AdminGradesDashboard() {
 
             {/* Card 4: Average Score */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-emerald-500 p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-lg">Average Score</span>
+                <div className="bg-emerald-500 p-3 sm:p-4 flex justify-between items-center text-white">
+                    <span className="font-semibold text-sm sm:text-lg">Average Score</span>
                     <Award size={18} className="opacity-80" />
                 </div>
-                <div className="p-6 flex items-center justify-between">
+                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
                     <div className="space-y-1">
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
                             {isLoadingExams ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
@@ -415,14 +415,14 @@ export default function AdminGradesDashboard() {
                   </div>
                 </div>
                 {selectedExamId && (
-                   <Button variant="ghost" onClick={handleBackToExams} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                   <Button variant="ghost" onClick={handleBackToExams} className="h-10 px-4 sm:h-14 sm:px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                       <ArrowLeft size={16} strokeWidth={3} />
                       All Exams
                    </Button>
                 )}
               </div>
               
-              <div className="bg-white dark:bg-slate-900/50 rounded-[2rem] lg:rounded-[4rem] border border-slate-100 dark:border-white/5 p-4 lg:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none min-h-[400px] lg:min-h-[600px] overflow-hidden relative">
+              <div className="bg-white dark:bg-slate-900/50 rounded-2xl lg:rounded-[4rem] border border-slate-100 dark:border-white/5 p-3 sm:p-6 lg:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none min-h-[400px] lg:min-h-[600px] overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: primaryColor, opacity: 0.2 }} />
                 <ExamGradesFlow 
                   exams={exams || []} 
@@ -566,6 +566,13 @@ function ExamGradesFlow({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Default to grid on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
 
   // New Filters State
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -1606,6 +1613,13 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Default to grid on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
 
   // New Filters State
   const [selectedSubject, setSelectedSubject] = useState<string>('all');

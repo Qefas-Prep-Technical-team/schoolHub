@@ -66,7 +66,7 @@ import { useSchoolProfile } from "@/lib/api/hooks/useSchool"
 
 
 // Define the menu item type
-interface AdminMenuItem {
+export interface AdminMenuItem {
     icon: LucideIcon;
     label: string;
     href: string;

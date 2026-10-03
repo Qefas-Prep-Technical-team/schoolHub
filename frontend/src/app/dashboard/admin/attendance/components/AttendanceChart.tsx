@@ -61,7 +61,7 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto mt-4 sm:mt-0">
                     <button
                         onClick={() => setActiveLine('students')}
                         className={cn(
@@ -92,7 +92,7 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                 </div>
             </div>
 
-            <div className="flex-1 min-h-[350px] w-full">
+            <div className="flex-1 min-h-[300px] sm:min-h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data}>
                         <defs>
@@ -171,7 +171,7 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                         </p>
                     </div>
                 </div>
-                <button className="h-12 px-8 rounded-2xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 whitespace-nowrap">
+                <button className="w-full sm:w-auto h-12 px-8 rounded-[1.5rem] bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 whitespace-nowrap mt-4 sm:mt-0">
                     Download Raw Data
                 </button>
             </div>

@@ -177,6 +177,32 @@ export class PaystackAdapter implements PaymentGateway {
       };
     }
 
+    if (eventType === 'charge.failed' || eventType === 'charge.declined') {
+      const meta = data['metadata'] as Record<string, unknown> | undefined;
+      const customFields = (meta?.['custom_fields'] ?? []) as Array<{
+        variable_name: string;
+        value: string;
+      }>;
+      const customer = data['customer'] as Record<string, string> | undefined;
+
+      return {
+        valid: true,
+        event: 'charge.failed',
+        data: {
+          reference: data['reference'] as string,
+          gatewayRef: data['reference'] as string,
+          amountNaira: ((data['amount'] as number) ?? 0) / 100,
+          channel: data['channel'] as string,
+          email: customer?.['email'],
+          gateway_response: data['gateway_response'] as string,
+          message: data['message'] as string,
+          meta: Object.fromEntries(
+            customFields.map((f) => [f.variable_name, f.value])
+          ),
+        },
+      };
+    }
+
     if (eventType === 'subaccount.update') {
       return {
         valid: true,

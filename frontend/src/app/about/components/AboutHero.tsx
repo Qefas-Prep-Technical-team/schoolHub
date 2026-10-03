@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const AboutHero: React.FC = () => {
     return (
-        <section className="relative overflow-hidden pt-32 pb-24 lg:pt-40 lg:pb-32 bg-blue-950 dark:bg-slate-950 font-['Lexend']">
+        <section className="relative overflow-hidden min-h-screen flex items-center pt-32 pb-24 lg:pt-40 lg:pb-32 bg-blue-950 dark:bg-slate-950 font-['Lexend']">
             <div className="max-w-[1440px] mx-auto px-6 relative z-10">
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
                     <motion.div
@@ -25,7 +25,7 @@ const AboutHero: React.FC = () => {
                             <span className="text-white/80 text-sm font-semibold tracking-wide">4.9 • 5K+ Reviews</span>
                         </motion.div>
                         
-                        <h1 className="text-[42px] sm:text-[56px] md:text-[72px] lg:text-[84px] font-bold mb-6 leading-[1.05] text-white tracking-tight uppercase">
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.05] text-white tracking-tight uppercase">
                             NEXT — GEN TOP NOTCH <span className="text-blue-500">SCHOOL</span> SOLUTION
                         </h1>
                         

@@ -187,7 +187,7 @@ function LinkingHub() {
   const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
 
   return (
-    <div className="p-8 w-[90%] max-w-[90%] mx-auto space-y-8 min-h-[calc(100vh-4rem)]">
+    <div className="p-2 md:p-6 lg:p-8 w-full md:w-[95%] lg:w-[90%] max-w-full lg:max-w-[90%] mx-auto space-y-6 md:space-y-8 min-h-[calc(100vh-4rem)]">
       <LinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)} 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
@@ -280,13 +280,16 @@ function LinkingHub() {
         )}
 
         {pagination && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={pagination.totalPages}
-            totalItems={pagination.total}
-            itemsPerPage={pagination.limit}
-            onPageChange={setCurrentPage}
-          />
+          <div className="px-2 pb-4 md:px-4 md:pb-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              onPageChange={setCurrentPage}
+              theme="blue"
+            />
+          </div>
         )}
       </div>
 

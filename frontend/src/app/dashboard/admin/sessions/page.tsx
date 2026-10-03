@@ -100,8 +100,8 @@ export default function SessionsPage() {
     return (
       <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-6 md:p-10 space-y-8">
         <Skeleton className="h-10 w-64 rounded-xl" />
-        <Skeleton className="h-32 w-full rounded-2xl w-[90%] max-w-[90%] mx-auto" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-[90%] max-w-[90%] mx-auto">
+        <Skeleton className="h-32 w-full rounded-2xl lg:w-[90%] lg:max-w-[90%] mx-auto" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full lg:w-[90%] max-w-full lg:max-w-[90%] mx-auto">
           <Skeleton className="col-span-4 h-[500px] rounded-2xl" />
           <Skeleton className="col-span-8 h-[500px] rounded-2xl" />
         </div>
@@ -113,7 +113,7 @@ export default function SessionsPage() {
     <div className="min-h-screen bg-transparent pb-20 font-sans">
       {/* Page Header */}
       <header className="pb-8 bg-transparent">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-[90%] max-w-[90%] mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full lg:w-[90%] max-w-full lg:max-w-[90%] mx-auto px-4 md:px-0">
           <div className="space-y-1.5">
             <div className="flex items-center text-xs text-slate-500 font-medium">
               <span>Admin</span>
@@ -148,7 +148,7 @@ export default function SessionsPage() {
         </div>
       </header>
 
-      <main className="p-6 md:p-10 w-[90%] max-w-[90%] mx-auto space-y-8">
+      <main className="p-4 md:p-10 w-full lg:w-[90%] max-w-full lg:max-w-[90%] mx-auto space-y-8">
         
         {/* Active Session Overview Banner */}
         {activeSession && (

@@ -15,9 +15,10 @@ interface InvitationsTableProps {
   searchTerm: string;
   page: number;
   onPageChange: (page: number) => void;
+  viewMode?: 'list' | 'grid';
 }
 
-export default function InvitationsTable({ searchTerm, page, onPageChange }: InvitationsTableProps) {
+export default function InvitationsTable({ searchTerm, page, onPageChange, viewMode = 'list' }: InvitationsTableProps) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId;
   const { data: settings } = useSchoolSettings(schoolId!);
@@ -62,73 +63,124 @@ export default function InvitationsTable({ searchTerm, page, onPageChange }: Inv
 
   return (
     <div className="w-full">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-800">
-              <th className="p-5 w-16 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
-              <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Name</th>
-              <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">System Email</th>
-              <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Class</th>
-              <th className="p-5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {students.map((student: any, index: number) => {
-              const studentClass = student.classes?.[0]?.class;
-              
-              return (
-                <tr
-                  key={student.id}
-                  className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                >
-                  <td className="p-5 text-center text-sm font-semibold text-slate-400">
-                    {(page - 1) * 10 + index + 1}
-                  </td>
-                  <td className="p-5">
-                    <div className="flex items-center gap-4">
-                      <div className="size-10 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                         <User size={20} />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[200px]">{student.name}</p>
-                        <p className="text-xs font-medium text-slate-500 mt-0.5">{student.studentCode || 'UNASSIGNED'}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-5">
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                      <Mail size={16} className="text-slate-400" />
-                      {student.email}
-                    </div>
-                  </td>
-                  <td className="p-5">
-                    <div className="flex flex-col gap-1">
-                      {studentClass ? (
-                        <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                          <BookOpen size={16} />
-                          {studentClass.name} {studentClass.section}
+      {viewMode === 'list' ? (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800">
+                <th className="p-5 w-16 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
+                <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Name</th>
+                <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">System Email</th>
+                <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Class</th>
+                <th className="p-5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {students.map((student: any, index: number) => {
+                const studentClass = student.classes?.[0]?.class;
+                
+                return (
+                  <tr
+                    key={student.id}
+                    className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <td className="p-5 text-center text-sm font-semibold text-slate-400">
+                      {(page - 1) * 10 + index + 1}
+                    </td>
+                    <td className="p-5">
+                      <div className="flex items-center gap-4">
+                        <div className="size-10 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                           <User size={20} />
                         </div>
-                      ) : (
-                        <span className="text-sm font-medium text-slate-400 italic">No Class</span>
-                      )}
+                        <div>
+                          <p className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[200px]">{student.name}</p>
+                          <p className="text-xs font-medium text-slate-500 mt-0.5">{student.studentCode || 'UNASSIGNED'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-5">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                        <Mail size={16} className="text-slate-400" />
+                        {student.email}
+                      </div>
+                    </td>
+                    <td className="p-5">
+                      <div className="flex flex-col gap-1">
+                        {studentClass ? (
+                          <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                            <BookOpen size={16} />
+                            {studentClass.name} {studentClass.section}
+                          </div>
+                        ) : (
+                          <span className="text-sm font-medium text-slate-400 italic">No Class</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-5 text-right">
+                      <Button 
+                        onClick={() => handleOpenInviteDialog(student)}
+                        style={{ backgroundColor: primaryColor }}
+                        className="h-9 px-5 rounded-xl text-white font-semibold text-xs hover:opacity-90 transition-opacity border-none shadow-sm flex items-center whitespace-nowrap shrink-0"
+                      >
+                        <Send size={14} className="mr-2" /> Invite
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 bg-slate-50/50 dark:bg-slate-900/30">
+          {students.map((student: any, index: number) => {
+            const studentClass = student.classes?.[0]?.class;
+            return (
+              <div key={student.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-bl-xl text-xs font-bold text-slate-400">
+                  #{(page - 1) * 10 + index + 1}
+                </div>
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="size-12 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 text-slate-500 flex items-center justify-center shrink-0">
+                    <User size={24} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{student.name}</p>
+                    <p className="text-xs font-medium text-slate-500 truncate">{student.studentCode || 'UNASSIGNED'}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                    <Mail size={14} className="text-slate-400 shrink-0" />
+                    <span className="truncate">{student.email}</span>
+                  </div>
+                  {studentClass ? (
+                    <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      <BookOpen size={14} className="shrink-0" />
+                      <span className="truncate">{studentClass.name} {studentClass.section}</span>
                     </div>
-                  </td>
-                  <td className="p-5 text-right">
-                    <Button 
-                      onClick={() => handleOpenInviteDialog(student)}
-                      style={{ backgroundColor: primaryColor }}
-                      className="h-9 px-5 rounded-xl text-white font-semibold text-xs hover:opacity-90 transition-opacity border-none shadow-sm flex items-center whitespace-nowrap shrink-0"
-                    >
-                      <Send size={14} className="mr-2" /> Invite
-                    </Button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  ) : (
+                    <span className="text-xs font-medium text-slate-400 italic flex items-center gap-2">
+                      <BookOpen size={14} className="shrink-0" /> No Class
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-auto pt-4">
+                  <Button 
+                    onClick={() => handleOpenInviteDialog(student)}
+                    style={{ backgroundColor: primaryColor }}
+                    className="w-full h-9 rounded-xl text-white font-semibold text-xs hover:opacity-90 transition-opacity border-none shadow-sm flex items-center justify-center shrink-0"
+                  >
+                    <Send size={14} className="mr-2" /> Invite
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {students.length === 0 && (
         <div className="p-16 text-center space-y-4">

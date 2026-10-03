@@ -305,6 +305,16 @@ export default function StudentsPage() {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Student Overview</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage and monitor students</p>
           </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+            <Button
+              onClick={() => setOpen(true)}
+              className="h-9 px-4 rounded-lg text-sm font-semibold text-white gap-2 shadow-sm w-full sm:w-auto"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <UserPlus size={14} />
+              Add Student
+            </Button>
+          </div>
         </div>
 
         {/* Stat Cards */}
@@ -330,10 +340,10 @@ export default function StudentsPage() {
         </div>
 
         {/* Filter Bar */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm">
-          <div className="flex flex-wrap items-center gap-2 p-3">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm p-3">
+          <div className="flex flex-col md:flex-row gap-3">
             {/* Search */}
-            <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <div className="relative w-full md:max-w-xs shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
               <input
                 type="text"
@@ -344,102 +354,98 @@ export default function StudentsPage() {
               />
             </div>
 
-            {/* Class filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
-                    filters.classId ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
-                  )}
-                >
-                  {filters.classId ? classFilters.find((c) => c.id === filters.classId)?.name || "Class" : "Class"}
-                  <ChevronDown size={13} />
+            {/* Filters Row */}
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* Class filter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
+                      filters.classId ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
+                    )}
+                  >
+                    {filters.classId ? classFilters.find((c) => c.id === filters.classId)?.name || "Class" : "Class"}
+                    <ChevronDown size={13} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48 rounded-xl shadow-lg">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Class</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {classFilters.map((cls) => (
+                    <DropdownMenuItem key={cls.id} onClick={() => handleFilterChange("classId", cls.id)} className={cn("text-sm rounded-lg", filters.classId === cls.id && "font-semibold")}>
+                      {cls.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Gender filter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
+                      filters.gender ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
+                    )}
+                  >
+                    {filters.gender ? filters.gender.charAt(0) + filters.gender.slice(1).toLowerCase() : "Gender"}
+                    <ChevronDown size={13} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Gender</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleFilterChange("gender", "")} className="text-sm rounded-lg">All</DropdownMenuItem>
+                  {genderOptions.map((opt) => (
+                    <DropdownMenuItem key={opt} onClick={() => handleFilterChange("gender", opt)} className={cn("text-sm rounded-lg", filters.gender === opt && "font-semibold")}>
+                      {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Status filter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
+                      filters.status ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
+                    )}
+                  >
+                    {filters.status || "Status"}
+                    <ChevronDown size={13} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleFilterChange("status", "")} className="text-sm rounded-lg">All</DropdownMenuItem>
+                  {statusOptions.map((opt) => (
+                    <DropdownMenuItem key={opt} onClick={() => handleFilterChange("status", opt)} className={cn("text-sm rounded-lg", filters.status === opt && "font-semibold")}>
+                      {opt}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {hasFilters && (
+                <Button variant="ghost" onClick={clearFilters} className="h-9 px-3 rounded-lg text-sm text-gray-500 hover:text-red-500 gap-1.5">
+                  <X size={13} />
+                  Reset
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 rounded-xl shadow-lg">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Class</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {classFilters.map((cls) => (
-                  <DropdownMenuItem key={cls.id} onClick={() => handleFilterChange("classId", cls.id)} className={cn("text-sm rounded-lg", filters.classId === cls.id && "font-semibold")}>
-                    {cls.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              )}
+            </div>
 
-            {/* Gender filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
-                    filters.gender ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
-                  )}
-                >
-                  {filters.gender ? filters.gender.charAt(0) + filters.gender.slice(1).toLowerCase() : "Gender"}
-                  <ChevronDown size={13} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Gender</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleFilterChange("gender", "")} className="text-sm rounded-lg">All</DropdownMenuItem>
-                {genderOptions.map((opt) => (
-                  <DropdownMenuItem key={opt} onClick={() => handleFilterChange("gender", opt)} className={cn("text-sm rounded-lg", filters.gender === opt && "font-semibold")}>
-                    {opt.charAt(0) + opt.slice(1).toLowerCase()}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Status filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
-                    filters.status ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
-                  )}
-                >
-                  {filters.status || "Status"}
-                  <ChevronDown size={13} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleFilterChange("status", "")} className="text-sm rounded-lg">All</DropdownMenuItem>
-                {statusOptions.map((opt) => (
-                  <DropdownMenuItem key={opt} onClick={() => handleFilterChange("status", opt)} className={cn("text-sm rounded-lg", filters.status === opt && "font-semibold")}>
-                    {opt}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {hasFilters && (
-              <Button variant="ghost" onClick={clearFilters} className="h-9 px-3 rounded-lg text-sm text-gray-500 hover:text-red-500 gap-1.5">
-                <X size={13} />
-                Reset Filters
-              </Button>
-            )}
-
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50">
+            {/* Export */}
+            <div className="flex items-center shrink-0 w-full md:w-auto mt-1 md:mt-0">
+              <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="w-full md:w-auto h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50">
                 <Download size={14} />
                 Export
-              </Button>
-              <Button
-                onClick={() => setOpen(true)}
-                className="h-9 px-4 rounded-lg text-sm font-semibold text-white gap-2 shadow-sm"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <UserPlus size={14} />
-                Add Student
               </Button>
             </div>
           </div>

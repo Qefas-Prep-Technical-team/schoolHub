@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
+import { AdminFeatureFlagKey } from "../adminFeatureFlags";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 interface Action {
   id: string;
@@ -16,10 +19,15 @@ interface Action {
   iconColor: string;
   bgColor: string;
   href: string;
+  featureKey?: AdminFeatureFlagKey;
 }
 
 export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const router = useRouter();
+  
+  const { user } = useAuthStore();
+  const { data: globalFeatures } = useGlobalFeatures('admin');
+
   const [actions] = useState<Action[]>([
     {
       id: 'add-student',
@@ -30,6 +38,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: 'text-blue-500',
       bgColor: 'bg-blue-50',
       href: '/dashboard/admin/students?showAdd=true',
+      featureKey: 'students',
     },
     {
       id: 'publish-results',
@@ -40,6 +49,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: 'text-emerald-500',
       bgColor: 'bg-emerald-50',
       href: '/dashboard/admin/grades',
+      featureKey: 'grades',
     },
     {
       id: 'announce',
@@ -50,6 +60,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: 'text-amber-500',
       bgColor: 'bg-amber-50',
       href: '/dashboard/admin/notifications',
+      featureKey: 'communication',
     },
     {
       id: 'manage-staff',
@@ -60,6 +71,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: 'text-purple-500',
       bgColor: 'bg-purple-50',
       href: '/dashboard/admin/teachers',
+      featureKey: 'teachers',
     },
     {
       id: 'schedule',
@@ -70,6 +82,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: '',
       bgColor: '',
       href: '/dashboard/admin/classes',
+      featureKey: 'classes',
     },
     {
       id: 'export-data',
@@ -80,6 +93,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: 'text-teal-500',
       bgColor: 'bg-teal-50',
       href: '/dashboard/admin/attendance',
+      featureKey: 'attendance',
     },
     {
       id: 'settings',
@@ -90,11 +104,18 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       iconColor: 'text-slate-500',
       bgColor: 'bg-slate-50',
       href: '/dashboard/admin/settings',
+      featureKey: 'settings',
     },
   ]);
 
   const [showMore, setShowMore] = useState(false);
-  const visibleActions = showMore ? actions : actions.slice(0, 4);
+  
+  const allowedActions = actions.filter((action) => {
+    if (!action.featureKey) return true;
+    return globalFeatures?.[action.featureKey] !== false;
+  });
+
+  const visibleActions = showMore ? allowedActions : allowedActions.slice(0, 4);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
@@ -103,7 +124,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
             <h3 className="text-base font-semibold text-slate-800 dark:text-white">Quick Actions</h3>
             <p className="text-xs text-slate-500">Shortcuts to common tasks</p>
         </div>
-        {actions.length > 4 && (
+        {allowedActions.length > 4 && (
           <button
             onClick={() => setShowMore(!showMore)}
             className="text-xs font-semibold transition-colors hover:opacity-80"

@@ -104,6 +104,25 @@ export const linkChildToParent = async (req: Request, res: Response) => {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+type MailPayload = Parameters<typeof resend.emails.send>[0];
+
+/**
+ * Single choke point for transactional email.
+ * Resend's SDK resolves with `{ error }` instead of throwing, which made every
+ * `.catch(console.error)` at the call sites dead code. We log failures here
+ * (subject + recipient) and return the untouched result so callers keep working.
+ */
+const sendMail = async (payload: MailPayload) => {
+  const result = await resend.emails.send(payload);
+  if (result.error) {
+    console.error(
+      `[Mail] FAILED subject="${payload.subject}" to=${JSON.stringify(payload.to)}:`,
+      result.error,
+    );
+  }
+  return result;
+};
+
 // default to false if not set
 
 export const sendEmailUpdateVerification = async (email: string, code: string) => {
@@ -111,10 +130,10 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
-    subject: `ACTION REQUIRED: Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
+    subject: `ACTION REQUIRED: Verify Your New Email Address ${isTest ? "(Original: " + email + ")" : ""}`,
     html: buildEmail({
       illustration: 'verification',
       testMode: isTest,
@@ -129,50 +148,154 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
   });
 };
 
-export const sendVerificationEmail = async (email: string, code: string, type: 'welcome' | 'confirmation' = 'welcome') => {
+export const sendVerificationEmail = async (email: string, code: string, type: 'welcome' | 'confirmation' | 'device-verification' = 'welcome', deviceInfo?: { deviceModel?: string, location?: string, time?: string }) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
 
   const subject = type === 'welcome'
-    ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}`
-    : `Qefas Hub Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
+    ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? "(Original: " + email + ")" : ""}`
+    : type === 'device-verification'
+    ? `Qefas Hub New Device Login Verification ${isTest ? "(Original: " + email + ")" : ""}`
+    : `Qefas Hub Identity Verification ${isTest ? "(Original: " + email + ")" : ""}`;
 
-  const title = type === 'welcome' ? "Welcome to Qefas Hub" : "Verify Your Identity";
+  const title = type === 'welcome' ? "Welcome to Qefas Hub" : type === 'device-verification' ? "Verify your new device" : "Verify Your Identity";
   const description = type === 'welcome'
     ? "Thank you for joining our academic community. Please use the verification code below to activate your account and proceed with your subscription."
+    : type === 'device-verification'
+    ? "We noticed a login attempt to your Qefas Hub account from a device we don't recognize. To continue, enter the verification code below on your login screen."
     : "Please use the secure verification code below to confirm your identity and proceed with your request.";
 
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  console.log('[RESEND DEBUG] RESEND_TEST raw:', JSON.stringify(process.env.RESEND_TEST));
-  console.log('[RESEND DEBUG] isTest:', isTest, '| from:', sender, '| to:', recipient);
+  let bodyContent = `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">${title}</h1>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">${description}</p>
+  `;
 
-  return await resend.emails.send({
+  if (type === 'device-verification' && deviceInfo) {
+      bodyContent += `
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:10px 0;color:#64748b;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9;">Device</td>
+              <td style="padding:10px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:700;border-bottom:1px solid #f1f5f9;">${deviceInfo.deviceModel || 'Unknown Device'}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 0;color:#64748b;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9;">Location</td>
+              <td style="padding:10px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:700;border-bottom:1px solid #f1f5f9;">${deviceInfo.location || 'Unknown Location'}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 0;color:#64748b;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9;">Time</td>
+              <td style="padding:10px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:700;border-bottom:1px solid #f1f5f9;">${deviceInfo.time || new Date().toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+      `;
+  }
+
+  if (type === 'device-verification') {
+      bodyContent += `
+        <div style="background:#f8fafc;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;border:1px dashed #cbd5e1;">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Your verification code</div>
+          <div style="font-size:36px;font-weight:900;color:#0f172a;letter-spacing:4px;">${code}</div>
+        </div>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">This code expires in 10 minutes.</p>
+        <p style="margin:0 0 24px 0;color:#475569;font-size:14px;line-height:1.6;font-weight:600;">Never share this code with anyone. Qefas Hub will never ask you for it.</p>
+        <hr style="border:0;border-top:1px solid #e2e8f0;margin:24px 0;" />
+        <p style="margin:0 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">Didn't try to log in? Someone may have your password. Please reset it right away and contact us at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a> so we can help secure your account.</p>
+      `;
+  } else {
+      bodyContent += `
+        ${otpBox(code, 10)}
+      `;
+  }
+
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: subject,
     html: buildEmail({
-      illustration: 'verification',
+      illustration: type === 'device-verification' ? 'device-code' : 'verification',
+      testMode: isTest,
+      originalRecipient: email,
+      body: bodyContent
+    })
+  });
+};
+
+
+export const sendNewDeviceLoginEmail = async (email: string, deviceInfo: { deviceModel?: string, location?: string, time?: string }) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `New Device Login Detected - Qefas Hub ${isTest ? "(Original: " + email + ")" : ""}`,
+    html: buildEmail({
+      illustration: 'new-device',
       testMode: isTest,
       originalRecipient: email,
       body: `
-        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">${title},</h1>
-        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">${description}</p>
-        ${otpBox(code, 10)}
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">New device sign-in</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We noticed a new sign-in to your Qefas Hub account. If this was you, you don't need to do anything. If not, please secure your account immediately.</p>
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:10px 0;color:#64748b;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9;">Device</td>
+              <td style="padding:10px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:700;border-bottom:1px solid #f1f5f9;">${deviceInfo.deviceModel || 'Unknown Device'}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 0;color:#64748b;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9;">Location</td>
+              <td style="padding:10px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:700;border-bottom:1px solid #f1f5f9;">${deviceInfo.location || 'Unknown Location'}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 0;color:#64748b;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9;">Time</td>
+              <td style="padding:10px 0;text-align:right;color:#0f172a;font-size:14px;font-weight:700;border-bottom:1px solid #f1f5f9;">${deviceInfo.time || new Date().toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+        ${ctaButton('Secure My Account', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/auth/forgot-password`)}
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:14px;line-height:1.6;">Need a hand? Our team is happy to help at <a href="mailto:support@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">support@qefashub.com</a>.</p>
       `,
     }),
   });
 };
 
+export const sendEmailVerifiedEmail = async (email: string) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Email Verified Successfully - Qefas Hub ${isTest ? "(Original: " + email + ")" : ""}`,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Email successfully verified!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Thank you for confirming your email address. Your Qefas Hub account is now more secure, and you have full access to all features associated with your account.</p>
+        ${infoCard('You can now log in and continue managing your academic workflow.', 'success')}
+        ${ctaButton('Go to Dashboard', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/login`)}
+      `,
+    }),
+  });
+};
 
 export const sendSetupCompleteEmail = async (email: string) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
 
-  return await resend.emails.send({
+  return await sendMail({
     from: isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
-    subject: `Your Account is Ready - Qefas Hub ${isTest ? `(Original: ${email})` : ''}`,
+    subject: `Your Account is Ready - Qefas Hub ${isTest ? "(Original: " + email + ")" : ""}`,
     html: buildEmail({
       illustration: 'success',
       testMode: isTest,
@@ -193,10 +316,10 @@ export const send2FADisabledEmail = async (email: string) => {
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
-    subject: `Security Alert: Two-Factor Authentication Disabled ${isTest ? `(Original: ${email})` : ''}`,
+    subject: `Security Alert: Two-Factor Authentication Disabled ${isTest ? "(Original: " + email + ")" : ""}`,
     html: buildEmail({
       illustration: 'security',
       testMode: isTest,
@@ -241,10 +364,10 @@ export const sendPaymentReceiptEmail = async (params: {
     year: 'numeric',
   });
 
-  return await resend.emails.send({
+  return await sendMail({
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
-    subject: `Payment Receipt: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
+    subject: `Payment Receipt: ${params.plan} Plan - Qefas Hub ${isTest ? "(Original: " + params.email + ")" : ""}`,
     html: buildEmail({
       illustration: 'payment',
       testMode: isTest,
@@ -293,10 +416,10 @@ export const sendPaymentFailedEmail = async (params: {
     minute: '2-digit',
   });
 
-  return await resend.emails.send({
+  return await sendMail({
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
-    subject: `Payment Failed: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
+    subject: `Payment Failed: ${params.plan} Plan - Qefas Hub ${isTest ? "(Original: " + params.email + ")" : ""}`,
     html: buildEmail({
       illustration: 'payment-failed',
       testMode: isTest,
@@ -304,11 +427,11 @@ export const sendPaymentFailedEmail = async (params: {
       body: `
         <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">We couldn't process your payment</h1>
         <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
-        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We tried to renew your <strong>${params.plan}</strong> subscription, but the payment didn't go through. No worries, this is easy to fix.</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We tried to process the payment for your <strong>${params.plan}</strong> subscription, but the payment didn't go through. No worries, this is easy to fix.</p>
         <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
           <table width="100%" cellpadding="0" cellspacing="0">
             ${receiptRow('Plan', params.plan)}
-            ${receiptRow('Amount', formattedAmount)}
+            ${params.amount > 0 ? receiptRow('Amount', formattedAmount) : ''}
             ${receiptRow('Reason', params.reason || 'Transaction declined')}
           </table>
         </div>
@@ -404,7 +527,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     throw new Error("Email is required to send reset link");
   }
 
-  return await resend.emails.send({
+  return await sendMail({
     from: process.env.NODE_ENV === 'test' ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: email,
     subject: "Reset Your Qefas Hub Password",
@@ -436,7 +559,7 @@ export const sendTeacherInvitationEmail = async (email: string, token: string, s
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
-  return await resend.emails.send({
+  return await sendMail({
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Invitation to join ${schoolName} on Qefas Hub`,
@@ -466,7 +589,7 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
-  return await resend.emails.send({
+  return await sendMail({
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Invitation to join ${schoolName} on Qefas Hub`,
@@ -737,7 +860,7 @@ export const sendPaymentFailureEmail = async (params: {
 
   const dashboardUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/billing`;
 
-  return await resend.emails.send({
+  return await sendMail({
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Action Required: Payment Failed for ${params.plan} Plan — Qefas Hub${isTest ? ` (Original: ${params.email})` : ''}`,
@@ -768,7 +891,7 @@ export const sendSubscriptionExpiredEmail = async (email: string, planName: stri
 
   const dashboardUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/billing`;
 
-  return await resend.emails.send({
+  return await sendMail({
     from: (typeof isTest !== 'undefined' && isTest) ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
     subject: `Subscription Expired: ${planName} Plan — Qefas Hub${isTest ? ` (Original: ${email})` : ''}`,
@@ -804,7 +927,7 @@ export const sendAdminJoinRequestEmail = async (params: {
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : recipientEmail;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `New Admin Request for ${schoolName} — Action Required${isTest ? ` (Original: ${recipientEmail})` : ''}`,
@@ -863,7 +986,7 @@ export const sendAdminApprovalEmail = async (params: {
   };
   const roleColor = roleColors[assignedRole] || '#2563eb';
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `You're approved! Welcome to ${schoolName} — ${formattedRole}${isTest ? ` (Original: ${adminEmail})` : ''}`,
@@ -908,7 +1031,7 @@ export const sendNewAdminJoinedEmail = async (params: {
     .replace(/_/g, ' ')
     .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `New Admin Joined ${schoolName} — ${formattedRole}${isTest ? ` (Original: ${recipientEmail})` : ''}`,
@@ -944,7 +1067,7 @@ export const sendWelcomeEmail = async (params: {
     .replace(/_/g, ' ')
     .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `Welcome to Qefas Hub! Your account is verified${isTest ? ` (Original: ${email})` : ''}`,
@@ -979,7 +1102,7 @@ export const sendAdminRejectionEmail = async (params: {
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : adminEmail;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `Update on your admin request for ${schoolName}${isTest ? ` (Original: ${adminEmail})` : ''}`,
@@ -1006,7 +1129,7 @@ export const sendAdminLimitReachedEmail = async (params: { recipientEmail: strin
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.recipientEmail;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `Admin Slot Filled: ${params.applicantName} tried to join ${params.schoolName}`,
@@ -1035,7 +1158,7 @@ export const sendNewDeviceAlertEmail = async (params: {
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.email;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `New login to your Qefas Hub account${isTest ? ` (Original: ${params.email})` : ''}`,
@@ -1073,7 +1196,7 @@ export const sendDeviceVerificationCodeEmail = async (params: {
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.email;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
-  return await resend.emails.send({
+  return await sendMail({
     from: sender,
     to: recipient,
     subject: `Device Verification Code: ${params.code}${isTest ? ` (Original: ${params.email})` : ''}`,

@@ -55,7 +55,7 @@ export interface WebhookVerifyResult {
   /** Whether the webhook signature is valid */
   valid: boolean;
   /** Normalized event type */
-  event: 'charge.success' | 'subscription.cancelled' | 'subaccount.update' | 'unknown';
+  event: 'charge.success' | 'charge.failed' | 'subscription.cancelled' | 'subaccount.update' | 'unknown';
   data: {
     reference?: string;
     gatewayRef?: string;
@@ -67,6 +67,8 @@ export interface WebhookVerifyResult {
     status?: string;
     paymentType?: string;
     meta?: Record<string, string>;
+    gateway_response?: string;
+    message?: string;
   };
 }
 

@@ -24,11 +24,16 @@ function NavBar() {
             );
             
             if (!isRoot) {
+                // Check if it's a multi-tenant school subdomain (e.g., school.qefashub.com)
+                // We avoid hiding the nav on Vercel preview URLs (.vercel.app)
                 if (host.includes("localhost") || host.includes("127.0.0.1")) {
                     const parts = host.split(".");
                     hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
-                } else {
-                    hasSub = true;
+                } else if (host.endsWith("qefashub.com") || host.endsWith("flexitistudio.com")) {
+                    const parts = host.split(".");
+                    if (parts.length >= 3 && parts[0] !== "www" && parts[0] !== "staging") {
+                        hasSub = true;
+                    }
                 }
             }
             setIsSubdomain(hasSub);
@@ -69,7 +74,7 @@ function NavBar() {
     return (
         shouldShow && (
             <div className="fixed top-4 left-0 w-full z-50 px-4 md:px-8 flex justify-center pointer-events-none">
-                <header className="pointer-events-auto w-full max-w-[1440px] bg-white/40 dark:bg-[#0a0f1e]/40 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-2xl transition-all duration-300 supports-[backdrop-filter]:bg-white/20">
+                <header className="pointer-events-auto w-full max-w-[1440px] bg-white/90 dark:bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-2xl transition-all duration-300 supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-[#0a0f1e]/80">
                     <Toolbar className="justify-between flex min-h-[64px] px-4 md:px-6" disableGutters>
                         <BigNavBar pages={pages} />
                         <MiniNav pages={pages} />

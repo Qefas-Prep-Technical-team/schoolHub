@@ -36,7 +36,7 @@ export default function VerificationCard() {
 
     if (shouldRequest && !hasRequested.current && email && userType) {
       hasRequested.current = true;
-      requestCode({ email, userType });
+      requestCode({ email, userType, isDeviceVerification: !!sessionStorage.getItem('preAuthToken') });
 
       // Clean up URL to prevent resending on manual refresh/reload
       const newParams = new URLSearchParams(searchParams.toString());
@@ -114,7 +114,7 @@ export default function VerificationCard() {
   const handleResendCode = async () => {
     if (email && userType) {
       try {
-        await resendCode({ email, userType });
+        await resendCode({ email, userType, isDeviceVerification: !!sessionStorage.getItem('preAuthToken') });
       } catch (error) {
         console.error('Resend failed:', error);
       }

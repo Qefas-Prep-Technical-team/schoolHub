@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AdminRole } from "../components/adminFeatureFlags";
-import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp, Loader2, LayoutGrid, List } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,14 @@ export default function RecordsPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"subject" | "student">("subject");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  
+  // Mobile defaults to grid view
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setViewMode("grid");
+    }
+  }, []);
   const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
   
   // Pagination state
@@ -655,6 +663,10 @@ export default function RecordsPage() {
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Subject Final Results</h2>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><List className="w-4 h-4" /></button>
+                <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><LayoutGrid className="w-4 h-4" /></button>
+              </div>
               <Dialog>
                 <DialogTrigger asChild>
                   <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
@@ -705,78 +717,124 @@ export default function RecordsPage() {
               </Dialog>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
-                  <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-4 py-3">NAME</th>
-                  <th className="px-4 py-3">SESSION & TERM</th>
-                  <th className="px-4 py-3">CLASS</th>
-                  <th className="px-4 py-3">SUBJECT</th>
-                  <th className="px-4 py-3">DATE SAVED</th>
-                  <th className="px-4 py-3">STATUS</th>
-                  <th className="px-6 py-3 text-right">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                {isLoadingSubjects ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
-                      <td className="px-4 py-4"><div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
-                    </tr>
-                  ))
-                ) : filteredSubjectResults.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
-                      No subject results found.
-                    </td>
+          {viewMode === "list" ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
+                    <th className="px-6 py-3 w-12">#</th>
+                    <th className="px-4 py-3">NAME</th>
+                    <th className="px-4 py-3">SESSION & TERM</th>
+                    <th className="px-4 py-3">CLASS</th>
+                    <th className="px-4 py-3">SUBJECT</th>
+                    <th className="px-4 py-3">DATE SAVED</th>
+                    <th className="px-4 py-3">STATUS</th>
+                    <th className="px-6 py-3 text-right">ACTIONS</th>
                   </tr>
-                ) : (
-                  filteredSubjectResults.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
-                    const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
-                    return (
-                      <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
-                        <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
-                        <td className="px-4 py-4 font-semibold text-slate-900 dark:text-slate-100">{res.name}</td>
-                        <td className="px-4 py-4">
-                          <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
-                          <span className="text-xs text-slate-400">{res.term}</span>
-                        </td>
-                        <td className="px-4 py-4">{res.class?.name}</td>
-                        <td className="px-4 py-4 text-slate-900 dark:text-slate-100">{res.subject?.name}</td>
-                        <td className="px-4 py-4 text-slate-500">{new Date(res.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            res.status === "PUBLISHED" 
-                              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                              : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                          }`}>
-                            {res.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)}
-                            className="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors"
-                          >
-                            Edit
-                          </button>
-                        </td>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
+                  {isLoadingSubjects ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
+                        <td className="px-4 py-4"><div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
+                        <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
                       </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ))
+                  ) : filteredSubjectResults.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
+                        No subject results found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSubjectResults.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
+                      const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
+                      return (
+                        <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
+                          <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
+                          <td className="px-4 py-4 font-semibold text-slate-900 dark:text-slate-100">{res.name}</td>
+                          <td className="px-4 py-4">
+                            <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
+                            <span className="text-xs text-slate-400">{res.term}</span>
+                          </td>
+                          <td className="px-4 py-4">{res.class?.name}</td>
+                          <td className="px-4 py-4 text-slate-900 dark:text-slate-100">{res.subject?.name}</td>
+                          <td className="px-4 py-4 text-slate-500">{new Date(res.createdAt).toLocaleDateString()}</td>
+                          <td className="px-4 py-4">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              res.status === "PUBLISHED" 
+                                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
+                                : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                            }`}>
+                              {res.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button 
+                              onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)}
+                              className="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-slate-50/50 dark:bg-slate-900/20">
+              {isLoadingSubjects ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-32 animate-pulse" />
+                ))
+              ) : filteredSubjectResults.length === 0 ? (
+                <div className="col-span-full py-8 text-center text-slate-500">No subject results found.</div>
+              ) : (
+                filteredSubjectResults.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
+                  const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
+                  return (
+                  <div key={res.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
+                     <div className="flex justify-between items-start">
+                       <div className="flex gap-2 max-w-[70%]">
+                         <span className="text-xs font-black text-slate-400/70 mt-1 select-none">#{globalIdx}</span>
+                         <div>
+                           <h3 className="font-bold text-slate-900 dark:text-white truncate pr-2" title={res.name}>{res.name}</h3>
+                           <p className="text-xs text-slate-500 truncate">{res.session?.name} • {res.term}</p>
+                         </div>
+                       </div>
+                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${res.status === "PUBLISHED" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"}`}>
+                         {res.status}
+                       </span>
+                     </div>
+                     <div className="grid grid-cols-2 gap-2 text-xs">
+                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
+                         <p className="text-slate-400 mb-0.5">Class</p>
+                         <p className="font-semibold text-slate-700 dark:text-slate-300 truncate" title={res.class?.name}>{res.class?.name}</p>
+                       </div>
+                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
+                         <p className="text-slate-400 mb-0.5">Subject</p>
+                         <p className="font-semibold text-slate-700 dark:text-slate-300 truncate" title={res.subject?.name}>{res.subject?.name}</p>
+                       </div>
+                     </div>
+                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                       <span className="text-[10px] text-slate-400">{new Date(res.createdAt).toLocaleDateString()}</span>
+                       <button onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)} className="text-xs font-bold text-[#5B5CE6] hover:text-[#4a4be5]">Edit Results</button>
+                     </div>
+                  </div>
+                  )
+                })
+              )}
+            </div>
+          )}
           
           {/* Pagination Controls */}
           {filteredSubjectResults && filteredSubjectResults.length > PAGE_SIZE && (
@@ -813,6 +871,10 @@ export default function RecordsPage() {
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Students Final Results</h2>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><List className="w-4 h-4" /></button>
+                <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><LayoutGrid className="w-4 h-4" /></button>
+              </div>
               <Dialog>
                 <DialogTrigger asChild>
                   <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
@@ -863,77 +925,123 @@ export default function RecordsPage() {
               </Dialog>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
-                  <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-4 py-3">STUDENT NAME</th>
-                  <th className="px-4 py-3">CLASS</th>
-                  <th className="px-4 py-3">SESSION & TERM</th>
-                  <th className="px-4 py-3">AVERAGE</th>
-                  <th className="px-4 py-3">POSITION</th>
-                  <th className="px-4 py-3">STATUS</th>
-                  <th className="px-6 py-3 text-right">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                {isLoadingStudents ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
-                      <td className="px-4 py-4"><div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
-                    </tr>
-                  ))
-                ) : filteredStudentResults.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
-                      No student results found.
-                    </td>
+          {viewMode === "list" ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
+                    <th className="px-6 py-3 w-12">#</th>
+                    <th className="px-4 py-3">STUDENT NAME</th>
+                    <th className="px-4 py-3">CLASS</th>
+                    <th className="px-4 py-3">SESSION & TERM</th>
+                    <th className="px-4 py-3">AVERAGE</th>
+                    <th className="px-4 py-3">POSITION</th>
+                    <th className="px-4 py-3">STATUS</th>
+                    <th className="px-6 py-3 text-right">ACTIONS</th>
                   </tr>
-                ) : (
-                  filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
-                    const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
-                    return (
-                      <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
-                        <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
-                        <td className="px-4 py-4 text-slate-900 dark:text-slate-100 font-bold">{res.student?.name}</td>
-                        <td className="px-4 py-4">{res.class?.name}</td>
-                        <td className="px-4 py-4">
-                          <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
-                          <span className="text-xs text-slate-400">{res.term}</span>
-                        </td>
-                        <td className="px-4 py-4 font-bold text-[#5B5CE6]">{res.averageScore ? `${res.averageScore}%` : "-"}</td>
-                        <td className="px-4 py-4 text-slate-500 font-medium">
-                          {res.position ? res.position + (["st", "nd", "rd"][((res.position + 90) % 100 - 10) % 10 - 1] || "th") : "-"}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            res.status === "PUBLISHED" 
-                              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                              : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                          }`}>
-                            {res.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors">
-                            View Report
-                          </button>
-                        </td>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
+                  {isLoadingStudents ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
+                        <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
+                        <td className="px-4 py-4"><div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
+                        <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
                       </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ))
+                  ) : filteredStudentResults.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
+                        No student results found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
+                      const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
+                      return (
+                        <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
+                          <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
+                          <td className="px-4 py-4 text-slate-900 dark:text-slate-100 font-bold">{res.student?.name}</td>
+                          <td className="px-4 py-4">{res.class?.name}</td>
+                          <td className="px-4 py-4">
+                            <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
+                            <span className="text-xs text-slate-400">{res.term}</span>
+                          </td>
+                          <td className="px-4 py-4 font-bold text-[#5B5CE6]">{res.averageScore ? `${res.averageScore}%` : "-"}</td>
+                          <td className="px-4 py-4 text-slate-500 font-medium">
+                            {res.position ? res.position + (["st", "nd", "rd"][((res.position + 90) % 100 - 10) % 10 - 1] || "th") : "-"}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              res.status === "PUBLISHED" 
+                                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
+                                : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                            }`}>
+                              {res.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors">
+                              View Report
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-slate-50/50 dark:bg-slate-900/20">
+              {isLoadingStudents ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-32 animate-pulse" />
+                ))
+              ) : filteredStudentResults.length === 0 ? (
+                <div className="col-span-full py-8 text-center text-slate-500">No student results found.</div>
+              ) : (
+                filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
+                  const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
+                  return (
+                  <div key={res.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
+                     <div className="flex justify-between items-start">
+                       <div className="flex gap-2 max-w-[70%]">
+                         <span className="text-xs font-black text-slate-400/70 mt-1 select-none">#{globalIdx}</span>
+                         <div>
+                           <h3 className="font-bold text-slate-900 dark:text-white truncate pr-2" title={res.student?.name}>{res.student?.name}</h3>
+                           <p className="text-xs text-slate-500 truncate">{res.class?.name}</p>
+                         </div>
+                       </div>
+                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${res.status === "PUBLISHED" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"}`}>
+                         {res.status}
+                       </span>
+                     </div>
+                     <div className="grid grid-cols-2 gap-2 text-xs">
+                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded text-center">
+                         <p className="text-slate-400 mb-0.5">Average</p>
+                         <p className="font-black text-[#5B5CE6]">{res.averageScore ? `${res.averageScore}%` : "-"}</p>
+                       </div>
+                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded text-center">
+                         <p className="text-slate-400 mb-0.5">Position</p>
+                         <p className="font-black text-slate-700 dark:text-slate-300">{res.position ? res.position + (["st", "nd", "rd"][((res.position + 90) % 100 - 10) % 10 - 1] || "th") : "-"}</p>
+                       </div>
+                     </div>
+                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                       <span className="text-[10px] text-slate-400 truncate pr-2">{res.session?.name} • {res.term}</span>
+                       <button className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0">View Report</button>
+                     </div>
+                  </div>
+                  )
+                })
+              )}
+            </div>
+          )}
           
           {/* Pagination Controls */}
           {filteredStudentResults && filteredStudentResults.length > PAGE_SIZE && (

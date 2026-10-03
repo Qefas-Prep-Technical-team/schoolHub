@@ -210,7 +210,7 @@ export default function SettingsPage() {
 
     if (isLoading) {
         return (
-            <div className="w-[80%] max-w-none mx-auto py-8 space-y-6 md:space-y-8 px-4 md:px-8">
+            <div className="w-full lg:w-[80%] max-w-7xl mx-auto py-6 md:py-8 space-y-6 md:space-y-8 px-4 md:px-8">
                 {/* Header Skeleton */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
                     <div className="space-y-2">
@@ -238,9 +238,9 @@ export default function SettingsPage() {
     const initials = (personalProfile?.name || 'A').split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
 
     return (
-        <div className="w-[80%] max-w-none mx-auto py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
+        <div className="w-full lg:w-[80%] max-w-7xl mx-auto py-6 md:py-8 animate-in fade-in duration-500 space-y-6 md:space-y-8 px-4 md:px-8">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                         <Settings className="text-blue-500" size={28} />
@@ -262,30 +262,30 @@ export default function SettingsPage() {
             </div>
 
             <Tabs defaultValue="general" className="w-full space-y-6">
-                <TabsList className="bg-slate-50 dark:bg-slate-900 rounded-lg p-1 w-full max-w-3xl grid grid-cols-5 h-auto">
-                    <TabsTrigger value="general" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                <TabsList className="bg-slate-50 dark:bg-slate-900 rounded-xl p-1 w-full max-w-4xl flex overflow-x-auto hide-scrollbar sm:grid sm:grid-cols-5 h-auto gap-1 items-center justify-start border border-slate-100 dark:border-slate-800/60">
+                    <TabsTrigger value="general" className="rounded-lg h-10 px-4 min-w-fit text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                         <div className="flex flex-row items-center justify-center gap-2">
-                            <Database size={14} /> <span className="hidden sm:inline">General</span>
+                            <Database size={14} /> <span>General</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="appearance" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                    <TabsTrigger value="appearance" className="rounded-lg h-10 px-4 min-w-fit text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                         <div className="flex flex-row items-center justify-center gap-2">
-                            <Palette size={14} /> <span className="hidden sm:inline">Appearance</span>
+                            <Palette size={14} /> <span>Appearance</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="security" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                    <TabsTrigger value="security" className="rounded-lg h-10 px-4 min-w-fit text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                         <div className="flex flex-row items-center justify-center gap-2">
-                            <ShieldCheck size={14} /> <span className="hidden sm:inline">Security</span>
+                            <ShieldCheck size={14} /> <span>Security</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="profile" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                    <TabsTrigger value="profile" className="rounded-lg h-10 px-4 min-w-fit text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                         <div className="flex flex-row items-center justify-center gap-2">
-                            <UserCircle size={14} /> <span className="hidden sm:inline">Profile</span>
+                            <UserCircle size={14} /> <span>Profile</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="landing" className="rounded-md h-9 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">
+                    <TabsTrigger value="landing" className="rounded-lg h-10 px-4 min-w-fit text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap">
                         <div className="flex flex-row items-center justify-center gap-2">
-                            <Rocket size={14} /> <span className="hidden sm:inline">Landing Page</span>
+                            <Rocket size={14} /> <span>Landing Page</span>
                         </div>
                     </TabsTrigger>
                 </TabsList>
@@ -513,8 +513,8 @@ export default function SettingsPage() {
                             <CardDescription>Manage your personal account details.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 space-y-8">
-                            <div className="flex items-center gap-5 p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                                <div className="h-16 w-16 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 flex items-center justify-center text-xl font-bold text-blue-600 dark:text-blue-400 overflow-hidden">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-center sm:text-left">
+                                <div className="h-16 w-16 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 flex items-center justify-center text-xl font-bold text-blue-600 dark:text-blue-400 overflow-hidden shrink-0">
                                     {personalProfile?.profileImage ? (
                                         <Image
                                             src={personalProfile.profileImage}
@@ -529,7 +529,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <h3 className="text-base font-bold text-slate-900 dark:text-white">Admin Avatar</h3>
-                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
+                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed mx-auto sm:mx-0">
                                         Upload a professional picture. It will appear on your top navigation bar.
                                     </p>
                                 </div>
@@ -739,20 +739,22 @@ export default function SettingsPage() {
 
 function SettingItem({ title, description, icon: Icon, checked, onCheckedChange, comingSoon }: any) {
     return (
-        <div className={cn("flex items-center justify-between gap-6", comingSoon && "opacity-60 pointer-events-none")}>
-            <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+        <div className={cn("flex flex-row items-center justify-between gap-4 md:gap-6", comingSoon && "opacity-60 pointer-events-none")}>
+            <div className="flex flex-row items-start md:items-center gap-3 md:gap-4 flex-1 min-w-0">
+                <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0 mt-0.5 md:mt-0">
                     <Icon size={18} />
                 </div>
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                         <p className="font-bold text-sm text-slate-900 dark:text-slate-100">{title}</p>
-                        {comingSoon && <Badge variant="outline" className="text-[9px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-0 px-1.5">Coming Soon</Badge>}
+                        {comingSoon && <Badge variant="outline" className="text-[9px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-0 px-1.5 shrink-0">Coming Soon</Badge>}
                     </div>
-                    <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-md">{description}</p>
+                    <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-md line-clamp-2 md:line-clamp-none">{description}</p>
                 </div>
             </div>
-            <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={comingSoon} />
+            <div className="shrink-0 ml-2">
+                <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={comingSoon} />
+            </div>
         </div>
     );
 }

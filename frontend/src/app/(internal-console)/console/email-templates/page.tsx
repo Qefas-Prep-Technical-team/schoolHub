@@ -196,6 +196,22 @@ const templates = [
     })
   },
   {
+    id: "email-verified",
+    title: "Email Verified",
+    icon: CheckCircle2,
+    color: "text-emerald-500",
+    generate: () => buildEmail({
+      illustration: 'success',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Email successfully verified!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi there,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Thank you for confirming your email address. Your Qefas Hub account is now more secure, and you have full access to all features associated with your account.</p>
+        ${infoCard('You can now log in and continue managing your academic workflow.', 'success')}
+        ${ctaButton('Go to Dashboard →', '#')}
+      `
+    })
+  },
+  {
     id: "welcome",
     title: "Welcome Email",
     icon: Mail,

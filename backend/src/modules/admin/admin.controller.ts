@@ -459,7 +459,7 @@ export const approveAdmin = async (req: Request, res: Response) => {
       recipientId: adminId,
       type: 'GENERAL',
       title: 'Admin Request Approved',
-      message: `Your request to join ${schoolAdmin.school.name} has been approved. You are now a ${role.replace(/_/g, ' ').replace(/\\w\\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())}.`,
+      message: `Your request to join ${schoolAdmin.school.name} has been approved. You are now a ${role.replace(/_/g, ' ').replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())}.`,
     }).catch((e) => console.error("[approveAdmin] Notification error:", e));
 
     // Fetch all active admins for this school (excluding the newly approved one)
@@ -489,7 +489,7 @@ export const approveAdmin = async (req: Request, res: Response) => {
           recipientId: ea.admin.id,
           type: 'GENERAL',
           title: 'New Admin Joined',
-          message: `${updatedAdmin.name} has joined the admin team as a ${role.replace(/_/g, ' ').replace(/\\w\\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())}.`,
+          message: `${updatedAdmin.name} has joined the admin team as a ${role.replace(/_/g, ' ').replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())}.`,
         }).catch((e) => console.error("[approveAdmin] Notification error:", e));
       });
     }).catch((e) => console.error("[approveAdmin] Fetch existing admins error:", e));

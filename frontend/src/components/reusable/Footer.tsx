@@ -22,11 +22,16 @@ const Footer: FC = () => {
             );
             
             if (!isRoot) {
+                // Check if it's a multi-tenant school subdomain (e.g., school.qefashub.com)
+                // We avoid hiding the footer on Vercel preview URLs (.vercel.app)
                 if (host.includes("localhost") || host.includes("127.0.0.1")) {
                     const parts = host.split(".");
                     hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
-                } else {
-                    hasSub = true;
+                } else if (host.endsWith("qefashub.com") || host.endsWith("flexitistudio.com")) {
+                    const parts = host.split(".");
+                    if (parts.length >= 3 && parts[0] !== "www" && parts[0] !== "staging") {
+                        hasSub = true;
+                    }
                 }
             }
             setIsSubdomain(hasSub);

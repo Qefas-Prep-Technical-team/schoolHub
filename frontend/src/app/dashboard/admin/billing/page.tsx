@@ -82,7 +82,7 @@ export default function AdminBillingPage() {
     };
     if (isLoading || financeLoading || isFeaturesLoading || analyticsLoading) {
         return (
-            <div className="space-y-8 pb-20 max-w-[1600px] mx-auto min-h-screen">
+            <div className="space-y-8 pb-20 max-w-[1600px] mx-auto min-h-screen px-4 md:px-8">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 mt-4 md:mt-8">
                     <div className="space-y-3">
@@ -213,17 +213,17 @@ export default function AdminBillingPage() {
     const storageUsedGB = ((billingData?.usage?.storageBytes || 0) / (1024 * 1024 * 1024)).toFixed(1);
 
     return (
-        <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
+        <div className="space-y-8 pb-20 max-w-[1600px] mx-auto px-4 md:px-8 mt-4 md:mt-8">
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
                 <div className="space-y-1">
-                    <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
+                    <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
                         Subscription & Billing
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
+                    <p className="text-sm md:text-lg text-slate-500 dark:text-slate-400 font-medium">
                         Manage your school's subscription plan and billing details
                     </p>
                 </div>
@@ -409,14 +409,14 @@ export default function AdminBillingPage() {
             </div>
 
             {analytics?.accounts && analytics.accounts.length > 0 && (
-                <div className="space-y-6 mt-12 bg-white dark:bg-slate-900/50 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center justify-between px-1">
+                <div className="space-y-6 mt-12 bg-white dark:bg-slate-900/50 p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-1 gap-4">
                         <div className="flex items-center gap-4">
                             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
                                 <Landmark size={28} />
                             </div>
                             <div className="space-y-1">
-                                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Bank Accounts</h2>
+                                <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Bank Accounts</h2>
                                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active accounts for receiving payments</p>
                             </div>
                         </div>
@@ -449,7 +449,7 @@ export default function AdminBillingPage() {
                         <CreditCard size={24} />
                     </div>
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
+                        <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
                             Transaction History
                         </h2>
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">A complete record of all your past payments and receipts</p>
@@ -464,8 +464,8 @@ export default function AdminBillingPage() {
                 />
             </div>
 
-            <div className="bg-slate-100 dark:bg-slate-800/40 rounded-[2.5rem] p-8 mt-12 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-4 text-center md:text-left">
+            <div className="bg-slate-100 dark:bg-slate-800/40 rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 mt-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4 text-left">
                     <div className="w-14 h-14 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-sm flex-shrink-0">
                         <AlertCircle className="w-7 h-7" />
                     </div>

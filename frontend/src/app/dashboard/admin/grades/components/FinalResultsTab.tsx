@@ -7,7 +7,7 @@ import { useClasses } from '@/lib/api/hooks/useClasses';
 import { Skeleton } from "@/components/ui/skeleton";
 import Pagination from './Pagination';
 import { cn } from '@/lib/utils';
-import { Trophy, FileText, Zap } from 'lucide-react';
+import { Trophy, FileText, Zap, LayoutGrid, List } from 'lucide-react';
 
 function getWAECGradeAndRemark(score: number): { grade: string, remark: string } {
   if (score >= 75) return { grade: 'A1', remark: 'EXCELLENT' };
@@ -28,6 +28,14 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
   const [selectedFinalResult, setSelectedFinalResult] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+
+  // Default to grid on mobile
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
 
   const { data: finalResults, isLoading } = useStudentTermResults();
   const { data: sessionsRes } = useSessions(schoolId);
@@ -116,26 +124,110 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center flex-wrap gap-4">
           <h3 className="text-xl font-bold text-slate-800 dark:text-white">Final Result Grades</h3>
+          
+          <div className="flex bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-1 shadow-inner">
+            <button 
+              onClick={() => setViewMode('grid')}
+              className={cn("h-8 w-8 rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-400 hover:text-slate-600")}
+              style={{ color: viewMode === 'grid' ? primaryColor : undefined }}
+            >
+              <LayoutGrid size={16} strokeWidth={2.5} />
+            </button>
+            <button 
+              onClick={() => setViewMode('list')}
+              className={cn("h-8 w-8 rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-400 hover:text-slate-600")}
+              style={{ color: viewMode === 'list' ? primaryColor : undefined }}
+            >
+              <List size={16} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
         
         <div className="flex-1 overflow-x-auto p-4">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                <th className="px-6 py-4 pb-4 w-16">#</th>
-                <th className="px-6 py-4 pb-4">Student</th>
-                <th className="px-6 py-4 pb-4">Subject</th>
-                <th className="px-6 py-4 pb-4">Class</th>
-                <th className="px-6 py-4 pb-4">Term</th>
-                <th className="px-6 py-4 pb-4 text-center">Score</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+          {viewMode === 'list' ? (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                  <th className="px-6 py-4 pb-4 w-16">#</th>
+                  <th className="px-6 py-4 pb-4">Student</th>
+                  <th className="px-6 py-4 pb-4">Subject</th>
+                  <th className="px-6 py-4 pb-4">Class</th>
+                  <th className="px-6 py-4 pb-4">Term</th>
+                  <th className="px-6 py-4 pb-4 text-center">Score</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {isLoading ? (
+                  <tr><td colSpan={6} className="p-6"><Skeleton className="h-10 w-full rounded-xl" /></td></tr>
+                ) : paginatedResults.length === 0 ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-slate-500 font-medium">No published final results found.</td></tr>
+                ) : paginatedResults.map((result: any, index: number) => {
+                  const scoreSources = result.scoreSources || {};
+                  const behavior = scoreSources.behavior || {};
+                  
+                  const isRevealed = result.scoresRevealed;
+                  
+                  let totalScore: number | string = '-';
+                  let percent: number | string = '-';
+                  let grade = "-";
+                  let remark = "-";
+                  let color = "text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400"; 
+                  
+                  if (isRevealed) {
+                    totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
+                    percent = result.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
+                    
+                    const waec = getWAECGradeAndRemark(Number(percent));
+                    grade = waec.grade;
+                    remark = waec.remark;
+                    
+                    if (Number(percent) >= 75) { color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
+                    else if (Number(percent) >= 65) { color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
+                    else if (Number(percent) >= 50) { color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; }
+                    else { color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                  }
+
+                  return (
+                    <tr key={result.id} onClick={() => setSelectedFinalResult({ ...result, grade, remark, totalScore, percent, behavior, isRevealed, color })} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer">
+                      <td className="px-6 py-5 text-sm font-semibold text-slate-400">
+                        <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">{(page - 1) * itemsPerPage + index + 1}</span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="font-bold text-slate-800 dark:text-white text-base line-clamp-1">{result.student?.name || 'Unknown Student'}</div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="font-bold text-slate-800 dark:text-white text-base line-clamp-1">{result.resultName || result.subject?.name || 'Unknown'}</div>
+                        <div className="text-xs font-medium text-slate-400 mt-0.5">{result.subject?.name} • {result.subject?.code}</div>
+                      </td>
+                      <td className="px-6 py-5 text-sm font-medium text-slate-600 dark:text-slate-300">
+                        {result.class?.name || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="font-semibold text-slate-700 dark:text-slate-200">{result.term} TERM</div>
+                        <div className="text-xs text-slate-400">{result.session?.name}</div>
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <div className="inline-flex flex-col items-center">
+                          <span className={cn("px-3 py-1 rounded-md text-xs font-black tracking-wider shadow-sm border border-transparent dark:border-white/5", color)}>
+                            {isRevealed ? `${percent}% • ${grade}` : 'HIDDEN'}
+                          </span>
+                          {isRevealed && (
+                            <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{remark}</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
-                <tr><td colSpan={6} className="p-6"><Skeleton className="h-10 w-full rounded-xl" /></td></tr>
+                [1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-40 w-full rounded-2xl" />)
               ) : paginatedResults.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-slate-500 font-medium">No published final results found.</td></tr>
-              ) : paginatedResults.map((result: any, index: number) => {
+                <div className="col-span-full p-8 text-center text-slate-500 font-medium">No published final results found.</div>
+              ) : paginatedResults.map((result: any) => {
                 const scoreSources = result.scoreSources || {};
                 const behavior = scoreSources.behavior || {};
                 
@@ -145,7 +237,7 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
                 let percent: number | string = '-';
                 let grade = "-";
                 let remark = "-";
-                let color = "text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400"; 
+                let color = "text-slate-500 bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"; 
                 
                 if (isRevealed) {
                   totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
@@ -155,46 +247,48 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
                   grade = waec.grade;
                   remark = waec.remark;
                   
-                  if (Number(percent) >= 75) { color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
-                  else if (Number(percent) >= 65) { color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
-                  else if (Number(percent) >= 50) { color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; }
-                  else { color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                  if (Number(percent) >= 75) { color = "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 dark:text-emerald-400"; }
+                  else if (Number(percent) >= 65) { color = "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800/50 dark:text-blue-400"; }
+                  else if (Number(percent) >= 50) { color = "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-800/50 dark:text-amber-400"; }
+                  else { color = "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800/50 dark:text-rose-400"; }
                 }
 
                 return (
-                  <tr key={result.id} onClick={() => setSelectedFinalResult({ ...result, grade, remark, totalScore, percent, behavior, isRevealed, color })} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer">
-                    <td className="px-6 py-5 text-sm font-semibold text-slate-400">
-                      <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">{(page - 1) * itemsPerPage + index + 1}</span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="font-bold text-slate-800 dark:text-white text-base line-clamp-1">{result.student?.name || 'Unknown Student'}</div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="font-bold text-slate-800 dark:text-white text-base line-clamp-1">{result.resultName || result.subject?.name || 'Unknown'}</div>
-                      <div className="text-xs font-medium text-slate-400 mt-0.5">{result.subject?.name} • {result.subject?.code}</div>
-                    </td>
-                    <td className="px-6 py-5 text-sm font-medium text-slate-600 dark:text-slate-300">
-                      {result.class?.name || 'Unknown'}
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="font-semibold text-slate-700 dark:text-slate-200">{result.term} TERM</div>
-                      <div className="text-xs text-slate-400">{result.session?.name}</div>
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <div className="inline-flex flex-col items-center">
-                        <span className={cn("px-3 py-1 rounded-md text-xs font-black tracking-wider shadow-sm border border-transparent dark:border-white/5", color)}>
-                          {isRevealed ? `${percent}% • ${grade}` : 'HIDDEN'}
-                        </span>
-                        {isRevealed && (
-                          <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{remark}</span>
-                        )}
+                  <div 
+                    key={result.id} 
+                    onClick={() => setSelectedFinalResult({ ...result, grade, remark, totalScore, percent, behavior, isRevealed, color })} 
+                    className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                           <h4 className="font-bold text-slate-800 dark:text-white line-clamp-1">{result.student?.name || 'Unknown Student'}</h4>
+                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                             {result.class?.name} • {result.term} TERM
+                           </p>
+                        </div>
+                        <div className={cn("px-2.5 py-1 rounded-lg text-xs font-black tracking-widest shadow-sm border", color)}>
+                           {isRevealed ? grade : '---'}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
+                      <div className="flex flex-col mb-4">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate">{result.subject?.name || result.resultName || 'Unknown Subject'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-slate-900 dark:text-white leading-none">{isRevealed ? percent : '?'}</span>
+                          {isRevealed && <span className="text-xs font-medium text-slate-400">%</span>}
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">
+                           View Details
+                        </div>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
         {pagination && pagination.total > 0 && (
           <div className="p-4 flex justify-center border-t border-slate-100 dark:border-slate-800 mt-auto bg-white dark:bg-slate-900">

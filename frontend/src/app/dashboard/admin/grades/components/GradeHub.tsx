@@ -82,6 +82,14 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   const itemsPerPage = 6; // Set to 6 to stay premium and consistent
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+
+  // Default to grid on mobile
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
+
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -286,49 +294,52 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
               />
           </div>
 
-          {/* Assessment/Exam Type Filter */}
-          <div className="w-full sm:w-44">
-            <Select value={selectedType} onValueChange={(val) => { setSelectedType(val); setCurrentPage(1); }}>
-              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
-                <SelectItem value="all">All Types</SelectItem>
-                {uniqueTypes.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Filters Group */}
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            {/* Assessment/Exam Type Filter */}
+            <div className="flex-1 min-w-[140px] sm:w-40 sm:flex-none">
+              <Select value={selectedType} onValueChange={(val) => { setSelectedType(val); setCurrentPage(1); }}>
+                <SelectTrigger className="h-12 w-full rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
+                  <SelectItem value="all">All Types</SelectItem>
+                  {uniqueTypes.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Subject Filter */}
-          <div className="w-full sm:w-44">
-            <Select value={selectedSubject} onValueChange={(val) => { setSelectedSubject(val); setCurrentPage(1); }}>
-              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
-                <SelectValue placeholder="All Subjects" />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
-                <SelectItem value="all">All Subjects</SelectItem>
-                {uniqueSubjects.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Subject Filter */}
+            <div className="flex-1 min-w-[140px] sm:w-40 sm:flex-none">
+              <Select value={selectedSubject} onValueChange={(val) => { setSelectedSubject(val); setCurrentPage(1); }}>
+                <SelectTrigger className="h-12 w-full rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                  <SelectValue placeholder="All Subjects" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
+                  <SelectItem value="all">All Subjects</SelectItem>
+                  {uniqueSubjects.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Class Filter */}
-          <div className="w-full sm:w-44">
-            <Select value={selectedClass} onValueChange={(val) => { setSelectedClass(val); setCurrentPage(1); }}>
-              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
-                <SelectValue placeholder="All Classes" />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
-                <SelectItem value="all">All Classes</SelectItem>
-                {classes.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Class Filter */}
+            <div className="flex-1 min-w-[140px] sm:w-40 sm:flex-none">
+              <Select value={selectedClass} onValueChange={(val) => { setSelectedClass(val); setCurrentPage(1); }}>
+                <SelectTrigger className="h-12 w-full rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                  <SelectValue placeholder="All Classes" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

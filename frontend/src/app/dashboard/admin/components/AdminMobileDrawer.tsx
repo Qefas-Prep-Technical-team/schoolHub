@@ -15,13 +15,14 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
-import { ADMIN_FEATURE_FLAGS, type AdminFeatureFlagKey } from "./adminFeatureFlags";
-import { adminMenuItems } from "./AdminMobileNav";
+import { ADMIN_FEATURE_FLAGS, type AdminFeatureFlagKey, type AdminRole, ROLE_NAV_PERMISSIONS } from "./adminFeatureFlags";
+import { adminMenuItems } from "./app-sidebar";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 const SECTION_TITLES = {
   core: "Core Management",
@@ -40,17 +41,7 @@ interface AdminMenuItem {
   section?: keyof typeof SECTION_TITLES;
 }
 
-function getFilteredMenuItemsBySection(items: AdminMenuItem[]) {
-  const filtered = items.filter((i) => ADMIN_FEATURE_FLAGS[i.featureKey]);
-  return {
-    core: filtered.filter((i) => i.section === "core"),
-    academics: filtered.filter((i) => i.section === "academics"),
-    administration: filtered.filter((i) => i.section === "administration"),
-    communication: filtered.filter((i) => i.section === "communication"),
-    advanced: filtered.filter((i) => i.section === "advanced"),
-    settings: filtered.filter((i) => i.section === "settings"),
-  };
-}
+
 
 export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const pathname = usePathname();
@@ -60,8 +51,31 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
   const user = useAuthStore((state) => state.user);
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: school } = useSchoolProfile(schoolId);
+  const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('admin');
 
-  const sections = React.useMemo(() => getFilteredMenuItemsBySection(adminMenuItems as any), []);
+  const sections = React.useMemo(() => {
+        if (isFeaturesLoading) return {};
+        const currentFeatures = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
+        const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
+
+        const filtered = adminMenuItems.filter(item => {
+            if (!(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
+            if (adminRole === 'SCHOOL_OWNER') return true;
+            
+            const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey as AdminFeatureFlagKey];
+            if (!allowedRoles) return true;
+            return !!adminRole && allowedRoles.includes(adminRole);
+        });
+
+        return {
+            core: filtered.filter(item => item.section === 'core'),
+            academics: filtered.filter(item => item.section === 'academics'),
+            administration: filtered.filter(item => item.section === 'administration'),
+            communication: filtered.filter(item => item.section === 'communication'),
+            advanced: filtered.filter(item => item.section === 'advanced'),
+            settings: filtered.filter(item => item.section === 'settings'),
+        };
+  }, [dynamicFeatures, isFeaturesLoading, user?.adminRole, user?.role]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -72,6 +86,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
       </SheetTrigger>
 
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
+        <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
         {/* Header */}
         <div className="px-6 py-8 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
           <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-4 group/logo">
@@ -103,7 +118,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
                 </div>
 
                 <div className="space-y-2">
-                  {items.map((item) => {
+                  {items.map((item: any) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
 

@@ -78,6 +78,13 @@ export default function ClassesOverviewPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
+
+    // Default to grid on mobile
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            setViewMode('grid');
+        }
+    }, []);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const itemsPerPage = 6;
 

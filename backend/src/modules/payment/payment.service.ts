@@ -977,6 +977,84 @@ export const paystackWebhookService = async (
     return { success: true };
   }
 
+  // ─── Branch A.5: charge.failed ────────────────────────────────────────────
+  if (event === 'charge.failed') {
+    const reference = data.reference;
+    const amountNaira = data.amountNaira || 0;
+    const channel = data.channel || 'card';
+    const reason = data.gateway_response || data.message || 'Transaction declined';
+
+    if (!reference) {
+      console.warn('[Webhook] charge.failed received with no reference. Ignoring.');
+      return { success: true };
+    }
+
+    // Idempotency check / check if it's already marked as failed
+    const existing = await prisma.transaction.findUnique({ where: { reference } });
+    if (existing?.status === 'FAILED') {
+      console.log(`[Webhook] Reference ${reference} already marked FAILED. Skipping email.`);
+      return { success: true };
+    }
+
+    let resolved: { userId: string; userRole: string; planId: string; planName: string; billingCycle: string } | null = null;
+
+    if (data.meta?.['userId'] && data.meta?.['user_role'] && data.meta?.['plan']) {
+      try {
+        const planId = await getPlanId(data.meta['user_role'], data.meta['plan']);
+        resolved = {
+          userId: data.meta['userId'],
+          userRole: data.meta['user_role'].toUpperCase(),
+          planId,
+          planName: data.meta['plan'],
+          billingCycle: data.meta['billing'] || 'monthly',
+        };
+      } catch {}
+    }
+
+    if (!resolved) {
+      resolved = await resolveUserFromChargeData({
+        customer: { email: data.email },
+        authorization: { authorization_code: data.authorizationToken },
+        metadata: {
+          custom_fields: data.meta
+            ? Object.entries(data.meta).map(([k, v]) => ({ variable_name: k, value: v }))
+            : [],
+        },
+      });
+    }
+
+    if (resolved) {
+      const { userId, userRole, planName } = resolved;
+      console.log(`[Webhook] Processing charge.failed for user ${userId} (${userRole}), plan: ${planName}`);
+      
+      try {
+        let userEmail: string | undefined;
+        if (userRole === "ADMIN") {
+          const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
+          userEmail = admin?.email;
+        } else {
+          userEmail = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { email: boolean } }) => Promise<{ email: string } | null> }>)[userRole.toLowerCase()].findUnique({ where: { id: userId }, select: { email: true } }).then(u => u?.email);
+        }
+
+        if (userEmail) {
+          await sendPaymentFailedEmail({
+            email: userEmail,
+            amount: amountNaira,
+            date: new Date(),
+            method: channel,
+            plan: planName,
+            reason: reason as string
+          });
+          console.log(`[Webhook] Failed payment email sent to ${userEmail} via webhook`);
+        }
+      } catch (err) {
+        console.error("[Webhook] Could not send failed payment email:", err);
+      }
+    }
+    
+    return { success: true };
+  }
+
   // ─── Branch B: subaccount.update ──────────────────────────────────────────
   if (event === 'subaccount.update') {
     const { subaccountCode, status } = data;

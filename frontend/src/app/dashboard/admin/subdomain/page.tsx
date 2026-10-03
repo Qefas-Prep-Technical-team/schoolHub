@@ -458,7 +458,7 @@ export default function SubdomainBuilderPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
           {subdomain && (
             <div className="flex items-center gap-2">
               <button
@@ -515,11 +515,11 @@ export default function SubdomainBuilderPage() {
       </div>
 
       {/* Main Split Screen Interface */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-[calc(100vh-80px)]">
+      <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden min-h-[calc(100vh-80px)]">
         {/* Left Hand: Controls Panel (Elementor Style) */}
-        <div className="w-full lg:w-[480px] border-r border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col overflow-y-auto shrink-0 pb-16">
+        <div className="w-full lg:w-[480px] lg:border-r border-b lg:border-b-0 border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col lg:overflow-y-auto shrink-0 pb-8 lg:pb-16">
           {/* Tab Selection */}
-          <div className="grid grid-cols-6 border-b border-slate-200 dark:border-slate-900 bg-white/50 dark:bg-slate-950/50 sticky top-0 z-10 backdrop-blur-sm">
+          <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-900 bg-white/50 dark:bg-slate-950/50 sticky top-0 z-10 backdrop-blur-sm hide-scrollbar">
             {[
               { id: "templates", label: "Templates" },
               { id: "hero", label: "Hero" },
@@ -532,7 +532,7 @@ export default function SubdomainBuilderPage() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id as any)}
-                className={`py-3.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all duration-200 ${
+                className={`px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all duration-200 shrink-0 whitespace-nowrap ${
                   activeTab === t.id
                     ? "border-blue-500 text-blue-600 dark:text-blue-500 bg-blue-500/5"
                     : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1004,9 +1004,9 @@ export default function SubdomainBuilderPage() {
         </div>
 
         {/* Right Hand: Interactive Visual Live Preview Frame */}
-        <div className="flex-1 bg-slate-100/50 dark:bg-slate-900/20 p-6 flex flex-col items-center overflow-y-auto">
+        <div className="flex-1 bg-slate-100/50 dark:bg-slate-900/20 p-2 sm:p-6 flex flex-col items-center lg:overflow-y-auto">
           {/* Frame Header */}
-          <div className="w-[95%] max-w-none bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded-t-2xl py-3 px-6 flex items-center justify-between shrink-0 shadow-xl">
+          <div className="w-full sm:w-[95%] max-w-none bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded-t-2xl py-3 px-4 sm:px-6 flex items-center justify-between shrink-0 shadow-xl">
             <div className="flex items-center gap-2">
               <Eye className="w-4 h-4 text-blue-500" />
               <span className="text-xs font-bold text-slate-600 dark:text-slate-300">LIVE PREVIEW SCREEN</span>
@@ -1030,7 +1030,7 @@ export default function SubdomainBuilderPage() {
 
           {/* Actual Visual Frame Content mimicking public page layout */}
           <div
-            className={`w-[95%] max-w-none border-x border-b border-slate-900 shadow-2xl transition-colors duration-300 min-h-[500px] flex flex-col relative rounded-b-2xl overflow-hidden ${
+            className={`w-full sm:w-[95%] max-w-none border-x border-b border-slate-900 shadow-2xl transition-colors duration-300 min-h-[500px] flex flex-col relative rounded-b-2xl overflow-hidden ${
               previewDarkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
             }`}
           >

@@ -50,6 +50,12 @@ export default function DepartmentsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isExporting, setIsExporting] = useState(false);
   
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
+  
   const { user } = useAuthStore();
   const schoolIdFromStore = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const [schoolId, setSchoolId] = useState<string | null>(schoolIdFromStore || null);
@@ -294,8 +300,8 @@ export default function DepartmentsPage() {
   const totalPages = Math.ceil(filteredDepartments.length / itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
-      <div className="max-w-[1600px] mx-auto space-y-12">
+    <div className="min-h-screen bg-white dark:bg-slate-950 p-4 md:p-6 lg:p-10 transition-colors duration-500">
+      <div className="max-w-[1600px] mx-auto space-y-8 md:space-y-12">
         
         {/* Modern Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
@@ -305,7 +311,7 @@ export default function DepartmentsPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">School Departments</span>
             </div>
             <div>
-              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
                 Departments<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
@@ -314,12 +320,12 @@ export default function DepartmentsPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-4 w-full lg:w-auto mt-4 lg:mt-0">
             <Button 
               onClick={handleExportPDF}
               disabled={isExporting}
               variant="outline"
-              className="h-16 px-10 rounded-[2rem] font-black uppercase tracking-widest gap-3 shadow-lg hover:scale-105 active:scale-95 transition-all border-2 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-50"
+              className="w-full sm:w-auto h-14 md:h-16 px-6 md:px-10 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest gap-3 shadow-lg hover:scale-105 active:scale-95 transition-all border-2 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-50"
             >
               {isExporting ? (
                 <div className="size-5 rounded-full border-2 border-slate-400 border-t-slate-800 animate-spin" />
@@ -334,7 +340,7 @@ export default function DepartmentsPage() {
                 setIsModalOpen(true);
               }}
               style={{ backgroundColor: primaryColor }}
-              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              className="w-full sm:w-auto h-14 md:h-16 px-6 md:px-10 rounded-[1.5rem] md:rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
             >
               <Plus size={20} strokeWidth={3} />
               Add Department
@@ -414,48 +420,35 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Operational Terminal Control */}
-        <div className="flex flex-wrap items-center justify-between gap-6">
-            <div className="relative group flex-1 max-w-xl">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-[2rem] lg:rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+            <div className="relative group w-full md:max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
                 <input 
                     type="text" 
                     placeholder="Search departments..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-900/40 backdrop-blur-xl border border-slate-100 dark:border-white/5 rounded-3xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                    className="w-full h-14 md:h-16 pl-14 md:pl-16 pr-6 bg-white dark:bg-slate-900/40 backdrop-blur-xl border border-slate-100 dark:border-white/5 rounded-[1.5rem] md:rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
                     style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 />
             </div>
-            <div className="flex items-center gap-4">
-                 <div className="flex bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-inner">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+                 <div className="flex w-full md:w-auto bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[1.2rem] md:rounded-2xl p-1.5 shadow-inner">
                     <button 
                       onClick={() => setViewMode('grid')}
-                      className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
+                      className={cn("flex-1 md:flex-none h-11 md:size-12 rounded-[1rem] md:rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
                       style={{ color: viewMode === 'grid' ? primaryColor : undefined }}
                     >
-                      <LayoutGrid size={20} strokeWidth={3} />
+                      <LayoutGrid size={18} strokeWidth={3} />
                     </button>
                     <button 
                       onClick={() => setViewMode('list')}
-                      className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
+                      className={cn("flex-1 md:flex-none h-11 md:size-12 rounded-[1rem] md:rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
                       style={{ color: viewMode === 'list' ? primaryColor : undefined }}
                     >
-                      <List size={20} strokeWidth={3} />
+                      <List size={18} strokeWidth={3} />
                     </button>
                  </div>
-                 <Button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    variant="outline" 
-                    className="h-16 px-8 rounded-3xl border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hidden sm:flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-50"
-                 >
-                    {isExporting ? (
-                      <div className="size-4 rounded-full border-2 border-slate-400 border-t-slate-800 animate-spin" />
-                    ) : (
-                      <Download size={18} strokeWidth={3} />
-                    )}
-                    {isExporting ? "Generating..." : "Export PDF"}
-                 </Button>
             </div>
         </div>
 
@@ -494,6 +487,7 @@ export default function DepartmentsPage() {
                     </div>
                 ) : (
                     paginatedDepartments.map((dept, index) => {
+                        const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
                         if (viewMode === 'grid') {
                             return (
                                 <motion.div 
@@ -546,7 +540,8 @@ export default function DepartmentsPage() {
                                     {/* Title & Description */}
                                     <div className="flex-1 mb-6">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+                                                <span className="text-sm font-black text-slate-300 dark:text-slate-600">#{globalIndex}</span>
                                                 {dept.name}
                                             </h3>
                                             <span className="text-[10px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md">
@@ -610,6 +605,7 @@ export default function DepartmentsPage() {
                                 <div className="absolute inset-0 bg-slate-50 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-none first:rounded-t-none last:rounded-b-2xl" />
 
                                 <div className="relative z-10 flex items-center gap-4">
+                                    <span className="font-mono text-sm font-bold text-slate-400 dark:text-slate-500 w-6">#{globalIndex}</span>
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
                                         <Building2 size={18} strokeWidth={2.5} />
                                     </div>
@@ -688,6 +684,7 @@ export default function DepartmentsPage() {
             totalItems={filteredDepartments.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
+            theme="blue"
           />
         )}
 

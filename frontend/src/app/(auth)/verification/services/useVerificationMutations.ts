@@ -7,8 +7,8 @@ export const useRequestCode = () => {
   const { auth } = useToast();
 
   return useMutation({
-    mutationFn: (data: { email: string; userType: string }) =>
-      verificationAPI.requestCode(data.email, data.userType),
+    mutationFn: (data: { email: string; userType: string; isDeviceVerification?: boolean }) =>
+      verificationAPI.requestCode(data.email, data.userType, data.isDeviceVerification),
     onSuccess: (response) => {
       auth.success(
         response.data?.message || "Verification code sent successfully!"
@@ -58,8 +58,8 @@ export const useResendCode = () => {
   const { auth } = useToast();
 
   return useMutation({
-    mutationFn: (data: { email: string; userType: string }) =>
-      verificationAPI.resendCode(data.email, data.userType),
+    mutationFn: (data: { email: string; userType: string; isDeviceVerification?: boolean }) =>
+      verificationAPI.resendCode(data.email, data.userType, data.isDeviceVerification),
     onSuccess: (response) => {
       auth.success(response.data?.message || "New code sent successfully!");
       // console.log("Code resent:", response.data);

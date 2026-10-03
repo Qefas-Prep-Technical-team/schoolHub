@@ -20,6 +20,7 @@ interface DeviceSession {
     deviceModel: string;
     osVersion: string;
     ipAddress: string;
+    location?: string;
     lastActiveAt: string;
     createdAt: string;
     isCurrentDevice: boolean;
@@ -211,7 +212,7 @@ export default function DeviceSessions() {
                                             )}
                                         </div>
                                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                            {session.osVersion === 'Windows 10' ? 'Windows 10/11' : (session.osVersion || 'Unknown OS')} • {session.ipAddress || 'Unknown IP'}
+                                            {session.osVersion === 'Windows 10' ? 'Windows 10/11' : (session.osVersion || 'Unknown OS')} • {session.location ? `${session.location} • ` : ''}{session.ipAddress || 'Unknown IP'}
                                         </p>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                                             Last active {formatDistanceToNow(new Date(session.lastActiveAt), { addSuffix: true })}

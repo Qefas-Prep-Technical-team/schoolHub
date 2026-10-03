@@ -28,11 +28,11 @@ interface VerifyCodeResponse {
 
 export const verificationAPI = {
   // Request verification code
-  requestCode: async (email: string, userType: string) => {
+  requestCode: async (email: string, userType: string, isDeviceVerification?: boolean) => {
     // console.log(userType);
     const response = await apiClient.post<ApiResponse<RequestCodeResponse>>(
       "/auth/request-code",
-      { email, userType }
+      { email, userType, isDeviceVerification }
     );
     return response;
   },
@@ -48,10 +48,10 @@ export const verificationAPI = {
   },
 
   // Resend verification code
-  resendCode: async (email: string, userType: string) => {
+  resendCode: async (email: string, userType: string, isDeviceVerification?: boolean) => {
     const response = await apiClient.post<ApiResponse<RequestCodeResponse>>(
       "/auth/request-code",
-      { email, userType }
+      { email, userType, isDeviceVerification }
     );
     return response;
   },

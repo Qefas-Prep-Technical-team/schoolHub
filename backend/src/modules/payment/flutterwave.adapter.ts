@@ -190,6 +190,25 @@ export class FlutterwaveAdapter implements PaymentGateway {
       };
     }
 
+    if (eventType === 'charge.failed' || eventType === 'charge.declined') {
+      const meta = (data['meta'] ?? {}) as Record<string, string>;
+      const customer = (data['customer'] ?? {}) as Record<string, string>;
+
+      return {
+        valid: true,
+        event: 'charge.failed',
+        data: {
+          reference: data['tx_ref'] as string,
+          gatewayRef: data['flw_ref'] as string,
+          amountNaira: (data['amount'] as number) ?? 0,
+          channel: data['payment_type'] as string,
+          email: customer['email'],
+          gateway_response: (data['processor_response'] as string) || (data['status'] as string),
+          meta,
+        },
+      };
+    }
+
     // ── subscription.cancelled ────────────────────────────────
     if (eventType === 'subscription.cancelled') {
       return {

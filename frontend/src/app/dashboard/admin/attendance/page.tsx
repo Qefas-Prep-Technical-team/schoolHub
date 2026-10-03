@@ -30,8 +30,9 @@ export default function AttendancePage() {
     const isLoading = statsLoading || summaryLoading
 
     return (
-        <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
-            {/* Header / Hero */}
+        <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-4 md:p-6 lg:p-10 transition-colors duration-500">
+            <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
+                {/* Header / Hero */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-4">
                     <Button 
@@ -42,26 +43,26 @@ export default function AttendancePage() {
                         <ChevronLeftIcon size={20} className="mr-2" /> Back to Ecosystem
                     </Button>
                     <div className="space-y-1">
-                        <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
-                            Attendance Hub
+                        <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+                            Attendance<span className="text-blue-600">.</span>
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-lg mt-2">
                             Real-time school-wide presence analytics & trend monitoring
                         </p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto">
                     <Button 
                         variant="outline" 
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-14 px-6 rounded-2xl font-bold shadow-sm"
+                        className="w-full sm:w-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-14 px-6 rounded-[1.5rem] md:rounded-[2rem] font-bold shadow-sm"
                         onClick={() => setShowHistory(!showHistory)}
                     >
                         <CalendarIcon size={18} className="mr-2" /> 
                         {showHistory ? "Hide History" : "View Analytics History"}
                     </Button>
                     <Button 
-                        className="bg-primary hover:bg-primary text-white h-14 px-8 rounded-2xl font-bold shadow-xl shadow-primary/20 gap-2"
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white h-14 px-8 rounded-[1.5rem] md:rounded-[2rem] font-bold shadow-xl shadow-blue-600/20 gap-2"
                     >
                         <DownloadIcon size={18} />
                         Generate Executive Report
@@ -89,6 +90,7 @@ export default function AttendancePage() {
                     <LowAttendanceList summary={summary} isLoading={summaryLoading} />
                     <AbsentStaffList summary={summary} isLoading={summaryLoading} />
                 </div>
+            </div>
             </div>
         </div>
     )

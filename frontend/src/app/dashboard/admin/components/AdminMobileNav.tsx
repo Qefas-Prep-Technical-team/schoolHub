@@ -40,16 +40,7 @@ import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 
-/* =========================
-   Types
-========================= */
-interface AdminMenuItem {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  featureKey: AdminFeatureFlagKey;
-  section?: keyof typeof SECTION_TITLES;
-}
+
 
 /* =========================
    Section titles
@@ -63,42 +54,7 @@ const SECTION_TITLES = {
   settings: "Settings",
 } as const;
 
-/* =========================
-   Menu Items
-   (same list you already have)
-========================= */
-export const adminMenuItems: AdminMenuItem[] = [
-  // === CORE MANAGEMENT ===
-  { icon: LayoutDashboard, label: "Overview", href: "/dashboard/admin", featureKey: "overview", section: "core" },
-  { icon: Building2, label: "School Profile", href: "/dashboard/admin/school-profile", featureKey: "schoolProfile", section: "core" },
-  { icon: Users, label: "Teachers", href: "/dashboard/admin/teachers", featureKey: "teachers", section: "core" },
-  { icon: GraduationCap, label: "Students", href: "/dashboard/admin/students", featureKey: "students", section: "core" },
-  { icon: CalendarDays, label: "Classes & Timetable", href: "/dashboard/admin/classes", featureKey: "classes", section: "core" },
-  { icon: CalendarDays, label: "Session Management", href: "/dashboard/admin/sessions", featureKey: "sessions", section: "core" },
-
-  // === ACADEMICS ===
-  { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
-  { icon: BookOpenCheck, label: "Exam Setup", href: "/dashboard/admin/exams", featureKey: "exams", section: "academics" },
-  { icon: ClipboardList, label: "Assignments", href: "/dashboard/admin/assignments", featureKey: "assignments", section: "academics" },
-  { icon: CheckSquare, label: "Attendance", href: "/dashboard/admin/attendance", featureKey: "attendance", section: "academics" },
-  { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
-
-  // === ADMINISTRATION ===
-  { icon: CreditCard, label: "Subscription", href: "/dashboard/admin/billing", featureKey: "billing", section: "administration" },
-  { icon: WalletCards, label: "Payments", href: "/dashboard/admin/payments", featureKey: "payments", section: "administration" },
-  { icon: BarChart3, label: "Reports & Analytics", href: "/dashboard/admin/reports", featureKey: "reports", section: "administration" },
-
-  // === COMMUNICATION ===
-  { icon: MessageSquare, label: "Communication", href: "/dashboard/admin/chat", featureKey: "communication", section: "communication" },
-  { icon: Landmark, label: "Gallery & Media", href: "/dashboard/admin/gallery", featureKey: "gallery", section: "communication" },
-
-  // === ADVANCED TOOLS ===
-  { icon: BrainCircuit, label: "Artificial Intelligence", href: "/dashboard/admin/ai-tools", featureKey: "aiTools", section: "advanced" },
-  { icon: Workflow, label: "Simulations", href: "/dashboard/admin/simulations", featureKey: "simulations", section: "advanced" },
-
-  // === SETTINGS ===
-  { icon: Settings, label: "Settings", href: "/dashboard/admin/settings", featureKey: "settings", section: "settings" },
-];
+import { adminMenuItems, type AdminMenuItem } from "./app-sidebar";
 
 /* =========================
    Helpers

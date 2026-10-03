@@ -72,6 +72,12 @@ const SubjectsPage = () => {
   const primaryColor = settings?.themeColor || '#2563eb';
 
   useEffect(() => {
+    if (window.innerWidth < 768) {
+      setViewMode("grid");
+    }
+  }, []);
+
+  useEffect(() => {
     if (schoolId) {
       fetchData();
     }
@@ -378,8 +384,8 @@ const SubjectsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
-      <div className="max-w-[1600px] mx-auto space-y-12">
+    <div className="min-h-screen bg-white dark:bg-slate-950 p-4 md:p-6 lg:p-10 transition-colors duration-500">
+      <div className="max-w-[1600px] mx-auto space-y-8 md:space-y-12">
         
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
@@ -389,7 +395,7 @@ const SubjectsPage = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Curriculum Management</span>
             </div>
             <div>
-              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
                 Subjects<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
@@ -398,11 +404,11 @@ const SubjectsPage = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full lg:w-auto mt-4 lg:mt-0">
             <Button 
               onClick={handleCreate}
               style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}
-              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
+              className="w-full lg:w-auto h-14 md:h-16 px-6 md:px-10 rounded-[1.5rem] md:rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
             >
               <Plus size={20} strokeWidth={3} />
               Add New Subject
@@ -468,88 +474,108 @@ const SubjectsPage = () => {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-            <div className="relative group flex-1 max-w-xl">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-4 rounded-[2rem] lg:rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+            <div className="relative group w-full xl:max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
                 <input 
                     type="text" 
                     placeholder="Search subjects..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                    className="w-full h-14 md:h-16 pl-14 md:pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[1.5rem] md:rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
                     style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 />
             </div>
             
-            <div className="flex items-center gap-4">
-                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                    <SelectTrigger className="h-16 w-[240px] rounded-[2rem] bg-white dark:bg-slate-950 border-slate-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest px-8 shadow-sm">
-                        <SelectValue placeholder="All Departments" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-3xl border-2 border-slate-100 dark:border-white/5 p-2">
-                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">All Departments</SelectItem>
-                        {departments.map(dep => (
-                            <SelectItem key={dep.id} value={dep.departmentId || dep.id} className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">{dep.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4 w-full xl:w-auto">
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
+                  <Select value={selectedScope} onValueChange={setSelectedScope}>
+                      <SelectTrigger className="flex-1 md:flex-none h-14 md:h-16 md:w-[200px] rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300 px-6 md:px-8 shadow-sm">
+                          <div className="flex items-center gap-2.5">
+                            <Filter className="w-4 h-4 text-emerald-500" />
+                            <SelectValue placeholder="All Types" />
+                          </div>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-[1.5rem] border border-slate-100 dark:border-white/5 p-2 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl">
+                          <SelectItem value="all" className="rounded-xl py-3 text-xs font-bold text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer">
+                            All Types
+                          </SelectItem>
+                          <SelectItem value="SCHOOL" className="rounded-xl py-3 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <Globe size={14} className="text-slate-400" /> School-wide
+                              </div>
+                          </SelectItem>
+                          <SelectItem value="PERSONAL" className="rounded-xl py-3 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <Lock size={14} className="text-slate-400" /> Private
+                              </div>
+                          </SelectItem>
+                      </SelectContent>
+                  </Select>
 
-                <Select value={selectedScope} onValueChange={setSelectedScope}>
-                    <SelectTrigger className="h-16 w-[200px] rounded-[2rem] bg-white dark:bg-slate-950 border-slate-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest px-8 shadow-sm">
-                        <SelectValue placeholder="Global Scope" />
-                        <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-3xl border-2 border-slate-100 dark:border-white/5 p-2">
-                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">All Types</SelectItem>
-                        <SelectItem value="SCHOOL" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Globe size={12} className="inline mr-2" /> School-wide
-                        </SelectItem>
-                        <SelectItem value="PERSONAL" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Lock size={12} className="inline mr-2" /> Private
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    variant="outline" 
-                    className="h-16 px-8 rounded-3xl border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 flex hover:bg-slate-100 dark:hover:bg-white/5 transition-all disabled:opacity-50"
-                >
-                    {isExporting ? (
-                      <div className="size-4 rounded-full border-2 border-slate-400 border-t-slate-800 animate-spin" />
-                    ) : (
-                      <Download size={18} strokeWidth={3} className="text-slate-400" />
-                    )}
-                    {isExporting ? "Generating..." : "Export PDF"}
-                </Button>
+                  <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                      <SelectTrigger className="flex-1 md:flex-none h-14 md:h-16 md:w-[240px] rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300 px-6 md:px-8 shadow-sm">
+                          <div className="flex items-center gap-2.5">
+                            <Layers className="w-4 h-4 text-[#5B5CE6]" />
+                            <SelectValue placeholder="All Departments" />
+                          </div>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-[1.5rem] border border-slate-100 dark:border-white/5 p-2 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl">
+                          <SelectItem value="all" className="rounded-xl py-3 text-xs font-bold text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer">
+                            All Departments
+                          </SelectItem>
+                          {departments.map(dep => (
+                              <SelectItem key={dep.id} value={dep.departmentId || dep.id} className="rounded-xl py-3 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer">
+                                {dep.name}
+                              </SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+                </div>
 
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-[2rem] h-16 items-center border border-slate-200/50 dark:border-white/5 shadow-inner">
-                    <button
-                        type="button"
-                        onClick={() => setViewMode("grid")}
-                        className={cn(
-                            "h-full px-6 rounded-[1.5rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                            viewMode === "grid" 
-                                ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-md" 
-                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                        )}
-                    >
-                        <LayoutGrid size={14} strokeWidth={2.5} />
-                        Grid
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setViewMode("list")}
-                        className={cn(
-                            "h-full px-6 rounded-[1.5rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                            viewMode === "list" 
-                                ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-md" 
-                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                        )}
-                    >
-                        <List size={14} strokeWidth={2.5} />
-                        List
-                    </button>
+                <div className="flex gap-3 md:gap-4 w-full md:w-auto">
+                  <Button 
+                      onClick={handleExportPDF}
+                      disabled={isExporting}
+                      variant="outline" 
+                      className="flex-1 md:flex-none h-14 md:h-16 px-4 md:px-8 rounded-[1.5rem] md:rounded-3xl border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-2 flex hover:bg-slate-100 dark:hover:bg-white/5 transition-all disabled:opacity-50"
+                  >
+                      {isExporting ? (
+                        <div className="size-4 rounded-full border-2 border-slate-400 border-t-slate-800 animate-spin" />
+                      ) : (
+                        <Download size={18} strokeWidth={3} className="text-slate-400" />
+                      )}
+                      {isExporting ? <span className="hidden sm:inline">Generating...</span> : <span className="hidden sm:inline">Export PDF</span>}
+                  </Button>
+
+                  <div className="flex flex-1 md:flex-none bg-slate-100 dark:bg-slate-800 p-1.5 rounded-[1.5rem] md:rounded-[2rem] h-14 md:h-16 items-center border border-slate-200/50 dark:border-white/5 shadow-inner">
+                      <button
+                          type="button"
+                          onClick={() => setViewMode("grid")}
+                          className={cn(
+                              "h-full w-full md:px-6 rounded-[1.2rem] md:rounded-[1.5rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                              viewMode === "grid" 
+                                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-md" 
+                                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          )}
+                      >
+                          <LayoutGrid size={14} strokeWidth={2.5} />
+                          <span className="hidden md:inline">Grid</span>
+                      </button>
+                      <button
+                          type="button"
+                          onClick={() => setViewMode("list")}
+                          className={cn(
+                              "h-full w-full md:px-6 rounded-[1.2rem] md:rounded-[1.5rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                              viewMode === "list" 
+                                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-md" 
+                                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          )}
+                      >
+                          <List size={14} strokeWidth={2.5} />
+                          <span className="hidden md:inline">List</span>
+                      </button>
+                  </div>
                 </div>
             </div>
         </div>
@@ -560,9 +586,9 @@ const SubjectsPage = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="flex items-center justify-between p-6 rounded-[2rem] bg-red-500/10 border border-red-500/20 text-red-900 dark:text-red-200"
+            className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-red-500/10 border border-red-500/20 text-red-900 dark:text-red-200"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
               <input
                 type="checkbox"
                 checked={selectedSubjectIds.length === filteredSubjects.length}
@@ -575,7 +601,7 @@ const SubjectsPage = () => {
             </div>
             <Button
               onClick={handleBulkDelete}
-              className="h-12 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest gap-2"
+              className="w-full sm:w-auto h-12 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest gap-2"
             >
               <Trash2 size={16} />
               Delete Selected
