@@ -23,6 +23,7 @@ import {
 } from 'recharts'
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
+import { HistoryDetailsModal } from '../components/HistoryDetailsModal'
 import { ExitStudentModal } from '../components/ExitStudentModal'
 import { StudentHistoryTimeline } from '../components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
@@ -80,10 +81,10 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
 function SectionCard({ title, children, className = '', headerAction }: { title: string; children: React.ReactNode; className?: string; headerAction?: React.ReactNode }) {
     return (
         <div className={cn("bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 rounded-2xl shadow-sm overflow-hidden", className)}>
-            <div className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 pb-4">
+            <div className="p-5 md:p-8 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/50 pb-4">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
-                    {headerAction}
+                    {headerAction && <div className="w-full sm:w-auto">{headerAction}</div>}
                 </div>
                 {children}
             </div>
@@ -306,6 +307,8 @@ export default function StudentProfilePage() {
     }, [tabParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
     const [isExitModalOpen, setIsExitModalOpen] = useState(false)
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+    const [selectedHistoryEvent, setSelectedHistoryEvent] = useState<any>(null)
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
     const [scheduleDate, setScheduleDate] = useState(new Date())
 
@@ -853,7 +856,7 @@ export default function StudentProfilePage() {
                     <div className="absolute inset-0 opacity-20"
                         style={{ backgroundImage: 'radial-gradient(circle at 100% 0%, white 0%, transparent 50%)' }} />
                     
-                    <div className="relative z-20 flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
+                    <div className="relative z-20 flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-center text-center md:text-left">
                         {/* Avatar */}
                         <div className="size-24 md:size-32 rounded-full bg-white p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow-lg border border-white/20">
                             <div className="w-full h-full rounded-full overflow-hidden border-2 border-white/50 relative">
@@ -863,22 +866,22 @@ export default function StudentProfilePage() {
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1 text-white space-y-3">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="space-y-2">
+                        <div className="flex-1 w-full text-white space-y-4">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="space-y-2 flex flex-col items-center md:items-start">
                                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
                                         {name}
                                     </h1>
                                     <p className="text-sm md:text-base font-medium text-white/80">
                                         {classNameLabel} · {department}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-4 pt-1">
-                                        <span className="flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-black/10 px-3 py-1 rounded-lg backdrop-blur-sm">
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+                                        <span className="flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-black/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
                                             <Hash size={14} />
                                             {studentCode}
                                         </span>
                                         <span className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm",
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-sm",
                                             isVerified ? 'bg-emerald-500/20 text-emerald-50' : 'bg-amber-500/20 text-amber-50'
                                         )}>
                                             <ShieldCheck size={14} />
@@ -887,16 +890,16 @@ export default function StudentProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
                                     <button
-                                        className="px-6 py-2.5 rounded-xl bg-white text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                                        className="flex-1 md:flex-none px-4 md:px-6 py-3 md:py-2.5 rounded-xl bg-white text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 active:scale-95"
                                         style={{ color: primaryColor }}
                                     >
-                                        <Edit2 size={16} /> Manage Student
+                                        <Edit2 size={16} /> <span className="hidden sm:inline">Manage Student</span><span className="sm:hidden">Manage</span>
                                     </button>
                                     <a
                                         href={`mailto:${email}`}
-                                        className="px-6 py-2.5 rounded-xl bg-black/20 text-white text-sm font-bold shadow-sm hover:bg-black/30 backdrop-blur-md transition-colors flex items-center justify-center gap-2"
+                                        className="flex-1 md:flex-none px-4 md:px-6 py-3 md:py-2.5 rounded-xl bg-black/20 text-white text-sm font-bold shadow-sm hover:bg-black/30 backdrop-blur-md transition-colors flex items-center justify-center gap-2 active:scale-95"
                                     >
                                         <Mail size={16} /> Contact
                                     </a>
@@ -909,7 +912,7 @@ export default function StudentProfilePage() {
 
             {/* ── Tabs (Verlof Style) ─────────────────────────────────────── */}
             <div className="w-full px-4 sm:px-6 lg:px-12 mt-8">
-                <div className="flex gap-6 overflow-x-auto scrollbar-hide border-b border-slate-200 dark:border-slate-800/50">
+                <div className="flex gap-6 overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-slate-800/50">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
@@ -951,7 +954,7 @@ export default function StudentProfilePage() {
 
                         {/* Personal Information */}
                         <SectionCard title="Personal Information">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                                 <InfoRow icon={Mail} label="Email Address" value={email} themeColor={primaryColor} />
                                 <InfoRow icon={Calendar} label="Date of Birth" value={dob} themeColor={primaryColor} />
                                 <InfoRow icon={Users} label="Gender" value={gender} themeColor={primaryColor} />
@@ -961,7 +964,7 @@ export default function StudentProfilePage() {
 
                         {/* Institutional Links */}
                         <SectionCard title="Academic Context">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                                 <InfoRow icon={Building2} label="Current School" value={student.school?.name || 'Not linked'} themeColor={primaryColor} />
                                 <InfoRow icon={BookOpen} label="Assigned Class" value={classNameLabel} themeColor={primaryColor} />
                                 <InfoRow icon={Briefcase} label="Department" value={department} themeColor={primaryColor} />
@@ -1041,7 +1044,7 @@ export default function StudentProfilePage() {
 
             {/* ── History Tab ─────────────────────────────────────────────── */}
             {activeTab === 'history' && (
-                <main className="max-w-4xl mx-auto px-4 md:px-12 mt-10 pb-20">
+                <main className="w-[98%] mx-auto px-4 md:px-12 mt-10 pb-20">
                     <SectionCard title="Student Timeline">
                         {isHistoryLoading ? (
                             <div className="py-20 flex flex-col items-center justify-center space-y-4">
@@ -1049,7 +1052,40 @@ export default function StudentProfilePage() {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading History...</p>
                             </div>
                         ) : (
-                            <StudentHistoryTimeline history={historyData || []} primaryColor={primaryColor} />
+                            <div className="pl-6 md:pl-12">
+                                <StudentHistoryTimeline 
+                                    history={[
+                                        // Dynamically inject the Current Class as the topmost event
+                                        ...(student?.classes?.length ? [{
+                                            id: 'current-active-class',
+                                            date: new Date().toISOString(),
+                                            type: 'PROMOTION', // Acts as their active / current status
+                                            title: `Currently in ${student.classes?.[0]?.class?.name || 'Class'}`,
+                                            description: `Student is currently active in this class.`,
+                                            metadata: { status: 'Active', session: '2025/2026', currentClass: student.classes?.[0]?.class?.name },
+                                            onClick: () => {
+                                                setSelectedHistoryEvent({
+                                                    type: 'PROMOTION',
+                                                    date: new Date().toISOString(),
+                                                    title: `Currently in ${student.classes?.[0]?.class?.name || 'Class'}`,
+                                                    description: `Student is currently active in this class.`,
+                                                    metadata: { status: 'Active', session: '2025/2026', newClass: student.classes?.[0]?.class?.name }
+                                                });
+                                                setIsHistoryModalOpen(true);
+                                            }
+                                        }] : []),
+                                        // Map the rest of the real history data
+                                        ...(historyData || []).map((event: any) => ({
+                                            ...event,
+                                            onClick: () => {
+                                                setSelectedHistoryEvent(event);
+                                                setIsHistoryModalOpen(true);
+                                            }
+                                        }))
+                                    ]}
+                                    primaryColor={primaryColor} 
+                                />
+                            </div>
                         )}
                     </SectionCard>
                 </main>
@@ -1668,14 +1704,14 @@ export default function StudentProfilePage() {
                      <SectionCard 
                         title="Weekly Schedule"
                         headerAction={
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full sm:w-auto mt-2 sm:mt-0">
                                 <WeekControls 
                                     currentDate={scheduleDate}
                                     onPrev={() => setScheduleDate(d => addWeeks(d, -1))}
                                     onNext={() => setScheduleDate(d => addWeeks(d, 1))}
                                     themeColor={primaryColor}
                                 />
-                                <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline" style={{ color: primaryColor }}>
+                                <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline w-full sm:w-auto text-center" style={{ color: primaryColor }}>
                                     Download PDF
                                 </button>
                             </div>
@@ -1758,7 +1794,7 @@ export default function StudentProfilePage() {
                                                     onClick={() => isEditingEvaluation && handleEvaluationChange(trait, rating)}
                                                     disabled={!isEditingEvaluation}
                                                     className={cn(
-                                                        "size-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
+                                                        "size-7 sm:size-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all shrink-0",
                                                         (evaluationData as any)[trait] === rating
                                                             ? "text-white shadow-md border-transparent"
                                                             : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-400",
@@ -1794,7 +1830,7 @@ export default function StudentProfilePage() {
                                                         onClick={() => isEditingEvaluation && handleEvaluationChange(trait, rating)}
                                                         disabled={!isEditingEvaluation}
                                                         className={cn(
-                                                            "size-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
+                                                            "size-7 sm:size-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all shrink-0",
                                                             (evaluationData as any)[trait] === rating
                                                                 ? "text-white shadow-md border-transparent"
                                                                 : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-400",
@@ -2387,6 +2423,13 @@ export default function StudentProfilePage() {
                 onClose={() => setIsExitModalOpen(false)}
                 studentId={studentId}
                 studentName={name}
+            />
+            {/* History Details Modal */}
+            <HistoryDetailsModal 
+                isOpen={isHistoryModalOpen}
+                onClose={() => setIsHistoryModalOpen(false)}
+                eventData={selectedHistoryEvent}
+                primaryColor={primaryColor}
             />
         </div>
     )

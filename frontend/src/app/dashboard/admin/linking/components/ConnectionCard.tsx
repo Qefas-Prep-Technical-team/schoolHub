@@ -65,7 +65,7 @@ export function ConnectionCard({
   // ── ACTIVE CONNECTION CARD ────────────────────────────────────────────────
   if (type === 'active') {
     return (
-      <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-6 pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
+      <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
         
         {/* Options Menu */}
         <div className="absolute top-4 right-4">
@@ -91,7 +91,7 @@ export function ConnectionCard({
           {/* Avatar Ring */}
           <div className={cn("absolute -inset-[6px] rounded-full border-[1.5px] border-slate-200/50 dark:border-slate-700 transition-colors group-hover:border-slate-300", cfg.border)}></div>
           
-          <Avatar className="h-16 w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105">
+          <Avatar className="h-12 w-12 md:h-16 md:w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105">
             <AvatarImage src={details.image} alt={details.name} className="object-cover" />
             <AvatarFallback className={cn("rounded-full text-white font-bold text-xl", cfg.avatar)}>
               {details.name?.charAt(0).toUpperCase() || <User size={20} />}
@@ -103,7 +103,7 @@ export function ConnectionCard({
         </div>
 
         {/* Name and Email */}
-        <div className="text-center mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
+        <div className="text-center mb-3 md:mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
           <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
             {details.name}
           </h3>
@@ -112,8 +112,8 @@ export function ConnectionCard({
           </p>
         </div>
 
-        {/* Animated Connection Row */}
-        <div className="w-full flex items-center justify-between gap-3 mb-6 px-1 relative">
+        {/* Animated Connection Row - Hidden on Mobile */}
+        <div className="hidden md:flex w-full items-center justify-between gap-3 mb-4 md:mb-6 px-1 relative">
            {/* Left Icon (Source) */}
            <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 z-10">
              <User size={12} className="text-slate-400" />
@@ -169,7 +169,7 @@ export function ConnectionCard({
 
   // ── PENDING REQUEST CARD ──────────────────────────────────────────────────
   return (
-    <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-6 pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
+    <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
       
       {/* Status Badge */}
       <div className="absolute top-4 left-4">
@@ -186,7 +186,7 @@ export function ConnectionCard({
           !isOutgoing && cfg.border
         )}></div>
         
-        <Avatar className="h-16 w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105 opacity-90">
+        <Avatar className="h-12 w-12 md:h-16 md:w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105 opacity-90">
           <AvatarImage src={details.image} alt={details.name} className="object-cover" />
           <AvatarFallback className={cn("rounded-full text-white font-bold text-xl", isOutgoing ? "bg-slate-300 dark:bg-slate-700" : cfg.avatar)}>
             {details.name?.charAt(0).toUpperCase() || <User size={20} />}
@@ -195,7 +195,7 @@ export function ConnectionCard({
       </div>
 
       {/* Name and Email */}
-      <div className="text-center mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
+      <div className="text-center mb-3 md:mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
         <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
           {details.name}
         </h3>
@@ -205,7 +205,7 @@ export function ConnectionCard({
       </div>
 
       {/* Action Buttons */}
-      <div className="w-full flex gap-2 mb-6 px-1">
+      <div className="w-full flex gap-2 mb-4 md:mb-6 px-1">
       {!isOutgoing ? (
         <>
           <button

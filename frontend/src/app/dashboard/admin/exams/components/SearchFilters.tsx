@@ -102,19 +102,38 @@ export default function SearchFilters({ filters, onFilterChange, hideCategoryFil
 
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div className="relative w-full md:w-80 group">
-                <Search size={16} strokeWidth={2.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <Input
-                    placeholder="Search assessments..."
-                    className="h-10 pl-10 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium w-full focus:ring-2 focus:ring-blue-500/20"
-                    value={filters.searchQuery || ''}
-                    onChange={(val) => onFilterChange({ searchQuery: val })}
-                />
+            <div className="flex items-center justify-between gap-3 w-full md:w-auto">
+                <div className="relative w-full md:w-80 group">
+                    <Search size={16} strokeWidth={2.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input
+                        placeholder="Search assessments..."
+                        className="h-10 pl-10 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium w-full focus:ring-2 focus:ring-blue-500/20"
+                        value={filters.searchQuery || ''}
+                        onChange={(val) => onFilterChange({ searchQuery: val })}
+                    />
+                </div>
+                
+                {viewMode && onViewModeChange && (
+                    <div className="flex shrink-0 items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-full h-10">
+                        <button 
+                            onClick={() => onViewModeChange('grid')}
+                            className={`p-1.5 rounded-full transition-all duration-300 ${viewMode === 'grid' ? 'bg-white shadow-sm text-slate-800 dark:bg-slate-700 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                        >
+                            <LayoutGrid size={16} strokeWidth={2.5} />
+                        </button>
+                        <button 
+                            onClick={() => onViewModeChange('list')}
+                            className={`p-1.5 rounded-full transition-all duration-300 ${viewMode === 'list' ? 'bg-white shadow-sm text-slate-800 dark:bg-slate-700 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                        >
+                            <List size={16} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                )}
             </div>
             
-            <div className="flex items-center gap-3 overflow-x-auto pb-2 md:pb-0 custom-scrollbar">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-3 w-full md:w-auto">
                 {isLoadingAny ? (
-                    <div className="h-10 w-24 rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                    <div className="h-10 w-full md:w-24 rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse col-span-2" />
                 ) : (
                     <>
                         <Select
@@ -122,21 +141,21 @@ export default function SearchFilters({ filters, onFilterChange, hideCategoryFil
                             value={filters.sessionId}
                             onChange={(val) => onFilterChange({ sessionId: val })}
                             options={sessionOptions}
-                            className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 min-w-[120px]"
+                            className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 w-full md:w-auto md:min-w-[120px]"
                         />
                         <Select
                             id="term"
                             value={filters.term}
                             onChange={(val) => onFilterChange({ term: val })}
                             options={termOptions}
-                            className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 min-w-[110px]"
+                            className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 w-full md:w-auto md:min-w-[110px]"
                         />
                         <Select
                             id="class"
                             value={filters.classId}
                             onChange={(val) => onFilterChange({ classId: val })}
                             options={classOptions}
-                            className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 min-w-[110px]"
+                            className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 w-full md:w-auto md:min-w-[110px]"
                         />
                         
                         {!hideCategoryFilter && (
@@ -150,13 +169,13 @@ export default function SearchFilters({ filters, onFilterChange, hideCategoryFil
                                     { value: 'QUIZ', label: 'Quiz' },
                                     { value: 'CA', label: 'CA' },
                                 ]}
-                                className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 min-w-[110px]"
+                                className="h-10 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-white dark:bg-slate-900 px-4 w-full md:w-auto md:min-w-[110px]"
                             />
                         )}
 
                         <Button
                             variant="secondary"
-                            className="h-10 px-4 rounded-full text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 border-0"
+                            className="h-10 px-4 rounded-full text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 w-full md:w-auto col-span-2 md:col-span-1"
                             onClick={() => onFilterChange({
                                 sessionId: 'all', term: 'all', classId: 'all', departmentId: 'all', status: 'all', category: 'all'
                             })}
@@ -164,22 +183,6 @@ export default function SearchFilters({ filters, onFilterChange, hideCategoryFil
                             Clear
                         </Button>
 
-                        {viewMode && onViewModeChange && (
-                            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-full h-10 ml-2">
-                                <button 
-                                    onClick={() => onViewModeChange('grid')}
-                                    className={`p-1.5 rounded-full transition-all duration-300 ${viewMode === 'grid' ? 'bg-white shadow-sm text-slate-800 dark:bg-slate-700 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-                                >
-                                    <LayoutGrid size={16} strokeWidth={2.5} />
-                                </button>
-                                <button 
-                                    onClick={() => onViewModeChange('list')}
-                                    className={`p-1.5 rounded-full transition-all duration-300 ${viewMode === 'list' ? 'bg-white shadow-sm text-slate-800 dark:bg-slate-700 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-                                >
-                                    <List size={16} strokeWidth={2.5} />
-                                </button>
-                            </div>
-                        )}
                     </>
                 )}
             </div>

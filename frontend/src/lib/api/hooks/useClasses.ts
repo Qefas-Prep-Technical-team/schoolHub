@@ -99,8 +99,13 @@ export const useSubmitAttendance = (classId: string) => {
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "attendance-summary", classId] });
       toast.success("Attendance saved successfully");
     },
-    onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to save attendance");
+    onError: (error: AxiosError<{ message?: string; error?: string }>) => {
+      console.error("[useSubmitAttendance] failed:", error.response?.status, error.response?.data ?? error.message);
+      toast.error(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        (error.response ? `Failed to save attendance (HTTP ${error.response.status})` : `Failed to save attendance: ${error.message}`)
+      );
     },
   });
 };

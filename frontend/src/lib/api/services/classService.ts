@@ -127,4 +127,9 @@ export const classService = {
     const response = await apiClient.post(`/classes/${classId}/promote`, data);
     return response.data;
   },
+
+  sendAnnouncement: async (classId: string, data: { title: string; message: string; targets: string[]; priority?: string }) => {
+    const response = await apiClient.post(`/classes/${classId}/announcement`, data);
+    return response.data;
+  },
 };

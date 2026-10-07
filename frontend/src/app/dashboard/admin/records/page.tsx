@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
+import { generatePDF } from "@/utils/pdfGenerator";
 
 import { useClassSubjectResults, useStudentTermResults, useCreateClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useClasses } from "@/lib/api/hooks/useClasses";
@@ -174,8 +175,8 @@ export default function RecordsPage() {
     );
   };
   
-  const handleExport = async () => {
-    setIsExporting(exportTargetFormat);
+  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
+    setIsExporting(targetFormat);
     try {
       const rawData = activeTab === "subject" ? subjectResults : studentResults;
       const dataToExport = rawData?.filter((res: any) => {
@@ -190,7 +191,7 @@ export default function RecordsPage() {
         return;
       }
       
-      const exportFormat = exportTargetFormat;
+      const exportFormat = targetFormat;
       
       let headers: string[] = [];
       let rows: string[][] = [];
@@ -278,83 +279,21 @@ export default function RecordsPage() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else {
-        const { jsPDF } = await import('jspdf');
-        const { default: autoTable } = await import('jspdf-autotable');
-        
-        const doc = new jsPDF('landscape');
-        const pageWidth = doc.internal.pageSize.getWidth();
-        
-        let startY = 15;
-
-        // Try adding the logo
-        if (schoolProfile?.logo) {
-          try {
-            // Top left corner logo
-            doc.addImage(schoolProfile.logo, 'PNG', 14, 15, 25, 25);
-          } catch (error) {
-            console.error("Could not load logo for PDF:", error);
-          }
-        }
-
-        // Proper School Heading
-        doc.setFontSize(22);
-        doc.setTextColor(30, 41, 59); // text-slate-800
-        doc.text(schoolName.toUpperCase(), pageWidth / 2, startY, { align: 'center' });
-        startY += 8;
-
-        if (schoolProfile?.motto) {
-          doc.setFontSize(12);
-          doc.setTextColor(71, 85, 105); // text-slate-600
-          doc.text(schoolProfile.motto, pageWidth / 2, startY, { align: 'center', renderingMode: 'fill' });
-          startY += 6;
-        }
-
-        if (schoolProfile?.address) {
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139); // text-slate-500
-          doc.text(schoolProfile.address, pageWidth / 2, startY, { align: 'center' });
-          startY += 5;
-        }
-
-        if (schoolProfile?.phone || schoolProfile?.schoolEmail) {
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139); // text-slate-500
-          const contactStr = [schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ');
-          doc.text(contactStr, pageWidth / 2, startY, { align: 'center' });
-          startY += 5;
-        }
-        
-        // Ensure startY clears the logo if it's placed on the left
-        if (startY < 45 && schoolProfile?.logo) {
-          startY = 45;
-        } else {
-          startY += 6;
-        }
-
-        doc.setFontSize(16);
-        doc.setTextColor(30, 41, 59); // text-slate-800
-        doc.text(`Records Report - ${tabName.charAt(0).toUpperCase() + tabName.slice(1)} View`, pageWidth / 2, startY, { align: 'center' });
-        startY += 6;
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139);
-        doc.text(`Generated on: ${dateStr}`, pageWidth / 2, startY, { align: 'center' });
-        startY += 8;
-
-        autoTable(doc, {
-          head: [headers],
-          body: rows,
-          startY: startY,
-          theme: 'grid',
-          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-          headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }
+        await generatePDF({
+          title: `Records Report - ${tabName.charAt(0).toUpperCase() + tabName.slice(1)} View`,
+          filename: `${fileNameBase}.pdf`,
+          schoolProfile,
+          metaData: [
+            { label: 'Date', value: dateStr },
+            { label: 'Total Records', value: dataToExport.length.toString() }
+          ],
+          tableHeaders: [headers],
+          tableData: rows
         });
-
-        doc.save(`${fileNameBase}.pdf`);
       }
     } catch (e) {
       console.error(e);
-      toast.error(`Failed to export records as ${exportTargetFormat.toUpperCase()}.`);
+      toast.error(`Failed to export records as ${targetFormat.toUpperCase()}.`);
     } finally {
       setIsExporting(null);
     }
@@ -415,7 +354,7 @@ export default function RecordsPage() {
               </div>
               <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
                 <button
-                  onClick={() => { setExportTargetFormat('csv'); handleExport(); }}
+                  onClick={() => handleExport('csv')}
                   disabled={isExporting !== null}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
                 >
@@ -423,7 +362,7 @@ export default function RecordsPage() {
                   Download CSV
                 </button>
                 <button
-                  onClick={() => { setExportTargetFormat('pdf'); handleExport(); }}
+                  onClick={() => handleExport('pdf')}
                   disabled={isExporting !== null}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
                 >

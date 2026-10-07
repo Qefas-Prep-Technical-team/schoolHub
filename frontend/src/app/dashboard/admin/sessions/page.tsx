@@ -65,9 +65,10 @@ export default function SessionsPage() {
     enabled: !!schoolId,
   });
 
-  const activeSession = sessions.find(s => s.status === "ACTIVE");
-  const archivedSessions = sessions.filter(s => s.status === "ARCHIVED");
-  const upcomingSessions = sessions.filter(s => s.status === "INACTIVE");
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const activeSession = safeSessions.find(s => s.status === "ACTIVE");
+  const archivedSessions = safeSessions.filter(s => s.status === "ARCHIVED");
+  const upcomingSessions = safeSessions.filter(s => s.status === "INACTIVE");
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => sessionService.archiveSession(id),

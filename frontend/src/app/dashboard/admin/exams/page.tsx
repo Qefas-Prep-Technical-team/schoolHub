@@ -2,7 +2,7 @@
 'use client';
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { examService } from "@/lib/api/services/examService";
 import AssessmentGrid from "./components/AssessmentGrid";
 import Header from "./components/Header";
@@ -38,6 +38,12 @@ export default function Dashboard() {
     });
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            setViewMode('grid');
+        }
+    }, []);
     
     const LIMIT = 10;
 

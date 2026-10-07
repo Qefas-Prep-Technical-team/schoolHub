@@ -305,89 +305,89 @@ export default function AdminGradesDashboard() {
 
 
         {/* Operational Control Tabs */}
-        <div className="border-b border-slate-200 dark:border-slate-800">
-            <div className="flex gap-6 overflow-x-auto no-scrollbar">
+        <div className="mb-6 lg:mb-8 bg-slate-100/50 dark:bg-slate-800/20 p-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
                 <button 
                     onClick={() => setActiveTab('exams')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'exams' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'exams' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'exams' ? primaryColor : 'transparent' }}
                 >
                     Exams
                 </button>
                 <button 
                     onClick={() => setActiveTab('ca')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'ca' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'ca' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'ca' ? primaryColor : 'transparent' }}
                 >
                     CA
                 </button>
                 <button 
                     onClick={() => setActiveTab('assignment')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'assignment' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'assignment' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'assignment' ? primaryColor : 'transparent' }}
                 >
                     Assignments
                 </button>
                 <button 
                     onClick={() => setActiveTab('test')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'test' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'test' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'test' ? primaryColor : 'transparent' }}
                 >
                     Quizzes/Test
                 </button>
                 <button 
                     onClick={() => setActiveTab('papers')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'papers' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'papers' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'papers' ? primaryColor : 'transparent' }}
                 >
                     Papers
                 </button>
                 <button 
                     onClick={() => setActiveTab('standalone')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'standalone' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'standalone' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'standalone' ? primaryColor : 'transparent' }}
                 >
                     All Grades
                 </button>
                 <button 
                     onClick={() => setActiveTab('final')}
                     className={cn(
-                        "py-4 px-1 text-sm transition-all whitespace-nowrap border-b-[3px]",
+                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
                         activeTab === 'final' 
-                          ? "font-bold text-slate-900 dark:text-white" 
-                          : "font-medium border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          ? "font-bold text-white shadow-sm" 
+                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                     )}
-                    style={{ borderBottomColor: activeTab === 'final' ? primaryColor : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'final' ? primaryColor : 'transparent' }}
                 >
                     Final Results
                 </button>
@@ -441,7 +441,59 @@ export default function AdminGradesDashboard() {
                 />
               </div>
             </motion.section>
-          ) : ['standalone', 'ca', 'assignment', 'test'].includes(activeTab) ? (
+          ) : ['ca', 'test'].includes(activeTab) ? (
+            <motion.section 
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      {activeTab === 'ca' ? 'Continuous Assessments' : 
+                       'Quizzes & Tests'}
+                    </h2>
+                    <p className="text-xs lg:text-sm font-medium text-slate-500">
+                      {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 
+                       'Overview of quizzes and tests.'}
+                    </p>
+                  </div>
+                </div>
+                {selectedExamId && (
+                   <Button variant="ghost" onClick={handleBackToExams} className="h-10 px-4 sm:h-14 sm:px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                      <ArrowLeft size={16} strokeWidth={3} />
+                      Back
+                   </Button>
+                )}
+              </div>
+              
+              <div className="bg-white dark:bg-slate-900/50 rounded-2xl lg:rounded-[4rem] border border-slate-100 dark:border-white/5 p-3 sm:p-6 lg:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none min-h-[400px] lg:min-h-[600px] overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: primaryColor, opacity: 0.2 }} />
+                <ExamGradesFlow 
+                  activeTab={activeTab}
+                  exams={exams || []} 
+                  selectedExamId={selectedExamId}
+                  setSelectedExamId={setSelectedExamId}
+                  selectedStudentId={selectedStudentId}
+                  setSelectedStudentId={setSelectedStudentId}
+                  selectedPaperId={selectedPaperId}
+                  setSelectedPaperId={setSelectedPaperId}
+                  onBackToExams={handleBackToExams}
+                  onBackToStudents={handleBackToStudents}
+                  isLoading={isLoadingExams}
+                  school={school}
+                  primaryColor={primaryColor}
+                  schoolId={schoolId}
+                />
+              </div>
+            </motion.section>
+          ) : ['standalone', 'assignment'].includes(activeTab) ? (
             <motion.section 
               key={activeTab}
               initial={{ opacity: 0, y: 20 }}
@@ -455,16 +507,10 @@ export default function AdminGradesDashboard() {
                 </div>
                 <div>
                   <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                    {activeTab === 'ca' ? 'Continuous Assessments' : 
-                     activeTab === 'assignment' ? 'Assignments' : 
-                     activeTab === 'test' ? 'Quizzes & Tests' : 
-                     'All Student Grades'}
+                    {activeTab === 'assignment' ? 'Assignments' : 'All Student Grades'}
                   </h2>
                   <p className="text-sm font-medium text-slate-500">
-                    {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 
-                     activeTab === 'assignment' ? 'Overview of all assignments.' : 
-                     activeTab === 'test' ? 'Overview of quizzes and tests.' : 
-                     'Comprehensive record of all student grades, quizzes, and class assessments across the school.'}
+                    {activeTab === 'assignment' ? 'Comprehensive record of all individual assignment grades and scores.' : 'Comprehensive record of all individual grades and scores.'}
                   </p>
                 </div>
               </div>
@@ -548,6 +594,7 @@ export default function AdminGradesDashboard() {
  * Exam Grades Flow - Handles Level 1 (Exams), Level 2 (Students), Level 3 (Result)
  */
 function ExamGradesFlow({ 
+  activeTab = 'exams',
   exams, 
   selectedExamId, 
   setSelectedExamId, 
@@ -581,7 +628,14 @@ function ExamGradesFlow({
   const { data: classesData } = useClasses(schoolId);
   const filteredExams = (exams || []).filter((e: any) => {
     const type = (e.category || e.assessmentType || '').toUpperCase();
-    if (type !== 'EXAM') return false;
+    
+    let isMatch = true;
+    if (activeTab === 'exams') isMatch = type === 'EXAM' || (!['CA', 'MIDTERM', 'ASSIGNMENT', 'PROJECT', 'HOMEWORK', 'CLASSWORK', 'QUIZ', 'TEST'].some(t => type.includes(t)));
+    else if (activeTab === 'ca') isMatch = type === 'CA' || type === 'MIDTERM' || type.includes('CONTINUOUS');
+    else if (activeTab === 'assignment') isMatch = type === 'ASSIGNMENT' || type.includes('PROJECT') || type.includes('HOMEWORK') || type.includes('CLASSWORK');
+    else if (activeTab === 'test') isMatch = type === 'QUIZ' || type === 'TEST' || type.includes('QUIZ') || type.includes('TEST');
+    
+    if (!isMatch) return false;
 
     const matchSearch = searchTerm === '' || 
       e.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1195,7 +1249,27 @@ function ExamStudentList({
 
         <div className="space-y-4">
             {isLoading ? (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                <>
+                {/* Mobile Skeleton View */}
+                <div className="md:hidden flex flex-col gap-3">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl p-4 animate-pulse flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0" />
+                                <div>
+                                    <div className="h-4 w-24 bg-slate-100 dark:bg-slate-800 rounded mb-2" />
+                                    <div className="h-3 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <div className="h-5 w-12 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                                <div className="h-3 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {/* Desktop Skeleton View */}
+                <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
@@ -1224,10 +1298,66 @@ function ExamStudentList({
                         </tbody>
                     </table>
                 </div>
+                </>
             ) : paginatedAttempts.length === 0 ? (
                 <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">No candidates found</div>
             ) : (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                <>
+                {/* Mobile List View */}
+                <div className="md:hidden flex flex-col gap-3">
+                    {paginatedAttempts.map((attempt: any, idx: number) => {
+                        const scorePercent = attempt.totalMarks ? Math.round((attempt.totalScore / attempt.totalMarks) * 100) : Math.round(attempt.totalScore || attempt.percentage || 0);
+                        const isPassed = scorePercent >= 50;
+                        
+                        const theme = isPassed ? {
+                            textHighlight: 'text-emerald-600 dark:text-emerald-400',
+                            badge: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30',
+                            progress: 'bg-emerald-500'
+                        } : {
+                            textHighlight: 'text-rose-600 dark:text-rose-400',
+                            badge: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border-rose-100 dark:border-rose-900/30',
+                            progress: 'bg-rose-500'
+                        };
+
+                        return (
+                            <div 
+                                key={attempt.id}
+                                onClick={() => onSelectStudent(attempt.studentId)}
+                                className={cn(
+                                    "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl p-4 flex items-center justify-between shadow-sm cursor-pointer transition-all active:scale-[0.98]",
+                                    isNavigating === attempt.id ? "opacity-70 pointer-events-none" : ""
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                        <User size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="flex-1 min-w-0 max-w-[140px]">
+                                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                            {attempt.student?.name}
+                                        </h3>
+                                        <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                                            {attempt.student?.studentId || "UID-UNSET"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-lg font-black ${theme.textHighlight}`}>
+                                            {scorePercent}%
+                                        </span>
+                                    </div>
+                                    <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded border ${theme.badge}`}>
+                                        {isPassed ? "Passed" : "Review"}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
@@ -1311,6 +1441,7 @@ function ExamStudentList({
                         </tbody>
                     </table>
                 </div>
+                </>
             )}
             {filteredAttempts.length > 0 && (
                 <div className="pt-6">

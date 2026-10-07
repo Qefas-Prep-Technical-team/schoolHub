@@ -212,7 +212,18 @@ export class StudentLifecycleService {
         });
       }
 
-      // 5. Generate history record
+      // 5. Gather academic snapshot (Term & Subject Results for this class)
+      const termResults = await tx.studentTermResult.findMany({
+        where: { studentId, classId: fromClassId },
+        include: { session: true }
+      });
+      
+      const subjectResults = await tx.studentSubjectTermResult.findMany({
+        where: { studentId, classId: fromClassId },
+        include: { subject: true, session: true }
+      });
+
+      // 6. Generate history record
       await tx.studentHistory.create({
         data: {
           studentId,
@@ -220,7 +231,28 @@ export class StudentLifecycleService {
           eventType: HistoryEventType.PROMOTED,
           title: "Student Promoted",
           description: `Student was promoted from ${fromClass.name} ${fromClass.section || ''} to ${toClass.name} ${toClass.section || ''}.`.trim(),
-          meta: { fromClassId, toClassId, session: toClass.session || undefined },
+          meta: { 
+            fromClassId, 
+            toClassId, 
+            session: toClass.session || undefined,
+            achievements: {
+              termResults: termResults.map(tr => ({
+                term: tr.term,
+                sessionName: tr.session?.name || '',
+                averageScore: tr.averageScore,
+                totalScore: tr.totalScore,
+                position: tr.position
+              })),
+              subjectResults: subjectResults.map(sr => ({
+                term: sr.term,
+                sessionName: sr.session?.name || '',
+                subjectName: sr.subject?.name || '',
+                examScore: sr.examScore,
+                caScore: sr.caScore,
+                totalScore: sr.totalScore
+              }))
+            }
+          },
           performedBy,
         },
       });

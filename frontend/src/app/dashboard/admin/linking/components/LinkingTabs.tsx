@@ -33,7 +33,7 @@ export function LinkingTabs({
           <button
             onClick={() => setMainTab('network')}
             className={cn(
-              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer",
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex-1 sm:flex-none",
               mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
@@ -42,7 +42,7 @@ export function LinkingTabs({
           <button
             onClick={() => setMainTab('classroom')}
             className={cn(
-              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer",
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex-1 sm:flex-none",
               mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
@@ -103,11 +103,11 @@ export function LinkingTabs({
         </div>
       </div>
 
-      <div className="relative group max-w-sm w-full lg:w-72">
+      <div className="relative group w-full lg:max-w-sm lg:w-72">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <Input 
           placeholder={`Search ${mainTab}...`}
-          className="pl-12 h-12 rounded-full border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-medium focus:ring-primary/20 transition-all"
+          className="pl-12 h-12 w-full rounded-full border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-medium focus:ring-primary/20 transition-all"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

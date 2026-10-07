@@ -1242,6 +1242,7 @@ export const updateTeacherClassStudentGradeService = async (
                     message: `${teacher?.name || 'A teacher'} updated ${student?.name || 'a student'}'s grade for ${existingGrade.subject} from ${existingGrade.score} to ${updatedGrade.score}/${updatedGrade.maxMarks}.`,
                     link: `/dashboard/admin/grades`,
                     meta: {
+                        priority: 'NORMAL',
                         gradeId: updatedGrade.id,
                         studentId,
                         subject: existingGrade.subject,
@@ -1400,7 +1401,7 @@ export const deleteTeacherClassStudentGradeService = async (
                 title: 'Grade Deleted',
                 message: `${teacher?.name || 'A teacher'} deleted ${student?.name || 'a student'}'s grade for ${grade.subject} (Score: ${grade.score}/${grade.maxMarks}).`,
                 link: `/dashboard/admin/grades`,
-                meta: { gradeId, studentId: grade.studentId, subject: grade.subject, classId }
+                meta: { priority: 'NORMAL', gradeId, studentId: grade.studentId, subject: grade.subject, classId }
             }))
         });
     }

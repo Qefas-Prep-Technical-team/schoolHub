@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../../config/database";
+import prisma, { withRetry } from "../../../config/database";
 import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { createActivityLog } from "../logs/logs.controller";
@@ -952,7 +952,10 @@ export const getPublicRoleFeatures = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Invalid role" });
         }
 
-        const features = await prisma.platformFeature.findMany();
+        const features = await withRetry(
+            () => prisma.platformFeature.findMany(),
+            "getPublicRoleFeatures_platformFeature_findMany"
+        );
         
         const featureMap: Record<string, boolean> = {};
         features.forEach(f => {
@@ -968,9 +971,12 @@ export const getPublicRoleFeatures = async (req: Request, res: Response) => {
             admin: 'schools'
         };
         const category = categoryMap[role.toLowerCase()];
-        const enforcementSetting = await prisma.platformSettings.findUnique({
-            where: { key: `sub_enforced_${category}` }
-        });
+        const enforcementSetting = await withRetry(
+            () => prisma.platformSettings.findUnique({
+                where: { key: `sub_enforced_${category}` }
+            }),
+            "getPublicRoleFeatures_platformSettings_findUnique"
+        );
 
         if (enforcementSetting && enforcementSetting.value === "false") {
             featureMap['billing'] = false;

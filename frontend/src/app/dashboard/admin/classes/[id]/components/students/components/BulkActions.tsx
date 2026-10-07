@@ -1,25 +1,26 @@
 import React from 'react';
-import { Download, Megaphone, Printer } from 'lucide-react';
+import { Download, Megaphone, Loader2 } from 'lucide-react';
 
 interface BulkActionsProps {
   onExport?: () => void;
   onSendAnnouncement?: () => void;
-  onPrintAttendance?: () => void;
+  isExporting?: boolean;
 }
 
 const BulkActions: React.FC<BulkActionsProps> = ({
   onExport,
   onSendAnnouncement,
-  onPrintAttendance
+  isExporting
 }) => {
   return (
     <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6 flex flex-wrap gap-x-6 gap-y-3">
       <button
         onClick={onExport}
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
+        disabled={isExporting}
+        className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Download size={18} />
-        Export Class List
+        {isExporting ? <Loader2 size={18} className="animate-spin text-primary" /> : <Download size={18} />}
+        {isExporting ? 'Exporting...' : 'Export Class List'}
       </button>
       
       <button
@@ -28,14 +29,6 @@ const BulkActions: React.FC<BulkActionsProps> = ({
       >
         <Megaphone size={18} />
         Send Announcement
-      </button>
-      
-      <button
-        onClick={onPrintAttendance}
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors"
-      >
-        <Printer size={18} />
-        Print Attendance Sheet
       </button>
     </div>
   );

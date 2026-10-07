@@ -144,6 +144,16 @@ export const classService = {
     return response.data.data;
   },
 
+  promoteStudents: async (classId: string, data: { toClassId: string, studentIds: string[] }) => {
+    const response = await apiClient.post(`/classes/${classId}/promote`, data);
+    return response.data; // Note: The backend route might return { success, message }, so we return response.data directly or data.data depending on wrapper. Let's return response.data.
+  },
+
+  sendAnnouncement: async (classId: string, data: { title: string; message: string; targets: string[]; priority?: string }) => {
+    const response = await apiClient.post(`/classes/${classId}/announcement`, data);
+    return response.data;
+  },
+
   submitAttendance: async (classId: string, records: any[]) => {
     const response = await apiClient.post(`/classes/${classId}/attendance`, { records });
     return response.data.data;

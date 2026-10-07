@@ -12,11 +12,14 @@ export const teacherKeys = {
 };
 
 export const useTeacherProfile = () => {
+  const { user } = useAuthStore();
+  
   return useQuery({
     queryKey: teacherKeys.profile(),
     queryFn: () => teacherService.getProfile(),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    enabled: user?.userType === 'TEACHER',
   });
 };
 

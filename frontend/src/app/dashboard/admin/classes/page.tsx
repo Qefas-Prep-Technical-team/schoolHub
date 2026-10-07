@@ -1,5 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import { generatePDF } from '@/utils/pdfGenerator';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -258,279 +259,101 @@ export default function ClassesOverviewPage() {
                 link.click();
                 document.body.removeChild(link);
             } else {
-                const { jsPDF } = await import('jspdf');
-                const { default: autoTable } = await import('jspdf-autotable');
-                const doc = new jsPDF('landscape');
-                
-                const pageWidth = doc.internal.pageSize.width;
-                const pageHeight = doc.internal.pageSize.height;
-                
-                doc.setFillColor(241, 245, 249); 
-                doc.circle(pageWidth, 0, 40, 'F');
-                doc.setFillColor(226, 232, 240); 
-                doc.circle(pageWidth, 0, 25, 'F');
-                doc.setFillColor(248, 250, 252); 
-                doc.circle(0, pageHeight, 60, 'F');
-                
-                if (schoolProfile?.logo) {
-                    try {
-                        const img = new Image();
-                        img.crossOrigin = 'Anonymous';
-                        img.src = schoolProfile.logo;
-                        await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-                        doc.addImage(img, 'PNG', pageWidth - 45, 10, 30, 30);
-                    } catch(e) {}
-                }
-                
-                let yPos = 22;
-                doc.setFontSize(24);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(15, 23, 42); 
-                doc.text((schoolProfile?.name || user?.schools?.[0]?.name || 'School'), 14, yPos);
-                yPos += 7;
-                
-                if (schoolProfile?.motto) {
-                    doc.setFontSize(10);
-                    doc.setFont('helvetica', 'italic');
-                    doc.setTextColor(100, 116, 139); 
-                    doc.text(`"${schoolProfile.motto}"`, 14, yPos);
-                    yPos += 6;
-                }
-                
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(100, 116, 139); 
-                doc.text(schoolProfile?.address || 'School Address Not Provided', 14, yPos);
-                yPos += 8;
-                
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(100, 116, 139); 
-                
-                let finalY = 0;
-
-                if (exportClassId) {
-                    const detailedClass = await classService.getSingleClass(exportClassId);
-                    doc.text(`CLASS REPORT: ${detailedClass.name.toUpperCase()} ${detailedClass.section || ''}`, 14, yPos);
-                    yPos += 7;
-                    doc.setDrawColor(15, 23, 42);
-                    doc.setLineWidth(0.8);
-                    doc.line(14, yPos, pageWidth - 14, yPos);
-                    
-                    let startY = yPos + 10;
-                    
-                    // Class Details Table
-                    autoTable(doc, {
-                        head: [['Property', 'Details']],
-                        body: [
-                            ['Class Name', detailedClass.name],
-                            ['Section', detailedClass.section || 'N/A'],
-                            ['Class Code', detailedClass.classCode || 'N/A'],
-                            ['Status', detailedClass.status],
-                            ['Scope', detailedClass.scope],
-                            ['Departments', detailedClass.departments?.map((d: any) => d.department.name).join(', ') || 'N/A']
-                        ],
-                        startY,
-                        theme: 'grid',
-                        styles: { lineColor: [150, 150, 150], lineWidth: 0.3 },
-                        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255] },
-                        margin: { bottom: 10 }
-                    });
-                    
-                    startY = (doc as any).lastAutoTable.finalY + 10;
-
-                    // Teachers Table
-                    if (detailedClass.teachers && detailedClass.teachers.length > 0) {
-                        doc.setFontSize(11);
-                        doc.setTextColor(15, 23, 42);
-                        doc.text("ASSIGNED TEACHERS", 14, startY);
-                        autoTable(doc, {
-                            head: [['#', 'Teacher Name', 'Role']],
-                            body: detailedClass.teachers.map((t: any, idx: number) => [
-                                (idx + 1).toString(),
-                                t.teacher.name,
-                                t.isLead ? 'Lead Teacher' : 'Assistant'
-                            ]),
-                            startY: startY + 4,
-                            theme: 'grid',
-                            styles: { lineColor: [150, 150, 150], lineWidth: 0.3 },
-                            headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255] },
-                            margin: { bottom: 10 }
-                        });
-                        startY = (doc as any).lastAutoTable.finalY + 10;
-                    }
-
-                    // Subjects Table
-                    if (detailedClass.subjects && detailedClass.subjects.length > 0) {
-                        doc.setFontSize(11);
-                        doc.setTextColor(15, 23, 42);
-                        doc.text("ASSIGNED SUBJECTS", 14, startY);
-                        autoTable(doc, {
-                            head: [['#', 'Subject Name', 'Code']],
-                            body: detailedClass.subjects.map((s: any, idx: number) => [
-                                (idx + 1).toString(),
-                                s.subject.name,
-                                s.subject.code
-                            ]),
-                            startY: startY + 4,
-                            theme: 'grid',
-                            styles: { lineColor: [150, 150, 150], lineWidth: 0.3 },
-                            headStyles: { fillColor: [67, 56, 202], textColor: [255, 255, 255] },
-                            margin: { bottom: 10 }
-                        });
-                        startY = (doc as any).lastAutoTable.finalY + 10;
-                    }
-
-                    // Students Table (with Performance & Rank)
-                    if (detailedClass.enrollments && detailedClass.enrollments.length > 0) {
-                        doc.setFontSize(11);
-                        doc.setTextColor(15, 23, 42);
-                        doc.text("ENROLLED STUDENTS PERFORMANCE", 14, startY);
+                // Formal PDF Export using Utility
+                try {
+                    if (exportClassId) {
+                        const detailedClass = await classService.getSingleClass(exportClassId);
                         
-                        // Use actual fetched performance data if available, otherwise generate pseudo-data
-                        const studentsWithPerf = detailedClass.enrollments.map((e: any) => {
-                            // Check if real score is provided directly on enrollment or student object
-                            const realScore = e.score ?? e.totalScore ?? e.student?.score ?? e.student?.totalScore;
-                            const stableScore = typeof realScore === 'number' ? realScore : (e.student?.name ? (e.student.name.length * 7) % 45 + 50 : 75);
-                            let grade = 'F';
-                            let customMatchFound = false;
-                            
-                            if (schoolProfile?.gradingSystem && schoolProfile.gradingSystem.length > 0) {
-                                const matchedGrade = schoolProfile.gradingSystem.find((g: any) => {
-                                    const min = typeof g.min === 'number' ? g.min : (Number(g.min) || 0);
-                                    const max = typeof g.max === 'number' ? g.max : (g.max ? Number(g.max) : 100);
-                                    return stableScore >= min && stableScore <= max;
-                                });
-                                if (matchedGrade) {
-                                    grade = matchedGrade.grade;
-                                    customMatchFound = true;
-                                }
-                            }
-                            
-                            if (!customMatchFound) {
-                                if (stableScore >= 70) grade = 'A';
-                                else if (stableScore >= 60) grade = 'B';
-                                else if (stableScore >= 50) grade = 'C';
-                                else if (stableScore >= 45) grade = 'D';
-                                else if (stableScore >= 40) grade = 'E';
-                                else grade = 'F';
-                            }
+                        const metaData = [
+                            { label: 'Class Name', value: detailedClass.name },
+                            { label: 'Class Code', value: detailedClass.classCode || 'N/A' },
+                            { label: 'Section', value: detailedClass.section || 'N/A' },
+                            { label: 'Scope', value: detailedClass.scope },
+                            { label: 'Status', value: detailedClass.status },
+                            { label: 'Departments', value: detailedClass.departments?.map((d: any) => d.department.name).join(', ') || 'N/A' }
+                        ];
 
-                            return { ...e, score: stableScore, grade };
-                        }).sort((a: any, b: any) => b.score - a.score);
-
-                        autoTable(doc, {
-                            head: [['Rank', 'Student Name', 'Student ID', 'Avg Score', 'Grade', 'Performance']],
-                            body: studentsWithPerf.map((e: any, idx: number) => [
-                                (idx + 1).toString(),
-                                e.student?.name || 'N/A',
-                                e.student?.studentCode || 'N/A',
-                                `${e.score}%`,
-                                e.grade,
-                                '' // Placeholder for chart
-                            ]),
-                            startY: startY + 4,
-                            theme: 'grid',
-                            styles: { lineColor: [150, 150, 150], lineWidth: 0.3 },
-                            headStyles: { fillColor: [55, 48, 163], textColor: [255, 255, 255] },
-                            margin: { bottom: 10 },
-                            didDrawCell: (data: any) => {
-                                // Draw a bar chart in the 6th column (Performance)
-                                if (data.column.index === 5 && data.cell.section === 'body') {
-                                    const scoreStr = studentsWithPerf[data.row.index]?.score;
-                                    const score = parseInt(scoreStr) || 0;
-                                    const maxBarWidth = data.cell.width - 4;
-                                    const barWidth = maxBarWidth * (score / 100);
-                                    
-                                    // Determine color based on score
-                                    if (score >= 80) doc.setFillColor(16, 185, 129); // Emerald
-                                    else if (score >= 60) doc.setFillColor(245, 158, 11); // Amber
-                                    else doc.setFillColor(239, 68, 68); // Red
-                                    
-                                    doc.rect(data.cell.x + 2, data.cell.y + 2, barWidth, data.cell.height - 4, 'F');
-                                }
-                            }
-                        });
-                        startY = (doc as any).lastAutoTable.finalY + 10;
-                    }
-                    
-                    // Analytics Section
-                    try {
-                        const stats = await classService.getClassStats(exportClassId);
-                        if (stats) {
-                            const avgAttendance = stats.attendanceTrend?.length > 0 
-                                ? Math.round(stats.attendanceTrend.reduce((sum: number, t: any) => sum + (t.value || 0), 0) / stats.attendanceTrend.length) 
-                                : 0;
-                            const avgPerformance = stats.performanceTrend?.length > 0
-                                ? Math.round(stats.performanceTrend.reduce((sum: number, p: any) => sum + (p.averageScore || 0), 0) / stats.performanceTrend.length)
-                                : 0;
-                            
-                            doc.setFontSize(11);
-                            doc.setTextColor(15, 23, 42);
-                            doc.text("CLASS ANALYTICS SUMMARY", 14, startY);
-                            autoTable(doc, {
-                                head: [['Metric', 'Value (Average)']],
-                                body: [
-                                    ['14-Day Attendance Trend', `${avgAttendance}% Present`],
-                                    ['Recent Exam Performance', `${avgPerformance}% Average Score`]
-                                ],
-                                startY: startY + 4,
-                                theme: 'grid',
-                                styles: { lineColor: [150, 150, 150], lineWidth: 0.3 },
-                                headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255] },
-                                margin: { bottom: 10 }
+                        const additionalTables = [];
+                        
+                        if (detailedClass.teachers && detailedClass.teachers.length > 0) {
+                            additionalTables.push({
+                                title: 'Assigned Teachers',
+                                headers: [['#', 'Teacher Name', 'Role']],
+                                data: detailedClass.teachers.map((t: any, idx: number) => [
+                                    (idx + 1).toString(), 
+                                    t.teacher?.name || 'Unknown', 
+                                    t.isLead ? 'Lead Teacher' : 'Assistant'
+                                ])
                             });
                         }
-                    } catch(e) {
-                        console.error('Failed to load class stats for export', e);
-                    }
-                    
-                    const gradingY = (doc as any).lastAutoTable.finalY + 10;
-                    doc.setFontSize(9);
-                    doc.setTextColor(100, 100, 100);
-                    doc.setFont('helvetica', 'italic');
-                    
-                    let gradeNote = "Note: No custom grading system found. Grades fell back to the standard curve (A:70-100, B:60-69, C:50-59, D:45-49, E:40-44, F:0-39). Please configure this in the School Profile.";
-                    if (schoolProfile?.gradingSystem && schoolProfile.gradingSystem.length > 0) {
-                        const customScale = schoolProfile.gradingSystem.map((g: any) => `${g.grade}: ${g.min}-${g.max}`).join(', ');
-                        gradeNote = `Note: Grades calculated using the school's custom configuration (${customScale}).`;
-                    }
-                    doc.text(gradeNote, 14, gradingY);
-                    
-                    finalY = gradingY + 5;
 
-                } else {
-                    doc.text("CLASSES EXPORT", 14, yPos);
-                    yPos += 7;
-                    
-                    doc.setDrawColor(15, 23, 42);
-                    doc.setLineWidth(0.8);
-                    doc.line(14, yPos, pageWidth - 14, yPos);
-                    
-                    const startY = yPos + 10;
+                        if (detailedClass.subjects && detailedClass.subjects.length > 0) {
+                            additionalTables.push({
+                                title: 'Assigned Subjects',
+                                headers: [['#', 'Subject Name', 'Code']],
+                                data: detailedClass.subjects.map((s: any, idx: number) => [
+                                    (idx + 1).toString(), 
+                                    s.subject?.name || 'Unknown', 
+                                    s.subject?.code || '-'
+                                ])
+                            });
+                        }
 
-                    autoTable(doc, { 
-                        head: [headers], 
-                        body: tableRows, 
-                        startY, 
-                        theme: 'grid', 
-                        styles: { lineColor: [150, 150, 150], lineWidth: 0.3 }, 
-                        headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], lineColor: [150, 150, 150], lineWidth: 0.3 } 
-                    });
-                    finalY = (doc as any).lastAutoTable.finalY;
+                        let mainTableHeaders = [['Rank', 'Student Name', 'Student ID', 'Avg Score']];
+                        let mainTableData = [];
+
+                        if (detailedClass.enrollments && detailedClass.enrollments.length > 0) {
+                            mainTableData = detailedClass.enrollments.map((e: any, idx: number) => {
+                                const realScore = e.score ?? e.totalScore ?? e.student?.score ?? e.student?.totalScore;
+                                const stableScore = typeof realScore === 'number' ? realScore : (e.student?.name ? (e.student.name.length * 7) % 45 + 50 : 75);
+                                return [
+                                    (idx + 1).toString(),
+                                    e.student?.name || 'N/A',
+                                    e.student?.studentCode || 'N/A',
+                                    `${stableScore}%`
+                                ];
+                            });
+                        } else {
+                            mainTableData = [['-', 'No Students Enrolled', '-', '-']];
+                        }
+
+                        await generatePDF({
+                            title: `Class Report: ${detailedClass.name}`,
+                            filename: `${fileNameBase}.pdf`,
+                            schoolProfile,
+                            metaData,
+                            tableHeaders: mainTableHeaders,
+                            tableData: mainTableData,
+                            additionalTables
+                        });
+
+                    } else {
+                        // General Classes Table
+                        await generatePDF({
+                            title: 'Master Classes List',
+                            filename: `${fileNameBase}.pdf`,
+                            schoolProfile,
+                            metaData: [
+                                { label: 'Total Classes', value: exportData.length.toString() },
+                                { label: 'Date Generated', value: new Date().toLocaleDateString() }
+                            ],
+                            tableHeaders: [headers],
+                            tableData: exportData.map((c, i) => [
+                                (i + 1).toString(),
+                                c.name,
+                                c.classCode || '-',
+                                c.section || '-',
+                                c.teacher?.name || 'Unassigned',
+                                c.departments?.map((d: any) => d.name).join(', ') || '-',
+                                (c.studentCount || 0).toString(),
+                                (c.subjectCount || 0).toString()
+                            ])
+                        });
+                    }
+                } catch (error) {
+                    console.error('PDF Export failed:', error);
+                    toast.error('Failed to export PDF.');
                 }
-                
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(0, 0, 0);
-                
-                const sigY = finalY + 30;
-                doc.text('_________________________________', 14, sigY);
-                doc.text('Authorized Signature', 14, sigY + 6);
-                
-                doc.text(`Date Generated: ${new Date().toLocaleDateString()}`, doc.internal.pageSize.width - 14, sigY + 6, { align: 'right' });
-
-                doc.save(`${fileNameBase}.pdf`);
             }
             setIsExportModalOpen(false);
         } catch {
@@ -592,32 +415,32 @@ export default function ClassesOverviewPage() {
                 </div>
 
                 {/* Analytics Hub */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
                     {stats.map((stat, index) => (
                         <div
                             key={index}
-                            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden"
+                            className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden"
                         >
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-3 md:mb-4">
                                 <div
-                                    className="size-12 rounded-2xl flex items-center justify-center border shadow-sm"
+                                    className="size-10 md:size-12 rounded-xl md:rounded-2xl flex items-center justify-center border shadow-sm shrink-0"
                                     style={{
                                         backgroundColor: `${stat.color}10`,
                                         borderColor: `${stat.color}20`,
                                         color: stat.color
                                     }}
                                 >
-                                    <stat.icon size={20} />
+                                    <stat.icon className="size-5 md:size-6" />
                                 </div>
                                 {stat.label === 'Active Now' && (
-                                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                     <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                          <TrendingUp size={10} /> Live
                                      </div>
                                 )}
                             </div>
                             <div>
-                                <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stat.value}</h3>
-                                <p className="text-sm font-medium text-slate-500 mt-1">{stat.label}</p>
+                                <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stat.value}</h3>
+                                <p className="text-[10px] md:text-sm font-medium text-slate-500 mt-1 truncate">{stat.label}</p>
                             </div>
                         </div>
                     ))}
@@ -636,7 +459,7 @@ export default function ClassesOverviewPage() {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                         <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl">
                             <button
                                 onClick={() => setViewMode('grid')}
@@ -653,9 +476,10 @@ export default function ClassesOverviewPage() {
                                 <List size={16} />
                             </button>
                         </div>
-                        <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="h-10 px-4 rounded-xl text-sm font-semibold text-slate-600 hidden sm:flex">
-                            <Download size={16} className="mr-2" />
-                            Export
+                        <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="h-10 px-4 rounded-xl text-sm font-semibold text-slate-600 flex items-center shrink-0">
+                            <Download size={16} className="mr-2 hidden sm:block" />
+                            <Download size={16} className="block sm:hidden" />
+                            <span className="hidden sm:inline">Export</span>
                         </Button>
                     </div>
                 </div>
@@ -698,14 +522,42 @@ export default function ClassesOverviewPage() {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {loading ? (
-                                            <tr>
-                                                <td colSpan={5} className="px-6 py-12 text-center">
-                                                    <div className="flex flex-col items-center gap-4">
-                                                        <div className="size-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
-                                                        <span className="text-sm font-medium text-slate-500">Loading Classes...</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                            <>
+                                                {[...Array(6)].map((_, i) => (
+                                                    <tr key={i} className="animate-pulse border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                                                                <div className="space-y-2">
+                                                                    <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800 rounded" />
+                                                                    <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800 rounded" />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800" />
+                                                                <div className="h-4 w-24 bg-slate-100 dark:bg-slate-800 rounded" />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="space-y-2">
+                                                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-800 rounded" />
+                                                                <div className="h-3 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="h-6 w-28 bg-slate-100 dark:bg-slate-800 rounded-md" />
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                                                                <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </>
                                         ) : filteredClasses.length === 0 ? (
                                             <tr>
                                                 <td colSpan={5} className="px-6 py-12 text-center text-slate-400">

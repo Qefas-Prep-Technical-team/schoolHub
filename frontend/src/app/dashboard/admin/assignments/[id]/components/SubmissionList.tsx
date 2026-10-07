@@ -5,6 +5,18 @@ import { format } from "date-fns";
 import { Users, Eye, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SubmissionReviewModal from "./SubmissionReviewModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { generatePDF } from "@/utils/pdfGenerator";
+import { Download } from "lucide-react";
+import { toast } from "react-toastify";
+
 
 interface Props {
   assignment: any;
@@ -13,7 +25,84 @@ interface Props {
 }
 
 export default function SubmissionList({ assignment, schoolId, readOnly = false }: Props) {
+  const { user } = useAuthStore();
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const { data: schoolProfile } = useSchoolProfile(schoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "");
+
+  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
+    setIsExporting(true);
+    try {
+      if (!submissions || submissions.length === 0) {
+        toast.info("No submissions to export.");
+        return;
+      }
+      
+      const headers = ["#", "Student Name", "Student Email", "Submitted At", "Status", "Score", "Max Score"];
+      const rows = submissions.map((sub: any, index: number) => {
+        return [
+          (index + 1).toString(),
+          sub.student?.name || "Unknown Student",
+          sub.student?.email || "No email",
+          sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, yyyy h:mm a") : "Unknown",
+          sub.status || "Unknown",
+          (sub.score ?? 0).toString(),
+          (assignment.maxScore || 100).toString()
+        ];
+      });
+
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
+      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileNameBase = `${sanitizedSchoolName}_assignment_submissions_${dateStr}`;
+
+      if (targetFormat === 'csv') {
+        const csvContent = [];
+        csvContent.push(`"${schoolName.toUpperCase()}"`);
+        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
+        csvContent.push("");
+        csvContent.push(`"Assignment: ${(assignment.title || '').replace(/"/g, '""')}"`);
+        csvContent.push(`"Generated on: ${dateStr}"`);
+        csvContent.push("");
+        
+        csvContent.push(headers.join(","));
+        rows.forEach((r: any[]) => {
+            const safeRow = r.map((item: any) => `"${String(item).replace(/"/g, '""')}"`);
+            csvContent.push(safeRow.join(","));
+        });
+
+        const csv = csvContent.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileNameBase}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        await generatePDF({
+          title: `Assignment Submissions: ${assignment.title}`,
+          filename: `${fileNameBase}.pdf`,
+          schoolProfile: schoolProfile,
+          metaData: [
+            { label: 'Date', value: dateStr },
+            { label: 'Total Submissions', value: submissions.length.toString() }
+          ],
+          tableHeaders: [headers],
+          tableData: rows
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Failed to export submissions as ${targetFormat.toUpperCase()}.`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
 
   const submissions = assignment.submissions || [];
 
@@ -39,12 +128,45 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
             {submissions.length} Total
           </span>
         </h3>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={isExporting}
+              className="h-9 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700"
+            >
+              {isExporting ? (
+                <div className="w-4 h-4 mr-2 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2 text-slate-400" />
+              )}
+              {isExporting ? "Exporting..." : "Export"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
+            <DropdownMenuItem 
+              onClick={() => handleExport('csv')}
+              className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
+            >
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleExport('pdf')}
+              className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
+            >
+              Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800">
+              <th className="pb-3 text-sm font-semibold text-slate-500 dark:text-slate-400 w-12 text-center">S/N</th>
               <th className="pb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">Student</th>
               <th className="pb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">Date</th>
               <th className="pb-3 text-sm font-semibold text-slate-500 dark:text-slate-400">Status</th>
@@ -53,8 +175,11 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
             </tr>
           </thead>
           <tbody>
-            {submissions.map((sub: any) => (
+            {submissions.map((sub: any, index: number) => (
               <tr key={sub.id} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                <td className="py-4 text-center font-medium text-slate-500 dark:text-slate-400">
+                  {index + 1}
+                </td>
                 <td className="py-4">
                   <div className="flex items-center gap-3">
                     <img 

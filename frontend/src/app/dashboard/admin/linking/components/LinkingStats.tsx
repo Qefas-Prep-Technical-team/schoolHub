@@ -24,9 +24,9 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
   const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
   const usagePercentage = studentLimit > 0 ? Math.min(100, (studentUsage / studentLimit) * 100) : 0;
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
       <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-        <CardContent className="p-6">
+        <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-2 text-blue-600 dark:text-blue-400">
             <ShieldCheck size={20} />
             <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none shadow-none">Active</Badge>
@@ -37,7 +37,7 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
       </Card>
 
       <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-        <CardContent className="p-6">
+        <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-2 text-primary dark:text-orange-400">
             <Clock size={20} />
             <Badge className="bg-primary/10 text-primary dark:text-orange-400 border-none shadow-none">Pending</Badge>
@@ -47,8 +47,8 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-        <CardContent className="p-6">
+      <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 col-span-2 md:col-span-1">
+        <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-2 text-purple-600 dark:text-purple-400">
             <Mail size={20} />
             <Badge className={cn(

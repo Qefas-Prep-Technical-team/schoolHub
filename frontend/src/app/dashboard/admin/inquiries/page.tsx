@@ -258,7 +258,7 @@ export default function AdminInquiriesPage() {
   };
 
   return (
-    <div className="p-6 w-[90%] max-w-[90%] mx-auto min-h-screen">
+    <div className="p-4 sm:p-6 w-full lg:w-[90%] lg:max-w-[90%] mx-auto min-h-screen">
       <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -337,7 +337,34 @@ export default function AdminInquiriesPage() {
         </div>
 
         {isLoading ? (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile Skeleton View */}
+          <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3 animate-pulse">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-4 h-4 rounded" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Skeleton className="w-8 h-8 rounded-xl" />
+                    <Skeleton className="w-8 h-8 rounded-xl" />
+                  </div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Skeleton View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -395,6 +422,7 @@ export default function AdminInquiriesPage() {
               </tbody>
             </table>
           </div>
+          </>
         ) : inquiries.length === 0 ? (
           <div className="p-16 text-center flex flex-col items-center">
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
@@ -406,7 +434,64 @@ export default function AdminInquiriesPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile List View */}
+          <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+            {inquiries.map((iq: any, index: number) => (
+              <div key={iq.id} className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(iq.id)}
+                      onChange={() => handleSelectOne(iq.id)}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
+                    />
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                        {iq.name}
+                        {iq.status === "UNREAD" && (
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDistanceToNow(new Date(iq.createdAt), { addSuffix: true })}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => handleEmail(iq.email)}
+                      className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl"
+                    >
+                      <Mail className="w-4 h-4" />
+                    </button>
+                    {iq.phone && (
+                      <button 
+                        onClick={() => handleWhatsApp(iq.phone)}
+                        className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl"
+                      >
+                        <Phone className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => confirmDelete([iq.id])}
+                      className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3">
+                    {iq.message}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -494,6 +579,7 @@ export default function AdminInquiriesPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Pagination controls */}

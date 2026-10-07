@@ -98,13 +98,26 @@ const AttendanceSwipeModal: React.FC<AttendanceSwipeModalProps> = ({
               {!showSummary ? `${currentIndex + 1} of ${students.length}` : 'Summary'}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {!showSummary && currentIndex > 0 && (
+              <button
+                onClick={() => {
+                  setAttendanceRecords(prev => prev.slice(0, currentIndex));
+                  setShowSummary(true);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+              >
+                Done
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content Area */}
@@ -193,7 +206,7 @@ const AttendanceSwipeModal: React.FC<AttendanceSwipeModalProps> = ({
             <button
               onClick={handleSubmit}
               disabled={isSaving}
-              className="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 bg-primary text-white text-sm font-bold leading-normal hover:bg-primary/95 transition-all shadow-lg shadow-blue-500/10 disabled:opacity-80"
+              className="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold leading-normal hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-80"
             >
               {isSaving ? 'Saving...' : 'Save & Publish'}
             </button>

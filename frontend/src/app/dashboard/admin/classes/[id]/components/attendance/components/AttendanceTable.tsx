@@ -96,10 +96,12 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         Attendance for: {formatDate(date)}
       </h2>
       
-      <div className="overflow-x-auto">
+      {/* Desktop/Tablet Table View */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-150 dark:border-gray-800">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-800">
             <tr>
+              <th className="px-4 py-3" scope="col">S/N</th>
               <th className="px-4 py-3" scope="col">Student</th>
               <th className="px-4 py-3" scope="col">Student ID</th>
               <th className="px-4 py-3" scope="col">Status</th>
@@ -108,12 +110,15 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {paginatedRecords.map((record) => {
+            {paginatedRecords.map((record, index) => {
               const name = record.studentName || (record as any).student?.name || "Unknown Student";
               const code = record.studentCode || (record as any).student?.studentCode || "-";
               const commentText = record.comment || (record as any).note || "-";
               return (
                 <tr key={record.id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                     <Link
                       href={`/dashboard/admin/students/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
@@ -145,6 +150,49 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {paginatedRecords.map((record) => {
+          const name = record.studentName || (record as any).student?.name || "Unknown Student";
+          const code = record.studentCode || (record as any).student?.studentCode || "-";
+          const commentText = record.comment || (record as any).note || "-";
+          return (
+            <div key={record.id} className="bg-gray-50 dark:bg-gray-800/40 p-4 rounded-xl border border-gray-150 dark:border-gray-800 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/dashboard/admin/students/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
+                    className="hover:underline text-primary font-bold text-base truncate block"
+                  >
+                    {name}
+                  </Link>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">ID: {code}</p>
+                </div>
+                <div className="shrink-0 mt-0.5">
+                  {getStatusBadge(record.status)}
+                </div>
+              </div>
+              
+              {commentText !== "-" && (
+                <div className="bg-white dark:bg-gray-900/50 p-3 rounded-lg border border-gray-200 dark:border-gray-800/80">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Comment</span>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{commentText}</p>
+                </div>
+              )}
+              
+              <div className="mt-1 flex justify-end">
+                <button
+                  onClick={() => onEdit?.(record)}
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors bg-white dark:bg-slate-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95"
+                >
+                  <Edit2 size={16} /> Edit
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
       
       {records.length === 0 && (

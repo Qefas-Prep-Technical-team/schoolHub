@@ -20,12 +20,12 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
         {/* View QR Codes — pill shaped */}
         <Button
           onClick={onShowQRCodeClick}
           variant="outline"
-          className="h-11 px-6 rounded-full font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm transition-all text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="w-full sm:w-auto h-11 px-6 rounded-full font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm transition-all text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           <QrCode className="mr-2 h-4 w-4" /> View QR Codes
         </Button>
@@ -35,14 +35,14 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
           <Button
             disabled
             variant="outline"
-            className="h-11 px-6 rounded-full font-semibold text-sm text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed"
+            className="w-full sm:w-auto h-11 px-6 rounded-full font-semibold text-sm text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed"
           >
             <Link2 className="mr-2 h-4 w-4" /> Limit Reached
           </Button>
         ) : (
           <Button
             onClick={onConnectClick}
-            className="h-11 px-6 rounded-full font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+            className="w-full sm:w-auto h-11 px-6 rounded-full font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
           >
             <Link2 className="mr-2 h-4 w-4" /> Connect with Code
           </Button>

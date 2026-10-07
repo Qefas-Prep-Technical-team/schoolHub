@@ -1,4 +1,4 @@
-export type ExamType = 'quiz' | 'test' | 'midterm' | 'final' | 'practice';
+export type ExamType = 'exam' | 'ca' | 'quiz' | 'assignment';
 export type ExamStatus = 'draft' | 'scheduled' | 'active' | 'completed' | 'graded' | 'unpublished' | 'expired';
 
 export interface Exam {
@@ -12,7 +12,7 @@ export interface Exam {
   classId: string;
   className: string;
   totalMarks: number;
-  duration: number; // in minutes
+  duration: number;
   date: string;
   dueDate?: string;
   questions: number;
@@ -24,6 +24,24 @@ export interface Exam {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Unified row type for the assessments table (covers Exam + Assignment)
+export interface AssessmentItem {
+  id: string;
+  title: string;
+  type: ExamType;
+  status: string;
+  subjectName: string;
+  subjectNames?: string[];
+  totalMarks: number;
+  duration?: number;
+  dueDate?: string;
+  date: string;
+  endDate?: string;
+  totalStudents: number;
+  completedStudents: number;
+  source: 'exam' | 'assignment';
 }
 
 export interface Question {
@@ -53,4 +71,4 @@ export interface ExamResult {
     isCorrect: boolean;
     marksObtained: number;
   }[];
-}
+}

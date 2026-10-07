@@ -72,7 +72,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onEdit, onViewResults }) => {
           {onViewResults && exam.status === 'completed' && (
             <button
               onClick={() => onViewResults(exam)}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-opacity"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-primary text-white dark:text-gray-900 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-opacity"
             >
               <BarChart3 size={16} />
               <span className="truncate">View Results</span>
@@ -82,7 +82,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onEdit, onViewResults }) => {
           {exam.status === 'active' && (
             <button
               onClick={() => onViewResults?.(exam)}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-opacity"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-primary text-white dark:text-gray-900 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-opacity"
             >
               <BarChart3 size={16} />
               <span className="truncate">Live Results</span>

@@ -11,6 +11,7 @@ type CreateNotificationInput = {
   message: string;
   linkRequestId?: string;
   link?: string;
+  priority?: "NORMAL" | "HIGH" | "URGENT";
   meta?: Record<string, any>;
 };
 
@@ -45,7 +46,7 @@ export const createNotification = async (input: CreateNotificationInput) => {
       message: input.message,
       link: input.link,
       linkRequestId: input.linkRequestId,
-      meta: input.meta || {},
+      meta: { ...(input.meta || {}), priority: input.priority || "NORMAL" },
     }));
 
     await prisma.notification.createMany({
@@ -77,11 +78,48 @@ export const createNotification = async (input: CreateNotificationInput) => {
         message: input.message,
         link: input.link,
         linkRequestId: input.linkRequestId,
-        meta: input.meta || {},
+        meta: { ...(input.meta || {}), priority: input.priority || "NORMAL" },
       },
     });
 
     io.to(`user:${input.recipientId}`).emit("notification:new", notification);
     return notification;
   }
+};
+
+/**
+ * Bulk-create single-recipient notifications in ONE database round-trip
+ * (createMany), then emit real-time socket events. Use this for fan-out
+ * scenarios like class attendance, where N notifications are generated at once.
+ * Does not support recipientType "SCHOOL" (use createNotification for that).
+ */
+export type BulkNotificationInput = Omit<CreateNotificationInput, "recipientType"> & {
+  recipientType: Exclude<CreateNotificationInput["recipientType"], "SCHOOL">;
+};
+
+export const createNotificationsBulk = async (inputs: BulkNotificationInput[]) => {
+  if (inputs.length === 0) return { count: 0 };
+
+  const createdAt = new Date();
+  const data = inputs.map((input) => ({
+    recipientType: input.recipientType as any,
+    recipientId: input.recipientId,
+    senderType: input.senderType as any,
+    senderId: input.senderId,
+    type: ["LINK_REQUEST", "LINK_ACCEPTED", "LINK_REJECTED"].includes(input.type) ? (input.type as any) : "GENERAL",
+    title: input.title,
+    message: input.message,
+    link: input.link,
+    linkRequestId: input.linkRequestId,
+    meta: { ...(input.meta || {}), priority: input.priority || "NORMAL" },
+  }));
+
+  const result = await prisma.notification.createMany({ data });
+
+  const io = getIO();
+  for (const n of data) {
+    io.to(`user:${n.recipientId}`).emit("notification:new", { ...n, status: "UNREAD", createdAt });
+  }
+
+  return { count: result.count };
 };

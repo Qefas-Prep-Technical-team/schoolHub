@@ -1,4 +1,3 @@
-// ...existing code...
 'use client';
 
 import { Plus, X, Layers, FileText } from 'lucide-react';
@@ -22,34 +21,34 @@ export default function Header() {
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <Button 
-                            variant="secondary" 
+                    <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-center gap-3">
+                        <Button
+                            variant="secondary"
                             onClick={() => setIsExamTypeModalOpen(true)}
-                            className="w-full sm:w-auto whitespace-nowrap font-black uppercase tracking-widest h-12 px-6 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-700 rounded-2xl shadow-xl shadow-blue-600/20 hover:-translate-y-1 hover:shadow-2xl active:scale-95 transition-all duration-300"
+                            className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-700 rounded-2xl shadow-xl shadow-blue-600/20 hover:-translate-y-1 hover:shadow-2xl active:scale-95 transition-all duration-300 text-[10px] sm:text-xs"
                         >
-                            <Plus size={18} strokeWidth={3} />
+                            <Plus size={16} strokeWidth={3} />
                             <span>Create Exam</span>
                         </Button>
 
-                        <Link href="/dashboard/admin/exams/new?category=QUIZ" className="flex-1 sm:flex-none">
-                            <Button variant="secondary" className="w-full sm:w-auto whitespace-nowrap font-black uppercase tracking-widest h-12 px-6 flex items-center justify-center gap-2 bg-purple-50 dark:bg-purple-900/10 border-2 border-purple-200 dark:border-purple-800 text-purple-600 rounded-2xl shadow-md hover:shadow-lg hover:border-purple-400 dark:hover:border-purple-600 hover:-translate-y-1 active:scale-95 transition-all duration-300">
-                                <Plus size={18} strokeWidth={3} />
+                        <Link href="/dashboard/admin/exams/new?category=QUIZ" className="w-full">
+                            <Button variant="secondary" className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-purple-50 dark:bg-purple-900/10 border-2 border-purple-200 dark:border-purple-800 text-purple-600 rounded-2xl shadow-md hover:shadow-lg hover:border-purple-400 dark:hover:border-purple-600 hover:-translate-y-1 active:scale-95 transition-all duration-300 text-[10px] sm:text-xs">
+                                <Plus size={16} strokeWidth={3} />
                                 <span>Create Quiz</span>
                             </Button>
                         </Link>
 
-                        <Link href="/dashboard/admin/exams/new?category=CA" className="flex-1 sm:flex-none">
-                            <Button variant="secondary" className="w-full sm:w-auto whitespace-nowrap font-black uppercase tracking-widest h-12 px-6 flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-900/10 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-600 rounded-2xl shadow-md hover:shadow-lg hover:border-emerald-400 dark:hover:border-emerald-600 hover:-translate-y-1 active:scale-95 transition-all duration-300">
-                                <Plus size={18} strokeWidth={3} />
+                        <Link href="/dashboard/admin/exams/new?category=CA" className="w-full">
+                            <Button variant="secondary" className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/10 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-600 rounded-2xl shadow-md hover:shadow-lg hover:border-emerald-400 dark:hover:border-emerald-600 hover:-translate-y-1 active:scale-95 transition-all duration-300 text-[10px] sm:text-xs">
+                                <Plus size={16} strokeWidth={3} />
                                 <span>Create CA</span>
                             </Button>
                         </Link>
 
-                        <Link href="/dashboard/admin/exams/new/paper" className="flex-1 sm:flex-none">
-                            <Button variant="secondary" className="w-full sm:w-auto whitespace-nowrap font-black uppercase tracking-widest h-12 px-6 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl shadow-md hover:shadow-lg hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 active:scale-95 transition-all duration-300">
-                                <Plus size={18} strokeWidth={3} />
-                                <span>Create Subject Paper</span>
+                        <Link href="/dashboard/admin/exams/new/paper" className="w-full">
+                            <Button variant="secondary" className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl shadow-md hover:shadow-lg hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 active:scale-95 transition-all duration-300 text-[10px] sm:text-xs">
+                                <Plus size={16} strokeWidth={3} />
+                                <span>Subject Paper</span>
                             </Button>
                         </Link>
                     </div>
@@ -62,7 +61,7 @@ export default function Header() {
                         <div className="p-8">
                             <h2 className="text-3xl font-black tracking-tighter mb-2 text-slate-900 dark:text-white">Exam Type</h2>
                             <p className="text-slate-500 dark:text-slate-400 mb-8 text-xs font-bold uppercase tracking-widest">Select the type of exam structure you want to create.</p>
-                            
+
                             <div className="flex flex-col gap-4">
                                 <Link href="/dashboard/admin/exams/new?category=EXAM&mode=SINGLE_SUBJECT" className="group" onClick={() => setIsExamTypeModalOpen(false)}>
                                     <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
@@ -89,8 +88,8 @@ export default function Header() {
                                 </Link>
                             </div>
                         </div>
-                        
-                        <button 
+
+                        <button
                             onClick={() => setIsExamTypeModalOpen(false)}
                             className="absolute top-6 right-6 p-2.5 rounded-full text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
                         >

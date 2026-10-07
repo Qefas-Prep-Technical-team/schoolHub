@@ -9,6 +9,7 @@ import ClassStudentsPage from './components/students/StudentsTab';
 import ClassSubjectsPage from './components/subjects/SubjectsTab';
 import ClassExamsPage from './components/exams/ExamsTab';
 import ClassAttendancePage from './components/attendance/AttendanceTab';
+import FinalResultsTab from './components/results/FinalResultsTab';
 import ManageClassModal from './components/ManageClassModal';
 import ClassQRCodeModal from './components/ClassQRCodeModal';
 import TeachersTab from './components/TeachersTab';
@@ -254,12 +255,12 @@ export default function ClassDetailsPage() {
     { 
       id: 'subjects', 
       label: 'Subjects' , 
-      content: <ClassSubjectsPage classSubjects={classData?.subjects || []} className={classData?.name} classId={id} /> 
+      content: <ClassSubjectsPage classSubjects={classData?.subjects || []} className={classData?.name} classId={id} classData={classData} /> 
     },
     {
       id: 'teachers',
       label: 'Teachers',
-      content: <TeachersTab teachers={classData?.teachers || []} />
+      content: <TeachersTab teachers={classData?.teachers || []} classData={classData} className={classData?.name} />
     },
     { 
       id: 'timetable', 
@@ -275,6 +276,11 @@ export default function ClassDetailsPage() {
       id: 'attendance', 
       label: 'Attendance' , 
       content: <ClassAttendancePage classData={classData} /> 
+    },
+    { 
+      id: 'results', 
+      label: 'Final Results' , 
+      content: <FinalResultsTab classId={id} /> 
     },
   ]
 
@@ -303,121 +309,95 @@ export default function ClassDetailsPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-      <main className="flex-1 p-8">
+    <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+      <main className="flex-1 p-4 md:p-8 w-full max-w-full">
         <div className="w-full">
           <div className="mb-4">
             <Breadcrumbs items={breadcrumbItems} />
           </div>
-          {/* Page Heading & Button Group */}
-          <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
-            <div className="flex flex-col gap-1">
+          {/* New Page Header Layout */}
+          <div className="bg-white dark:bg-[#1b2232] rounded-3xl p-6 md:p-8 mb-8 border border-gray-150 dark:border-[#364563] shadow-sm flex flex-col md:flex-row gap-8 justify-between items-start md:items-center relative overflow-hidden">
+            {/* Background Accent */}
+            <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col gap-2 z-10">
               {loading ? (
                 <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
               ) : (
-                <p className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-tight">
-                  {classData?.name} {classData?.section ? `- ${classData.section}` : ""}
-                </p>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl border border-primary/20">
+                    {classData?.name?.charAt(0) || "C"}
+                  </div>
+                  <div>
+                    <h1 className="text-gray-900 dark:text-white text-3xl font-black tracking-tight">
+                      {classData?.name} {classData?.section ? <span className="text-primary">{classData.section}</span> : ""}
+                    </h1>
+                    <div className="text-gray-500 dark:text-gray-400 mt-1.5 font-medium flex items-center gap-3 text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> Active Class
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                      <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
+                        Code: {classData?.classCode}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               )}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400 text-sm font-medium">
-                {loading ? (
-                  <>
-                    <span className="flex items-center gap-1.5 animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
-                       Code: <span className="inline-block h-3.5 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
-                    </span>
-                    <span>|</span>
-                    <span className="animate-pulse">
-                      Teachers: <span className="inline-block h-3.5 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-                    </span>
-                    <span>|</span>
-                    <span className="animate-pulse">
-                      Students: <span className="inline-block h-3.5 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                       Code: <span className="text-gray-900 dark:text-white font-bold">{classData?.classCode}</span>
-                    </span>
-                    {classData?.level && (
-                      <>
-                        <span>|</span>
-                        <span>
-                          Level: <span className="text-gray-900 dark:text-white font-bold">{classData.level}</span>
-                        </span>
-                      </>
-                    )}
-                    {classData?.session && (
-                      <>
-                        <span>|</span>
-                        <span>
-                          Session: <span className="text-gray-900 dark:text-white font-bold">{sessions.find((s: any) => s.id === classData.session)?.name || classData.session}</span>
-                        </span>
-                      </>
-                    )}
-                    {classData?.term && (
-                      <>
-                        <span>|</span>
-                        <span>
-                          Term: <span className="text-gray-900 dark:text-white font-bold">{classData.term}</span>
-                        </span>
-                      </>
-                    )}
-                    <span>|</span>
-                    <span>
-                      Teachers:{" "}
-                      {(() => {
-                        const teachers = classData?.teachers || [];
-                        if (teachers.length > 2) {
-                          return (
-                            <button
-                              onClick={() => setIsTeachersModalOpen(true)}
-                              className="text-primary hover:underline font-bold focus:outline-none transition-colors align-baseline"
-                              title="View all assigned teachers"
-                            >
-                              {teachers.slice(0, 2).map((t: any) => t.teacher?.name).join(', ')} ...
-                            </button>
-                          );
-                        }
-                        return (
-                          <span className="text-gray-900 dark:text-white font-bold">
-                            {teachers.length > 0
-                              ? teachers.map((t: any) => t.teacher?.name).join(', ')
-                              : "Not Assigned"}
-                          </span>
-                        );
-                      })()}
-                    </span>
-                    <span>|</span>
-                    <span>Students: <span className="text-gray-900 dark:text-white font-bold">{classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0}</span></span>
-                  </>
-                )}
-              </div>
             </div>
-            
-            <div className="flex flex-wrap gap-3">
-              <button 
-                onClick={() => setIsQRModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl h-10 px-5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
-              >
-                <QrCode size={18} />
-                <span>QR Access</span>
-              </button>
-              
-              <button 
-                onClick={() => setIsManageModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl h-10 px-5 bg-primary text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
-              >
-                <UserCog size={18} />
-                <span>Manage Class</span>
-              </button>
+
+            <div className="flex flex-col sm:flex-row gap-5 sm:gap-8 w-full md:w-auto z-10 items-start sm:items-center">
+               <div className="flex items-center gap-6 sm:gap-8 w-full sm:w-auto justify-start">
+                 {/* Quick Stats */}
+                 <div className="flex flex-col gap-1">
+                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Students</span>
+                   <span className="text-2xl font-black text-gray-900 dark:text-white">
+                     {loading ? "..." : (classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0)}
+                   </span>
+                 </div>
+                 
+                 <div className="w-px h-10 bg-gray-200 dark:bg-[#364563]" />
+                 
+                 <div className="flex flex-col gap-1">
+                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Teachers</span>
+                   <span className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                     {loading ? "..." : (classData?.teachers?.length || 0)}
+                     {classData?.teachers?.length > 0 && (
+                       <button
+                          onClick={() => setIsTeachersModalOpen(true)}
+                          className="text-primary hover:underline text-xs font-bold transition-colors align-middle"
+                          title="View all assigned teachers"
+                        >
+                          View
+                        </button>
+                     )}
+                   </span>
+                 </div>
+               </div>
+               
+               <div className="hidden sm:block w-px h-10 bg-gray-200 dark:bg-[#364563]" />
+               
+               <div className="flex gap-3 w-full sm:w-auto items-center mt-2 sm:mt-0">
+                 <button 
+                    onClick={() => setIsQRModalOpen(true)}
+                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0"
+                    title="QR Access"
+                  >
+                    <QrCode size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setIsManageModalOpen(true)}
+                    className="flex-1 sm:flex-none sm:px-6 h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white dark:text-gray-900 font-bold shadow-md shadow-primary/20 hover:bg-primary/90 transition-all hover:-translate-y-0.5"
+                  >
+                    <UserCog size={18} />
+                    <span>Manage</span>
+                  </button>
+               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="mb-8 overflow-hidden">
+          <div className="mb-6 md:mb-8 w-full overflow-x-auto no-scrollbar pb-1">
             <CustomTabs
               tabs={tabs}
               activeTab={activeTab}

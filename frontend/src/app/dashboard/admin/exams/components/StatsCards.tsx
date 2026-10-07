@@ -57,15 +57,15 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
                     <p className="text-indigo-100 font-medium mb-8 max-w-md leading-relaxed text-sm">
                         Create, schedule, and grade assessments. Keep your school's examination process organized and efficient.
                     </p>
-                    <div className="flex flex-wrap gap-4">
-                        <Link href="/dashboard/admin/exams/new?category=EXAM&mode=SINGLE_SUBJECT">
-                            <button className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl transition-colors shadow-sm flex items-center gap-2 text-sm">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Link href="/dashboard/admin/exams/new?category=EXAM&mode=SINGLE_SUBJECT" className="w-full sm:w-auto">
+                            <button className="w-full bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm">
                                 <Plus size={18} strokeWidth={2.5} />
                                 Create Exam
                             </button>
                         </Link>
-                        <Link href="/dashboard/admin/exams/new/paper">
-                            <button className="bg-indigo-700/50 hover:bg-indigo-700 border border-indigo-400/30 text-white font-bold px-6 py-3 rounded-xl transition-colors flex items-center gap-2 text-sm">
+                        <Link href="/dashboard/admin/exams/new/paper" className="w-full sm:w-auto">
+                            <button className="w-full bg-indigo-700/50 hover:bg-indigo-700 border border-indigo-400/30 text-white font-bold px-6 py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm">
                                 <FileText size={18} strokeWidth={2.5} />
                                 New Subject Paper
                             </button>

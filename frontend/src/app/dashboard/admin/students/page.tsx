@@ -18,6 +18,8 @@ import {
   Zap,
   ChevronDown,
   X,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StudentsTable from "./components/StudentsTable";
@@ -46,6 +48,7 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({ classId: "", gender: "", status: "" });
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportFilters, setExportFilters] = useState({ classId: "", departmentId: "", subjectId: "" });
@@ -441,9 +444,26 @@ export default function StudentsPage() {
               )}
             </div>
 
-            {/* Export */}
-            <div className="flex items-center shrink-0 w-full md:w-auto mt-1 md:mt-0">
-              <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="w-full md:w-auto h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50">
+            {/* Export and View Toggle */}
+            <div className="flex items-center gap-2 shrink-0 w-full md:w-auto mt-1 md:mt-0">
+              <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 shrink-0 h-9 items-center border border-gray-200 dark:border-white/5">
+                <button 
+                  onClick={() => setViewMode("list")}
+                  className={cn("p-1.5 rounded-md transition-all h-full flex items-center justify-center", viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700")}
+                  title="List View"
+                >
+                  <List size={14} />
+                </button>
+                <button 
+                  onClick={() => setViewMode("grid")}
+                  className={cn("p-1.5 rounded-md transition-all h-full flex items-center justify-center", viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700")}
+                  title="Grid View"
+                >
+                  <LayoutGrid size={14} />
+                </button>
+              </div>
+
+              <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="flex-1 md:flex-none h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50">
                 <Download size={14} />
                 Export
               </Button>
@@ -451,13 +471,14 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm overflow-hidden">
+        {/* Table / Grid */}
+        <div className={cn("bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden", viewMode === "list" ? "border border-gray-100 dark:border-white/5" : "bg-transparent shadow-none dark:bg-transparent")}>
           <StudentsTable
             searchTerm={searchTerm}
             filters={filters}
             page={page}
             onPageChange={setPage}
+            viewMode={viewMode}
           />
         </div>
       </div>

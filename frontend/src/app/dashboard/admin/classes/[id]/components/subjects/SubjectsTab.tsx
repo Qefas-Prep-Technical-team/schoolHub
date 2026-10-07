@@ -2,48 +2,91 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
+
+import { Plus, Download, Loader2, FileText, FileSpreadsheet } from 'lucide-react';
 import SubjectCard from './components/SubjectCard';
 import AddSubjectModal from './components/AddSubjectModal';
 import { Subject } from './components/types';
 import Pagination from '@/components/ui/Pagination';
 import SubjectDetailsModal from './components/SubjectDetailsModal';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { toast } from 'react-toastify';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ClassSubjectsPageProps {
   classSubjects?: any[];
   className?: string;
   classId?: string;
+  classData?: any;
 }
 
 export default function ClassSubjectsPage({ 
   classSubjects = [], 
   className = '',
-  classId: propClassId
+  classId: propClassId,
+  classData
 }: ClassSubjectsPageProps) {
   const router = useRouter();
   const params = useParams();
   const classId = propClassId || (params.id as string);
 
+  const { data: schoolProfile } = useSchoolProfile(classData?.schoolId || '');
+  const [isExporting, setIsExporting] = useState(false);
+
   // Map real classSubject data to Subject type
   const subjects: Subject[] = useMemo(() => {
-    return classSubjects.map(cs => ({
-      id: cs.subject.id,
-      name: cs.subject.name,
-      code: cs.subject.code,
-      description: cs.subject.description || '',
-      teacherName: cs.subject.teacher?.name || 'Not assigned',
-      teacherId: cs.subject.teacherId || '',
-      icon: '',
-      assignments: 0,
-      exams: cs.subject._count?.subjectExamPapers || 0,
-      averageScore: 0,
-      classPerformance: 0,
-      enrolledStudents: 0,
-      credits: 0,
-      semester: 'fall',
-      academicYear: ''
-    }));
-  }, [classSubjects]);
+    return classSubjects.map(cs => {
+      let matchedTeachers: string[] = [];
+
+      // 1. Try to find from class teachers who teach this subject
+      if (classData?.teachers) {
+        const matchingClassTeachers = classData.teachers.filter((ct: any) => 
+          ct.teacher?.subjects?.some((s: any) => s.id === cs.subject.id) ||
+          ct.teacher?.teacherSubjects?.some((ts: any) => ts.subjectId === cs.subject.id)
+        );
+        if (matchingClassTeachers.length > 0) {
+          matchedTeachers = matchingClassTeachers.map((ct: any) => ct.teacher.name).filter(Boolean);
+        }
+      }
+
+      // 2. If no class-specific teacher matches, fall back to globally assigned teachers
+      if (matchedTeachers.length === 0) {
+        if (cs.subject.teacher?.name) {
+          matchedTeachers.push(cs.subject.teacher.name);
+        }
+        if (cs.subject.teacherSubjects && cs.subject.teacherSubjects.length > 0) {
+          const globalTeachers = cs.subject.teacherSubjects.map((ts: any) => ts.teacher?.name).filter(Boolean);
+          matchedTeachers = Array.from(new Set([...matchedTeachers, ...globalTeachers])); // Remove duplicates
+        }
+      }
+
+      const finalTeacherName = matchedTeachers.length > 0 ? matchedTeachers.join('\n') : 'Not assigned';
+
+      return {
+        id: cs.subject.id,
+        name: cs.subject.name,
+        code: cs.subject.code,
+        description: cs.subject.description || '',
+        teacherName: finalTeacherName,
+        teacherId: '', // You can safely ignore this for the PDF
+        icon: '',
+        assignments: 0,
+        exams: cs.subject._count?.subjectExamPapers || 0,
+        averageScore: 0,
+        classPerformance: 0,
+        enrolledStudents: 0,
+        credits: 0,
+        semester: 'fall' as any,
+        academicYear: ''
+      };
+    });
+  }, [classSubjects, classData]);
 
   const [currentSubjects, setCurrentSubjects] = useState<Subject[]>(subjects);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -76,6 +119,83 @@ export default function ClassSubjectsPage({
     // console.log('Adding subject to class:', subjectData);
   };
 
+  const handleExport = async () => {
+    if (currentSubjects.length === 0) {
+      toast.warning("No subjects to export");
+      return;
+    }
+    
+    setIsExporting(true);
+    const toastId = toast.loading("Generating PDF...", { autoClose: false });
+
+    try {
+      const tableData = currentSubjects.map((subject, index) => [
+        index + 1,
+        subject.name,
+        subject.code || '-',
+        subject.teacherName || 'Not Assigned',
+        subject.exams > 0 ? `${subject.exams} Exams` : 'None'
+      ]);
+
+      await generatePDF({
+        title: 'Class Subjects Report',
+        filename: `${schoolProfile?.name || 'School'}_${className || 'Class'}_Subjects.pdf`,
+        schoolProfile,
+        metaData: [
+          { label: 'Class Name', value: className || 'Unknown Class' },
+          { label: 'Date Exported', value: new Date().toLocaleDateString() },
+          { label: 'Total Subjects', value: currentSubjects.length.toString() },
+          { label: 'Assigned Teachers', value: currentSubjects.filter(s => s.teacherName && s.teacherName !== 'Not assigned').length.toString() }
+        ],
+        tableHeaders: [['S/N', 'Subject Name', 'Subject Code', 'Assigned Teacher', 'Total Exams']],
+        tableData
+      });
+
+      toast.update(toastId, { render: "PDF Exported Successfully!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast.update(toastId, { render: "Failed to export PDF", type: "error", isLoading: false, autoClose: 3000 });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (currentSubjects.length === 0) {
+      toast.warning("No subjects to export");
+      return;
+    }
+    
+    const headers = ['S/N', 'Subject Name', 'Subject Code', 'Assigned Teacher', 'Total Exams'];
+    const rows = currentSubjects.map((subject, index) => [
+      index + 1,
+      `"${subject.name}"`,
+      `"${subject.code || '-'}"`,
+      `"${subject.teacherName || 'Not Assigned'}"`,
+      `"${subject.exams > 0 ? `${subject.exams} Exams` : 'None'}"`
+    ]);
+    
+    const schoolName = schoolProfile?.name || (globalThis as any)?.settings?.schoolName || 'School';
+    const schoolAddress = schoolProfile?.address || '';
+    const csvContent = [
+      `"${schoolName}"`,
+      `"${schoolAddress}"`,
+      `"Class: ${className || 'Class'}"`,
+      '',
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].filter(r => r !== '""').join('\\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${schoolProfile?.name || 'School'}_${className || 'Class'}_Subjects.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV Exported Successfully!");
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page Header */}
@@ -84,13 +204,38 @@ export default function ClassSubjectsPage({
           Class Subjects
         </h2>
         
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center justify-center gap-2 overflow-hidden rounded-full h-10 px-5 bg-primary text-white text-sm font-semibold leading-normal tracking-wide shadow-sm hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={18} />
-          <span className="truncate">Add Subject</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                disabled={isExporting}
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+              >
+                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleExport} className="cursor-pointer flex items-center gap-2">
+                <FileText size={16} className="text-rose-500" />
+                <span>Export as PDF</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer flex items-center gap-2">
+                <FileSpreadsheet size={16} className="text-emerald-500" />
+                <span>Export as CSV</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center justify-center gap-2 overflow-hidden rounded-full h-10 px-5 bg-primary text-white dark:text-gray-900 text-sm font-semibold leading-normal tracking-wide shadow-sm hover:bg-primary/90 transition-colors"
+          >
+            <Plus size={18} />
+            <span className="truncate">Add Subject</span>
+          </button>
+        </div>
       </header>
       
       {/* Subjects Grid */}
@@ -117,7 +262,7 @@ export default function ClassSubjectsPage({
           </p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-5 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 font-semibold"
+            className="px-5 py-2.5 bg-primary text-white dark:text-gray-900 rounded-full hover:bg-primary/90 font-semibold"
           >
             Add Subject
           </button>
@@ -131,6 +276,7 @@ export default function ClassSubjectsPage({
           totalItems={currentSubjects.length}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          theme="blue"
         />
       )}
 

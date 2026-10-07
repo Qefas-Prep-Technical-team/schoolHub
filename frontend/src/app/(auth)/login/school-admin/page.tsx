@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
         <div className="w-full md:w-[45%] lg:w-[40%] min-h-screen flex flex-col justify-center px-4 sm:px-10 lg:px-16 py-10 md:py-16 md:bg-white md:dark:bg-slate-950">
            
            {/* Back Button */}
-           <div className="w-full max-w-[550px] mx-auto mb-6 md:mb-10">
+           <div className="w-full max-w-[440px] mx-auto mb-6 md:mb-10">
              <Link href="/login" className="flex items-center gap-3 text-sm font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors w-max group">
                <div className="p-2.5 rounded-full bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 group-hover:shadow-md transition-all group-hover:-translate-x-1">
                  <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-300" />
@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
            </div>
            
            {/* Card (Glassmorphic on mobile, flat on desktop) */}
-           <div className="w-full max-w-[550px] mx-auto bg-white/70 dark:bg-slate-900/70 md:bg-transparent md:dark:bg-transparent backdrop-blur-xl md:backdrop-blur-none border border-white/60 dark:border-white/5 md:border-none rounded-[2.5rem] md:rounded-none shadow-2xl shadow-blue-900/5 md:shadow-none p-6 sm:p-12 md:p-0 animate-in fade-in slide-in-from-bottom-8 duration-700 relative overflow-hidden">
+           <div className="w-full max-w-[440px] mx-auto bg-white/70 dark:bg-slate-900/70 md:bg-transparent md:dark:bg-transparent backdrop-blur-xl md:backdrop-blur-none border border-white/60 dark:border-white/5 md:border-none rounded-[2.5rem] md:rounded-none shadow-2xl shadow-blue-900/5 md:shadow-none p-6 sm:p-12 md:p-0 animate-in fade-in slide-in-from-bottom-8 duration-700 relative overflow-hidden">
              
              {/* Mobile-only inner glass shine effect */}
              <div className="absolute inset-0 bg-gradient-to-tr from-white/40 to-transparent dark:from-white/5 dark:to-transparent opacity-50 md:hidden pointer-events-none" />

@@ -495,6 +495,7 @@ export const deleteGradeService = async (id: string) => {
       type: 'GENERAL' as const,
       title: 'Grade Deleted',
       message: `A grade for student ${grade.student.name} in ${subjectName} has been deleted.`,
+      meta: { priority: 'NORMAL' }
     }));
 
     await prisma.notification.createMany({

@@ -2,8 +2,15 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { toast } from 'react-toastify';
 import { useRouter, useParams } from 'next/navigation';
-import { Download, Plus } from 'lucide-react';
+import { Download, Plus, FileText, FileSpreadsheet } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import AttendanceSummaryCard from './components/AttendanceSummaryCard';
 import AttendanceCalendar from './components/AttendanceCalendar';
 import AttendanceTable from './components/AttendanceTable';
@@ -136,7 +143,7 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
 
   // Map real students from classData enrollments
   const students = useMemo(() => {
-    return (classData?.enrollments || []).map((e: any) => ({
+    return (classData?.enrollments || []).filter((e: any) => e?.student?.id).map((e: any) => ({
       id: e.student.id,
       name: e.student.name,
       code: e.student.studentCode || e.student.id.substring(0, 6)
@@ -457,7 +464,8 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
           <table>
             <thead>
               <tr>
-                <th style="width: 25%;">Student Name</th>
+                <th style="width: 5%;">S/N</th>
+                <th style="width: 20%;">Student Name</th>
                 <th style="width: 15%;">Admission ID</th>
                 <th style="width: 15%;">Status</th>
                 <th style="width: 25%;">Comment / Note</th>
@@ -467,16 +475,17 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
             <tbody>
               ${attendanceRecords.length === 0 ? `
                 <tr>
-                  <td colspan="5" class="empty-state">No attendance recorded for this date.</td>
+                  <td colspan="6" class="empty-state">No attendance recorded for this date.</td>
                 </tr>
-              ` : attendanceRecords.map((rec: any) => {
+              ` : attendanceRecords.map((rec: any, index: number) => {
                 const sName = rec.student?.name || rec.studentName || "Unknown Student";
                 const sCode = rec.student?.studentCode || rec.studentCode || "-";
                 const sStatus = rec.status || "absent";
                 const sComment = rec.comment || rec.note || "-";
-                const sBy = rec.submittedBy || "System";
+                const sBy = rec.recordedByName || rec.submittedBy || "System";
                 return `
                   <tr>
+                    <td style="color: #64748b;">${index + 1}</td>
                     <td style="font-weight: 700; color: #1e293b;">${sName}</td>
                     <td class="student-code">${sCode}</td>
                     <td>
@@ -520,6 +529,51 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
     }
   };
 
+  const handleExportCSV = () => {
+    if (attendanceRecords.length === 0) {
+      toast.warning("No attendance records to export");
+      return;
+    }
+
+    const headers = ['S/N', 'Student Name', 'Admission ID', 'Status', 'Comment / Note', 'Marked By'];
+    
+    const rows = attendanceRecords.map((rec: any, index: number) => [
+      `"${index + 1}"`,
+      `"${rec.student?.name || rec.studentName || "Unknown Student"}"`,
+      `"${rec.student?.studentCode || rec.studentCode || "-"}"`,
+      `"${rec.status || "absent"}"`,
+      `"${rec.comment || rec.note || "-"}"`,
+      `"${rec.recordedByName || rec.submittedBy || "System"}"`
+    ]);
+
+    const formattedDate = selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    
+    const schoolNameVal = (globalThis as any)?.schoolProfile?.name || (globalThis as any)?.settings?.schoolName || 'School';
+    const schoolAddressVal = (globalThis as any)?.schoolProfile?.address || '';
+    const classNameVal = classData?.name || 'Class';
+
+    const csvContent = [
+      `"${schoolNameVal}"`,
+      `"${schoolAddressVal}"`,
+      `"Class: ${classNameVal}"`,
+      `"Date: ${formattedDate}"`,
+      '',
+      headers.join(','),
+      ...rows.map((row: any[]) => row.join(','))
+    ].filter(r => r !== '""').join('\\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${schoolNameVal.replace(/\\s+/g, '_')}_${classNameVal.replace(/\\s+/g, '_')}_Attendance_${selectedDate.toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV Exported Successfully!");
+  };
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
   };
@@ -561,19 +615,32 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
           </div>
           
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleDownloadReport}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition-colors"
-            >
-              <Download size={18} className="mr-2" />
-              <span className="truncate">Download Report</span>
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition-colors"
+                >
+                  <Download size={18} className="mr-2" />
+                  <span className="truncate">Download Report</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleDownloadReport} className="cursor-pointer flex items-center gap-2">
+                  <FileText size={16} className="text-rose-500" />
+                  <span>Export as PDF</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer flex items-center gap-2">
+                  <FileSpreadsheet size={16} className="text-emerald-500" />
+                  <span>Export as CSV</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <button
               type="button"
               onClick={handleStartAttendance}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-5 bg-primary hover:bg-primary/90 text-white gap-2 text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-5 bg-primary hover:bg-primary/90 text-white dark:text-gray-900 gap-2 text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
             >
               <Plus size={16} />
               <span className="truncate">Start Attendance</span>
@@ -625,7 +692,7 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
         isOpen={showListModal}
         onClose={() => setShowListModal(false)}
         onSave={handleSaveAttendance}
-        students={students.length > 0 ? students : mockStudents}
+        students={students}
         date={selectedDate.toLocaleDateString('en-CA')}
         initialRecords={attendanceRecords}
         isSaving={submitMutation.isPending}
@@ -635,8 +702,8 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
         isOpen={showSwipeModal}
         onClose={() => setShowSwipeModal(false)}
         onSave={handleSaveAttendance}
-        students={students.length > 0 ? students : mockStudents}
-        date={selectedDate.toISOString().split('T')[0]}
+        students={students}
+        date={selectedDate.toLocaleDateString('en-CA')}
         initialRecords={attendanceRecords}
         isSaving={submitMutation.isPending}
       />

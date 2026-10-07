@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { generatePDF } from '@/utils/pdfGenerator';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { format } from "date-fns";
 import { 
   Plus, 
   Search, 
@@ -196,192 +204,82 @@ const SubjectsPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleExportPDF = () => {
+    const handleExport = async (targetFormat: 'csv' | 'pdf') => {
     setIsExporting(true);
-
-    // Create a temporary hidden iframe to prevent pop-up blocking
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.width = "0px";
-    iframe.style.height = "0px";
-    iframe.style.border = "none";
-    iframe.style.opacity = "0";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document || iframe.contentDocument;
-    if (!doc) {
-      toast.error("Failed to generate PDF export.");
-      setIsExporting(false);
-      return;
-    }
-
-    const htmlContent = `
-      <html>
-        <head>
-          <title>School Subjects Report</title>
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #1e293b;
-              margin: 40px;
-              line-height: 1.5;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 40px;
-              border-bottom: 2px solid #e2e8f0;
-              padding-bottom: 20px;
-            }
-            .title {
-              font-size: 28px;
-              font-weight: 800;
-              text-transform: uppercase;
-              letter-spacing: -0.5px;
-              margin: 0;
-            }
-            .motto {
-              font-size: 14px;
-              font-style: italic;
-              color: #475569;
-              margin: 8px 0;
-            }
-            .subtitle {
-              font-size: 12px;
-              color: #64748b;
-              margin-top: 15px;
-              font-weight: 600;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-            }
-            .school-logo {
-              max-height: 80px;
-              margin-bottom: 15px;
-              border-radius: 8px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            }
-            th {
-              background-color: #f8fafc !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              border-bottom: 2px solid #cbd5e1;
-              text-align: left;
-              padding: 12px 16px;
-              font-size: 11px;
-              font-weight: 800;
-              text-transform: uppercase;
-              color: #475569;
-              letter-spacing: 0.5px;
-            }
-            td {
-              padding: 16px;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 13px;
-            }
-            .code {
-              font-family: monospace;
-              font-weight: 700;
-              background-color: #f1f5f9 !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              padding: 4px 8px;
-              border-radius: 6px;
-              font-size: 11px;
-            }
-            .metric {
-              font-weight: 700;
-            }
-            .scope-badge {
-              font-size: 10px;
-              font-weight: 800;
-              text-transform: uppercase;
-              padding: 4px 8px;
-              border-radius: 12px;
-            }
-            .scope-school {
-              background-color: #ecfdf5 !important;
-              color: #059669;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            .scope-personal {
-              background-color: #fffbeb !important;
-              color: #d97706;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            .footer {
-              margin-top: 50px;
-              text-align: center;
-              font-size: 10px;
-              color: #94a3b8;
-              border-top: 1px solid #e2e8f0;
-              padding-top: 20px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            ${schoolProfile?.logo ? `<img src="${schoolProfile.logo}" alt="School Logo" class="school-logo" />` : ''}
-            <h1 class="title">${schoolProfile?.name || 'School Subjects Report'}</h1>
-            ${schoolProfile?.motto ? `<p class="motto">"${schoolProfile.motto}"</p>` : ''}
-            <h2 class="subtitle">Curriculum Report | Generated on ${new Date().toLocaleDateString()}</h2>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Subject Name</th>
-                <th>Code</th>
-                <th>Teachers</th>
-                <th>Classes</th>
-                <th>Scope</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredSubjects.map(sub => `
-                <tr>
-                  <td><strong>${sub.name}</strong></td>
-                  <td><span class="code">${sub.code}</span></td>
-                  <td class="metric">${sub.teachersCount || 0}</td>
-                  <td class="metric">${sub.classesCount || 0}</td>
-                  <td>
-                    <span class="scope-badge ${sub.scope === 'SCHOOL' ? 'scope-school' : 'scope-personal'}">
-                      ${sub.scope === 'SCHOOL' ? 'School-wide' : 'Private'}
-                    </span>
-                  </td>
-                  <td><em>${sub.description || 'No description provided.'}</em></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div class="footer">
-            Qefas Prep Hub © ${new Date().getFullYear()} - Curriculum Management Suite
-          </div>
-        </body>
-      </html>
-    `;
-
-    doc.write(htmlContent);
-    doc.close();
-
-    // Trigger printing once loaded
-    setTimeout(() => {
-      if (iframe.contentWindow) {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
+    try {
+      const dataToExport = filteredSubjects || [];
+      if (!dataToExport || dataToExport.length === 0) {
+        toast.info("No subjects to export.");
+        return;
       }
       
-      // Cleanup after print dialogue opens
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        setIsExporting(false);
-      }, 1000);
-    }, 1500); // Premium loading state transition
+      const headers = ["#", "Subject Name", "Code", "Teachers", "Classes", "Scope"];
+      const rows = dataToExport.map((sub, index) => [
+        (index + 1).toString(),
+        sub.name || "N/A",
+        sub.code || "N/A",
+        (sub.teachersCount || 0).toString(),
+        (sub.classesCount || 0).toString(),
+        sub.scope === 'SCHOOL' ? 'School-wide' : 'Private'
+      ]);
+
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
+      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileNameBase = `${sanitizedSchoolName}_subjects_export_${dateStr}`;
+
+      if (targetFormat === 'csv') {
+        const csvContent = [];
+        csvContent.push(`"${schoolName.toUpperCase()}"`);
+        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
+        csvContent.push("");
+        csvContent.push(`"Subjects Report"`);
+        csvContent.push(`"Generated on: ${dateStr}"`);
+        csvContent.push("");
+
+        const csvRows = dataToExport.map((sub, index) => [
+          (index + 1).toString(),
+          `"${(sub.name || "").replace(/"/g, '""')}"`,
+          `"${(sub.code || "").replace(/"/g, '""')}"`,
+          (sub.teachersCount || 0).toString(),
+          (sub.classesCount || 0).toString(),
+          sub.scope === 'SCHOOL' ? 'School-wide' : 'Private'
+        ]);
+        
+        csvContent.push(headers.join(","));
+        csvRows.forEach(r => csvContent.push(r.join(",")));
+
+        const csv = csvContent.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileNameBase}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        await generatePDF({
+          title: `School Subjects Report`,
+          filename: `${fileNameBase}.pdf`,
+          schoolProfile,
+          metaData: [
+            { label: 'Date', value: dateStr },
+            { label: 'Total Subjects', value: dataToExport.length.toString() }
+          ],
+          tableHeaders: [headers],
+          tableData: rows
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Failed to export records as ${targetFormat.toUpperCase()}.`);
+    } finally {
+      setIsExporting(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 p-4 md:p-6 lg:p-10 transition-colors duration-500">
@@ -404,20 +302,55 @@ const SubjectsPage = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4 w-full lg:w-auto mt-4 lg:mt-0">
+          <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-5 w-full lg:w-auto mt-6 lg:mt-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  disabled={isExporting}
+                  variant="outline"
+                  className="group w-full sm:w-auto h-14 md:h-16 px-6 md:px-8 rounded-xl font-bold tracking-wide gap-3 hover:scale-[1.02] active:scale-95 transition-all duration-300 border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl text-slate-700 dark:text-slate-300 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 disabled:opacity-50 relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/5 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  {isExporting ? (
+                    <div className="size-5 rounded-full border-2 border-slate-400 border-t-slate-800 dark:border-slate-600 dark:border-t-white animate-spin" />
+                  ) : (
+                    <Download size={20} strokeWidth={2.5} className="text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors" />
+                  )}
+                  {isExporting ? "Generating..." : "Export Data"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
+                <DropdownMenuItem 
+                  onClick={() => handleExport('csv')}
+                  className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
+                >
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleExport('pdf')}
+                  className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
+                >
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button 
               onClick={handleCreate}
-              style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}
-              className="w-full lg:w-auto h-14 md:h-16 px-6 md:px-10 rounded-[1.5rem] md:rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
+              style={{ 
+                background: `linear-gradient(135deg, ${primaryColor}, #3b82f6)`,
+                boxShadow: `0 10px 30px -10px ${primaryColor}80` 
+              }}
+              className="group w-full sm:w-auto h-14 md:h-16 px-6 md:px-8 rounded-xl text-white font-bold tracking-wide gap-3 hover:scale-[1.02] active:scale-95 transition-all duration-300 relative overflow-hidden border-0"
             >
-              <Plus size={20} strokeWidth={3} />
+              <div className="absolute inset-0 bg-white/20 dark:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <Plus size={22} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
               Add New Subject
             </Button>
           </div>
         </div>
 
         {/* Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
                     <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
@@ -455,7 +388,7 @@ const SubjectsPage = () => {
                 </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+            <div className="col-span-2 md:col-span-1 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
                     <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">System Status</p>
                     <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -533,50 +466,7 @@ const SubjectsPage = () => {
                   </Select>
                 </div>
 
-                <div className="flex gap-3 md:gap-4 w-full md:w-auto">
-                  <Button 
-                      onClick={handleExportPDF}
-                      disabled={isExporting}
-                      variant="outline" 
-                      className="flex-1 md:flex-none h-14 md:h-16 px-4 md:px-8 rounded-[1.5rem] md:rounded-3xl border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-2 flex hover:bg-slate-100 dark:hover:bg-white/5 transition-all disabled:opacity-50"
-                  >
-                      {isExporting ? (
-                        <div className="size-4 rounded-full border-2 border-slate-400 border-t-slate-800 animate-spin" />
-                      ) : (
-                        <Download size={18} strokeWidth={3} className="text-slate-400" />
-                      )}
-                      {isExporting ? <span className="hidden sm:inline">Generating...</span> : <span className="hidden sm:inline">Export PDF</span>}
-                  </Button>
-
-                  <div className="flex flex-1 md:flex-none bg-slate-100 dark:bg-slate-800 p-1.5 rounded-[1.5rem] md:rounded-[2rem] h-14 md:h-16 items-center border border-slate-200/50 dark:border-white/5 shadow-inner">
-                      <button
-                          type="button"
-                          onClick={() => setViewMode("grid")}
-                          className={cn(
-                              "h-full w-full md:px-6 rounded-[1.2rem] md:rounded-[1.5rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                              viewMode === "grid" 
-                                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-md" 
-                                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                          )}
-                      >
-                          <LayoutGrid size={14} strokeWidth={2.5} />
-                          <span className="hidden md:inline">Grid</span>
-                      </button>
-                      <button
-                          type="button"
-                          onClick={() => setViewMode("list")}
-                          className={cn(
-                              "h-full w-full md:px-6 rounded-[1.2rem] md:rounded-[1.5rem] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300",
-                              viewMode === "list" 
-                                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-md" 
-                                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                          )}
-                      >
-                          <List size={14} strokeWidth={2.5} />
-                          <span className="hidden md:inline">List</span>
-                      </button>
-                  </div>
-                </div>
+                
             </div>
         </div>
 

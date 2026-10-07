@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import {
@@ -328,6 +328,11 @@ export default function NotificationsPage() {
                             {n.title}
                           </h3>
                           {!n.isRead && <Badge className="bg-blue-400 text-white text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm hover:bg-blue-500">New</Badge>}
+                          {(n.meta as any)?.priority && (n.meta as any)?.priority !== 'NORMAL' && (
+                            <Badge className={cn("text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm", (n.meta as any)?.priority === 'URGENT' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-amber-500 text-white hover:bg-amber-600')}>
+                              {(n.meta as any).priority}
+                            </Badge>
+                          )}
                         </div>
                         <span className="text-[10px] text-slate-400 font-black flex items-center gap-1.5 shrink-0 ml-4 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
                           <Clock size={10} /> {new Date(n.createdAt).toLocaleDateString()}
@@ -398,3 +403,4 @@ export default function NotificationsPage() {
     </div>
   );
 }
+

@@ -35,7 +35,9 @@ import { toast } from "react-toastify";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { departmentService, Department } from "./services/departmentService";
 import { apiClient } from "@/lib/api/client";
-import { useSchoolSettings, useSchoolStats } from "@/lib/api/hooks/useSchool";
+import { useSchoolSettings, useSchoolStats, useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { generatePDF } from "@/utils/pdfGenerator";
+import { format } from "date-fns";
 import DepartmentModal from "./components/DepartmentModal";
 import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
@@ -61,6 +63,7 @@ export default function DepartmentsPage() {
   const [schoolId, setSchoolId] = useState<string | null>(schoolIdFromStore || null);
   const { data: settings } = useSchoolSettings(schoolId || '');
   const { data: schoolStats } = useSchoolStats(schoolId || '');
+  const { data: schoolProfile } = useSchoolProfile(schoolId || '');
   const primaryColor = settings?.themeColor || '#2563eb';
 
   const fetchSchoolId = useCallback(async () => {
@@ -128,153 +131,80 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
     setIsExporting(true);
-
-    // Create a temporary hidden iframe to prevent pop-up blocking
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.width = "0px";
-    iframe.style.height = "0px";
-    iframe.style.border = "none";
-    iframe.style.opacity = "0";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document || iframe.contentDocument;
-    if (!doc) {
-      toast.error("Failed to generate PDF export.");
-      setIsExporting(false);
-      return;
-    }
-
-    const htmlContent = `
-      <html>
-        <head>
-          <title>School Departments Report</title>
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              color: #1e293b;
-              margin: 40px;
-              line-height: 1.5;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 40px;
-              border-bottom: 2px solid #e2e8f0;
-              padding-bottom: 20px;
-            }
-            .title {
-              font-size: 28px;
-              font-weight: 800;
-              text-transform: uppercase;
-              letter-spacing: -0.5px;
-              margin: 0;
-            }
-            .subtitle {
-              font-size: 14px;
-              color: #64748b;
-              margin-top: 5px;
-              font-weight: 600;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            }
-            th {
-              background-color: #f8fafc !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              border-bottom: 2px solid #cbd5e1;
-              text-align: left;
-              padding: 12px 16px;
-              font-size: 11px;
-              font-weight: 800;
-              text-transform: uppercase;
-              color: #475569;
-              letter-spacing: 0.5px;
-            }
-            td {
-              padding: 16px;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 13px;
-            }
-            .code {
-              font-family: monospace;
-              font-weight: 700;
-              background-color: #f1f5f9 !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              padding: 4px 8px;
-              border-radius: 6px;
-              font-size: 11px;
-            }
-            .metric {
-              font-weight: 700;
-            }
-            .footer {
-              margin-top: 50px;
-              text-align: center;
-              font-size: 10px;
-              color: #94a3b8;
-              border-top: 1px solid #e2e8f0;
-              padding-top: 20px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1 class="title">School Departments Report</h1>
-            <p class="subtitle">Generated on ${new Date().toLocaleDateString()} | Verified School Schema</p>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Department Name</th>
-                <th>Code</th>
-                <th>Subjects</th>
-                <th>Classes</th>
-                <th>Students</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${departments.map(dept => `
-                <tr>
-                  <td><strong>${dept.name}</strong></td>
-                  <td><span class="code">${dept.code}</span></td>
-                  <td class="metric">${dept.subjects?.length || 0}</td>
-                  <td class="metric">${dept._count?.classes || 0}</td>
-                  <td class="metric">${dept._count?.students || 0}</td>
-                  <td><em>${dept.description || 'No description provided.'}</em></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div class="footer">
-            Qefas Prep Hub © ${new Date().getFullYear()} - Administrative Management Suite
-          </div>
-        </body>
-      </html>
-    `;
-
-    doc.write(htmlContent);
-    doc.close();
-
-    // Trigger printing once loaded
-    setTimeout(() => {
-      if (iframe.contentWindow) {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
+    try {
+      const dataToExport = departments || [];
+      if (!dataToExport || dataToExport.length === 0) {
+        toast.info("No departments to export.");
+        return;
       }
       
-      // Cleanup after print dialog opens
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        setIsExporting(false);
-      }, 1000);
-    }, 1500); // Elegant 1.5s delay to display loading micro-animation
+      const headers = ["#", "Department Name", "Code", "Subjects", "Classes", "Students"];
+      const rows = dataToExport.map((dept, index) => [
+        (index + 1).toString(),
+        dept.name || "N/A",
+        dept.code || "N/A",
+        (dept.subjects?.length || 0).toString(),
+        (dept._count?.classes || 0).toString(),
+        (dept._count?.students || 0).toString()
+      ]);
+
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
+      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const fileNameBase = `${sanitizedSchoolName}_departments_export_${dateStr}`;
+
+      if (targetFormat === 'csv') {
+        const csvContent = [];
+        csvContent.push(`"${schoolName.toUpperCase()}"`);
+        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
+        csvContent.push("");
+        csvContent.push(`"Departments Report"`);
+        csvContent.push(`"Generated on: ${dateStr}"`);
+        csvContent.push("");
+
+        const csvRows = dataToExport.map((dept, index) => [
+          (index + 1).toString(),
+          `"${(dept.name || "").replace(/"/g, '""')}"`,
+          `"${(dept.code || "").replace(/"/g, '""')}"`,
+          (dept.subjects?.length || 0).toString(),
+          (dept._count?.classes || 0).toString(),
+          (dept._count?.students || 0).toString()
+        ]);
+        
+        csvContent.push(headers.join(","));
+        csvRows.forEach(r => csvContent.push(r.join(",")));
+
+        const csv = csvContent.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileNameBase}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        await generatePDF({
+          title: `School Departments Report`,
+          filename: `${fileNameBase}.pdf`,
+          schoolProfile,
+          metaData: [
+            { label: 'Date', value: dateStr },
+            { label: 'Total Departments', value: dataToExport.length.toString() }
+          ],
+          tableHeaders: [headers],
+          tableData: rows
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(`Failed to export records as ${targetFormat.toUpperCase()}.`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -320,36 +250,58 @@ export default function DepartmentsPage() {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-4 w-full lg:w-auto mt-4 lg:mt-0">
-            <Button 
-              onClick={handleExportPDF}
-              disabled={isExporting}
-              variant="outline"
-              className="w-full sm:w-auto h-14 md:h-16 px-6 md:px-10 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest gap-3 shadow-lg hover:scale-105 active:scale-95 transition-all border-2 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-50"
-            >
-              {isExporting ? (
-                <div className="size-5 rounded-full border-2 border-slate-400 border-t-slate-800 animate-spin" />
-              ) : (
-                <Download size={20} strokeWidth={3} />
-              )}
-              {isExporting ? "Generating..." : "Export PDF"}
-            </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-5 w-full lg:w-auto mt-6 lg:mt-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  disabled={isExporting}
+                  variant="outline"
+                  className="group w-full sm:w-auto h-14 md:h-16 px-6 md:px-8 rounded-xl font-bold tracking-wide gap-3 hover:scale-[1.02] active:scale-95 transition-all duration-300 border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl text-slate-700 dark:text-slate-300 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 disabled:opacity-50 relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/5 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  {isExporting ? (
+                    <div className="size-5 rounded-full border-2 border-slate-400 border-t-slate-800 dark:border-slate-600 dark:border-t-white animate-spin" />
+                  ) : (
+                    <Download size={20} strokeWidth={2.5} className="text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors" />
+                  )}
+                  {isExporting ? "Generating..." : "Export Data"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
+                <DropdownMenuItem 
+                  onClick={() => handleExport('csv')}
+                  className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
+                >
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleExport('pdf')}
+                  className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
+                >
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button 
               onClick={() => {
                 setSelectedDepartment(null);
                 setIsModalOpen(true);
               }}
-              style={{ backgroundColor: primaryColor }}
-              className="w-full sm:w-auto h-14 md:h-16 px-6 md:px-10 rounded-[1.5rem] md:rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              style={{ 
+                background: `linear-gradient(135deg, ${primaryColor}, #3b82f6)`,
+                boxShadow: `0 10px 30px -10px ${primaryColor}80` 
+              }}
+              className="group w-full sm:w-auto h-14 md:h-16 px-6 md:px-8 rounded-xl text-white font-bold tracking-wide gap-3 hover:scale-[1.02] active:scale-95 transition-all duration-300 relative overflow-hidden border-0"
             >
-              <Plus size={20} strokeWidth={3} />
+              <div className="absolute inset-0 bg-white/20 dark:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <Plus size={22} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
               Add Department
             </Button>
           </div>
         </div>
 
         {/* Department & School Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
                     <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
@@ -420,16 +372,18 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Operational Terminal Control */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-[2rem] lg:rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-[2rem] lg:rounded-[2.5rem] bg-white dark:bg-[#15171e] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-slate-100/80 dark:border-white/5 transition-all duration-300 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_40px_rgb(0,0,0,0.3)]">
             <div className="relative group w-full md:max-w-xl">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                    <Search className="text-slate-400 group-focus-within:text-primary transition-colors duration-300" size={20} strokeWidth={2.5} style={{ color: searchQuery ? primaryColor : undefined }} />
+                </div>
                 <input 
                     type="text" 
                     placeholder="Search departments..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-14 md:h-16 pl-14 md:pl-16 pr-6 bg-white dark:bg-slate-900/40 backdrop-blur-xl border border-slate-100 dark:border-white/5 rounded-[1.5rem] md:rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                    style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                    className="w-full h-14 bg-slate-50/80 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 border border-transparent focus:border-primary/30 dark:focus:border-primary/30 rounded-[1.5rem] pl-14 pr-6 text-[15px] font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 outline-none transition-all duration-300 focus:shadow-[0_0_0_4px_var(--tw-ring-color)]"
+                    style={{ '--tw-ring-color': `${primaryColor}15` } as any}
                 />
             </div>
             <div className="flex items-center gap-3 w-full md:w-auto">

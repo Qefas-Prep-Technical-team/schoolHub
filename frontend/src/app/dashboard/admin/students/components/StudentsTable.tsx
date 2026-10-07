@@ -28,6 +28,7 @@ interface StudentsTableProps {
   };
   page: number;
   onPageChange: (page: number) => void;
+  viewMode?: "list" | "grid";
 }
 
 const GenderBadge = ({ gender }: { gender?: string }) => {
@@ -73,6 +74,7 @@ export default function StudentsTable({
   filters,
   page,
   onPageChange,
+  viewMode = "list",
 }: StudentsTableProps) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
@@ -186,7 +188,74 @@ export default function StudentsTable({
 
   return (
     <div className="flex flex-col">
-      {/* ── Desktop table ─────────────────────────────────────────────────── */}
+      {viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-1">
+          {students.map((student: any) => {
+            const isSelected = selectedIds.includes(student.id);
+            const studentClass = student.classes?.[0]?.class;
+            const studentCode = student.studentCode ? String(student.studentCode).padStart(8, "0") : "—";
+            return (
+              <div
+                key={student.id}
+                className={cn(
+                  "bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative group",
+                  isSelected && "border-indigo-400 dark:border-indigo-500 ring-1 ring-indigo-400 dark:ring-indigo-500"
+                )}
+              >
+                <div className="absolute top-4 left-4 z-10">
+                  <input
+                    type="checkbox"
+                    className="size-4.5 rounded border-gray-300 dark:border-white/20 cursor-pointer accent-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                    style={{ opacity: isSelected ? 1 : undefined }}
+                    checked={isSelected}
+                    onChange={(e) => toggleSelect(e, student.id)}
+                  />
+                </div>
+                
+                <div className="flex flex-col items-center text-center mt-2">
+                  <div className="size-20 rounded-full overflow-hidden border-4 border-gray-50 dark:border-slate-800 bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0 mb-4 shadow-sm">
+                    {student.profileImage ? (
+                      <img
+                        src={student.profileImage}
+                        alt={student.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User size={32} className="text-gray-400" />
+                    )}
+                  </div>
+                  
+                  <Link href={`/dashboard/admin/students/${student.id}`} className="hover:text-indigo-600 transition-colors">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white line-clamp-1">{student.name}</h3>
+                  </Link>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2 font-mono">{studentCode}</p>
+                  
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
+                    {studentClass && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
+                        {studentClass.name}{studentClass.section ? `-${studentClass.section}` : ""}
+                      </span>
+                    )}
+                    <GenderBadge gender={student.gender} />
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 w-full flex items-center justify-between">
+                    <StatusDot verified={student.verified} />
+                    <Link
+                      href={`/dashboard/admin/students/${student.id}`}
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          {/* ── Desktop table ─────────────────────────────────────────────────── */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
@@ -379,6 +448,8 @@ export default function StudentsTable({
           );
         })}
       </div>
+      </>
+      )}
 
       {/* ── Empty state ───────────────────────────────────────────────────── */}
       {students.length === 0 && (

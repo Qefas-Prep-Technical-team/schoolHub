@@ -150,7 +150,11 @@ export default function NotificationCenter() {
                   )}
 
                   <div className="flex gap-3">
-                    <div className="mt-0.5 bg-background border rounded-full p-1.5 shrink-0 h-8 w-8 flex items-center justify-center">
+                    <div className={cn(
+                      "mt-0.5 bg-background border rounded-full p-1.5 shrink-0 h-8 w-8 flex items-center justify-center",
+                      (n.meta as any)?.priority === 'URGENT' && "border-rose-500 bg-rose-50 text-rose-500 dark:bg-rose-950/30",
+                      (n.meta as any)?.priority === 'HIGH' && "border-amber-500 bg-amber-50 text-amber-500 dark:bg-amber-950/30"
+                    )}>
                       {getTypeIcon(n.type)}
                     </div>
 

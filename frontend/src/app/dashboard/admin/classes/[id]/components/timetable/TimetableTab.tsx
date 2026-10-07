@@ -13,7 +13,7 @@ import { Period } from './components/types';
 
 import { useClassTimetable, useAutoGenerateTimetable, useDeleteTimetablePeriod } from '@/lib/api/hooks/useClasses';
 import { useSessions } from '@/lib/api/hooks/useSessions';
-import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 
@@ -27,12 +27,14 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
   const classId = params.id as string;
   const schoolId = classData?.schoolId || "";
   const { data: settings } = useSchoolSettings(schoolId);
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
 
   // Sessions and Term Filters
   const { data: sessionsData } = useSessions(schoolId);
   const sessions = sessionsData?.data || [];
   const [selectedSessionName, setSelectedSessionName] = useState("");
   const [selectedTermName, setSelectedTermName] = useState("First Term");
+  const [isExporting, setIsExporting] = useState(false);
 
   React.useEffect(() => {
     if (sessions && sessions.length > 0 && !selectedSessionName) {
@@ -204,20 +206,6 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
   };
 
   const handleDownload = () => {
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.width = "0px";
-    iframe.style.height = "0px";
-    iframe.style.border = "none";
-    iframe.style.opacity = "0";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document || iframe.contentDocument;
-    if (!doc) {
-      toast.error("Failed to generate PDF export.");
-      return;
-    }
-
     const classNameVal = classData?.name || "Class Timetable";
     const termVal = selectedTermName;
     const sessionVal = selectedSessionName;
@@ -413,9 +401,10 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
         <body>
           <div class="header-container">
             <div class="school-branding">
-              ${settings?.logo ? `<img class="school-logo" src="${settings.logo}" alt="School Logo" />` : ''}
+              ${schoolProfile?.logo || settings?.logo ? `<img class="school-logo" src="${schoolProfile?.logo || settings?.logo}" alt="School Logo" />` : ''}
               <div class="school-info">
-                <h2>${settings?.schoolName || classData?.school?.name || 'Academic Institution'}</h2>
+                <h2>${schoolProfile?.name || settings?.schoolName || classData?.school?.name || 'Academic Institution'}</h2>
+                ${schoolProfile?.address ? `<p>${schoolProfile.address}</p>` : ''}
                 <p>Class: ${classNameVal}</p>
               </div>
             </div>
@@ -467,10 +456,23 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
       </html>
     `;
 
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) {
+      toast.error("Failed to generate PDF export.");
+      return;
+    }
+
     doc.write(htmlContent);
     doc.close();
 
-    // Trigger printing once iframe document loading finishes and image loads
     const triggerPrint = () => {
       if (iframe.contentWindow) {
         iframe.contentWindow.focus();
@@ -485,7 +487,6 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
     if (img && !img.complete) {
       img.onload = triggerPrint;
       img.onerror = triggerPrint;
-      // Safety timeout in case image loading hangs
       setTimeout(triggerPrint, 3000);
     } else {
       setTimeout(triggerPrint, 1000);
@@ -564,6 +565,48 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
     onNavigateToAttendance?.();
   };
 
+  const handleDownloadCSV = () => {
+    if (periods.length === 0) {
+      toast.warning("No timetable to export");
+      return;
+    }
+
+    const headers = ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    
+    const rows = periods.map(period => {
+      const row = [period.timeSlot];
+      days.forEach(day => {
+        const subject = period.subjects[day];
+        if (subject) {
+          row.push(`"${subject.name}${subject.teacher ? ' - ' + subject.teacher : ''}"`);
+        } else {
+          row.push('""');
+        }
+      });
+      return row;
+    });
+
+    const schoolName = schoolProfile?.name || settings?.schoolName || 'School';
+    const schoolAddress = schoolProfile?.address || '';
+    const csvContent = [
+      `"${schoolName}"`,
+      `"${schoolAddress}"`,
+      `"Class: ${classData?.name || 'Class'}"`,
+      '',
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].filter(r => r !== '""').join('\\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${schoolProfile?.name?.replace(/\s+/g, '_') || 'School'}_${classData?.name?.replace(/\s+/g, '_') || 'Class'}_Timetable.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV Exported Successfully!");
+  };
+
   return (
     <div className="w-full mt-6">
       {/* Header Section */}
@@ -581,7 +624,9 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
           onAutoGenerate={handleAutoGenerateClick}
           onAddPeriod={handleAddPeriod}
           onDownload={handleDownload}
+          onDownloadCSV={handleDownloadCSV}
           onReplicate={handleReplicate}
+          isExporting={isExporting}
         />
       </header>
 

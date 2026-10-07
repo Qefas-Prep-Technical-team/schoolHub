@@ -92,8 +92,8 @@ export const createClassService = async ({
       },
       include: {
         school: true,
-        teachers: { include: { teacher: true } },
-        subjects: { include: { subject: true } },
+        teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+        subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
         departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
@@ -136,8 +136,8 @@ export const createClassService = async ({
       },
       include: {
         school: true,
-        teachers: { include: { teacher: true } },
-        subjects: { include: { subject: true } },
+        teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+        subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
         departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
@@ -191,8 +191,8 @@ export const createClassService = async ({
     },
     include: {
       school: true,
-      teachers: { include: { teacher: true } },
-      subjects: { include: { subject: true } },
+      teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+      subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
       enrollments: { include: { student: true } },
     },
   });
@@ -290,8 +290,8 @@ export const getClassesService = async ({
       where: { schoolId },
       include: {
         school: true,
-        teachers: { include: { teacher: true } },
-        subjects: { include: { subject: true } },
+        teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+        subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
         departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
@@ -304,8 +304,8 @@ export const getClassesService = async ({
       where: { teachers: { some: { teacherId: currentUserId } } },
       include: {
         school: true,
-        teachers: { include: { teacher: true } },
-        subjects: { include: { subject: true } },
+        teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+        subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
         departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
@@ -320,8 +320,8 @@ export const getClassesService = async ({
         class: {
           include: {
             school: true,
-            teachers: { include: { teacher: true } },
-            subjects: { include: { subject: true } },
+            teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+            subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
             departments: { include: { department: true } },
             enrollments: { include: { student: true } },
           },
@@ -339,11 +339,15 @@ export const getSingleClassService = async (classId: string) => {
     where: { id: classId },
     include: {
       school: true,
-      teachers: { include: { teacher: true } },
+      teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
       subjects: {
         include: {
           subject: {
             include: {
+              teacher: true,
+              teacherSubjects: {
+                include: { teacher: true }
+              },
               _count: {
                 select: {
                   subjectExamPapers: true,
@@ -361,6 +365,8 @@ export const getSingleClassService = async (classId: string) => {
           title: true,
           description: true,
           status: true,
+          category: true,
+          scope: true,
           totalMarks: true,
           durationMinutes: true,
           startDate: true,
@@ -398,6 +404,7 @@ export const getSingleClassService = async (classId: string) => {
           student: true,
         },
       },
+
     },
   });
 
@@ -405,18 +412,49 @@ export const getSingleClassService = async (classId: string) => {
     throw new Error("Class not found");
   }
 
+  // Fetch assignments separately since there's no direct Prisma relation defined
+  const classAssignments = await prisma.assignment.findMany({
+    where: { classId },
+    select: {
+      id: true,
+      title: true,
+      instructions: true,
+      dueDate: true,
+      totalMarks: true,
+      status: true,
+      subjectId: true,
+      teacherId: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: { questions: true, submissions: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const enrichedAssignments = classAssignments.map(a => {
+    const subject = foundClass.subjects.find(s => s.subjectId === a.subjectId)?.subject;
+    return { ...a, subject: subject ? { name: subject.name } : null };
+  });
+
+  const enrichedClass = {
+    ...foundClass,
+    assignments: enrichedAssignments,
+  };
+
   // Resolve session UUID to session name if necessary
-  if (foundClass.session && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(foundClass.session)) {
+  if (enrichedClass.session && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(enrichedClass.session)) {
     const sessionObj = await prisma.session.findUnique({
-      where: { id: foundClass.session },
+      where: { id: enrichedClass.session },
       select: { name: true }
     });
     if (sessionObj) {
-      foundClass.session = sessionObj.name;
+      enrichedClass.session = sessionObj.name;
     }
   }
 
-  return foundClass;
+  return enrichedClass;
 };
 
 export const previewClassByCodeService = async (classCode: string) => {
@@ -424,8 +462,8 @@ export const previewClassByCodeService = async (classCode: string) => {
     where: { classCode },
     include: {
       school: true,
-      teachers: { include: { teacher: true } },
-      subjects: { include: { subject: true } },
+      teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+      subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
       departments: { include: { department: true } },
       enrollments: true,
     },
@@ -447,8 +485,8 @@ export const previewClassByIdService = async (id: string) => {
     where: { id },
     include: {
       school: true,
-      teachers: { include: { teacher: true } },
-      subjects: { include: { subject: true } },
+      teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+      subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
       departments: { include: { department: true } },
       enrollments: true,
     },
@@ -486,8 +524,8 @@ export const requestToJoinClassService = async ({
     where: { classCode },
     include: {
       school: true,
-      teachers: { include: { teacher: true } },
-      subjects: { include: { subject: true } },
+      teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+      subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
     },
   });
 
@@ -709,7 +747,9 @@ export const attachSubjectsToClassService = async ({
     include: {
       subjects: {
         include: {
-          subject: true,
+          subject: {
+            include: { teacher: true },
+          },
         },
       },
     },
@@ -768,8 +808,8 @@ export const updateClassService = async ({
     },
     include: {
       school: true,
-      teachers: { include: { teacher: true } },
-      subjects: { include: { subject: true } },
+      teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
+      subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
       departments: { include: { department: true } },
       enrollments: { include: { student: true } },
     },
@@ -874,7 +914,7 @@ export const replaceClassSubjectsService = async ({
   return prisma.class.findUnique({
     where: { id: classId },
     include: {
-      subjects: { include: { subject: true } },
+      subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
     },
   });
 };
@@ -1062,4 +1102,100 @@ export const promoteStudentsService = async ({
   await Promise.all(notificationPromises);
 
   return { success: true, message: `Successfully promoted ${studentIds.length} students` };
+};
+
+export const sendClassAnnouncementService = async (
+  classId: string,
+  senderId: string,
+  payload: { title: string; message: string; targets: string[], priority?: string }
+) => {
+  const { title, message, targets, priority = 'NORMAL' } = payload;
+  
+  if (!targets || targets.length === 0) {
+    throw new Error("At least one target audience (STUDENT, PARENT) must be selected.");
+  }
+
+  const foundClass = await prisma.class.findUnique({
+    where: { id: classId },
+    include: {
+      enrollments: {
+        include: {
+          student: {
+            include: { parentLinks: { include: { parent: true } } },
+          },
+        },
+      },
+      teachers: {
+        include: { teacher: true }
+      }
+    },
+  });
+
+  if (!foundClass) throw new Error("Class not found");
+
+  const notificationsToCreate = [];
+  const senderType = "TEACHER";
+
+  for (const enrollment of foundClass.enrollments) {
+    const student = enrollment.student;
+
+    if (targets.includes("STUDENT") && student.id) {
+      notificationsToCreate.push({
+        recipientType: "STUDENT" as any,
+        recipientId: student.id,
+        senderType: senderType as any,
+        senderId,
+        type: "GENERAL" as any,
+        title,
+        message,
+        meta: { priority },
+      });
+    }
+
+    if (targets.includes("PARENT") && student.parentLinks && student.parentLinks.length > 0) {
+      for (const parentLink of student.parentLinks) {
+        if (parentLink.parent?.id) {
+          notificationsToCreate.push({
+            recipientType: "PARENT" as any,
+            recipientId: parentLink.parent.id,
+            senderType: senderType as any,
+            senderId,
+            type: "GENERAL" as any,
+            title,
+            message,
+            meta: { priority },
+          });
+        }
+      }
+    }
+  }
+
+  if (targets.includes("TEACHER") && foundClass.teachers) {
+    for (const classTeacher of foundClass.teachers) {
+      if (classTeacher.teacherId) {
+        notificationsToCreate.push({
+          recipientType: "TEACHER" as any,
+          recipientId: classTeacher.teacherId,
+          senderType: senderType as any,
+          senderId,
+          type: "GENERAL" as any,
+          title,
+          message,
+          meta: { priority },
+        });
+      }
+    }
+  }
+
+  if (notificationsToCreate.length > 0) {
+    await prisma.notification.createMany({
+      data: notificationsToCreate,
+      skipDuplicates: true,
+    });
+  }
+
+  return { 
+    success: true, 
+    message: `Announcement sent to ${notificationsToCreate.length} recipients.` 
+  };
 };

@@ -10,13 +10,13 @@ interface LinkingCodeCardsProps {
 
 export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCodeCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
       {/* Individual Code Card */}
       <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all duration-300">
-        <div className="relative px-6 py-6 overflow-hidden">
-           <div className="flex items-center justify-between gap-4 relative z-10 flex-wrap">
+        <div className="relative px-4 py-4 md:px-6 md:py-6 overflow-hidden">
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
                 <ShieldCheck className="text-primary" size={24} />
               </div>
               <div>
@@ -25,8 +25,8 @@ export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCo
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-full border border-slate-100 dark:border-slate-700 shadow-inner flex items-center justify-center min-w-[100px]">
+            <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <div className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-full border border-slate-100 dark:border-slate-700 shadow-inner flex items-center justify-center min-w-[100px]">
                 <span className="text-xl font-black tracking-widest text-slate-900 dark:text-white">
                   {personalCode || '...'}
                 </span>
@@ -35,7 +35,7 @@ export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCo
                 onClick={() => onCopy(personalCode || '')}
                 size="icon"
                 variant="outline"
-                className="h-11 w-11 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-all border-slate-200 dark:border-slate-700"
+                className="h-11 w-11 shrink-0 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-all border-slate-200 dark:border-slate-700"
               >
                 <Copy size={18} />
               </Button>
@@ -47,10 +47,10 @@ export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCo
       {/* School Code Card */}
       {schoolCode && (
         <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all duration-300">
-          <div className="relative px-6 py-6 overflow-hidden">
-             <div className="flex items-center justify-between gap-4 relative z-10 flex-wrap">
+          <div className="relative px-4 py-4 md:px-6 md:py-6 overflow-hidden">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center shrink-0">
                   <Link2 className="text-blue-500" size={24} />
                 </div>
                 <div>
@@ -59,8 +59,8 @@ export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCo
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-full border border-slate-100 dark:border-slate-700 shadow-inner flex items-center justify-center min-w-[100px]">
+              <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <div className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-full border border-slate-100 dark:border-slate-700 shadow-inner flex items-center justify-center min-w-[100px]">
                   <span className="text-xl font-black tracking-widest text-slate-900 dark:text-white">
                     {schoolCode}
                   </span>
@@ -69,7 +69,7 @@ export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCo
                   onClick={() => onCopy(schoolCode)}
                   size="icon"
                   variant="outline"
-                  className="h-11 w-11 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-all border-slate-200 dark:border-slate-700"
+                  className="h-11 w-11 shrink-0 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-all border-slate-200 dark:border-slate-700"
                 >
                   <Copy size={18} />
                 </Button>

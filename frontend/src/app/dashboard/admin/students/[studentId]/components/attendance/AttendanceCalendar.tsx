@@ -161,54 +161,56 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
   return (
     <div className="space-y-8">
       {/* Header & Stats */}
-      <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-8 rounded-[2.5rem] shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="size-16 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
-            <CalendarIcon size={32} />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-4">
-              <button onClick={handlePrevMonth} className="hover:text-primary transition-colors"><ChevronLeft size={24}/></button>
-              {MONTHS[month]} {year}
-              <button onClick={handleNextMonth} className="hover:text-primary transition-colors"><ChevronRight size={24}/></button>
-            </h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Monthly Attendance Overview</p>
+      <div className="flex flex-col xl:flex-row gap-6 items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm">
+        <div className="flex items-center gap-4 md:gap-6 w-full xl:w-auto justify-between xl:justify-start">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="size-12 md:size-16 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
+              <CalendarIcon className="size-6 md:size-8" />
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2 md:gap-4">
+                <button onClick={handlePrevMonth} className="hover:text-primary transition-colors p-1"><ChevronLeft size={20} className="md:size-6" /></button>
+                {MONTHS[month]} {year}
+                <button onClick={handleNextMonth} className="hover:text-primary transition-colors p-1"><ChevronRight size={20} className="md:size-6" /></button>
+              </h2>
+              <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Monthly Attendance</p>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Present</p>
-            <p className="text-xl font-black text-emerald-500">{presentCount}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 w-full xl:w-auto mt-2 xl:mt-0">
+          <div className="px-4 md:px-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center flex-1">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Present</p>
+            <p className="text-lg md:text-xl font-black text-emerald-500">{presentCount}</p>
           </div>
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Late</p>
-            <p className="text-xl font-black text-amber-500">{lateCount}</p>
+          <div className="px-4 md:px-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center flex-1">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Late</p>
+            <p className="text-lg md:text-xl font-black text-amber-500">{lateCount}</p>
           </div>
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absent</p>
-            <p className="text-xl font-black text-rose-500">{absentCount}</p>
+          <div className="px-4 md:px-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center flex-1">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absent</p>
+            <p className="text-lg md:text-xl font-black text-rose-500">{absentCount}</p>
           </div>
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rate</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white">{attendanceRate}%</p>
+          <div className="px-4 md:px-6 py-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center flex-1">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rate</p>
+            <p className="text-lg md:text-xl font-black text-slate-900 dark:text-white">{attendanceRate}%</p>
           </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm">
-        <div className="grid grid-cols-7 gap-4 mb-4">
+      <div className="bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2rem] md:rounded-[2.5rem] p-4 md:p-8 shadow-sm">
+        <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
           {DAYS.map(day => (
-            <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            <div key={day} className="text-center text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">
               {day}
             </div>
           ))}
         </div>
         
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-2 md:gap-4">
           {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-24 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
+            <div key={`empty-${i}`} className="h-16 md:h-24 rounded-xl md:rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
           ))}
           
           {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -221,15 +223,15 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
                 key={day} 
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "h-24 rounded-2xl border p-3 flex flex-col justify-between transition-all cursor-pointer hover:shadow-md hover:scale-[1.02]",
+                  "h-16 md:h-24 rounded-xl md:rounded-2xl border p-2 md:p-3 flex flex-col justify-between transition-all cursor-pointer hover:shadow-md hover:scale-[1.02]",
                   record ? getStatusColor(record.status) : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-slate-300",
                   isToday && !record && "border-primary/50 shadow-sm"
                 )}
                 style={isToday && !record ? { borderColor: themeColor } : {}}
               >
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-1 md:gap-0">
                   <span className={cn(
-                    "text-sm font-black", 
+                    "text-[11px] md:text-sm font-black", 
                     record ? "opacity-90" : "text-slate-400",
                     isToday && !record && "text-slate-900 dark:text-white"
                   )}>
@@ -239,7 +241,7 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
                 </div>
                 
                 {record && (
-                  <div className="text-[9px] font-black uppercase tracking-widest mt-auto">
+                  <div className="hidden md:block text-[9px] font-black uppercase tracking-widest mt-auto">
                     {record.status}
                   </div>
                 )}

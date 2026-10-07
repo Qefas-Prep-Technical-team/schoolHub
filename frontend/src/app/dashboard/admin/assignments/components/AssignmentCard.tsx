@@ -41,72 +41,58 @@ export default function AssignmentCard({
     if (viewMode === 'list') {
         return (
             <motion.div
-                className="group relative grid grid-cols-1 md:grid-cols-[0.5fr_2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800/60 transition-all duration-300 first:rounded-t-2xl last:rounded-b-2xl last:border-0 z-10 cursor-pointer"
+                className="group relative grid grid-cols-[0.5fr_2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 items-center px-8 py-5 border-b border-slate-100 dark:border-slate-800/60 transition-all duration-200 first:rounded-t-2xl last:rounded-b-2xl last:border-0 z-10 cursor-pointer min-w-[900px] hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
             >
-                <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 opacity-0 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none -z-10 rounded-inherit" />
-                
-                {/* Index Column */}
-                <div className="hidden md:block font-bold text-slate-400 dark:text-slate-500 text-sm">
+                {/* Index / Checkbox styled */}
+                <div className="font-semibold text-slate-400 dark:text-slate-500 text-sm">
                     {index ? String(index).padStart(2, '0') : ''}
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                        {assignment.creator?.profileImage ? (
-                            <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-10 h-10 rounded-full object-cover" />
-                        ) : (
-                            <FileText size={18} />
-                        )}
+                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <FileText size={16} />
                     </div>
                     <div>
-                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-primary transition-colors">{assignment.title}</h4>
-                        <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm line-clamp-1">{assignment.title}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{assignment.subject}</span>
-                           {assignment.creator && (
-                               <>
-                               <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-                               <span className="text-[10px] font-bold text-slate-500 truncate max-w-[120px] hidden sm:inline">{assignment.creator.name}</span>
-                               </>
-                           )}
                         </div>
                     </div>
                 </div>
 
-                <div className="text-sm font-semibold text-slate-600 dark:text-slate-400 hidden md:block">
+                <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {assignment.className}
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 hidden md:flex">
-                    <Calendar size={14} className={isOverdue ? 'text-rose-500' : 'text-primary/70'} />
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
                     {assignment.dueDate}
                 </div>
 
-                <div className="flex flex-col gap-1.5 pr-6 hidden md:flex">
-                     <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400">
-                         <span>{assignment.progress}%</span>
-                         <span>{assignment.submitted}/{assignment.totalStudents}</span>
-                     </div>
+                <div className="flex flex-col gap-1.5 pr-6">
                      <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                          <div className={`h-full rounded-full ${isOverdue ? 'bg-rose-500' : 'bg-primary'}`} style={{ width: `${assignment.progress}%` }} />
                      </div>
+                     <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                         <span>{assignment.progress}% completed</span>
+                     </div>
                 </div>
 
-                <div className="hidden md:block">
-                     <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusStyles(assignment.status)}`}>
+                <div>
+                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${getStatusStyles(assignment.status).replace('border-', 'border border-')}`}>
                          {getStatusLabel(assignment.status)}
                      </span>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
                     <button
                         onClick={() => {
                             setIsNavigating(true);
                             onViewDetails?.(assignment.id);
                         }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-primary hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+                        className="p-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all"
                     >
-                        {isNavigating ? <Loader2 size={14} className="animate-spin" /> : 'Review'}
+                        {isNavigating ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} />}
                     </button>
                 </div>
             </motion.div>
@@ -130,11 +116,7 @@ export default function AssignmentCard({
 
             <div className="flex flex-col items-center text-center mb-6 pt-2">
                 <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 shadow-sm border border-slate-100 dark:border-slate-700/50 group-hover:text-primary group-hover:bg-primary/5 group-hover:border-primary/20 transition-all overflow-hidden">
-                    {assignment.creator?.profileImage ? (
-                        <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-full h-full object-cover" />
-                    ) : (
-                        <FileText size={24} />
-                    )}
+                    <FileText size={24} />
                 </div>
                 
                 <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 tracking-tight line-clamp-2 leading-tight mb-2">

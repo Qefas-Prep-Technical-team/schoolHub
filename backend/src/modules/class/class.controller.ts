@@ -23,6 +23,7 @@ import {
   replaceClassSubjectsService,
   removeSubjectFromClassService,
   promoteStudentsService,
+  sendClassAnnouncementService
 } from "./class.service";
 import { handleError } from "../../utils/error-handler";
 
@@ -834,5 +835,29 @@ export const promoteStudents = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "class.promoteStudents");
+  }
+};
+
+export const sendClassAnnouncement = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const classId = id as string;
+    const { title, message, targets, priority } = req.body;
+
+    if (!req.user || !req.user.id) {
+      console.error("LOG ERROR: [sendClassAnnouncement] req.user missing");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const result = await sendClassAnnouncementService(classId, req.user.id, {
+      title,
+      message,
+      targets,
+      priority
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return handleError(res, error, "class.sendClassAnnouncement");
   }
 };

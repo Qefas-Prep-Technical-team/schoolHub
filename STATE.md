@@ -1243,3 +1243,10 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
  -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   s t u d e n t   s e t t i n g s   p a g e   f o r   ' i s T w o F a c t o r E n a b l e d '   m i s s i n g   o n   S t u d e n t P r o f i l e  
  -   [ x ]   F r o n t e n d   s u c c e s s f u l l y   b u i l t   w i t h   z e r o   T y p e S c r i p t   o r   c o m p i l a t i o n   e r r o r s  
  
+### Tuesday, October 6, 2026
+- [x] Fixed class attendance save timeout (admin + teacher): parent notifications in attendance.service.ts were awaited sequentially per student (>60s). Now fire-and-forget with 2 batched queries.
+- [x] Added Zod validation to POST /classes/:id/attendance (attendance.controller.ts); installed zod in backend.
+- [x] useSubmitAttendance toast now shows real backend error / HTTP status.
+- [x] AttendanceTab: removed mock-student fallback; swipe modal uses local date (en-CA) like list modal.
+- [x] Added createNotificationsBulk (notification.service.ts): one createMany insert + socket emits. Attendance parent notifications now use it (1 insert per save instead of N).
+- [x] Added a 'Done' button to the AttendanceSwipeModal to allow teachers to finish swiping early and save a partial attendance list.

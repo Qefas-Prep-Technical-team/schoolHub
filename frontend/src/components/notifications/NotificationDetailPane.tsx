@@ -135,6 +135,11 @@ export default function NotificationDetailPane({
               <Badge variant="outline" className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2", getTypeColor(notification.type))}>
                 {notification.type.replace('_', ' ')}
               </Badge>
+              {(notification.meta as any)?.priority && (notification.meta as any)?.priority !== 'NORMAL' && (
+                <Badge variant="outline" className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2", (notification.meta as any)?.priority === 'URGENT' ? 'border-rose-500 text-rose-500' : 'border-amber-500 text-amber-500')}>
+                  {(notification.meta as any).priority}
+                </Badge>
+              )}
               {!notification.isRead && (
                 <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-xl">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />

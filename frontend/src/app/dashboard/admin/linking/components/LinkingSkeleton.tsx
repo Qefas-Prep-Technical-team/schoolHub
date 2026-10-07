@@ -4,13 +4,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function LinkingSkeleton({ count = 3 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 w-full">
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-sm border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-6 pt-8 h-[280px]">
-          <Skeleton className="h-16 w-16 rounded-full mb-4 mt-2" />
-          <Skeleton className="h-4 w-32 mb-2" />
-          <Skeleton className="h-3 w-24 mb-6" />
-          <div className="w-full flex items-center justify-between gap-3 mb-6 px-1">
+        <Card key={i} className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-sm border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 h-[240px] md:h-[280px]">
+          <Skeleton className="h-12 w-12 md:h-16 md:w-16 rounded-full mb-4 mt-2" />
+          <Skeleton className="h-4 w-24 md:w-32 mb-2" />
+          <Skeleton className="h-3 w-16 md:w-24 mb-3 md:mb-6" />
+          <div className="hidden md:flex w-full items-center justify-between gap-3 mb-4 md:mb-6 px-1">
             <Skeleton className="w-7 h-7 rounded-full" />
             <Skeleton className="flex-1 h-[2px] rounded-full" />
             <Skeleton className="w-7 h-7 rounded-full" />

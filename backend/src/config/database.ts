@@ -26,8 +26,19 @@ async function performReconnect(): Promise<void> {
   
   reconnectPromise = (async () => {
     try {
-      await prisma.$disconnect();
-      await prisma.$connect();
+      // Add a 5 second timeout to reconnect attempts to prevent deadlocks
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Reconnect timed out")), 5000)
+      );
+      
+      await Promise.race([
+        (async () => {
+          await prisma.$disconnect();
+          await prisma.$connect();
+        })(),
+        timeoutPromise
+      ]);
+      
       connectionHealthy = true;
     } finally {
       reconnectPromise = null;
