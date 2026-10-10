@@ -21,8 +21,10 @@ import {
   History,
   ShieldCheck,
   TrendingUp,
-  Download
+  Download,
+  Info
 } from "lucide-react";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -241,9 +243,23 @@ export default function DepartmentsPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">School Departments</span>
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Departments<span style={{ color: primaryColor }}>.</span>
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+                  Departments<span style={{ color: primaryColor }}>.</span>
+                </h1>
+                <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none mt-2">
+                                <Info size={28} strokeWidth={2.5} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                            Manage all academic departments within the institution.
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
                 Manage your school's departments, assign coordinators, and organize academic subject mappings.
               </p>
@@ -304,7 +320,21 @@ export default function DepartmentsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Number of functional academic departments currently active.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="size-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                         <Layers size={20} strokeWidth={2.5} />
                     </div>
@@ -321,7 +351,21 @@ export default function DepartmentsPage() {
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Teachers</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Teachers</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Total number of active teaching staff across all departments.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                         <Users size={20} strokeWidth={2.5} />
                     </div>
@@ -338,7 +382,21 @@ export default function DepartmentsPage() {
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Total number of subjects configured across the school.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                         <Zap size={20} strokeWidth={2.5} />
                     </div>
@@ -355,7 +413,21 @@ export default function DepartmentsPage() {
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Students</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Students</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Total number of enrolled students across all departments.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="size-10 rounded-xl bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center">
                         <GraduationCap size={20} strokeWidth={2.5} />
                     </div>

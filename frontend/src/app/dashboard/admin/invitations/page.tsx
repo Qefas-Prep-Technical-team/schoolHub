@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
-import { MailPlus, Search, Send, CheckCircle2, Users, GraduationCap, UserPlus, List, LayoutGrid } from "lucide-react";
+import { MailPlus, Search, Send, CheckCircle2, Users, GraduationCap, UserPlus, List, LayoutGrid, Info } from "lucide-react";
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -61,9 +62,23 @@ export default function InvitationsPage() {
           </div>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                Invitations
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  Invitations
+                </h1>
+                <TooltipProvider>
+                  <UITooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none mt-1">
+                        <Info size={20} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                      Manage pending onboarding flows. Here you can generate secure invite links, track account claiming status, and verify newly registered students and faculty.
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              </div>
               <p className="text-sm text-slate-500 font-medium mt-1">
                 Invite pre-registered members to claim their accounts. Link their real email and send a verification link.
               </p>

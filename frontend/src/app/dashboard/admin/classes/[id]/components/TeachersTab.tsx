@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from "react";
-import { User, Mail, Phone, BadgeCheck, Download, Loader2, FileText, FileSpreadsheet } from "lucide-react";
+import { User, Mail, Phone, BadgeCheck, Download, Loader2, FileText, FileSpreadsheet, Info } from "lucide-react";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import Pagination from "@/components/ui/Pagination";
 import TeacherDetailsModal from "./TeacherDetailsModal";
 import { generatePDF } from '@/utils/pdfGenerator';
@@ -156,9 +157,23 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [], classData, cla
     <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-6">
       {/* Page Header */}
       <header className="flex flex-wrap justify-between items-center gap-4">
-        <h2 className="text-gray-900 dark:text-white text-xl font-bold">
-          Class Teachers
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-gray-900 dark:text-white text-xl font-bold">
+            Class Teachers
+          </h2>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                  <Info size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                Lists all staff members officially assigned to teach or manage this class. Use this roster to identify primary instructors, verify departmental coverage, and monitor staff allocation across different subjects.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         
         <div className="flex items-center gap-2">
           <DropdownMenu>

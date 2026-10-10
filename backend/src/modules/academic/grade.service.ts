@@ -85,21 +85,25 @@ export const getAllGradesService = async ({
   schoolId,
   classId,
   subject,
+  includeExams,
 }: {
   schoolId: string;
   classId?: string;
   subject?: string;
+  includeExams?: boolean;
 }) => {
   return prisma.grade.findMany({
     where: {
       schoolId,
       classId,
       subject,
-      examId: null, // Only standalone grades
+      ...(includeExams ? {} : { examId: null }), // Only standalone grades if includeExams is false
     },
     include: {
       student: true,
       class: true,
+      exam: includeExams ? { include: { session: true } } : false,
+      subjectPaper: includeExams ? { include: { subject: true } } : false,
     },
     orderBy: { createdAt: "desc" },
   });

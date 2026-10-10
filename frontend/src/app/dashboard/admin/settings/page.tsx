@@ -18,8 +18,10 @@ import {
     Paintbrush,
     UserCircle,
     Key,
-    Fingerprint
+    Fingerprint,
+    Info
 } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -242,23 +244,46 @@ export default function SettingsPage() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-                        <Settings className="text-blue-500" size={28} />
-                        Settings
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                            <Settings className="text-blue-500" size={28} />
+                            Settings
+                        </h1>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                                    Configure core school preferences, styling, and integration settings.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                         Manage your school&apos;s digital infrastructure and preferences.
                     </p>
                 </div>
 
-                <Button
-                    onClick={handleSave}
-                    disabled={isPending || !hasChanges}
-                    className="h-10 px-6 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 font-semibold shadow-sm transition-all"
-                >
-                    {!isPending && <Save size={16} className="mr-2" />}
-                    {isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={() => window.open('/onboarding?revisit=true', '_blank')}
+                        className="h-10 px-4 md:px-6 rounded-lg font-semibold shadow-sm transition-all border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+                    >
+                        Revisit Onboarding
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={isPending || !hasChanges}
+                        className="h-10 px-4 md:px-6 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 font-semibold shadow-sm transition-all"
+                    >
+                        {!isPending && <Save size={16} className="mr-2" />}
+                        {isPending ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="general" className="w-full space-y-6">
@@ -296,6 +321,7 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <Rocket className="text-blue-500" size={18} /> Feature Management
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Manage beta features and global availability overrides.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Control feature availability across dashboards.</CardDescription>
                         </CardHeader>
@@ -324,6 +350,7 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <Database className="text-blue-500" size={18} /> Academic Configuration
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Set the active academic session and default term globally.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Default settings for the current academic cycle.</CardDescription>
                         </CardHeader>
@@ -368,6 +395,7 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <Paintbrush className="text-blue-500" size={18} /> Theme Settings
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Customize the platform's primary color scheme.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Personalize your institution&apos;s digital atmosphere.</CardDescription>
                         </CardHeader>
@@ -430,6 +458,7 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <ShieldCheck className="text-blue-500" size={18} /> Institutional Security
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Configure high-level security overrides and global locks.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Global safeguards and administrative controls.</CardDescription>
                         </CardHeader>
@@ -465,13 +494,17 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <Key className="text-blue-500" size={18} /> Password & Authentication
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Update your account password securely.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Manage your login credentials.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between p-5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
                                 <div className="space-y-1">
-                                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
+                                    <div className="flex items-center gap-1.5">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
+                                        <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Update the password used to access your account.</TooltipContent></Tooltip></TooltipProvider>
+                                    </div>
                                     <p className="text-xs font-medium text-slate-500">Change your password to ensure account security.</p>
                                 </div>
                                 <ChangePasswordModal>
@@ -488,6 +521,7 @@ export default function SettingsPage() {
                             <CardTitle className="text-lg font-bold flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-2">
                                     <ShieldCheck className="text-blue-500" size={18} /> Two-Factor Auth
+                                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Enable 2FA for enhanced account protection.</TooltipContent></Tooltip></TooltipProvider>
                                 </div>
                             </CardTitle>
                             <CardDescription>Extra layer of account security.</CardDescription>
@@ -509,6 +543,7 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <UserCircle className="text-blue-500" size={18} /> Personal Profile
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Update your personal account details and avatar.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Manage your personal account details.</CardDescription>
                         </CardHeader>
@@ -528,7 +563,10 @@ export default function SettingsPage() {
                                     )}
                                 </div>
                                 <div className="space-y-1">
-                                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Admin Avatar</h3>
+                                    <div className="flex items-center gap-1.5">
+                                        <h3 className="text-base font-bold text-slate-900 dark:text-white">Admin Avatar</h3>
+                                        <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Manage your profile image displayed in the dashboard.</TooltipContent></Tooltip></TooltipProvider>
+                                    </div>
                                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed mx-auto sm:mx-0">
                                         Upload a professional picture. It will appear on your top navigation bar.
                                     </p>
@@ -606,12 +644,16 @@ export default function SettingsPage() {
                         <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <Rocket className="text-blue-500" size={18} /> Landing Page Content
+                                <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Modify content displayed on the school's public landing page.</TooltipContent></Tooltip></TooltipProvider>
                             </CardTitle>
                             <CardDescription>Configure your public school landing page design and content.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 space-y-8">
                             <div className="space-y-4">
-                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Hero Section</h4>
+                                <div className="flex items-center gap-1.5 mb-4">
+                                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Hero Section</h4>
+                                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Main headline area visible at the top of the landing page.</TooltipContent></Tooltip></TooltipProvider>
+                                </div>
                                 <div className="grid grid-cols-1 gap-6">
                                     <div className="space-y-2">
                                         <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Hero Title</Label>
@@ -635,7 +677,10 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
-                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">About Section</h4>
+                                <div className="flex items-center gap-1.5 mb-4">
+                                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">About Section</h4>
+                                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Information describing the mission and vision of the school.</TooltipContent></Tooltip></TooltipProvider>
+                                </div>
                                 <div className="grid grid-cols-1 gap-6">
                                     <div className="space-y-2">
                                         <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">About Title</Label>
@@ -660,7 +705,10 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
-                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">School Features / Highlights</h4>
+                                <div className="flex items-center gap-1.5 mb-4">
+                                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">School Features / Highlights</h4>
+                                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Highlight the key offerings and facilities of your institution.</TooltipContent></Tooltip></TooltipProvider>
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {localLandingPage?.features?.map((feat: any, index: number) => (
                                         <div key={index} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 space-y-4">
@@ -690,7 +738,10 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
-                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Parent / Alumni Testimonials</h4>
+                                <div className="flex items-center gap-1.5 mb-4">
+                                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Parent / Alumni Testimonials</h4>
+                                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Quotes from the community showcasing school reputation.</TooltipContent></Tooltip></TooltipProvider>
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {localLandingPage?.testimonials?.map((t: any, index: number) => (
                                         <div key={index} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 space-y-4">

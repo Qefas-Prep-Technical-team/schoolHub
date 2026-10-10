@@ -4,7 +4,8 @@ import { useState } from "react"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool"
 import { usePendingAdmins } from "@/lib/api/hooks/useAdmin"
-import { Shield, Users, Clock, Search } from "lucide-react"
+import { Shield, Users, Clock, Search, Info } from "lucide-react"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ActiveMembersTable from "./components/ActiveMembersTable"
 import PendingRequestsTable from "./components/PendingRequestsTable"
@@ -33,9 +34,23 @@ export default function TeamPage() {
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                                Admin Team
-                            </h1>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                                    Admin Team
+                                </h1>
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={300}>
+                                        <TooltipTrigger asChild>
+                                            <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none mt-1">
+                                                <Info size={20} />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                            Central hub for managing institutional access rights. Regulate active system operators, assign administrative roles, and carefully review pending staff authorization requests.
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
                             <p className="text-sm text-slate-500 font-medium mt-1">
                                 Manage who has access to your school dashboard, their roles, and approve or reject new join requests.
                             </p>

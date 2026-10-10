@@ -218,12 +218,12 @@ export default function ClassCard({
           <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2">
                   {classData.isLive ? (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold">
-                    <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" /> In Session
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase">
+                    <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" /> {classData.currentActivity || 'In Session'}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold">
-                        <Activity size={12} /> Inactive
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold uppercase">
+                        <Activity size={12} /> {classData.currentActivity || 'Inactive'}
                     </div>
                   )}
               </div>

@@ -15,6 +15,8 @@ export const useGrades = (studentId?: string, params?: { page?: number; limit?: 
   return useQuery({
     queryKey: gradeKeys.list({ studentId, ...params }),
     queryFn: () => gradeService.getStudentGrades(studentId, params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    retry: 1,
   });
 };
 
@@ -23,13 +25,17 @@ export const useClassLeaderboard = (classId?: string) => {
     queryKey: gradeKeys.list({ action: "leaderboard", classId }),
     queryFn: () => gradeService.getClassLeaderboard(classId!),
     enabled: !!classId,
+    staleTime: 1000 * 60 * 5, // Leaderboards don't change frequently (5 mins)
+    retry: 1,
   });
 };
 
-export const useAdminGrades = (filters?: { classId?: string; subject?: string }) => {
+export const useAdminGrades = (filters?: { classId?: string; subject?: string; includeExams?: boolean }) => {
   return useQuery({
     queryKey: gradeKeys.admin(filters || {}),
     queryFn: () => gradeService.getAdminGrades(filters),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    retry: 1,
   });
 };
 
@@ -38,6 +44,7 @@ export const useGrade = (id: string) => {
     queryKey: gradeKeys.detail(id),
     queryFn: () => gradeService.getGradeById(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 2,
     retry: false,
   });
 };
@@ -47,6 +54,8 @@ export const useGradeHub = (schoolId: string, filters?: Record<string, unknown>)
     queryKey: gradeKeys.hub({ schoolId, ...filters }),
     queryFn: () => gradeService.getGradeHub(schoolId, filters),
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 };
 

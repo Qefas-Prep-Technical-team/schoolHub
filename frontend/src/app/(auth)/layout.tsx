@@ -19,6 +19,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // If user isn't logged in, no redirect
     if (!isAuthenticated) return "";
 
+    // If user is explicitly revisiting onboarding, skip redirect
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      if (search.get("revisit") === "true" && window.location.pathname === "/onboarding") {
+        return "";
+      }
+    }
+
     // If logged in but onboarding not done, push to onboarding
     if (!hasCompletedOnboarding) {
       return `/onboarding?type=${userType ?? ""}`;

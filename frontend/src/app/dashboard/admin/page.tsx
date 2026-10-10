@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
-import { Users, GraduationCap, CheckCircle2, CreditCard, ClipboardList } from 'lucide-react';
+import { Users, GraduationCap, CheckCircle2, CreditCard, ClipboardList , Info} from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import AdminLoading from './loading.bak';
 
@@ -88,7 +89,21 @@ export default function AdminDashboard() {
             {/* Today at a Glance */}
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-center">
                 <div className="mb-6">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Today at a glance</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white">Today at a glance</h3>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Provides a real-time snapshot of the school's operational capacity and registered entities. Monitoring these aggregates helps identify immediate discrepancies in expected enrollment or staffing numbers.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <p className="text-xs text-slate-500">Live operations summary</p>
                 </div>
                 
@@ -136,7 +151,21 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs text-slate-500 font-medium">Total Students</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-500 font-medium">Total Students</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Reflects the total count of active, enrolled student accounts in the current session. A sudden drop may indicate unrecorded transfers or system data loss.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><Users size={14} /></div>
                 </div>
                 <div>
@@ -150,7 +179,21 @@ export default function AdminDashboard() {
 
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs text-slate-500 font-medium">Total Teachers</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-500 font-medium">Total Teachers</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Reflects the total count of active faculty staff members. Use this metric to ensure you maintain optimal student-to-teacher ratios across the institution.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600"><GraduationCap size={14} /></div>
                 </div>
                 <div>
@@ -164,7 +207,21 @@ export default function AdminDashboard() {
 
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs text-slate-500 font-medium">Total Classes</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-500 font-medium">Total Classes</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Reflects the total number of distinct classroom cohorts configured. Useful for auditing spatial requirements and general school capacity.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><CheckCircle2 size={14} /></div>
                 </div>
                 <div>
@@ -178,7 +235,21 @@ export default function AdminDashboard() {
 
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs text-slate-500 font-medium">Total Subjects</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-500 font-medium">Total Subjects</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Reflects the breadth of your academic curriculum. Monitoring this ensures curriculum diversity and highlights potential gaps in educational offerings.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600"><CreditCard size={14} /></div>
                 </div>
                 <div>

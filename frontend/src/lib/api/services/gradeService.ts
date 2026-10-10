@@ -22,12 +22,18 @@ export interface Grade {
   examId: string | null;
   subjectPaperId: string | null;
   examAttemptId: string | null;
+  sessionId?: string | null;
+  term?: string | null;
   createdAt: string;
   updatedAt: string;
   exam?: {
+    id?: string;
     title: string;
+    term?: string;
     session?: {
+      id?: string;
       name: string;
+      currentTerm?: string;
     }
   };
   subjectPaper?: {
@@ -50,7 +56,7 @@ export const gradeService = {
     return data;
   },
 
-  getAdminGrades: async (params?: { classId?: string; subject?: string }) => {
+  getAdminGrades: async (params?: { classId?: string; subject?: string; includeExams?: boolean }) => {
     const { data } = await apiClient.get<{ success: boolean; data: Grade[] }>("/academic/grades/admin", {
         params
     });

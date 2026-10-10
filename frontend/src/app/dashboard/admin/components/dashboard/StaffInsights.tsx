@@ -1,6 +1,7 @@
 'use client';
 
-import { Users, UserX, Building, AlertTriangle, TrendingUp, TrendingDown, Landmark, Sparkles } from 'lucide-react';
+import { Users, UserX, Building, AlertTriangle, TrendingUp, TrendingDown, Landmark, Sparkles , Info} from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useState, useMemo } from 'react';
 import ProgressBar from './ui/ProgressBar';
 import { useSchoolDashboardSummary } from '@/lib/api/hooks/useSchool';

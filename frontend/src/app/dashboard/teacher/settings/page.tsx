@@ -183,14 +183,23 @@ export default function TeacherSettingsPage() {
                     </p>
                 </div>
                 
-                <Button 
-                    onClick={handleSave} 
-                    disabled={updateSettings.isPending}
-                    className="h-10 px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 font-semibold shadow-sm transition-all"
-                >
-                    {updateSettings.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save size={16} className="mr-2" />}
-                    Save Preferences
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={() => window.open('/onboarding?revisit=true', '_blank')}
+                        className="h-10 px-4 md:px-6 rounded-lg font-semibold shadow-sm transition-all border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+                    >
+                        Revisit Onboarding
+                    </Button>
+                    <Button 
+                        onClick={handleSave} 
+                        disabled={updateSettings.isPending}
+                        className="h-10 px-4 md:px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 font-semibold shadow-sm transition-all"
+                    >
+                        {updateSettings.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save size={16} className="mr-2" />}
+                        Save Preferences
+                    </Button>
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">

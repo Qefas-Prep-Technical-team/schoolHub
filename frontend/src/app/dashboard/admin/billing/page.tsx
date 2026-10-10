@@ -12,8 +12,10 @@ import {
     Landmark,
     TrendingDown,
     X,
-    Loader2
+    Loader2,
+    Info
 } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -220,9 +222,12 @@ export default function AdminBillingPage() {
                 className="flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
                 <div className="space-y-1">
-                    <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
-                        Subscription & Billing
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
+                            Subscription & Billing
+                        </h1>
+                        <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={28} /></button></TooltipTrigger><TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">Manage your school's active subscription plan and billing methods.</TooltipContent></Tooltip></TooltipProvider>
+                    </div>
                     <p className="text-sm md:text-lg text-slate-500 dark:text-slate-400 font-medium">
                         Manage your school's subscription plan and billing details
                     </p>
@@ -302,8 +307,22 @@ export default function AdminBillingPage() {
                     </div>
                     <div className="relative z-10 mt-8">
                         <p className="text-sm font-medium mb-3 opacity-90">Need extra features?</p>
-                        <Button onClick={() => router.push('/dashboard/admin/billing/pricing')} className="bg-white text-[#6C5CE7] hover:bg-slate-50 font-bold rounded-lg px-6 h-10">
-                            Upgrade
+                        <Button 
+                            disabled={isNavigating}
+                            onClick={() => {
+                                setIsNavigating(true);
+                                router.push('/dashboard/admin/billing/upgrade');
+                            }} 
+                            className="bg-white text-[#6C5CE7] hover:bg-slate-50 font-bold rounded-lg px-6 h-10"
+                        >
+                            {isNavigating ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#6C5CE7]" />
+                                    Loading...
+                                </>
+                            ) : (
+                                "Upgrade"
+                            )}
                         </Button>
                     </div>
                 </Card>
@@ -341,7 +360,10 @@ export default function AdminBillingPage() {
                 {/* 3. Payment methods (Spans 2 rows) */}
                 <Card className="rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 lg:row-span-2 flex flex-col bg-white dark:bg-slate-900">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Payment method</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Payment method</h3>
+                            <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">The primary payment method used for subscription renewals.</TooltipContent></Tooltip></TooltipProvider>
+                        </div>
                     </div>
                     <div className="space-y-4 flex-1">
                         {latestTxn ? (
@@ -370,10 +392,21 @@ export default function AdminBillingPage() {
                         )}
                     </div>
                     <Button 
-                        onClick={() => router.push('/dashboard/admin/billing/upgrade')}
+                        disabled={isNavigating}
+                        onClick={() => {
+                            setIsNavigating(true);
+                            router.push('/dashboard/admin/billing/upgrade');
+                        }}
                         className="w-full bg-[#6C5CE7] hover:bg-[#5A4BCC] text-white rounded-lg mt-6 py-6 font-semibold"
                     >
-                        Update payment method
+                        {isNavigating ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+                                Loading...
+                            </>
+                        ) : (
+                            "Update payment method"
+                        )}
                     </Button>
                 </Card>
 
@@ -416,7 +449,10 @@ export default function AdminBillingPage() {
                                 <Landmark size={28} />
                             </div>
                             <div className="space-y-1">
-                                <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Bank Accounts</h2>
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Bank Accounts</h2>
+                                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={24} /></button></TooltipTrigger><TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">Configured accounts for receiving payouts.</TooltipContent></Tooltip></TooltipProvider>
+                                </div>
                                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active accounts for receiving payments</p>
                             </div>
                         </div>
@@ -449,9 +485,12 @@ export default function AdminBillingPage() {
                         <CreditCard size={24} />
                     </div>
                     <div className="space-y-1">
-                        <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
-                            Transaction History
-                        </h2>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
+                                Transaction History
+                            </h2>
+                            <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={24} /></button></TooltipTrigger><TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">Record of all past payments and invoices.</TooltipContent></Tooltip></TooltipProvider>
+                        </div>
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">A complete record of all your past payments and receipts</p>
                     </div>
                 </div>

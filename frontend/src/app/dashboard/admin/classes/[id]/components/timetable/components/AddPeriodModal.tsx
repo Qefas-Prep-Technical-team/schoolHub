@@ -218,6 +218,11 @@ export default function AddPeriodModal({
       }
 
       await upsertMutation.mutateAsync(payload);
+      if (!isBreak && teacherId && !periodToEdit?.id) {
+        toast.success("Schedule saved and teacher notified!");
+      } else {
+        toast.success("Schedule saved successfully!");
+      }
       onClose();
     } catch (err) {
       console.error(err);
@@ -460,7 +465,7 @@ export default function AddPeriodModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-2 flex items-center justify-center gap-2 h-12 px-6 bg-primary hover:bg-primary/95 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/10"
+              className="flex-2 flex items-center justify-center gap-2 h-12 px-6 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-md shadow-blue-500/20 active:scale-95"
             >
               <Save size={16} />
               <span>{isSubmitting ? "Saving..." : "Save Schedule"}</span>

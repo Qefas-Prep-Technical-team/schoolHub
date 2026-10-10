@@ -181,9 +181,23 @@ export default function AdminGradesDashboard() {
                 <ChevronRight size={14} className="mx-1.5 text-slate-400" />
                 <span className="text-slate-900 dark:text-white">Grades</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white">
-                Grades
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white">
+                  Grades
+                </h1>
+                <TooltipProvider>
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 focus:outline-none transition-colors mt-1">
+                        <Info size={24} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                      Detailed grade summaries, student results, and overall academic progress tracking.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="text-sm text-slate-500">
                 Detailed grade summaries, student results, and overall progress tracking.
               </p>
@@ -207,7 +221,21 @@ export default function AdminGradesDashboard() {
             {/* Card 1: Total Exams */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
                 <div className="bg-blue-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-sm sm:text-lg">Total Exams</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm sm:text-lg">Total Exams</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The total number of exams created and recorded across the school.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <Trophy size={18} className="opacity-80" />
                 </div>
                 <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
@@ -233,7 +261,21 @@ export default function AdminGradesDashboard() {
             {/* Card 2: Subject Papers */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
                 <div className="bg-purple-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-sm sm:text-lg">Subject Papers</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm sm:text-lg">Subject Papers</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The total number of subject papers recorded.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <Layers size={18} className="opacity-80" />
                 </div>
                 <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
@@ -256,7 +298,21 @@ export default function AdminGradesDashboard() {
             {/* Card 3: Graded Students */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
                 <div className="bg-rose-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-sm sm:text-lg">Students Graded</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm sm:text-lg">Students Graded</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The total number of students with recorded grades.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <Users size={18} className="opacity-80" />
                 </div>
                 <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
@@ -282,7 +338,21 @@ export default function AdminGradesDashboard() {
             {/* Card 4: Average Score */}
             <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
                 <div className="bg-emerald-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <span className="font-semibold text-sm sm:text-lg">Average Score</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm sm:text-lg">Average Score</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The overall average score.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <Award size={18} className="opacity-80" />
                 </div>
                 <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
@@ -410,7 +480,21 @@ export default function AdminGradesDashboard() {
                     <Trophy size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Exams</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Exams</h2>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                              <Info size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            Overview of all formal examinations.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="text-xs lg:text-sm font-medium text-slate-500">Overview of all formal examinations.</p>
                   </div>
                 </div>
@@ -455,10 +539,24 @@ export default function AdminGradesDashboard() {
                     <FileText size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                      {activeTab === 'ca' ? 'Continuous Assessments' : 
-                       'Quizzes & Tests'}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                        {activeTab === 'ca' ? 'Continuous Assessments' : 
+                         'Quizzes & Tests'}
+                      </h2>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                              <Info size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 'Overview of quizzes and tests.'}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="text-xs lg:text-sm font-medium text-slate-500">
                       {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 
                        'Overview of quizzes and tests.'}
@@ -506,9 +604,23 @@ export default function AdminGradesDashboard() {
                   <FileText size={24} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                    {activeTab === 'assignment' ? 'Assignments' : 'All Student Grades'}
-                  </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                        {activeTab === 'assignment' ? 'Assignments' : 'All Student Grades'}
+                      </h2>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                              <Info size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            {activeTab === 'assignment' ? 'Comprehensive record of all individual assignment grades and scores.' : 'Comprehensive record of all individual grades and scores.'}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   <p className="text-sm font-medium text-slate-500">
                     {activeTab === 'assignment' ? 'Comprehensive record of all individual assignment grades and scores.' : 'Comprehensive record of all individual grades and scores.'}
                   </p>
@@ -540,9 +652,23 @@ export default function AdminGradesDashboard() {
                   <TrendingUp size={24} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                    Final Student Results
-                  </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                        Final Student Results
+                      </h2>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                              <Info size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            Overall performance aggregates and final end-of-term results for each student.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   <p className="text-sm font-medium text-slate-500">
                     Comprehensive final result summaries across the institution
                   </p>
@@ -563,7 +689,21 @@ export default function AdminGradesDashboard() {
                   <BarChart3 size={24} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Subject Papers</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Subject Papers</h2>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                              <Info size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            Review results for specific subject papers.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   <p className="text-sm font-medium text-slate-500">Review results for specific subject papers.</p>
                 </div>
               </div>
@@ -697,7 +837,21 @@ function ExamGradesFlow({
           </div>
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                 <div>
-                   <p className="text-xs font-medium text-slate-500 mb-1">Total Questions</p>
+                   <div className="flex items-center gap-1.5 mb-1">
+                     <p className="text-xs font-medium text-slate-500">Total Questions</p>
+                     <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                              <Info size={12} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            Combined total of all questions available in these papers.
+                          </TooltipContent>
+                        </Tooltip>
+                     </TooltipProvider>
+                   </div>
                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{totalQuestions}</h3>
                 </div>
                 <div className="flex gap-2 mt-4">
@@ -709,11 +863,39 @@ function ExamGradesFlow({
                     <p className="text-xs font-medium text-slate-400 mb-4">Structure Overview</p>
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium flex items-center gap-2 text-slate-300"><Layers className="text-emerald-400" size={14} /> Total Papers</span>
+                            <span className="text-xs font-medium flex items-center gap-1.5 text-slate-300">
+                                <Layers className="text-emerald-400" size={14} /> Total Papers
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={300}>
+                                        <TooltipTrigger asChild>
+                                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                                <Info size={12} />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                            Total number of individual papers in this assessment.
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </span>
                             <span className="text-sm font-semibold">{totalPapers}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium flex items-center gap-2 text-slate-300"><User className="text-amber-400" size={14} /> Global Attempts</span>
+                            <span className="text-xs font-medium flex items-center gap-1.5 text-slate-300">
+                                <User className="text-amber-400" size={14} /> Global Attempts
+                                <TooltipProvider>
+                                    <Tooltip delayDuration={300}>
+                                        <TooltipTrigger asChild>
+                                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                                <Info size={12} />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                            Total number of student attempts across all active papers.
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </span>
                             <span className="text-sm font-semibold">{totalAttempts}</span>
                         </div>
                     </div>
@@ -1691,7 +1873,21 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
                       
                       <div className="grid grid-cols-2 gap-6 relative z-10">
                           <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700/50 text-center shadow-sm">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Class Average</p>
+                              <div className="flex items-center justify-center gap-1.5 mb-2">
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Class Average</p>
+                                  <TooltipProvider>
+                                      <Tooltip delayDuration={300}>
+                                          <TooltipTrigger asChild>
+                                              <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                                  <Info size={12} />
+                                              </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                              The average score across the entire class for this exam.
+                                          </TooltipContent>
+                                      </Tooltip>
+                                  </TooltipProvider>
+                              </div>
                               <p className="text-4xl font-black text-slate-900 dark:text-white">{Math.round((result.classAverage / result.totalMarks) * 100) || "76"}%</p>
                           </div>
 
@@ -1801,7 +1997,21 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 rounded-2xl shadow-sm group relative overflow-hidden text-white" style={{ backgroundColor: primaryColor }}>
                 <TrendingUp className="absolute -right-4 -bottom-4 text-white/10" size={100} />
-                <p className="text-xs font-medium opacity-80 mb-2">Total Papers</p>
+                <div className="flex items-center gap-1.5 mb-2">
+                    <p className="text-xs font-medium opacity-80">Total Papers</p>
+                    <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                            <TooltipTrigger asChild>
+                                <button type="button" className="text-white/70 hover:text-white focus:outline-none">
+                                    <Info size={12} />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                Total unique subject papers currently active.
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
                 <h3 className="text-3xl font-bold mb-4">{filteredPapers.length}</h3>
                 <p className="text-xs font-medium bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10 whitespace-nowrap">
                    {totalAttempts} Student Attempts
@@ -1809,7 +2019,21 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
           </div>
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                 <div>
-                   <p className="text-xs font-medium text-slate-500 mb-2">Total Questions</p>
+                   <div className="flex items-center gap-1.5 mb-2">
+                     <p className="text-xs font-medium text-slate-500">Total Questions</p>
+                     <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                              <Info size={12} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                            Combined total of all questions available in these papers.
+                          </TooltipContent>
+                        </Tooltip>
+                     </TooltipProvider>
+                   </div>
                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{totalQuestions}</h3>
                 </div>
                 <div className="flex gap-2 mt-6">

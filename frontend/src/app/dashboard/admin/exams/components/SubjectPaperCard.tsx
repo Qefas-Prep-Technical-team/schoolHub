@@ -8,6 +8,8 @@ import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface SubjectPaperCardProps {
   paper: SubjectPaper & { 
@@ -173,7 +175,21 @@ export default function SubjectPaperCard({ paper, examId: propExamId, viewMode =
 
             <div className="grid grid-cols-2 gap-y-4 mt-6">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Subject</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Subject</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-purple-500 focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The academic subject this paper assesses.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                         <BookOpen className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                         <span className="truncate">{paper.subject?.name || 'Unknown'}</span>
@@ -181,7 +197,21 @@ export default function SubjectPaperCard({ paper, examId: propExamId, viewMode =
                 </div>
 
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Teacher</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Teacher</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-purple-500 focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The faculty member responsible for authoring or managing this paper.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                         <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                         <span className="truncate">{paper.teacher?.name || 'Unassigned'}</span>
@@ -189,7 +219,21 @@ export default function SubjectPaperCard({ paper, examId: propExamId, viewMode =
                 </div>
 
                 <div className="flex flex-col col-span-2 border-t border-slate-200 dark:border-white/10 pt-4 mt-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Linked Exams</span>
+                    <div className="flex items-center gap-1.5 mb-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Linked Exams</span>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-purple-500 focus:outline-none">
+                                        <Info size={12} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Shows the assessments where this paper is currently included.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     {paper.exams && paper.exams.length > 0 ? (
                         <div className="flex items-center text-sm font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-3 py-2 rounded-xl">
                             <Calendar className="h-4 w-4 mr-2" />

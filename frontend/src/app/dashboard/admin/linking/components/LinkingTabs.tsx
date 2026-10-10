@@ -51,55 +51,56 @@ export function LinkingTabs({
         </div>
 
         {/* Sub Tabs */}
-        <div className="flex gap-2 bg-slate-50 dark:bg-slate-800 p-1 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">
-          <Button 
-            variant="ghost" 
-            size="sm"
+        <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-full sm:w-auto border border-slate-200 dark:border-slate-700 shadow-inner">
+          <button
             onClick={() => setSubTab('active')}
             className={cn(
-              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest px-4 transition-all",
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex-1 sm:flex-none",
               subTab === 'active' 
                 ? (mainTab === 'classroom' 
-                    ? "bg-purple-600 text-white shadow-sm hover:bg-purple-700 hover:text-white focus:bg-purple-600 focus:text-white focus:ring-0" 
-                    : "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm hover:bg-slate-800 dark:hover:bg-slate-200 hover:text-white dark:hover:text-slate-900 focus:bg-slate-900 dark:focus:bg-slate-100 focus:text-white dark:focus:text-slate-900 focus:ring-0") 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
+                    ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" 
+                    : "bg-white dark:bg-slate-700 shadow-sm text-primary") 
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
             Connected
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
+          </button>
+          <button
             onClick={() => setSubTab('pending')}
             className={cn(
-              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest relative px-4 transition-all",
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex-1 sm:flex-none relative flex items-center justify-center",
               subTab === 'pending' 
                 ? (mainTab === 'classroom' 
-                    ? "bg-purple-600 text-white shadow-sm hover:bg-purple-700 hover:text-white focus:bg-purple-600 focus:text-white focus:ring-0" 
-                    : "bg-primary text-white shadow-sm hover:bg-primary/90 hover:text-white focus:bg-primary focus:text-white focus:ring-0") 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
+                    ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" 
+                    : "bg-white dark:bg-slate-700 shadow-sm text-primary") 
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
             Pending
             {(mainTab === 'network' ? networkPendingCount : classroomPendingCount) > 0 && (
-              <span className={cn("ml-2 px-1.5 py-0.5 rounded-full text-[8px] font-black", subTab === 'pending' ? "bg-white text-primary" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300")}>
+              <span className={cn(
+                "ml-2 px-1.5 py-0.5 rounded-full text-[9px] font-black leading-none", 
+                subTab === 'pending' 
+                  ? (mainTab === 'classroom' ? "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300" : "bg-indigo-100 text-primary dark:bg-indigo-900/50 dark:text-indigo-300")
+                  : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+              )}>
                 {mainTab === 'network' ? networkPendingCount : classroomPendingCount}
               </span>
             )}
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
+          </button>
+          <button
             onClick={() => setSubTab('history')}
             className={cn(
-              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest px-4 transition-all",
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex-1 sm:flex-none",
               subTab === 'history' 
-                ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:text-white focus:bg-blue-600 focus:text-white focus:ring-0" 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
+                ? (mainTab === 'classroom' 
+                    ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" 
+                    : "bg-white dark:bg-slate-700 shadow-sm text-primary") 
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
             History
-          </Button>
+          </button>
         </div>
       </div>
 

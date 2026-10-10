@@ -44,6 +44,8 @@ import {
   X,
   LayoutDashboard
 } from "lucide-react";
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const TEMPLATE_CONFIGS = [
@@ -438,7 +440,21 @@ export default function SubdomainBuilderPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white uppercase">Visual Page Builder</h1>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white uppercase">Visual Page Builder</h1>
+                <TooltipProvider>
+                  <UITooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none mt-0.5">
+                        <Info size={16} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                      Customize your school's public-facing landing page. Update your hero banner, highlight core features, manage testimonials, and apply design templates to reflect your brand identity.
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              </div>
               <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
                 Live
               </span>
@@ -549,8 +565,23 @@ export default function SubdomainBuilderPage() {
             {activeTab === "templates" && (
               <div className="space-y-6">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-900">
-                  <LayoutTemplate className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                  <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Website Templates</h3>
+
+                  <div className="flex items-center gap-2">
+                    <LayoutTemplate className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Website Templates</h3>
+                  </div>
+                  <TooltipProvider>
+                    <UITooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-auto">
+                          <Info size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                        Browse and apply pre-designed layouts. Select a layout that best aligns with your school's brand to get started quickly.
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
 
                 <div className="space-y-4">
@@ -649,8 +680,23 @@ export default function SubdomainBuilderPage() {
             {activeTab === "hero" && (
               <div className="space-y-5">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-900">
-                  <Sparkles className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                  <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Hero Banner Section</h3>
+
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Hero Banner Section</h3>
+                  </div>
+                  <TooltipProvider>
+                    <UITooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-auto">
+                          <Info size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                        The very first section visitors see. Set a strong first impression with a captivating title, subtitle, and an engaging background image.
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
 
                 <div className="space-y-2">
@@ -700,8 +746,23 @@ export default function SubdomainBuilderPage() {
             {activeTab === "about" && (
               <div className="space-y-5">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-900">
-                  <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                  <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Vision & Mission Section</h3>
+
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Vision & Mission Section</h3>
+                  </div>
+                  <TooltipProvider>
+                    <UITooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-auto">
+                          <Info size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                        Introduce your school's history and core values. Share the founding principles that guide your educational approach.
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
 
                 <div className="space-y-2">
@@ -744,8 +805,22 @@ export default function SubdomainBuilderPage() {
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-900">
                   <div className="flex items-center gap-2">
                     <Award className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+
                     <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Core Highlights</h3>
+                    <TooltipProvider>
+                      <UITooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-2">
+                            <Info size={14} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                          Showcase your school's top facilities, awards, or unique selling points using configurable cards.
+                        </TooltipContent>
+                      </UITooltip>
+                    </TooltipProvider>
                   </div>
+
                   <button
                     onClick={addFeature}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200"
@@ -820,8 +895,22 @@ export default function SubdomainBuilderPage() {
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-900">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+
                     <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Parent & Student Reviews</h3>
+                    <TooltipProvider>
+                      <UITooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-2">
+                            <Info size={14} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                          Feature positive feedback from the community to build trust and demonstrate your impact.
+                        </TooltipContent>
+                      </UITooltip>
+                    </TooltipProvider>
                   </div>
+
                   <button
                     onClick={addTestimonial}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200"
@@ -889,8 +978,23 @@ export default function SubdomainBuilderPage() {
             {activeTab === "contact" && (
               <div className="space-y-5">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-900">
-                  <Globe className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                  <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Contact & Location</h3>
+
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Contact & Location</h3>
+                  </div>
+                  <TooltipProvider>
+                    <UITooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-auto">
+                          <Info size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                        Provide accurate public contact information so prospective students and partners can easily reach you.
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
 
                 <div className="space-y-2">
@@ -932,8 +1036,23 @@ export default function SubdomainBuilderPage() {
             {activeTab === "settings" && (
               <div className="space-y-5">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-900">
-                  <Palette className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                  <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Branding Aesthetics</h3>
+
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Branding Aesthetics</h3>
+                  </div>
+                  <TooltipProvider>
+                    <UITooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-auto">
+                          <Info size={14} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                        Define global styling properties like your primary accent color to ensure a consistent visual identity.
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
 
                 <div className="space-y-3">

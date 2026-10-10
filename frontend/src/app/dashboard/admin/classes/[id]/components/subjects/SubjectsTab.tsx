@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
-import { Plus, Download, Loader2, FileText, FileSpreadsheet } from 'lucide-react';
+import { Plus, Download, Loader2, FileText, FileSpreadsheet, Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import SubjectCard from './components/SubjectCard';
 import AddSubjectModal from './components/AddSubjectModal';
 import { Subject } from './components/types';
@@ -200,9 +201,23 @@ export default function ClassSubjectsPage({
     <div className="flex flex-col gap-6">
       {/* Page Header */}
       <header className="flex flex-wrap justify-between items-center gap-4">
-        <h2 className="text-gray-900 dark:text-white text-xl font-bold">
-          Class Subjects
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-gray-900 dark:text-white text-xl font-bold">
+            Class Subjects
+          </h2>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                  <Info size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                Details all academic subjects actively taught to this class. Use this view to ensure comprehensive curriculum coverage and to configure distinct grading requirements or pass marks per subject.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         
         <div className="flex items-center gap-2">
           <DropdownMenu>

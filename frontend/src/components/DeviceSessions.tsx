@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Smartphone, Monitor, Globe, LogOut, Loader2, Server } from 'lucide-react';
+import { Smartphone, Monitor, Globe, LogOut, Loader2, Server, Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -162,6 +163,7 @@ export default function DeviceSessions() {
             <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <Server className={theme.icon} size={18} /> Logged-in Devices
+                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Manage devices where you are currently signed in.</TooltipContent></Tooltip></TooltipProvider>
                 </CardTitle>
                 <CardDescription>Manage devices where you are currently signed in.</CardDescription>
             </CardHeader>

@@ -46,12 +46,13 @@ export const getAllGrades = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: "Unauthorized: School ID missing" });
     }
 
-    const { classId, subject } = req.query;
+    const { classId, subject, includeExams } = req.query;
 
     const data = await getAllGradesService({
       schoolId,
       classId: classId as string,
       subject: subject as string,
+      includeExams: includeExams === 'true',
     });
     return res.status(200).json({ success: true, data });
   } catch (error: any) {

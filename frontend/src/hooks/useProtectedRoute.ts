@@ -31,6 +31,15 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
 
       // If user is authenticated but shouldn't be on auth pages (like login)
       if (!requireAuth && isAuthenticated) {
+        // Allow explicit revisit of onboarding
+        if (typeof window !== 'undefined') {
+          const search = new URLSearchParams(window.location.search);
+          if (search.get("revisit") === "true" && pathname === "/onboarding") {
+            setIsChecking(false);
+            return;
+          }
+        }
+        
         // console.log("🔐 Redirecting to dashboard: Already authenticated");
         const dashPath = user?.userType ? `/dashboard/${user.userType.toLowerCase().replace('_', '-')}` : "/dashboard";
         router.replace(dashPath);

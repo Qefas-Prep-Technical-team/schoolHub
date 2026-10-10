@@ -215,7 +215,7 @@ export default function SlotDetailsModal({
                   onClose();
                   onAdd();
                 }}
-                className="flex items-center gap-1.5 h-10 px-5 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/95 transition-all shadow-sm active:scale-95"
+                className="flex items-center gap-1.5 h-10 px-5 rounded-xl text-xs font-bold bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition-all shadow-md active:scale-95"
               >
                 <span>Schedule Period</span>
               </button>

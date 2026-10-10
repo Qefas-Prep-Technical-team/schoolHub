@@ -1,6 +1,8 @@
 'use client';
  
 import React, { useState } from 'react';
+import { Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 import HeaderActions from './components/HeaderActions';
 import FilterButton from './components/FilterButton';
@@ -612,9 +614,23 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
       {/* Header Section */}
       <header className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-gray-900 dark:text-white text-xl font-bold">
-            Class Timetable
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-gray-900 dark:text-white text-xl font-bold">
+              Class Timetable
+            </h2>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                    <Info size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                  Displays the weekly instructional schedule for this class, divided by day and hour slots. Use this grid to configure free periods, assign subject teachers to active slots, and proactively resolve any scheduling overlaps.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-xs text-gray-500 dark:text-slate-400">
             Configure classes schedules and hourly slot intervals
           </p>

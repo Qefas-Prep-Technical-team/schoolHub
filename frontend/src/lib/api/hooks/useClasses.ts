@@ -20,9 +20,8 @@ export const useClasses = (schoolId?: string) => {
     queryKey: classQueryKeys.list(schoolId),
     queryFn: () => classService.getClasses(schoolId),
     enabled: isAdmin ? !!schoolId : true,
-    refetchInterval: 5000, // Refetch every 5 seconds for "real-time" feel
-    staleTime: 4000,       // Keep data fresh for 4 seconds
-    refetchIntervalInBackground: true, // Continue polling when tab is not focused if needed
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 };
 
@@ -31,8 +30,8 @@ export const useSingleClass = (id: string) => {
     queryKey: classQueryKeys.detail(id),
     queryFn: () => classService.getSingleClass(id),
     enabled: !!id,
-    refetchInterval: 5000, // Polling for real-time updates
-    staleTime: 4000,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 };
 
@@ -85,8 +84,8 @@ export const useClassStats = (classId: string) => {
     queryKey: [...classQueryKeys.all, "stats", classId],
     queryFn: () => classService.getClassStats(classId),
     enabled: !!classId,
-    refetchInterval: 10000, // Analytics can be slightly slower
-    staleTime: 8000,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 };
 
@@ -116,8 +115,8 @@ export const useClassTimetable = (classId: string, termPeriodId?: string) => {
     queryKey: [...classQueryKeys.all, "timetable", classId, { termPeriodId }],
     queryFn: () => classService.getTimetable(classId, termPeriodId),
     enabled: !!classId,
-    refetchInterval: 5000,
-    staleTime: 4000,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
   });
 };
 
@@ -208,6 +207,7 @@ export const useClassBehaviourAlerts = (classId: string, studentId?: string) => 
     queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts", { studentId }],
     queryFn: () => classService.getBehaviourAlerts(classId, studentId),
     enabled: !!classId,
+    staleTime: 1000 * 60 * 5,
   });
 };
 

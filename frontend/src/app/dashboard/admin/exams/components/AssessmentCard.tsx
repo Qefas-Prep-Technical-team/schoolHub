@@ -18,6 +18,8 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import ConfirmationModal from './ui/ConfirmationModal';
 import { toast } from 'react-toastify';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface AssessmentCardProps {
     assessment: Exam;
@@ -216,7 +218,21 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
 
                 <div className="grid grid-cols-2 gap-y-4 mt-6">
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Scope</span>
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scope</span>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                            <Info size={12} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                        Indicates if this assessment is meant for the entire school or specifically targeted.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                             <School className={`h-4 w-4 ${theme.textHighlight}`} />
                             <span className="truncate">{assessment.scope?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
@@ -224,7 +240,21 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                     </div>
 
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mode</span>
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mode</span>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                            <Info size={12} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                        The format in which the examination will be conducted (e.g., Computer Based, Written).
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                             <Laptop className={`h-4 w-4 ${theme.textHighlight}`} />
                             <span className="truncate">{assessment.mode?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
@@ -232,7 +262,21 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                     </div>
 
                     <div className="flex flex-col col-span-2 border-t border-slate-200 dark:border-white/10 pt-4 mt-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Departments</span>
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Departments</span>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                            <Info size={12} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                        Specific departments or faculties assigned to take this assessment.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         {assessment.departments && assessment.departments.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                                 {assessment.departments.map((d: any) => (

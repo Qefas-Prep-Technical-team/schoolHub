@@ -294,6 +294,7 @@ export const getClassesService = async ({
         subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
         departments: { include: { department: true } },
         enrollments: { include: { student: true } },
+        timetablePeriods: { select: { day: true, startTime: true, endTime: true, subject: { select: { name: true } } } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -308,6 +309,7 @@ export const getClassesService = async ({
         subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
         departments: { include: { department: true } },
         enrollments: { include: { student: true } },
+        timetablePeriods: { select: { day: true, startTime: true, endTime: true, subject: { select: { name: true } } } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -324,6 +326,7 @@ export const getClassesService = async ({
             subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
             departments: { include: { department: true } },
             enrollments: { include: { student: true } },
+            timetablePeriods: { select: { day: true, startTime: true, endTime: true, subject: { select: { name: true } } } },
           },
         },
       },

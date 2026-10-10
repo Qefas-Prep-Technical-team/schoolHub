@@ -4,7 +4,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { useRouter, useParams } from 'next/navigation';
-import { Download, Plus, FileText, FileSpreadsheet } from 'lucide-react';
+import { Download, Plus, FileText, FileSpreadsheet, Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -606,9 +607,23 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
       <header className="py-4 border-b border-gray-150 dark:border-gray-800">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-gray-900 dark:text-white text-xl font-bold">
-              Class Attendance
-            </h2>
+                        <div className="flex items-center gap-2">
+              <h2 className="text-gray-900 dark:text-white text-xl font-bold">
+                Class Attendance
+              </h2>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                    Tracks daily presence, absence, and late arrivals for this class. Use this register to identify chronic absenteeism or correlate poor attendance directly with declining academic performance.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
               Manage daily attendance records, track summaries, and log status updates.
             </p>

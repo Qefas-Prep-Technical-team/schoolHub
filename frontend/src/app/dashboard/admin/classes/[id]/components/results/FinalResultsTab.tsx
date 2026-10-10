@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileCheck, LayoutGrid, List, PlusCircle, Search } from 'lucide-react';
+import { FileCheck, LayoutGrid, List, PlusCircle, Search, Info } from 'lucide-react';
 import { useClassSubjectResults } from '@/lib/api/hooks/useRecords';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export default function FinalResultsTab({ classId }: { classId: string }) {
   const router = useRouter();
@@ -30,7 +31,21 @@ export default function FinalResultsTab({ classId }: { classId: string }) {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-gray-900 dark:text-white text-xl font-bold">Final Results</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-gray-900 dark:text-white text-xl font-bold">Final Results</h2>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-primary transition-colors">
+                    <Info size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                  Displays the cumulative final grades and end-of-term evaluations for this class. Use this view to audit student progress and prepare official report cards or transcripts at the end of the academic period.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''} configured
           </p>

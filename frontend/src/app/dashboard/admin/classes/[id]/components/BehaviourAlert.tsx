@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AlertTriangle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, AlertCircle, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface AlertItem {
   id: string;
@@ -51,9 +52,23 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
 
   return (
     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Behaviour Alerts
-      </h3>
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Behaviour Alerts
+        </h3>
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                <Info size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+              Chronicles recent disciplinary incidents, commendations, or urgent teacher notices affecting this class. Monitoring these alerts helps identify environmental or social issues early, allowing for timely pastoral interventions.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <div className="flex flex-col gap-4">
         {paginatedAlerts.map((alert, index) => (
           <React.Fragment key={alert.id}>

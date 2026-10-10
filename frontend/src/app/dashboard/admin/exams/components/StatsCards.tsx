@@ -1,5 +1,6 @@
 import { Exam, SubjectPaper } from "@/lib/api/services/examService";
-import { BookOpen, FileText, LayoutDashboard, PenTool, Plus } from "lucide-react";
+import { BookOpen, FileText, LayoutDashboard, PenTool, Plus, Info } from "lucide-react";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import Link from "next/link";
 
 interface StatsCardsProps {
@@ -18,6 +19,7 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
             bg: "bg-white dark:bg-slate-900",
             iconColor: "text-blue-500",
             iconBg: "bg-blue-50 dark:bg-blue-900/20",
+            tooltip: 'Total number of active and scheduled examinations.',
         },
         { 
             label: 'Total Quizzes', 
@@ -26,6 +28,7 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
             bg: "bg-white dark:bg-slate-900",
             iconColor: "text-orange-500",
             iconBg: "bg-orange-50 dark:bg-orange-900/20",
+            tooltip: 'Total number of quizzes available for students.',
         },
         { 
             label: 'Total CAs', 
@@ -34,6 +37,7 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
             bg: "bg-white dark:bg-slate-900",
             iconColor: "text-emerald-500",
             iconBg: "bg-emerald-50 dark:bg-emerald-900/20",
+            tooltip: 'Total number of continuous assessments recorded.',
         },
         { 
             label: 'Subject Papers', 
@@ -42,6 +46,7 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
             bg: "bg-white dark:bg-slate-900",
             iconColor: "text-purple-500",
             iconBg: "bg-purple-50 dark:bg-purple-900/20",
+            tooltip: 'Total distinct subject papers currently active.',
         }
     ];
 
@@ -87,9 +92,23 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.iconBg} ${stat.iconColor}`}>
                                     <Icon size={24} strokeWidth={2.5} />
                                 </div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                    {stat.label}
-                                </p>
+                                <div className="flex items-center gap-1.5">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                        {stat.label}
+                                    </p>
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={300}>
+                                            <TooltipTrigger asChild>
+                                                <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                                    <Info size={12} />
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                                {stat.tooltip}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
                             </div>
                             <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
                                 {stat.value}

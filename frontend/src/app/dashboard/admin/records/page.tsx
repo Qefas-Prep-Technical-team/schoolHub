@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AdminRole } from "../components/adminFeatureFlags";
-import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp, Loader2, LayoutGrid, List } from "lucide-react";
+import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp, Loader2, LayoutGrid, List, Info, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 import { useClassSubjectResults, useStudentTermResults, useCreateClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useClasses } from "@/lib/api/hooks/useClasses";
 import { useSessions } from "@/lib/api/hooks/useSessions";
-import { useSchoolSubjects, useSchoolDepartments, useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { useSchoolSubjects, useSchoolDepartments, useSchoolProfile, useSchoolStudents } from "@/lib/api/hooks/useSchool";
 
 export default function RecordsPage() {
   const { user } = useAuthStore();
@@ -34,6 +35,7 @@ export default function RecordsPage() {
   // Pagination state
   const [subjectPage, setSubjectPage] = useState(1);
   const [studentPage, setStudentPage] = useState(1);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
   // Filter state
   const [filterClass, setFilterClass] = useState("");
@@ -82,7 +84,9 @@ export default function RecordsPage() {
   const departments = Array.isArray(departmentsData) ? departmentsData : departmentsData?.data || [];
 
   const { data: subjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
-  const { data: studentResults, isLoading: isLoadingStudents } = useStudentTermResults();
+  
+  const { data: studentsData, isLoading: isLoadingStudents } = useSchoolStudents(effectiveSchoolId, { search: studentSearchQuery });
+  const studentResults = Array.isArray(studentsData) ? studentsData : studentsData?.data || [];
 
   // Filter logic
   const filteredSubjectResults = subjectResults?.filter((res: any) => {
@@ -93,9 +97,7 @@ export default function RecordsPage() {
   }) || [];
 
   const filteredStudentResults = studentResults?.filter((res: any) => {
-    if (filterClass && res.classId !== filterClass) return false;
-    if (filterSession && res.sessionId !== filterSession) return false;
-    if (filterTerm && res.term !== filterTerm) return false;
+    if (filterClass && res.currentClassId !== filterClass) return false;
     return true;
   }) || [];
 
@@ -304,7 +306,21 @@ export default function RecordsPage() {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold text-[#1a1b2e] dark:text-white tracking-tight">Records</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[28px] font-bold text-[#1a1b2e] dark:text-white tracking-tight">Records</h1>
+            <TooltipProvider>
+              <UITooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 focus:outline-none transition-colors">
+                    <Info size={24} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                  View and manage term results for students and subjects. This data is computed from aggregated assessments.
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </div>
           <div className="flex items-center text-sm text-slate-500 mt-1 font-medium">
             <User className="w-4 h-4 mr-1.5" /> Total: {totalRecords}
           </div>
@@ -511,7 +527,21 @@ export default function RecordsPage() {
             <div className="p-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
               <Users className="w-4 h-4" />
             </div>
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Total {activeTab === "student" ? "Students" : "Subjects"}</span>
+            <span className="text-sm font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              Total {activeTab === "student" ? "Students" : "Subjects"}
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                      <Info size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    The total number of results found based on the currently applied filters.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </span>
           </div>
           <div className="flex items-end justify-between">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalRecords}</h3>
@@ -528,7 +558,21 @@ export default function RecordsPage() {
             <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
               <FileCheck className="w-4 h-4" />
             </div>
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Completed Records</span>
+            <span className="text-sm font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              Completed Records
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                      <Info size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    Results that have been finalized and marked as PUBLISHED.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </span>
           </div>
           <div className="flex items-end justify-between">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white">{completedRecords}</h3>
@@ -545,7 +589,21 @@ export default function RecordsPage() {
             <div className="p-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg">
               <Clock className="w-4 h-4" />
             </div>
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Pending Records</span>
+            <span className="text-sm font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              Pending Records
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                      <Info size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    Results that are still in DRAFT mode and haven't been published yet.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </span>
           </div>
           <div className="flex items-end justify-between">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingRecords}</h3>
@@ -560,8 +618,20 @@ export default function RecordsPage() {
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <TrendingUp className="w-16 h-16" />
           </div>
-          <div className="flex items-center gap-3 mb-4 text-white/90 relative z-10">
+          <div className="flex items-center gap-1.5 mb-4 text-white/90 relative z-10">
             <span className="text-sm font-bold tracking-wide">Average Score</span>
+            <TooltipProvider>
+              <UITooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-white/70 hover:text-white focus:outline-none">
+                    <Info size={14} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                  The overall average percentage score calculated from all valid student records.
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-end justify-between relative z-10">
             <h3 className="text-3xl font-black text-white">{averageScore}%</h3>
@@ -600,7 +670,21 @@ export default function RecordsPage() {
       {activeTab === "subject" && (
         <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Subject Final Results</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Subject Final Results</h2>
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    A list of final results categorized by subjects.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                 <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><List className="w-4 h-4" /></button>
@@ -808,8 +892,32 @@ export default function RecordsPage() {
       {activeTab === "student" && (
         <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Students Final Results</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Students Final Results</h2>
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    A list of final results categorized by students.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search students..." 
+                  value={studentSearchQuery} 
+                  onChange={(e) => { setStudentSearchQuery(e.target.value); setStudentPage(1); }} 
+                  className="pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all w-64"
+                />
+              </div>
               <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                 <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><List className="w-4 h-4" /></button>
                 <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-[#5B5CE6]" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}><LayoutGrid className="w-4 h-4" /></button>
@@ -871,11 +979,9 @@ export default function RecordsPage() {
                   <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
                     <th className="px-6 py-3 w-12">#</th>
                     <th className="px-4 py-3">STUDENT NAME</th>
+                    <th className="px-4 py-3">STUDENT CODE</th>
+                    <th className="px-4 py-3">GENDER</th>
                     <th className="px-4 py-3">CLASS</th>
-                    <th className="px-4 py-3">SESSION & TERM</th>
-                    <th className="px-4 py-3">AVERAGE</th>
-                    <th className="px-4 py-3">POSITION</th>
-                    <th className="px-4 py-3">STATUS</th>
                     <th className="px-6 py-3 text-right">ACTIONS</th>
                   </tr>
                 </thead>
@@ -903,30 +1009,15 @@ export default function RecordsPage() {
                     filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
                       const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
                       return (
-                        <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
+                        <tr key={res.id} onClick={() => router.push('/dashboard/admin/records/student/' + res.id)} className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
                           <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
-                          <td className="px-4 py-4 text-slate-900 dark:text-slate-100 font-bold">{res.student?.name}</td>
-                          <td className="px-4 py-4">{res.class?.name}</td>
-                          <td className="px-4 py-4">
-                            <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
-                            <span className="text-xs text-slate-400">{res.term}</span>
-                          </td>
-                          <td className="px-4 py-4 font-bold text-[#5B5CE6]">{res.averageScore ? `${res.averageScore}%` : "-"}</td>
-                          <td className="px-4 py-4 text-slate-500 font-medium">
-                            {res.position ? res.position + (["st", "nd", "rd"][((res.position + 90) % 100 - 10) % 10 - 1] || "th") : "-"}
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${
-                              res.status === "PUBLISHED" 
-                                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                                : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                            }`}>
-                              {res.status}
-                            </span>
-                          </td>
+                          <td className="px-4 py-4 text-slate-900 dark:text-slate-100 font-bold">{res.name} {res.lastName || ''}</td>
+                          <td className="px-4 py-4">{res.studentCode || "-"}</td>
+                          <td className="px-4 py-4">{res.gender || "-"}</td>
+                          <td className="px-4 py-4">{res.classes?.[0]?.class?.name || res.gradeLevel || "-"}</td>
                           <td className="px-6 py-4 text-right">
-                            <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors">
-                              View Report
+                            <button onClick={(e) => { e.stopPropagation(); router.push('/dashboard/admin/records/student/' + res.id); }} className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors">
+                              View Record
                             </button>
                           </td>
                         </tr>
@@ -948,32 +1039,28 @@ export default function RecordsPage() {
                 filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
                   const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
                   return (
-                  <div key={res.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
+                  <div key={res.id} onClick={() => router.push('/dashboard/admin/records/student/' + res.id)} className="cursor-pointer bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
                      <div className="flex justify-between items-start">
                        <div className="flex gap-2 max-w-[70%]">
                          <span className="text-xs font-black text-slate-400/70 mt-1 select-none">#{globalIdx}</span>
                          <div>
-                           <h3 className="font-bold text-slate-900 dark:text-white truncate pr-2" title={res.student?.name}>{res.student?.name}</h3>
-                           <p className="text-xs text-slate-500 truncate">{res.class?.name}</p>
+                           <h3 className="font-bold text-slate-900 dark:text-white truncate pr-2" title={`${res.name} ${res.lastName || ''}`}>{res.name} {res.lastName || ''}</h3>
+                           <p className="text-xs text-slate-500 truncate">{res.studentCode || "No Student Code"}</p>
                          </div>
                        </div>
-                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${res.status === "PUBLISHED" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"}`}>
-                         {res.status}
-                       </span>
                      </div>
                      <div className="grid grid-cols-2 gap-2 text-xs">
                        <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded text-center">
-                         <p className="text-slate-400 mb-0.5">Average</p>
-                         <p className="font-black text-[#5B5CE6]">{res.averageScore ? `${res.averageScore}%` : "-"}</p>
+                         <p className="text-slate-400 mb-0.5">Gender</p>
+                         <p className="font-black text-[#5B5CE6]">{res.gender || "-"}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded text-center">
-                         <p className="text-slate-400 mb-0.5">Position</p>
-                         <p className="font-black text-slate-700 dark:text-slate-300">{res.position ? res.position + (["st", "nd", "rd"][((res.position + 90) % 100 - 10) % 10 - 1] || "th") : "-"}</p>
+                         <p className="text-slate-400 mb-0.5">Class</p>
+                         <p className="font-black text-slate-700 dark:text-slate-300">{res.classes?.[0]?.class?.name || res.gradeLevel || "-"}</p>
                        </div>
                      </div>
-                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                       <span className="text-[10px] text-slate-400 truncate pr-2">{res.session?.name} • {res.term}</span>
-                       <button className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0">View Report</button>
+                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center">
+                       <button className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0">View Record</button>
                      </div>
                   </div>
                   )

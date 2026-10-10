@@ -16,7 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 open={!isCollapsed} 
                 onOpenChange={(open) => setIsCollapsed(!open)}
                 style={{
-                    "--sidebar-width": "260px",
+                    "--sidebar-width": "200px",
                     "--sidebar-width-icon": "64px",
                 } as React.CSSProperties}
             >

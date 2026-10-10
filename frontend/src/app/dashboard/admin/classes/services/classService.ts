@@ -39,7 +39,15 @@ export interface Class {
   _count?: {
     enrollments: number;
     subjects: number;
-  }
+  };
+  timetablePeriods?: {
+    day: string;
+    startTime: string;
+    endTime: string;
+    isBreak?: boolean;
+    breakLabel?: string | null;
+    subject?: { name: string };
+  }[];
 }
 
 export const classService = {

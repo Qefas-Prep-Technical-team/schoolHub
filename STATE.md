@@ -1250,3 +1250,9 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
 - [x] AttendanceTab: removed mock-student fallback; swipe modal uses local date (en-CA) like list modal.
 - [x] Added createNotificationsBulk (notification.service.ts): one createMany insert + socket emits. Attendance parent notifications now use it (1 insert per save instead of N).
 - [x] Added a 'Done' button to the AttendanceSwipeModal to allow teachers to finish swiping early and save a partial attendance list.
+
+- [x] Updated TrendChartTooltip to dynamically display the breakdown of the daily average by individual subjects instead of plotting separate lines per subject.
+
+- [x] Updated TrendChartTooltip to dynamically display the breakdown of the daily average by individual subjects instead of plotting separate lines per subject.
+
+- [x] Replaced the basic loading text on the class Analytics tab with a detailed UI skeleton loader that perfectly mimics the layout of the loaded charts.

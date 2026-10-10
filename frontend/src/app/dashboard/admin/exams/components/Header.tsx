@@ -1,9 +1,10 @@
 'use client';
 
-import { Plus, X, Layers, FileText } from 'lucide-react';
+import { Plus, X, Layers, FileText, Info } from 'lucide-react';
 import Button from './ui/Button';
 import Link from 'next/link';
 import { useState } from 'react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export default function Header() {
     const [isExamTypeModalOpen, setIsExamTypeModalOpen] = useState(false);
@@ -13,9 +14,23 @@ export default function Header() {
             <header className="w-full mb-10">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8 border-b border-gray-100 dark:border-gray-800 pb-8 transition-all duration-300 ease-in-out">
                     <div>
-                        <h1 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
-                            Admin Exam Setup
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                Admin Exam Setup
+                            </h1>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none transition-colors mt-2">
+                                            <Info size={24} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                        Oversee and manage all school examinations, quizzes, and continuous assessments in one centralized dashboard.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base mt-2 max-w-2xl font-bold uppercase tracking-widest">
                             Oversee and manage all school examinations and subject papers.
                         </p>

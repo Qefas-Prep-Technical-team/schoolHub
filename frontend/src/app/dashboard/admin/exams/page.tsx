@@ -8,8 +8,10 @@ import AssessmentGrid from "./components/AssessmentGrid";
 import Header from "./components/Header";
 import SearchFilters from "./components/SearchFilters";
 import StatsCards from "./components/StatsCards";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import SubjectPaperGrid from "./components/SubjectPaperGrid";
 import Pagination from "./components/Pagination";
 import { useSubjectPapersPaginated, useExamsPaginated } from "@/lib/api/hooks/useExams";
@@ -203,6 +205,21 @@ export default function Dashboard() {
                     </TabsList>
 
                     <TabsContent value="exams" className="space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Exams</h2>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-blue-500 transition-colors focus:outline-none">
+                                            <Info size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                                        View and manage major school examinations.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter viewMode={viewMode} onViewModeChange={setViewMode} />
                         {isLoadingExams ? renderLoading() : isErrorExams ? renderError("Unable to load exams") : examsData?.data?.length === 0 ? (
                             <>
@@ -220,6 +237,21 @@ export default function Dashboard() {
                     </TabsContent>
 
                     <TabsContent value="quiz" className="space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Quizzes</h2>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-purple-500 transition-colors focus:outline-none">
+                                            <Info size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                                        View and manage frequent short assessments.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter viewMode={viewMode} onViewModeChange={setViewMode} />
                         {isLoadingQuizzes ? renderLoading() : isErrorQuizzes ? renderError("Unable to load quizzes") : quizzesData?.data?.length === 0 ? (
                             <>
@@ -237,6 +269,21 @@ export default function Dashboard() {
                     </TabsContent>
 
                     <TabsContent value="ca" className="space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Continuous Assessments</h2>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-emerald-500 transition-colors focus:outline-none">
+                                            <Info size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                                        View and manage ongoing continuous assessments.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter viewMode={viewMode} onViewModeChange={setViewMode} />
                         {isLoadingCAs ? renderLoading() : isErrorCAs ? renderError("Unable to load CAs") : casData?.data?.length === 0 ? (
                             <>
@@ -254,6 +301,21 @@ export default function Dashboard() {
                     </TabsContent>
 
                     <TabsContent value="papers" className="space-y-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white">Subject Papers</h2>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-blue-500 transition-colors focus:outline-none">
+                                            <Info size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                                        View and manage distinct subject question papers.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter viewMode={viewMode} onViewModeChange={setViewMode} />
                         {isLoadingPapers ? renderLoading() : isErrorPapers ? renderError("Unable to load subject papers") : papersData?.data?.length === 0 ? (
                             <>

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Tag, Plus, X, CheckCircle2, XCircle, Loader2,
   Calendar, Users, Percent, Hash, ChevronDown, ChevronUp,
-  BadgeCheck, AlertTriangle, Copy, Trash2, PauseCircle
+  BadgeCheck, AlertTriangle, Copy, Trash2, PauseCircle, PlayCircle
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -245,6 +245,11 @@ function CouponRow({ coupon }: { coupon: Coupon }) {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["coupons"] }); toast.success("Coupon deactivated"); },
   });
 
+  const activate = useMutation({
+    mutationFn: () => platformClient.put(`/platform/billing/coupon/${coupon.id}`, { isActive: true }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["coupons"] }); toast.success("Coupon activated"); },
+  });
+
   const deleteMut = useMutation({
     mutationFn: () => platformClient.delete(`/platform/billing/coupon/${coupon.id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["coupons"] }); toast.success("Coupon deleted"); },
@@ -293,11 +298,17 @@ function CouponRow({ coupon }: { coupon: Coupon }) {
 
         {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {coupon.isActive && (
+          {coupon.isActive ? (
             <button onClick={() => deactivate.mutate()} disabled={deactivate.isPending}
               title="Deactivate"
               className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 hover:bg-amber-200 transition-colors">
               {deactivate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PauseCircle className="w-3.5 h-3.5" />}
+            </button>
+          ) : (
+            <button onClick={() => activate.mutate()} disabled={activate.isPending}
+              title="Activate"
+              className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 hover:bg-emerald-200 transition-colors">
+              {activate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlayCircle className="w-3.5 h-3.5" />}
             </button>
           )}
           <button onClick={() => { if (confirm(`Delete coupon "${coupon.code}"?`)) deleteMut.mutate(); }}

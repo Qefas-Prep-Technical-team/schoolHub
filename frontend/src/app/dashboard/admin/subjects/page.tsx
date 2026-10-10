@@ -37,8 +37,10 @@ import {
   Globe,
   Lock,
   Trash2,
-  Edit2
+  Edit2,
+  Info
 } from "lucide-react";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import SubjectCard from "./components/SubjectCard";
 import SubjectModal from "./components/SubjectModal";
 import DeleteSubjectModal from "./components/DeleteSubjectModal";
@@ -353,7 +355,21 @@ const SubjectsPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Total number of subjects configured across the school.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div 
                         className="size-10 rounded-xl flex items-center justify-center"
                         style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
@@ -373,7 +389,21 @@ const SubjectsPage = () => {
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Number of functional academic departments currently active.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                         <Layers size={20} strokeWidth={2.5} />
                     </div>
@@ -390,7 +420,21 @@ const SubjectsPage = () => {
 
             <div className="col-span-2 md:col-span-1 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
                 <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">System Status</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">System Status</p>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    Current status of the subject synchronization system.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                         <ShieldCheck size={20} strokeWidth={2.5} />
                     </div>

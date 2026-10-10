@@ -1,6 +1,7 @@
 'use client';
 
-import { Clock, Calendar, CheckCircle, FileText, AlertCircle, ChevronRight, Zap } from 'lucide-react';
+import { Clock, Calendar, CheckCircle, FileText, AlertCircle, ChevronRight, Zap , Info} from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useState } from 'react';
 
 import Link from 'next/link';

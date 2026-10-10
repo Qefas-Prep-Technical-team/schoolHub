@@ -1056,8 +1056,12 @@ export const sendWelcomeEmail = async (params: {
   name: string;
   role: string;
   loginUrl: string;
+  schoolCode?: string;
+  adminCode?: string;
+  teacherCode?: string;
+  studentCode?: string;
 }) => {
-  const { email, name, role, loginUrl } = params;
+  const { email, name, role, loginUrl, schoolCode, adminCode, teacherCode, studentCode } = params;
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
@@ -1066,6 +1070,41 @@ export const sendWelcomeEmail = async (params: {
   const formattedRole = role
     .replace(/_/g, ' ')
     .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  let codesHtml = '';
+  if (role === 'admin' || role === 'school_owner') {
+    codesHtml = `
+      <li style="margin-bottom:6px;"><strong>Admins:</strong> Can link with Teachers and Students. As an admin, you have two codes: a <strong>School Code</strong> (to share with teachers/students joining your school) and an <strong>Admin Code</strong> (used exclusively to invite other admins to your school's team).
+        ${schoolCode && adminCode ? `
+        <div style="margin-top:8px;padding:10px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;font-family:monospace;font-size:14px;color:#0f172a;">
+          School Code: <span style="font-size:16px;font-weight:bold;color:#3b82f6;">${schoolCode}</span><br/>
+          Admin Code: <span style="font-size:16px;font-weight:bold;color:#8b5cf6;">${adminCode}</span>
+        </div>` : ''}
+      </li>
+    `;
+  } else if (role === 'teacher') {
+    codesHtml = `
+      <li style="margin-bottom:6px;"><strong>Teachers:</strong> Can link with their School and Students.
+        ${teacherCode ? `
+        <div style="margin-top:8px;padding:10px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;font-family:monospace;font-size:14px;color:#0f172a;">
+          Your Teacher Code: <span style="font-size:16px;font-weight:bold;color:#3b82f6;">${teacherCode}</span>
+        </div>` : ''}
+      </li>
+    `;
+  } else if (role === 'student') {
+    codesHtml = `
+      <li style="margin-bottom:6px;"><strong>Students:</strong> Can link with their School, Teachers, and Parents.
+        ${studentCode ? `
+        <div style="margin-top:8px;padding:10px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;font-family:monospace;font-size:14px;color:#0f172a;">
+          Your Student Code: <span style="font-size:16px;font-weight:bold;color:#3b82f6;">${studentCode}</span>
+        </div>` : ''}
+      </li>
+    `;
+  } else if (role === 'parent') {
+    codesHtml = `
+      <li style="margin-bottom:6px;"><strong>Parents:</strong> Can link with their Students to monitor progress.</li>
+    `;
+  }
 
   return await sendMail({
     from: sender,
@@ -1078,6 +1117,17 @@ export const sendWelcomeEmail = async (params: {
       body: `
         <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Hi ${name}, I'm Ola from Qefas Hub. Welcome!</h1>
         <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">You've just joined one of the most exciting platforms for education management, and we're so glad you're here.</p>
+        
+        ${codesHtml ? `
+        <div style="background:#f8fafc;border-radius:14px;padding:18px;margin-bottom:20px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Your Linking Codes</div>
+          <p style="margin:0 0 12px 0;color:#475569;font-size:14px;line-height:1.6;">Use your unique linking codes to connect with others on Qefas Hub:</p>
+          <ul style="margin:0 0 12px 0;padding-left:20px;color:#475569;font-size:14px;line-height:1.6;">
+            ${codesHtml}
+          </ul>
+        </div>
+        ` : ''}
+
         <p style="margin:0 0 16px 0;color:#0f172a;font-size:16px;font-weight:800;letter-spacing:-0.3px;">Education management, reimagined.</p>
         <p style="margin:0 0 24px 0;color:#475569;font-size:15px;line-height:1.7;">Qefas Hub brings your entire institution together in one place. Manage your students, teachers, attendance, grades, and parent communication without ever juggling multiple tools. Everything you need is right here, working together.</p>
         <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Ready to get started? We'd love to have you on board.</p>

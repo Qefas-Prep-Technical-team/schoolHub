@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
-import { Lock } from 'lucide-react';
+import { Lock , Info} from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DashboardChartsProps {
@@ -97,7 +98,21 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
             <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
+                        <div className="flex items-center gap-2">
                         <h3 className="text-base font-semibold text-slate-800 dark:text-white">Student Attendance Overview</h3>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Visualizes daily attendance patterns across the school over recent weeks. Use this to quickly spot downward trends or anomalies in student turnout.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                         <p className="text-xs text-slate-500">Daily present vs absent across all grades</p>
                     </div>
                     <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-1 self-start">
@@ -153,7 +168,21 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                         <div className="w-12 h-12 bg-white dark:bg-slate-950 rounded-full flex items-center justify-center shadow-md mb-2">
                             <Lock className="w-5 h-5 text-slate-400" />
                         </div>
+                        <div className="flex items-center gap-2">
                         <h3 className="text-sm font-bold text-slate-800 dark:text-white">AI Performance Insights</h3>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Analyzes current academic data to surface automated, data-driven recommendations and predictions regarding school-wide educational health.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                         <p className="text-xs text-slate-500">Upgrade your subscription to unlock deep AI-driven academic analytics.</p>
                         <button className="px-5 py-2 text-white text-xs font-semibold rounded-full transition-colors mt-2" style={{ backgroundColor: primaryColor }}>
                             Upgrade Plan
@@ -162,7 +191,21 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                 ) : null}
 
                 <div>
-                    <h3 className="text-base font-semibold text-slate-800 dark:text-white">Academic Performance</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-slate-800 dark:text-white">Academic Performance</h3>
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Maps the aggregate trajectory of average assessment scores across all subjects and grades. A consistent drop may point to systemic issues in recent curriculum delivery.
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <p className="text-xs text-slate-500">Average score distribution - {totalAssessments} records</p>
                 </div>
 

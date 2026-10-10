@@ -38,7 +38,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { generatePDF } from "@/utils/pdfGenerator";
-import { Download } from "lucide-react";
+import { Download, Info } from "lucide-react";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 
 export default function AssignmentsPage() {
@@ -215,6 +216,7 @@ export default function AssignmentsPage() {
         color: "text-blue-500",
         bg: "bg-blue-500/10",
         border: "border-blue-500/20",
+        info: "Total number of assignments created across the school."
       },
       {
         title: "Active (Published)",
@@ -223,6 +225,7 @@ export default function AssignmentsPage() {
         color: "text-emerald-500",
         bg: "bg-emerald-500/10",
         border: "border-emerald-500/20",
+        info: "Assignments that are currently visible to students."
       },
       {
         title: "Overdue",
@@ -231,6 +234,7 @@ export default function AssignmentsPage() {
         color: "text-rose-500",
         bg: "bg-rose-500/10",
         border: "border-rose-500/20",
+        info: "Assignments where the submission deadline has passed."
       },
       {
         title: "Drafts",
@@ -239,6 +243,7 @@ export default function AssignmentsPage() {
         color: "text-slate-500",
         bg: "bg-slate-500/10",
         border: "border-slate-500/20",
+        info: "Assignments that are saved but not yet published to students."
       },
     ];
   }, [assignments]);
@@ -343,9 +348,25 @@ export default function AssignmentsPage() {
                   <div className={`p-2 rounded-lg ${stat.bg} ${stat.color} shrink-0`}>
                     <Icon size={18} strokeWidth={2.5} />
                   </div>
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                    {stat.title}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      {stat.title}
+                    </p>
+                    {stat.info && (
+                        <TooltipProvider>
+                            <Tooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                        <Info size={14} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    {stat.info}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex items-end justify-between mt-auto">
@@ -373,9 +394,23 @@ export default function AssignmentsPage() {
                 <BookOpen size={24} strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                  Assignments
-                </h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    Assignments
+                    </h3>
+                    <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                            <TooltipTrigger asChild>
+                                <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                                    <Info size={16} />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">
+                                View and manage all student assignments.
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
                 <p className="text-sm font-medium text-slate-500">
                   Manage coursework and deadlines
                 </p>

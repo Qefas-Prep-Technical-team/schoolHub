@@ -14,7 +14,7 @@ import ManageClassModal from './components/ManageClassModal';
 import ClassQRCodeModal from './components/ClassQRCodeModal';
 import TeachersTab from './components/TeachersTab';
 import Breadcrumbs from './components/students/components/Breadcrumbs';
-
+import AnalyticsTab from './components/analytics/AnalyticsTab';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
@@ -281,6 +281,11 @@ export default function ClassDetailsPage() {
       id: 'results', 
       label: 'Final Results' , 
       content: <FinalResultsTab classId={id} /> 
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      content: <AnalyticsTab classId={id} classNameLabel={classData?.name} />
     },
   ]
 

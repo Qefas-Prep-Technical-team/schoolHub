@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Zap, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { Clock, Zap, AlertTriangle, ArrowUpRight , Info} from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,6 +158,7 @@ export default function UsageLimitsCard({
           <div>
             <h4 className="text-base font-semibold text-slate-800 dark:text-white leading-tight flex items-center gap-2">
               {title}
+              <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl text-left">Real-time metrics on your subscription feature usage.</TooltipContent></Tooltip></TooltipProvider>
               {isTrial ? (
                 <Badge className="bg-amber-500 hover:bg-amber-500 text-[9px] h-4 px-1.5 font-bold uppercase text-white border-none">Trial</Badge>
               ) : (

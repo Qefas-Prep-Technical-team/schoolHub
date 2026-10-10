@@ -7,6 +7,8 @@ import {
   FileText, Clock, Users, BookOpen, Edit2, BarChart3, CalendarClock, Download, FileSpreadsheet
 } from 'lucide-react';
 import { AssessmentItem, ExamType } from './components/types';
+import { Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -195,7 +197,21 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-gray-900 dark:text-white text-xl font-bold">Assessments</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-gray-900 dark:text-white text-xl font-bold">Assessments</h2>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-primary transition-colors">
+                    <Info size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                  Chronicles all individual continuous assessments (assignments, quizzes, and midterm tests) scheduled for this class. Use this timeline to monitor short-term student engagement and identify gaps in recent syllabus comprehension.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             {filtered.length} record{filtered.length !== 1 ? 's' : ''}
             {' \u00b7 '}{mappedExams.length} exam{mappedExams.length !== 1 ? 's' : ''}

@@ -1,4 +1,6 @@
 import { Link2, QrCode } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 
@@ -12,9 +14,23 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white mb-2">
-          Linking Hub
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white mb-2">
+            Linking Hub
+          </h1>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-gray-400 hover:text-primary transition-colors focus:outline-none mb-2">
+                  <Info size={24} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                Centralized hub for managing school network connections. Track active parent-student-teacher links, review pending connection requests, and access your school's unique QR codes for easy onboarding.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-gray-500 dark:text-gray-400 font-medium text-lg">
           Manage connections between parents, students, and teachers.
         </p>

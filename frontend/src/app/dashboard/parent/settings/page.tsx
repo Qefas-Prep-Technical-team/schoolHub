@@ -117,14 +117,23 @@ export default function ParentSettingsPage() {
           </p>
         </div>
 
-        <Button
-          onClick={handleProfileSubmit}
-          disabled={isUpdating}
-          className="h-10 px-6 rounded-lg bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 font-semibold shadow-sm transition-all"
-        >
-          {!isUpdating && <Save size={16} className="mr-2" />}
-          {isUpdating ? 'Saving...' : 'Save Changes'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => window.open('/onboarding?revisit=true', '_blank')}
+            className="h-10 px-4 md:px-6 rounded-lg font-semibold shadow-sm transition-all border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+          >
+            Revisit Onboarding
+          </Button>
+          <Button
+            onClick={handleProfileSubmit}
+            disabled={isUpdating}
+            className="h-10 px-4 md:px-6 rounded-lg bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 font-semibold shadow-sm transition-all"
+          >
+            {!isUpdating && <Save size={16} className="mr-2" />}
+            {isUpdating ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="profile" className="w-full space-y-6">

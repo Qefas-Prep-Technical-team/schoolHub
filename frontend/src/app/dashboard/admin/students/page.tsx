@@ -34,6 +34,8 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { AnimatePresence, motion } from "framer-motion";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { toast } from "react-toastify";
 
 export default function StudentsPage() {
@@ -127,6 +129,7 @@ export default function StudentsPage() {
       iconBg: "#ede9fe",
       iconColor: "#7c3aed",
       note: "vs last year",
+      tooltip: "The cumulative count of all enrolled students in the database, including both active and pending accounts.",
     },
     {
       label: "Active Students",
@@ -135,6 +138,7 @@ export default function StudentsPage() {
       iconBg: "#d1fae5",
       iconColor: "#059669",
       note: "vs last semester",
+      tooltip: "Students who have completed the onboarding process and possess verified platform credentials.",
     },
     {
       label: "On Leave",
@@ -143,6 +147,7 @@ export default function StudentsPage() {
       iconBg: "#fef3c7",
       iconColor: "#d97706",
       note: "This Semester",
+      tooltip: "Students marked as pending or temporarily absent from active classroom participation.",
     },
     {
       label: "Avg Attendance",
@@ -151,6 +156,7 @@ export default function StudentsPage() {
       iconBg: "#dbeafe",
       iconColor: "#2563eb",
       note: "This Semester",
+      tooltip: "The overall average attendance rate calculated from today's active roll calls across all classes.",
     },
   ];
 
@@ -305,7 +311,21 @@ export default function StudentsPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Student Overview</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Student Overview</h1>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-gray-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                    Comprehensive student directory. Manage individual student records, track status updates, and filter down by class, department, or gender.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage and monitor students</p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
@@ -328,7 +348,23 @@ export default function StudentsPage() {
               className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</span>
+                  {stat.tooltip && (
+                    <TooltipProvider>
+                      <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-gray-400 hover:text-primary transition-colors focus:outline-none">
+                            <Info size={12} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                          {stat.tooltip}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <div
                   className="size-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ backgroundColor: stat.iconBg, color: stat.iconColor }}

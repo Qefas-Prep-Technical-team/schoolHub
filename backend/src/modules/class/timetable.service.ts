@@ -1,5 +1,7 @@
 import prisma from "../../config/database";
 
+import { createNotification } from "../notification/notification.service";
+
 export const getClassTimetableService = async (classId: string, termPeriodId?: string) => {
   const whereClause: any = { classId };
   if (termPeriodId) {
@@ -39,7 +41,7 @@ export const upsertTimetablePeriodService = async (data: any) => {
     });
   }
   
-  return prisma.timetablePeriod.create({
+  const newPeriod = await prisma.timetablePeriod.create({
     data: {
       classId,
       day,
@@ -53,6 +55,20 @@ export const upsertTimetablePeriodService = async (data: any) => {
       termPeriodId: termPeriodId || null,
     },
   });
+
+  if (!isBreak && teacherId) {
+    createNotification({
+      recipientType: "TEACHER",
+      recipientId: teacherId,
+      senderType: "SCHOOL",
+      senderId: "SYSTEM",
+      type: "GENERAL",
+      title: "New Timetable Assignment",
+      message: `You have been assigned a new class period on ${day} (${startTime} - ${endTime}).`,
+    }).catch(err => console.error("Failed to notify teacher:", err));
+  }
+
+  return newPeriod;
 };
 
 export const deleteTimetablePeriodService = async (id: string) => {

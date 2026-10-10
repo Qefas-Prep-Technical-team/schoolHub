@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Sparkles, ChevronRight, ChevronLeft, Info, AlertTriangle, Zap, Clock } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useNotifications, useMarkAsRead } from '@/lib/api/hooks/useNotifications';

@@ -1,5 +1,7 @@
 import React from 'react';
 import { AttendanceSummary } from './types';
+import { Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface AttendanceSummaryCardProps {
   summary: AttendanceSummary;
@@ -22,25 +24,29 @@ const AttendanceSummaryCard: React.FC<AttendanceSummaryCardProps> = ({
       label: 'Overall Attendance',
       value: `${typeof rateVal === 'number' ? rateVal.toFixed(1) : rateVal}%`,
       color: 'blue',
-      icon: '📊'
+      icon: '📊',
+      info: 'Reflects the overall attendance percentage on the selected day. Consistently low rates may point to broader classroom disengagement or systemic scheduling issues.'
     },
     {
       label: 'Total Present',
       value: presentVal.toLocaleString(),
       color: 'green',
-      icon: '✅'
+      icon: '✅',
+      info: 'The absolute count of students who were marked as present. Use this alongside the total student count to gauge daily active participation.'
     },
     {
       label: 'Total Absent',
       value: absentVal.toLocaleString(),
       color: 'red',
-      icon: '❌'
+      icon: '❌',
+      info: 'The total number of students completely missing from this class. High numbers here should trigger a review of parent notifications or underlying health/environmental factors.'
     },
     {
       label: 'Total Late',
       value: lateVal.toLocaleString(),
       color: 'yellow',
-      icon: '⏰'
+      icon: '⏰',
+      info: 'Tracks students who arrived after the scheduled start time. Monitoring this helps identify patterns in tardiness that could disrupt the overall learning flow.'
     }
   ];
 
@@ -98,7 +104,23 @@ const AttendanceSummaryCard: React.FC<AttendanceSummaryCardProps> = ({
               </div>
             ) : (
               <>
-                <p className="text-sm font-semibold">{stat.label}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold">{stat.label}</p>
+                  {stat.info && (
+                    <TooltipProvider>
+                      <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="opacity-70 hover:opacity-100 transition-opacity focus:outline-none">
+                            <Info size={12} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                          <p>{stat.info}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <p className={`text-2xl font-bold mt-1 ${valueClasses[stat.color as keyof typeof valueClasses]}`}>
                   {stat.value}
                 </p>

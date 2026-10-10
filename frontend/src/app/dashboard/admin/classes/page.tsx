@@ -11,6 +11,7 @@ import { classService, Class } from './services/classService';
 import { toast } from 'react-toastify';
 import {
     Layers,
+    Info,
     Plus,
     Search,
     Filter,
@@ -33,6 +34,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Tooltip as UITooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import ClassGrid from './components/ClassGrid';
 import ClassModal from './components/ClassModal';
@@ -116,7 +118,49 @@ export default function ClassesOverviewPage() {
     const classes = (fetchClassesData as Class[]) || [];
 
     const mappedClassData: ClassData[] = useMemo(() => {
-        return classes.map((c: Class) => ({
+        const now = new Date();
+        const currentDay = now.toLocaleString('en-US', { weekday: 'long' }).toUpperCase();
+        const parseTime = (timeStr: string) => {
+            if (!timeStr) return 0;
+            const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+            if (!match) return 0;
+            let hours = parseInt(match[1], 10);
+            const minutes = parseInt(match[2], 10);
+            const ampm = match[3]?.toUpperCase();
+            if (ampm === 'PM' && hours < 12) hours += 12;
+            if (ampm === 'AM' && hours === 12) hours = 0;
+            return hours * 60 + minutes;
+        };
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        return classes.map((c: Class) => {
+            const todayPeriods = (c.timetablePeriods?.filter((p: any) => p.day?.toUpperCase() === currentDay) || []).sort((a: any, b: any) => parseTime(a.startTime) - parseTime(b.startTime));
+            const currentPeriod = todayPeriods.find((p: any) => currentMinutes >= parseTime(p.startTime) && currentMinutes <= parseTime(p.endTime));
+            
+            let activityStatus = 'Study Session';
+            let isLiveStatus = false;
+            if (c.status === 'ACTIVE') {
+                if (todayPeriods.length === 0) {
+                    activityStatus = 'No Class Today';
+                } else {
+                    const firstClass = parseTime(todayPeriods[0].startTime);
+                    const lastClass = parseTime(todayPeriods[todayPeriods.length - 1].endTime);
+                    if (currentMinutes < firstClass || currentMinutes > lastClass) {
+                        activityStatus = 'Out of School';
+                    } else if (currentPeriod) {
+                        if (currentPeriod.isBreak) {
+                            activityStatus = currentPeriod.breakLabel || 'On Break';
+                        } else {
+                            activityStatus = currentPeriod.subject?.name || 'In Class';
+                            isLiveStatus = true;
+                        }
+                    } else {
+                        activityStatus = 'Free Period';
+                    }
+                }
+            }
+
+            return {
             id: c.id,
             name: c.name,
             section: c.section || 'N/A',
@@ -134,9 +178,9 @@ export default function ClassesOverviewPage() {
                 id: d.department.id,
                 name: d.department.name
             })),
-            isLive: c.status === 'ACTIVE' && Math.random() > 0.3,
-            currentActivity: c.status === 'ACTIVE' ? (c.subjects?.[0]?.subject?.name || 'Study Session') : undefined,
-        }));
+            isLive: isLiveStatus,
+            currentActivity: c.status === 'ACTIVE' ? activityStatus : undefined,
+        };});
     }, [classes]);
 
     const filteredClasses = useMemo(() => {
@@ -157,7 +201,7 @@ export default function ClassesOverviewPage() {
 
     const stats = useMemo(() => {
         const totalClasses = classes.length;
-        const teachersAssigned = classes.filter((c: Class) => c.teachers && c.teachers.length > 0).length;
+        const teachersAssigned = new Set(classes.flatMap((c: Class) => c.teachers?.map((t: any) => t.teacher?.id).filter(Boolean) || [])).size;
         const studentsTotal = classes.reduce((sum: number, c: Class) => sum + (c._count?.enrollments ?? c.enrollments?.length ?? 0), 0);
         const activeNodes = mappedClassData.filter(c => c.isLive).length;
 
@@ -167,28 +211,32 @@ export default function ClassesOverviewPage() {
                 value: totalClasses,
                 icon: LayoutGrid,
                 color: primaryColor,
-                desc: 'Registered Classes'
+                desc: 'Registered Classes',
+                info: "Shows how many classes are currently set up in the school. This gives you a quick idea of the school's overall size."
             },
             {
-                label: 'Assigned Faculty',
+                label: 'Assigned Teachers',
                 value: teachersAssigned,
                 icon: Users,
                 color: '#2563eb', // Indigo
-                desc: 'Primary Teachers'
+                desc: 'Class Teachers',
+                info: "Shows how many unique teachers are assigned to teach classes. This helps you make sure teachers aren't being overloaded with too many classes."
             },
             {
                 label: 'Enrolled Students',
                 value: studentsTotal,
                 icon: Zap,
                 color: '#10b981', // Emerald
-                desc: 'Platform Enrollment'
+                desc: 'Platform Enrollment',
+                info: "Shows the total number of students enrolled across all your classes. This helps you easily keep track of the school's overall student population."
             },
             {
                 label: 'Active Now',
                 value: activeNodes,
                 icon: Activity,
                 color: '#f59e0b', // Amber
-                desc: 'In-Session Classes'
+                desc: 'In-Session Classes',
+                info: 'Shows how many classes are currently happening right now. This lets you quickly see which classrooms are active and might need your attention.'
             },
         ];
     }, [classes, mappedClassData, primaryColor]);
@@ -432,11 +480,23 @@ export default function ClassesOverviewPage() {
                                 >
                                     <stat.icon className="size-5 md:size-6" />
                                 </div>
-                                {stat.label === 'Active Now' && (
+                                <div className="flex items-center gap-2">
+                                    {stat.label === 'Active Now' && (
                                      <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                          <TrendingUp size={10} /> Live
                                      </div>
                                 )}
+                                    <TooltipProvider>
+                                        <UITooltip>
+                                            <TooltipTrigger asChild>
+                                                <Info className="size-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-[300px] p-3 text-sm bg-slate-900 border-slate-800 text-slate-200 shadow-2xl">
+                                                {stat.info}
+                                            </TooltipContent>
+                                        </UITooltip>
+                                    </TooltipProvider>
+                                </div>
                             </div>
                             <div>
                                 <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stat.value}</h3>
@@ -513,6 +573,7 @@ export default function ClassesOverviewPage() {
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap w-12 text-center">#</th>
                                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Class Name</th>
                                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Teacher</th>
                                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Details</th>
@@ -525,6 +586,9 @@ export default function ClassesOverviewPage() {
                                             <>
                                                 {[...Array(6)].map((_, i) => (
                                                     <tr key={i} className="animate-pulse border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                                        <td className="px-6 py-4 w-12 text-center">
+                                                            <div className="h-4 w-6 bg-slate-100 dark:bg-slate-800 rounded mx-auto" />
+                                                        </td>
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-4">
                                                                 <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800" />
@@ -560,7 +624,7 @@ export default function ClassesOverviewPage() {
                                             </>
                                         ) : filteredClasses.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                                <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                                                     <div className="flex flex-col items-center gap-3 opacity-50">
                                                         <Layers size={40} strokeWidth={1.5} />
                                                         <span className="text-sm font-medium">No Classes Found</span>
@@ -574,6 +638,9 @@ export default function ClassesOverviewPage() {
                                                     onClick={() => router.push(`/dashboard/admin/classes/${cls.id}`)}
                                                     className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                                                 >
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                                        {((currentPage - 1) * itemsPerPage) + index + 1}
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex items-center gap-4">
                                                             <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-200 dark:border-slate-700" style={{ color: primaryColor }}>
@@ -600,9 +667,9 @@ export default function ClassesOverviewPage() {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         {cls.isLive ? (
-                                                            <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold border border-blue-200 dark:border-blue-500/20">In Session</span>
+                                                            <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold border border-blue-200 dark:border-blue-500/20 uppercase">{cls.currentActivity || 'In Session'}</span>
                                                         ) : (
-                                                            <span className="px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold border border-slate-200 dark:border-slate-700">Inactive</span>
+                                                            <span className="px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold border border-slate-200 dark:border-slate-700 uppercase">{cls.currentActivity || 'Inactive'}</span>
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -730,4 +797,5 @@ export default function ClassesOverviewPage() {
         </div>
     );
 }
+
 

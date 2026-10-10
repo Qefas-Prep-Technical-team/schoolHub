@@ -11,6 +11,8 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import { Info } from 'lucide-react';
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface PerformanceChartProps {
   performanceTrend?: any[];
@@ -41,9 +43,25 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
     <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div className="flex flex-col gap-1">
-          <h3 className="text-xl font-black text-gray-900 dark:text-white capitalize tracking-tight">
-            Class {view}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white capitalize tracking-tight">
+              Class {view}
+            </h3>
+            <TooltipProvider>
+              <UITooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                    <Info size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                  {view === 'performance' 
+                    ? "Visualizes the aggregate trajectory of average assessment scores over the current term. Watch for sudden dips, which may indicate a challenging new topic or the need for a syllabus review." 
+                    : "Plots daily attendance rates over the last two weeks. Consistent downward trends here often correlate closely with declining academic performance."}
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
             {view === 'performance' ? 'Average scores across recent assessments' : 'Attendance trends for the last 14 days'}
           </p>

@@ -23,6 +23,8 @@ import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -261,10 +263,24 @@ export default function AdminInquiriesPage() {
     <div className="p-4 sm:p-6 w-full lg:w-[90%] lg:max-w-[90%] mx-auto min-h-screen">
       <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
+        <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <MessageSquare className="w-8 h-8 text-blue-600 dark:text-blue-500" />
             Website Inquiries
           </h1>
+          <TooltipProvider>
+            <UITooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button type="button" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 focus:outline-none transition-colors mt-1">
+                  <Info size={24} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                Manage and respond to messages submitted through your public school landing page's contact form.
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        </div>
           <p className="text-slate-600 dark:text-slate-400 mt-2 text-sm">
             Manage and respond to messages submitted through your public school landing page.
           </p>
@@ -297,7 +313,21 @@ export default function AdminInquiriesPage() {
             <Inbox className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Inquiries</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Inquiries</p>
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                      <Info size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    The overall total number of messages received from the public landing page.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{totalInquiries}</p>
           </div>
         </div>
@@ -307,7 +337,21 @@ export default function AdminInquiriesPage() {
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unread (This Page)</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unread (This Page)</p>
+              <TooltipProvider>
+                <UITooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                      <Info size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    The number of unread messages currently loaded on this page. Clicking a message will mark it as read.
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{unreadCount}</p>
           </div>
         </div>
@@ -316,14 +360,28 @@ export default function AdminInquiriesPage() {
       {/* Inquiries List */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            Recent Messages
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              Recent Messages
+            </h2>
+            <TooltipProvider>
+              <UITooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
+                    <Info size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                  A list of all recent inquiries. You can select multiple messages to delete them in bulk, or click on a row to read the full message.
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
             {selectedIds.length > 0 && (
               <span className="text-xs bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2.5 py-0.5 rounded-full font-bold">
                 {selectedIds.length} Selected
               </span>
             )}
-          </h2>
+          </div>
           
           {selectedIds.length > 0 && (
             <button 

@@ -38,6 +38,7 @@ import {
   Share2,
   Percent
 } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -232,7 +233,21 @@ export default function SchoolProfilePage() {
           
           {/* About Section */}
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-800 dark:text-white mb-4">About Institution</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-base font-semibold text-slate-800 dark:text-white">About Institution</h2>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                    Displays your official institutional mission and description. This information represents your school's public identity across the system.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 {school?.description || "A premier educational institution focused on excellence and holistic development. Committed to nurturing future leaders through innovative teaching methodologies and a balanced approach to academic and extracurricular growth."}
             </p>
@@ -241,7 +256,21 @@ export default function SchoolProfilePage() {
           {/* Academic Leadership */}
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-base font-semibold text-slate-800 dark:text-white">Leadership Protocol</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-slate-800 dark:text-white">Leadership Protocol</h2>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                          <Info size={16} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                        Lists key administrative personnel and their delegated access levels. Ensure only authorized staff members hold top-tier roles here.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
             </div>
             
             <div className="space-y-6">
@@ -292,7 +321,21 @@ export default function SchoolProfilePage() {
 
           {/* System Architecture */}
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-800 dark:text-white mb-6">Digital Capabilities</h2>
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-base font-semibold text-slate-800 dark:text-white">Digital Capabilities</h2>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                    Highlights your system credentials and authorized feature access tier. Upgrading your plan will unlock additional capabilities here.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1">
                     <p className="text-xs font-semibold text-slate-500">Institutional Hash</p>
@@ -323,7 +366,21 @@ export default function SchoolProfilePage() {
                     <Share2 size={20} />
                 </div>
                 <div>
-                    <h2 className="text-base font-semibold text-slate-800 dark:text-white">Governance & Social</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-slate-800 dark:text-white">Governance & Social</h2>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                              <Info size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                            Consolidates core foundational details, such as the principal and institutional categorization, along with your official social media channels.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="text-xs text-slate-500">Leadership details and social media presence.</p>
                 </div>
             </div>
@@ -372,7 +429,21 @@ export default function SchoolProfilePage() {
           {school?.levels && school.levels.length > 0 && (
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-slate-800 dark:text-white">Academic Levels</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-slate-800 dark:text-white">Academic Levels</h2>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                          <Info size={16} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                        Displays the overarching grade frameworks applied across your school (e.g., Junior Secondary, Senior Secondary). These dictate class formations.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Badge variant="secondary" className="rounded-xl px-2 py-0.5 text-[10px] font-semibold">
                     {school.levels.length} Configured
                 </Badge>
@@ -399,7 +470,21 @@ export default function SchoolProfilePage() {
           {school?.gradingSystem && school.gradingSystem.length > 0 && (
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-slate-800 dark:text-white">Grading System Configuration</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-slate-800 dark:text-white">Grading System Configuration</h2>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                          <Info size={16} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                        Defines the standardized assessment thresholds applied to student scores institution-wide. It ensures consistent evaluation matrices.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Badge variant="secondary" className="rounded-xl px-2 py-0.5 text-[10px] font-semibold">
                     {school.gradingSystem.length} Grades
                 </Badge>
@@ -433,7 +518,21 @@ export default function SchoolProfilePage() {
           
           {/* Contact Details Card */}
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-800 dark:text-white mb-6">Connectivity</h2>
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-base font-semibold text-slate-800 dark:text-white">Connectivity</h2>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                    Centralizes essential communication nodes—email, phone lines, and physical coordinates—facilitating parent and staff outreach.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             
             <div className="space-y-6">
                 <SidebarInfoItem icon={Mail} label="Academic Dispatch" value={school?.schoolEmail} themeColor={primaryColor} />
@@ -462,7 +561,21 @@ export default function SchoolProfilePage() {
 
           {/* Operational Insights */}
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-800 dark:text-white mb-6">Institutional Stats</h2>
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-base font-semibold text-slate-800 dark:text-white">Institutional Stats</h2>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                    Quickly audits key performance indicators and validation statuses that reflect the administrative health of the institution.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             
             <div className="space-y-5">
                 <StatRow label="Principal" value={school?.principal || 'Not Assigned'} icon={UserIcon} color="text-purple-500 bg-purple-50 dark:bg-purple-900/20" />

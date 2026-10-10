@@ -31,6 +31,8 @@ import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -121,9 +123,23 @@ export default function SessionsPage() {
               <ChevronRight size={14} className="mx-1" />
               <span className="text-slate-900 dark:text-slate-100 font-semibold">Sessions</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Academic Sessions
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Academic Sessions
+              </h1>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                      <Info size={18} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                    Configure the global academic timeline for your school. Define session dates, segment them into active terms, and securely archive past years to preserve historical data.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-sm text-slate-500">Manage and monitor school sessions and terms.</p>
           </div>
 
@@ -201,9 +217,23 @@ export default function SessionsPage() {
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-blue-50 dark:bg-blue-500/10 text-blue-600 border-blue-100 dark:border-blue-500/20">
                     <Plus size={18} />
                   </div>
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                    New Session
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                      New Session
+                    </h2>
+                    <TooltipProvider>
+                      <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none">
+                            <Info size={14} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                          Create a new academic year schema. You can define exact start and end dates and provision exact dates for First, Second, and Third terms.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
               </div>
               <SessionForm 

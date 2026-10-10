@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Clock
 } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useNotifications } from '@/lib/api/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';

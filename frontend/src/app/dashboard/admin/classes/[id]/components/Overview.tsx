@@ -55,11 +55,13 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
             title="Class Average Score" 
             value={stats ? `${stats.overallAvgScore}%` : "0%"} 
             isLoading={isStatsLoading}
+            info="Displays the aggregate average score of all students in this class across all recorded assessments. Use this to quickly gauge the overall academic health and performance level of the class."
           />
           <StatsCard 
             title="Attendance Summary" 
             value={attendanceSummary ? `${Math.round(attendanceSummary.rate)}%` : "0%"} 
             isLoading={isAttendanceSummaryLoading}
+            info="Shows the overall attendance rate for the class across the current session. A low percentage may indicate systemic issues requiring teacher or administrative intervention."
           />
         </div>
 

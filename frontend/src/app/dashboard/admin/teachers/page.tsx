@@ -16,8 +16,9 @@ import { useSubscriptionUsage } from '@/lib/api/hooks/useSubscriptionUsage'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import {
     Users, UserPlus, Search, ShieldCheck, Zap, Activity,
-    Download, ChevronRight, ChevronLeft, ClipboardList,
+    Download, ChevronRight, ChevronLeft, ClipboardList, Info,
 } from 'lucide-react'
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Button } from "@/components/ui/button"
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -287,10 +288,10 @@ export default function ManageTeachersPage() {
     const atLimit = subUsage?.limits?.teachers !== -1 && (subUsage?.usage?.teachers || teachersList.length) >= (subUsage?.limits?.teachers || 0)
 
     const stats = [
-        { label: 'Total Teachers', value: teachersList.length, icon: Users, iconBg: '#ede9fe', iconColor: '#7c3aed', note: 'Registered faculty' },
-        { label: 'Active Teachers', value: teachersList.filter(t => t.status === 'active').length, icon: ShieldCheck, iconBg: '#d1fae5', iconColor: '#059669', note: 'Verified accounts' },
-        { label: 'Total Subjects', value: uniqueSubjects.size, icon: Activity, iconBg: '#dbeafe', iconColor: '#2563eb', note: 'Subjects covered' },
-        { label: 'Pending', value: teachersList.filter(t => t.status === 'pending').length, icon: Zap, iconBg: '#fef3c7', iconColor: '#d97706', note: 'Awaiting verification' },
+        { label: 'Total Teachers', value: teachersList.length, icon: Users, iconBg: '#ede9fe', iconColor: '#7c3aed', note: 'Registered faculty', tooltip: 'The total number of teacher accounts created on the platform, regardless of verification status.' },
+        { label: 'Active Teachers', value: teachersList.filter(t => t.status === 'active').length, icon: ShieldCheck, iconBg: '#d1fae5', iconColor: '#059669', note: 'Verified accounts', tooltip: 'Teachers who have successfully claimed their accounts and verified their identities.' },
+        { label: 'Total Subjects', value: uniqueSubjects.size, icon: Activity, iconBg: '#dbeafe', iconColor: '#2563eb', note: 'Subjects covered', tooltip: 'The unique count of academic subjects currently assigned to the active teaching staff.' },
+        { label: 'Pending', value: teachersList.filter(t => t.status === 'pending').length, icon: Zap, iconBg: '#fef3c7', iconColor: '#d97706', note: 'Awaiting verification', tooltip: 'Teacher accounts that have been invited but have not yet completed the claiming and verification process.' },
     ]
 
     const getPageNumbers = () => {
@@ -390,7 +391,21 @@ export default function ManageTeachersPage() {
             <div className="w-[95%] max-w-[1600px] mx-auto space-y-5">
 
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Teacher Overview</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Teacher Overview</h1>
+                        <TooltipProvider>
+                            <UITooltip delayDuration={300}>
+                                <TooltipTrigger asChild>
+                                    <button type="button" className="text-gray-400 hover:text-indigo-500 transition-colors focus:outline-none">
+                                        <Info size={16} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                    Comprehensive directory of your teaching staff. Monitor individual faculty status, assigned subjects, and manage personnel records all in one place.
+                                </TooltipContent>
+                            </UITooltip>
+                        </TooltipProvider>
+                    </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage and monitor faculty members</p>
                 </div>
 
@@ -398,7 +413,23 @@ export default function ManageTeachersPage() {
                     {stats.map((stat, i) => (
                         <div key={i} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</span>
+                                    {stat.tooltip && (
+                                        <TooltipProvider>
+                                            <UITooltip delayDuration={300}>
+                                                <TooltipTrigger asChild>
+                                                    <button type="button" className="text-gray-400 hover:text-indigo-500 transition-colors focus:outline-none">
+                                                        <Info size={12} />
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                                    {stat.tooltip}
+                                                </TooltipContent>
+                                            </UITooltip>
+                                        </TooltipProvider>
+                                    )}
+                                </div>
                                 <div className="size-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: stat.iconBg, color: stat.iconColor }}>
                                     <stat.icon size={15} />
                                 </div>
@@ -413,7 +444,21 @@ export default function ManageTeachersPage() {
 
                 <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
                     <div className="mb-4">
-                        <h3 className="text-sm font-bold text-gray-800 dark:text-white">Attendance Trend</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-white">Attendance Trend</h3>
+                            <TooltipProvider>
+                                <UITooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-gray-400 hover:text-indigo-500 transition-colors focus:outline-none">
+                                            <Info size={14} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                        Visualizes the aggregate weekly attendance pattern of all teachers. Identify recurring days of high absenteeism or tardiness to optimize scheduling and substitute coverage.
+                                    </TooltipContent>
+                                </UITooltip>
+                        </TooltipProvider>
+                        </div>
                         <p className="text-xs text-gray-400 mt-0.5">Weekly teacher presence</p>
                     </div>
                     <div className="h-[200px] w-full">

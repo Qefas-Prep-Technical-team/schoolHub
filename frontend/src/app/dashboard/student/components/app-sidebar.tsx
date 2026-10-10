@@ -144,7 +144,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
             collapsible="icon"
             className={cn(
                 "transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-0",
-                isCollapsed ? "w-[64px]" : "w-[260px]"
+                isCollapsed ? "w-[64px]" : "w-[200px]"
             )}
         >
             {/* Header */}
