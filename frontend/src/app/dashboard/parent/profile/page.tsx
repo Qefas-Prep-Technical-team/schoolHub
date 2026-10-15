@@ -37,6 +37,7 @@ import { useToast } from '@/lib/hooks/useToast';
 import EditProfileModal from './components/EditProfileModal';
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
 import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 export default function ParentProfilePage() {
   const { user } = useAuthStore();
@@ -131,9 +132,16 @@ export default function ParentProfilePage() {
             <ChevronRight size={14} className="text-orange-500" />
             <span className="text-orange-600 font-bold">Profile</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            My Profile
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              My Profile
+            </h1>
+            <HeaderTooltip
+              content="Your guardian profile hub. Manage your contact details, security credentials, registered email, and inspect all student accounts linked to your guardianship."
+              side="right"
+              size={15}
+            />
+          </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Overview of your personal details, security settings, and linked children.
           </p>
@@ -249,7 +257,13 @@ export default function ParentProfilePage() {
                   <User size={20} className="text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Personal Details</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Personal Details</h3>
+                    <HeaderTooltip
+                      content="Verified contact information used by the school administration for emergency contacts, official grade report releases, and critical notifications."
+                      side="top"
+                    />
+                  </div>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">Your Contact Information</p>
                 </div>
               </div>
@@ -278,9 +292,15 @@ export default function ParentProfilePage() {
                 <div className="space-y-6">
                   <div className="flex items-center gap-3">
                     <Wallet className="text-slate-400" size={16} />
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Subscription Details
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        Subscription Details
+                      </h4>
+                      <HeaderTooltip
+                        content="Your current platform membership tier and billing status. Active subscriptions grant unhindered access to academic progress reports, termly analytics, and teacher communications."
+                        side="top"
+                      />
+                    </div>
                     <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -298,9 +318,15 @@ export default function ParentProfilePage() {
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <Users className="text-slate-400" size={16} />
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Linked Children
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Linked Children
+                    </h4>
+                    <HeaderTooltip
+                      content="All student accounts currently associated with your parent account. Use the 'My Children' dashboard to switch active views or link additional wards."
+                      side="top"
+                    />
+                  </div>
                   <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
                 </div>
 

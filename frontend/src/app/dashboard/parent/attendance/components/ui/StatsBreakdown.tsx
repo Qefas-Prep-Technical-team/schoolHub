@@ -1,4 +1,5 @@
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 interface StatItem {
   type: 'present' | 'late' | 'absent';
@@ -73,9 +74,15 @@ export default function StatsBreakdown({
   return (
     <div className="flex-1 w-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-          Semester Summary
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Semester Summary
+          </h3>
+          <HeaderTooltip 
+            content="Summary of verified school days for this child. Rate is calculated as (Days Present + Days Late) / Total Recorded Days."
+            side="top"
+          />
+        </div>
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${statusConfig[status].color}`}>
           Status: {statusConfig[status].label}
         </span>
@@ -107,7 +114,7 @@ export default function StatsBreakdown({
         <div className="mt-6">
           <button
             onClick={onViewDetails}
-            className="w-full py-2.5 rounded-xl bg-blue-600 dark:bg-indigo-600 text-white text-sm font-black uppercase tracking-widest hover:bg-blue-700 dark:hover:bg-indigo-700 transition-all shadow-lg shadow-blue-600/20 dark:shadow-indigo-600/20"
+            className="w-full py-2.5 rounded-xl bg-orange-600 dark:bg-orange-600 text-white text-xs font-black uppercase tracking-widest hover:bg-orange-700 dark:hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20 active:scale-[0.98] cursor-pointer"
           >
             View Detailed Breakdown
           </button>

@@ -41,6 +41,28 @@
 
 ### Thursday, October 15, 2026
 
+- **Parent Settings Page Mobile Responsiveness & Comprehensive Header Tooltips (`/dashboard/parent/settings`)**:
+    - [x] **Container Layout & Edge Padding Normalization**: Replaced unconstrained `w-[95%] px-4 md:px-8 py-8` with standardized `max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8`, preventing screen edge clipping on mobile viewports.
+    - [x] **Responsive Page Header & Mobile Action Bar**: Added responsive icon badge, flex-wrap actions, and full-width touch-friendly button sizing on small screens.
+    - [x] **Mobile Tabs Navigation**: Enhanced `TabsList` with smooth horizontal scrolling (`no-scrollbar`), comfortable touch heights (`h-9`), and responsive trigger padding so parents can easily navigate between Profile, Appearance, Security, and Notifications tabs without layout breakage.
+    - [x] **Comprehensive Header Tooltips**: Integrated context-rich, analytical tooltips adhering strictly to `.agents/skills/comprehensive_header_tooltips/SKILL.md`:
+        - **Account Settings Header**: Master overview tooltip describing contact info, student focus, 2FA, password management, and active session controls.
+        - **Personal Information**: Outlines emergency broadcast usage, report card release notifications, and teacher communication channels.
+        - **Default Student Focus**: Details automatic child selection across dashboard charts, grade transcripts, and attendance.
+        - **Display & Appearance**: Explains daylight vs low-light mode benefits and automatic OS system synchronization.
+        - **Security Protocols**: Covers credential defense, authenticator app/email OTP 2FA, and device session termination.
+        - **Notification Center**: Explains unread highlighting, mark-as-read interactions, and notification categories.
+        - **Account Verified & Subscription**: Clarifies verified institutional status and tier coverage.
+    - [x] **Touch Targets & Form Sizing**: Scaled all card headers and contents from rigid `p-8` to responsive `p-4 sm:p-6 md:p-8`, fluid input padding, rounded-2xl cards, and responsive notification item layout.
+
+- **Parent Login Mobile Responsiveness & Comprehensive Header Tooltip (`/login/parent`)**:
+    - [x] **Header Tooltip**: Integrated `HeaderTooltip` next to "Parent Portal" adhering to the Comprehensive Header Tooltips skill with rich, context-aware information explaining real-time grade tracking, attendance records, and direct school communication.
+    - [x] **Mobile Responsiveness Polish (`RightPanel.tsx`, `ParentLoginForm.tsx`, `TwoFactorForm.tsx`, `page.tsx`)**:
+        - Updated title font sizes from rigid `text-4xl` to responsive `text-2xl sm:text-3xl md:text-4xl` and added descriptive subtitle.
+        - Adjusted outer container padding (`px-3 sm:px-8 py-6 sm:py-12`) and card border radius (`rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-10`) to eliminate excessive margins and prevent screen edge collisions on mobile phones.
+        - Fluidly scaled form inputs, eye toggle buttons, and submit buttons (`h-12 sm:h-14 px-5 sm:px-6 text-sm sm:text-base`) with autocomplete tags.
+        - Made 2FA OTP slots responsive (`w-10 h-12 sm:w-14 sm:h-16 text-lg sm:text-2xl gap-1.5 sm:gap-3`) preventing horizontal overflow on small mobile phone displays.
+
 - **Parent Dashboard List & Grid View Modes (Default: Grid)**:
     - [x] **Linked Students (`/dashboard/parent/my-children`)**:
         - Added `viewMode` toggle (`'grid' | 'list'`) to `PageHeading` with `grid` set as the default view.

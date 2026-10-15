@@ -41,7 +41,8 @@ interface ParentMenuItem {
 }
 
 function getFilteredParentMenuItemsBySection(items: ParentMenuItem[]) {
-  const filtered = items.filter((i) => PARENT_FEATURE_FLAGS[i.featureKey]);
+  // Hide Subscription/billing from mobile drawer, and filter by feature flags
+  const filtered = items.filter((i) => i.featureKey !== "billing" && PARENT_FEATURE_FLAGS[i.featureKey]);
 
   return {
     core: filtered.filter((i) => i.section === "core"),

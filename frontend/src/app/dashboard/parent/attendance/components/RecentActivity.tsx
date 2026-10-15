@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import StatusBadge from './StatusBadge';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 interface Activity {
     id: string;
@@ -49,12 +50,18 @@ export default function RecentActivity({
     return (
         <div className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col h-full">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                    {title}
-                </h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                        {title}
+                    </h3>
+                    <HeaderTooltip 
+                        content="Shows the 5 most recent attendance logs for this student."
+                        side="top"
+                    />
+                </div>
                 <Link
                     href={viewAllHref}
-                    className="text-xs font-bold cursor-pointer text-primary hover:underline"
+                    className="text-xs font-bold cursor-pointer text-orange-600 hover:text-orange-700 transition-colors"
                 >
                     View All
                 </Link>

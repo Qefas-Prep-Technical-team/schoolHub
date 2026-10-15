@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import ParentHeader from './components/ParentHeader';
 import StudentProfile from './components/StudentProfile';
 import AttendanceAlert from './components/AttendanceAlert';
 import AttendanceChart from './components/AttendanceChart';
@@ -16,28 +15,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
+import Breadcrumbs from '../performance/components/Breadcrumbs';
+
 export default function ParentAttendancePage() {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [trendPeriod, setTrendPeriod] = useState('This Semester');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const { selectedChildId } = useParentStore();
     const { data: dashboard, isLoading: loadingDash } = useParentDashboard(selectedChildId);
     const { data: child, isLoading: loadingChild } = useChildDetails(selectedChildId);
 
+    const router = useRouter();
+
     const isLoading = loadingDash || loadingChild;
 
     if (isLoading) {
         return (
-            <div className="flex flex-col flex-1 gap-6 p-4 md:p-8 lg:p-10">
-                <Skeleton className="h-32 w-full rounded-xl" />
+            <div className="flex flex-col flex-1 gap-6 p-2 sm:p-4">
+                <Skeleton className="h-28 w-full rounded-3xl" />
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        <Skeleton className="h-64 w-full rounded-xl" />
-                        <Skeleton className="h-64 w-full rounded-xl" />
+                        <Skeleton className="h-64 w-full rounded-3xl" />
+                        <Skeleton className="h-64 w-full rounded-3xl" />
                     </div>
                     <div className="space-y-6">
-                        <Skeleton className="h-96 w-full rounded-xl" />
-                        <Skeleton className="h-40 w-full rounded-xl" />
+                        <Skeleton className="h-80 w-full rounded-3xl" />
+                        <Skeleton className="h-40 w-full rounded-3xl" />
                     </div>
                 </div>
             </div>
@@ -51,9 +53,19 @@ export default function ParentAttendancePage() {
         imageUrl: child?.profileImage || `https://ui-avatars.com/api/?name=${child?.name}&background=random`,
     };
 
-    const attendanceRate = dashboard?.stats?.attendanceRate ?? 100;
-    
     const attendances = (child as any)?.attendances || [];
+    const presentDays = attendances.filter((a: any) => a.status.toLowerCase() === 'present').length;
+    const lateDays = attendances.filter((a: any) => a.status.toLowerCase() === 'late').length;
+    const absentDays = attendances.filter((a: any) => a.status.toLowerCase() === 'absent').length;
+    const totalRecordedDays = presentDays + lateDays + absentDays;
+
+    // Real-time calculation based on recorded attendance items (present + late / total)
+    // If no records at all, fallback to dashboard rate or 100
+    const calculatedRate = totalRecordedDays > 0
+        ? Math.round(((presentDays + lateDays) / totalRecordedDays) * 100)
+        : (dashboard?.stats?.attendanceRate ?? 100);
+
+    const attendanceRate = calculatedRate;
     const activities = attendances.slice(0, 5).map((a: any) => {
         let dateStr = '';
         const d = new Date(a.date);
@@ -102,85 +114,75 @@ export default function ParentAttendancePage() {
         isCurrent: i === Math.min(breakdown.length, sliceCount) - 1
     }));
     
-    const presentDays = attendances.filter((a: any) => a.status.toLowerCase() === 'present').length;
-    const lateDays = attendances.filter((a: any) => a.status.toLowerCase() === 'late').length;
-    const absentDays = attendances.filter((a: any) => a.status.toLowerCase() === 'absent').length;
-
-    const router = useRouter();
-
     const handleViewDetails = () => {
         setIsDetailsModalOpen(true);
     };
 
     const handleReportAbsence = () => {
-        // Open absence reporting modal
+        setIsDetailsModalOpen(true);
     };
 
     return (
-        <div className="flex h-screen w-full overflow-hidden">
-            {/* Sidebar */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 space-y-8">
+            <Breadcrumbs 
+                items={[
+                    { label: 'Parent Hub', href: '/dashboard/parent' },
+                    { label: 'Attendance', href: '/dashboard/parent/attendance' },
+                ]}
+            />
 
+            {/* Student Profile & Header */}
+            <StudentProfile
+                student={studentData}
+                lastUpdated={`Today, ${format(new Date(), 'h:mm a')}`}
+            />
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col h-full overflow-y-auto relative">
-                {/* Mobile Header */}
-                <ParentHeader onMenuClick={() => setIsSidebarOpen(true)} />
+            {/* Attendance Alert */}
+            <AttendanceAlert
+                attendanceRate={attendanceRate}
+                message={`${studentData.name} has maintained a ${attendanceRate}% attendance record this semester.`}
+            />
 
-                {/* Page Content */}
-                <div className="flex-1 w-[95%] mx-auto py-8 flex flex-col gap-8">
-                    {/* Student Profile */}
-                    <StudentProfile
-                        student={studentData}
-                        lastUpdated={`Today, ${format(new Date(), 'h:mm a')}`}
+            {/* Main Dashboard Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                {/* Left Column */}
+                <div className="lg:col-span-2 flex flex-col gap-6 sm:gap-8">
+                    {/* Attendance Chart */}
+                    <AttendanceChart
+                        attendance={attendanceRate}
+                        stats={{
+                            presentDays: presentDays,
+                            lateDays: lateDays,
+                            absentDays: absentDays,
+                        }}
+                        status={attendanceRate >= 90 ? "excellent" : attendanceRate >= 75 ? "good" : "poor"}
+                        onViewDetails={handleViewDetails}
                     />
 
-                    {/* Attendance Alert */}
-                    <AttendanceAlert
-                        attendanceRate={attendanceRate}
-                        message={`${studentData.name} has maintained a ${attendanceRate}% attendance record this semester.`}
+                    {/* Monthly Trend */}
+                    <MonthlyTrend 
+                        data={monthlyData} 
+                        period={trendPeriod}
+                        onPeriodChange={setTrendPeriod}
+                        trendText={trendText}
                     />
-
-                    {/* Main Dashboard Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Left Column */}
-                        <div className="lg:col-span-2 flex flex-col gap-6">
-                            {/* Attendance Chart */}
-                            <AttendanceChart
-                                attendance={attendanceRate}
-                                stats={{
-                                    presentDays: presentDays,
-                                    lateDays: lateDays,
-                                    absentDays: absentDays,
-                                }}
-                                status={attendanceRate >= 90 ? "excellent" : attendanceRate >= 75 ? "good" : "poor"}
-                                onViewDetails={handleViewDetails}
-                            />
-
-                            {/* Monthly Trend */}
-                            <MonthlyTrend 
-                                data={monthlyData} 
-                                period={trendPeriod}
-                                onPeriodChange={setTrendPeriod}
-                                trendText={trendText}
-                            />
-                        </div>
-
-                        {/* Right Column */}
-                        <div className="flex flex-col gap-6">
-                            {/* Recent Activity */}
-                            <RecentActivity
-                                activities={activities}
-                                viewAllHref="/dashboard/parent/attendance/monthly"
-                            />
-
-                            {/* Quick Contact */}
-                            <QuickContact
-                                onButtonClick={handleReportAbsence}
-                            />
-                        </div>
-                    </div>
                 </div>
-            </main>
+
+                {/* Right Column */}
+                <div className="flex flex-col gap-6 sm:gap-8">
+                    {/* Recent Activity */}
+                    <RecentActivity
+                        activities={activities}
+                        viewAllHref="/dashboard/parent/attendance/monthly"
+                    />
+
+                    {/* Quick Contact */}
+                    <QuickContact
+                        description={`Quickly view breakdown or notify the school if ${studentData.name} will be absent.`}
+                        onButtonClick={handleReportAbsence}
+                    />
+                </div>
+            </div>
 
             {/* Details Modal */}
             <DetailsModal 
@@ -188,6 +190,6 @@ export default function ParentAttendancePage() {
                 onClose={() => setIsDetailsModalOpen(false)} 
                 attendances={attendances} 
             />
-        </div>
+        </main>
     );
 }

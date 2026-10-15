@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { TrendingUp } from 'lucide-react';
 
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
+
 interface MonthlyData {
   month: string;
   attendance: number;
@@ -32,9 +34,15 @@ export default function MonthlyTrend({
   return (
     <div className="bg-white dark:bg-slate-900 rounded-[20px] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white">
-          {title}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            {title}
+          </h3>
+          <HeaderTooltip 
+            content="Displays historical attendance rates grouped by session periods. Hover over any dot on the trend line to view exact attendance percentage for that date."
+            side="top"
+          />
+        </div>
         
         <select
           value={period}

@@ -33,7 +33,7 @@ export default function AttendanceChart({
                 <CircularChart
                     value={attendance}
                     size="lg"
-                    color="#356fe3"
+                    color="#ea580c"
                     label="Present"
                 />
 

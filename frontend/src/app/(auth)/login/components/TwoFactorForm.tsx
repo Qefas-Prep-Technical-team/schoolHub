@@ -102,12 +102,12 @@ export default function TwoFactorForm() {
           <form onSubmit={handleAppSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col items-center justify-center w-full mb-2">
               <InputOTP maxLength={6} value={appCode} onChange={setAppCode}>
-                <InputOTPGroup className="gap-2 sm:gap-3 flex w-full justify-center">
+                <InputOTPGroup className="gap-1.5 sm:gap-3 flex w-full justify-center">
                   {[0, 1, 2, 3, 4, 5].map((index) => (
                     <InputOTPSlot 
                       key={index} 
                       index={index} 
-                      className="w-12 h-14 sm:w-14 sm:h-16 text-2xl font-black rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-sm focus:ring-2 focus:border-transparent transition-all" 
+                      className="w-10 h-12 sm:w-14 sm:h-16 text-lg sm:text-2xl font-black rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-sm focus:ring-2 focus:border-transparent transition-all" 
                     />
                   ))}
                 </InputOTPGroup>
@@ -163,12 +163,12 @@ export default function TwoFactorForm() {
           <form onSubmit={handleEmailSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col items-center justify-center w-full mb-2">
               <InputOTP maxLength={6} value={emailCode} onChange={setEmailCode}>
-                <InputOTPGroup className="gap-2 sm:gap-3 flex w-full justify-center">
+                <InputOTPGroup className="gap-1.5 sm:gap-3 flex w-full justify-center">
                   {[0, 1, 2, 3, 4, 5].map((index) => (
                     <InputOTPSlot 
                       key={index} 
                       index={index} 
-                      className="w-12 h-14 sm:w-14 sm:h-16 text-2xl font-black rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-sm focus:ring-2 focus:border-transparent transition-all" 
+                      className="w-10 h-12 sm:w-14 sm:h-16 text-lg sm:text-2xl font-black rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-sm focus:ring-2 focus:border-transparent transition-all" 
                     />
                   ))}
                 </InputOTPGroup>

@@ -1,6 +1,12 @@
 'use client';
 
-import { X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import StatusBadge from './StatusBadge';
 
 interface DetailsModalProps {
@@ -10,43 +16,40 @@ interface DetailsModalProps {
 }
 
 export default function DetailsModal({ isOpen, onClose, attendances }: DetailsModalProps) {
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-[20px] shadow-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-slate-100 dark:border-slate-800">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Attendance Breakdown</h2>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 rounded-[1.75rem] overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl">
+                <DialogHeader className="p-6 border-b border-slate-100 dark:border-slate-800">
+                    <DialogTitle className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                        Attendance Breakdown
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
+                        Detailed log of all verified session attendance records
+                    </DialogDescription>
+                </DialogHeader>
 
-                {/* Content */}
-                <div className="p-6 overflow-y-auto flex-1">
+                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     {attendances.length === 0 ? (
-                        <div className="text-center py-10 text-slate-500">
-                            No attendance records found.
+                        <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm font-semibold">
+                            No attendance records found for this period.
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {attendances.map((record, index) => {
-                                const status = record.status.toLowerCase();
+                                const status = String(record.status || '').toLowerCase();
                                 const badgeVariant = status === 'present' ? 'success' : status === 'late' ? 'warning' : 'default';
                                 
                                 return (
-                                    <div key={record.id || index} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                                    <div 
+                                        key={record.id || index} 
+                                        className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                    >
                                         <div>
-                                            <p className="font-semibold text-slate-900 dark:text-white">
+                                            <p className="font-bold text-sm text-slate-900 dark:text-white">
                                                 {new Date(record.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                             </p>
                                             {record.remarks && (
-                                                <p className="text-sm text-slate-500 mt-1">{record.remarks}</p>
+                                                <p className="text-xs text-slate-500 mt-0.5">{record.remarks}</p>
                                             )}
                                         </div>
                                         <StatusBadge 
@@ -60,8 +63,7 @@ export default function DetailsModal({ isOpen, onClose, attendances }: DetailsMo
                         </div>
                     )}
                 </div>
-
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

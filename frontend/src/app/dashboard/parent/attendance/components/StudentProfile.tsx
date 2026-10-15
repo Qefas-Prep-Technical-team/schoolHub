@@ -13,49 +13,51 @@ interface StudentProfileProps {
 
 export default function StudentProfile({ student, lastUpdated }: StudentProfileProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative size-16 md:size-20 shrink-0">
-            <Image
-              src={student.imageUrl}
-              alt={`Student portrait of ${student.name}`}
-              fill
-              className="rounded-full shadow-sm border-2 border-white dark:border-gray-700 object-cover"
-            />
-          </div>
-          
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">
-              Attendance Overview
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+      <div className="flex items-center gap-4">
+        <div className="relative size-16 sm:size-20 shrink-0 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-md">
+          <Image
+            src={student.imageUrl}
+            alt={`Student portrait of ${student.name}`}
+            fill
+            className="object-cover"
+          />
+        </div>
+        
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
+              Attendance
             </h1>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
-              <p className="text-base text-gray-500 dark:text-gray-400 font-medium">
-                {student.name} • {student.grade}
-              </p>
-              <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Student ID: {student.studentId}
-              </p>
-            </div>
+            <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+              Overview
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-bold">
+              {student.name}
+            </p>
+            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 px-2 py-0.5 rounded-lg border border-orange-100 dark:border-orange-900/30">
+              {student.grade}
+            </span>
+            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+              ID: {student.studentId}
+            </p>
           </div>
         </div>
       </div>
       
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col items-end mr-2">
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">
-            Last Updated
+      <div className="flex items-center gap-4 self-start sm:self-auto">
+        <div className="flex flex-col items-start sm:items-end">
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
+            Last Synced
           </span>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
             {lastUpdated}
           </span>
         </div>
-        
-        <button className="flex items-center gap-2 px-4 h-10 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-shadow text-sm font-semibold text-slate-700 dark:text-slate-200">
-          <Download className="h-4 w-4" />
-          <span className="hidden sm:inline">Report</span>
-        </button>
       </div>
     </div>
   );
