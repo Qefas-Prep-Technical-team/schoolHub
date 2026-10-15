@@ -94,6 +94,7 @@ const Footer: FC = () => {
                         <ul className="space-y-2">
                             <li><Link className="text-slate-400 hover:text-white transition-colors" href="/terms">Terms of Service</Link></li>
                             <li><Link className="text-slate-400 hover:text-white transition-colors" href="/privacy">Privacy Policy</Link></li>
+                            <li><Link className="text-slate-400 hover:text-white transition-colors" href="/data-deletion">User Data Deletion</Link></li>
                         </ul>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 'use client'
+
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
@@ -12,29 +13,29 @@ export default function PerformanceCard() {
   const dash = `${avg}, 100`
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-[20px] shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow cursor-pointer relative group">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[20px] shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow cursor-pointer relative group">
       <Link href="/dashboard/parent/performance" className="absolute inset-0 z-10" />
       {/* Top Header Section */}
-      <div className="bg-indigo-500 p-4 flex items-center justify-between">
-        <span className="text-white font-semibold text-[15px] tracking-wide">Performance</span>
-        <div className="bg-white/20 p-1.5 rounded-lg">
-          <GraduationCap className="w-4 h-4 text-white" />
+      <div className="bg-indigo-500 p-3 sm:p-4 flex items-center justify-between">
+        <span className="text-white font-bold text-xs sm:text-[15px] tracking-wide truncate">Performance</span>
+        <div className="bg-white/20 p-1 sm:p-1.5 rounded-lg shrink-0">
+          <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
         </div>
       </div>
       
       {/* Bottom Content Section */}
-      <div className="p-5 flex items-center justify-between flex-1">
+      <div className="p-3 sm:p-5 flex items-center justify-between flex-1 gap-2">
         <div>
-          {isLoading ? <Skeleton className="h-10 w-20 mb-1" /> : (
-            <span className="text-3xl font-black text-slate-800 dark:text-white leading-none block">{avg}%</span>
+          {isLoading ? <Skeleton className="h-7 sm:h-9 w-14 sm:w-20 mb-1" /> : (
+            <span className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white leading-none block">{avg}%</span>
           )}
-          <span className="text-xs text-slate-400 font-medium mt-1 block">Average</span>
+          <span className="text-[10px] sm:text-xs text-slate-400 font-medium mt-1 block">Average</span>
         </div>
 
         {/* Radial Progress */}
-        <div className="relative size-16">
+        <div className="relative size-12 sm:size-16 shrink-0">
           {isLoading ? (
-            <Skeleton className="size-16 rounded-full" />
+            <Skeleton className="size-full rounded-full" />
           ) : (
             <>
               <svg className="size-full -rotate-90" viewBox="0 0 36 36">
@@ -55,7 +56,7 @@ export default function PerformanceCard() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">{avg}%</span>
+                <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white">{avg}%</span>
               </div>
             </>
           )}

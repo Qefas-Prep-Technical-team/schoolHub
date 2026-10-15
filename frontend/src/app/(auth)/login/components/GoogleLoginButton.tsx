@@ -1,95 +1,98 @@
 "use client";
 
-import { getSupabase } from "@/lib/supabaseClient";
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
-import { toast } from "react-toastify";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 
 interface GoogleLoginButtonProps {
     userType: string;
+    pill?: boolean;
+    className?: string;
+    mode?: "signin" | "signup";
+    showDivider?: boolean;
 }
 
-export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) {
+export default function GoogleLoginButton({ 
+    userType, 
+    pill = false, 
+    className = "", 
+    mode = "signin",
+    showDivider = true,
+}: GoogleLoginButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const { data: settings, isLoading: settingsLoading } = usePublicPlatformSettings();
 
-    const googleAuthEnabledGlobal = String(settings?.google_auth_enabled) === "true";
+    const googleAuthEnabledGlobal = settings ? String(settings.google_auth_enabled) !== "false" : true;
     const googleLoginFeature = settings?.google_login_feature as Record<string, boolean> | undefined;
     
     // Map URL role to backend feature role
     const roleMap: Record<string, string> = {
+        'school': 'admin',
         'school-admin': 'admin',
+        'admin': 'admin',
         'teacher': 'teacher',
         'student': 'student',
-        'parent': 'parent'
+        'parent': 'parent',
+        'staff': 'staff',
     };
     const backendRole = roleMap[userType.toLowerCase()] || userType.toLowerCase();
     
     const googleAuthEnabledForRole = googleLoginFeature ? googleLoginFeature[backendRole] !== false : true;
-    const isEnabled = !!settings && googleAuthEnabledGlobal && googleAuthEnabledForRole;
+    const isEnabled = googleAuthEnabledGlobal && googleAuthEnabledForRole;
 
-    if (settingsLoading) return <div className="h-14 w-full bg-slate-50 dark:bg-slate-800 animate-pulse rounded-xl" />;
+    if (settingsLoading) {
+        return (
+            <div className={`h-14 w-full bg-slate-100 dark:bg-slate-800 animate-pulse ${pill ? 'rounded-full' : 'rounded-2xl'} my-4`} />
+        );
+    }
+
     if (!isEnabled) return null;
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleLogin = () => {
         setIsLoading(true);
-        try {
-            const supabaseClient = getSupabase();
-            const { error } = await supabaseClient.auth.signInWithOAuth({
-
-                provider: "google",
-                options: {
-                    redirectTo: `${window.location.origin}/login/callback?role=${userType}`,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    },
-                },
-            });
-
-            if (error) throw error;
-        } catch (error: unknown) {
-            console.error("Google login error:", error);
-            toast.error("Login failed");
-            setIsLoading(false);
-        }
+        window.location.href = `/api/auth/google?role=${encodeURIComponent(backendRole)}`;
     };
 
+    const isSignUp = mode === "signup";
+
     return (
-        <>
-            <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+        <div className={`w-full ${className}`}>
+            {showDivider && (
+                <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-slate-200 dark:border-slate-800" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white dark:bg-slate-900 px-4 text-slate-400 dark:text-slate-500 font-bold tracking-widest text-[10px]">
+                            {isSignUp ? "Or sign up with" : "Or continue with"}
+                        </span>
+                    </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white dark:bg-slate-900 px-4 text-gray-400 font-bold tracking-widest">
-                        Or continue with
-                    </span>
-                </div>
-            </div>
+            )}
             <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={isLoading}
-                className="flex items-center justify-center w-full h-14 gap-3 cursor-pointer bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 group relative overflow-hidden"
+                className={`flex items-center justify-center w-full h-14 gap-3 cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 ${pill ? 'rounded-full' : 'rounded-2xl'} hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden`}
             >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
                 
                 {isLoading ? (
                     <div className="flex items-center gap-2">
                         <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm font-bold text-gray-600 dark:text-gray-300">Connecting Google...</span>
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                            {isSignUp ? "Connecting Google..." : "Connecting Google..."}
+                        </span>
                     </div>
                 ) : (
                     <>
-                        <FcGoogle size={24} className="group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-wide">
-                            Continue with Google
+                        <FcGoogle size={22} className="group-hover:scale-110 transition-transform duration-200" />
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200 tracking-wide">
+                            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
                         </span>
                     </>
                 )}
             </button>
-        </>
+        </div>
     );
 }

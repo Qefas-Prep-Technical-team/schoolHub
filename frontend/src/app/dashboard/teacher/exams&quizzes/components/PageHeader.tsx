@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HeaderTooltip } from "@/app/dashboard/teacher/components/dashboard/HeaderTooltip";
 
 interface PageHeaderProps {
   title: string;
@@ -18,15 +19,18 @@ export default function PageHeader({ title, onCreateNew, onAddPaper, activeTab }
   const baseItemStyle = "flex items-center gap-2 cursor-pointer text-xs font-semibold py-2";
 
   return (
-    <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4 mb-6">
-      <h1 className="text-slate-900 dark:text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
-        {title}
-      </h1>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex items-center gap-2">
+        <h1 className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-black leading-tight tracking-tight">
+          {title}
+        </h1>
+        <HeaderTooltip content="Centralized assessment command center for authoring, scheduling, and reviewing single-paper examinations, quizzes, continuous assessments (CA), and assignments across your classes." />
+      </div>
       
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center cursor-pointer justify-center gap-2 rounded-xl h-10 px-4 text-xs font-bold shadow-sm transition-all duration-300 border hover:-translate-y-0.5 active:scale-95 whitespace-nowrap bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500 hover:shadow-emerald-900/20">
+            <button className="w-full sm:w-auto flex items-center cursor-pointer justify-center gap-2 rounded-xl h-10 px-4 text-xs font-bold shadow-sm transition-all duration-300 border hover:-translate-y-0.5 active:scale-95 whitespace-nowrap bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500 hover:shadow-emerald-900/20">
               <Plus className="w-4 h-4" strokeWidth={3} />
               <span>Create New</span>
               <ChevronDown className="w-4 h-4 opacity-70" strokeWidth={2.5} />

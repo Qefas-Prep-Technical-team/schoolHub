@@ -9,6 +9,7 @@ import {
     Moon
 } from 'lucide-react';
 import Image from 'next/image';
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 export default function Header() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -55,10 +56,7 @@ export default function Header() {
                     </button>
 
                     {/* Notifications */}
-                    <button className="relative p-2 text-text-secondary hover:text-primary dark:text-text-secondary-dark dark:hover:text-white transition-colors">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute top-1.5 right-1.5 size-2 bg-danger rounded-full border-2 border-surface-light dark:border-surface-dark" />
-                    </button>
+                    <NotificationCenter />
 
                     {/* Profile */}
                     <div className="flex items-center gap-3 cursor-pointer">

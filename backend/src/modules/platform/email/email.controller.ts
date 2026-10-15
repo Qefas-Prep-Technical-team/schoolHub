@@ -90,6 +90,31 @@ export const testEmailTemplate = async (req: Request, res: Response) => {
           time: "Oct 1, 2026, 10:30 AM"
         });
         break;
+      case "account-deactivation-confirmation":
+        await authService.sendAccountDeactivationConfirmationEmail({
+          email,
+          name: "Jane Doe",
+          role: "Student",
+          ticketId: `DEACT-${Date.now().toString(36).toUpperCase()}-TEST`,
+          device: "Chrome 128 • Windows PC",
+          location: "Lagos, Nigeria",
+          time: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ", 10:30 AM",
+        });
+        break;
+      case "account-deactivation-request":
+        const testTicketId = `DEL-${Date.now().toString(36).toUpperCase()}-TEST`;
+        const testFrontendUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+        await authService.sendAccountDeletionEmail({
+          email,
+          name: "Jane Doe",
+          role: "Student",
+          ticketId: testTicketId,
+          device: "iPhone 15 Pro • Safari 17.4",
+          location: "Lagos, Nigeria",
+          time: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ", 10:30 AM",
+          deactivateUrl: `${testFrontendUrl}/data-deletion/confirm?token=demo_test_token&ticketId=${testTicketId}`,
+        });
+        break;
       default:
         return res.status(400).json({ success: false, message: "Unknown template ID." });
     }

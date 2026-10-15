@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 import TwoFactorSetup from '@/components/auth/TwoFactorSetup';
+import DeactivateAccountSection from '@/components/auth/DeactivateAccountSection';
 import ImageUpload from '@/components/reusable/ImageUpload';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -535,6 +536,9 @@ export default function SettingsPage() {
                     </Card>
 
                     <DeviceSessions />
+
+                    {/* Account Deactivation / Danger Zone */}
+                    <DeactivateAccountSection userRole="admin" />
                 </TabsContent>
 
                 {/* Profile Settings */}

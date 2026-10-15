@@ -39,7 +39,7 @@ export default function AssignmentCard({
         <motion.div
             onClick={() => onViewDetails?.(assignment.id)}
             whileHover={{ y: -5, scale: 1.01 }}
-            className="group relative flex flex-col p-6 md:p-8 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10 shadow-sm hover:shadow-md hover:shadow-emerald-500/10 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300 overflow-hidden cursor-pointer"
+            className="group relative flex flex-col p-4 sm:p-6 md:p-8 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/40 shadow-sm hover:shadow-md hover:shadow-emerald-500/10 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300 overflow-hidden cursor-pointer"
         >
 
             <div className="flex justify-between items-start mb-6">

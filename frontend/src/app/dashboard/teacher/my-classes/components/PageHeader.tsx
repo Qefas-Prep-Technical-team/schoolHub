@@ -5,6 +5,7 @@ import { Plus, GraduationCap } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCreateLinkRequest } from '@/lib/api/hooks/useLinks';
 import { toast } from 'react-toastify';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
 interface PageHeaderProps {
     title: string;
@@ -49,19 +50,25 @@ export default function PageHeader({ title, description, isPersonal }: PageHeade
     };
 
     return (
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-                    {title}
-                </h1>
-                <p className="text-base text-gray-500 dark:text-gray-400 mt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+                        {title}
+                    </h1>
+                    <HeaderTooltip 
+                        content="Your centralized catalog of assigned teaching classes and curriculum sections. Use this registry to manage classroom enrollments, inspect cohort schedules, and connect to new institutional class sections." 
+                        size={15} 
+                    />
+                </div>
+                <p className="text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
                     {description}
                 </p>
             </div>
             
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                    <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-500/90 transition-colors font-semibold text-sm">
+                    <button className="flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-emerald-500 text-white rounded-xl sm:rounded-lg hover:bg-emerald-500/90 transition-colors font-semibold text-xs sm:text-sm shadow-sm w-full sm:w-auto shrink-0">
                         <Plus className="w-4 h-4" />
                         <span>{actionText}</span>
                     </button>

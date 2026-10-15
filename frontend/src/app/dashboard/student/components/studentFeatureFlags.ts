@@ -22,7 +22,7 @@ export const STUDENT_FEATURE_FLAGS = {
   // === OPTIONAL/ADVANCED FEATURES ===
   library: false,
   payments: false,
-  billing: true,
+  billing: false,
   aiStudy: false,
   timetable: false,
 };

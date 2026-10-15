@@ -4,7 +4,7 @@ import { Resend } from "resend";
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { generateAccessToken } from "../../services/authService";
+import { generateAccessToken, generateRefreshToken } from "../../services/authService";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { UserRole } from "@prisma/client";
 import { enforceStudentLimit } from "../subscription/quota.helpers";
@@ -13,6 +13,8 @@ import { SubscriptionComplianceService } from "../subscription/subscription-comp
 import { getSingleString } from "../../utils/request-utils";
 import { handleError } from "../../utils/error-handler";
 import { buildEmail, ctaButton, secondaryLink, otpBox, infoCard, receiptRow } from "../../utils/email-template";
+import { createNotification } from "../notification/notification.service";
+import { generateStaffToken } from "../platform/auth/auth.service";
 
 
 // Get student by code (for parent to verify before linking)
@@ -451,7 +453,7 @@ export const loginUser = async (email: string, password: string) => {
   if (student) {
     if (!student.password)
       throw new Error(
-        "This account is linked to Google. Please use Google Login.",
+        "This account uses social sign-in. Please sign in with Google or Facebook, or reset your password to create an access password.",
       );
     const match = await bcrypt.compare(password, student.password);
     if (!match) throw new Error("Invalid credentials");
@@ -466,7 +468,9 @@ export const loginUser = async (email: string, password: string) => {
   if (teacher) {
     // Guard: Ensure password exists
     if (!teacher.password) {
-      throw new Error("Account is not set up with a password");
+      throw new Error(
+        "This account uses social sign-in. Please sign in with Google or Facebook, or reset your password to create an access password.",
+      );
     }
     const match = await bcrypt.compare(password, teacher.password);
     if (!match) throw new Error("Invalid credentials");
@@ -484,7 +488,7 @@ export const loginUser = async (email: string, password: string) => {
   if (admin) {
     if (!admin.password)
       throw new Error(
-        "This account is linked to Google. Please use Google Login.",
+        "This account uses social sign-in. Please sign in with Google or Facebook, or reset your password to create an access password.",
       );
     const match = await bcrypt.compare(password, admin.password);
     if (!match) throw new Error("Invalid credentials");
@@ -503,7 +507,7 @@ export const loginUser = async (email: string, password: string) => {
   if (parent) {
     if (!parent.password)
       throw new Error(
-        "This account is linked to Google. Please use Google Login.",
+        "This account uses social sign-in. Please sign in with Google or Facebook, or reset your password to create an access password.",
       );
     const match = await bcrypt.compare(password, parent.password);
     if (!match) throw new Error("Invalid credentials");
@@ -611,8 +615,9 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
 
 
 export const googleAuthService = async (
-  supabaseToken: string,
-  userRole?: UserRole,
+  supabaseTokenOrData: string | { googleId: string; email: string; name?: string; emailVerified?: boolean; inviteToken?: string },
+  userRole?: UserRole | "STAFF",
+  deviceInfo?: any,
 ) => {
   // Check if Google Auth is enabled in platform settings
   const googleAuthSetting = await prisma.platformSettings.findUnique({
@@ -623,8 +628,8 @@ export const googleAuthService = async (
     throw new Error("Google Authentication is currently deactivated by the platform administrator.");
   }
 
-  // Check if Google Auth is enabled for this specific role
-  if (userRole) {
+  // Check if Google Auth is enabled for this specific role (if not STAFF)
+  if (userRole && (userRole as string) !== "STAFF") {
     const googleAuthFeature = await prisma.platformFeature.findUnique({
       where: { featureKey: "googleLogin" }
     });
@@ -637,60 +642,146 @@ export const googleAuthService = async (
     }
   }
 
-  // Verify Supabase's own signed JWT (the session.access_token from the frontend).
-  // This is always present and contains the verified Google user data embedded by Supabase.
-  // We verify it with our SUPABASE_JWT_SECRET from the Supabase Dashboard → Settings → API.
-  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
-  if (!jwtSecret) {
-    throw new Error("SUPABASE_JWT_SECRET is not configured on the server.");
-  }
+  let email: string | undefined;
+  let name: string | undefined;
+  let googleId: string | undefined;
+  let inviteToken: string | undefined;
 
-  let decoded: any;
-  try {
-    const parts = supabaseToken.split('.');
-    if (parts.length === 3) {
-      const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
-      console.log("Token Header:", header);
+  if (typeof supabaseTokenOrData === "object" && supabaseTokenOrData !== null) {
+    email = supabaseTokenOrData.email?.toLowerCase().trim();
+    name = supabaseTokenOrData.name;
+    googleId = supabaseTokenOrData.googleId;
+    inviteToken = supabaseTokenOrData.inviteToken?.trim();
+    if (supabaseTokenOrData.emailVerified === false) {
+      throw new Error("Google account email is not verified");
+    }
+  } else if (typeof supabaseTokenOrData === "string") {
+    // Legacy Supabase JWT fallback
+    const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("SUPABASE_JWT_SECRET is not configured on the server.");
     }
 
-    // Support both HS256 (standard) and ES256 (asymmetric)
-    decoded = jwt.verify(supabaseToken, process.env.SUPABASE_JWT_SECRET!, {
-      algorithms: ['HS256', 'ES256']
-    });
-  } catch (error: any) {
-    console.error("Supabase JWT Verification Failed:", {
-      error: error.message,
-      name: error.name,
-      secretSet: !!process.env.SUPABASE_JWT_SECRET,
-      tokenLength: supabaseToken?.length
-    });
-    throw new Error("Invalid or expired session token");
-  }
+    let decoded: any;
+    try {
+      decoded = jwt.verify(supabaseTokenOrData, jwtSecret, {
+        algorithms: ["HS256", "ES256"]
+      });
+    } catch (error: any) {
+      console.error("Supabase JWT Verification Failed:", {
+        error: error.message,
+        name: error.name,
+      });
+      throw new Error("Invalid or expired session token");
+    }
 
-  // Extract user info from the Supabase JWT payload
-  const email: string | undefined = decoded.email;
-  const userMeta = decoded.user_metadata || {};
-  const name: string | undefined = userMeta.full_name || userMeta.name;
-  const googleId: string | undefined = userMeta.provider_id || userMeta.sub;
+    email = decoded.email?.toLowerCase().trim();
+    const userMeta = decoded.user_metadata || {};
+    name = userMeta.full_name || userMeta.name;
+    googleId = userMeta.provider_id || userMeta.sub;
+  }
 
   if (!email) throw new Error("Google account must have an email");
 
+  // Handle Staff Invitation Token Acceptance
+  if (inviteToken) {
+    const invitedStaff = await prisma.platformStaff.findUnique({
+      where: { inviteToken }
+    });
+
+    if (!invitedStaff || !invitedStaff.inviteExpires || invitedStaff.inviteExpires < new Date()) {
+      throw new Error("Invalid or expired staff invitation link.");
+    }
+
+    const staff = await prisma.platformStaff.update({
+      where: { id: invitedStaff.id },
+      data: {
+        googleId,
+        isActive: true,
+        inviteToken: null,
+        inviteExpires: null,
+      }
+    });
+
+    try {
+      await prisma.platformActivityLog.create({
+        data: {
+          staffId: staff.id,
+          action: "STAFF_INVITE_ACCEPTED_GOOGLE",
+          entityType: "PlatformStaff",
+          entityId: staff.id,
+          details: { email: staff.email, role: staff.role }
+        }
+      });
+    } catch (logErr) {
+      console.error("Failed to log activity log for staff invite acceptance:", logErr);
+    }
+
+    const staffToken = generateStaffToken({
+      id: staff.id,
+      email: staff.email,
+      role: staff.role
+    });
+
+    return {
+      user: staff,
+      token: staffToken,
+      accessToken: staffToken,
+      refreshToken: null,
+      userRole: "STAFF" as any,
+      isNewUser: false,
+      isPlatformStaff: true,
+    };
+  }
+
+  // Check PlatformStaff if userRole is STAFF
+  if ((userRole as string) === "STAFF") {
+    const staff = await prisma.platformStaff.findFirst({
+      where: { OR: [{ googleId: googleId || undefined }, { email }] }
+    });
+    if (!staff) {
+      throw new Error("No platform staff account found for this Google email. Access must be granted by an administrator.");
+    }
+    if (!staff.isActive) {
+      throw new Error("Your staff account has been deactivated.");
+    }
+    if (!staff.googleId && googleId) {
+      await prisma.platformStaff.update({
+        where: { id: staff.id },
+        data: { googleId }
+      });
+    }
+    const staffToken = generateStaffToken({
+      id: staff.id,
+      email: staff.email,
+      role: staff.role
+    });
+    return {
+      user: staff,
+      token: staffToken,
+      accessToken: staffToken,
+      refreshToken: null,
+      userRole: "STAFF" as any,
+      isNewUser: false,
+      isPlatformStaff: true,
+    };
+  }
+
   let user: any;
-  let actualRole: UserRole = userRole as UserRole;
+  let requestedRole: UserRole = (userRole as UserRole) || UserRole.STUDENT;
+  let actualRole: UserRole = requestedRole;
 
-
-  // Global lookup to detect "Wrong Portal" logins
+  // Global lookup to detect "Wrong Portal" logins or existing account linking
   const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
-    prisma.student.findFirst({ where: { OR: [{ googleId }, { email }] } }),
-    prisma.teacher.findFirst({ where: { OR: [{ googleId }, { email }] } }),
-    prisma.admin.findFirst({ where: { OR: [{ googleId }, { email }] }, include: { schoolAdmins: true } }),
-    prisma.parent.findFirst({ where: { OR: [{ googleId }, { email }] } }),
+    prisma.student.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
+    prisma.teacher.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
+    prisma.admin.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] }, include: { schoolAdmins: true } }),
+    prisma.parent.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
   ]);
 
   const existingUser = existingStudent || existingTeacher || existingAdmin || existingParent;
 
   if (existingUser) {
-    // Check if they exist in the exact role they are trying to log in as
     let foundInRequestedRole = false;
 
     if (userRole === UserRole.STUDENT && existingStudent) {
@@ -705,10 +796,15 @@ export const googleAuthService = async (
     } else if (userRole === UserRole.PARENT && existingParent) {
       user = existingParent;
       foundInRequestedRole = true;
+    } else if (!userRole) {
+      // If no portal role was specified, accept the existing account's role
+      if (existingStudent) { user = existingStudent; actualRole = UserRole.STUDENT; foundInRequestedRole = true; }
+      else if (existingTeacher) { user = existingTeacher; actualRole = UserRole.TEACHER; foundInRequestedRole = true; }
+      else if (existingAdmin) { user = existingAdmin; actualRole = UserRole.ADMIN; foundInRequestedRole = true; }
+      else if (existingParent) { user = existingParent; actualRole = UserRole.PARENT; foundInRequestedRole = true; }
     }
 
     if (!foundInRequestedRole) {
-      // Find what role they actually are to give a helpful error message
       let detectedRole = "";
       if (existingAdmin) detectedRole = "School Admin";
       else if (existingTeacher) detectedRole = "Teacher";
@@ -718,23 +814,28 @@ export const googleAuthService = async (
       throw new Error(`This email is registered as a ${detectedRole}. Please login through the correct portal.`);
     }
 
-    actualRole = userRole as UserRole; // They are in the correct portal
+    if (userRole) {
+      actualRole = userRole as UserRole;
+    }
 
-    // Link Google ID if not already linked
+    // Check account active status
+    if (user.isActive === false || user.status === "DEACTIVATED" || user.status === "SUSPENDED") {
+      throw new Error("Your account has been deactivated. Please contact your school administrator or support.");
+    }
+
+    // Link Google ID if not already linked (safe because email_verified is true)
     if (!user.googleId && googleId) {
       const updateData = { googleId, authProvider: "GOOGLE", verified: true };
       if (actualRole === UserRole.STUDENT) user = await prisma.student.update({ where: { id: user.id }, data: updateData });
       else if (actualRole === UserRole.TEACHER) user = await prisma.teacher.update({ where: { id: user.id }, data: updateData });
-      else if (actualRole === UserRole.ADMIN) user = await prisma.admin.update({ where: { id: user.id }, data: { ...updateData, status: "APPROVED" } });
+      else if (actualRole === UserRole.ADMIN) user = await prisma.admin.update({ where: { id: user.id }, data: updateData });
       else if (actualRole === UserRole.PARENT) user = await prisma.parent.update({ where: { id: user.id }, data: updateData });
     }
   } else {
-    // If user doesn't exist, create them in the requested role
-    if (!userRole) {
-      throw new Error("No user role provided. If you are a new user, please sign up through the registration page.");
-    }
+    // If user doesn't exist, create them in the requested role (defaulting to STUDENT)
+    actualRole = (userRole as UserRole) || UserRole.STUDENT;
 
-    switch (userRole) {
+    switch (actualRole) {
       case UserRole.STUDENT: {
         const studentCode = await generateUniqueCode(prisma, "student", name || "Student");
         user = await prisma.student.create({
@@ -745,6 +846,8 @@ export const googleAuthService = async (
             authProvider: "GOOGLE",
             studentCode,
             role: UserRole.STUDENT,
+            status: "ACTIVE",
+            isActive: true,
             verified: true,
             acceptedTerms: true,
             termsAcceptedAt: new Date(),
@@ -764,6 +867,8 @@ export const googleAuthService = async (
             authProvider: "GOOGLE",
             teacherCode,
             role: UserRole.TEACHER,
+            status: "ACTIVE",
+            isActive: true,
             verified: true,
             acceptedTerms: true,
             termsAcceptedAt: new Date(),
@@ -784,7 +889,8 @@ export const googleAuthService = async (
             adminCode,
             role: UserRole.ADMIN,
             verified: true,
-            status: "APPROVED",
+            status: "PENDING",
+            isActive: true,
             acceptedTerms: true,
             termsAcceptedAt: new Date(),
           },
@@ -803,6 +909,8 @@ export const googleAuthService = async (
             authProvider: "GOOGLE",
             parentCode,
             role: UserRole.PARENT,
+            status: "ACTIVE",
+            isActive: true,
             verified: true,
             acceptedTerms: true,
             termsAcceptedAt: new Date(),
@@ -813,11 +921,12 @@ export const googleAuthService = async (
       }
 
       default:
-        throw new Error(`Google Login not supported for role: ${userRole}`);
+        throw new Error(`Google Login not supported for role: ${actualRole}`);
     }
   }
 
   const token = generateAccessToken(user.id, actualRole);
+  const refreshToken = await generateRefreshToken(user.id, actualRole, deviceInfo);
 
   // Real-time subscription compliance check
   await SubscriptionComplianceService.verifyAndSyncStatus({
@@ -826,7 +935,443 @@ export const googleAuthService = async (
     schoolId: user.schoolId || (user as any).schoolAdmins?.[0]?.schoolId || null
   });
 
-  return { user, token };
+  // If this is a newly registered user via Google, dispatch welcome email and notification
+  if (!existingUser) {
+    try {
+      const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+      sendWelcomeEmail({
+        email: user.email,
+        name: (user as any).name || (user as any).fullName || "User",
+        role: actualRole.toLowerCase(),
+        loginUrl: `${frontendUrl}/login`,
+        studentCode: (user as any).studentCode,
+        teacherCode: (user as any).teacherCode,
+        adminCode: (user as any).adminCode,
+        parentCode: (user as any).parentCode,
+      }).catch((mailErr) => {
+        console.error("Failed to send welcome email for Google registration:", mailErr);
+      });
+
+      createNotification({
+        recipientType: actualRole as any,
+        recipientId: user.id,
+        type: "GENERAL",
+        title: "Welcome to Qefas Hub",
+        message: `Welcome to Qefas Hub! Your ${actualRole.toLowerCase()} account has been created via Google Sign-In and is ready to go.`,
+      }).catch(console.error);
+    } catch (notifyErr) {
+      console.error("Failed to dispatch welcome communications for Google registration:", notifyErr);
+    }
+  }
+
+  return {
+    user,
+    token,
+    accessToken: token,
+    refreshToken,
+    userRole: actualRole,
+    isNewUser: !existingUser,
+  };
+};
+
+export const facebookAuthService = async (
+  data: { facebookId: string; email?: string | null; name?: string; inviteToken?: string },
+  userRole?: UserRole | "STAFF",
+  deviceInfo?: any,
+) => {
+  const facebookId = data.facebookId?.trim();
+  const email = data.email?.toLowerCase().trim();
+  const name = data.name?.trim();
+  const inviteToken = data.inviteToken?.trim();
+
+  if (!facebookId) {
+    throw new Error("Facebook ID is required.");
+  }
+
+  // Handle Staff Invitation Token Acceptance
+  if (inviteToken) {
+    const invitedStaff = await prisma.platformStaff.findUnique({
+      where: { inviteToken }
+    });
+
+    if (!invitedStaff || !invitedStaff.inviteExpires || invitedStaff.inviteExpires < new Date()) {
+      throw new Error("Invalid or expired staff invitation link.");
+    }
+
+    const staff = await prisma.platformStaff.update({
+      where: { id: invitedStaff.id },
+      data: {
+        facebookId,
+        isActive: true,
+        inviteToken: null,
+        inviteExpires: null,
+      }
+    });
+
+    try {
+      await prisma.platformActivityLog.create({
+        data: {
+          staffId: staff.id,
+          action: "STAFF_INVITE_ACCEPTED_FACEBOOK",
+          entityType: "PlatformStaff",
+          entityId: staff.id,
+          details: { email: staff.email, role: staff.role }
+        }
+      });
+    } catch (logErr) {
+      console.error("Failed to log activity log for staff invite acceptance:", logErr);
+    }
+
+    const staffToken = generateStaffToken({
+      id: staff.id,
+      email: staff.email,
+      role: staff.role
+    });
+
+    return {
+      user: staff,
+      token: staffToken,
+      accessToken: staffToken,
+      refreshToken: null,
+      userRole: "STAFF" as any,
+      isNewUser: false,
+      isPlatformStaff: true,
+    };
+  }
+
+  // 1. Check if Facebook Auth is enabled globally in platform settings
+  const fbAuthSetting = await prisma.platformSettings.findUnique({
+    where: { key: "facebook_auth_enabled" }
+  });
+
+  if (fbAuthSetting && fbAuthSetting.value === "false") {
+    throw new Error("Facebook Authentication is currently deactivated by the platform administrator.");
+  }
+
+  // 2. Check if Facebook Auth is enabled for this specific role (if not STAFF)
+  if (userRole && (userRole as string) !== "STAFF") {
+    const fbAuthFeature = await prisma.platformFeature.findUnique({
+      where: { featureKey: "facebookLogin" }
+    });
+
+    if (fbAuthFeature) {
+      const roleKey = `${userRole.toLowerCase()}Enabled` as keyof typeof fbAuthFeature;
+      if (fbAuthFeature[roleKey] === false) {
+        throw new Error(`Facebook Authentication is deactivated for ${userRole}s.`);
+      }
+    }
+  }
+
+  // 3. Handle STAFF role for Operations Console SSO
+  if ((userRole as string) === "STAFF") {
+    let staff = await prisma.platformStaff.findFirst({
+      where: { facebookId }
+    });
+
+    if (!staff && email) {
+      const staffByEmail = await prisma.platformStaff.findFirst({ where: { email } });
+      if (staffByEmail) {
+        throw new Error(
+          "An account with this email already exists. Please sign in with your access key, then connect Facebook from your console settings."
+        );
+      }
+    }
+
+    if (!staff) {
+      throw new Error(
+        "No platform staff account found for this Facebook account. Access must be granted by an administrator."
+      );
+    }
+
+    if (!staff.isActive) {
+      throw new Error("Your staff account has been deactivated.");
+    }
+
+    const staffToken = generateStaffToken({
+      id: staff.id,
+      email: staff.email,
+      role: staff.role
+    });
+
+    return {
+      user: staff,
+      token: staffToken,
+      accessToken: staffToken,
+      refreshToken: null,
+      userRole: "STAFF" as any,
+      isNewUser: false,
+      isPlatformStaff: true,
+    };
+  }
+
+  // 4. Global lookup by facebookId across all standard roles
+  const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+    prisma.student.findFirst({ where: { facebookId } }),
+    prisma.teacher.findFirst({ where: { facebookId } }),
+    prisma.admin.findFirst({ where: { facebookId }, include: { schoolAdmins: true } }),
+    prisma.parent.findFirst({ where: { facebookId } }),
+  ]);
+
+  const existingFbUser = existingStudent || existingTeacher || existingAdmin || existingParent;
+
+  let user: any;
+  let requestedRole: UserRole = (userRole as UserRole) || UserRole.STUDENT;
+  let actualRole: UserRole = requestedRole;
+
+  if (existingFbUser) {
+    let foundInRequestedRole = false;
+
+    if (userRole === UserRole.STUDENT && existingStudent) {
+      user = existingStudent;
+      foundInRequestedRole = true;
+    } else if (userRole === UserRole.TEACHER && existingTeacher) {
+      user = existingTeacher;
+      foundInRequestedRole = true;
+    } else if (userRole === UserRole.ADMIN && existingAdmin) {
+      user = existingAdmin;
+      foundInRequestedRole = true;
+    } else if (userRole === UserRole.PARENT && existingParent) {
+      user = existingParent;
+      foundInRequestedRole = true;
+    } else if (!userRole) {
+      if (existingStudent) { user = existingStudent; actualRole = UserRole.STUDENT; foundInRequestedRole = true; }
+      else if (existingTeacher) { user = existingTeacher; actualRole = UserRole.TEACHER; foundInRequestedRole = true; }
+      else if (existingAdmin) { user = existingAdmin; actualRole = UserRole.ADMIN; foundInRequestedRole = true; }
+      else if (existingParent) { user = existingParent; actualRole = UserRole.PARENT; foundInRequestedRole = true; }
+    }
+
+    if (!foundInRequestedRole) {
+      let detectedRole = "";
+      if (existingAdmin) detectedRole = "School Admin";
+      else if (existingTeacher) detectedRole = "Teacher";
+      else if (existingStudent) detectedRole = "Student";
+      else if (existingParent) detectedRole = "Parent";
+
+      throw new Error(`This Facebook account is registered as a ${detectedRole}. Please login through the correct portal.`);
+    }
+
+    if (userRole) {
+      actualRole = userRole as UserRole;
+    }
+
+    // Check account active status
+    if (user.isActive === false || user.status === "DEACTIVATED" || user.status === "SUSPENDED") {
+      throw new Error("Your account has been deactivated. Please contact your school administrator or support.");
+    }
+  } else {
+    // Facebook account not yet linked.
+    // If no email provided, reject with EMAIL_REQUIRED error so Option A can collect email.
+    if (!email) {
+      throw new Error("EMAIL_REQUIRED: Facebook did not provide an email address. Please complete your profile to continue.");
+    }
+
+    // Rule: NO AUTO-LINKING on email match. Check if existing user has this email.
+    const [emailStudent, emailTeacher, emailAdmin, emailParent] = await Promise.all([
+      prisma.student.findFirst({ where: { email } }),
+      prisma.teacher.findFirst({ where: { email } }),
+      prisma.admin.findFirst({ where: { email }, include: { schoolAdmins: true } }),
+      prisma.parent.findFirst({ where: { email } }),
+    ]);
+
+    const existingByEmail = emailStudent || emailTeacher || emailAdmin || emailParent;
+    if (existingByEmail) {
+      throw new Error(
+        "An account with this email already exists. Please sign in with your usual method, then connect Facebook from your settings."
+      );
+    }
+
+    // If no account exists with email, create new user in requested role
+    actualRole = (userRole as UserRole) || UserRole.STUDENT;
+
+    switch (actualRole) {
+      case UserRole.STUDENT: {
+        const studentCode = await generateUniqueCode(prisma, "student", name || "Student");
+        user = await prisma.student.create({
+          data: {
+            name: name || "Facebook User",
+            email,
+            facebookId,
+            authProvider: "FACEBOOK",
+            studentCode,
+            role: UserRole.STUDENT,
+            status: "ACTIVE",
+            isActive: true,
+            verified: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
+          },
+        });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.STUDENT);
+        break;
+      }
+
+      case UserRole.TEACHER: {
+        const teacherCode = await generateUniqueCode(prisma, "teacher", name || "Teacher");
+        user = await prisma.teacher.create({
+          data: {
+            name: name || "Facebook User",
+            email,
+            facebookId,
+            authProvider: "FACEBOOK",
+            teacherCode,
+            role: UserRole.TEACHER,
+            status: "ACTIVE",
+            isActive: true,
+            verified: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
+          },
+        });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.TEACHER);
+        break;
+      }
+
+      case UserRole.ADMIN: {
+        const adminCode = await generateUniqueCode(prisma, "admin", name || "Admin");
+        user = await prisma.admin.create({
+          data: {
+            name: name || "Facebook User",
+            email,
+            facebookId,
+            authProvider: "FACEBOOK",
+            adminCode,
+            role: UserRole.ADMIN,
+            verified: true,
+            status: "PENDING",
+            isActive: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
+          },
+        });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN);
+        break;
+      }
+
+      case UserRole.PARENT: {
+        const parentCode = await generateUniqueCode(prisma, "parent", name || "Parent");
+        user = await prisma.parent.create({
+          data: {
+            fullName: name || "Facebook User",
+            email,
+            facebookId,
+            authProvider: "FACEBOOK",
+            parentCode,
+            role: UserRole.PARENT,
+            status: "ACTIVE",
+            isActive: true,
+            verified: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
+          },
+        });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.PARENT);
+        break;
+      }
+
+      default:
+        throw new Error(`Facebook Login not supported for role: ${actualRole}`);
+    }
+  }
+
+  const token = generateAccessToken(user.id, actualRole);
+  const refreshToken = await generateRefreshToken(user.id, actualRole, deviceInfo);
+
+  await SubscriptionComplianceService.verifyAndSyncStatus({
+    userId: user.id,
+    userType: actualRole,
+    schoolId: user.schoolId || (user as any).schoolAdmins?.[0]?.schoolId || null
+  });
+
+  if (!existingFbUser) {
+    try {
+      const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+      sendWelcomeEmail({
+        email: user.email,
+        name: (user as any).name || (user as any).fullName || "User",
+        role: actualRole.toLowerCase(),
+        loginUrl: `${frontendUrl}/login`,
+        studentCode: (user as any).studentCode,
+        teacherCode: (user as any).teacherCode,
+        adminCode: (user as any).adminCode,
+        parentCode: (user as any).parentCode,
+      }).catch((mailErr) => {
+        console.error("Failed to send welcome email for Facebook registration:", mailErr);
+      });
+
+      createNotification({
+        recipientType: actualRole as any,
+        recipientId: user.id,
+        type: "GENERAL",
+        title: "Welcome to Qefas Hub",
+        message: `Welcome to Qefas Hub! Your ${actualRole.toLowerCase()} account has been created via Facebook Sign-In and is ready to go.`,
+      }).catch(console.error);
+    } catch (notifyErr) {
+      console.error("Failed to dispatch welcome communications for Facebook registration:", notifyErr);
+    }
+  }
+
+  return {
+    user,
+    token,
+    accessToken: token,
+    refreshToken,
+    userRole: actualRole,
+    isNewUser: !existingFbUser,
+  };
+};
+
+export const facebookDataDeletionService = async (facebookUserId: string) => {
+  const confirmationCode = `DEL-FB-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+  // Find user by facebookId across all roles
+  const [student, teacher, admin, parent, staff] = await Promise.all([
+    prisma.student.findFirst({ where: { facebookId: facebookUserId } }),
+    prisma.teacher.findFirst({ where: { facebookId: facebookUserId } }),
+    prisma.admin.findFirst({ where: { facebookId: facebookUserId } }),
+    prisma.parent.findFirst({ where: { facebookId: facebookUserId } }),
+    prisma.platformStaff.findFirst({ where: { facebookId: facebookUserId } }),
+  ]);
+
+  const target = student || teacher || admin || parent || staff;
+  const role = student ? "STUDENT" : teacher ? "TEACHER" : admin ? "ADMIN" : parent ? "PARENT" : staff ? "STAFF" : "UNKNOWN";
+
+  if (target) {
+    if (student) await prisma.student.update({ where: { id: student.id }, data: { facebookId: null } });
+    else if (teacher) await prisma.teacher.update({ where: { id: teacher.id }, data: { facebookId: null } });
+    else if (admin) await prisma.admin.update({ where: { id: admin.id }, data: { facebookId: null } });
+    else if (parent) await prisma.parent.update({ where: { id: parent.id }, data: { facebookId: null } });
+    else if (staff) await prisma.platformStaff.update({ where: { id: staff.id }, data: { facebookId: null } });
+
+    // Log compliance audit ticket
+    try {
+      await prisma.supportTicket.create({
+        data: {
+          subject: `Facebook Data Deletion Request (${confirmationCode})`,
+          description: JSON.stringify({
+            event: "FACEBOOK_DATA_DELETION",
+            facebookUserId,
+            targetUserId: target.id,
+            targetEmail: target.email,
+            role,
+            confirmationCode,
+            timestamp: new Date().toISOString(),
+          }),
+          category: "COMPLIANCE_DATA_DELETION",
+          userType: role,
+          userId: target.id,
+          userName: (target as any).name || (target as any).fullName || "User",
+          userEmail: target.email || "unknown@user.com",
+          schoolName: (target as any).schoolId || "SYSTEM",
+          priority: "HIGH",
+          status: "RESOLVED",
+        },
+      });
+    } catch (auditErr) {
+      console.error("Failed to log data deletion audit ticket:", auditErr);
+    }
+  }
+
+  return { confirmationCode };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1060,8 +1605,9 @@ export const sendWelcomeEmail = async (params: {
   adminCode?: string;
   teacherCode?: string;
   studentCode?: string;
+  parentCode?: string;
 }) => {
-  const { email, name, role, loginUrl, schoolCode, adminCode, teacherCode, studentCode } = params;
+  const { email, name, role, loginUrl, schoolCode, adminCode, teacherCode, studentCode, parentCode } = params;
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
   const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
@@ -1071,8 +1617,10 @@ export const sendWelcomeEmail = async (params: {
     .replace(/_/g, ' ')
     .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
+  const normalizedRole = (role || '').toLowerCase();
+
   let codesHtml = '';
-  if (role === 'admin' || role === 'school_owner') {
+  if (normalizedRole === 'admin' || normalizedRole === 'school_owner') {
     codesHtml = `
       <li style="margin-bottom:6px;"><strong>Admins:</strong> Can link with Teachers and Students. As an admin, you have two codes: a <strong>School Code</strong> (to share with teachers/students joining your school) and an <strong>Admin Code</strong> (used exclusively to invite other admins to your school's team).
         ${schoolCode && adminCode ? `
@@ -1082,7 +1630,7 @@ export const sendWelcomeEmail = async (params: {
         </div>` : ''}
       </li>
     `;
-  } else if (role === 'teacher') {
+  } else if (normalizedRole === 'teacher') {
     codesHtml = `
       <li style="margin-bottom:6px;"><strong>Teachers:</strong> Can link with their School and Students.
         ${teacherCode ? `
@@ -1091,7 +1639,7 @@ export const sendWelcomeEmail = async (params: {
         </div>` : ''}
       </li>
     `;
-  } else if (role === 'student') {
+  } else if (normalizedRole === 'student') {
     codesHtml = `
       <li style="margin-bottom:6px;"><strong>Students:</strong> Can link with their School, Teachers, and Parents.
         ${studentCode ? `
@@ -1100,9 +1648,14 @@ export const sendWelcomeEmail = async (params: {
         </div>` : ''}
       </li>
     `;
-  } else if (role === 'parent') {
+  } else if (normalizedRole === 'parent') {
     codesHtml = `
-      <li style="margin-bottom:6px;"><strong>Parents:</strong> Can link with their Students to monitor progress.</li>
+      <li style="margin-bottom:6px;"><strong>Parents:</strong> Can link with their Students to monitor progress.
+        ${parentCode ? `
+        <div style="margin-top:8px;padding:10px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;font-family:monospace;font-size:14px;color:#0f172a;">
+          Your Parent Code: <span style="font-size:16px;font-weight:bold;color:#3b82f6;">${parentCode}</span>
+        </div>` : ''}
+      </li>
     `;
   }
 
@@ -1282,3 +1835,137 @@ export const sendDeviceVerificationCodeEmail = async (params: {
     }),
   });
 };
+
+export const sendAccountDeletionEmail = async (params: {
+  email: string;
+  name?: string;
+  role: string;
+  ticketId: string;
+  device?: string;
+  location?: string;
+  time?: string;
+  deactivateUrl?: string;
+}) => {
+  const userName = params.name || "User";
+  const purgeDate = new Date();
+  purgeDate.setDate(purgeDate.getDate() + 30);
+  const formattedPurgeDate = purgeDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Account Deactivation & Deletion Request Received - Qefas Hub${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: "reset",
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Account Deactivation & Deletion Request Received</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hello ${userName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We have received your formal request to deactivate your account and initiate the permanent deletion of your personal data on Qefas Hub.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Request Details</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Reference Ticket', params.ticketId)}
+            ${receiptRow('Account Email', params.email)}
+            ${receiptRow('Account Role', params.role)}
+            ${receiptRow('Device', params.device || 'Chrome 128 • Windows PC')}
+            ${receiptRow('Location', params.location || 'Lagos, Nigeria')}
+            ${receiptRow('Requested Time', params.time || new Date().toLocaleString())}
+            ${receiptRow('Grace Period', '30 Days')}
+            ${receiptRow('Purge Scheduled', formattedPurgeDate)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>30-Day Grace Period:</strong> Pursuant to Google Play Data Safety, Apple App Store 5.1.1(v), and GDPR guidelines, your account is queued for permanent purge after 30 days. Click the button below to complete your immediate deactivation.', 'warning')}
+
+        <div style="margin:28px 0;text-align:center;">
+          ${params.deactivateUrl ? ctaButton('Deactivate Account →', params.deactivateUrl, '#e11d48') : ''}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>What will be deleted:</strong> Your login credentials, OAuth connections, active device tokens, notification preferences, and uploaded profile media will be permanently destroyed.
+        </p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Educational Archives:</strong> In accordance with statutory school accreditation laws, institutional records (such as finalized examination marks and attendance rosters) remain stored within the school\'s encrypted records.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">If you did not submit this request, please contact us immediately at <a href="mailto:privacy@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">privacy@qefashub.com</a> referencing ticket <strong>${params.ticketId}</strong> to cancel this action and secure your account.</p>
+      `,
+    }),
+  });
+};
+
+export const sendAccountDeactivationConfirmationEmail = async (params: {
+  email: string;
+  name?: string;
+  role: string;
+  ticketId?: string;
+  device?: string;
+  location?: string;
+  time?: string;
+}) => {
+  const userName = params.name || "User";
+  const refTicket = params.ticketId || `DEACT-${Date.now().toString(36).toUpperCase()}`;
+
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : params.email;
+  const sender = isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Account Deactivation Confirmation - Qefas Hub${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: "security",
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Your account has been deactivated</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi ${userName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This email confirms that your Qefas Hub account (<strong>${params.email}</strong>) has been successfully deactivated upon your request.</p>
+        
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Deactivation Summary</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Reference Ticket', refTicket)}
+            ${receiptRow('Account Role', params.role)}
+            ${receiptRow('Status', 'Deactivated')}
+            ${receiptRow('Active Sessions', 'All revoked')}
+            ${receiptRow('Device', params.device || 'Chrome 128 • Windows PC')}
+            ${receiptRow('Location', params.location || 'Lagos, Nigeria')}
+            ${receiptRow('Effective Time', params.time || new Date().toLocaleString())}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Immediate effect:</strong> All active sessions across your mobile and web devices have been terminated. Your public profile is no longer visible to other campus members.', 'warning')}
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>What happens to your data:</strong> Your historical academic submissions and records remain securely archived in compliance with educational institutional standards. You will not receive notifications while your account remains deactivated.
+        </p>
+
+        <p style="margin:0 0 20px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Changed your mind?</strong> If this was an accident or you would like to reactivate your account in the future, you can sign in again or reach out to our dedicated support team.
+        </p>
+
+        <div style="margin:24px 0;">
+          ${ctaButton('Contact Support →', 'mailto:support@qefashub.com', '#e11d48')}
+        </div>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">If you did not authorize this deactivation, please contact our security team immediately at <a href="mailto:security@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">security@qefashub.com</a>.</p>
+      `,
+    }),
+  });
+};
+
+
+

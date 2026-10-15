@@ -268,12 +268,34 @@ export const completePasswordResetSchema = yup.object({
 
 export const googleAuthSchema = yup.object({
   body: yup.object({
-    idToken: yup.string().required("Google ID Token is required"),
+    idToken: yup.string().optional().nullable(),
+    googleId: yup.string().optional().nullable(),
+    email: yup.string().email("Invalid email format").optional().nullable(),
+    name: yup.string().optional().nullable(),
+    emailVerified: yup.boolean().optional().nullable(),
+    inviteToken: yup.string().optional().nullable(),
     userRole: yup
       .string()
       .oneOf(
-        ["STUDENT", "PARENT", "TEACHER", "ADMIN"],
+        ["STUDENT", "PARENT", "TEACHER", "ADMIN", "STAFF"],
         "Invalid user role for Google Login",
+      )
+      .optional()
+      .nullable(),
+  }),
+});
+
+export const facebookAuthSchema = yup.object({
+  body: yup.object({
+    facebookId: yup.string().required("Facebook ID is required"),
+    email: yup.string().email("Invalid email format").optional().nullable(),
+    name: yup.string().optional().nullable(),
+    inviteToken: yup.string().optional().nullable(),
+    userRole: yup
+      .string()
+      .oneOf(
+        ["STUDENT", "PARENT", "TEACHER", "ADMIN", "STAFF"],
+        "Invalid user role for Facebook Login",
       )
       .optional()
       .nullable(),

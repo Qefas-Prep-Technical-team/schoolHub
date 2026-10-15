@@ -5,7 +5,7 @@ import { getGradeStatusColor, formatPosition, calculateLetterGrade, getLetterGra
 import { StudentGrade, IndividualGrade, GradeStatus } from './types'
 import Image from 'next/image'
 import { Icon } from '../../Icon'
-import Pagination from '@/components/ui/Pagination'
+import { TeacherPagination as Pagination } from '@/app/dashboard/teacher/components/TeacherPagination'
 
 interface GradeTableProps {
   grades: StudentGrade[]

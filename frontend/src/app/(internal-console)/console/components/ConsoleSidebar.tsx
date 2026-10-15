@@ -32,7 +32,8 @@ import {
     UserCheck,
     Wrench,
     Tag,
-    Mail
+    Mail,
+    UserX
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
@@ -43,6 +44,7 @@ export const consoleMenuItems = [
     { icon: GraduationCap, label: "Students", href: "/console/students" },
     { icon: Presentation, label: "Teachers", href: "/console/teachers" },
     { icon: Users, label: "Parents", href: "/console/parents" },
+    { icon: UserX, label: "Deletions & Deactivations", href: "/console/deletions" },
     { icon: Wrench, label: "System Architecture", href: "/console/features" },
     { icon: CreditCard, label: "Revenue Architecture", href: "/console/billing/pricing" },
     { icon: Tag, label: "Coupon Codes", href: "/console/billing/coupons" },

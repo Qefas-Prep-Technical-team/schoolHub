@@ -7,7 +7,7 @@ import { Student } from "./types";
 interface StudentGridProps {
   students: Student[];
   isLoading: boolean;
-  error: any;
+  error: unknown;
   searchQuery: string;
   limit: number;
 }
@@ -56,7 +56,7 @@ const StudentGrid: React.FC<StudentGridProps> = ({ students, isLoading, error, s
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
       <AnimatePresence mode="popLayout">
         {students.map((student: Student, index: number) => (
           <motion.div

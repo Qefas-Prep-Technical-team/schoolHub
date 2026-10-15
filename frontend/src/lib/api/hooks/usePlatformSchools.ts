@@ -23,6 +23,8 @@ export interface PlatformParentDetails {
   parentCode: string;
   phone?: string;
   subscriptionStatus: string;
+  isActive?: boolean;
+  status?: string;
   plan: string;
   createdAt: string;
   verified: boolean;
@@ -143,6 +145,8 @@ export interface PlatformSchoolDetails {
   phone?: string;
   address?: string;
   subscriptionStatus: string;
+  isActive?: boolean;
+  status?: string;
   plan: string;
   subscriptionPlanId?: string;
   subscriptionEnd?: string;
@@ -232,6 +236,8 @@ export interface PlatformTeacherDetails {
   email: string;
   teacherCode: string;
   subscriptionStatus: string;
+  isActive?: boolean;
+  status?: string;
   plan: string;
   createdAt: string;
   verified: boolean;
@@ -285,6 +291,8 @@ export interface PlatformStudentDetails {
   email: string;
   studentCode: string;
   subscriptionStatus: string;
+  isActive?: boolean;
+  status?: string;
   plan: string;
   createdAt: string;
   verified: boolean;
@@ -390,10 +398,10 @@ export const useUpdateSchoolStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, isActive }: { id: string; status?: string; isActive?: boolean }) => {
       const { data } = await platformClient.patch<{ message: string }>(
         `/platform/support/schools/${id}/status`,
-        { status },
+        { status, isActive },
         {
           headers: { Authorization: `Bearer ${platform_token}` },
         },
@@ -408,6 +416,118 @@ export const useUpdateSchoolStatus = () => {
     onError: (err: AxiosError<{ message?: string }>) => {
       toast.error(
         err.response?.data?.message || "Failed to update school status",
+      );
+    },
+  });
+};
+
+export const useUpdateStudentStatus = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status, isActive }: { id: string; status?: string; isActive?: boolean }) => {
+      const { data } = await platformClient.patch<{ message: string }>(
+        `/platform/support/students/${id}/status`,
+        { status, isActive },
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+        },
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-students"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-student-details"] });
+      toast.success(res.message);
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to update student status",
+      );
+    },
+  });
+};
+
+export const useUpdateTeacherStatus = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status, isActive }: { id: string; status?: string; isActive?: boolean }) => {
+      const { data } = await platformClient.patch<{ message: string }>(
+        `/platform/support/teachers/${id}/status`,
+        { status, isActive },
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+        },
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-teacher-details"] });
+      toast.success(res.message);
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to update teacher status",
+      );
+    },
+  });
+};
+
+export const useUpdateParentStatus = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status, isActive }: { id: string; status?: string; isActive?: boolean }) => {
+      const { data } = await platformClient.patch<{ message: string }>(
+        `/platform/support/parents/${id}/status`,
+        { status, isActive },
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+        },
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-parents"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-parent-details"] });
+      toast.success(res.message);
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to update parent status",
+      );
+    },
+  });
+};
+
+export const useUpdateAdminStatus = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status, isActive }: { id: string; status?: string; isActive?: boolean }) => {
+      const { data } = await platformClient.patch<{ message: string }>(
+        `/platform/support/admins/${id}/status`,
+        { status, isActive },
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+        },
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-admins"] });
+      queryClient.invalidateQueries({ queryKey: ["compliance-requests"] });
+      toast.success(res.message);
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to update admin status",
       );
     },
   });
@@ -816,12 +936,158 @@ export const useUpdateParentPlan = () => {
     onSuccess: (res: { message: string }) => {
       queryClient.invalidateQueries({ queryKey: ["platform-parents"] });
       queryClient.invalidateQueries({ queryKey: ["platform-parent-details"] });
-      toast.success(res.message);
+      toast.success(res.message, { toastId: "update-parent-plan" });
     },
     onError: (err: AxiosError<{ message?: string }>) => {
       toast.error(
         err.response?.data?.message || "Failed to update parent plan",
+        { toastId: "update-parent-plan-error" }
       );
     },
   });
 };
+
+export const useDeletePlatformSchool = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, adminPassword, reason }: { id: string; adminPassword: string; reason?: string }) => {
+      const { data } = await platformClient.delete<{ message: string }>(
+        `/platform/support/schools/${id}`,
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+          data: { adminPassword, reason },
+        }
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-schools"] });
+      toast.success(res.message, { toastId: "delete-school-success" });
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to delete school",
+        { toastId: "delete-school-error" }
+      );
+    },
+  });
+};
+
+export const useDeletePlatformStudent = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, adminPassword, reason }: { id: string; adminPassword: string; reason?: string }) => {
+      const { data } = await platformClient.delete<{ message: string }>(
+        `/platform/support/students/${id}`,
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+          data: { adminPassword, reason },
+        }
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-students"] });
+      queryClient.invalidateQueries({ queryKey: ["compliance-requests"] });
+      toast.success(res.message, { toastId: "delete-student-success" });
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to delete student",
+        { toastId: "delete-student-error" }
+      );
+    },
+  });
+};
+
+export const useDeletePlatformTeacher = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, adminPassword, reason }: { id: string; adminPassword: string; reason?: string }) => {
+      const { data } = await platformClient.delete<{ message: string }>(
+        `/platform/support/teachers/${id}`,
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+          data: { adminPassword, reason },
+        }
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["compliance-requests"] });
+      toast.success(res.message, { toastId: "delete-teacher-success" });
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to delete teacher",
+        { toastId: "delete-teacher-error" }
+      );
+    },
+  });
+};
+
+export const useDeletePlatformParent = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, adminPassword, reason }: { id: string; adminPassword: string; reason?: string }) => {
+      const { data } = await platformClient.delete<{ message: string }>(
+        `/platform/support/parents/${id}`,
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+          data: { adminPassword, reason },
+        }
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-parents"] });
+      queryClient.invalidateQueries({ queryKey: ["compliance-requests"] });
+      toast.success(res.message, { toastId: "delete-parent-success" });
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to delete parent",
+        { toastId: "delete-parent-error" }
+      );
+    },
+  });
+};
+
+export const useDeletePlatformAdmin = () => {
+  const { platform_token } = usePlatformStaffStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, adminPassword, reason }: { id: string; adminPassword: string; reason?: string }) => {
+      const { data } = await platformClient.delete<{ message: string }>(
+        `/platform/support/admins/${id}`,
+        {
+          headers: { Authorization: `Bearer ${platform_token}` },
+          data: { adminPassword, reason },
+        }
+      );
+      return data;
+    },
+    onSuccess: (res: { message: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["platform-admins"] });
+      queryClient.invalidateQueries({ queryKey: ["compliance-requests"] });
+      toast.success(res.message, { toastId: "delete-admin-success" });
+    },
+    onError: (err: AxiosError<{ message?: string }>) => {
+      toast.error(
+        err.response?.data?.message || "Failed to delete admin",
+        { toastId: "delete-admin-error" }
+      );
+    },
+  });
+};
+

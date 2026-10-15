@@ -1,4 +1,5 @@
 "use client";
+
 import StudentLoginForm from "./StudentLoginForm";
 import TwoFactorForm from "../../components/TwoFactorForm";
 import { useAuthStore } from "../../services/auth-store";
@@ -7,16 +8,23 @@ export default function RightPanel() {
     const user = useAuthStore((state) => state.user);
     
     return (
-        <div className="flex-1 flex flex-col justify-center p-8 sm:p-10 lg:p-12">
-            <div className="w-full max-w-md mx-auto">
-                <div className="text-center mb-10 flex flex-col items-center">
-                    <div className="flex items-center gap-2 mb-8">
-                        <div className="w-5 h-5 rounded-sm bg-rose-500"></div>
-                        <span className="text-lg font-bold text-slate-800 dark:text-white">qefas hub</span>
+        <div className="w-full flex flex-col justify-center">
+            <div className="w-full">
+                <div className="text-center mb-6 sm:mb-8 flex flex-col items-center">
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                        <div className="w-7 h-7 rounded-xl bg-rose-500 flex items-center justify-center text-white font-black text-xs shadow-md shadow-rose-500/30">
+                            Q
+                        </div>
+                        <span className="text-base sm:text-lg font-black text-slate-800 dark:text-white tracking-tight">
+                            Qefas Hub
+                        </span>
                     </div>
-                    <h1 className="text-4xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                         Student Portal
                     </h1>
+                    <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        Sign in to access your grades, assignments, timetable and learning portal
+                    </p>
                 </div>
 
                 {user?.require2FA ? (
@@ -27,8 +35,8 @@ export default function RightPanel() {
                     <StudentLoginForm />
                 )}
 
-                <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800">
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em] italic">
+                <div className="mt-8 sm:mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">
                         &ldquo;Empowering students for a brighter future.&rdquo;
                     </p>
                 </div>

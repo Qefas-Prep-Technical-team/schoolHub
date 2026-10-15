@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Mail, ArrowRight, CheckCircle2, ShieldAlert, CreditCard, Ticket, KeyRound, UserPlus, Smartphone, Loader2 } from "lucide-react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { Mail, ArrowRight, CheckCircle2, ShieldAlert, CreditCard, Ticket, KeyRound, UserPlus, Smartphone, Loader2, UserX, UserMinus, ShieldCheck } from "lucide-react"
 import { platformClient } from "@/lib/api/platformClient";
 import { toast } from "react-toastify";
 
@@ -181,6 +182,96 @@ function receiptRow(label: string, value: string, highlight = false): string {
 // --- Email Mock Data ---
 
 const templates = [
+  {
+    id: "account-deactivation-request",
+    title: "Account Deactivation Request",
+    icon: UserMinus,
+    color: "text-amber-500",
+    badge: "Compliance",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    generate: () => buildEmail({
+      illustration: 'reset',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Account Deactivation & Deletion Request Received</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hello Jane,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We have received your formal request to deactivate your account and initiate the permanent deletion of your personal data on Qefas Hub.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Request Details</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Reference Ticket', 'DEL-M49X9-K8L2')}
+            ${receiptRow('Account Email', 'jane@example.com')}
+            ${receiptRow('Account Role', 'Teacher')}
+            ${receiptRow('Device', 'iPhone 15 Pro • Safari 17.4')}
+            ${receiptRow('Location', 'Lagos, Nigeria')}
+            ${receiptRow('Requested Time', 'Oct 15, 2026, 10:30 AM')}
+            ${receiptRow('Grace Period', '30 Days')}
+            ${receiptRow('Purge Scheduled', 'Nov 14, 2026')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>30-Day Grace Period:</strong> Pursuant to Google Play Data Safety, Apple App Store 5.1.1(v), and GDPR guidelines, your account is queued for permanent purge after 30 days. Click the button below to complete your immediate deactivation.', 'warning')}
+
+        <div style="margin:28px 0;text-align:center;">
+          ${ctaButton('Deactivate Account →', 'http://localhost:3000/data-deletion/confirm?token=demo_token&ticketId=DEL-M49X9-K8L2', '#e11d48')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>What will be deleted:</strong> Your login credentials, OAuth connections, active device tokens, notification preferences, and uploaded profile media will be permanently destroyed.
+        </p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Educational Archives:</strong> In accordance with statutory school accreditation laws, institutional records (such as finalized examination marks and attendance rosters) remain stored within the school\'s encrypted records.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">If you did not submit this request, please contact us immediately at <a href="mailto:privacy@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">privacy@qefashub.com</a> referencing ticket <strong>DEL-M49X9-K8L2</strong> to cancel this action and secure your account.</p>
+      `
+    })
+  },
+  {
+    id: "account-deactivation-confirmation",
+    title: "Account Deactivation Confirmation",
+    icon: UserX,
+    color: "text-rose-500",
+    badge: "Security",
+    badgeColor: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+    generate: () => buildEmail({
+      illustration: 'security',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Your account has been deactivated</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi Jane,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This email confirms that your Qefas Hub account (<strong>jane@example.com</strong>) has been successfully deactivated upon your request.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Deactivation Summary</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Reference Ticket', 'DEACT-M49X9-K8L2')}
+            ${receiptRow('Account Role', 'Student')}
+            ${receiptRow('Status', 'Deactivated')}
+            ${receiptRow('Active Sessions', 'All revoked')}
+            ${receiptRow('Device', 'Chrome 128 • Windows PC')}
+            ${receiptRow('Location', 'Lagos, Nigeria')}
+            ${receiptRow('Effective Time', 'Oct 15, 2026, 10:30 AM')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Immediate effect:</strong> All active sessions across your mobile and web devices have been terminated. Your public profile is no longer visible to other campus members.', 'warning')}
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>What happens to your data:</strong> Your historical academic submissions and records remain securely archived in compliance with educational institutional standards. You will not receive notifications while your account remains deactivated.
+        </p>
+
+        <p style="margin:0 0 20px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Changed your mind?</strong> If this was an accident or you would like to reactivate your account in the future, you can sign in again or reach out to our dedicated support team.
+        </p>
+
+        <div style="margin:24px 0;">
+          ${ctaButton('Contact Support →', 'mailto:support@qefashub.com', '#e11d48')}
+        </div>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">If you did not authorize this deactivation, please contact our security team immediately at <a href="mailto:security@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">security@qefashub.com</a>.</p>
+      `
+    })
+  },
   {
     id: "verification",
     title: "Email Verification",
@@ -446,9 +537,24 @@ const templates = [
   }
 ];
 
-export default function EmailTemplatesPage() {
-    const [selectedTemplate, setSelectedTemplate] = useState(templates[0].id)
-    const activeTemplate = templates.find(t => t.id === selectedTemplate)
+function EmailTemplatesContent() {
+    const searchParams = useSearchParams();
+    const queryTemplate = searchParams?.get("template");
+
+    const [selectedTemplate, setSelectedTemplate] = useState<string>(() => {
+        if (queryTemplate && templates.some(t => t.id === queryTemplate)) {
+            return queryTemplate;
+        }
+        return templates[0].id;
+    });
+
+    useEffect(() => {
+        if (queryTemplate && templates.some(t => t.id === queryTemplate)) {
+            setSelectedTemplate(queryTemplate);
+        }
+    }, [queryTemplate]);
+
+    const activeTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
     const [isSending, setIsSending] = useState(false)
 
     const handleSendTestEmail = async () => {
@@ -473,13 +579,13 @@ export default function EmailTemplatesPage() {
         <div className="space-y-6 pb-20">
             <div>
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Email Templates</h1>
-                <p className="text-slate-500 font-medium mt-1">Preview system automated email designs and content.</p>
+                <p className="text-slate-500 font-medium mt-1">Preview system automated email designs, telemetry fields, and content.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Sidebar Navigation */}
                 <div className="lg:col-span-1 space-y-2">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-2 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-2 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
                         {templates.map((template) => {
                             const Icon = template.icon
                             const isActive = selectedTemplate === template.id
@@ -488,15 +594,20 @@ export default function EmailTemplatesPage() {
                                 <button
                                     key={template.id}
                                     onClick={() => setSelectedTemplate(template.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+                                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all ${
                                         isActive 
-                                            ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold" 
+                                            ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold shadow-sm" 
                                             : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium"
                                     }`}
                                 >
-                                    <Icon size={18} className={isActive ? "text-indigo-600 dark:text-indigo-400" : template.color} />
-                                    <span className="text-sm truncate">{template.title}</span>
-                                    {isActive && <ArrowRight size={14} className="ml-auto opacity-50" />}
+                                    <Icon size={18} className={isActive ? "text-indigo-600 dark:text-indigo-400 shrink-0" : `${template.color} shrink-0`} />
+                                    <span className="text-sm truncate flex-1">{template.title}</span>
+                                    {(template as any).badge && (
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${(template as any).badgeColor || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                                            {(template as any).badge}
+                                        </span>
+                                    )}
+                                    {isActive && <ArrowRight size={14} className="ml-1 opacity-60 shrink-0" />}
                                 </button>
                             )
                         })}
@@ -505,31 +616,33 @@ export default function EmailTemplatesPage() {
 
                 {/* Preview Area */}
                 <div className="lg:col-span-3">
-                    <div className="bg-slate-100 dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner h-[800px] flex flex-col">
-                        <div className="h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2 justify-between">
+                    <div className="bg-slate-100 dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner h-[850px] flex flex-col">
+                        <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2 justify-between">
                             <div className="flex gap-1.5 w-20">
                                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
                                 <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-slate-800 rounded-md px-3 py-1 text-xs text-slate-500 dark:text-slate-400 font-mono flex-1 max-w-md text-center truncate mx-4">
-                                Preview: {activeTemplate?.title}
+                            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-md px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono flex-1 max-w-md justify-center truncate mx-4 border border-slate-200 dark:border-slate-700">
+                                <span className="text-slate-400">Preview:</span>
+                                <span className="font-bold">{activeTemplate?.title}</span>
                             </div>
-                            <div className="flex justify-end w-20">
+                            <div className="flex justify-end w-24">
                                 <button 
                                     onClick={handleSendTestEmail}
                                     disabled={isSending}
-                                    className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded border border-indigo-200 dark:border-indigo-500/30 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSending ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
-                                    Test
+                                    Send Test
                                 </button>
                             </div>
                         </div>
                         <div className="flex-1 bg-[#f0f2f8] p-4 relative">
-                            {/* We use an iframe to isolate the email styles completely from the dashboard */}
+                            {/* Isolated iframe for email rendering */}
                             {activeTemplate && (
                                 <iframe
+                                    key={activeTemplate.id}
                                     srcDoc={activeTemplate.generate()}
                                     className="w-full h-full bg-transparent border-0 rounded-xl"
                                     title={activeTemplate.title}
@@ -541,4 +654,12 @@ export default function EmailTemplatesPage() {
             </div>
         </div>
     )
+}
+
+export default function EmailTemplatesPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading email templates preview...</div>}>
+            <EmailTemplatesContent />
+        </Suspense>
+    );
 }

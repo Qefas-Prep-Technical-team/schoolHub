@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface StudentListProps {
   students: Student[];
   isLoading: boolean;
-  error: any;
+  error: unknown;
   searchQuery: string;
   currentPage?: number;
   itemsPerPage?: number;
@@ -25,16 +25,16 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
 
   if (isLoading) {
     return (
-      <div className="w-full bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm overflow-hidden animate-pulse">
-        <div className="h-12 bg-slate-50 dark:bg-emerald-900/40 border-b border-slate-200 dark:border-emerald-800/50" />
+      <div className="w-full bg-white dark:bg-black rounded-xl sm:rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden animate-pulse">
+        <div className="h-12 bg-slate-50 dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800" />
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex h-20 items-center px-6 border-b border-slate-100 dark:border-emerald-800/40">
-            <div className="w-8 bg-slate-200 dark:bg-slate-700 h-4 rounded mr-4" />
-            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 mr-4" />
-            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded mr-auto" />
-            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded mr-12" />
-            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded mr-12" />
-            <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+          <div key={i} className="flex h-16 sm:h-20 items-center px-4 sm:px-6 border-b border-slate-100 dark:border-zinc-800/60">
+            <div className="w-6 sm:w-8 bg-slate-200 dark:bg-zinc-900 h-4 rounded mr-3 sm:mr-4" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-200 dark:bg-zinc-900 mr-3 sm:mr-4" />
+            <div className="h-4 w-24 sm:w-32 bg-slate-200 dark:bg-zinc-900 rounded mr-auto" />
+            <div className="h-4 w-16 sm:w-20 bg-slate-200 dark:bg-zinc-900 rounded mr-6 sm:mr-12" />
+            <div className="h-4 w-16 sm:w-24 bg-slate-200 dark:bg-zinc-900 rounded mr-6 sm:mr-12" />
+            <div className="h-7 sm:h-8 w-20 sm:w-24 bg-slate-200 dark:bg-zinc-900 rounded-lg" />
           </div>
         ))}
       </div>
@@ -43,17 +43,17 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
 
   if (error) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 rounded-2xl border border-red-100 bg-red-50/50 dark:bg-red-900/10"
+        className="flex flex-col items-center justify-center py-16 rounded-xl sm:rounded-2xl border border-red-100 bg-red-50/50 dark:bg-red-900/10"
       >
         <div className="p-4 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
           <AlertCircle className="w-8 h-8 text-red-500" />
         </div>
         <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Failed to load students</h3>
         <p className="text-slate-600 dark:text-slate-400 mt-2 text-sm text-center">
-          {error instanceof Error ? error.message : "Please try again later." }
+          {error instanceof Error ? error.message : "Please try again later."}
         </p>
       </motion.div>
     );
@@ -61,10 +61,10 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
 
   if (students.length === 0) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-slate-200 dark:border-emerald-800/50 bg-slate-50/50 dark:bg-emerald-950/60/10"
+        className="flex flex-col items-center justify-center py-20 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-emerald-800/50 bg-slate-50/50 dark:bg-emerald-950/60/10"
       >
         <div className="p-4 rounded-full bg-slate-100 dark:bg-emerald-900/40 mb-4">
           <User className="w-8 h-8 text-slate-400" />
@@ -78,17 +78,17 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
   }
 
   return (
-    <div className="w-full bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm overflow-hidden">
+    <div className="w-full bg-white dark:bg-emerald-950/60 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 dark:bg-emerald-900/40 border-b border-slate-200 dark:border-emerald-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <th className="px-6 py-4 font-semibold w-12 text-center">#</th>
-              <th className="px-6 py-4 font-semibold">Student</th>
-              <th className="px-6 py-4 font-semibold">Grade</th>
-              <th className="px-6 py-4 font-semibold">Performance</th>
-              <th className="px-6 py-4 font-semibold">Attendance</th>
-              <th className="px-6 py-4 font-semibold text-right">Action</th>
+            <tr className="bg-slate-50 dark:bg-emerald-900/40 border-b border-slate-200 dark:border-emerald-800/50 text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold w-12 text-center">#</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Student</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Grade</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Performance</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Attendance</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-emerald-800/50">
@@ -96,23 +96,23 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
               {students.map((student, idx) => {
                 const initials = student.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 const absoluteIndex = (currentPage - 1) * itemsPerPage + idx + 1;
-                
+
                 return (
-                  <motion.tr 
+                  <motion.tr
                     key={student.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     className="group hover:bg-slate-50 dark:hover:bg-emerald-900/30 transition-colors"
                   >
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                       <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
                         {absoluteIndex}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center overflow-hidden font-bold border border-emerald-200 dark:border-emerald-800">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center overflow-hidden font-bold border border-emerald-200 dark:border-emerald-800 shrink-0">
                           {student.avatarUrl ? (
                             <Image src={student.avatarUrl} alt={student.name} width={40} height={40} className="w-full h-full object-cover" />
                           ) : (
@@ -125,23 +125,23 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
                         <GraduationCap size={14} className="text-slate-400" />
                         {student.grade}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <PerformanceBadge level={student.performance} />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className={cn("text-xs transition-transform duration-300", getAttendanceStyles(student.attendance))}>
                         {student.attendance}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                       <Link href={`/dashboard/teacher/students/${student.id}`}>
-                        <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 dark:bg-emerald-900/40 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 transition-all">
+                        <button className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-slate-100 dark:bg-emerald-900/40 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 transition-all">
                           View Profile
                           <ArrowRight size={14} />
                         </button>

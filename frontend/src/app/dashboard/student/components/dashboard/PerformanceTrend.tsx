@@ -11,16 +11,37 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { TrendingUp } from 'lucide-react';
+import { HeaderTooltip } from './HeaderTooltip';
+
+export interface PerformanceAttempt {
+  id?: string;
+  totalScore: number;
+  totalMarks?: number;
+  submittedAt?: string | Date;
+  exam?: {
+    id?: string;
+    title?: string;
+  };
+}
+
+export interface PerformanceGrade {
+  id?: string;
+  subject?: string;
+  score: number;
+  maxMarks?: number;
+  dateLogged?: string | Date;
+  createdAt?: string | Date;
+}
 
 interface PerformanceTrendProps {
-  attempts: any[];
-  standaloneGrades: any[];
+  attempts: PerformanceAttempt[];
+  standaloneGrades: PerformanceGrade[];
 }
 
 const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ attempts, standaloneGrades }) => {
   const data = useMemo(() => {
     // Combine both attempts and standalone grades into a single timeline
-    const timeline: { date: Date, score: number, label: string }[] = [];
+    const timeline: { date: Date; score: number; label: string }[] = [];
 
     attempts?.forEach(a => {
       if (a.submittedAt) {
@@ -33,9 +54,10 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ attempts, standalon
     });
 
     standaloneGrades?.forEach(g => {
-      if (g.dateLogged || g.createdAt) {
+      const dateVal = g.dateLogged || g.createdAt;
+      if (dateVal) {
         timeline.push({
-          date: new Date(g.dateLogged || g.createdAt),
+          date: new Date(dateVal),
           score: Math.round((g.score / (g.maxMarks || 1)) * 100),
           label: g.subject || 'Assignment'
         });
@@ -54,20 +76,25 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ attempts, standalon
   }, [attempts, standaloneGrades]);
 
   return (
-    <div className="bg-white dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none relative overflow-hidden group">
+    <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-8 shadow-sm dark:shadow-none relative overflow-hidden group">
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 pointer-events-none" />
       
-      <div className="flex items-center justify-between mb-10 relative z-10">
+      <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8 relative z-10">
         <div>
-           <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Performance <span className="text-emerald-500">Trend</span></h3>
-           <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Score progression over time</p>
+           <div className="flex items-center gap-2">
+             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+               Performance <span className="text-emerald-500">Trend</span>
+             </h3>
+             <HeaderTooltip content="Chronological scoring progression tracking your normalized exam percentages and assignment grades across the academic session." />
+           </div>
+           <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest mt-1">Score progression over time</p>
         </div>
-        <div className="p-3 bg-emerald-500/10 rounded-2xl">
-           <TrendingUp className="w-5 h-5 text-emerald-500" />
+        <div className="p-2.5 sm:p-3 bg-emerald-500/10 rounded-xl sm:rounded-2xl shrink-0">
+           <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
         </div>
       </div>
 
-      <div className="relative z-10 h-64 w-full">
+      <div className="relative z-10 h-60 sm:h-64 w-full">
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -89,21 +116,21 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ attempts, standalon
                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                 labelStyle={{ fontWeight: 'bold', color: '#888', marginBottom: '4px' }}
                 itemStyle={{ fontWeight: 'black', color: '#10b981' }}
-                formatter={(value: number, name: string, props: any) => [`${value}%`, props.payload.fullLabel]}
+                formatter={(value, _name, item) => [`${value}%`, (item?.payload as { fullLabel?: string } | undefined)?.fullLabel || 'Score']}
               />
               <Line 
                 type="monotone" 
                 dataKey="score" 
                 stroke="#10b981" 
-                strokeWidth={4}
+                strokeWidth={3}
                 dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }}
                 activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full w-full flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Not enough data to map trends</p>
+          <div className="h-full w-full flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl sm:rounded-3xl p-4 text-center">
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Not enough data to map trends</p>
           </div>
         )}
       </div>

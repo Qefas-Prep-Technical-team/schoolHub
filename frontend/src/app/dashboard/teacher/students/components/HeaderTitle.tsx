@@ -1,6 +1,7 @@
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Sparkles } from "lucide-react";
+import { HeaderTooltip } from "@/app/dashboard/teacher/components/dashboard/HeaderTooltip";
 
 const HeaderTitle: React.FC = () => {
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
@@ -13,9 +14,12 @@ const HeaderTitle: React.FC = () => {
         <Sparkles size={12} className="animate-pulse" />
         Academic Directory
       </div>
-      <h1 className="text-slate-900 dark:text-white text-4xl sm:text-5xl font-black tracking-tight leading-none">
-        Students
-      </h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-slate-900 dark:text-white text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-none">
+          Students
+        </h1>
+        <HeaderTooltip content="Centralized registry of all scholars currently enrolled in your assigned classrooms. Use this directory to monitor individual student performance, review attendance histories, and launch quick session roll calls." />
+      </div>
       <div className="mt-3 flex items-center gap-2">
         <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
           {isPersonal ? "All Connected Schools" : selectedSchoolName}

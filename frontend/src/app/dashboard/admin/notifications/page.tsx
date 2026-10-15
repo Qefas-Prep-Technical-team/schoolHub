@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import {
@@ -310,37 +310,37 @@ export default function NotificationsPage() {
                   )}
                   onClick={() => handleOpenModal(n)}
                 >
-                  <CardContent className="p-5 flex gap-5 items-start">
+                  <CardContent className="p-4 sm:p-5 flex gap-3.5 sm:gap-5 items-start">
                     <div className={cn(
-                      "p-3 rounded-2xl shrink-0 h-12 w-12 flex items-center justify-center transition-all",
+                      "p-2.5 sm:p-3 rounded-2xl shrink-0 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center transition-all",
                       !n.isRead ? "bg-blue-400 text-white shadow-md shadow-blue-400/30" : "bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700"
                     )}>
                       {getTypeIcon(n.type, n.isRead)}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <h3 className={cn(
-                            "text-base leading-tight truncate tracking-tight",
+                            "text-sm sm:text-base leading-tight truncate tracking-tight",
                             !n.isRead ? "font-black text-slate-900 dark:text-white" : "font-bold text-slate-500 dark:text-slate-400"
                           )}>
                             {n.title}
                           </h3>
-                          {!n.isRead && <Badge className="bg-blue-400 text-white text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm hover:bg-blue-500">New</Badge>}
+                          {!n.isRead && <Badge className="bg-blue-400 text-white text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm hover:bg-blue-500 shrink-0">New</Badge>}
                           {(n.meta as any)?.priority && (n.meta as any)?.priority !== 'NORMAL' && (
-                            <Badge className={cn("text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm", (n.meta as any)?.priority === 'URGENT' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-amber-500 text-white hover:bg-amber-600')}>
+                            <Badge className={cn("text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm shrink-0", (n.meta as any)?.priority === 'URGENT' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-amber-500 text-white hover:bg-amber-600')}>
                               {(n.meta as any).priority}
                             </Badge>
                           )}
                         </div>
-                        <span className="text-[10px] text-slate-400 font-black flex items-center gap-1.5 shrink-0 ml-4 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold flex items-center gap-1.5 shrink-0 uppercase tracking-tight bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 sm:py-1 rounded-md self-start sm:self-auto">
                           <Clock size={10} /> {new Date(n.createdAt).toLocaleDateString()}
                         </span>
                       </div>
 
                       <p className={cn(
-                        "text-sm leading-relaxed mb-3 line-clamp-1",
+                        "text-xs sm:text-sm leading-relaxed mb-3 line-clamp-1",
                         !n.isRead ? "text-slate-600 dark:text-slate-300 font-medium" : "text-slate-500 dark:text-slate-500"
                       )}>
                         {n.message}
@@ -351,7 +351,7 @@ export default function NotificationsPage() {
                            Review Details <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                          </span>
 
-                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                            <Button 
                              variant="ghost" 
                              size="sm" 

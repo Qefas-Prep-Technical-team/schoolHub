@@ -1,107 +1,89 @@
-import { cn } from '@/lib/utils';
+'use client';
+
+import React from 'react';
+import { BookOpen, Layers, Award, Trophy } from 'lucide-react';
+import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
 interface ClassStatsProps {
   totalClasses: number;
+  totalSubjects: number;
+  attemptsCount: number;
+  classPosition: string | null;
 }
 
-export function ClassStats({ totalClasses }: ClassStatsProps) {
+export function ClassStats({ 
+  totalClasses, 
+  totalSubjects, 
+  attemptsCount, 
+  classPosition 
+}: ClassStatsProps) {
   const stats = [
     { 
       title: 'Enrolled Classes', 
       value: totalClasses, 
-      subtitle: 'Todays', 
-      change: '+11%', 
-      changeColor: 'text-pink-600', 
-      headerBg: 'bg-pink-600', 
-      chartColor: 'text-pink-600',
-      chartType: 'bars' 
+      subtitle: 'Active Cohorts', 
+      icon: <BookOpen className="w-5 h-5 text-pink-600 dark:text-pink-400" />,
+      tooltip: 'Number of official class cohorts, homerooms, or grade levels you are currently assigned to.',
+      accent: 'border-l-4 border-l-pink-500'
     },
     { 
-      title: 'Total Subjects', 
-      value: `${totalClasses * 2}`, 
-      subtitle: 'Todays', 
-      change: '-6.5%', 
-      changeColor: 'text-rose-500', 
-      headerBg: 'bg-fuchsia-500', 
-      chartColor: 'text-fuchsia-500',
-      chartType: 'circle' 
+      title: 'Active Subjects', 
+      value: totalSubjects, 
+      subtitle: 'Class Curriculum', 
+      icon: <Layers className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400" />,
+      tooltip: 'Total distinct academic curriculum courses and syllabus modules taught across your classes.',
+      accent: 'border-l-4 border-l-fuchsia-500'
     },
     { 
       title: 'Exam Attempts', 
-      value: '03', 
-      subtitle: 'Todays', 
-      change: '+09%', 
-      changeColor: 'text-pink-500', 
-      headerBg: 'bg-rose-500', 
-      chartColor: 'text-rose-500',
-      chartType: 'bars' 
+      value: attemptsCount, 
+      subtitle: 'Completed Tests', 
+      icon: <Award className="w-5 h-5 text-rose-600 dark:text-rose-400" />,
+      tooltip: 'Total number of exam papers, class quizzes, and periodic continuous assessment assessments completed.',
+      accent: 'border-l-4 border-l-rose-500'
     },
     { 
-      title: 'Overall Rank', 
-      value: '05', 
-      subtitle: 'Todays', 
-      change: '+31%', 
-      changeColor: 'text-pink-600', 
-      headerBg: 'bg-pink-500', 
-      chartColor: 'text-pink-500',
-      chartType: 'siren' 
+      title: 'Stream Position', 
+      value: classPosition || '—', 
+      subtitle: 'Cohort Standing', 
+      icon: <Trophy className="w-5 h-5 text-amber-500" />,
+      tooltip: 'Your verified class ranking position based on accumulated continuous assessment and examination scores.',
+      accent: 'border-l-4 border-l-amber-500'
     },
   ];
 
   return (
-    <div className="mb-10">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Overview</h2>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300">
-            Md Rayhan Islam ▼
-          </button>
-          <button className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300">
-            Central Clinic, Dhaka ▼
-          </button>
-          <button className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300">
-            Todays ▼
-          </button>
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">Overview</h2>
+          <HeaderTooltip content="Real-time academic summary aggregated across your enrolled classes, subjects, and examination logs." />
         </div>
       </div>
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-              <div className={cn("p-4 text-white font-medium text-lg", stat.headerBg)}>
+          <div 
+            key={i} 
+            className={`bg-white dark:bg-zinc-950/80 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 md:p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between ${stat.accent}`}
+          >
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center shrink-0">
+                {stat.icon}
+              </div>
+              <HeaderTooltip content={stat.tooltip} />
+            </div>
+            <div>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-wider mb-1">
                 {stat.title}
-              </div>
-              <div className="p-6 flex items-center justify-between flex-grow">
-                  <div className={cn("flex-shrink-0 w-16 h-16 relative flex items-center justify-center", stat.chartColor)}>
-                    {stat.chartType === 'circle' && (
-                      <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="28" className="stroke-slate-200 dark:stroke-slate-700" strokeWidth="6" fill="none" />
-                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="none" strokeDasharray="176" strokeDashoffset="60" strokeLinecap="round" />
-                      </svg>
-                    )}
-                    {stat.chartType === 'siren' && (
-                       <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="28" className="stroke-slate-200 dark:stroke-slate-700" strokeWidth="6" fill="none" />
-                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="none" strokeDasharray="176" strokeDashoffset="120" strokeLinecap="round" />
-                      </svg>
-                    )}
-                    {stat.chartType === 'bars' && (
-                      <div className="flex items-end gap-1 h-12 w-full pt-2">
-                        <div className="w-2 bg-slate-200 dark:bg-slate-700 rounded-t-sm h-full"></div>
-                        <div className="w-2 bg-slate-200 dark:bg-slate-700 rounded-t-sm h-3/4"></div>
-                        <div className="w-2 bg-slate-200 dark:bg-slate-700 rounded-t-sm h-1/2"></div>
-                        <div className="w-2 rounded-t-sm h-full bg-current"></div>
-                        <div className="w-2 bg-slate-200 dark:bg-slate-700 rounded-t-sm h-2/3"></div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                      <div className="text-3xl font-bold text-slate-800 dark:text-white leading-none mb-1">{stat.value}</div>
-                      <div className="text-sm font-medium text-slate-400">{stat.subtitle}</div>
-                  </div>
-                  <div className={cn("text-xs font-bold self-end mb-1 ml-2", stat.changeColor)}>
-                      {stat.change}
-                  </div>
-              </div>
+              </p>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {stat.value}
+              </h3>
+              <p className="text-[10px] sm:text-xs text-slate-400 dark:text-zinc-500 font-medium mt-1">
+                {stat.subtitle}
+              </p>
+            </div>
           </div>
         ))}
       </section>

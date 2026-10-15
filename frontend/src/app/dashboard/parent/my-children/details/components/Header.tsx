@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Search, Bell, School } from 'lucide-react'
 import { Input } from './ui/Input'
+import NotificationCenter from '@/components/notifications/NotificationCenter'
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -33,10 +34,7 @@ export default function Header() {
           </div>
         </div>
 
-        <button className="relative p-2 text-slate-500 hover:text-primary dark:text-slate-400 transition-colors">
-          <Bell className="size-5" />
-          <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full" />
-        </button>
+        <NotificationCenter />
 
         <div className="relative">
           <Image

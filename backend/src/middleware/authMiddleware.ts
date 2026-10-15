@@ -62,34 +62,34 @@ export const authenticateToken = async (
           where: { id: decoded.userId },
           include: { schoolAdmins: { where: { active: true }, take: 1 } }
         });
-        if (admin) {
+        if (admin && admin.isActive !== false) {
           userExists = true;
           schoolId = admin.schoolAdmins[0]?.schoolId;
           tenantId = admin.tenantId;
         }
       } else if (decoded.userType === "SUPER_ADMIN") {
         const admin = await prisma.admin.findUnique({ where: { id: decoded.userId } });
-        if (admin) {
+        if (admin && admin.isActive !== false) {
           userExists = true;
           tenantId = admin.tenantId;
         }
       } else if (decoded.userType === "TEACHER") {
         const teacher = await prisma.teacher.findUnique({ where: { id: decoded.userId } });
-        if (teacher) {
+        if (teacher && teacher.isActive !== false) {
           userExists = true;
           schoolId = (teacher as any).activeSchoolId || (teacher as any).primarySchoolId || (teacher as any).currentSchoolId || (teacher as any).schoolId || undefined;
           tenantId = (teacher as any).tenantId;
         }
       } else if (decoded.userType === "STUDENT") {
         const student = await prisma.student.findUnique({ where: { id: decoded.userId } });
-        if (student) {
+        if (student && student.isActive !== false) {
           userExists = true;
           schoolId = student.schoolId || undefined;
           tenantId = student.tenantId;
         }
       } else if (decoded.userType === "PARENT") {
         const parent = await prisma.parent.findUnique({ where: { id: decoded.userId } });
-        if (parent) {
+        if (parent && parent.isActive !== false) {
           userExists = true;
           tenantId = parent.tenantId;
         }
@@ -100,17 +100,18 @@ export const authenticateToken = async (
           prisma.student.findUnique({ where: { id: decoded.userId } }),
           prisma.parent.findUnique({ where: { id: decoded.userId } }),
         ]);
-        userExists = !!(admin || teacher || student || parent);
+        const matched = admin || teacher || student || parent;
+        userExists = !!(matched && (matched as any).isActive !== false);
       }
 
       setCachedSession(decoded.userId, decoded.userType, { valid: userExists, schoolId, tenantId });
     }
 
     if (!userExists) {
-      console.warn(`[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) not found in database.`);
+      console.warn(`[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) not found or account is deactivated.`);
       return res.status(401).json({
         success: false,
-        message: "User account no longer exists in the database. Please log in again.",
+        message: "User account no longer exists or has been deactivated. Please log in again.",
       });
     }
 

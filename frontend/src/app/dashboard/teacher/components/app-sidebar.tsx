@@ -72,7 +72,7 @@ interface MenuItem {
 }
 
 // Corrected menu items with feature keys
-export const menuGroups = [
+export const menuGroups: { label: string; items: MenuItem[] }[] = [
     {
         label: "Primary",
         items: [
@@ -143,6 +143,17 @@ export function AppSidebar() {
         return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}) };
     }, [dynamicFeatures, isFeaturesLoading]);
 
+    // Active menu groups without disabled / soon items
+    const activeMenuGroups = useMemo(() => {
+        if (!currentFeatures) return [];
+        return menuGroups
+            .map((group) => ({
+                ...group,
+                items: group.items.filter((item) => !!(currentFeatures as any)[item.featureKey]),
+            }))
+            .filter((group) => group.items.length > 0);
+    }, [currentFeatures]);
+
     return (
         <Sidebar
             collapsible="icon"
@@ -190,60 +201,57 @@ export function AppSidebar() {
                         ))}
                     </div>
                 ) : (
-                    menuGroups.map((group) => (
-                    <div key={group.label} className="space-y-2">
-                        {!isCollapsed && (
-                            <h3 className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
-                                {group.label}
-                            </h3>
-                        )}
-                        <SidebarMenu className="gap-1.5 font-inherit">
-                            {group.items.map(({ icon: Icon, label, href, featureKey }) => {
-                                const isEnabled = !!(currentFeatures as any)[featureKey];
-                                const isActive = pathname === href;
+                    activeMenuGroups.map((group) => (
+                        <div key={group.label} className="space-y-2">
+                            {!isCollapsed && (
+                                <h3 className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
+                                    {group.label}
+                                </h3>
+                            )}
+                            <SidebarMenu className="gap-1.5 font-inherit">
+                                {group.items.map(({ icon: Icon, label, href }) => {
+                                    const isActive = pathname === href;
 
-                                // If feature is disabled, don't render it at all
-                                if (!isEnabled) return null;
-                                
-                                return (
-                                    <SidebarMenuItem key={label}>
-                                        <Link 
-                                            href={href} 
-                                            className="w-full"
-                                        >
-                                            <SidebarMenuButton
-                                                className={cn(
-                                                    "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden",
-                                                    isActive
-                                                        ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-[0_4px_12px_rgba(5,150,105,0.1)]"
-                                                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white",
-                                                    isCollapsed && "justify-center mx-auto"
-                                                )}
+                                    return (
+                                        <SidebarMenuItem key={label}>
+                                            <Link 
+                                                href={href} 
+                                                className="w-full"
                                             >
-                                                {isActive && (
-                                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-emerald-600 rounded-r-full shadow-[2px_0_8px_rgba(5,150,105,0.6)]" />
-                                                )}
-                                                <Icon className={cn(
-                                                    "h-5 w-5 transition-all duration-300 group-hover:scale-110",
-                                                    isActive ? "text-emerald-600 dark:text-emerald-400" : "group-hover:text-emerald-500",
-                                                )} />
-                                                {!isCollapsed && (
-                                                    <span className="text-[13.5px] tracking-tight truncate flex-1">{label}</span>
-                                                )}
-                                                
-                                                {!isCollapsed && !isActive && (
-                                                    <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
-                                                        <ChevronRight className="h-3.5 w-3.5 text-emerald-500/50" />
-                                                    </div>
-                                                )}
-                                            </SidebarMenuButton>
-                                        </Link>
-                                    </SidebarMenuItem>
-                                )
-                            })}
-                        </SidebarMenu>
-                    </div>
-                )))}
+                                                <SidebarMenuButton
+                                                    className={cn(
+                                                        "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden",
+                                                        isActive
+                                                            ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-[0_4px_12px_rgba(5,150,105,0.1)]"
+                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white",
+                                                        isCollapsed && "justify-center mx-auto"
+                                                    )}
+                                                >
+                                                    {isActive && (
+                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-emerald-600 rounded-r-full shadow-[2px_0_8px_rgba(5,150,105,0.6)]" />
+                                                    )}
+                                                    <Icon className={cn(
+                                                        "h-5 w-5 transition-all duration-300 group-hover:scale-110",
+                                                        isActive ? "text-emerald-600 dark:text-emerald-400" : "group-hover:text-emerald-500",
+                                                    )} />
+                                                    {!isCollapsed && (
+                                                        <span className="text-[13.5px] tracking-tight truncate flex-1">{label}</span>
+                                                    )}
+                                                    
+                                                    {!isCollapsed && !isActive && (
+                                                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                                                            <ChevronRight className="h-3.5 w-3.5 text-emerald-500/50" />
+                                                        </div>
+                                                    )}
+                                                </SidebarMenuButton>
+                                            </Link>
+                                        </SidebarMenuItem>
+                                    );
+                                })}
+                            </SidebarMenu>
+                        </div>
+                    ))
+                )}
             </SidebarContent>
 
             {/* Footer */}

@@ -12,6 +12,7 @@ import { useTeacherRegistration } from '../../services/useRegistrationMutations'
 import { TeacherFormData, teacherSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
+import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
 
 /* ─── Design tokens — Teacher = Emerald ─── */
 const EMERALD      = '#047857'; // emerald-700
@@ -382,6 +383,8 @@ export default function TeacherCard() {
                 )}
               </span>
             </button>
+
+            <SocialAuthRow userType="teacher" mode="signup" />
 
             {/* Footer */}
             <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">

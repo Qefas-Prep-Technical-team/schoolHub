@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import PageHeader from './components/PageHeader';
 import AssessmentTypeToggle from './components/AssessmentTypeToggle';
 import StatsCards from './components/StatsCards';
@@ -10,17 +10,64 @@ import AssessmentList from './components/AssessmentList';
 import { useExams, useStudentStats } from '@/lib/api/hooks/useExams';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
 import { Assessment, StatCard } from './components/types';
-import { 
-    timeFilters 
-} from './components/data';
-import { Loader2 } from 'lucide-react';
+import { timeFilters } from './components/data';
+import { Loader2, Search, X, LayoutGrid, List } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
+import { Input } from '@/components/ui/input';
+import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
-export default function Home() {
+interface RawSubjectPaper {
+  durationMinutes?: number;
+  questions?: unknown[];
+  subject?: {
+    name?: string;
+  };
+}
+
+interface RawAttempt {
+  status?: string;
+  totalScore?: number;
+  totalMarks?: number;
+}
+
+interface RawExamItem {
+  id: string;
+  title: string;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  durationMinutes?: number;
+  resultReleaseAt?: string;
+  allowImmediateResult?: boolean;
+  subjectPapers?: RawSubjectPaper[];
+  attempts?: RawAttempt[];
+}
+
+interface RawAssignmentItem {
+  id: string;
+  title: string;
+  subject?: string;
+  dueDate?: string;
+  createdAt?: string;
+  grade?: string;
+  status?: string;
+  questionCount?: number;
+}
+
+export default function StudentAssessmentsPage() {
     const [assessmentType, setAssessmentType] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
     const [timeFilter, setTimeFilter] = useState('term');
+    const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
     const itemsPerPage = 10;
+
+    // Detect small screens and prefer grid view by default on mobile
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            setViewMode('grid');
+        }
+    }, []);
 
     // Fetch student stats and published assessments
     const { data: statsData, isLoading: isStatsLoading } = useStudentStats();
@@ -32,55 +79,58 @@ export default function Home() {
     
     // Normalize and combine assessments and assignments
     const assessments = useMemo(() => {
-        const assignmentsData = assignmentsResponse?.assignments || [];
-        return [...examsData, ...assignmentsData];
+        const assignmentsData = (assignmentsResponse?.assignments as unknown as RawAssignmentItem[]) || [];
+        const exams = (examsData as unknown as RawExamItem[]) || [];
+        return [...exams, ...assignmentsData];
     }, [examsData, assignmentsResponse]);
 
     // Map Backend Assessments and Assignments to Frontend interface
     const allAssessments: Assessment[] = useMemo(() => {
         const now = new Date();
-        return assessments.map((item: any) => {
-            // Assignments have 'questionCount' field; exams have 'category'. Use this as the discriminator.
+        return assessments.map((item) => {
+            // Assignments have 'questionCount' field and lack 'category'
             const isAssignment = 'questionCount' in item && !('category' in item);
 
             if (isAssignment) {
-                const dueDate = item.dueDate ? new Date(item.dueDate) : null;
+                const assignment = item as RawAssignmentItem;
+                const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
                 
                 let status: Assessment['status'] = 'open';
-                if (item.status === 'overdue') status = 'missing';
-                else if (item.status === 'submitted' || item.status === 'graded') status = 'submitted';
-                else if (item.status === 'in_progress') status = 'ongoing';
-                else if (item.startDate && now < new Date(item.startDate)) status = 'coming soon';
+                if (assignment.status === 'overdue') status = 'missing';
+                else if (assignment.status === 'submitted' || assignment.status === 'graded') status = 'submitted';
+                else if (assignment.status === 'in_progress') status = 'ongoing';
+                else if (assignment.createdAt && now < new Date(assignment.createdAt)) status = 'coming soon';
                 else if (dueDate && now > dueDate) status = 'closed';
                 else status = 'open';
 
                 return {
-                    id: item.id,
-                    title: item.title,
-                    subject: item.subject || 'Multiple Subjects',
-                    date: item.dueDate ? new Date(item.dueDate).toLocaleDateString('en-US', {
+                    id: assignment.id,
+                    title: assignment.title,
+                    subject: assignment.subject || 'Multiple Subjects',
+                    date: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                     }) : 'TBD',
-                    startDate: item.createdAt ? new Date(item.createdAt) : undefined,
+                    startDate: assignment.createdAt ? new Date(assignment.createdAt) : undefined,
                     endDate: dueDate || undefined,
-                    score: item.grade || null,
+                    score: assignment.grade || null,
                     status,
                     type: 'assignment',
-                    durationMinutes: 0, // Assignments typically don't have a strict timer in this context
-                    questionsCount: item.questionCount || 0,
+                    durationMinutes: 0,
+                    questionsCount: assignment.questionCount || 0,
                 };
             }
 
             // Otherwise, it's an Exam/Quiz/CA
-            const startDate = item.startDate ? new Date(item.startDate) : null;
-            const endDate = item.endDate ? new Date(item.endDate) : null;
-            const attempt = item.attempts?.[0];
-            const questionsCount = item.subjectPapers?.reduce((acc: number, paper: any) => acc + (paper.questions?.length || 0), 0) || 0;
-            const durationMinutes = item.durationMinutes > 0 
-                ? item.durationMinutes 
-                : item.subjectPapers?.reduce((acc: number, paper: any) => acc + (paper.durationMinutes || 0), 0) || 0;
+            const exam = item as RawExamItem;
+            const startDate = exam.startDate ? new Date(exam.startDate) : null;
+            const endDate = exam.endDate ? new Date(exam.endDate) : null;
+            const attempt = exam.attempts?.[0];
+            const questionsCount = exam.subjectPapers?.reduce((acc: number, paper) => acc + (paper.questions?.length || 0), 0) || 0;
+            const durationMinutes = (exam.durationMinutes ?? 0) > 0 
+                ? (exam.durationMinutes ?? 0) 
+                : exam.subjectPapers?.reduce((acc: number, paper) => acc + (paper.durationMinutes || 0), 0) || 0;
 
             let status: Assessment['status'] = 'open';
             if (startDate && now < startDate) {
@@ -97,21 +147,21 @@ export default function Home() {
             }
 
             return {
-                id: item.id,
-                title: item.title,
-                subject: item.subjectPapers?.[0]?.subject?.name || 'Multiple Subjects',
-                date: item.startDate ? new Date(item.startDate).toLocaleDateString('en-US', {
+                id: exam.id,
+                title: exam.title,
+                subject: exam.subjectPapers?.[0]?.subject?.name || 'Multiple Subjects',
+                date: exam.startDate ? new Date(exam.startDate).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
                 }) : 'TBD',
                 startDate: startDate || undefined,
                 endDate: endDate || undefined,
-                score: (item.allowImmediateResult || (item.resultReleaseAt && now >= new Date(item.resultReleaseAt))) 
+                score: (exam.allowImmediateResult || (exam.resultReleaseAt && now >= new Date(exam.resultReleaseAt))) 
                     ? (attempt?.totalScore != null ? `${Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100)}%` : null) 
                     : null,
                 status,
-                type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : item.category?.toLowerCase() === 'ca' ? 'ca' : 'exam',
+                type: exam.category?.toLowerCase() === 'quiz' ? 'quiz' : exam.category?.toLowerCase() === 'ca' ? 'ca' : 'exam',
                 durationMinutes,
                 questionsCount,
             };
@@ -162,78 +212,153 @@ export default function Home() {
         ];
     }, [statsData]);
 
-    // Filter assessments by type
+    // Filter assessments by type and search query
     const filteredAssessments = useMemo(() => {
-        return allAssessments.filter(assessment =>
-            assessmentType === 'exams' ? assessment.type === 'exam' 
-            : assessmentType === 'quizzes' ? assessment.type === 'quiz'
-            : assessmentType === 'ca' ? assessment.type === 'ca'
-            : assessment.type === 'assignment'
-        );
-    }, [allAssessments, assessmentType]);
+        const q = searchQuery.toLowerCase().trim();
+        return allAssessments.filter(assessment => {
+            const matchesType = assessmentType === 'exams' ? assessment.type === 'exam' 
+                : assessmentType === 'quizzes' ? assessment.type === 'quiz'
+                : assessmentType === 'ca' ? assessment.type === 'ca'
+                : assessment.type === 'assignment';
 
-    if (isExamsLoading || isStatsLoading) {
+            if (!matchesType) return false;
+            if (!q) return true;
+            return assessment.title.toLowerCase().includes(q) || assessment.subject.toLowerCase().includes(q);
+        });
+    }, [allAssessments, assessmentType, searchQuery]);
+
+    if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+            <div className="w-full space-y-6 sm:space-y-8 animate-pulse font-sans">
+                <div className="h-20 w-1/2 rounded-2xl bg-slate-200 dark:bg-zinc-900" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-32 rounded-3xl bg-slate-200 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800" />
+                    ))}
+                </div>
+                <div className="h-64 rounded-3xl bg-slate-200 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800" />
             </div>
         );
     }
 
     if (isError) {
         return (
-            <div className="flex h-screen flex-col items-center justify-center gap-4 text-center">
-                <p className="text-xl font-bold text-red-500">Failed to load assessments</p>
-                <p className="text-slate-500">Please check your connection and try again.</p>
+            <div className="w-full py-20 flex flex-col items-center justify-center gap-4 text-center">
+                <p className="text-xl font-bold text-rose-500">Failed to load assessments</p>
+                <p className="text-sm text-slate-500 dark:text-zinc-400">Please check your network connection and try again.</p>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen">
-            <main className="flex-1 p-6 lg:p-8">
-                <div className="mx-auto w-[95%] max-w-[1600px]">
-                    <PageHeader />
+        <div className="w-full space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6">
+            <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8">
+                <PageHeader />
 
-                    {/* Stats & Performance Grid */}
-                    <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
-                        <div className="xl:col-span-2">
-                            <StatsCards cards={dynamicStatCards} />
-                        </div>
-                        <PerformanceChart stats={statsData} />
+                {/* Stats & Performance Grid */}
+                <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-3">
+                    <div className="xl:col-span-2">
+                        <StatsCards cards={dynamicStatCards} />
+                    </div>
+                    <PerformanceChart stats={statsData} />
+                </div>
+
+                {/* Assessment Type, Search, and Time Filter Toolbar */}
+                <div className="space-y-3 pt-2">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">
+                            Available Assessments
+                        </h2>
+                        <HeaderTooltip content="Select an assessment category to view current schedules, question count, and your score reports." />
                     </div>
 
-                    {/* Unified Table Toolbar */}
-                    <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                         <AssessmentTypeToggle onTypeChange={(type) => {
                             setAssessmentType(type);
                             setCurrentPage(1);
                         }} />
                         
-                        <div className="flex items-center gap-3">
-                            {/* We could add a search input here in the future to perfectly match the design */}
+                        <div className="flex items-center gap-2.5 sm:gap-3 flex-1 md:flex-none justify-between md:justify-end">
+                            {/* Search input */}
+                            <div className="relative flex-1 sm:w-60">
+                                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <Input
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                    placeholder="Search title or subject..."
+                                    className="pl-9 pr-8 h-10 rounded-xl bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 text-xs shadow-sm"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+
                             <TimeFilter
                                 filters={timeFilters}
                                 activeFilter={timeFilter}
                                 onFilterChange={setTimeFilter}
                             />
+
+                            {/* View Mode Toggle */}
+                            <div className="flex items-center p-1 bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl shrink-0">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    type="button"
+                                    className={`p-2 rounded-lg text-xs font-semibold transition-all ${
+                                        viewMode === 'grid'
+                                            ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                                    }`}
+                                    title="Grid View"
+                                    aria-label="Grid View"
+                                >
+                                    <LayoutGrid size={16} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    type="button"
+                                    className={`p-2 rounded-lg text-xs font-semibold transition-all ${
+                                        viewMode === 'table'
+                                            ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                                    }`}
+                                    title="Table View"
+                                    aria-label="Table View"
+                                >
+                                    <List size={16} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <AssessmentList assessments={filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} />
-                    {filteredAssessments.length > 0 && (
-                        <div className="mt-8 flex justify-center">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={Math.ceil(filteredAssessments.length / itemsPerPage)}
-                                totalItems={filteredAssessments.length}
-                                itemsPerPage={itemsPerPage}
-                                onPageChange={setCurrentPage}
-                            />
-                        </div>
-                    )}
                 </div>
-            </main>
+
+                {/* Assessment List (Grid or Table View) */}
+                <AssessmentList 
+                    assessments={filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} 
+                    viewMode={viewMode}
+                />
+                
+                {filteredAssessments.length > itemsPerPage && (
+                    <div className="mt-8 flex justify-center">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={Math.ceil(filteredAssessments.length / itemsPerPage)}
+                            totalItems={filteredAssessments.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            theme="pink"
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

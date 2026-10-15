@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, GraduationCap, School, BookOpen } from 'lucide-react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { HeaderTooltip } from './HeaderTooltip';
 
 interface TeacherHeroProps {
   selectedSchoolName: string;
@@ -51,12 +52,18 @@ export default function TeacherHero({
       <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-r from-[#1E293B] to-[#334155] shadow-sm border border-slate-800 flex flex-col md:flex-row">
         
         {/* Left Content */}
-        <div className="flex-1 p-8 md:p-10 z-10">
-          <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-white/90 font-medium text-xs mb-4">
-            {displaySession} • {isPersonal ? "Global" : selectedSchoolName}
+        <div className="flex-1 p-5 sm:p-8 md:p-10 z-10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-white/90 font-medium text-xs">
+              {displaySession} • {isPersonal ? "Global" : selectedSchoolName}
+            </div>
+            <HeaderTooltip 
+              content={`Displays your institutional teaching overview and active session. You are currently operating under ${displaySession} for ${isPersonal ? "your personal account" : selectedSchoolName}, managing ${totalClasses} assigned class cohort${totalClasses === 1 ? '' : 's'}.`}
+              size={13}
+            />
           </div>
           
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3">
             Welcome back to {isPersonal ? "your Dashboard" : selectedSchoolName}
           </h2>
           

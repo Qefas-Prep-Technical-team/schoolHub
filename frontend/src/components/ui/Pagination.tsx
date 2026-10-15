@@ -21,7 +21,7 @@ const Pagination: React.FC<PaginationProps> = ({
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  const pageNumbers = [];
+  const pageNumbers: (number | string)[] = [];
   const maxVisiblePages = 5;
 
   if (totalPages <= maxVisiblePages) {
@@ -41,16 +41,21 @@ const Pagination: React.FC<PaginationProps> = ({
   if (!totalItems || totalItems === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-200/60 dark:border-slate-800/60 gap-4 mt-6">
-      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-        Showing <span className="text-slate-900 dark:text-slate-100 font-bold">{startItem}</span> to <span className="text-slate-900 dark:text-slate-100 font-bold">{endItem}</span> of <span className="text-slate-900 dark:text-slate-100 font-bold">{totalItems}</span> results
+    <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-200/80 dark:border-zinc-800 gap-3 sm:gap-4 mt-6 w-full">
+      <p className="text-[11px] sm:text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider text-center sm:text-left">
+        Showing <span className="text-slate-900 dark:text-white font-bold">{startItem}</span> to <span className="text-slate-900 dark:text-white font-bold">{endItem}</span> of <span className="text-slate-900 dark:text-white font-bold">{totalItems}</span> results
       </p>
       
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
+            className={`flex h-8 sm:h-9 w-8 sm:w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90 focus:outline-none ${
+              theme === 'pink' 
+                ? 'hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-300 dark:hover:border-pink-800 focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 dark:focus:border-pink-500' 
+                : 'focus:ring-2 focus:ring-emerald-500/30'
+            }`}
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
+            aria-label="Previous Page"
           >
             <ChevronLeft size={16} />
           </button>
@@ -59,30 +64,39 @@ const Pagination: React.FC<PaginationProps> = ({
             typeof page === 'number' ? (
               <button
                 key={index}
-                className={`flex h-9 min-w-9 px-3 items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90 ${
+                className={`flex h-8 sm:h-9 min-w-8 sm:min-w-9 px-2.5 sm:px-3 items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90 focus:outline-none ${
                   currentPage === page
                     ? theme === 'blue'
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20 dark:from-blue-600 dark:to-indigo-700 dark:shadow-blue-950/40 scale-105'
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20 dark:from-blue-600 dark:to-indigo-700 scale-105 focus:ring-2 focus:ring-blue-400'
                       : theme === 'pink'
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/20 dark:from-pink-600 dark:to-rose-700 dark:shadow-pink-950/40 scale-105'
-                      : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20 dark:from-green-600 dark:to-emerald-700 dark:shadow-green-950/40 scale-105'
-                    : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-md shadow-pink-500/30 scale-105 focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 dark:focus:ring-offset-zinc-950'
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-500/20 dark:from-green-600 dark:to-emerald-700 scale-105 focus:ring-2 focus:ring-emerald-400'
+                    : `border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 ${
+                        theme === 'pink' 
+                          ? 'hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-200 dark:hover:border-pink-900/40 focus:ring-2 focus:ring-pink-500/40 focus:border-pink-500 dark:focus:border-pink-400' 
+                          : 'focus:ring-2 focus:ring-emerald-500/30'
+                      }`
                 }`}
                 onClick={() => onPageChange(page)}
               >
                 {page}
               </button>
             ) : (
-              <span key={index} className="text-slate-400 px-1 font-black select-none">
+              <span key={index} className="text-slate-400 dark:text-zinc-600 px-1 font-bold select-none text-xs">
                 {page}
               </span>
             )
           ))}
           
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
+            className={`flex h-8 sm:h-9 w-8 sm:w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90 focus:outline-none ${
+              theme === 'pink' 
+                ? 'hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-300 dark:hover:border-pink-800 focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 dark:focus:border-pink-500' 
+                : 'focus:ring-2 focus:ring-emerald-500/30'
+            }`}
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
+            aria-label="Next Page"
           >
             <ChevronRight size={16} />
           </button>
@@ -92,4 +106,3 @@ const Pagination: React.FC<PaginationProps> = ({
 };
 
 export default Pagination;
-

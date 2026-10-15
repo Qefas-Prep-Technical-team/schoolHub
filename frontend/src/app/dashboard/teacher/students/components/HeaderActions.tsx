@@ -18,14 +18,14 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ onQuickAttendance, onExpo
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="secondary" icon="ios_share" onClick={onExport}>
+      <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+        <Button variant="secondary" icon="ios_share" onClick={onExport} className="w-full sm:w-auto">
           Export List
         </Button>
-        <Button variant="secondary" icon="forward_to_inbox" onClick={handleBulkMessage}>
+        <Button variant="secondary" icon="forward_to_inbox" onClick={handleBulkMessage} className="w-full sm:w-auto">
           Bulk Message
         </Button>
-        <Button variant="primary" icon="checklist" onClick={onQuickAttendance}>
+        <Button variant="primary" icon="checklist" onClick={onQuickAttendance} className="col-span-2 sm:col-span-1 w-full sm:w-auto">
           Quick Attendance
         </Button>
       </div>

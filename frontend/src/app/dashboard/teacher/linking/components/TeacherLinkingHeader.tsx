@@ -1,5 +1,9 @@
+'use client';
+
+import React from 'react';
 import { Link2, QrCode } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
 interface TeacherLinkingHeaderProps {
   onConnectClick: () => void;
@@ -8,45 +12,40 @@ interface TeacherLinkingHeaderProps {
 
 export function TeacherLinkingHeader({ onConnectClick, onShowQRCodeClick }: TeacherLinkingHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200/60 dark:border-zinc-800">
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white mb-2">
-          Linking Hub
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 font-medium text-lg">
-          Onboard students and manage your school connections.
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+            Linking Hub
+          </h1>
+          <HeaderTooltip
+            content="Establish secure, bidirectional classroom and institutional connections. Share your unique Teacher Code or QR badge to onboard scholars, guardians, and class cohorts into your academic workspace."
+            size={15}
+          />
+        </div>
+        <p className="text-xs sm:text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium mt-1">
+          Onboard students, link guardians, and manage institutional school network connections.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        {/* View QR Hub — outline style, works fine with Button */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+        {/* View QR Hub */}
         <Button
           onClick={onShowQRCodeClick}
           variant="outline"
-          className="h-14 px-8 rounded-2xl font-black bg-white dark:bg-gray-800/60 border-2 border-gray-100 dark:border-gray-700/60 shadow-sm hover:scale-105 active:scale-95 transition-all text-green-600 dark:text-green-400 dark:hover:bg-gray-700/60"
+          className="h-11 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-bold bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-800 active:scale-95 transition-all text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm"
         >
-          <QrCode className="mr-2 h-5 w-5" /> View QR Hub
+          <QrCode className="mr-2 h-4 w-4 shrink-0" />
+          <span>View QR Hub</span>
         </Button>
 
-        {/* Connect with Code — raw button to avoid CVA bg-primary override in dark mode */}
+        {/* Connect with Code */}
         <button
           onClick={onConnectClick}
-          className="
-            inline-flex items-center gap-2
-            h-14 px-8 rounded-2xl font-black text-sm cursor-pointer
-            text-white
-            transition-all duration-300 ease-out
-            bg-green-600 hover:bg-green-700
-            shadow-lg shadow-green-500/25
-            dark:bg-gradient-to-r dark:from-green-500 dark:to-emerald-600
-            dark:hover:from-green-400 dark:hover:to-emerald-500
-            dark:shadow-[0_4px_24px_rgba(34,197,94,0.35)]
-            dark:hover:shadow-[0_4px_32px_rgba(34,197,94,0.55)]
-            hover:scale-105 active:scale-95
-          "
+          className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-5 sm:px-7 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm text-white transition-all bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20 active:scale-95 cursor-pointer"
         >
-          <Link2 className="h-5 w-5 shrink-0" />
-          Connect with Code
+          <Link2 className="h-4 w-4 shrink-0" />
+          <span>Connect with Code</span>
         </button>
       </div>
     </div>

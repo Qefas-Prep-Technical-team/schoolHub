@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { User, Award, BarChart3, TrendingUp, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { HeaderTooltip } from './HeaderTooltip';
 
 interface StudentPerformanceWidgetProps {
   performanceMetrics: {
@@ -44,24 +45,30 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
   };
 
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-6 shadow-sm h-full transition-all duration-300">
-      <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4 sm:p-6 shadow-sm h-full transition-all duration-300">
+      <div className="flex items-center justify-between mb-4 sm:mb-8">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-            Academic Pulse
-          </h2>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Academic Pulse
+            </h2>
+            <HeaderTooltip 
+              content="Offers a granular look at individual student mastery, highlighting your top achievers alongside the overall grade distribution (A through F). Use this to celebrate top performers, identify students who may need supplemental help, and ensure your grade curve remains balanced across your classes." 
+              size={14} 
+            />
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 flex items-center gap-1.5 sm:gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             Top Performer Tracking
           </p>
         </div>
-        <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700">
-          <BarChart3 className="w-5 h-5 text-slate-500" />
+        <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 shrink-0">
+          <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
         </div>
       </div>
 
       {/* Top Students Section */}
-      <div className="space-y-4 mb-4">
+      <div className="space-y-3 sm:space-y-4 mb-4">
         {topStudents.length > 0 ? (
           currentStudents.map((student, index) => {
             const overallIndex = (currentPage - 1) * itemsPerPage + index;
@@ -70,16 +77,16 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
                 key={student.id} 
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-center justify-between group p-3 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-800/30 border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/30 hover:bg-white dark:hover:bg-slate-800/60 transition-all duration-500"
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between group p-2.5 sm:p-3 rounded-xl sm:rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-800/30 border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/30 hover:bg-white dark:hover:bg-slate-800/60 transition-all duration-500"
               >
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-all duration-500 shadow-sm">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="relative shrink-0">
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-all duration-500 shadow-sm">
                       {student.image ? (
                         <Image src={student.image} alt={student.name} fill className="object-cover" />
                       ) : (
-                        <span className="text-sm font-black text-emerald-600 uppercase">
+                        <span className="text-xs sm:text-sm font-black text-emerald-600 uppercase">
                           {student.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </span>
                       )}

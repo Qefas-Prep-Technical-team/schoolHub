@@ -40,6 +40,7 @@ import { useToast } from '@/lib/hooks/useToast';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 import TwoFactorSetup from '@/components/auth/TwoFactorSetup';
+import DeactivateAccountSection from '@/components/auth/DeactivateAccountSection';
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 
@@ -408,6 +409,9 @@ export default function ParentSettingsPage() {
             </Card>
             
             <DeviceSessions />
+
+            {/* Account Deactivation / Danger Zone */}
+            <DeactivateAccountSection userRole="parent" />
           </div>
         </TabsContent>
 

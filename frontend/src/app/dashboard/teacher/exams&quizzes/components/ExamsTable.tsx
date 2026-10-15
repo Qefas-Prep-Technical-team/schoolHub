@@ -104,7 +104,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
 
   if (viewMode === 'grid') {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pt-2">
         {exams.map((exam, idx) => {
           const baseIndex = (currentPage - 1) * itemsPerPage;
           const numStr = String(baseIndex + idx + 1).padStart(2, '0');
@@ -126,7 +126,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={`group relative rounded-3xl p-5 border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col ${isMyItem ? 'bg-emerald-500/5 border-emerald-500/30 dark:border-emerald-500/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40'}`}
+              className={`group relative rounded-2xl sm:rounded-3xl p-4 sm:p-5 border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col ${isMyItem ? 'bg-emerald-500/5 border-emerald-500/30 dark:border-emerald-500/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40'}`}
             >
               {/* Header inside Card */}
               <div className="flex items-start justify-between gap-4">
@@ -331,14 +331,14 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={`group flex flex-col items-stretch cursor-pointer gap-4 p-4 md:p-5 rounded-2xl border ${isMyItem ? 'bg-emerald-500/5 border-emerald-500/30 dark:border-emerald-500/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40'} hover:border-emerald-500/50 transition-all duration-300 shadow-sm hover:shadow-md`}
+              className={`group flex flex-col items-stretch cursor-pointer gap-4 p-3.5 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl border ${isMyItem ? 'bg-emerald-500/5 border-emerald-500/30 dark:border-emerald-500/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/40'} hover:border-emerald-500/50 transition-all duration-300 shadow-sm hover:shadow-md`}
               onClick={() => {}}
             >
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-4 w-full">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full">
               {/* Title & Context */}
-              <div className="flex items-center gap-6 flex-1 min-w-0">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-6 flex-1 min-w-0 w-full lg:w-auto">
                 {/* Numbering */}
-                <div className="text-sm font-black text-slate-400 dark:text-slate-600 w-8 shrink-0">
+                <div className="text-xs sm:text-sm font-black text-slate-400 dark:text-slate-600 w-6 sm:w-8 shrink-0 pt-1 sm:pt-0">
                   #{numStr}
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
@@ -414,7 +414,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               </div>
 
               {/* Metrics */}
-              <div className="flex flex-wrap items-center gap-8 px-6 border-x border-slate-100 dark:border-slate-800/50">
+              <div className="flex flex-wrap items-center justify-between sm:justify-start gap-4 sm:gap-8 px-2 sm:px-6 py-2.5 sm:py-0 border-y sm:border-y-0 sm:border-x border-slate-100 dark:border-slate-800/50 w-full lg:w-auto">
                 <div className="flex flex-col items-center">
                   <span className="text-sm font-black text-slate-900 dark:text-slate-100">
                     {(() => {
@@ -452,7 +452,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               </div>
 
               {/* Status & Actions */}
-              <div className="flex items-center gap-6">
+              <div className="flex items-center justify-between lg:justify-end gap-3 sm:gap-6 w-full lg:w-auto">
                 <div className="flex flex-col items-end gap-1.5">
                   <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] rounded-xl border ${getStatusStyles(exam.status)}`}>
                     {exam.status}
@@ -563,8 +563,8 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                                 </div>
                               )}
                             </div>
-                        </div>
-                        <div className="flex items-center gap-6">
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                           <div className="flex flex-col items-center">
                             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{paper.questionsCount || paper.questions?.length || 0}</p>
                             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Questions</p>

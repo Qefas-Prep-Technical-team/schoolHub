@@ -2,8 +2,7 @@
 
 import { Assessment } from './types';
 import Badge from './ui/Badge';
-import Link from "next/link";
-import { Clock, BookOpen, ChevronRight, Activity, Calendar, Loader2 } from "lucide-react";
+import { Clock, BookOpen, ChevronRight, Activity, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -51,11 +50,11 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
     }, [assessment]);
 
     const getScoreColor = (score: string | null) => {
-        if (!score) return 'text-slate-400';
-        const scoreNum = parseInt(score.replace('%', ''));
-        if (scoreNum >= 75) return 'text-emerald-500';
-        if (scoreNum >= 50) return 'text-amber-500';
-        return 'text-rose-500';
+        if (!score) return 'text-slate-400 dark:text-zinc-500';
+        const scoreNum = parseInt(score.replace('%', ''), 10);
+        if (scoreNum >= 75) return 'text-emerald-500 font-black';
+        if (scoreNum >= 50) return 'text-amber-500 font-black';
+        return 'text-rose-500 font-black';
     };
 
     const isLive = assessment.status === 'open' || assessment.status === 'ongoing';
@@ -68,73 +67,73 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
                 router.push(`/dashboard/student/exams&quizzes/${assessment.id}`);
             }}
             className={cn(
-                "group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer",
+                "group border-b border-slate-100 dark:border-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors relative cursor-pointer",
                 isNavigating ? "opacity-50 pointer-events-none" : ""
             )}
         >
-            <td className="p-4 relative text-center">
-                <span className="text-xs font-bold text-slate-400">
+            <td className="p-4 text-center">
+                <span className="text-xs font-bold text-slate-400 dark:text-zinc-500">
                     {index < 10 ? `0${index}` : index}
                 </span>
             </td>
-            <td className="p-4 relative">
+            <td className="p-4">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-pink-600 transition-colors shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-slate-400 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors shrink-0">
                         {assessment.type === 'exam' ? <BookOpen size={18} strokeWidth={2.5} /> : <Activity size={18} strokeWidth={2.5} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-pink-600 transition-colors">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                             {assessment.title}
                         </h3>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
                             <span className="truncate">{assessment.subject}</span>
                         </div>
                     </div>
                 </div>
             </td>
-            <td className="p-4 relative">
+            <td className="p-4">
                 <div className="flex flex-col gap-0.5">
                     {timeLeftStr ? (
-                        <span className={`text-[11px] font-black tracking-tight flex items-center gap-1.5 ${isLive ? 'text-indigo-500' : 'text-amber-500'}`}>
+                        <span className={`text-[11px] font-black tracking-tight flex items-center gap-1.5 ${isLive ? 'text-pink-600 dark:text-pink-400' : 'text-amber-500'}`}>
                             <Clock size={12} className={isLive ? 'animate-spin-slow' : ''} />
                             {timeLeftStr}
                         </span>
                     ) : (
-                        <div className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
+                        <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-700 dark:text-zinc-300 font-medium">
                             {assessment.date}
                         </div>
                     )}
                 </div>
             </td>
-            <td className="p-4 relative text-center">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <td className="p-4 text-center">
+                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-zinc-300">
                     {(assessment.durationMinutes ?? 0) > 0 ? `${assessment.durationMinutes}m` : '-'}
                 </span>
             </td>
-            <td className="p-4 relative text-center">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <td className="p-4 text-center">
+                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-zinc-300">
                     {(assessment.questionsCount ?? 0) > 0 ? assessment.questionsCount : '-'}
                 </span>
             </td>
-            <td className="p-4 relative text-center">
-                <span className={`text-sm font-black ${getScoreColor(assessment.score)}`}>
+            <td className="p-4 text-center">
+                <span className={`text-xs sm:text-sm ${getScoreColor(assessment.score)}`}>
                     {assessment.score || '-'}
                 </span>
             </td>
-            <td className="p-4 relative">
+            <td className="p-4">
                 <Badge variant={assessment.status} size="sm">
                     {assessment.status === 'open' ? 'Live Now' : 
                     assessment.status === 'coming soon' ? 'Coming Soon' :
                     assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
                 </Badge>
             </td>
-            <td className="p-4 relative text-center">
+            <td className="p-4 text-center">
                 <div className="flex items-center justify-center">
                     {isNavigating ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <Loader2 className="h-4 w-4 animate-spin text-pink-600" />
                     ) : (
-                        <div className="h-8 w-8 flex items-center justify-center rounded-full text-slate-300 group-hover:text-pink-600 group-hover:bg-pink-600/10 transition-colors">
-                            <ChevronRight size={18} />
+                        <div className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 group-hover:text-pink-600 dark:group-hover:text-pink-400 group-hover:bg-pink-50 dark:group-hover:bg-zinc-800 transition-colors">
+                            <ChevronRight size={16} />
                         </div>
                     )}
                 </div>

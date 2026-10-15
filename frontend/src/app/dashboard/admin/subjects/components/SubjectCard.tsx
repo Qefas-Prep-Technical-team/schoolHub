@@ -102,15 +102,20 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
                   )}
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                   <div 
                       className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-slate-100/50 dark:border-white/5"
                       style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
                   >
                       {getIcon(subject.name, subject.code)}
                   </div>
-                  <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-primary transition-colors">{subject.name}</h4>
+                  <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-primary transition-colors">{subject.name}</h4>
+                        <span className="md:hidden font-mono text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded">
+                            {subject.code}
+                        </span>
+                      </div>
                       <span className="text-xs text-slate-400 line-clamp-1 italic max-w-md">{subject.description || "No description provided."}</span>
                   </div>
               </div>
@@ -194,27 +199,27 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
     <motion.div
       whileHover={{ y: -4, boxShadow: '0 12px 40px -12px rgba(0,0,0,0.1)' }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 transition-all duration-300 cursor-pointer flex flex-col min-h-[200px] shadow-sm"
+      className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 transition-all duration-300 cursor-pointer flex flex-col min-h-[190px] sm:min-h-[200px] shadow-sm"
       onClick={() => onView?.(subject)}
     >
       {/* Top Header: Icon & Actions */}
       <div className="flex justify-between items-start mb-4">
         <div 
-          className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0"
           style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
         >
-          {getIcon(subject.name, subject.code, "size-6")}
+          {getIcon(subject.name, subject.code, "size-5 sm:size-6")}
         </div>
 
         <div className="flex-1 flex justify-end">
           {index !== undefined && (
-            <span className="text-4xl font-black text-slate-100 dark:text-slate-800/50 -mt-2 -mr-2 select-none group-hover:text-slate-200 dark:group-hover:text-slate-800 transition-colors">
+            <span className="text-3xl sm:text-4xl font-black text-slate-100 dark:text-slate-800/50 -mt-2 -mr-2 select-none group-hover:text-slate-200 dark:group-hover:text-slate-800 transition-colors">
               {index.toString().padStart(2, '0')}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute top-6 right-6">
+        <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 absolute top-4 right-4 sm:top-6 sm:right-6">
           <Button
             onClick={(e) => {
               e.stopPropagation();
@@ -222,7 +227,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
             }}
             variant="ghost"
             size="icon"
-            className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
           >
             <Edit2 size={14} />
           </Button>

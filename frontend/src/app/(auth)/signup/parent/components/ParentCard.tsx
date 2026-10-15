@@ -12,6 +12,7 @@ import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
+import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
 
 /* ─── Design tokens — Parent = Orange ─── */
 const ORANGE      = '#ea580c'; // orange-600
@@ -318,6 +319,8 @@ export default function ParentCard() {
                 )}
               </span>
             </button>
+
+            <SocialAuthRow userType="parent" mode="signup" />
 
             {/* Footer */}
             <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">

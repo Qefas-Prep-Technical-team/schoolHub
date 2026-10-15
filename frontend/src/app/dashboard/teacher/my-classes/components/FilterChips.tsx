@@ -32,7 +32,7 @@ export default function FilterChips({ filters, options, onFilterChange, onClearF
     };
 
     return (
-        <div className="mb-10 flex flex-wrap items-center gap-4">
+        <div className="mb-4 sm:mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
             {options.academicYear.length > 0 && (
                 <FilterPill 
                     label="Academic Year" 
@@ -86,9 +86,9 @@ export default function FilterChips({ filters, options, onFilterChange, onClearF
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
                         onClick={onClearFilters}
-                        className="flex h-12 items-center justify-center gap-2 rounded-2xl text-rose-500 bg-rose-500/10 px-6 hover:bg-rose-500 hover:text-white transition-all ml-auto text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/5 active:scale-95"
+                        className="flex h-9 sm:h-10 items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl text-rose-500 bg-rose-500/10 px-3.5 sm:px-5 hover:bg-rose-500 hover:text-white transition-all ml-auto text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95"
                     >
-                        <FilterX size={16} />
+                        <FilterX size={15} />
                         Clear All
                     </motion.button>
                 )}
@@ -113,19 +113,19 @@ function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onCha
             <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onToggle}
-                className={`flex h-10 items-center justify-between gap-3 rounded-lg px-4 border transition-all duration-300 ${
+                className={`flex h-9 sm:h-10 items-center justify-between gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 border transition-all duration-300 ${
                     value 
                     ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' 
                     : 'bg-white dark:bg-emerald-950/60 border-slate-200 dark:border-emerald-800/50 text-slate-600 dark:text-slate-300 hover:border-emerald-500/50'
                 }`}
             >
-                <div className="flex items-center gap-2">
-                    <Icon size={16} className={value ? 'text-white' : 'text-emerald-500'} strokeWidth={2.5} />
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Icon size={15} className={value ? 'text-white' : 'text-emerald-500'} strokeWidth={2.5} />
                     <span className="text-[10px] font-black uppercase tracking-widest leading-none">
                         {value || label}
                     </span>
                 </div>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} ${value ? 'text-white/70' : 'text-slate-400'}`} />
+                <ChevronDown size={13} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} ${value ? 'text-white/70' : 'text-slate-400'}`} />
             </motion.button>
 
             <AnimatePresence>

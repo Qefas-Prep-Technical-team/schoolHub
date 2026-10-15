@@ -33,18 +33,18 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm overflow-hidden">
+    <div className="w-full bg-white dark:bg-emerald-950/60 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 dark:bg-emerald-900/40 border-b border-slate-200 dark:border-emerald-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <th className="px-6 py-4 font-semibold w-12 text-center">#</th>
-              <th className="px-6 py-4 font-semibold">Class Info</th>
-              <th className="px-6 py-4 font-semibold">Level / Schedule</th>
-              <th className="px-6 py-4 font-semibold">Class GPA</th>
-              <th className="px-6 py-4 font-semibold">Attendance</th>
-              <th className="px-6 py-4 font-semibold">Pending</th>
-              <th className="px-6 py-4 font-semibold text-right">Action</th>
+            <tr className="bg-slate-50 dark:bg-emerald-900/40 border-b border-slate-200 dark:border-emerald-800/50 text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold w-12 text-center">#</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Class Info</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Level / Schedule</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Class GPA</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Attendance</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold">Pending</th>
+              <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-emerald-800/50">
@@ -60,14 +60,14 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                     transition={{ delay: idx * 0.05 }}
                     className="group hover:bg-slate-50 dark:hover:bg-emerald-900/30 transition-colors"
                   >
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                       <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
                         {idx + 1}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-emerald-700/50">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-emerald-700/50 shrink-0">
                           <Image src={cls.image || '/users/user 1.jpeg'} alt={cls.name} width={48} height={48} className="w-full h-full object-cover" />
                         </div>
                         <div>
@@ -78,7 +78,7 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <div className="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                         <span>{cls.level || 'N/A'}</span>
                         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -87,17 +87,17 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className={cn("text-xs transition-transform duration-300 inline-block", getGradeStyles(cls.averageGrade))}>
                         {cls.averageGrade}%
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className={cn("text-xs transition-transform duration-300 inline-block", getAttendanceStyles(cls.attendance))}>
                         {cls.attendance}%
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       {pendingCount > 0 ? (
                          <span className={cn("text-xs transition-transform duration-300 inline-block", getPendingStyles(pendingCount))}>
                             {pendingCount} Tasks
@@ -106,9 +106,9 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                          <span className="text-xs font-medium text-slate-400">None</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                       <Link href={`/dashboard/teacher/my-classes/${cls.id}`} onClick={() => onClassClick(cls.id)}>
-                        <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 dark:bg-emerald-900/40 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
+                        <button className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-slate-100 dark:bg-emerald-900/40 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
                           Enter
                           <ArrowRight size={14} />
                         </button>

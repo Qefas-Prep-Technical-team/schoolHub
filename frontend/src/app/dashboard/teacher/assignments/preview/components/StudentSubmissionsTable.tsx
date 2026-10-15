@@ -141,13 +141,14 @@ export default function StudentSubmissionsTable({
             </div>
 
             {submissions.length > itemsPerPage && (
-                <div className="p-6 border-t border-gray-100 dark:border-gray-800">
+                <div className="px-4 sm:px-6 pb-6">
                     <Pagination
                         currentPage={currentPage}
                         totalPages={Math.ceil(submissions.length / itemsPerPage)}
                         totalItems={submissions.length}
                         itemsPerPage={itemsPerPage}
                         onPageChange={setCurrentPage}
+                        itemName="submissions"
                     />
                 </div>
             )}

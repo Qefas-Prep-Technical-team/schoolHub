@@ -15,10 +15,12 @@ import {
     useUpdateSchoolPlan, 
     useAllPlatformPlans,
     useUpdateSchoolStatus,
+    useDeletePlatformSchool,
     useImpersonateAdmin,
     PlatformSchoolDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetSchoolSubscription } from "@/lib/api/hooks/usePlatformBilling"
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal"
 import { 
     Building2 as BuildingIcon, 
     Calendar as CalendarIcon, 
@@ -39,7 +41,12 @@ import {
     Unlock as UnlockIcon,
     Cloud as CloudIcon,
     RotateCcw as RotateCcwIcon,
-    History as HistoryIcon
+    History as HistoryIcon,
+    CheckCircle2 as CheckCircle2Icon,
+    ShieldAlert as ShieldAlertIcon,
+    AlertTriangle as AlertTriangleIcon,
+    Check as CheckIcon,
+    Trash2 as TrashIcon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -56,6 +63,7 @@ export default function SchoolDetailsPage() {
     const { data: plans } = useAllPlatformPlans()
     const updatePlan = useUpdateSchoolPlan()
     const toggleStatus = useUpdateSchoolStatus()
+    const deleteSchoolMutation = useDeletePlatformSchool()
     const impersonate = useImpersonateAdmin()
     const resetSubscription = useResetSchoolSubscription()
 
@@ -67,6 +75,9 @@ export default function SchoolDetailsPage() {
     const [billingCycle, setBillingCycle] = useState("monthly")
     const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
     const [resetConfirmText, setResetConfirmText] = useState("")
+    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
+    const [selectedStatus, setSelectedStatus] = useState<string>("ACTIVE")
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
     useEffect(() => {
         if (school) {
@@ -143,6 +154,78 @@ export default function SchoolDetailsPage() {
         updatePlan.mutate({ id: id as string, planData })
     }
 
+    const isDeactivated = school.subscriptionStatus === "DEACTIVATED" || school.subscriptionStatus === "SUSPENDED";
+
+    const ALL_STATUS_OPTIONS = [
+        {
+            key: "ACTIVE",
+            title: "Active Access",
+            badge: "ACTIVE",
+            badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+            description: "School is fully operational. All administrators, teachers, and students can log in and use features normally.",
+            icon: CheckCircle2Icon,
+            color: "text-emerald-500",
+            borderActive: "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10",
+        },
+        {
+            key: "DEACTIVATED",
+            title: "Deactivate Account",
+            badge: "DEACTIVATED",
+            badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+            description: "Completely deactivates the school. Revokes all active administrator sessions and blocks login with 403 Forbidden.",
+            icon: LockIcon,
+            color: "text-rose-500",
+            borderActive: "border-rose-500 bg-rose-500/5 dark:bg-rose-500/10",
+        },
+        {
+            key: "SUSPENDED",
+            title: "Suspend Access",
+            badge: "SUSPENDED",
+            badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+            description: "Temporarily halts school access. Used for compliance review, policy violations, or audit review. Blocks admin login.",
+            icon: ShieldAlertIcon,
+            color: "text-amber-500",
+            borderActive: "border-amber-500 bg-amber-500/5 dark:bg-amber-500/10",
+        },
+        {
+            key: "INACTIVE",
+            title: "Inactive / Dormant",
+            badge: "INACTIVE",
+            badgeClass: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+            description: "Marks school as dormant or inactive (e.g. incomplete setup or archived institutional record).",
+            icon: ClockIcon,
+            color: "text-slate-400",
+            borderActive: "border-slate-500 bg-slate-500/5 dark:bg-slate-500/10",
+        }
+    ];
+
+    const handleApplyStatusChange = () => {
+        const shouldDeactivate = selectedStatus === "DEACTIVATED" || selectedStatus === "SUSPENDED" || selectedStatus === "INACTIVE";
+        toggleStatus.mutate({ 
+            id: school.id, 
+            status: selectedStatus,
+            isActive: !shouldDeactivate
+        }, {
+            onSuccess: () => {
+                setIsStatusDialogOpen(false);
+            }
+        });
+    };
+
+    const handleDeleteSchool = async ({ adminPassword, reason }: { adminPassword: string; reason?: string }) => {
+        try {
+            await deleteSchoolMutation.mutateAsync({
+                id: school.id,
+                adminPassword,
+                reason
+            });
+            setIsDeleteModalOpen(false);
+            router.push("/console/schools");
+        } catch (error) {
+            console.error("Failed to delete school:", error);
+        }
+    };
+
     return (
         <div className="space-y-8 pb-20">
             {/* Header */}
@@ -163,22 +246,160 @@ export default function SchoolDetailsPage() {
                         <ExternalLinkIcon size={16} className="mr-2" /> Impersonate Admin
                     </Button>
                     <Button 
+                        disabled={toggleStatus.isPending}
                         className={cn(
-                            "shadow-xl",
-                            school.subscriptionStatus === "ACTIVE" 
-                                ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20" 
+                            "shadow-xl font-bold transition-all",
+                            !isDeactivated 
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20" 
                                 : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-400/20"
                         )}
-                        onClick={() => toggleStatus.mutate({ 
-                            id: school.id, 
-                            status: school.subscriptionStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE" 
-                        })}
+                        onClick={() => {
+                            setSelectedStatus(isDeactivated ? "ACTIVE" : "DEACTIVATED");
+                            setIsStatusDialogOpen(true);
+                        }}
                     >
-                        {school.subscriptionStatus === "ACTIVE" ? <LockIcon size={16} className="mr-2" /> : <UnlockIcon size={16} className="mr-2" />}
-                        {school.subscriptionStatus === "ACTIVE" ? "Suspend Access" : "Restore Access"}
+                        {!isDeactivated ? <LockIcon size={16} className="mr-2" /> : <UnlockIcon size={16} className="mr-2" />}
+                        {!isDeactivated ? "Deactivate Account" : "Activate Account"}
+                    </Button>
+                    <Button 
+                        variant="destructive"
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20"
+                        onClick={() => setIsDeleteModalOpen(true)}
+                    >
+                        <TrashIcon size={16} className="mr-2" />
+                        Delete School
                     </Button>
                 </div>
             </div>
+
+            {/* Proper Account Status Dialog */}
+            <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+                <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-[2rem] shadow-2xl p-6 sm:p-8">
+                    <DialogHeader className="space-y-3">
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "h-12 w-12 rounded-2xl flex items-center justify-center border shadow-md shrink-0",
+                                selectedStatus === "ACTIVE" 
+                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                                    : selectedStatus === "DEACTIVATED"
+                                    ? "bg-rose-500/10 border-rose-500/20 text-rose-500"
+                                    : "bg-amber-500/10 border-amber-500/20 text-amber-500"
+                            )}>
+                                {selectedStatus === "ACTIVE" ? <ShieldCheckIcon size={24} /> : <ShieldAlertIcon size={24} />}
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                                    Manage Account Status
+                                </DialogTitle>
+                                <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Set the operational status for <span className="font-bold text-slate-800 dark:text-slate-200">{school.name}</span> ({school.schoolCode})
+                                </DialogDescription>
+                            </div>
+                        </div>
+
+                        {/* Current Status Pill */}
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-xs">
+                            <span className="text-slate-500 font-bold uppercase tracking-wider text-[11px]">Current Live Status:</span>
+                            <Badge className={cn("px-3 py-0.5 font-bold uppercase text-[10px] tracking-wider border", 
+                                (school.subscriptionStatus === "DEACTIVATED" || school.subscriptionStatus === "SUSPENDED")
+                                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            )}>
+                                {school.subscriptionStatus || "ACTIVE"}
+                            </Badge>
+                        </div>
+                    </DialogHeader>
+
+                    {/* All Status Option Cards */}
+                    <div className="space-y-2.5 my-3">
+                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Available Statuses:
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {ALL_STATUS_OPTIONS.map((opt) => {
+                                const isSelected = selectedStatus === opt.key;
+                                const Icon = opt.icon;
+                                return (
+                                    <div
+                                        key={opt.key}
+                                        onClick={() => setSelectedStatus(opt.key)}
+                                        className={cn(
+                                            "flex flex-col justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 text-left relative group",
+                                            isSelected 
+                                                ? opt.borderActive + " shadow-md"
+                                                : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-950/50"
+                                        )}
+                                    >
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <Icon size={18} className={opt.color} />
+                                                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                                    {opt.title}
+                                                </span>
+                                            </div>
+                                            <div className={cn(
+                                                "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
+                                                isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 dark:border-slate-700"
+                                            )}>
+                                                {isSelected && <CheckIcon size={12} strokeWidth={3} />}
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                            {opt.description}
+                                        </p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Warning / Impact Notice */}
+                    {(selectedStatus === "DEACTIVATED" || selectedStatus === "SUSPENDED") && (
+                        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs leading-relaxed">
+                            <AlertTriangleIcon size={18} className="shrink-0 mt-0.5" />
+                            <div>
+                                <span className="font-bold">Security Notice: </span>
+                                Applying <span className="font-black uppercase">{selectedStatus}</span> will immediately deactivate all linked School Administrator accounts, terminate active login sessions, and return a 403 Forbidden on subsequent login attempts.
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedStatus === "ACTIVE" && (
+                        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs leading-relaxed">
+                            <CheckCircle2Icon size={18} className="shrink-0 mt-0.5" />
+                            <div>
+                                <span className="font-bold">Access Restoration: </span>
+                                Setting status to <span className="font-black uppercase">ACTIVE</span> will restore operational access and allow all linked school administrators to authenticate normally.
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsStatusDialogOpen(false)}
+                            className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl"
+                            disabled={toggleStatus.isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={toggleStatus.isPending}
+                            onClick={handleApplyStatusChange}
+                            className={cn(
+                                "rounded-xl font-bold px-6 shadow-lg transition-all",
+                                selectedStatus === "DEACTIVATED"
+                                    ? "bg-rose-600 hover:bg-rose-700 text-white"
+                                    : selectedStatus === "SUSPENDED"
+                                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            )}
+                        >
+                            {toggleStatus.isPending ? "Updating..." : `Confirm ${selectedStatus} Status`}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column: Info & Stats */}
@@ -197,7 +418,7 @@ export default function SchoolDetailsPage() {
                                         alt={school.name} 
                                         fill
                                         className="object-contain p-4" 
-                                    />
+                                     />
                                 ) : (
                                     <BuildingIcon size={40} className="text-slate-300 dark:text-slate-700" />
                                 )}
@@ -207,6 +428,14 @@ export default function SchoolDetailsPage() {
                                 <div className="flex flex-wrap items-center gap-3 mt-2">
                                     <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-wider">
                                         {school.schoolCode}
+                                    </Badge>
+                                    <Badge className={cn(
+                                        "px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-wider border",
+                                        isDeactivated
+                                            ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                    )}>
+                                        {isDeactivated ? "DEACTIVATED" : "ACTIVE"}
                                     </Badge>
                                     <code className="text-sm text-slate-500 font-mono bg-slate-100 dark:bg-slate-950 px-2 py-0.5 rounded border border-slate-200 dark:border-white/5">
                                         ID: {school.tenantId}
@@ -677,6 +906,14 @@ export default function SchoolDetailsPage() {
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
+                                <Button 
+                                    variant="outline"
+                                    className="w-full h-11 border-red-200 dark:border-red-950/60 bg-red-50/50 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 rounded-xl font-bold text-xs"
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                >
+                                    <TrashIcon size={14} className="mr-2" />
+                                    Delete School Permanently
+                                </Button>
                             </div>
 
                             <p className="text-[10px] text-slate-500 text-center leading-relaxed">
@@ -686,6 +923,16 @@ export default function SchoolDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            <DeleteConfirmationModal 
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteSchool}
+                entityName={school.name}
+                entityType="School"
+                identifier={school.schoolCode}
+                isLoading={deleteSchoolMutation.isPending}
+            />
         </div>
     )
 }

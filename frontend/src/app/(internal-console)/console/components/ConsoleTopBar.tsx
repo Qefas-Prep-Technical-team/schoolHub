@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatDistanceToNow } from "date-fns"
 
+import { ConsoleMobileDrawer } from "./ConsoleMobileDrawer"
+
 interface ConsoleTopBarProps {
     onToggleSidebar: () => void;
     isCollapsed: boolean;
@@ -29,18 +31,23 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
 
     return (
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
-            <div className="flex items-center gap-6 flex-1">
+            <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                {/* Mobile Navigation Drawer */}
+                <ConsoleMobileDrawer />
+
+                {/* Desktop Sidebar Collapse Toggle */}
                 <Button
                     variant="ghost"
                     size="icon"
                     onClick={onToggleSidebar}
-                    className="h-9 w-9 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all border border-slate-200 dark:border-white/5"
+                    className="hidden md:flex h-9 w-9 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all border border-slate-200 dark:border-white/5"
+                    title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
                     {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
                 </Button>
 
                 {/* Dashboard Badge */}
-                <div className="hidden lg:flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+                <div className="hidden sm:flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
                     <Shield size={14} className="text-indigo-400" />
                     <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Platform Core</span>
                 </div>
@@ -80,7 +87,11 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
                             )}
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden shadow-2xl border-slate-200 dark:border-white/10 dark:bg-slate-900">
+                    <DropdownMenuContent 
+                        align="end" 
+                        sideOffset={8}
+                        className="w-[calc(100vw-24px)] sm:w-80 max-w-[380px] p-0 rounded-2xl overflow-hidden shadow-2xl border-slate-200 dark:border-white/10 dark:bg-slate-900 mr-1 sm:mr-0 z-50 animate-in fade-in-50 zoom-in-95"
+                    >
                         <div className="p-4 bg-slate-50 dark:bg-slate-950/50 flex items-center justify-between">
                             <DropdownMenuLabel className="p-0 font-bold text-slate-900 dark:text-white">Recent Notifications</DropdownMenuLabel>
                             <span className="text-xs text-indigo-500 font-medium cursor-pointer hover:underline" onClick={() => router.push('/console/support')}>View all</span>

@@ -9,9 +9,21 @@ import AttendanceList from './components/AttendanceList';
 import { useStudentAttendance } from '@/lib/api/hooks/useStudent';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, Calendar } from 'lucide-react';
+import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
-export default function Home() {
+interface AttendanceRecordItem {
+    id?: string;
+    date: string;
+    status: string;
+    notes?: string;
+    note?: string;
+    class?: {
+        name?: string;
+    };
+}
+
+export default function StudentAttendancePage() {
     const { user } = useAuthStore();
     const studentId = user?.id || '';
     const [viewType, setViewType] = useState<'day' | 'week' | 'month' | 'term'>('day');
@@ -20,17 +32,17 @@ export default function Home() {
     
     // Process attendance data
     const attendanceData = useMemo(() => {
-        const records = response || [];
+        const records = (response as AttendanceRecordItem[]) || [];
         
         let present = 0;
         let absent = 0;
         let late = 0;
         const total = records.length;
         
-        // Group by day for the chart
+        // Group by time-series for the chart
         const chartDataMap: Record<string, { label: string; present: number; late: number; absent: number }> = {};
         
-        records.forEach((record: any) => {
+        records.forEach((record) => {
             const status = record.status?.toUpperCase() || '';
             if (status === 'PRESENT') present++;
             else if (status === 'ABSENT') absent++;
@@ -47,7 +59,6 @@ export default function Home() {
             } else if (viewType === 'month') {
                 dateStr = format(dateObj, 'MMM yyyy');
             } else {
-                // Group all into 'Current Term' for term view, or you can calculate terms if term dates are available.
                 dateStr = 'Current Term';
             }
             
@@ -69,6 +80,9 @@ export default function Home() {
         
         return {
             total,
+            presentCount: present,
+            absentCount: absent,
+            lateCount: late,
             presentPct,
             absentPct,
             latePct,
@@ -76,87 +90,101 @@ export default function Home() {
         };
     }, [response, viewType]);
 
-    const stats: Array<React.ComponentProps<typeof StatCard>> = [
+    const stats = [
         {
-            title: 'Present',
+            title: 'Present Sessions',
             value: `${attendanceData.presentPct}%`,
-            bgColor: 'bg-green-500',
-            textColor: 'text-white',
+            description: `${attendanceData.presentCount} of ${attendanceData.total} days logged`,
+            icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
+            color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+            tooltip: "Percentage of total school days where presence was officially verified and confirmed.",
         },
         {
-            title: 'Absent',
+            title: 'Unexcused / Absent',
             value: `${attendanceData.absentPct}%`,
-            bgColor: 'bg-red-500',
-            textColor: 'text-white',
+            description: `${attendanceData.absentCount} missed sessions`,
+            icon: <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />,
+            color: "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400",
+            tooltip: "Percentage of recorded absences. Keep attendance above 75% to maintain examination qualification status.",
         },
         {
-            title: 'Late',
+            title: 'Late Arrivals',
             value: `${attendanceData.latePct}%`,
-            bgColor: 'bg-orange-500',
-            textColor: 'text-white',
+            description: `${attendanceData.lateCount} delayed check-ins`,
+            icon: <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
+            color: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
+            tooltip: "Sessions where arrival was registered after the morning assembly or morning roll call bell.",
         },
         {
-            title: 'Total Days',
-            value: `${attendanceData.total}`,
-            bgColor: 'bg-indigo-500',
-            textColor: 'text-white',
-            description: 'in this term',
+            title: 'Evaluated Days',
+            value: `${attendanceData.total} Days`,
+            description: 'Official academic days recorded',
+            icon: <Calendar className="w-5 h-5 text-pink-600 dark:text-pink-400" />,
+            color: "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400",
+            tooltip: "Cumulative sum of recorded attendance days within this term's academic calendar.",
         },
     ];
 
     return (
-        <div className="relative flex min-h-screen w-full">
-            <main className="flex-1 p-6 lg:p-8">
-                <div className="mx-auto w-[95%] max-w-[1600px]">
-                    <PageHeader records={response || []} />
-                    <InfoBanner />
+        <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
+            <PageHeader records={response || []} />
+            <InfoBanner />
 
-                    {isLoading ? (
-                        <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                            <Loader2 className="w-12 h-12 text-pink-600 animate-spin" />
-                            <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Loading attendance data...</p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                                {stats.map((stat, index) => (
-                                    <StatCard key={index} {...stat} />
+            {isLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                    <Loader2 className="w-10 h-10 text-pink-600 animate-spin" />
+                    <p className="text-zinc-500 dark:text-zinc-400 font-bold uppercase text-[11px] tracking-widest">
+                        Loading attendance data...
+                    </p>
+                </div>
+            ) : (
+                <>
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                        {stats.map((stat, index) => (
+                            <StatCard key={index} {...stat} />
+                        ))}
+                    </div>
+
+                    {/* Chart Section */}
+                    <div className="bg-white dark:bg-zinc-950 rounded-2xl p-4 sm:p-6 border border-slate-200/80 dark:border-zinc-800 shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-slate-100 dark:border-zinc-800/80 pb-5">
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                        Attendance Trend Overview
+                                    </h3>
+                                    <HeaderTooltip 
+                                        content="Visual projection of your presence, tardiness, and absences over time. Switch between day, week, month, and term views to analyze longitudinal consistency."
+                                    />
+                                </div>
+                                <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                                    Presence Frequency Timeline
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 w-full sm:w-auto">
+                                {(['day', 'week', 'month', 'term'] as const).map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setViewType(type)}
+                                        className={`flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 capitalize cursor-pointer ${
+                                            viewType === type 
+                                            ? 'bg-pink-600 text-white shadow-sm shadow-pink-500/25' 
+                                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-white/60 dark:hover:bg-zinc-800/60'
+                                        }`}
+                                    >
+                                        {type}
+                                    </button>
                                 ))}
                             </div>
+                        </div>
+                        <AttendanceChart data={attendanceData.chartData} />
+                    </div>
 
-                            {/* Chart Section */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm mb-8">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Attendance Overview</h3>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Chart Visualization</p>
-                                    </div>
-                                    <div className="flex gap-1.5 p-1 bg-slate-100/50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm w-full sm:w-auto">
-                                        {(['day', 'week', 'month', 'term'] as const).map((type) => (
-                                            <button
-                                                key={type}
-                                                onClick={() => setViewType(type)}
-                                                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 capitalize ${
-                                                    viewType === type 
-                                                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' 
-                                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                                                }`}
-                                            >
-                                                {type}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <AttendanceChart data={attendanceData.chartData} />
-                            </div>
-
-                            {/* Recent Attendance List */}
-                            <AttendanceList records={response || []} />
-                        </>
-                    )}
-                </div>
-            </main>
+                    {/* Recent Attendance List with Grid/Table toggle & Pink pagination */}
+                    <AttendanceList records={response || []} />
+                </>
+            )}
         </div>
     );
 }

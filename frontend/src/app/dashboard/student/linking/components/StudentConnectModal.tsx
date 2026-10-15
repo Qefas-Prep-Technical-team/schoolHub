@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Link2 } from 'lucide-react';
 import {
@@ -50,76 +52,89 @@ export function StudentConnectModal({ isOpen, onClose }: StudentConnectModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[420px] rounded-[2rem] p-8 border-none bg-white dark:bg-slate-900">
-        <DialogHeader className="text-left space-y-3">
-          <div className="h-14 w-14 rounded-2xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center text-pink-600">
-            <Link2 size={28} />
+      <DialogContent className="sm:max-w-[440px] rounded-2xl p-6 sm:p-7 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl">
+        <DialogHeader className="text-left space-y-2.5">
+          <div className="h-12 w-12 rounded-2xl bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center text-pink-600 dark:text-pink-400">
+            <Link2 size={24} />
           </div>
-          <DialogTitle className="text-2xl font-black tracking-tight">Expand Your Network</DialogTitle>
-          <DialogDescription className="font-medium text-slate-500">
+          <DialogTitle className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+            Expand Your Network
+          </DialogTitle>
+          <DialogDescription className="font-normal text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
             Link up with your school, join a new classroom, or connect with your parents using a secure code.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleConnect} className="space-y-6 py-4">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Connection Type</label>
+        <form onSubmit={handleConnect} className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Connection Type
+            </label>
             <Select value={linkType} onValueChange={(val) => {
               setLinkType(val);
               setCode(''); 
             }}>
-              <SelectTrigger className="h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="STUDENT_CLASS">🎓 Student to Class</SelectItem>
+              <SelectContent className="rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800">
+                <SelectItem value="STUDENT_CLASS">🎓 Student to Classroom</SelectItem>
                 <SelectItem value="SCHOOL_STUDENT">🏫 Student to School</SelectItem>
                 <SelectItem value="PARENT_STUDENT">👪 Student to Parent</SelectItem>
               </SelectContent>
             </Select>
             {linkType === 'SCHOOL_STUDENT' && connectedSchool && (
-              <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 leading-relaxed">
-                  Note: You are already connected to <span className="font-black uppercase tracking-tight">{connectedSchool.name}</span>. Linking to a new school may override your current academic affiliation.
+              <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400 leading-relaxed">
+                  Note: You are already connected to <span className="font-bold uppercase tracking-tight">{connectedSchool.name}</span>. Linking to a new school may update your current affiliation.
                 </p>
               </div>
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Secure Code</label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Secure Code
+            </label>
             <Input 
               value={code} 
               onChange={(e) => setCode(e.target.value)}
               placeholder={
                 linkType === 'STUDENT_CLASS' ? 'e.g. MATH101' : 
-                (linkType === 'SCHOOL_STUDENT' ? 'e.g. school-code' : 'e.g. parent-code')
+                (linkType === 'SCHOOL_STUDENT' ? 'e.g. SCH-XXXX' : 'e.g. PAR-XXXX')
               } 
-              className="h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-mono tracking-widest uppercase"
+              className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 font-mono tracking-wider uppercase text-zinc-900 dark:text-zinc-100"
               required 
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Personal Note <span className="text-slate-300 lowercase font-normal">(Optional)</span></label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Personal Note <span className="text-zinc-400 lowercase font-normal">(Optional)</span>
+            </label>
             <Input 
               value={note} 
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Hi, I'm joining your class..." 
-              className="h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700"
+              placeholder="Hi, I am joining your class..." 
+              className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-xs"
             />
           </div>
 
-          <div className="pt-4 flex gap-3">
-            <Button type="button" variant="ghost" onClick={onClose} className="flex-1 rounded-xl h-12 font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
+          <div className="pt-3 flex gap-2.5">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose} 
+              className="flex-1 rounded-xl h-11 font-bold text-xs border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-850"
+            >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={isPending || !code.trim()}
-              className="flex-1 rounded-xl h-12 bg-pink-600 hover:bg-pink-700 text-white font-bold shadow-lg shadow-pink-200"
+              className="flex-1 rounded-xl h-11 bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md shadow-pink-500/20"
             >
-              {isPending ? 'Connecting...' : 'Connect'}
+              {isPending ? 'Connecting...' : 'Send Request'}
             </Button>
           </div>
         </form>

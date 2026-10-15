@@ -94,6 +94,12 @@ export default function PlatformSettingsPage() {
                                     enabled: String(settings?.google_auth_enabled) !== "false" 
                                 },
                                 { 
+                                    key: "facebook_auth_enabled", 
+                                    title: "Facebook Authentication", 
+                                    desc: "Enable/Disable Facebook Login and Sign Up platform-wide.", 
+                                    enabled: String(settings?.facebook_auth_enabled) !== "false" 
+                                },
+                                { 
                                     key: "global_registration", 
                                     title: "Global Registration", 
                                     desc: "Enable/Disable new school signups globally.", 

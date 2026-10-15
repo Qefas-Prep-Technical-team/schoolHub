@@ -10,8 +10,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { Eye, EyeOff } from "lucide-react";
 
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
-
-// import { adminRoleOptions } from "@/lib/constants/adminOptions"; // Commented out
+import SocialAuthRow from "../../components/SocialAuthRow";
 
 export default function LoginForm() {
   const { data: globalFeatures } = useGlobalFeatures('admin');
@@ -174,7 +173,9 @@ export default function LoginForm() {
         </button>
       </div>
 
-      <p className="mt-20 text-center text-xs text-slate-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
+      <SocialAuthRow userType="admin" mode="signin" />
+
+      <p className="mt-10 text-center text-xs text-slate-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
         By signing in you agree to Qefas Hub&apos;s <br />
         <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer bg-transparent border-none p-0 outline-none">Terms of Services</button>
         {" "}and{" "}

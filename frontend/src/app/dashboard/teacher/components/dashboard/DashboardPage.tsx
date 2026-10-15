@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import StatsCards from './StatsCards';
 import AssignmentsExams from './AssignmentsExams';
 import PerformanceAnalytics from './PerformanceAnalytics';
 import StudentPerformanceWidget from './StudentPerformanceWidget';
@@ -15,6 +14,7 @@ import InsightsGrid from './InsightsGrid';
 import MessagesAnnouncements from './MessagesAnnouncements';
 import TeacherSchedule from './TeacherSchedule';
 import RecentPersonalActivity from './RecentPersonalActivity';
+import { HeaderTooltip } from './HeaderTooltip';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import { useNotifications } from '@/lib/api/hooks/useNotifications';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <main className="p-6 md:p-8">
+      <main className="p-4 sm:p-6 md:p-8">
         <div className="max-w-[1600px] mx-auto">
           {/* Header Section */}
           <TeacherHero 
@@ -202,7 +202,7 @@ export default function DashboardPage() {
               <InsightsGrid stats={stats} />
 
               {/* Bento Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mt-6 sm:mt-8">
                 
                 {/* Assignments & Exams (8 Cols) */}
                 <div className="lg:col-span-8">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Daily Schedule (4 Cols) */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
+                <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-6">
                   <UsageLimitsCard 
                     role="TEACHER"
                     title="Teaching Quota"
@@ -240,13 +240,19 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Quick Tools & Announcements (4 Cols) */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                  <div className="bg-primary/5 dark:bg-primary/10 rounded-[2rem] p-6 border border-primary/10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <LayoutGrid className="w-5 h-5 text-primary" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-primary">Quick Tools</h3>
+                <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-6">
+                  <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 border border-primary/10">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="flex items-center gap-2">
+                        <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                        <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest text-primary">Quick Tools</h3>
+                      </div>
+                      <HeaderTooltip 
+                        content="Shortcuts to your most frequent daily teacher workflows. Use these buttons to instantly enter new grades or export curriculum performance reports without navigating through nested menus." 
+                        size={14} 
+                      />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                       <QuickTool icon={Plus} label="Grade" sub="New Entry" color="bg-emerald-500" />
                       <QuickTool icon={Share2} label="Reports" sub="Export Data" color="bg-blue-500" />
                     </div>
@@ -286,9 +292,16 @@ function DashboardSkeleton() {
         </div>
 
         {/* Stats Row Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mb-8">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className={cn("h-32 rounded-[2rem]", skeletonClass)} />
+            <Skeleton 
+              key={i} 
+              className={cn(
+                "h-28 sm:h-32 rounded-2xl sm:rounded-[2rem]",
+                i === 5 ? "col-span-2 md:col-span-2 lg:col-span-1" : "col-span-1",
+                skeletonClass
+              )} 
+            />
           ))}
         </div>
 
@@ -313,14 +326,14 @@ function DashboardSkeleton() {
 }
 
 
-function QuickTool({ icon: Icon, label, sub, color }: { icon: any, label: string, sub: string, color: string }) {
+function QuickTool({ icon: Icon, label, sub, color }: { icon: React.ElementType; label: string; sub: string; color: string }) {
   return (
-    <button className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800/80 rounded-[1.5rem] shadow-lg shadow-slate-200/50 dark:shadow-none hover:translate-y-[-4px] active:scale-95 transition-all duration-300">
-      <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center mb-3 shadow-lg shadow-current/20`}>
-        <Icon className="w-5 h-5 text-white" />
+    <button className="flex flex-col items-center justify-center p-3 sm:p-4 bg-white dark:bg-slate-800/80 rounded-xl sm:rounded-[1.5rem] shadow-lg shadow-slate-200/50 dark:shadow-none hover:translate-y-[-4px] active:scale-95 transition-all duration-300">
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${color} flex items-center justify-center mb-2 sm:mb-3 shadow-lg shadow-current/20`}>
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
       </div>
-      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{label}</span>
-      <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{sub}</span>
+      <span className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{label}</span>
+      <span className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{sub}</span>
     </button>
   );
 }

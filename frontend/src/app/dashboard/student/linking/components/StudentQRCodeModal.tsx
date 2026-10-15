@@ -30,16 +30,16 @@ const StudentQRCodeModal: React.FC<StudentQRCodeModalProps> = ({
   
   const links = [
     {
-      title: "Parent Linking",
-      description: "Ask your parent to scan this to link their account to yours.",
+      title: "Parent Account Linking",
+      description: "Ask your parent or guardian to scan this code to link their portal with your academic records.",
       icon: <UserPlus className="w-5 h-5" />,
       url: `${baseUrl}/signup/parent?studentCode=${studentCode}`,
-      color: "blue",
+      color: "pink",
       label: "For Parents"
     },
     {
-      title: "Identity Verification",
-      description: "Quickly share your profile with teachers or school staff.",
+      title: "Student Verification",
+      description: "Share your verified profile code directly with teachers, administrators, or school staff.",
       icon: <ShieldCheck className="w-5 h-5" />,
       url: `${baseUrl}/verify/student/${studentCode}`,
       color: "emerald",
@@ -54,54 +54,57 @@ const StudentQRCodeModal: React.FC<StudentQRCodeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-[2.5rem] overflow-hidden p-0">
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-white relative overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+      <DialogContent className="sm:max-w-[650px] bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl rounded-3xl overflow-hidden p-0 max-h-[90vh] overflow-y-auto">
+        <div className="bg-gradient-to-br from-pink-600 via-rose-600 to-indigo-700 p-6 sm:p-7 text-white relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
           
-          <DialogHeader className="text-white relative z-10">
-            <div className="flex items-center gap-3 mb-2">
+          <DialogHeader className="text-white relative z-10 text-left">
+            <div className="flex items-center gap-2.5 mb-1.5">
                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
-                 <Share2 className="w-6 h-6" />
+                 <Share2 className="w-5 h-5" />
                </div>
-               <DialogTitle className="text-3xl font-black tracking-tight">Access Hub</DialogTitle>
+               <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                 Digital Passports
+               </DialogTitle>
             </div>
-            <DialogDescription className="text-indigo-100 text-lg opacity-90 font-medium">
-              Share these QR codes to quickly link with parents or verify your identity.
+            <DialogDescription className="text-pink-100 text-xs sm:text-sm font-medium">
+              Share these QR codes to quickly link your account with parents or verify your student credentials.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="p-5 sm:p-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             {links.map((link) => (
               <div 
                 key={link.title}
-                className="flex flex-col items-center p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-indigo-500/20 transition-all duration-300 group"
+                className="flex flex-col items-center p-5 bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/80 dark:border-zinc-800 transition-all duration-200"
               >
-                <div className="w-full flex justify-between items-center mb-6">
-                  <div className={`p-2.5 rounded-2xl ${
-                    link.color === 'blue' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
+                <div className="w-full flex justify-between items-center mb-4">
+                  <div className={`p-2 rounded-xl ${
+                    link.color === 'pink' 
+                      ? 'bg-pink-100 text-pink-600 dark:bg-pink-950/60 dark:text-pink-400' 
+                      : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
                   }`}>
                     {link.icon}
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 px-2.5 py-0.5 rounded-full border border-slate-200/80 dark:border-zinc-800">
                     {link.label}
                   </span>
                 </div>
                 
-                <h3 className="font-bold text-slate-900 dark:text-white mb-2 text-center">
+                <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm mb-1 text-center">
                   {link.title}
                 </h3>
-                <p className="text-xs text-slate-500 text-center mb-6 line-clamp-2 min-h-[32px]">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center mb-5 line-clamp-2 min-h-[32px]">
                   {link.description}
                 </p>
                 
-                <div className="bg-white p-4 rounded-[2.5rem] shadow-sm border border-slate-100 group-hover:shadow-md transition-shadow duration-300">
+                <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-zinc-800">
                   <QRCode
                     value={link.url}
-                    size={180}
+                    size={140}
                     level="H"
                     className="max-w-full h-auto"
                   />
@@ -109,26 +112,26 @@ const StudentQRCodeModal: React.FC<StudentQRCodeModalProps> = ({
 
                 <Button
                   onClick={() => copyToClipboard(link.url, link.title)}
-                  variant="ghost"
-                  className="mt-6 w-full flex items-center justify-center gap-2 font-bold py-6 rounded-2xl hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 transition-all active:scale-95 text-sm"
+                  variant="outline"
+                  className="mt-5 w-full flex items-center justify-center gap-2 font-bold h-10 rounded-xl bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-850 border-slate-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 cursor-pointer"
                 >
-                  <Copy className="w-4 h-4" />
-                  <span>Copy Link</span>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy Direct URL</span>
                 </Button>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-800/30 p-6 flex flex-col items-center gap-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="bg-slate-50 dark:bg-zinc-900/40 p-4 sm:p-5 flex flex-col items-center gap-1.5 border-t border-slate-100 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest font-black text-slate-400">Student ID:</span>
-            <span className="text-[10px] uppercase tracking-widest font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
-              {studentCode}
+            <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Student Code:</span>
+            <span className="text-[10px] uppercase tracking-wider font-mono font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/40 px-2 py-0.5 rounded border border-pink-200 dark:border-pink-900/50">
+              {studentCode || "---"}
             </span>
           </div>
-          <p className="text-[8px] uppercase tracking-widest font-black text-slate-300">
-            Powered by Qefas Hub Security
+          <p className="text-[9px] uppercase tracking-wider font-bold text-zinc-400">
+            Powered by Qefas Hub Digital Passports
           </p>
         </div>
       </DialogContent>

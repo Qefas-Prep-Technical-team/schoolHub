@@ -126,12 +126,13 @@ export default function DeviceSessions() {
                 window.location.href = '/login';
             }
         },
-        onError: (error: any, variables, context) => {
+        onError: (error: unknown, variables, context) => {
             // Rollback on error
             if (context?.previousSessions) {
                 queryClient.setQueryData(['deviceSessions'], context.previousSessions);
             }
-            toast.error(error.response?.data?.message || "Failed to revoke session");
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || "Failed to revoke session");
         },
         onSettled: () => {
             // Sync with server in background

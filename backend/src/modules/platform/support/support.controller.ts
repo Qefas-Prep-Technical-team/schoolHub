@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma, { withRetry } from "../../../config/database";
 import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { createActivityLog } from "../logs/logs.controller";
 import { getSingleString } from "../../../utils/request-utils";
 import { getSchoolUsageService } from "../../subscription/quota.service";
@@ -125,37 +126,270 @@ export const searchSchools = async (req: Request, res: Response) => {
 };
 
 /**
- * Toggle school suspension status
+ * Toggle school suspension/deactivation status
  */
 export const toggleSchoolStatus = async (req: Request, res: Response) => {
   try {
     const id = getSingleString(req.params.id);
-    const { status } = req.body; // 'ACTIVE', 'SUSPENDED', etc.
+    const { status, isActive } = req.body as { status?: string; isActive?: boolean }; // 'ACTIVE', 'SUSPENDED', 'DEACTIVATED'
+
+    const shouldDeactivate = isActive === false || status === 'DEACTIVATED' || status === 'SUSPENDED';
+    const targetStatus = shouldDeactivate ? (status || 'DEACTIVATED') : 'ACTIVE';
 
     const school = await prisma.school.update({
       where: { id },
-      data: { subscriptionStatus: status }
+      data: { subscriptionStatus: targetStatus }
     });
+
+    // Synchronize school admins and revoke active sessions when deactivated
+    const schoolAdmins = await prisma.schoolAdmin.findMany({
+      where: { schoolId: id },
+      select: { adminId: true }
+    });
+    const adminIds = schoolAdmins.map((sa) => sa.adminId).filter(Boolean);
+
+    if (shouldDeactivate) {
+      await prisma.schoolAdmin.updateMany({
+        where: { schoolId: id },
+        data: { active: false }
+      });
+      if (adminIds.length > 0) {
+        await prisma.admin.updateMany({
+          where: { id: { in: adminIds } },
+          data: { isActive: false, status: 'DEACTIVATED' }
+        });
+        await prisma.refreshToken.updateMany({
+          where: { userId: { in: adminIds } },
+          data: { isValid: false }
+        });
+      }
+    } else {
+      await prisma.schoolAdmin.updateMany({
+        where: { schoolId: id },
+        data: { active: true }
+      });
+      if (adminIds.length > 0) {
+        await prisma.admin.updateMany({
+          where: { id: { in: adminIds } },
+          data: { isActive: true, status: 'ACTIVE' }
+        });
+      }
+    }
 
     // Activity Log
     const loggingStaff = (req as any).staff;
     if (loggingStaff) {
-        await createActivityLog(
-            loggingStaff.id,
-            status === 'ACTIVE' ? "ACTIVATE_SCHOOL" : "SUSPEND_SCHOOL",
-            "School",
-            id,
-            { schoolName: school.name }
-        );
+      await createActivityLog(
+        loggingStaff.id,
+        shouldDeactivate ? "SUSPEND_SCHOOL" : "ACTIVATE_SCHOOL",
+        "School",
+        id,
+        { schoolName: school.name, status: targetStatus }
+      );
     }
 
     return res.status(200).json({
       success: true,
-      message: `School ${school.name} is now ${status}`,
+      message: `School ${school.name} is now ${targetStatus}`,
       data: school
     });
   } catch (error) {
     return handleError(res, error, "support.toggleSchoolStatus");
+  }
+};
+
+/**
+ * Toggle student account active/deactivated status
+ */
+export const toggleStudentStatus = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { status, isActive } = req.body as { status?: string; isActive?: boolean };
+
+    const shouldDeactivate = isActive === false || status === 'DEACTIVATED' || status === 'SUSPENDED';
+    const targetIsActive = !shouldDeactivate;
+    const targetStatus = shouldDeactivate ? (status || 'DEACTIVATED') : 'ACTIVE';
+
+    const student = await prisma.student.update({
+      where: { id },
+      data: {
+        isActive: targetIsActive,
+        status: targetStatus,
+      }
+    });
+
+    if (shouldDeactivate) {
+      // Invalidate existing sessions
+      await prisma.refreshToken.updateMany({
+        where: { userId: id },
+        data: { isValid: false }
+      });
+    }
+
+    const loggingStaff = (req as any).staff;
+    if (loggingStaff) {
+      await createActivityLog(
+        loggingStaff.id,
+        targetIsActive ? "ACTIVATE_STUDENT" : "DEACTIVATE_STUDENT",
+        "Student",
+        id,
+        { studentName: student.name, status: targetStatus }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Student ${student.name} is now ${targetStatus}`,
+      data: student
+    });
+  } catch (error) {
+    return handleError(res, error, "support.toggleStudentStatus");
+  }
+};
+
+/**
+ * Toggle teacher account active/deactivated status
+ */
+export const toggleTeacherStatus = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { status, isActive } = req.body as { status?: string; isActive?: boolean };
+
+    const shouldDeactivate = isActive === false || status === 'DEACTIVATED' || status === 'SUSPENDED';
+    const targetIsActive = !shouldDeactivate;
+    const targetStatus = shouldDeactivate ? (status || 'DEACTIVATED') : 'ACTIVE';
+
+    const teacher = await prisma.teacher.update({
+      where: { id },
+      data: {
+        isActive: targetIsActive,
+        status: targetStatus,
+      }
+    });
+
+    if (shouldDeactivate) {
+      // Invalidate existing sessions
+      await prisma.refreshToken.updateMany({
+        where: { userId: id },
+        data: { isValid: false }
+      });
+    }
+
+    const loggingStaff = (req as any).staff;
+    if (loggingStaff) {
+      await createActivityLog(
+        loggingStaff.id,
+        targetIsActive ? "ACTIVATE_TEACHER" : "DEACTIVATE_TEACHER",
+        "Teacher",
+        id,
+        { teacherName: teacher.name, status: targetStatus }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Teacher ${teacher.name} is now ${targetStatus}`,
+      data: teacher
+    });
+  } catch (error) {
+    return handleError(res, error, "support.toggleTeacherStatus");
+  }
+};
+
+/**
+ * Toggle parent account active/deactivated status
+ */
+export const toggleParentStatus = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { status, isActive } = req.body as { status?: string; isActive?: boolean };
+
+    const shouldDeactivate = isActive === false || status === 'DEACTIVATED' || status === 'SUSPENDED';
+    const targetIsActive = !shouldDeactivate;
+    const targetStatus = shouldDeactivate ? (status || 'DEACTIVATED') : 'ACTIVE';
+
+    const parent = await prisma.parent.update({
+      where: { id },
+      data: {
+        isActive: targetIsActive,
+        status: targetStatus,
+      }
+    });
+
+    if (shouldDeactivate) {
+      // Invalidate existing sessions
+      await prisma.refreshToken.updateMany({
+        where: { userId: id },
+        data: { isValid: false }
+      });
+    }
+
+    const loggingStaff = (req as any).staff;
+    if (loggingStaff) {
+      await createActivityLog(
+        loggingStaff.id,
+        targetIsActive ? "ACTIVATE_PARENT" : "DEACTIVATE_PARENT",
+        "Parent",
+        id,
+        { parentName: parent.fullName, status: targetStatus }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Parent ${parent.fullName} is now ${targetStatus}`,
+      data: parent
+    });
+  } catch (error) {
+    return handleError(res, error, "support.toggleParentStatus");
+  }
+};
+
+/**
+ * Toggle admin account active/deactivated status
+ */
+export const toggleAdminStatus = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { status, isActive } = req.body as { status?: string; isActive?: boolean };
+
+    const shouldDeactivate = isActive === false || status === 'DEACTIVATED' || status === 'SUSPENDED';
+    const targetIsActive = !shouldDeactivate;
+    const targetStatus = shouldDeactivate ? (status || 'DEACTIVATED') : 'ACTIVE';
+
+    const admin = await prisma.admin.update({
+      where: { id },
+      data: {
+        isActive: targetIsActive,
+        status: targetStatus,
+      }
+    });
+
+    if (shouldDeactivate) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: id },
+        data: { isValid: false }
+      });
+    }
+
+    const loggingStaff = (req as any).staff;
+    if (loggingStaff) {
+      await createActivityLog(
+        loggingStaff.id,
+        targetIsActive ? "ACTIVATE_ADMIN" : "DEACTIVATE_ADMIN",
+        "Admin",
+        id,
+        { adminName: admin.name, status: targetStatus }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Admin ${admin.name} is now ${targetStatus}`,
+      data: admin
+    });
+  } catch (error) {
+    return handleError(res, error, "support.toggleAdminStatus");
   }
 };
 
@@ -1377,5 +1611,599 @@ export const updateParentPlan = async (req: Request, res: Response) => {
     });
   } catch (error) {
     return handleError(res, error, "support.updateParentPlan");
+  }
+};
+
+/**
+ * Permanently delete a student alone with administrator password verification
+ */
+export const deleteStudent = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { adminPassword, reason } = req.body as { adminPassword?: string; reason?: string };
+
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Administrator password is required to permanently delete a user." });
+    }
+
+    const loggingStaff = (req as any).staff;
+    const staffRecord = await prisma.platformStaff.findUnique({
+      where: { id: loggingStaff?.id },
+    });
+
+    if (!staffRecord || !staffRecord.password) {
+      return res.status(401).json({ success: false, message: "Staff account unauthenticated." });
+    }
+
+    const isMatch = await bcrypt.compare(adminPassword, staffRecord.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect administrator password. Deletion unauthorized." });
+    }
+
+    const student = await prisma.student.findUnique({ where: { id } });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found." });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.refreshToken.deleteMany({ where: { userId: id } });
+      await tx.parentChildLink.deleteMany({ where: { studentId: id } });
+      await tx.linkRequest.deleteMany({ where: { OR: [{ requesterStudentId: id }, { targetStudentId: id }] } });
+      await tx.classEnrollment.deleteMany({ where: { studentId: id } });
+      await tx.attendance.deleteMany({ where: { studentId: id } });
+      await tx.behaviourAlert.deleteMany({ where: { studentId: id } });
+      await tx.studentBehaviourProfile.deleteMany({ where: { studentId: id } });
+      await tx.studentHistory.deleteMany({ where: { studentId: id } });
+      await tx.studentEnrollment.deleteMany({ where: { studentId: id } });
+      await tx.examAttempt.deleteMany({ where: { studentId: id } });
+      await tx.grade.deleteMany({ where: { studentId: id } });
+      await tx.studentTermResult.deleteMany({ where: { studentId: id } });
+      await tx.studentSubjectTermResult.deleteMany({ where: { studentId: id } });
+      await tx.termlyEvaluation.deleteMany({ where: { studentId: id } });
+      await tx.payment.deleteMany({ where: { studentId: id } });
+      await tx.student.delete({ where: { id } });
+    });
+
+    await createActivityLog(
+      loggingStaff.id,
+      "DELETE_STUDENT",
+      "Student",
+      id,
+      {
+        studentName: student.name,
+        studentCode: student.studentCode,
+        email: student.email,
+        schoolId: student.schoolId,
+        deletedBy: loggingStaff.email,
+        staffName: loggingStaff.fullName,
+        reason: reason || "Manual deletion via Operations Console",
+        timestamp: new Date().toISOString()
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Student ${student.name} has been permanently deleted.`
+    });
+  } catch (error) {
+    return handleError(res, error, "support.deleteStudent");
+  }
+};
+
+/**
+ * Permanently delete a teacher alone with administrator password verification
+ */
+export const deleteTeacher = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { adminPassword, reason } = req.body as { adminPassword?: string; reason?: string };
+
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Administrator password is required to permanently delete a user." });
+    }
+
+    const loggingStaff = (req as any).staff;
+    const staffRecord = await prisma.platformStaff.findUnique({
+      where: { id: loggingStaff?.id },
+    });
+
+    if (!staffRecord || !staffRecord.password) {
+      return res.status(401).json({ success: false, message: "Staff account unauthenticated." });
+    }
+
+    const isMatch = await bcrypt.compare(adminPassword, staffRecord.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect administrator password. Deletion unauthorized." });
+    }
+
+    const teacher = await prisma.teacher.findUnique({ where: { id } });
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: "Teacher not found." });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.refreshToken.deleteMany({ where: { userId: id } });
+      await tx.linkRequest.deleteMany({ where: { OR: [{ requesterTeacherId: id }, { targetTeacherId: id }] } });
+      await tx.classTeacher.deleteMany({ where: { teacherId: id } });
+      await tx.teacherSubject.deleteMany({ where: { teacherId: id } });
+      await tx.teacherAttendance.deleteMany({ where: { teacherId: id } });
+      await tx.timetablePeriod.deleteMany({ where: { teacherId: id } });
+      await tx.subject.updateMany({ where: { teacherId: id }, data: { teacherId: null } });
+      await tx.grade.deleteMany({ where: { teacherId: id } });
+      await tx.teacher.delete({ where: { id } });
+    });
+
+    await createActivityLog(
+      loggingStaff.id,
+      "DELETE_TEACHER",
+      "Teacher",
+      id,
+      {
+        teacherName: teacher.name,
+        teacherCode: teacher.teacherCode,
+        email: teacher.email,
+        deletedBy: loggingStaff.email,
+        staffName: loggingStaff.fullName,
+        reason: reason || "Manual deletion via Operations Console",
+        timestamp: new Date().toISOString()
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Teacher ${teacher.name} has been permanently deleted.`
+    });
+  } catch (error) {
+    return handleError(res, error, "support.deleteTeacher");
+  }
+};
+
+/**
+ * Permanently delete a parent alone with administrator password verification
+ */
+export const deleteParent = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { adminPassword, reason } = req.body as { adminPassword?: string; reason?: string };
+
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Administrator password is required to permanently delete a user." });
+    }
+
+    const loggingStaff = (req as any).staff;
+    const staffRecord = await prisma.platformStaff.findUnique({
+      where: { id: loggingStaff?.id },
+    });
+
+    if (!staffRecord || !staffRecord.password) {
+      return res.status(401).json({ success: false, message: "Staff account unauthenticated." });
+    }
+
+    const isMatch = await bcrypt.compare(adminPassword, staffRecord.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect administrator password. Deletion unauthorized." });
+    }
+
+    const parent = await prisma.parent.findUnique({ where: { id } });
+    if (!parent) {
+      return res.status(404).json({ success: false, message: "Parent not found." });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.refreshToken.deleteMany({ where: { userId: id } });
+      await tx.parentChildLink.deleteMany({ where: { parentId: id } });
+      await tx.linkRequest.deleteMany({ where: { OR: [{ requesterParentId: id }, { targetParentId: id }] } });
+      await tx.payment.deleteMany({ where: { parentId: id } });
+      await tx.parent.delete({ where: { id } });
+    });
+
+    await createActivityLog(
+      loggingStaff.id,
+      "DELETE_PARENT",
+      "Parent",
+      id,
+      {
+        parentName: parent.fullName,
+        parentCode: parent.parentCode,
+        email: parent.email,
+        deletedBy: loggingStaff.email,
+        staffName: loggingStaff.fullName,
+        reason: reason || "Manual deletion via Operations Console",
+        timestamp: new Date().toISOString()
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Parent ${parent.fullName} has been permanently deleted.`
+    });
+  } catch (error) {
+    return handleError(res, error, "support.deleteParent");
+  }
+};
+
+/**
+ * Permanently delete an admin alone with administrator password verification
+ */
+export const deleteAdmin = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { adminPassword, reason } = req.body as { adminPassword?: string; reason?: string };
+
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Administrator password is required to permanently delete an administrator." });
+    }
+
+    const loggingStaff = (req as any).staff;
+    const staffRecord = await prisma.platformStaff.findUnique({
+      where: { id: loggingStaff?.id },
+    });
+
+    if (!staffRecord || !staffRecord.password) {
+      return res.status(401).json({ success: false, message: "Staff account unauthenticated." });
+    }
+
+    const isMatch = await bcrypt.compare(adminPassword, staffRecord.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect administrator password. Deletion unauthorized." });
+    }
+
+    const admin = await prisma.admin.findUnique({ where: { id } });
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin not found." });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.refreshToken.deleteMany({ where: { userId: id } });
+      await tx.schoolAdmin.deleteMany({ where: { adminId: id } });
+      await tx.admin.delete({ where: { id } });
+    });
+
+    await createActivityLog(
+      loggingStaff.id,
+      "DELETE_ADMIN",
+      "Admin",
+      id,
+      {
+        adminName: admin.name,
+        adminCode: admin.adminCode,
+        email: admin.email,
+        deletedBy: loggingStaff.email,
+        staffName: loggingStaff.fullName,
+        reason: reason || "Manual deletion via Operations Console",
+        timestamp: new Date().toISOString()
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Admin ${admin.name} has been permanently deleted.`
+    });
+  } catch (error) {
+    return handleError(res, error, "support.deleteAdmin");
+  }
+};
+
+/**
+ * Permanently delete a school alone with administrator password verification
+ */
+export const deleteSchool = async (req: Request, res: Response) => {
+  try {
+    const id = getSingleString(req.params.id);
+    const { adminPassword, reason } = req.body as { adminPassword?: string; reason?: string };
+
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Administrator password is required to permanently delete an institution." });
+    }
+
+    const loggingStaff = (req as any).staff;
+    const staffRecord = await prisma.platformStaff.findUnique({
+      where: { id: loggingStaff?.id },
+    });
+
+    if (!staffRecord || !staffRecord.password) {
+      return res.status(401).json({ success: false, message: "Staff account unauthenticated." });
+    }
+
+    const isMatch = await bcrypt.compare(adminPassword, staffRecord.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect administrator password. Deletion unauthorized." });
+    }
+
+    const school = await prisma.school.findUnique({ where: { id } });
+    if (!school) {
+      return res.status(404).json({ success: false, message: "School not found." });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.schoolAdmin.deleteMany({ where: { schoolId: id } });
+      await tx.schoolSetting.deleteMany({ where: { schoolId: id } });
+      await tx.schoolLandingPage.deleteMany({ where: { schoolId: id } });
+      await tx.schoolSubscription.deleteMany({ where: { schoolId: id } });
+      await tx.fileRecord.deleteMany({ where: { schoolId: id } });
+      await tx.student.updateMany({ where: { schoolId: id }, data: { schoolId: null } });
+      await tx.student.updateMany({ where: { originalSchoolId: id }, data: { originalSchoolId: null } });
+      await tx.teacher.updateMany({ where: { schoolId: id }, data: { schoolId: null, activeSchoolId: null, currentSchoolId: null, primarySchoolId: null } });
+      await tx.class.deleteMany({ where: { schoolId: id } });
+      await tx.subject.deleteMany({ where: { schoolId: id } });
+      await tx.school.delete({ where: { id } });
+    });
+
+    await createActivityLog(
+      loggingStaff.id,
+      "DELETE_SCHOOL",
+      "School",
+      id,
+      {
+        schoolName: school.name,
+        schoolCode: school.schoolCode,
+        tenantId: school.tenantId,
+        deletedBy: loggingStaff.email,
+        staffName: loggingStaff.fullName,
+        reason: reason || "Manual deletion via Operations Console",
+        timestamp: new Date().toISOString()
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `School ${school.name} has been permanently deleted.`
+    });
+  } catch (error) {
+    return handleError(res, error, "support.deleteSchool");
+  }
+};
+
+/**
+ * @desc Get all compliance requests (Account deactivations & data deletion requests) and deactivated accounts across the ecosystem
+ * @route GET /api/platform/support/compliance-requests
+ */
+export const listComplianceRequests = async (req: Request, res: Response) => {
+  try {
+    const { category, status, search, role } = req.query as {
+      category?: string;
+      status?: string;
+      search?: string;
+      role?: string;
+    };
+
+    // 1. Fetch compliance tickets (Data deletion & account deactivation requests)
+    const ticketWhere: any = {
+      category: category ? category : { in: ["COMPLIANCE_DATA_DELETION", "COMPLIANCE_ACCOUNT_DEACTIVATION"] },
+    };
+
+    if (status) {
+      ticketWhere.status = status;
+    }
+
+    if (role && role !== "ALL") {
+      ticketWhere.userType = role.toUpperCase();
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      ticketWhere.OR = [
+        { userEmail: { contains: q, mode: "insensitive" } },
+        { userName: { contains: q, mode: "insensitive" } },
+        { subject: { contains: q, mode: "insensitive" } },
+        { id: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const tickets = await prisma.supportTicket.findMany({
+      where: ticketWhere,
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { messages: true } },
+      },
+    });
+
+    // 2. Fetch all currently deactivated users across all 4 role tables
+    const q = search && search.trim() ? search.trim() : null;
+
+    let deactivatedStudents: any[] = [];
+    let deactivatedTeachers: any[] = [];
+    let deactivatedAdmins: any[] = [];
+    let deactivatedParents: any[] = [];
+
+    const baseWhere = {
+      OR: [{ isActive: false }, { status: "DEACTIVATED" }],
+    };
+
+    if (!role || role === "ALL" || role.toUpperCase() === "STUDENT") {
+      deactivatedStudents = await prisma.student.findMany({
+        where: q ? {
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                { email: { contains: q, mode: "insensitive" } },
+                { name: { contains: q, mode: "insensitive" } },
+                { studentCode: { contains: q, mode: "insensitive" } },
+              ]
+            }
+          ]
+        } : baseWhere,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          studentCode: true,
+          status: true,
+          isActive: true,
+          updatedAt: true,
+          createdAt: true,
+          school: { select: { id: true, name: true, schoolCode: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+      });
+    }
+
+    if (!role || role === "ALL" || role.toUpperCase() === "TEACHER") {
+      deactivatedTeachers = await prisma.teacher.findMany({
+        where: q ? {
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                { email: { contains: q, mode: "insensitive" } },
+                { name: { contains: q, mode: "insensitive" } },
+                { teacherCode: { contains: q, mode: "insensitive" } },
+              ]
+            }
+          ]
+        } : baseWhere,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          teacherCode: true,
+          status: true,
+          isActive: true,
+          updatedAt: true,
+          createdAt: true,
+          school: { select: { id: true, name: true, schoolCode: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+      });
+    }
+
+    if (!role || role === "ALL" || role.toUpperCase() === "ADMIN") {
+      deactivatedAdmins = await prisma.admin.findMany({
+        where: q ? {
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                { email: { contains: q, mode: "insensitive" } },
+                { name: { contains: q, mode: "insensitive" } },
+                { adminCode: { contains: q, mode: "insensitive" } },
+              ]
+            }
+          ]
+        } : baseWhere,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          adminCode: true,
+          status: true,
+          isActive: true,
+          updatedAt: true,
+          createdAt: true,
+          schoolAdmins: { select: { school: { select: { id: true, name: true, schoolCode: true } } } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+      });
+    }
+
+    if (!role || role === "ALL" || role.toUpperCase() === "PARENT") {
+      deactivatedParents = await prisma.parent.findMany({
+        where: q ? {
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                { email: { contains: q, mode: "insensitive" } },
+                { fullName: { contains: q, mode: "insensitive" } },
+                { parentCode: { contains: q, mode: "insensitive" } },
+              ]
+            }
+          ]
+        } : baseWhere,
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          parentCode: true,
+          status: true,
+          isActive: true,
+          updatedAt: true,
+          createdAt: true,
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+      });
+    }
+
+    // Format deactivated users into a standardized shape
+    const deactivatedUsers = [
+      ...deactivatedStudents.map(s => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        code: s.studentCode,
+        role: "STUDENT",
+        status: s.status,
+        isActive: s.isActive,
+        deactivatedAt: s.updatedAt,
+        createdAt: s.createdAt,
+        schoolName: s.school?.name || null,
+      })),
+      ...deactivatedTeachers.map(t => ({
+        id: t.id,
+        name: t.name,
+        email: t.email,
+        code: t.teacherCode,
+        role: "TEACHER",
+        status: t.status,
+        isActive: t.isActive,
+        deactivatedAt: t.updatedAt,
+        createdAt: t.createdAt,
+        schoolName: t.school?.name || null,
+      })),
+      ...deactivatedAdmins.map(a => ({
+        id: a.id,
+        name: a.name,
+        email: a.email,
+        code: a.adminCode,
+        role: "ADMIN",
+        status: a.status,
+        isActive: a.isActive,
+        deactivatedAt: a.updatedAt,
+        createdAt: a.createdAt,
+        schoolName: a.schoolAdmins?.[0]?.school?.name || null,
+      })),
+      ...deactivatedParents.map(p => ({
+        id: p.id,
+        name: p.fullName,
+        email: p.email,
+        code: p.parentCode,
+        role: "PARENT",
+        status: p.status,
+        isActive: p.isActive,
+        deactivatedAt: p.updatedAt,
+        createdAt: p.createdAt,
+        schoolName: null,
+      })),
+    ].sort((a, b) => new Date(b.deactivatedAt).getTime() - new Date(a.deactivatedAt).getTime());
+
+    // Summary counts
+    const totalDeletionRequests = tickets.filter(t => t.category === "COMPLIANCE_DATA_DELETION").length;
+    const pendingDeletionRequests = tickets.filter(t => t.category === "COMPLIANCE_DATA_DELETION" && t.status !== "RESOLVED" && t.status !== "CLOSED").length;
+    const totalDeactivationTickets = tickets.filter(t => t.category === "COMPLIANCE_ACCOUNT_DEACTIVATION").length;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        tickets,
+        deactivatedUsers,
+        summary: {
+          totalDeletionRequests,
+          pendingDeletionRequests,
+          totalDeactivationTickets,
+          totalDeactivatedUsers: deactivatedUsers.length,
+          totalStudentsDeactivated: deactivatedStudents.length,
+          totalTeachersDeactivated: deactivatedTeachers.length,
+          totalAdminsDeactivated: deactivatedAdmins.length,
+          totalParentsDeactivated: deactivatedParents.length,
+        }
+      }
+    });
+  } catch (error) {
+    return handleError(res, error, "support.listComplianceRequests");
   }
 };

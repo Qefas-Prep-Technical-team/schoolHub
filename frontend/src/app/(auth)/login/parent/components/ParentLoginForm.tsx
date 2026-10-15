@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLoginMutation } from "../../services/use-auth-mutations";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import SocialAuthRow from "../../components/SocialAuthRow";
 
 export default function ParentLoginForm() {
   const [email, setEmail] = useState("");
@@ -58,6 +59,8 @@ export default function ParentLoginForm() {
           ) : null}
           Login
         </button>
+
+        <SocialAuthRow userType="parent" mode="signin" />
 
         <div className="text-center mt-4">
           <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 max-w-[280px] mx-auto leading-relaxed">

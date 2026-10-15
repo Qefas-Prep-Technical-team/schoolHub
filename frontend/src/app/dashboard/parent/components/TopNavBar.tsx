@@ -105,7 +105,7 @@ export default function TopNavBar() {
         <ParentMobileDrawer />
 
         {/* Child Selector */}
-        <div className="relative hidden xl:block min-w-[200px] group">
+        <div className="relative hidden sm:block min-w-[150px] md:min-w-[180px] lg:min-w-[200px] group">
           <select 
             value={selectedChildId || ''}
             onChange={(e) => setSelectedChildId(e.target.value)}

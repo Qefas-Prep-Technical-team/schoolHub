@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, CheckCircle2, ChevronRight, Mail, Shield, UploadCloud, Settings, Sparkles, Users, CreditCard, MessageSquare, GraduationCap, LayoutDashboard, Calendar, Layers, BookOpen, FileSpreadsheet, Maximize2, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import CheerAnimation from './_components/CheerAnimation';
 import { useAuthStore } from '../login/services/auth-store';
 import Lottie from "lottie-react";
@@ -90,13 +90,15 @@ const getSteps = (userType: string) => {
     ];
 };
 
-export default function Onboarding() {
+function OnboardingContent() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const searchParams = useSearchParams();
+  const { user, isAuthenticated } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [previewRole, setPreviewRole] = useState<string | null>(null);
   
-  const userType = previewRole || user?.userType || 'ADMIN';
+  const queryRole = (searchParams.get('type') || searchParams.get('role'))?.toUpperCase();
+  const userType = previewRole || queryRole || user?.userType || 'ADMIN';
   const theme = THEME_MAP[userType as keyof typeof THEME_MAP] || THEME_MAP.ADMIN;
   const currentSteps = getSteps(userType);
   
@@ -110,11 +112,21 @@ export default function Onboarding() {
       }
   };
 
+  const getDashboardRoute = (role: string) => {
+      const normalized = role.toLowerCase().replace('_', '-');
+      if (normalized === 'school-admin' || normalized === 'admin') return '/dashboard/admin';
+      return `/dashboard/${normalized}`;
+  };
+
   const handleNext = () => {
     if (currentStep < currentSteps.length - 1) {
         setCurrentStep(prev => prev + 1);
     } else {
-        router.push(getLoginRoute(userType));
+        if (isAuthenticated || user) {
+            router.push(getDashboardRoute(userType));
+        } else {
+            router.push(getLoginRoute(userType));
+        }
     }
   };
   
@@ -181,6 +193,19 @@ export default function Onboarding() {
           {/* Right Content Area (Dynamic Steps) */}
           <div className="flex-1 flex flex-col p-8 lg:p-20 bg-white dark:bg-slate-950 relative transition-colors duration-500 overflow-y-auto">
             
+            {/* Quick Skip Tour option for authenticated users */}
+            {(isAuthenticated || user) && currentStep < currentSteps.length - 1 && (
+              <div className="w-full max-w-xl mx-auto mb-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => router.push(getDashboardRoute(userType))}
+                  className="text-xs font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                >
+                  Skip Tour & Go to Dashboard <ChevronRight size={13} />
+                </button>
+              </div>
+            )}
+
             {/* Minimal Top Stepper (Hidden on Step 0) */}
             {currentStep > 0 && (
               <div className="w-full max-w-xl mx-auto mb-12 flex items-center justify-between">
@@ -246,14 +271,14 @@ export default function Onboarding() {
                                     {currentStep === 3 && <StaffStudentStep theme={theme} />}
                                     {currentStep === 4 && <AssessmentsStep theme={theme} />}
                                     {currentStep === 5 && <FinanceStep theme={theme} />}
-                                    {currentStep === 6 && <SuccessStep theme={theme} />}
+                                    {currentStep === 6 && <SuccessStep theme={theme} userType={userType} />}
                                 </>
                             ) : (
                                 <>
                                     {currentStep === 1 && <ManagementStep theme={theme} userType={userType} />}
                                     {currentStep === 2 && <CommunicationStep theme={theme} userType={userType} />}
                                     {currentStep === 3 && <AcademicsStep theme={theme} userType={userType} />}
-                                    {currentStep === 4 && <SuccessStep theme={theme} />}
+                                    {currentStep === 4 && <SuccessStep theme={theme} userType={userType} />}
                                 </>
                             )}
 
@@ -269,7 +294,7 @@ export default function Onboarding() {
                                     onClick={handleNext}
                                     className={`h-12 px-8 rounded-xl font-bold shadow-lg border-none ${theme.buttonColor}`}
                                 >
-                                    {currentStep === currentSteps.length - 1 ? 'Login to your Dashboard' : 'Continue'}
+                                    {currentStep === currentSteps.length - 1 ? ((isAuthenticated || user) ? 'Go to your Dashboard' : 'Login to your Dashboard') : 'Continue'}
                                 </Button>
                             </div>
                         </motion.div>
@@ -280,6 +305,18 @@ export default function Onboarding() {
         </div>
       </CheerAnimation>
     </div>
+  );
+}
+
+export default function Onboarding() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
 
@@ -367,7 +404,16 @@ function AcademicsStep({ theme, userType }: { theme: any; userType: string }) {
     );
 }
 
-function SuccessStep({ theme }: { theme: any }) {
+function SuccessStep({ theme, userType }: { theme: any; userType?: string }) {
+    const subtitle = useMemo(() => {
+        switch (userType) {
+            case 'STUDENT': return "The tour is complete. It's time to explore your learning portal and start achieving your academic goals.";
+            case 'PARENT': return "The tour is complete. It's time to connect with your student and monitor their academic progress.";
+            case 'TEACHER': return "The tour is complete. It's time to prepare your classes and engage with your students.";
+            default: return "The tour is complete. It's time to take the reins and start building your digital academy.";
+        }
+    }, [userType]);
+
     return (
         <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="flex flex-col items-center justify-center text-center space-y-6 py-12">
             <div className="mb-4">
@@ -379,7 +425,7 @@ function SuccessStep({ theme }: { theme: any }) {
             </div>
                         <div>
                 <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-4">You're ready <br/> to launch!</h3>
-                <p className="text-slate-500 text-lg max-w-md mx-auto">The tour is complete. It's time to take the reins and start building your digital academy.</p>
+                <p className="text-slate-500 text-lg max-w-md mx-auto">{subtitle}</p>
                 
                 <div className="mt-8 p-4 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 max-w-md mx-auto flex gap-3 items-start text-left">
                     <Info className="text-orange-500 shrink-0 mt-0.5" size={18} />

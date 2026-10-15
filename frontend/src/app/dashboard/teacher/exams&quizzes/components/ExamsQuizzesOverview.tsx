@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from './PageHeader';
 import FilterChips from './FilterChips';
-import ExamsTable from './ExamsTable';
+import ExamsTable, { Exam } from './ExamsTable';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { examService } from '@/lib/api/services/examService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
@@ -22,8 +22,9 @@ import CreatePaperForm from './CreatePaperForm';
 import CreateExamForm from './CreateExamForm';
 import CreateAssignmentForm from './CreateAssignmentForm';
 import { useRouter } from 'next/navigation';
-import Pagination from '@/components/ui/Pagination';
+import { TeacherPagination } from '../../components/TeacherPagination';
 import { toast } from 'react-toastify';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
 export default function ExamsQuizzesOverview() {
   const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment'>('exams');
@@ -40,7 +41,7 @@ export default function ExamsQuizzesOverview() {
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [createCategory, setCreateCategory] = useState<'EXAM' | 'QUIZ' | 'CA'>('EXAM');
-  const [examToDelete, setExamToDelete] = useState<any>(null);
+  const [examToDelete, setExamToDelete] = useState<Exam | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   const queryClient = useQueryClient();
@@ -61,8 +62,9 @@ export default function ExamsQuizzesOverview() {
       setIsRefreshing(true);
       queryClient.invalidateQueries({ queryKey: ['teacher-exams'] });
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to delete assessment.');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err?.response?.data?.message || 'Failed to delete assessment.');
     }
   });
 
@@ -194,84 +196,153 @@ export default function ExamsQuizzesOverview() {
     return list;
   }, [data, filters.class, filters.subject, filters.date, activeTab, isPersonal, subjectsData, user?.id]);
 
+  // On mobile screens, default to Grid View
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
+
+  const totalAssessments = filteredData.length;
+  const publishedCount = useMemo(() => {
+    return filteredData.filter(item => item.status?.toUpperCase() === 'PUBLISHED' || item.status?.toUpperCase() === 'APPROVED' || item.status?.toUpperCase() === 'COMPLETED').length;
+  }, [filteredData]);
+  const draftCount = useMemo(() => {
+    return filteredData.filter(item => item.status?.toUpperCase() === 'DRAFT').length;
+  }, [filteredData]);
+  const myItemsCount = useMemo(() => {
+    return filteredData.filter(item => {
+      const itm = item as Exam & { assignedTeachers?: Array<{ id: string }> };
+      return itm.teacherId === user?.id || itm.assignedTeachers?.some(t => t.id === user?.id);
+    }).length;
+  }, [filteredData, user?.id]);
+
   return (
-    <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[95%] mx-auto">
-      <div className="flex flex-col flex-1">
+    <main className="w-full space-y-6 sm:space-y-8 py-2">
+      <div className="flex flex-col flex-1 w-full">
         <PageHeader 
           title="Assessments" 
           onCreateNew={handleCreateNew}
           onAddPaper={() => setIsAddPaperModalOpen(true)}
           activeTab={activeTab}
         />
+
+        {/* Top Stat Cards — 2 Columns on Mobile */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6">
+          <StatCard 
+            label="Total Assessments" 
+            value={totalAssessments} 
+            icon={ClipboardList} 
+            color="text-emerald-500" 
+            bgColor="bg-emerald-500/10" 
+            tooltip="Total count of exams, quizzes, continuous assessments, and assignments configured in your directory. Use this to monitor overall evaluation volume." 
+          />
+          <StatCard 
+            label="Active / Published" 
+            value={publishedCount} 
+            icon={Trophy} 
+            color="text-blue-500" 
+            bgColor="bg-blue-500/10" 
+            tooltip="Assessments currently published or approved for student submission and grading. Use this to verify which evaluations are actively taking responses." 
+          />
+          <StatCard 
+            label="Draft Assessments" 
+            value={draftCount} 
+            icon={FileText} 
+            color="text-amber-500" 
+            bgColor="bg-amber-500/10" 
+            tooltip="Assessments still in preparation or pending question entry. Use this to quickly identify pending evaluation drafts before publishing deadlines." 
+          />
+          <StatCard 
+            label="My Modules" 
+            value={myItemsCount} 
+            icon={Sparkles} 
+            color="text-purple-500" 
+            bgColor="bg-purple-500/10" 
+            tooltip="Evaluations created by you or where you are directly assigned as the evaluating instructor. Use this to track your personal grading responsibility." 
+          />
+        </div>
         
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-emerald-950/30 backdrop-blur-md rounded-2xl border border-emerald-100 dark:border-emerald-800/40 shadow-xl shadow-emerald-900/5 p-6"
+          className="bg-white dark:bg-emerald-950/30 backdrop-blur-md rounded-xl sm:rounded-2xl border border-emerald-100 dark:border-emerald-800/40 shadow-xl shadow-emerald-900/5 p-4 sm:p-6"
         >
           {/* Tabs Strategy */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <div className="inline-flex p-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-[1.5rem] shadow-inner border border-emerald-100/50 dark:border-emerald-800/30 flex-wrap md:flex-nowrap gap-1 backdrop-blur-sm">
-              <TabButton 
-                active={activeTab === 'exams'} 
-                onClick={() => handleTabChange('exams')}
-                icon={Trophy}
-                label="Exams"
-              />
-              <TabButton 
-                active={activeTab === 'quizzes'} 
-                onClick={() => handleTabChange('quizzes')}
-                icon={ClipboardList}
-                label="Quizzes"
-              />
-              <TabButton 
-                active={activeTab === 'subject-papers'} 
-                onClick={() => handleTabChange('subject-papers')}
-                icon={Sparkles}
-                label="Subject Papers"
-              />
-              <TabButton 
-                active={activeTab === 'ca'} 
-                onClick={() => handleTabChange('ca')}
-                icon={FileText}
-                label="CA"
-              />
-              <TabButton 
-                active={activeTab === 'assignment'} 
-                onClick={() => handleTabChange('assignment')}
-                icon={BookOpen}
-                label="Assignments"
-              />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5 pb-4 sm:pb-5 border-b border-emerald-100/60 dark:border-emerald-800/30">
+            {/* Scrollable Category Tabs */}
+            <div className="relative w-full md:w-auto overflow-hidden">
+              <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl sm:rounded-2xl shadow-inner border border-emerald-100/60 dark:border-emerald-800/30 overflow-x-auto no-scrollbar scroll-smooth overscroll-x-contain">
+                <TabButton 
+                  active={activeTab === 'exams'} 
+                  onClick={() => handleTabChange('exams')}
+                  icon={Trophy}
+                  label="Exams"
+                  count={activeTab === 'exams' ? filteredData.length : undefined}
+                />
+                <TabButton 
+                  active={activeTab === 'quizzes'} 
+                  onClick={() => handleTabChange('quizzes')}
+                  icon={ClipboardList}
+                  label="Quizzes"
+                  count={activeTab === 'quizzes' ? filteredData.length : undefined}
+                />
+                <TabButton 
+                  active={activeTab === 'subject-papers'} 
+                  onClick={() => handleTabChange('subject-papers')}
+                  icon={Sparkles}
+                  label="Subject Papers"
+                  count={activeTab === 'subject-papers' ? filteredData.length : undefined}
+                />
+                <TabButton 
+                  active={activeTab === 'ca'} 
+                  onClick={() => handleTabChange('ca')}
+                  icon={FileText}
+                  label="CA"
+                  count={activeTab === 'ca' ? filteredData.length : undefined}
+                />
+                <TabButton 
+                  active={activeTab === 'assignment'} 
+                  onClick={() => handleTabChange('assignment')}
+                  icon={BookOpen}
+                  label="Assignments"
+                  count={activeTab === 'assignment' ? filteredData.length : undefined}
+                />
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
-
-
-               {/* Grid / List view mode switcher */}
-               <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 p-1 rounded-xl border border-emerald-100/50 dark:border-emerald-800/30 backdrop-blur-sm">
-                 <button
-                   onClick={() => setViewMode('list')}
-                   className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                     viewMode === 'list' 
-                       ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
-                       : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                   }`}
-                   title="List View"
-                 >
-                   <List size={16} strokeWidth={2.5} />
-                 </button>
-                 <button
-                   onClick={() => setViewMode('grid')}
-                   className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                     viewMode === 'grid' 
-                       ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
-                       : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                   }`}
-                   title="Grid View"
-                 >
-                   <LayoutGrid size={16} strokeWidth={2.5} />
-                 </button>
-               </div>
+            {/* View Mode Switcher Row */}
+            <div className="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto pt-1 md:pt-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 md:hidden">
+                Display Layout
+              </span>
+              <div className="flex items-center gap-2">
+                <HeaderTooltip content="Switch between visual Grid cards and the comprehensive tabular List perspective." />
+                <div className="flex items-center gap-1 bg-emerald-50/80 dark:bg-emerald-950/40 p-1 rounded-xl border border-emerald-100/60 dark:border-emerald-800/30 backdrop-blur-sm shadow-inner">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      viewMode === 'list' 
+                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                    title="List View"
+                  >
+                    <List size={16} strokeWidth={2.5} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      viewMode === 'grid' 
+                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                    title="Grid View"
+                  >
+                    <LayoutGrid size={16} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -283,7 +354,7 @@ export default function ExamsQuizzesOverview() {
             onClearFilters={handleClearFilters}
           />
 
-          <div className="mt-8">
+          <div className="mt-4 sm:mt-6">
             <AnimatePresence mode="wait">
               {(isLoading || isRefreshing) ? (
                 <motion.div
@@ -312,15 +383,14 @@ export default function ExamsQuizzesOverview() {
                     onDelete={(exam) => setExamToDelete(exam)}
                   />
                   {filteredData.length > 0 && (
-                      <div className="mt-8 flex justify-center">
-                          <Pagination
-                              currentPage={currentPage}
-                              totalPages={Math.ceil(filteredData.length / itemsPerPage)}
-                              totalItems={filteredData.length}
-                              itemsPerPage={itemsPerPage}
-                              onPageChange={setCurrentPage}
-                          />
-                      </div>
+                      <TeacherPagination
+                          currentPage={currentPage}
+                          totalPages={Math.ceil(filteredData.length / itemsPerPage)}
+                          totalItems={filteredData.length}
+                          itemsPerPage={itemsPerPage}
+                          onPageChange={setCurrentPage}
+                          itemName="assessments"
+                      />
                   )}
                 </motion.div>
               )}
@@ -389,7 +459,7 @@ export default function ExamsQuizzesOverview() {
             </DialogTitle>
           </DialogHeader>
           <CreateAssignmentForm 
-            onSuccess={(id) => {
+            onSuccess={(id: string) => {
               setIsAssignmentModalOpen(false);
               router.push(`/dashboard/teacher/assignments/${id}?edit=true`);
             }} 
@@ -417,8 +487,8 @@ export default function ExamsQuizzesOverview() {
               Cancel
             </button>
             <button
-              onClick={() => deleteMutation.mutate(examToDelete.id)}
-              disabled={deleteMutation.isPending}
+              onClick={() => examToDelete && deleteMutation.mutate(examToDelete.id)}
+              disabled={deleteMutation.isPending || !examToDelete}
               className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer transition-colors"
             >
               {deleteMutation.isPending && <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
@@ -431,26 +501,82 @@ export default function ExamsQuizzesOverview() {
   );
 }
 
-function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: React.ElementType, label: string }) {
+function TabButton({ 
+  active, 
+  onClick, 
+  icon: Icon, 
+  label,
+  count
+}: { 
+  active: boolean, 
+  onClick: () => void, 
+  icon: React.ElementType, 
+  label: string,
+  count?: number 
+}) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.96 }}
       onClick={onClick}
-      className={`relative flex items-center cursor-pointer gap-2 px-4 py-2 rounded-xl transition-all duration-500 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400/70 focus-visible:ring-offset-0 ${
+      className={`relative flex items-center cursor-pointer gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 overflow-hidden focus:outline-none shrink-0 whitespace-nowrap select-none ${
         active 
-          ? 'text-white' 
-          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 dark:text-slate-400'
+          ? 'text-white shadow-md shadow-emerald-600/20' 
+          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30'
       }`}
     >
-      <Icon size={14} className="relative z-10" />
-      <span className="text-xs font-black uppercase tracking-widest relative z-10">{label}</span>
+      <Icon size={14} className="relative z-10 shrink-0" strokeWidth={2.5} />
+      <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider relative z-10">{label}</span>
+      {typeof count === 'number' && (
+        <span className={`relative z-10 px-1.5 py-0.5 text-[9px] font-black rounded-md ${
+          active 
+            ? 'bg-white/20 text-white' 
+            : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+        }`}>
+          {count}
+        </span>
+      )}
       
       {active && (
         <motion.div 
           layoutId="active-tab-bg"
-          className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 shadow-lg shadow-emerald-500/20 dark:shadow-emerald-950/40"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+          className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 shadow-md shadow-emerald-500/20"
+          transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
         />
       )}
-    </button>
+    </motion.button>
+  );
+}
+
+function StatCard({ 
+  label, 
+  value, 
+  icon: Icon, 
+  color, 
+  bgColor, 
+  tooltip 
+}: { 
+  label: string; 
+  value: string | number; 
+  icon: React.ElementType; 
+  color: string; 
+  bgColor: string; 
+  tooltip: string; 
+}) {
+  return (
+    <motion.div 
+      whileHover={{ y: -2, scale: 1.01 }}
+      className="p-3 sm:p-5 md:p-6 bg-white dark:bg-emerald-950/60 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
+    >
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className={`p-2 sm:p-3 md:p-3.5 rounded-lg sm:rounded-xl ${bgColor} ${color} transition-transform group-hover:scale-105 shrink-0`}>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" strokeWidth={2.5} />
+        </div>
+        <HeaderTooltip content={tooltip} />
+      </div>
+      <div>
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-500 transition-colors line-clamp-1">{label}</p>
+        <p className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5 sm:mt-1">{value}</p>
+      </div>
+    </motion.div>
   );
 }

@@ -5,9 +5,12 @@ import { useParams, useRouter } from "next/navigation"
 import { 
     usePlatformParentDetails,
     useUpdateParentPlan,
+    useUpdateParentStatus,
+    useDeletePlatformParent,
     PlatformParentDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetParentSubscription } from "@/lib/api/hooks/usePlatformBilling"
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal"
 import { 
     UserCircle as UserIcon,
     Mail as MailIcon,
@@ -28,7 +31,8 @@ import {
     School as ClassIcon,
     Filter as FilterIcon,
     RefreshCw as ResetIcon,
-    ShieldAlert as SuspendIcon
+    ShieldAlert as SuspendIcon,
+    Trash2 as TrashIcon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,7 +41,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
 
 export default function PlatformParentDetailsPage() {
     const params = useParams()
@@ -47,7 +50,10 @@ export default function PlatformParentDetailsPage() {
 
     const { data: parent, isLoading } = usePlatformParentDetails(id as string)
     const updatePlan = useUpdateParentPlan()
+    const toggleStatus = useUpdateParentStatus()
     const resetSubscription = useResetParentSubscription()
+    const deleteParentMutation = useDeletePlatformParent()
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
     if (isLoading) return <LoadingSkeleton />
 
@@ -65,16 +71,36 @@ export default function PlatformParentDetailsPage() {
         { label: "Joined", value: format(new Date(parent.createdAt), 'MMM yyyy'), icon: CalendarIcon, color: "text-orange-400" },
     ]
 
-    const handleUpdateStatus = (status: string) => {
-        updatePlan.mutate({ 
-            id: parent.id, 
-            planData: { subscriptionStatus: status } 
-        })
+    const isDeactivated = parent.isActive === false || parent.status === "DEACTIVATED" || parent.subscriptionStatus === "DEACTIVATED" || parent.subscriptionStatus === "SUSPENDED"
+
+    const handleToggleStatus = () => {
+        const action = isDeactivated ? "activate" : "deactivate"
+        if (confirm(`Are you sure you want to ${action} this parent account? ${isDeactivated ? "The parent will regain platform access." : "The parent will be deactivated and unable to log in."}`)) {
+            toggleStatus.mutate({ 
+                id: parent.id, 
+                isActive: isDeactivated,
+                status: isDeactivated ? "ACTIVE" : "DEACTIVATED"
+            })
+        }
     }
 
     const handleResetSubscription = () => {
         if (confirm("Are you sure you want to reset this parent's subscription to FREE? This will clear all institution overrides.")) {
             resetSubscription.mutate({ id: parent.id })
+        }
+    }
+
+    const handleDeleteParent = async ({ adminPassword, reason }: { adminPassword: string; reason?: string }) => {
+        try {
+            await deleteParentMutation.mutateAsync({
+                id: parent.id,
+                adminPassword,
+                reason
+            })
+            setIsDeleteModalOpen(false)
+            router.push("/console/parents")
+        } catch (error) {
+            console.error("Failed to delete parent:", error)
         }
     }
 
@@ -97,6 +123,14 @@ export default function PlatformParentDetailsPage() {
                             <Badge className="bg-indigo-500/10 text-indigo-500 border-none font-black px-3 py-1 uppercase tracking-widest text-[10px]">
                                 {parent.parentCode}
                             </Badge>
+                            <Badge className={cn(
+                                "font-black px-3 py-1 uppercase tracking-widest text-[10px] border",
+                                isDeactivated
+                                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            )}>
+                                {isDeactivated ? "DEACTIVATED" : "ACTIVE"}
+                            </Badge>
                         </div>
                         <p className="text-slate-500 font-medium flex items-center gap-2">
                            <MailIcon size={14} /> {parent.email}
@@ -105,32 +139,26 @@ export default function PlatformParentDetailsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                    {parent.subscriptionStatus === 'ACTIVE' ? (
-                        <Button 
-                            variant="outline" 
-                            className="rounded-2xl border-red-500/20 text-red-500 hover:bg-red-500/10"
-                            onClick={() => handleUpdateStatus('SUSPENDED')}
-                            disabled={updatePlan.isPending}
-                        >
-                            <SuspendIcon size={18} className="mr-2" /> Suspend Account
-                        </Button>
-                    ) : (
-                        <Button 
-                            variant="outline" 
-                            className="rounded-2xl border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10"
-                            onClick={() => handleUpdateStatus('ACTIVE')}
-                            disabled={updatePlan.isPending}
-                        >
-                            <CheckCircleIcon size={18} className="mr-2" /> Restore Access
-                        </Button>
-                    )}
+                    <Button 
+                        variant="outline" 
+                        className={cn(
+                            "rounded-2xl font-bold transition-all",
+                            !isDeactivated
+                                ? "border-rose-500/20 text-rose-500 hover:bg-rose-500/10"
+                                : "border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10"
+                        )}
+                        onClick={handleToggleStatus}
+                        disabled={toggleStatus.isPending}
+                    >
+                        {!isDeactivated ? <SuspendIcon size={18} className="mr-2" /> : <CheckCircleIcon size={18} className="mr-2" />}
+                        {!isDeactivated ? "Deactivate Account" : "Activate Account"}
+                    </Button>
                     <Button 
                         variant="destructive" 
-                        className="rounded-2xl"
-                        onClick={handleResetSubscription}
-                        disabled={resetSubscription.isPending}
+                        className="rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20"
+                        onClick={() => setIsDeleteModalOpen(true)}
                     >
-                        <ResetIcon size={18} className="mr-2" /> Reset Sub
+                        <TrashIcon size={18} className="mr-2" /> Delete Parent
                     </Button>
                 </div>
             </div>
@@ -215,8 +243,37 @@ export default function PlatformParentDetailsPage() {
                             </TabsTrigger>
                         </TabsList>
 
-                        <div className="mt-8">
+                        <div className="mt-8 space-y-8">
                             <TabsContent value="overview">
+                                <div className="space-y-6">
+                                    <Card className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                            <ShieldCheckIcon size={18} className="text-indigo-500" /> Administrative Operations & Security
+                                        </h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <Button 
+                                                variant="outline"
+                                                onClick={handleToggleStatus}
+                                                disabled={toggleStatus.isPending}
+                                                className={cn(
+                                                    "h-12 rounded-xl font-bold text-xs justify-start px-4",
+                                                    !isDeactivated ? "text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-950/60 hover:bg-rose-50" : "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-950/60 hover:bg-emerald-50"
+                                                )}
+                                            >
+                                                <SuspendIcon size={16} className="mr-2" />
+                                                {!isDeactivated ? "Deactivate Parent Access" : "Activate Parent Access"}
+                                            </Button>
+                                            <Button 
+                                                variant="outline"
+                                                onClick={handleResetSubscription}
+                                                disabled={resetSubscription.isPending}
+                                                className="h-12 rounded-xl font-bold text-xs justify-start px-4 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-950/60 hover:bg-amber-50"
+                                            >
+                                                <ResetIcon size={16} className="mr-2" />
+                                                Reset Subscription to Free
+                                            </Button>
+                                        </div>
+                                    </Card>
                                 <Card className="p-8 bg-white dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-4">
@@ -245,6 +302,7 @@ export default function PlatformParentDetailsPage() {
                                         </div>
                                     </div>
                                 </Card>
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="children">
@@ -294,6 +352,16 @@ export default function PlatformParentDetailsPage() {
                     </Tabs>
                 </div>
             </div>
+
+            <DeleteConfirmationModal 
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteParent}
+                entityName={parent.fullName}
+                entityType="Parent"
+                identifier={parent.parentCode}
+                isLoading={deleteParentMutation.isPending}
+            />
         </div>
     )
 }

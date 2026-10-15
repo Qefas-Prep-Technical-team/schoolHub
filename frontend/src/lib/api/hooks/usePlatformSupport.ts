@@ -84,3 +84,76 @@ export const usePlatformReplyTicket = () => {
     });
 };
 
+export interface ComplianceTicket {
+  id: string;
+  category: "COMPLIANCE_DATA_DELETION" | "COMPLIANCE_ACCOUNT_DEACTIVATION" | string;
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  subject: string;
+  description: string;
+  userType?: string;
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    messages: number;
+  };
+}
+
+export interface DeactivatedUserRecord {
+  id: string;
+  name: string;
+  email: string;
+  code: string;
+  role: "STUDENT" | "TEACHER" | "ADMIN" | "PARENT";
+  status: string;
+  isActive: boolean;
+  deactivatedAt: string;
+  createdAt: string;
+  schoolName: string | null;
+}
+
+export interface ComplianceSummary {
+  totalDeletionRequests: number;
+  pendingDeletionRequests: number;
+  totalDeactivationTickets: number;
+  totalDeactivatedUsers: number;
+  totalStudentsDeactivated: number;
+  totalTeachersDeactivated: number;
+  totalAdminsDeactivated: number;
+  totalParentsDeactivated: number;
+}
+
+export interface ComplianceResponseData {
+  tickets: ComplianceTicket[];
+  deactivatedUsers: DeactivatedUserRecord[];
+  summary: ComplianceSummary;
+}
+
+export const usePlatformComplianceRequests = (params?: {
+  category?: string;
+  status?: string;
+  search?: string;
+  role?: string;
+}) => {
+  const { platform_token } = usePlatformStaffStore();
+
+  return useQuery<ComplianceResponseData>({
+    queryKey: ["compliance-requests", params],
+    queryFn: async () => {
+      const { data } = await platformClient.get<{ success: boolean; data: ComplianceResponseData }>(
+        "/platform/support/compliance-requests",
+        {
+          params,
+          headers: { Authorization: `Bearer ${platform_token}` },
+        }
+      );
+      return data.data;
+    },
+    enabled: !!platform_token,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+

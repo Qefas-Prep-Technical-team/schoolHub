@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { 
@@ -15,21 +15,21 @@ import {
   Mail,
   Activity
 } from 'lucide-react';
-import Pagination from '@/components/ui/Pagination';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { 
   useNotifications, 
   useMarkAsRead, 
-  useMarkAllAsRead,
+  useMarkAllAsRead, 
   useDeleteNotification 
 } from '@/lib/api/hooks/useNotifications';
 import { useRespondToLinkRequest } from '@/lib/api/hooks/useLinks';
 import { cn } from '@/lib/utils';
 import NotificationDetailModal from '@/components/notifications/NotificationDetailModal';
 import { Notification } from '@/lib/api/services/notificationService';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
+import { TeacherPagination } from '@/app/dashboard/teacher/components/TeacherPagination';
 import { NotificationStatsCard } from './components/NotificationStatsCard';
 import { NotificationFeedSkeleton, NotificationStatsSkeleton } from './components/NotificationsSkeleton';
 
@@ -48,6 +48,7 @@ export default function TeacherNotificationsPage() {
   const markAllAsReadMutation = useMarkAllAsRead();
   const respondMutation = useRespondToLinkRequest();
   const deleteMutation = useDeleteNotification();
+
   const displayNotifications = notifications.map((n: Notification) => 
     optimisticReadIds.has(n.id) ? { ...n, isRead: true } : n
   );
@@ -105,67 +106,83 @@ export default function TeacherNotificationsPage() {
         onSuccess: () => {
           markAsReadMutation.mutate(notificationId);
           setIsModalOpen(false);
-          refetch(); // Refresh to show changes
+          refetch();
         },
       }
     );
   };
 
   const getTypeIcon = (type: string, isRead: boolean) => {
-    const iconClass = isRead ? "h-5 w-5" : "h-5 w-5 text-slate-900";
+    const iconClass = isRead ? "h-4 w-4 sm:h-5 sm:w-5" : "h-4 w-4 sm:h-5 sm:w-5 text-slate-900 dark:text-white";
     switch (type) {
       case 'LINK_REQUEST': 
       case 'LINK_ACCEPTED':
-      case 'LINK_REJECTED': return <Info className={isRead ? "h-5 w-5 text-blue-500" : iconClass} />;
+      case 'LINK_REJECTED': return <Info className={isRead ? "h-4 w-4 sm:h-5 sm:w-5 text-blue-500" : iconClass} />;
       case 'SYSTEM':
-      case 'GENERAL': return <AlertCircle className={isRead ? "h-5 w-5 text-orange-500" : iconClass} />;
-      case 'MESSAGE': return <Mail className={isRead ? "h-5 w-5 text-primary" : iconClass} />;
-      case 'ANNOUNCEMENT': return <Megaphone className={isRead ? "h-5 w-5 text-purple-500" : iconClass} />;
-      case 'ACADEMIC': return <Activity className={isRead ? "h-5 w-5 text-green-500" : iconClass} />;
-      default: return <Bell className={isRead ? "h-5 w-5 text-slate-500" : iconClass} />;
+      case 'GENERAL': return <AlertCircle className={isRead ? "h-4 w-4 sm:h-5 sm:w-5 text-amber-500" : iconClass} />;
+      case 'MESSAGE': return <Mail className={isRead ? "h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" : iconClass} />;
+      case 'ANNOUNCEMENT': return <Megaphone className={isRead ? "h-4 w-4 sm:h-5 sm:w-5 text-purple-500" : iconClass} />;
+      case 'ACADEMIC': return <Activity className={isRead ? "h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" : iconClass} />;
+      default: return <Bell className={isRead ? "h-4 w-4 sm:h-5 sm:w-5 text-slate-500" : iconClass} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-transparent py-8 animate-in fade-in duration-500">
-      <div className="w-[95%] max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8">
+    <div className="p-3.5 sm:p-6 md:p-8 w-full max-w-[1600px] mx-auto min-h-screen bg-slate-50/50 dark:bg-black font-sans">
+      <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
         
         {/* Left Column: Main Content */}
-        <div className="flex-1 space-y-8 min-w-0">
+        <div className="flex-1 space-y-4 sm:space-y-6 min-w-0">
           
           {/* Header */}
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 bg-green-400 rounded-lg shadow-green-400/20 shadow-lg">
-                  <Bell size={16} className="text-slate-900 fill-current" />
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 pb-2 border-b border-slate-200/60 dark:border-zinc-800">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="p-1.5 bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                  <Bell size={15} className="fill-current" />
                 </div>
-                <span className="text-[10px] font-black text-primary tracking-widest uppercase">Command Center Feed</span>
+                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
+                  Command Center Feed
+                </span>
               </div>
-              <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                Notifications
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium tracking-tight">Stay updated with academic alerts, messages, and linking requests.</p>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                  Notifications
+                </h1>
+                <HeaderTooltip
+                  content="Centralized notifications command feed for real-time institutional broadcasts, direct student linking requests, system status alerts, and academic assignment updates."
+                  size={15}
+                />
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Stay updated with academic alerts, student link requests, and system events.
+              </p>
             </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Mark All As Read Action */}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               {unreadCount > 0 && (
                 <Button 
                   onClick={() => markAllAsReadMutation.mutate()}
                   disabled={markAllAsReadMutation.isPending}
                   variant="outline"
-                  className="h-11 px-6 rounded-xl border-dashed border-2 border-slate-300 dark:border-slate-800 hover:border-primary hover:text-primary transition-all font-black text-xs uppercase tracking-widest"
+                  className="w-full sm:w-auto h-11 px-4 sm:px-6 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 transition-all font-bold text-xs uppercase tracking-wider active:scale-95 shadow-sm"
                 >
-                  {markAllAsReadMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <Check className="mr-2" size={16} />}
-                  Mark all read
+                  {markAllAsReadMutation.isPending ? (
+                    <Loader2 className="animate-spin mr-2" size={15} />
+                  ) : (
+                    <Check className="mr-2 text-emerald-500" size={15} />
+                  )}
+                  <span>Mark all read</span>
                 </Button>
               )}
             </div>
           </header>
 
-          {/* Filters and Search Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/50 dark:bg-slate-900/30 p-2 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-            <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-full sm:w-auto overflow-x-auto scrollbar-hide">
+          {/* Filters and Search Bar Card */}
+          <div className="bg-white dark:bg-emerald-950/20 rounded-2xl border border-slate-200/80 dark:border-emerald-800/40 p-3 sm:p-4 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+            {/* Filter Pills with Horizontal Scroll on Mobile */}
+            <div className="flex p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl overflow-x-auto scroll-smooth no-scrollbar border border-slate-200/60 dark:border-zinc-800 shrink-0">
               {([
                 { id: 'all', label: 'All' },
                 { id: 'unread', label: 'Unread' },
@@ -177,12 +194,13 @@ export default function TeacherNotificationsPage() {
               ]).map((t) => (
                 <button
                   key={t.id}
+                  type="button"
                   onClick={() => { setFilter(t.id); setCurrentPage(1); }}
                   className={cn(
-                    "flex-1 sm:flex-none px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                    "px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0",
                     filter === t.id 
-                      ? "bg-white dark:bg-slate-700 shadow-sm text-primary" 
-                      : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      ? "bg-white dark:bg-emerald-950/60 shadow-sm text-emerald-600 dark:text-emerald-400 border border-slate-200/60 dark:border-emerald-700/50" 
+                      : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                   )}
                 >
                   {t.label}
@@ -190,114 +208,123 @@ export default function TeacherNotificationsPage() {
               ))}
             </div>
 
-            <div className="relative w-full sm:w-72 group px-1 sm:px-0">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
-              <Input
-                placeholder="Filter activity..."
-                className="pl-11 h-10 rounded-xl border-slate-200/50 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 shadow-sm focus:ring-2 focus:ring-primary/20 text-xs font-bold"
+            {/* Live Search Input */}
+            <div className="relative w-full md:w-72">
+              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Filter notifications..."
+                className="w-full h-10 sm:h-11 pl-10 pr-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 font-medium outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               />
             </div>
           </div>
 
-          {/* Notifications List */}
+          {/* Notifications Feed */}
           {isLoading ? (
             <NotificationFeedSkeleton />
           ) : filteredNotifications.length === 0 ? (
-            <Card className="rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 overflow-hidden py-24 text-center shadow-none">
-              <CardContent>
-                <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                  <Bell className="h-10 w-10 text-slate-300 dark:text-slate-600" />
-                </div>
-                <h3 className="text-xl font-black mb-2 text-slate-900 dark:text-white uppercase tracking-tight">Signal Clear</h3>
-                <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-bold text-xs uppercase tracking-widest opacity-60">No pending notifications in this frequency.</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl sm:rounded-3xl border border-dashed border-slate-200 dark:border-zinc-800 bg-white dark:bg-black py-16 sm:py-20 text-center shadow-none p-6 space-y-3">
+              <div className="w-16 h-16 bg-slate-50 dark:bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-slate-100 dark:border-zinc-800">
+                <Bell className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                Signal Clear
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium">
+                No notifications match your active search or category filter.
+              </p>
+            </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="space-y-3 sm:space-y-3.5">
               {paginatedNotifications.map((n: Notification) => (
-                <Card 
+                <div 
                   key={n.id} 
                   className={cn(
-                    "rounded-[2rem] transition-all duration-300 group overflow-hidden cursor-pointer",
+                    "rounded-2xl border transition-all duration-200 group overflow-hidden cursor-pointer p-3.5 sm:p-5 flex gap-3 sm:gap-4 items-start shadow-sm",
                     !n.isRead 
-                      ? "bg-white dark:bg-slate-900 shadow-lg shadow-primary/5 border-primary/20 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-0.5" 
-                      : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/50 dark:border-slate-800/50 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md"
+                      ? "bg-white dark:bg-emerald-950/40 border-emerald-500/40 dark:border-emerald-800/60 shadow-md shadow-emerald-500/5 hover:-translate-y-0.5" 
+                      : "bg-white dark:bg-black border-slate-200/80 dark:border-zinc-800 hover:bg-slate-50/50 dark:hover:bg-zinc-950"
                   )}
                   onClick={() => handleOpenModal(n)}
                 >
-                  <CardContent className="p-5 flex gap-5 items-start">
-                    <div className={cn(
-                      "p-3 rounded-2xl shrink-0 h-12 w-12 flex items-center justify-center transition-all",
-                      !n.isRead ? "bg-green-400 text-slate-900 shadow-md shadow-green-400/30" : "bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700"
+                  {/* Category Icon */}
+                  <div className={cn(
+                    "p-2.5 sm:p-3 rounded-xl shrink-0 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center transition-all",
+                    !n.isRead 
+                      ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" 
+                      : "bg-slate-100 dark:bg-zinc-900 text-slate-400 border border-slate-200/60 dark:border-zinc-800"
+                  )}>
+                    {getTypeIcon(n.type, n.isRead)}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <h3 className={cn(
+                          "text-sm sm:text-base leading-tight truncate tracking-tight font-bold",
+                          !n.isRead ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"
+                        )}>
+                          {n.title}
+                        </h3>
+                        {!n.isRead && (
+                          <Badge className="bg-emerald-500 text-white text-[9px] font-black uppercase py-0.5 px-1.5 shadow-none shrink-0">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                        <Clock size={11} /> {new Date(n.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <p className={cn(
+                      "text-xs sm:text-sm leading-relaxed mb-2.5 line-clamp-2",
+                      !n.isRead ? "text-slate-600 dark:text-slate-300 font-medium" : "text-slate-400 dark:text-slate-500"
                     )}>
-                      {getTypeIcon(n.type, n.isRead)}
+                      {n.message}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                        <span>Review Details</span>
+                        <ChevronRight size={13} />
+                      </span>
+
+                      <button 
+                        type="button" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteMutation.mutate(n.id);
+                        }}
+                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center transition-colors opacity-70 group-hover:opacity-100"
+                        aria-label="Delete notification"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className={cn(
-                            "text-base leading-tight truncate tracking-tight",
-                            !n.isRead ? "font-black text-slate-900 dark:text-white" : "font-bold text-slate-500 dark:text-slate-400"
-                          )}>
-                            {n.title}
-                          </h3>
-                          {!n.isRead && <Badge className="bg-green-400 text-slate-900 text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5 shadow-sm hover:bg-green-400/90">New</Badge>}
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-black flex items-center gap-1.5 shrink-0 ml-4 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
-                          <Clock size={10} /> {new Date(n.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-
-                      <p className={cn(
-                        "text-sm leading-relaxed mb-3 line-clamp-1",
-                        !n.isRead ? "text-slate-600 dark:text-slate-300 font-medium" : "text-slate-500 dark:text-slate-500"
-                      )}>
-                        {n.message}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                         <span className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1 opacity-80 group-hover:opacity-100">
-                           Review Details <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                         </span>
-
-                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <Button 
-                             variant="ghost" 
-                             size="sm" 
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               deleteMutation.mutate(n.id);
-                             }}
-                             className="h-8 w-8 p-0 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                           >
-                             <Trash2 size={14} />
-                           </Button>
-                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
               
+              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-4">
-                  <Pagination 
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={filteredNotifications.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
+                <TeacherPagination 
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredNotifications.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  itemName="notifications"
+                />
               )}
             </div>
           )}
         </div>
 
-        {/* Right Column: Stats Card */}
+        {/* Right Column: Sticky Stats Card */}
         <div className="w-full lg:w-[320px] shrink-0">
           {isLoading ? (
             <NotificationStatsSkeleton />
@@ -319,4 +346,3 @@ export default function TeacherNotificationsPage() {
     </div>
   );
 }
-

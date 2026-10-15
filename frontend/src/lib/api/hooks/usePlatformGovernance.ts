@@ -76,7 +76,9 @@ export const usePublicPlatformSettings = () => {
         queryFn: async () => {
             const { data } = await platformClient.get<{ data: Record<string, unknown> }>("/platform/settings/public");
             return data?.data ?? data ?? null;
-        }
+        },
+        staleTime: 1000 * 60 * 10,
+        retry: 1,
     })
 }
 

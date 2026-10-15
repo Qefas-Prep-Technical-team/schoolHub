@@ -20,7 +20,7 @@ export default function ClassGrid({ classes, onClassClick }: ClassGridProps) {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {classes.map((cls) => (
                 <div key={cls.id} className="w-full flex justify-center">
                     <ClassCard

@@ -4,6 +4,7 @@ import { Button } from './ui/Button';
 import { Bell, Menu, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 interface HeaderProps {
   title?: string;
@@ -75,14 +76,7 @@ export default function Header({
           
           {/* Notifications */}
           {showNotifications && (
-            <Button link="" variant="ghost" size="icon" className="h-9 w-9 relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-              <span className="sr-only">Notifications</span>
-            </Button>
+            <NotificationCenter />
           )}
           
           {/* User profile */}

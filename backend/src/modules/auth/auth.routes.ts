@@ -17,6 +17,8 @@ import {
   verifyResetToken,
   completePasswordReset,
   googleAuth,
+  facebookAuth,
+  facebookDataDeletion,
   finalizeCheckoutSetup,
   claimAccount,
   changePassword,
@@ -28,9 +30,18 @@ import {
   disable2FA,
   login2FA,
   send2FAEmail,
+  deactivateAccount,
+  requestDataDeletion,
+  confirmDeactivation,
 } from "./auth.controller";
 import { validateZodRequest } from "../../middleware/validateZodRequest";
-import { verify2FASchema, login2FASchema } from "./auth.zod";
+import {
+  verify2FASchema,
+  login2FASchema,
+  deactivateAccountSchema,
+  dataDeletionRequestSchema,
+  confirmDeactivationSchema,
+} from "./auth.zod";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
   schoolRegistrationSchema,
@@ -42,6 +53,7 @@ import {
   loginSchema,
   completePasswordResetSchema,
   googleAuthSchema,
+  facebookAuthSchema,
   changePasswordSchema,
 } from "./auth.validation";
 import { getStudentByCode, linkChildToParent } from "./auth.service";
@@ -79,8 +91,10 @@ router.post(
 router.get("/students/code/:studentCode", getStudentByCode);
 router.post("/parents/link-child", linkChildToParent);
 
-// Google Auth
+// Social OAuth (Google & Facebook)
 router.post("/google", validateRequest(googleAuthSchema), googleAuth);
+router.post("/facebook", validateRequest(facebookAuthSchema), facebookAuth);
+router.post("/facebook/data-deletion", facebookDataDeletion);
 
 // Verification
 router.post("/check-email", checkEmail);
@@ -131,5 +145,23 @@ router.get("/me", authenticateToken, getMe);
 router.post("/2fa/generate", authenticateToken, generate2FA);
 router.post("/2fa/verify", authenticateToken, validateZodRequest(verify2FASchema), verify2FA);
 router.post("/2fa/disable", authenticateToken, disable2FA);
+
+// User Data Deletion & Account Deactivation
+router.post(
+  "/account/deactivate",
+  authenticateToken,
+  validateZodRequest(deactivateAccountSchema),
+  deactivateAccount
+);
+router.post(
+  "/account/deletion-request",
+  validateZodRequest(dataDeletionRequestSchema),
+  requestDataDeletion
+);
+router.post(
+  "/account/confirm-deactivation",
+  validateZodRequest(confirmDeactivationSchema),
+  confirmDeactivation
+);
 
 export default router;

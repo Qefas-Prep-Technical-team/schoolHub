@@ -13,7 +13,7 @@ import {
 } from '@/lib/api/hooks/useLinks';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
-import Pagination from '@/components/ui/Pagination';
+import { TeacherPagination } from '@/app/dashboard/teacher/components/TeacherPagination';
 
 import { TeacherLinkingHeader } from './components/TeacherLinkingHeader';
 import { TeacherLinkingCodeCards } from './components/TeacherLinkingCodeCards';
@@ -23,25 +23,24 @@ import { TeacherLinkingTabs } from './components/TeacherLinkingTabs';
 import { TeacherActiveLinksGrid } from './components/TeacherActiveLinksGrid';
 import { TeacherPendingRequestsGrid } from './components/TeacherPendingRequestsGrid';
 import { TeacherConnectModal } from './components/TeacherConnectModal';
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 function LinkingSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-6 w-full">
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="rounded-2xl overflow-hidden border-none shadow-sm h-[200px]">
-          <CardHeader className="p-4 flex flex-col items-center gap-3">
-             <Skeleton className="w-16 h-16 rounded-full" />
-             <div className="space-y-2 flex flex-col items-center w-full">
-               <Skeleton className="h-4 w-32" />
-               <Skeleton className="h-3 w-24" />
-             </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-3">
-             <Skeleton className="h-6 w-full rounded-xl" />
-          </CardContent>
-        </Card>
+        <div
+          key={i}
+          className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black p-5 animate-pulse shadow-sm h-[200px] flex flex-col items-center justify-between"
+        >
+          <div className="flex flex-col items-center gap-3 w-full">
+            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-zinc-900" />
+            <div className="space-y-2 flex flex-col items-center w-full">
+              <div className="h-4 w-32 bg-slate-200 dark:bg-zinc-900 rounded" />
+              <div className="h-3 w-24 bg-slate-200 dark:bg-zinc-900 rounded" />
+            </div>
+          </div>
+          <div className="h-6 w-full bg-slate-200 dark:bg-zinc-900 rounded-xl" />
+        </div>
       ))}
     </div>
   );
@@ -157,7 +156,7 @@ function LinkingHub() {
   );
 
   return (
-    <div className="p-8 w-[95%] max-w-[1600px] mx-auto space-y-8 min-h-[calc(100vh-4rem)] bg-gray-50/30 dark:bg-transparent">
+    <div className="p-3.5 sm:p-6 md:p-8 w-full max-w-[1600px] mx-auto space-y-5 sm:space-y-8 min-h-screen bg-slate-50/50 dark:bg-black font-sans">
       <TeacherLinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)}
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
@@ -192,7 +191,7 @@ function LinkingHub() {
         isPersonal={isPersonal}
       />
 
-      <div className="space-y-6">
+      <div className="bg-white dark:bg-emerald-950/20 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-emerald-800/40 p-4 sm:p-6 shadow-sm space-y-5">
         <TeacherLinkingTabs 
           isPersonal={isPersonal}
           mainTab={mainTab}
@@ -233,12 +232,13 @@ function LinkingHub() {
         )}
 
         {currentPagination && (
-          <Pagination
+          <TeacherPagination
             currentPage={isPersonal ? (mainTab === 'network' ? instPage : classPage) : currentPage}
             totalPages={currentPagination.totalPages}
             totalItems={currentPagination.total}
             itemsPerPage={currentPagination.limit}
             onPageChange={isPersonal ? (mainTab === 'network' ? setInstPage : setClassPage) : setCurrentPage}
+            itemName={subTab === 'active' ? 'connections' : 'requests'}
           />
         )}
       </div>

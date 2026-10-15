@@ -1,606 +1,721 @@
-"use client";
+'use client';
 
-import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Download,
+  Plus,
+  Search,
+  FilterX,
+  LayoutGrid,
+  List,
+  FileSpreadsheet,
+  Users,
+  BookOpen,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  GraduationCap,
+} from 'lucide-react';
+import { toast } from 'react-toastify';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import {
+  useClassSubjectResults,
+  useStudentTermResults,
+} from '@/lib/api/hooks/useRecords';
+import { useClasses } from '@/lib/api/hooks/useClasses';
+import { useSessions } from '@/lib/api/hooks/useSessions';
+import { useSchoolSubjects, useSchoolDepartments } from '@/lib/api/hooks/useSchool';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
+import { TeacherPagination } from '@/app/dashboard/teacher/components/TeacherPagination';
 
-import { ShieldAlert, Download, SlidersHorizontal, User, Phone, Mail, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, Plus, Users, FileCheck, Clock, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-import { toast } from "react-toastify";
+import { RecordsStatsCards } from './components/RecordsStatsCards';
+import { SubjectResultCard, SubjectResultItem } from './components/SubjectResultCard';
+import { StudentResultCard, StudentResultItem } from './components/StudentResultCard';
+import { RecordsSkeleton } from './components/RecordsSkeleton';
+import { CreateResultDialog } from './components/CreateResultDialog';
 
-import { useClassSubjectResults, useStudentTermResults, useCreateClassSubjectResult } from "@/lib/api/hooks/useRecords";
-import { useClasses } from "@/lib/api/hooks/useClasses";
-import { useSessions } from "@/lib/api/hooks/useSessions";
-import { useSchoolSubjects, useSchoolDepartments } from "@/lib/api/hooks/useSchool";
+const PAGE_SIZE = 9;
 
 export default function RecordsPage() {
   const { user } = useAuthStore();
   const router = useRouter();
+
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"subject" | "student">("subject");
-  
-  // Pagination state
+  const [activeTab, setActiveTab] = useState<'subject' | 'student'>('subject');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSession, setSelectedSession] = useState('');
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+
+  // Pagination States
   const [subjectPage, setSubjectPage] = useState(1);
   const [studentPage, setStudentPage] = useState(1);
-  const PAGE_SIZE = 10;
 
-  // Popup form state
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    classId: "",
-    subjectId: "",
-    departmentId: "",
-    sessionId: "",
-    term: "FIRST",
-    revealDate: "",
-    releaseDate: "",
-    assignmentMax: 10,
-    quizMax: 10,
-    caMax: 20,
-    examMax: 60,
-  });
+  // User & School Context
+  const effectiveSchoolId =
+    (user as { schoolId?: string; school?: { id: string }; schools?: { schoolId: string }[]; tenantId?: string })?.schoolId ||
+    (user as { school?: { id: string } })?.school?.id ||
+    user?.schools?.[0]?.schoolId ||
+    (user as { tenantId?: string })?.tenantId ||
+    '';
 
-  const { mutate: createResult, isPending: isCreating } = useCreateClassSubjectResult();
-  
-  const effectiveSchoolId = (user as any)?.schoolId || (user as any)?.school?.id || user?.schools?.[0]?.schoolId || user?.tenantId || "";
-
-  // Data hooks for dropdowns
+  // Dropdown Data Hooks
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(effectiveSchoolId);
   const { data: sessionsData, isLoading: isLoadingSessions } = useSessions(effectiveSchoolId);
   const { data: subjectsData, isLoading: isLoadingSubjectsList } = useSchoolSubjects(effectiveSchoolId);
   const { data: departmentsData, isLoading: isLoadingDepartments } = useSchoolDepartments(effectiveSchoolId);
 
-  const classes = Array.isArray(classesData) ? classesData : classesData?.data || [];
-  const sessions = Array.isArray(sessionsData) ? sessionsData : sessionsData?.data || [];
-  const subjects = Array.isArray(subjectsData) ? subjectsData : subjectsData?.data || [];
-  const departments = Array.isArray(departmentsData) ? departmentsData : departmentsData?.data || [];
+  const classes = useMemo(() => {
+    if (Array.isArray(classesData)) return classesData;
+    return (classesData as { data?: { id: string; name: string }[] })?.data || [];
+  }, [classesData]);
 
-  const { data: subjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
-  const { data: studentResults, isLoading: isLoadingStudents } = useStudentTermResults();
+  const sessions = useMemo(() => {
+    if (Array.isArray(sessionsData)) return sessionsData;
+    return (sessionsData as { data?: { id: string; name: string }[] })?.data || [];
+  }, [sessionsData]);
 
-  // Compute summary stats dynamically
-  const totalRecords = activeTab === "student" ? (studentResults?.length || 0) : (subjectResults?.length || 0);
-  const completedRecords = activeTab === "student" 
-    ? (studentResults?.filter((r: any) => r.status === "PUBLISHED").length || 0)
-    : (subjectResults?.filter((r: any) => r.status === "PUBLISHED").length || 0);
-  const pendingRecords = totalRecords - completedRecords;
-  const completionRate = totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 100) : 0;
-  
-  // Compute average score only from student results
-  const validScores = studentResults?.filter((r: any) => r.averageScore != null).map((r: any) => r.averageScore) || [];
-  const averageScore = validScores.length > 0 
-    ? (validScores.reduce((a: number, b: number) => a + b, 0) / validScores.length).toFixed(1)
-    : "0.0";
+  const subjects = useMemo(() => {
+    if (Array.isArray(subjectsData)) return subjectsData;
+    return (subjectsData as { data?: { id: string; name: string }[] })?.data || [];
+  }, [subjectsData]);
 
+  const departments = useMemo(() => {
+    if (Array.isArray(departmentsData)) return departmentsData;
+    return (departmentsData as { data?: { id: string; name: string }[] })?.data || [];
+  }, [departmentsData]);
+
+  // Results Query Hooks
+  const { data: rawSubjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
+  const { data: rawStudentResults, isLoading: isLoadingStudents } = useStudentTermResults();
+
+  const subjectResults: SubjectResultItem[] = useMemo(() => {
+    return Array.isArray(rawSubjectResults) ? rawSubjectResults : [];
+  }, [rawSubjectResults]);
+
+  const studentResults: StudentResultItem[] = useMemo(() => {
+    return Array.isArray(rawStudentResults) ? rawStudentResults : [];
+  }, [rawStudentResults]);
+
+  // Mobile layout initialization: default to 'grid' on mobile devices
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
   }, []);
+
+  // Reset page when tab or filters change
+  useEffect(() => {
+    setSubjectPage(1);
+    setStudentPage(1);
+  }, [activeTab, searchQuery, selectedClass, selectedSession, selectedTerm, selectedStatus]);
+
+  // Dynamic Summary Stats Computations
+  const currentDatasetCount = activeTab === 'student' ? studentResults.length : subjectResults.length;
+
+  const completedRecords = useMemo(() => {
+    if (activeTab === 'student') {
+      return studentResults.filter((r) => r.status === 'PUBLISHED').length;
+    }
+    return subjectResults.filter((r) => r.status === 'PUBLISHED').length;
+  }, [activeTab, studentResults, subjectResults]);
+
+  const pendingRecords = currentDatasetCount - completedRecords;
+  const completionRate = currentDatasetCount > 0 ? Math.round((completedRecords / currentDatasetCount) * 100) : 0;
+
+  const averageScore = useMemo(() => {
+    const validScores = studentResults
+      .filter((r) => r.averageScore != null && typeof r.averageScore === 'number')
+      .map((r) => r.averageScore as number);
+    if (validScores.length === 0) return '0.0';
+    return (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1);
+  }, [studentResults]);
+
+  // Filtered Subject Results
+  const filteredSubjectResults = useMemo(() => {
+    return subjectResults.filter((item) => {
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const subjectName = (item.subject?.name || item.name || '').toLowerCase();
+        const className = (item.class?.name || '').toLowerCase();
+        const sessionName = (item.session?.name || '').toLowerCase();
+        if (!subjectName.includes(query) && !className.includes(query) && !sessionName.includes(query)) {
+          return false;
+        }
+      }
+      if (selectedClass && item.classId !== selectedClass) return false;
+      if (selectedSession && item.sessionId !== selectedSession) return false;
+      if (selectedTerm && item.term !== selectedTerm) return false;
+      if (selectedStatus && item.status !== selectedStatus) return false;
+      return true;
+    });
+  }, [subjectResults, searchQuery, selectedClass, selectedSession, selectedTerm, selectedStatus]);
+
+  // Filtered Student Results
+  const filteredStudentResults = useMemo(() => {
+    return studentResults.filter((item) => {
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const studentName = (item.student?.name || '').toLowerCase();
+        const className = (item.class?.name || '').toLowerCase();
+        const sessionName = (item.session?.name || '').toLowerCase();
+        if (!studentName.includes(query) && !className.includes(query) && !sessionName.includes(query)) {
+          return false;
+        }
+      }
+      if (selectedClass && item.classId !== selectedClass) return false;
+      if (selectedSession && item.sessionId !== selectedSession) return false;
+      if (selectedTerm && item.term !== selectedTerm) return false;
+      if (selectedStatus && item.status !== selectedStatus) return false;
+      return true;
+    });
+  }, [studentResults, searchQuery, selectedClass, selectedSession, selectedTerm, selectedStatus]);
+
+  // Active Filter Detection
+  const hasActiveFilters = Boolean(
+    searchQuery || selectedClass || selectedSession || selectedTerm || selectedStatus
+  );
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedClass('');
+    setSelectedSession('');
+    setSelectedTerm('');
+    setSelectedStatus('');
+  };
+
+  // Paginated Slices
+  const paginatedSubjectResults = useMemo(() => {
+    const start = (subjectPage - 1) * PAGE_SIZE;
+    return filteredSubjectResults.slice(start, start + PAGE_SIZE);
+  }, [filteredSubjectResults, subjectPage]);
+
+  const paginatedStudentResults = useMemo(() => {
+    const start = (studentPage - 1) * PAGE_SIZE;
+    return filteredStudentResults.slice(start, start + PAGE_SIZE);
+  }, [filteredStudentResults, studentPage]);
+
+  const subjectTotalPages = Math.ceil(filteredSubjectResults.length / PAGE_SIZE) || 1;
+  const studentTotalPages = Math.ceil(filteredStudentResults.length / PAGE_SIZE) || 1;
 
   if (!mounted) return null;
 
-
-
-  const handleScoreChange = (id: string, field: "ca" | "exam", value: string) => {
-    // Keep this for any future inline edits if needed
-  };
-
-  const handleCreateSubmit = () => {
-    if (!formData.name || !formData.classId || !formData.subjectId || !formData.sessionId) {
-      toast.error("Please fill in all required fields (Name, Class, Subject, Session).");
-      return;
-    }
-
-    createResult(
-      {
-        ...formData,
-        departmentId: formData.departmentId || null,
-        revealDate: formData.revealDate ? new Date(formData.revealDate).toISOString() : null,
-        releaseDate: formData.releaseDate ? new Date(formData.releaseDate).toISOString() : null,
-      },
-      {
-        onSuccess: (res) => {
-          toast.success("Final result configured successfully!");
-          setIsPopupOpen(false);
-          router.push(`/dashboard/teacher/records/new?id=${res.data.id}`);
-        },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || "Failed to create result configuration");
-        },
-      }
-    );
-  };
-
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-slate-50/50 dark:bg-[#0f1015] min-h-screen">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto min-h-screen bg-slate-50/50 dark:bg-black font-sans">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-2 border-b border-slate-200/60 dark:border-zinc-800">
         <div>
-          <h1 className="text-[28px] font-bold text-[#1a1b2e] dark:text-white tracking-tight">Final Results</h1>
-          <div className="flex items-center text-sm text-slate-500 mt-1 font-medium">
-            <User className="w-4 h-4 mr-1.5" /> Total: {totalRecords}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              Final Results
+            </h1>
+            <HeaderTooltip
+              content="The official grading repository for termly student assessments and end-of-term score compilation. Configure score weighting, sync marks from exams and assignments, and publish official academic result sheets."
+              size={15}
+            />
           </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            Manage subject compilations, publish termly report cards, and track academic averages.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
-            <Download className="w-4 h-4" />
-            Export data
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => toast.info('Exporting report summary...')}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all shadow-sm active:scale-95"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>Export Data</span>
           </button>
-          <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
-            <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
-                <Plus className="w-4 h-4" />
-                Add Final Result
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] dark:bg-[#1a1b2e] dark:border-slate-800 max-h-[90vh] overflow-visible">
-              <DialogHeader>
-                <DialogTitle className="text-slate-900 dark:text-white">Add New Final Result</DialogTitle>
-                <DialogDescription className="text-slate-500">
-                  Configure the settings for the new final result entry.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
-                  <input type="text" placeholder="e.g. Term 1 Mathematics Result" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all" />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class</label>
-                    {isLoadingClasses ? (
-                      <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
-                    ) : (
-                      <select value={formData.classId} onChange={(e) => setFormData({...formData, classId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                        <option value="">Select Class</option>
-                        {classes.map((c: any) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Subject</label>
-                    {isLoadingSubjectsList ? (
-                      <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
-                    ) : (
-                      <select value={formData.subjectId} onChange={(e) => setFormData({...formData, subjectId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                        <option value="">Select Subject</option>
-                        {subjects.map((s: any) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Department <span className="text-[10px] text-slate-400 font-normal">(Optional)</span></label>
-                    {isLoadingDepartments ? (
-                      <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
-                    ) : (
-                      <select value={formData.departmentId} onChange={(e) => setFormData({...formData, departmentId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                        <option value="">All Departments</option>
-                        {departments.map((d: any) => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session</label>
-                    {isLoadingSessions ? (
-                      <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
-                    ) : (
-                      <select value={formData.sessionId} onChange={(e) => setFormData({...formData, sessionId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                        <option value="">Select Session</option>
-                        {sessions.map((s: any) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term</label>
-                    <select value={formData.term} onChange={(e) => setFormData({...formData, term: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                      <option value="FIRST">First Term</option>
-                      <option value="SECOND">Second Term</option>
-                      <option value="THIRD">Third Term</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Reveal Date</label>
-                    <input type="date" value={formData.revealDate} onChange={(e) => setFormData({...formData, revealDate: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Release Date</label>
-                    <input type="date" value={formData.releaseDate} onChange={(e) => setFormData({...formData, releaseDate: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all" />
-                  </div>
-                </div>
-                
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Include Assessments & Max Marks</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Assignment Max</label>
-                      <input type="number" value={formData.assignmentMax} onChange={(e) => setFormData({...formData, assignmentMax: Number(e.target.value)})} placeholder="Max (e.g. 10)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all text-center mt-2" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Quiz Max</label>
-                      <input type="number" value={formData.quizMax} onChange={(e) => setFormData({...formData, quizMax: Number(e.target.value)})} placeholder="Max (e.g. 10)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all text-center mt-2" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">CA Max</label>
-                      <input type="number" value={formData.caMax} onChange={(e) => setFormData({...formData, caMax: Number(e.target.value)})} placeholder="Max (e.g. 20)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all text-center mt-2" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Exam Max</label>
-                      <input type="number" value={formData.examMax} onChange={(e) => setFormData({...formData, examMax: Number(e.target.value)})} placeholder="Max (e.g. 60)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all text-center mt-2" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    Cancel
-                  </button>
-                </DialogClose>
-                <button onClick={handleCreateSubmit} disabled={isCreating} className="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors text-center disabled:opacity-70">
-                  {isCreating ? "Creating..." : "Create"}
-                </button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+
+          <button
+            type="button"
+            onClick={() => setIsPopupOpen(true)}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Final Result</span>
+          </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col justify-between">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
-              <Users className="w-4 h-4" />
-            </div>
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Total {activeTab === "student" ? "Students" : "Subjects"}</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">{totalRecords}</h3>
-            <div className="flex items-center text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              100%
-            </div>
-          </div>
-        </div>
-        
-        {/* Card 2 */}
-        <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col justify-between">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <FileCheck className="w-4 h-4" />
-            </div>
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Completed Records</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">{completedRecords}</h3>
-            <div className="flex items-center text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              {completionRate}%
-            </div>
-          </div>
-        </div>
+      {/* KPI Stats Cards */}
+      <RecordsStatsCards
+        totalRecords={currentDatasetCount}
+        completedRecords={completedRecords}
+        pendingRecords={pendingRecords}
+        completionRate={completionRate}
+        averageScore={averageScore}
+        activeTab={activeTab}
+      />
 
-        {/* Card 3 */}
-        <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col justify-between">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg">
-              <Clock className="w-4 h-4" />
-            </div>
-            <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Pending Records</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingRecords}</h3>
-            <div className="flex items-center text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded">
-              {totalRecords > 0 ? 100 - completionRate : 0}%
-            </div>
-          </div>
-        </div>
+      {/* Directory & Content Card */}
+      <div className="bg-white dark:bg-emerald-950/20 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-emerald-800/40 p-4 sm:p-6 shadow-sm space-y-5">
+        {/* Top Controls: Tabs & View Toggle */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-100 dark:border-emerald-800/30">
+          {/* Tab Switcher */}
+          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('subject')}
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'subject'
+                  ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-emerald-500" />
+              <span>Subject Final Results</span>
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                {subjectResults.length}
+              </span>
+            </button>
 
-        {/* Card 4 - Highlighted */}
-        <div className="bg-gradient-to-br from-[#10b981] to-[#059669] rounded-xl border border-[#10b981]/20 p-5 shadow-lg shadow-[#10b981]/20 text-white flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <TrendingUp className="w-16 h-16" />
-          </div>
-          <div className="flex items-center gap-3 mb-4 text-white/90 relative z-10">
-            <span className="text-sm font-bold tracking-wide">Average Score</span>
-          </div>
-          <div className="flex items-end justify-between relative z-10">
-            <h3 className="text-3xl font-black text-white">{averageScore}%</h3>
-            <button className="px-3 py-1.5 bg-white/20 hover:bg-white/30 transition-colors rounded text-xs font-bold backdrop-blur-sm cursor-pointer">
-              View Details
+            <button
+              type="button"
+              onClick={() => setActiveTab('student')}
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'student'
+                  ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <Users className="w-4 h-4 text-blue-500" />
+              <span>Students Final Results</span>
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                {studentResults.length}
+              </span>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800">
-        <button
-          onClick={() => setActiveTab("subject")}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
-            activeTab === "subject"
-              ? "border-[#10b981] text-[#10b981]"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          }`}
-        >
-          Subject Final Result
-        </button>
-        <button
-          onClick={() => setActiveTab("student")}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
-            activeTab === "student"
-              ? "border-[#10b981] text-[#10b981]"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          }`}
-        >
-          Students Final Result
-        </button>
-      </div>
-
-      {/* List of Final Results */}
-      {activeTab === "subject" && (
-        <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Subject Final Results</h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                <option>All Classes</option>
-                <option>JSS 1 A</option>
-                <option>JSS 1 B</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                <option>All Sessions</option>
-                <option>2023/2024</option>
-                <option>2024/2025</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                <option>All Terms</option>
-                <option>First Term</option>
-                <option>Second Term</option>
-                <option>Third Term</option>
-              </select>
+          {/* Directory Title & View Switcher */}
+          <div className="flex items-center justify-between md:justify-end gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline-block">
+                View Mode
+              </span>
+              <HeaderTooltip
+                content="Toggle between compact Grid Cards (recommended on mobile screens) or structured Tabular view."
+                size={12}
+              />
+            </div>
+            <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-white dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+                aria-label="Grid View"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
+                  viewMode === 'table'
+                    ? 'bg-white dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+                aria-label="Table View"
+              >
+                <List className="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
-                  <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-4 py-3">SESSION & TERM</th>
-                  <th className="px-4 py-3">CLASS</th>
-                  <th className="px-4 py-3">SUBJECT</th>
-                  <th className="px-4 py-3">DATE SAVED</th>
-                  <th className="px-4 py-3">STATUS</th>
-                  <th className="px-6 py-3 text-right">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                {isLoadingSubjects ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
-                      <td className="px-4 py-4"><div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
-                    </tr>
-                  ))
-                ) : subjectResults?.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
-                      No subject results found.
-                    </td>
-                  </tr>
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder={
+                activeTab === 'subject'
+                  ? 'Search by subject name, class, or session...'
+                  : 'Search by student name, class, or session...'
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-medium"
+            />
+          </div>
+
+          {/* Dynamic Dropdowns Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+            {/* Class Filter */}
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer"
+            >
+              <option value="">All Classes</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Session Filter */}
+            <select
+              value={selectedSession}
+              onChange={(e) => setSelectedSession(e.target.value)}
+              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer"
+            >
+              <option value="">All Sessions</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Term Filter */}
+            <select
+              value={selectedTerm}
+              onChange={(e) => setSelectedTerm(e.target.value)}
+              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer"
+            >
+              <option value="">All Terms</option>
+              <option value="FIRST">First Term</option>
+              <option value="SECOND">Second Term</option>
+              <option value="THIRD">Third Term</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer"
+            >
+              <option value="">All Statuses</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="DRAFT">Draft</option>
+            </select>
+          </div>
+
+          {/* Reset Filters */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="h-11 px-3 inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200/60 dark:border-red-900/40 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs sm:text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+            >
+              <FilterX className="w-4 h-4" />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
+
+        {/* Content Area: Subject Final Results */}
+        {activeTab === 'subject' && (
+          <div>
+            {isLoadingSubjects ? (
+              <RecordsSkeleton viewMode={viewMode} />
+            ) : filteredSubjectResults.length === 0 ? (
+              <div className="py-12 sm:py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-black/30 p-6 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200/60 dark:border-emerald-700/40">
+                  <FileSpreadsheet className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  No Subject Final Results Found
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? 'No records match your active search filters. Try clearing or refining your criteria.'
+                    : 'Start by creating your first subject final result sheet to compile scores.'}
+                </p>
+                {hasActiveFilters ? (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
                 ) : (
-                  subjectResults?.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
-                    const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
-                    return (
-                      <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
-                        <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
-                        <td className="px-4 py-4">
-                          <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
-                          <span className="text-xs text-slate-400">{res.term}</span>
-                        </td>
-                        <td className="px-4 py-4">{res.class?.name}</td>
-                        <td className="px-4 py-4 text-slate-900 dark:text-slate-100">{res.subject?.name}</td>
-                        <td className="px-4 py-4 text-slate-500">{new Date(res.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            res.status === "PUBLISHED" 
-                              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                              : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                          }`}>
-                            {res.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => router.push(res.createdById === user?.id ? `/dashboard/teacher/records/new?id=${res.id}` : `/dashboard/teacher/records/preview?id=${res.id}`)}
-                            className="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#10b981] hover:text-[#10b981] dark:hover:border-[#10b981] rounded text-xs font-bold transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => setIsPopupOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all shadow-sm shadow-emerald-500/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create First Result Sheet
+                  </button>
+                )}
+              </div>
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+                {paginatedSubjectResults.map((item) => (
+                  <SubjectResultCard key={item.id} item={item} currentUserId={user?.id} />
+                ))}
+              </div>
+            ) : (
+              /* Table View */
+              <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
+                        <th className="px-5 py-3.5 w-12">#</th>
+                        <th className="px-4 py-3.5">Session & Term</th>
+                        <th className="px-4 py-3.5">Class</th>
+                        <th className="px-4 py-3.5">Subject</th>
+                        <th className="px-4 py-3.5">Date Saved</th>
+                        <th className="px-4 py-3.5">Status</th>
+                        <th className="px-5 py-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
+                      {paginatedSubjectResults.map((res, index) => {
+                        const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
+                        const isOwner = res.createdById === user?.id;
+                        const isPublished = res.status === 'PUBLISHED';
+                        return (
+                          <tr
+                            key={res.id}
+                            className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
                           >
-                            {res.createdById === user?.id ? "Edit" : "Preview"}
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination Controls */}
-          {subjectResults && subjectResults.length > PAGE_SIZE && (
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/10">
-              <span className="text-xs text-slate-500">
-                Showing {(subjectPage - 1) * PAGE_SIZE + 1} - {Math.min(subjectPage * PAGE_SIZE, subjectResults.length)} of {subjectResults.length}
-              </span>
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => setSubjectPage(p => Math.max(1, p - 1))}
-                  disabled={subjectPage === 1}
-                  className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <div className="px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Page {subjectPage} of {Math.ceil(subjectResults.length / PAGE_SIZE)}
+                            <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
+                            <td className="px-4 py-4">
+                              <span className="block font-bold text-slate-900 dark:text-slate-100">
+                                {res.session?.name || 'Session'}
+                              </span>
+                              <span className="text-xs text-slate-400">{res.term} Term</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
+                                <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+                                {res.class?.name || 'Assigned Class'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 font-bold text-slate-900 dark:text-slate-100">
+                              {res.subject?.name || res.name || 'Subject'}
+                            </td>
+                            <td className="px-4 py-4 text-xs text-slate-500">
+                              {new Date(res.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                                  isPublished
+                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40'
+                                    : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40'
+                                }`}
+                              >
+                                {isPublished ? (
+                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                ) : (
+                                  <Clock className="w-3 h-3 text-amber-500" />
+                                )}
+                                {res.status}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(
+                                    isOwner
+                                      ? `/dashboard/teacher/records/new?id=${res.id}`
+                                      : `/dashboard/teacher/records/preview?id=${res.id}`
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
+                              >
+                                <span>{isOwner ? 'Edit Sheet' : 'Preview'}</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <button 
-                  onClick={() => setSubjectPage(p => Math.min(Math.ceil(subjectResults.length / PAGE_SIZE), p + 1))}
-                  disabled={subjectPage === Math.ceil(subjectResults.length / PAGE_SIZE)}
-                  className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
 
-      {activeTab === "student" && (
-        <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Students Final Results</h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                <option>All Classes</option>
-                <option>JSS 1 A</option>
-                <option>JSS 1 B</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                <option>All Sessions</option>
-                <option>2023/2024</option>
-                <option>2024/2025</option>
-              </select>
-              <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-[#10b981]/50 transition-all cursor-pointer">
-                <option>All Terms</option>
-                <option>First Term</option>
-                <option>Second Term</option>
-                <option>Third Term</option>
-              </select>
-            </div>
+            {/* Pagination */}
+            {filteredSubjectResults.length > 0 && (
+              <TeacherPagination
+                currentPage={subjectPage}
+                totalPages={subjectTotalPages}
+                totalItems={filteredSubjectResults.length}
+                itemsPerPage={PAGE_SIZE}
+                onPageChange={setSubjectPage}
+                itemName="subject results"
+              />
+            )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
-                  <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-4 py-3">STUDENT NAME</th>
-                  <th className="px-4 py-3">CLASS</th>
-                  <th className="px-4 py-3">SESSION & TERM</th>
-                  <th className="px-4 py-3">AVERAGE</th>
-                  <th className="px-4 py-3">POSITION</th>
-                  <th className="px-4 py-3">STATUS</th>
-                  <th className="px-6 py-3 text-right">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                {isLoadingStudents ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="px-6 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-4"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
-                      <td className="px-4 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-12"></div></td>
-                      <td className="px-4 py-4"><div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></td>
-                      <td className="px-6 py-4 flex justify-end"><div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
-                    </tr>
-                  ))
-                ) : studentResults?.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
-                      No student results found.
-                    </td>
-                  </tr>
-                ) : (
-                  studentResults?.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
-                    const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
-                    return (
-                      <tr key={res.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/30 transition-colors group">
-                        <td className="px-6 py-4 text-xs text-slate-400">{globalIdx}</td>
-                        <td className="px-4 py-4 text-slate-900 dark:text-slate-100 font-bold">{res.student?.name}</td>
-                        <td className="px-4 py-4">{res.class?.name}</td>
-                        <td className="px-4 py-4">
-                          <span className="block text-slate-900 dark:text-slate-100">{res.session?.name}</span>
-                          <span className="text-xs text-slate-400">{res.term}</span>
-                        </td>
-                        <td className="px-4 py-4 font-bold text-[#10b981]">{res.averageScore ? `${res.averageScore}%` : "-"}</td>
-                        <td className="px-4 py-4 text-slate-500 font-medium">
-                          {res.position ? res.position + (["st", "nd", "rd"][((res.position + 90) % 100 - 10) % 10 - 1] || "th") : "-"}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            res.status === "PUBLISHED" 
-                              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                              : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-                          }`}>
-                            {res.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#10b981] hover:text-[#10b981] dark:hover:border-[#10b981] rounded text-xs font-bold transition-colors">
-                            View Report
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination Controls */}
-          {studentResults && studentResults.length > PAGE_SIZE && (
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/10">
-              <span className="text-xs text-slate-500">
-                Showing {(studentPage - 1) * PAGE_SIZE + 1} - {Math.min(studentPage * PAGE_SIZE, studentResults.length)} of {studentResults.length}
-              </span>
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => setStudentPage(p => Math.max(1, p - 1))}
-                  disabled={studentPage === 1}
-                  className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <div className="px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Page {studentPage} of {Math.ceil(studentResults.length / PAGE_SIZE)}
+        )}
+
+        {/* Content Area: Students Final Results */}
+        {activeTab === 'student' && (
+          <div>
+            {isLoadingStudents ? (
+              <RecordsSkeleton viewMode={viewMode} />
+            ) : filteredStudentResults.length === 0 ? (
+              <div className="py-12 sm:py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-black/30 p-6 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto border border-blue-200/60 dark:border-blue-700/40">
+                  <Users className="w-6 h-6" />
                 </div>
-                <button 
-                  onClick={() => setStudentPage(p => Math.min(Math.ceil(studentResults.length / PAGE_SIZE), p + 1))}
-                  disabled={studentPage === Math.ceil(studentResults.length / PAGE_SIZE)}
-                  className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  No Student Final Results Found
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? 'No student term records match your active search filters.'
+                    : 'Publish subject score sheets to compile final student results.'}
+                </p>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
+                )}
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+                {paginatedStudentResults.map((item) => (
+                  <StudentResultCard
+                    key={item.id}
+                    item={item}
+                    onViewReport={(s) => toast.info(`Opening report card for ${s.student?.name || 'scholar'}...`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Table View */
+              <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
+                        <th className="px-5 py-3.5 w-12">#</th>
+                        <th className="px-4 py-3.5">Scholar Name</th>
+                        <th className="px-4 py-3.5">Class</th>
+                        <th className="px-4 py-3.5">Session & Term</th>
+                        <th className="px-4 py-3.5">Average</th>
+                        <th className="px-4 py-3.5">Position</th>
+                        <th className="px-4 py-3.5">Status</th>
+                        <th className="px-5 py-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
+                      {paginatedStudentResults.map((res, index) => {
+                        const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
+                        const isPublished = res.status === 'PUBLISHED';
+                        return (
+                          <tr
+                            key={res.id}
+                            className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
+                          >
+                            <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
+                            <td className="px-4 py-4 font-bold text-slate-900 dark:text-slate-100">
+                              {res.student?.name || 'Student Name'}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
+                                <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+                                {res.class?.name || 'Class'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="block font-bold text-slate-900 dark:text-slate-100">
+                                {res.session?.name || 'Session'}
+                              </span>
+                              <span className="text-xs text-slate-400">{res.term} Term</span>
+                            </td>
+                            <td className="px-4 py-4 font-black text-emerald-600 dark:text-emerald-400">
+                              {res.averageScore != null ? `${res.averageScore}%` : '-'}
+                            </td>
+                            <td className="px-4 py-4 text-xs font-bold text-slate-500">
+                              {res.position ? `${res.position}` : '-'}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                                  isPublished
+                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40'
+                                    : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40'
+                                }`}
+                              >
+                                {isPublished ? (
+                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                ) : (
+                                  <Clock className="w-3 h-3 text-amber-500" />
+                                )}
+                                {res.status}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toast.info(`Opening report card for ${res.student?.name || 'scholar'}...`)
+                                }
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
+                              >
+                                <span>View Report</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
+            {/* Pagination */}
+            {filteredStudentResults.length > 0 && (
+              <TeacherPagination
+                currentPage={studentPage}
+                totalPages={studentTotalPages}
+                totalItems={filteredStudentResults.length}
+                itemsPerPage={PAGE_SIZE}
+                onPageChange={setStudentPage}
+                itemName="student results"
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add Final Result Dialog */}
+      <CreateResultDialog
+        isOpen={isPopupOpen}
+        onOpenChange={setIsPopupOpen}
+        classes={classes}
+        subjects={subjects}
+        departments={departments}
+        sessions={sessions}
+        isLoadingClasses={isLoadingClasses}
+        isLoadingSubjects={isLoadingSubjectsList}
+        isLoadingDepartments={isLoadingDepartments}
+        isLoadingSessions={isLoadingSessions}
+      />
     </div>
   );
 }
-

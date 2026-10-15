@@ -9,8 +9,7 @@ import { Exam, ExamFilter, ExamStatus } from './components/types'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore'
-import { Loader2 } from 'lucide-react'
-import Pagination from '@/components/ui/Pagination'
+import { TeacherPagination as Pagination } from '@/app/dashboard/teacher/components/TeacherPagination'
 import { TabSkeleton } from '../TabSkeleton'
 
 export default function ExamsPage() {

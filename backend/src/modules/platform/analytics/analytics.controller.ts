@@ -24,35 +24,47 @@ export const getGlobalStats = async (req: Request, res: Response) => {
       prisma.admin.count()
     ]);
 
-    // 2. Financial Metrics (Monthly Recurring Revenue placeholder logic)
-    // In a real app, we'd sum active subscription amounts.
-    // For now, we'll sum successful transaction totals from the last 30 days.
+    // 2. Financial Metrics — Actual processed live Flutterwave payments
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const recentRevenue = await prisma.transactionHistory.aggregate({
-      where: {
-        status: 'SUCCESS',
-        createdAt: { gte: thirtyDaysAgo }
-      },
-      _sum: {
-        amount: true
-      }
-    });
-
-    const totalRevenue = await prisma.transactionHistory.aggregate({
-      where: { status: 'SUCCESS' },
-      _sum: { amount: true }
-    });
+    // Filter specifically for live processed payments via Flutterwave gateway
+    const [flutterwaveRevenue, recentFlutterwaveRevenue, totalPlatformRevenue] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: {
+          gateway: "FLUTTERWAVE",
+          status: { in: ["SUCCESS", "successful", "completed"] },
+        },
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+      prisma.transaction.aggregate({
+        where: {
+          gateway: "FLUTTERWAVE",
+          status: { in: ["SUCCESS", "successful", "completed"] },
+          createdAt: { gte: thirtyDaysAgo },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: {
+          status: { in: ["SUCCESS", "successful", "completed"] },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
 
     // 3. Storage Usage
     const storageUsage = await prisma.fileMetric.aggregate({
       _sum: { fileSize: true }
     });
 
-    // 4. Activity Metrics (Simulated from platform login)
-    // In a real app, you might have an Activity table.
+    // 4. Activity Metrics
     const activeSessions = 0; // Placeholder
+
+    const flwTotal = Number(flutterwaveRevenue._sum.amount || 0);
+    const flwRecent = Number(recentFlutterwaveRevenue._sum.amount || 0);
+    const allTotal = Number(totalPlatformRevenue._sum.amount || 0);
 
     return res.status(200).json({
       success: true,
@@ -64,8 +76,11 @@ export const getGlobalStats = async (req: Request, res: Response) => {
         totalParents: parentCount,
         totalAdmins: adminCount,
         totalUsers: studentCount + teacherCount + parentCount + adminCount,
-        totalRevenue: (totalRevenue._sum.amount || 0),
-        mrr: (recentRevenue._sum.amount || 0),
+        totalRevenue: flwTotal > 0 ? flwTotal : allTotal,
+        flutterwaveRevenue: flwTotal,
+        allTimeRevenue: allTotal,
+        mrr: flwRecent,
+        gateway: "FLUTTERWAVE",
         currency: "NGN",
         totalStorageBytes: Number(storageUsage._sum.fileSize || 0),
         activeSessions
@@ -92,12 +107,13 @@ export const getGrowthStats = async (req: Request, res: Response) => {
         prisma.school.count({
           where: { createdAt: { gte: start, lte: end } }
         }),
-        prisma.transactionHistory.aggregate({
+        prisma.transaction.aggregate({
           where: {
-            status: 'SUCCESS',
-            createdAt: { gte: start, lte: end }
+            gateway: "FLUTTERWAVE",
+            status: { in: ["SUCCESS", "successful", "completed"] },
+            createdAt: { gte: start, lte: end },
           },
-          _sum: { amount: true }
+          _sum: { amount: true },
         }),
         prisma.student.count({
           where: { createdAt: { gte: start, lte: end } }

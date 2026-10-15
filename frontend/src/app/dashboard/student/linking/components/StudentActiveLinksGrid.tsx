@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { MoreVertical, X, Loader2, User, Monitor, Link2, Info } from 'lucide-react';
+import { MoreVertical, X, Loader2, User, Monitor, Link2, Info, Copy } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,8 +11,23 @@ import {
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 
+export interface ActiveLinkEntity {
+  id: string;
+  peerName: string;
+  peerEmail: string;
+  peerCode?: string;
+  roleDisplay?: string;
+  peerImage?: string;
+  variant: 'network' | 'classroom';
+  leftEntityId?: string;
+  rightCode?: string;
+  leftCode?: string;
+  userId?: string;
+  linkType: string;
+}
+
 interface StudentActiveLinksGridProps {
-  links: any[];
+  links: ActiveLinkEntity[];
   onRevoke: (id: string) => void;
   revokingId?: string | null;
   mainTab: 'network' | 'classroom';
@@ -19,97 +36,102 @@ interface StudentActiveLinksGridProps {
 export function StudentActiveLinksGrid({ links, onRevoke, revokingId, mainTab }: StudentActiveLinksGridProps) {
   if (links.length === 0) {
     return (
-      <div className="col-span-full py-12 flex flex-col items-center justify-center text-center space-y-3 opacity-50">
-        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full">
-          <Link2 size={32} className="text-slate-400" />
+      <div className="col-span-full py-16 flex flex-col items-center justify-center text-center space-y-3 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-8">
+        <div className="p-3.5 bg-slate-100 dark:bg-zinc-900 rounded-2xl text-zinc-400">
+          <Link2 size={28} />
         </div>
-        <p className="text-xs font-black uppercase tracking-widest text-slate-500">No active {mainTab} connections found.</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+          No active {mainTab} connections found.
+        </p>
+        <p className="text-xs text-zinc-400 max-w-sm">
+          Connect with your classmates or school teachers using the &quot;New Connection&quot; button above.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
       {links.map((link) => {
         const isClass = link.variant === 'classroom';
         const isRevoking = revokingId === link.id;
 
         const borderClass = isClass ? "border-purple-500" : "border-pink-500";
-        const avatarClass = isClass ? "bg-purple-500" : "bg-pink-500";
-        const textClass = isClass ? "text-purple-600" : "text-pink-600";
-        const bgClass = isClass ? "bg-purple-50" : "bg-pink-50";
+        const avatarBg = isClass ? "bg-purple-600" : "bg-pink-600";
+        const textClass = isClass ? "text-purple-600 dark:text-purple-400" : "text-pink-600 dark:text-pink-400";
 
         return (
-          <Card key={link.id} className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-6 pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
-            
-            {/* Options Menu */}
-            <div className="absolute top-4 right-4">
+          <Card 
+            key={link.id} 
+            className="rounded-2xl overflow-hidden bg-white dark:bg-zinc-950 border border-slate-200/80 dark:border-zinc-800 shadow-sm hover:shadow-md relative flex flex-col items-center p-5 pt-6 transition-all duration-200"
+          >
+            {/* Options Dropdown Menu */}
+            <div className="absolute top-3.5 right-3.5">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+                  >
                     <MoreVertical size={16} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-xl p-2 border-none shadow-2xl">
+                <DropdownMenuContent align="end" className="rounded-xl p-1.5 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-xl">
+                  {link.peerCode && (
+                    <DropdownMenuItem 
+                      className="p-2.5 font-medium rounded-lg cursor-pointer text-xs text-zinc-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900" 
+                      onClick={() => copyToClipboard(link.peerCode || "", "Entity code")}
+                    >
+                      <Copy className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Copy Code
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
-                    className="p-3 font-medium rounded-lg cursor-pointer" 
-                    onClick={() => {
-                      const code = link.leftEntityId === link.userId ? link.rightCode : link.leftCode;
-                      copyToClipboard(code, "Entity code");
-                    }}
-                  >
-                    <Info className="mr-3 h-4 w-4" /> Copy Code
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="p-3 font-medium rounded-lg text-red-500 focus:bg-red-50 cursor-pointer" 
+                    className="p-2.5 font-medium rounded-lg text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-950/40 cursor-pointer text-xs" 
                     onClick={() => !isRevoking && onRevoke(link.id)} 
                     disabled={isRevoking}
                   >
-                    {isRevoking ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <X className="mr-3 h-4 w-4" />} Disconnect
+                    {isRevoking ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <X className="mr-2 h-3.5 w-3.5" />} 
+                    Disconnect
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
-            {/* Avatar Area */}
-            <div className="relative mb-4 mt-2 cursor-pointer group">
-              {/* Avatar Ring */}
-              <div className={cn("absolute -inset-[6px] rounded-full border-[1.5px] border-slate-200/50 dark:border-slate-700 transition-colors group-hover:border-slate-300", borderClass)}></div>
+            {/* Avatar Profile Area */}
+            <div className="relative mb-3 mt-1 cursor-pointer group">
+              <div className={cn("absolute -inset-[3px] rounded-full border-2", borderClass)} />
               
-              <Avatar className="h-16 w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105">
-                <AvatarImage src={link.peerImage} alt={link.peerName} className="object-cover" />
-                <AvatarFallback className={cn("rounded-full text-white font-bold text-xl", avatarClass)}>
+              <Avatar className="h-16 w-16 rounded-full border-2 border-white dark:border-zinc-950 shadow-sm transition-transform group-hover:scale-105">
+                {link.peerImage && <AvatarImage src={link.peerImage} alt={link.peerName} className="object-cover" />}
+                <AvatarFallback className={cn("rounded-full text-white font-bold text-lg", avatarBg)}>
                   {link.peerName?.charAt(0).toUpperCase() || <User size={20} />}
                 </AvatarFallback>
               </Avatar>
 
               {/* Status Dot */}
-              <div className={cn("absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900", avatarClass)}></div>
+              <div className={cn("absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-zinc-950", avatarBg)} />
             </div>
 
-            {/* Name and Email */}
-            <div className="text-center mb-6 cursor-pointer">
-              <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
+            {/* Name and Contact */}
+            <div className="text-center mb-4 w-full px-2">
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm mb-0.5 truncate tracking-tight" title={link.peerName}>
                 {link.peerName}
               </h3>
-              <p className="text-[11px] text-[#94a3b8] font-medium truncate max-w-[200px]">
+              <p className="text-[11px] text-zinc-400 font-medium truncate" title={link.peerEmail}>
                 {link.peerEmail}
               </p>
             </div>
 
             {/* Animated Connection Row */}
-            <div className="w-full flex items-center justify-between gap-3 mb-6 px-1 relative">
-               {/* Left Icon (Source) */}
-               <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 z-10">
-                 <User size={12} className="text-slate-400" />
+            <div className="w-full flex items-center justify-between gap-2 mb-4 px-1 relative">
+               <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-center shrink-0 z-10 text-zinc-500">
+                 <User size={12} />
                </div>
                
-               {/* Connecting Line with Animated Dots */}
                <div className="flex-1 h-6 relative flex items-center justify-center overflow-hidden">
-                 {/* Static dotted track */}
-                 <div className="absolute w-full border-t-[3px] border-dotted border-slate-200 dark:border-slate-700 opacity-70"></div>
+                 <div className="absolute w-full border-t border-dashed border-slate-300 dark:border-zinc-700" />
                  
-                 {/* Inline animation styles */}
                  <style dangerouslySetInnerHTML={{__html: `
                    @keyframes travel-pulse-student {
                      0% { left: 0%; opacity: 0; transform: scale(0.5); }
@@ -119,32 +141,28 @@ export function StudentActiveLinksGrid({ links, onRevoke, revokingId, mainTab }:
                    }
                    .animate-travel-pulse-student {
                      position: absolute;
-                     animation: travel-pulse-student 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+                     animation: travel-pulse-student 2.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
                    }
                  `}} />
                  
-                 {/* The moving, glowing connection dot */}
-                 <div className={cn("animate-travel-pulse-student h-[6px] w-[6px] rounded-full", avatarClass)}></div>
+                 <div className={cn("animate-travel-pulse-student h-1.5 w-1.5 rounded-full", avatarBg)} />
 
-                 {/* Center Desktop Icon */}
-                 <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center z-10 border border-slate-100 dark:border-slate-800 shadow-sm">
-                   <Monitor size={10} className="text-slate-400" />
+                 <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center z-10 border border-slate-200/80 dark:border-zinc-800 shadow-sm text-zinc-400">
+                   <Monitor size={10} />
                  </div>
                </div>
 
-               {/* Right Icon (Destination/Role) */}
-               <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 z-10">
+               <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-center shrink-0 z-10">
                  <Link2 size={12} className={textClass} />
                </div>
             </div>
 
-            {/* Divider */}
-            <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-4"></div>
+            <div className="w-full h-px bg-slate-100 dark:border-zinc-800/80 dark:bg-zinc-800/80 mb-3" />
 
-            {/* Bottom Role */}
-            <div className="text-center w-full pb-1">
-              <span className="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">
-                {link.roleDisplay || link.type?.replace('_', ' ')}
+            {/* Bottom Role Badge */}
+            <div className="text-center w-full">
+              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+                {link.roleDisplay || link.linkType?.replace('_', ' ')}
               </span>
             </div>
 

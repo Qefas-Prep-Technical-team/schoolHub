@@ -21,7 +21,17 @@ import {
     getTeacherDetails,
     updateTeacherPlan,
     getParentDetails,
-    updateParentPlan
+    updateParentPlan,
+    toggleStudentStatus,
+    toggleTeacherStatus,
+    toggleParentStatus,
+    toggleAdminStatus,
+    deleteSchool,
+    deleteStudent,
+    deleteTeacher,
+    deleteParent,
+    deleteAdmin,
+    listComplianceRequests
 } from "./support.controller";
 import { authenticatePlatformStaff, authorizePlatformRole } from "../../../middleware/platformAuthMiddleware";
 
@@ -43,13 +53,27 @@ router.get("/parents/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TEC
 router.patch("/parents/:id/plan", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), updateParentPlan);
 
 /**
- * @route   PATCH /api/platform/support/schools/:id/status
+ * @route   PATCH /api/platform/support/status
  */
 router.patch("/schools/:id/status", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), toggleSchoolStatus);
+router.patch("/students/:id/status", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), toggleStudentStatus);
+router.patch("/teachers/:id/status", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), toggleTeacherStatus);
+router.patch("/parents/:id/status", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), toggleParentStatus);
+router.patch("/admins/:id/status", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), toggleAdminStatus);
 router.patch("/schools/:id/limits", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateSchoolLimits);
 router.patch("/schools/:id/plan", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateSchoolPlan);
 router.patch("/students/:id/plan", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateStudentPlan);
 router.patch("/teachers/:id/plan", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateTeacherPlan);
+
+/**
+ * @route   DELETE /api/platform/support/:entity/:id
+ * Permanent deletion endpoints requiring password verification
+ */
+router.delete("/schools/:id", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), deleteSchool);
+router.delete("/students/:id", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), deleteStudent);
+router.delete("/teachers/:id", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), deleteTeacher);
+router.delete("/parents/:id", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), deleteParent);
+router.delete("/admins/:id", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), deleteAdmin);
 
 /**
  * @route   POST /api/platform/support/impersonate
@@ -60,6 +84,7 @@ router.post("/impersonate", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TE
  * @route   GET /api/platform/support/tickets
  */
 router.get("/tickets", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), listTickets);
+router.get("/compliance-requests", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), listComplianceRequests);
 router.get("/tickets/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), getTicketSupportDetails);
 router.patch("/tickets/:id/status", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateTicketStatus);
 router.post("/tickets/:id/messages", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), replyToTicket);

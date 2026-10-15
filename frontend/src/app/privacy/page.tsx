@@ -118,6 +118,9 @@ export default function PrivacyPolicy() {
           <p className="mt-3">
             If a school cancels its account, we will retain the data for a standard grace period of 90 days to prevent accidental loss, after which the database records, uploaded papers, and account links will be permanently deleted or anonymized from our live servers, subject to backup rotation cycle latency.
           </p>
+          <p className="mt-3">
+            Individual users can request deactivation or permanent deletion of their account credentials and personal files at any time via our dedicated <Link href="/data-deletion" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">User Data Deletion Request Page</Link>.
+          </p>
         </>
       ),
     },

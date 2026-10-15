@@ -28,6 +28,7 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
   try {
     const publicKeys = [
       "google_auth_enabled", 
+      "facebook_auth_enabled",
       "platform_name", 
       "maintenance_mode",
       "sub_enforced_schools",
@@ -46,6 +47,7 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
 
     // Ensure defaults if not set
     if (settingsMap.google_auth_enabled === undefined) settingsMap.google_auth_enabled = "true";
+    if (settingsMap.facebook_auth_enabled === undefined) settingsMap.facebook_auth_enabled = "true";
     if (settingsMap.maintenance_mode === undefined) settingsMap.maintenance_mode = "false";
 
     // Fetch Google Login feature status for role-specific checks
@@ -63,6 +65,27 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
     } else {
       // Default to enabled if feature not defined in DB yet
       settingsMap.google_login_feature = {
+        student: true,
+        teacher: true,
+        parent: true,
+        admin: true
+      };
+    }
+
+    // Fetch Facebook Login feature status for role-specific checks
+    const facebookLoginFeature = await prisma.platformFeature.findUnique({
+      where: { featureKey: "facebookLogin" }
+    });
+
+    if (facebookLoginFeature) {
+      settingsMap.facebook_login_feature = {
+        student: facebookLoginFeature.studentEnabled,
+        teacher: facebookLoginFeature.teacherEnabled,
+        parent: facebookLoginFeature.parentEnabled,
+        admin: facebookLoginFeature.adminEnabled
+      };
+    } else {
+      settingsMap.facebook_login_feature = {
         student: true,
         teacher: true,
         parent: true,

@@ -12,6 +12,7 @@ import { useStudentRegistration } from '../../services/useRegistrationMutations'
 import { StudentFormData, studentSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
+import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
 
 /* ─── Design tokens — Student = Rose ─── */
 const ROSE      = '#be123c'; // rose-700
@@ -361,6 +362,8 @@ export default function StudentCard() {
                 )}
               </span>
             </button>
+
+            <SocialAuthRow userType="student" mode="signup" />
 
             {/* Footer */}
             <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">

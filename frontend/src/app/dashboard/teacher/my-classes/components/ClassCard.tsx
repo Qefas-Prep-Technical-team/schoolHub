@@ -39,13 +39,13 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
         <motion.div
             whileHover={{ y: -4, scale: 1.01 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="group relative flex flex-col w-full max-w-md mx-auto p-6 rounded-2xl border border-slate-200 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col w-full max-w-md mx-auto p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 bg-white dark:bg-emerald-950/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
         >
             {/* Top Shine Effect */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
             {/* Header: Title & Subject */}
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex justify-between items-start mb-4 sm:mb-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                          <div className={`p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500`}>
@@ -55,19 +55,19 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
                              {classData.subject}
                         </span>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none pt-1">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none pt-1">
                         {classData.name}
                     </h3>
                 </div>
                 {pendingCount > 0 && (
-                    <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getPendingColor(pendingCount)}`}>
+                    <div className={`px-2.5 sm:px-3 py-1 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-widest border ${getPendingColor(pendingCount)}`}>
                         {pendingCount} Tasks
                     </div>
                 )}
             </div>
 
             {/* Middle: Sleek Wide-Pill Image */}
-            <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-6 shadow-md border border-slate-100 dark:border-emerald-800/40">
+            <div className="relative h-28 sm:h-32 w-full rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-6 shadow-md border border-slate-100 dark:border-emerald-800/40">
                 <Image 
                     src={classData.image || '/users/user 1.jpeg'} 
                     alt={classData.name}
@@ -76,7 +76,7 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
-                <div className="absolute bottom-3 left-4 flex items-center gap-3">
+                <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 flex items-center gap-3">
                     <div className="flex items-center gap-1.5 text-white text-[10px] font-bold">
                         <Users size={12} />
                         {classData.studentCount}
@@ -89,17 +89,17 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
             </div>
 
             {/* Integrated Metric Bar */}
-            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-emerald-900/20 rounded-2xl mb-8 border border-slate-100 dark:border-emerald-800/40">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-50/50 dark:bg-emerald-900/20 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 border border-slate-100 dark:border-emerald-800/40">
                 <div className="flex flex-col gap-0.5">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Attendance</span>
-                    <span className={`text-sm font-black ${getAttendanceColor(classData.attendance)}`}>
+                    <span className={`text-xs sm:text-sm font-black ${getAttendanceColor(classData.attendance)}`}>
                          {classData.attendance}%
                     </span>
                 </div>
-                <div className="w-px h-8 bg-slate-200 dark:bg-slate-700/50"></div>
+                <div className="w-px h-7 sm:h-8 bg-slate-200 dark:bg-slate-700/50"></div>
                 <div className="flex flex-col gap-0.5 items-end">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Class GPA</span>
-                    <span className={`text-sm font-black ${getGradeColor(classData.averageGrade)}`}>
+                    <span className={`text-xs sm:text-sm font-black ${getGradeColor(classData.averageGrade)}`}>
                         {classData.averageGrade}%
                     </span>
                 </div>
@@ -110,7 +110,7 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
                 <Link href={`/dashboard/teacher/my-classes/${classData.id}`} onClick={onClick} className="block">
                     <motion.button
                         whileTap={{ scale: 0.98 }}
-                        className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 group/btn shadow-xl shadow-black/5 hover:bg-emerald-500 transition-all"
+                        className="w-full py-3 sm:py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 group/btn shadow-xl shadow-black/5 hover:bg-emerald-500 transition-all"
                     >
                         Enter Classroom
                         <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" strokeWidth={3} />

@@ -142,8 +142,10 @@ model Admin {
   role                    UserRole
   adminCode               String            @unique
   googleId                String?           @unique
+  facebookId              String?           @unique
   authProvider            String            @default("EMAIL")
   verified                Boolean           @default(false)
+  isActive                Boolean           @default(true)
   status                  String            @default("PENDING")
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
@@ -195,6 +197,7 @@ model Teacher {
   role                    UserRole
   teacherCode             String              @unique
   googleId                String?             @unique
+  facebookId              String?             @unique
   authProvider            String              @default("EMAIL")
   subject                 String?
   department              String?
@@ -202,6 +205,8 @@ model Teacher {
   yearsOfExperience       Int?
   address                 String?
   verified                Boolean             @default(false)
+  isActive                Boolean             @default(true)
+  status                  String              @default("ACTIVE")
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
   gender                  Gender?
@@ -265,6 +270,7 @@ model Student {
   isTwoFactorEnabled        Boolean                    @default(false)
   studentCode               String                     @unique
   googleId                  String?                    @unique
+  facebookId                String?                    @unique
   authProvider              String                     @default("EMAIL")
   gradeLevel                String?
   dateOfBirth               DateTime?
@@ -272,6 +278,8 @@ model Student {
   schoolId                  String?
   originalSchoolId          String?
   verified                  Boolean                    @default(false)
+  isActive                  Boolean                    @default(true)
+  status                    String                     @default("ACTIVE")
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
   gender                    Gender?
@@ -348,9 +356,12 @@ model Parent {
   parentCode              String            @unique
   phone                   String?
   googleId                String?           @unique
+  facebookId              String?           @unique
   authProvider            String            @default("EMAIL")
   role                    UserRole
   verified                Boolean           @default(false)
+  isActive                Boolean           @default(true)
+  status                  String            @default("ACTIVE")
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   gender                  Gender?
@@ -1473,6 +1484,8 @@ model PlatformStaff {
   email         String                @unique
   password      String?
   role          PlatformRole
+  googleId      String?               @unique
+  facebookId    String?               @unique
   isActive      Boolean               @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime              @default(now())

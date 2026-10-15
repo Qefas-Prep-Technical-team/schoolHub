@@ -10,6 +10,7 @@ import {
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { HeaderTooltip } from './HeaderTooltip';
 
 export default function PerformanceAnalytics() {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'semester'>('month');
@@ -63,26 +64,32 @@ export default function PerformanceAnalytics() {
   };
 
   return (
-    <div className="p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700">
-            <Activity className="w-5 h-5 text-slate-500" />
+    <div className="p-4 sm:p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 mb-5 sm:mb-8">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 shrink-0">
+            <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-              Academic Velocity
-            </h2>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Growth & Trends</p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                Academic Velocity
+              </h2>
+              <HeaderTooltip 
+                content={`Visualizes continuous student achievement and cohort score trajectories over time. It compares top quartile performers against the overall class average, helping you spot positive growth trends or pinpoint when scores drop during specific curriculum topics. You are currently viewing trends across your assigned subjects for the ${timeRange === 'week' ? 'current week' : timeRange === 'month' ? 'current month' : 'entire semester'}.`} 
+                size={14} 
+              />
+            </div>
+            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">Growth & Trends</p>
           </div>
         </div>
         
-        <div className="flex gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+        <div className="flex gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 self-start sm:self-auto">
           {['week', 'month', 'semester'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range as any)}
-              className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
+              className={`px-2.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all duration-200 ${
                 timeRange === range
                   ? 'bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-black/5'
                   : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'

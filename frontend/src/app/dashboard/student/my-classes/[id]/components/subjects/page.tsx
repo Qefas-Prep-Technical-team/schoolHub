@@ -314,6 +314,7 @@ export default function SubjectsPage({
               totalItems={subjects.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
+              theme="pink"
             />
           </div>
         )}

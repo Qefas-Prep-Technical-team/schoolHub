@@ -1,13 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { usePlatformLoginMutation } from "./usePlatformAuthMutations"
-import { ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react"
+import { ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
-import Image from "next/image" // We don't have an image, we'll use icon
+import Image from "next/image"
 import { toast } from "react-toastify"
 
-export default function PlatformLoginPage() {
+function PlatformLoginForm() {
+    const searchParams = useSearchParams()
+    const errorParam = searchParams.get("error")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
@@ -107,9 +110,18 @@ export default function PlatformLoginPage() {
                             <span className="font-bold text-2xl tracking-wide text-slate-900 dark:text-white">QefasHub</span>
                         </div>
 
-                        <h2 className="text-[32px] font-bold text-slate-900 dark:text-white text-center mb-10 transition-colors leading-tight">
+                        <h2 className="text-[32px] font-bold text-slate-900 dark:text-white text-center mb-8 transition-colors leading-tight">
                             Operations <br/> Login
                         </h2>
+
+                        {errorParam && (
+                            <div className="w-full mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                <div className="text-xs text-red-700 dark:text-red-300 font-medium leading-relaxed">
+                                    {errorParam}
+                                </div>
+                            </div>
+                        )}
 
                         <form onSubmit={handleSubmit} className="w-full space-y-5">
                             <div className="relative">
@@ -158,12 +170,15 @@ export default function PlatformLoginPage() {
                             or sign in with
                         </div>
 
-                        {/* Circular SSO Buttons */}
+                        {/* Circular SSO Buttons for Google and Facebook */}
                         <div className="flex items-center justify-center gap-4 mt-6">
                             <button
                                 type="button"
-                                onClick={() => toast.info("Coming soon")}
-                                className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                title="Sign in with Google"
+                                onClick={() => {
+                                    window.location.href = "/api/auth/google?role=staff"
+                                }}
+                                className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm hover:scale-105"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -174,11 +189,14 @@ export default function PlatformLoginPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => toast.info("Coming soon")}
-                                className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                title="Sign in with Facebook"
+                                onClick={() => {
+                                    window.location.href = "/api/auth/facebook?role=staff"
+                                }}
+                                className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm hover:scale-105"
                             >
-                                <svg className="w-5 h-5 text-slate-900 dark:text-white" viewBox="0 0 384 512" fill="currentColor">
-                                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                                <svg className="w-5 h-5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                                 </svg>
                             </button>
                         </div>
@@ -195,5 +213,19 @@ export default function PlatformLoginPage() {
                 </div>
             </motion.div>
         </div>
+    )
+}
+
+export default function PlatformLoginPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                </div>
+            }
+        >
+            <PlatformLoginForm />
+        </Suspense>
     )
 }

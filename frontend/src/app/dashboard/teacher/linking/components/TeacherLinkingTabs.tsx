@@ -1,8 +1,9 @@
+'use client';
+
 import React from 'react';
 import { Search } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from '@/lib/utils';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
 interface TeacherLinkingTabsProps {
   isPersonal: boolean;
@@ -33,33 +34,40 @@ export function TeacherLinkingTabs({
   activeCount,
   pendingCount,
   isLoadingActive,
-  isLoadingRequests
+  isLoadingRequests,
 }: TeacherLinkingTabsProps) {
-  const currentPendingCount = isPersonal 
-    ? (mainTab === 'network' ? networkPendingCount : classroomPendingCount) 
+  const currentPendingCount = isPersonal
+    ? mainTab === 'network'
+      ? networkPendingCount
+      : classroomPendingCount
     : pendingCount;
 
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
-        
+    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
         {/* Category Toggle (Personal Mode Only) */}
         {isPersonal && (
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-full sm:w-auto border border-slate-200 dark:border-slate-700 shadow-inner">
+          <div className="flex p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl sm:rounded-2xl w-full sm:w-auto border border-slate-200/80 dark:border-zinc-800">
             <button
+              type="button"
               onClick={() => setMainTab('network')}
               className={cn(
-                "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer",
-                mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-green-600" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+                'flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer',
+                mainTab === 'network'
+                  ? 'bg-white dark:bg-emerald-950/60 shadow-sm text-emerald-600 dark:text-emerald-400 border border-slate-200/60 dark:border-emerald-700/50'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               )}
             >
               Network
             </button>
             <button
+              type="button"
               onClick={() => setMainTab('classroom')}
               className={cn(
-                "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer",
-                mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-green-600" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+                'flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg sm:rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer',
+                mainTab === 'classroom'
+                  ? 'bg-white dark:bg-emerald-950/60 shadow-sm text-emerald-600 dark:text-emerald-400 border border-slate-200/60 dark:border-emerald-700/50'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               )}
             >
               Classroom
@@ -68,50 +76,51 @@ export function TeacherLinkingTabs({
         )}
 
         {/* Status Toggle */}
-        <div className="flex gap-2 bg-slate-50 dark:bg-slate-800 p-1 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">
-          <Button 
-            variant="ghost" 
-            size="sm"
+        <div className="flex p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-zinc-800 w-full sm:w-auto">
+          <button
+            type="button"
             onClick={() => setSubTab('active')}
             className={cn(
-              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest px-4 transition-all",
-              subTab === 'active' 
-                ? (isPersonal && mainTab === 'classroom' 
-                    ? "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:text-white focus:bg-green-600 focus:text-white focus:ring-0" 
-                    : "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm hover:bg-slate-800 dark:hover:bg-slate-200 hover:text-white dark:hover:text-slate-900 focus:bg-slate-900 dark:focus:bg-slate-100 focus:text-white dark:focus:text-slate-900 focus:ring-0") 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
+              'flex-1 sm:flex-none h-9 sm:h-10 px-3.5 sm:px-5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all inline-flex items-center justify-center gap-1.5',
+              subTab === 'active'
+                ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             )}
           >
-            Connected ({isLoadingActive ? '...' : activeCount})
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
+            <span>Connected</span>
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              {isLoadingActive ? '···' : activeCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setSubTab('pending')}
             className={cn(
-              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest relative px-4 transition-all",
-              subTab === 'pending' 
-                ? (isPersonal && mainTab === 'classroom' 
-                    ? "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:text-white focus:bg-green-600 focus:text-white focus:ring-0" 
-                    : "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:text-white focus:bg-green-600 focus:text-white focus:ring-0") 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
+              'flex-1 sm:flex-none h-9 sm:h-10 px-3.5 sm:px-5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all inline-flex items-center justify-center gap-1.5',
+              subTab === 'pending'
+                ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             )}
           >
-            Pending ({isLoadingRequests ? '...' : pendingCount})
+            <span>Pending</span>
+            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              {isLoadingRequests ? '···' : pendingCount}
+            </span>
             {currentPendingCount > 0 && (
-              <span className={cn("ml-2 px-1.5 py-0.5 rounded-full text-[8px] font-black", subTab === 'active' ? "bg-white text-green-600" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300")}>
-                {currentPendingCount}
-              </span>
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
             )}
-          </Button>
+          </button>
         </div>
       </div>
 
-      <div className="relative group max-w-sm w-full lg:w-72">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-        <Input 
-          placeholder={`Search links...`}
-          className="pl-12 h-12 rounded-full border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-medium focus:ring-green-500/20 transition-all"
+      {/* Search Input */}
+      <div className="relative w-full lg:w-72">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <input
+          type="text"
+          placeholder="Search linked members..."
+          className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 font-medium outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

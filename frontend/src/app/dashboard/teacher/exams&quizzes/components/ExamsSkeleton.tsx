@@ -15,7 +15,7 @@ export const ExamsTableSkeleton: React.FC = () => {
 
       {/* Row Skeletons */}
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex flex-col md:flex-row items-center justify-between gap-4 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+        <div key={i} className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
           <div className="flex items-center gap-4 flex-1">
             <Skeleton className="h-12 w-12 rounded-2xl" />
             <div className="space-y-2">

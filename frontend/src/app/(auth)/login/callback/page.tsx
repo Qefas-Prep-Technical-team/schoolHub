@@ -2,17 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-
+import { apiClient } from "@/lib/api/client";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
-
-/** Maps raw/internal error messages to safe, user-friendly strings. */
-function getSafeErrorMessage(raw: string): string {
-    return "Login failed";
-}
+import Cookies from "js-cookie";
 
 export default function GoogleAuthCallback() {
     const router = useRouter();
@@ -25,72 +19,59 @@ export default function GoogleAuthCallback() {
             if (isProcessing.current) return;
             isProcessing.current = true;
 
-            const role = searchParams.get("role");
-            
-            try {
-                // 1. Get the session from Supabase
-                const supabaseClient = getSupabase();
-                const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+            const authStatus = searchParams.get("auth");
+            const errorParam = searchParams.get("error");
+            const role = searchParams.get("role") || "student";
+            const dest = searchParams.get("dest") || `/dashboard/${role.toLowerCase().replace('_', '-')}`;
 
-                
-                if (sessionError) throw sessionError;
-                if (!session) {
-                    toast.error("No session found. Please try again.");
-                    router.push("/login");
-                    return;
-                }
-
-                // 2. Extract Supabase's own signed JWT (always present in the session).
-                // Supabase does not forward the Google ID token (provider_id_token) reliably,
-                // so we verify the Supabase access_token on the backend instead.
-                // It's a proper signed JWT containing the user's email, name, and Google sub.
-                const supabaseToken = session?.access_token;
-                // console.log("Supabase session token present:", !!supabaseToken, "Length:", supabaseToken?.length);
-                
-                if (!supabaseToken) {
-                    throw new Error("No session token found. Please try logging in again.");
-                }
-
-                // 3. Finalize authentication with our custom backend
-                const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-                const response = await axios.post(`${backendUrl}/auth/google`, {
-                    idToken: supabaseToken,   // field name kept for backend compatibility
-                    userRole: role
-                });
-
-                if (response.data.success) {
-                    const { user, token } = response.data.data;
-                    const actualRole = user.role;
-                    
-                    setAuth(user, token);
-
-                    // Handle "Wrong Portal" detection feedback
-                    if (role && role !== actualRole) {
-                        toast.info(`Detected as ${actualRole}. Redirecting to the correct portal...`, {
-                            autoClose: 5000
-                        });
-                    } else {
-                        toast.success(`Welcome back, ${user.name}!`);
-                    }
-                    
-                    // Redirect based on ACTUAL role from backend
-                    const dashboardPath = `/dashboard/${actualRole.toLowerCase().replace('_', '-')}`;
-                    router.push(dashboardPath);
-                } else {
-                    throw new Error(response.data.message || "Backend authentication failed");
-                }
-
-            } catch (error: any) {
-                console.error("Auth Callback Error:", error);
-
-                // Sanitize: never show raw token strings or internal library errors to the user.
-                // error.message from google-auth-library can contain the full token value.
-                const rawMessage: string = error.response?.data?.message || error.message || "";
-                const friendlyMessage = getSafeErrorMessage(rawMessage);
-
-                toast.error(friendlyMessage);
-                router.push("/login");
+            if (errorParam) {
+                toast.error(errorParam);
+                router.replace("/login");
+                return;
             }
+
+            if (authStatus === "success") {
+                try {
+                    // Hydrate client-side auth store using the newly established session
+                    const token = Cookies.get("token") || "";
+                    const response = await apiClient.get("/auth/me");
+
+                    if (response.data && (response.data.user || response.data.data)) {
+                        const userData = response.data.user || response.data.data;
+                        const normalizedUser = {
+                            ...userData,
+                            userType: (userData.role || role).toUpperCase(),
+                            name: userData.name || userData.fullName || "User",
+                        };
+
+                        setAuth(normalizedUser, token);
+                        toast.success(`Welcome, ${normalizedUser.name}!`);
+                    } else {
+                        // Fallback user object if /auth/me returns minimal payload
+                        setAuth(
+                            {
+                                id: "me",
+                                email: "",
+                                name: "User",
+                                role: role.toUpperCase(),
+                                userType: role.toUpperCase() as any,
+                            },
+                            token
+                        );
+                        toast.success("Welcome back!");
+                    }
+
+                    router.replace(dest);
+                } catch (err: unknown) {
+                    console.error("Failed to hydrate user profile after Google sign-in:", err);
+                    // Even if /auth/me fails, cookies are set so navigate to destination
+                    router.replace(dest);
+                }
+                return;
+            }
+
+            // If arrived with no parameters, redirect to login
+            router.replace("/login");
         };
 
         handleCallback();

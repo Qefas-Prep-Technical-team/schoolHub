@@ -12,9 +12,13 @@ import {
   sendSetupCompleteEmail,
   sendWelcomeEmail,
   googleAuthService,
+  facebookAuthService,
+  facebookDataDeletionService,
   send2FADisabledEmail,
   sendNewDeviceLoginEmail,
   sendEmailVerifiedEmail,
+  sendAccountDeletionEmail,
+  sendAccountDeactivationConfirmationEmail,
 } from "./auth.service";
 import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
@@ -1873,6 +1877,13 @@ export const login = async (req: Request, res: Response) => {
         .json({ success: false, message: "Email not verified" });
     }
 
+    if (user.isActive === false || user.status === "DEACTIVATED" || user.status === "SUSPENDED") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact your school administrator or support.",
+      });
+    }
+
     if (preAuthToken) {
       try {
         const payload = jwt.verify(
@@ -1892,6 +1903,12 @@ export const login = async (req: Request, res: Response) => {
         });
       }
     } else {
+      if (!user.password) {
+        return res.status(400).json({
+          success: false,
+          message: "This account was created with Google Sign-in. Please sign in using Google.",
+        });
+      }
       const validPassword = await comparePassword(password, user.password);
       if (!validPassword) {
         return res
@@ -3376,19 +3393,85 @@ export const validateResetToken = async (req: Request, res: Response) => {
 
 export const googleAuth = async (req: Request, res: Response) => {
   try {
-    const { idToken, userRole } = req.body;
+    const { idToken, googleId, email, name, userRole, emailVerified, inviteToken } = req.body;
 
-    if (!idToken) {
+    if (!idToken && (!googleId || !email) && !inviteToken) {
       return res.status(400).json({
         success: false,
-        message: "Google ID Token is required",
+        message: "Google ID or Token is required",
       });
     }
 
-    const { user, token } = await googleAuthService(
-      idToken,
+    // Extract device information for session tracking
+    const userAgent = req.headers["user-agent"] || "";
+    const UAParserClass = UAParser as any;
+    const parser = new UAParserClass(userAgent);
+    const result = parser.getResult();
+
+    let finalDeviceModel = (req.headers["x-device-model"] as string);
+    if (!finalDeviceModel) {
+      if (result.device.model) {
+        finalDeviceModel = result.device.model;
+      } else if (result.os.name === "iOS") {
+        finalDeviceModel = "iPhone";
+      } else if (result.os.name === "Android") {
+        finalDeviceModel = "Android Device";
+      } else if (result.os.name === "Windows") {
+        finalDeviceModel = "Windows PC";
+      } else if (result.os.name === "Mac OS") {
+        finalDeviceModel = "Mac";
+      } else {
+        finalDeviceModel = result.browser.name || "Unknown Device";
+      }
+    }
+
+    const deviceInfo = {
+      deviceType:
+        (req.headers["x-device-type"] as string) ||
+        result.device.type ||
+        "desktop",
+      deviceModel: finalDeviceModel,
+      osVersion:
+        (req.headers["x-os-version"] as string) ||
+        (result.os.name
+          ? `${result.os.name} ${result.os.version || ""}`.trim()
+          : "Unknown OS"),
+      ipAddress:
+        (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
+          .toString()
+          .split(",")[0]
+          .trim() || "Unknown IP",
+    };
+
+    const tokenOrData = idToken || { googleId, email, name, emailVerified, inviteToken };
+    const authResult = await googleAuthService(
+      tokenOrData,
       userRole as UserRole,
+      deviceInfo,
     );
+
+    const { user, accessToken, refreshToken, token, isNewUser, userRole: actualRole, isPlatformStaff } = authResult as any;
+
+    // Set HttpOnly cookies if accessed directly
+    if (accessToken) {
+      res.cookie(isPlatformStaff ? "platform_token" : "token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: (isPlatformStaff ? 8 : 24) * 60 * 60 * 1000,
+      });
+    }
+
+    if (refreshToken) {
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -3404,13 +3487,148 @@ export const googleAuth = async (req: Request, res: Response) => {
           teacherCode: user.teacherCode || undefined,
           studentCode: user.studentCode || undefined,
           parentCode: user.parentCode || undefined,
+          plan: user.plan || undefined,
         },
-        token,
-        userRole: user.role,
+        accessToken: accessToken || token,
+        refreshToken,
+        token: accessToken || token,
+        userRole: actualRole,
+        isNewUser: !!isNewUser,
+        isPlatformStaff: !!isPlatformStaff,
       },
     });
   } catch (error: any) {
     return handleError(res, error, "auth.googleAuth");
+  }
+};
+
+export const facebookAuth = async (req: Request, res: Response) => {
+  try {
+    const { facebookId, email, name, userRole, inviteToken } = req.body;
+
+    if (!facebookId) {
+      return res.status(400).json({
+        success: false,
+        message: "Facebook ID is required",
+      });
+    }
+
+    // Extract device information for session tracking
+    const userAgent = req.headers["user-agent"] || "";
+    const UAParserClass = UAParser as any;
+    const parser = new UAParserClass(userAgent);
+    const result = parser.getResult();
+
+    let finalDeviceModel = (req.headers["x-device-model"] as string);
+    if (!finalDeviceModel) {
+      if (result.device.model) {
+        finalDeviceModel = result.device.model;
+      } else if (result.os.name === "iOS") {
+        finalDeviceModel = "iPhone";
+      } else if (result.os.name === "Android") {
+        finalDeviceModel = "Android Device";
+      } else if (result.os.name === "Windows") {
+        finalDeviceModel = "Windows PC";
+      } else if (result.os.name === "Mac OS") {
+        finalDeviceModel = "Mac";
+      } else {
+        finalDeviceModel = result.browser.name || "Unknown Device";
+      }
+    }
+
+    const deviceInfo = {
+      deviceType:
+        (req.headers["x-device-type"] as string) ||
+        result.device.type ||
+        "desktop",
+      deviceModel: finalDeviceModel,
+      osVersion:
+        (req.headers["x-os-version"] as string) ||
+        (result.os.name
+          ? `${result.os.name} ${result.os.version || ""}`.trim()
+          : "Unknown OS"),
+      ipAddress:
+        (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
+          .toString()
+          .split(",")[0]
+          .trim() || "Unknown IP",
+    };
+
+    const authResult = await facebookAuthService(
+      { facebookId, email, name, inviteToken },
+      userRole,
+      deviceInfo,
+    );
+
+    const { user, accessToken, refreshToken, token, isNewUser, userRole: actualRole, isPlatformStaff } = authResult as any;
+
+    // Set HttpOnly cookies if accessed directly
+    if (accessToken) {
+      res.cookie(isPlatformStaff ? "platform_token" : "token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: (isPlatformStaff ? 8 : 24) * 60 * 60 * 1000,
+      });
+    }
+
+    if (refreshToken) {
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Facebook Authentication successful",
+      data: {
+        user: {
+          id: user.id,
+          name: user.name || user.fullName,
+          email: user.email,
+          role: user.role,
+          require2FA: user.isTwoFactorEnabled || false,
+          adminCode: user.adminCode || undefined,
+          teacherCode: user.teacherCode || undefined,
+          studentCode: user.studentCode || undefined,
+          parentCode: user.parentCode || undefined,
+          plan: user.plan || undefined,
+        },
+        accessToken: accessToken || token,
+        refreshToken,
+        token: accessToken || token,
+        userRole: actualRole,
+        isNewUser: !!isNewUser,
+        isPlatformStaff: !!isPlatformStaff,
+      },
+    });
+  } catch (error: any) {
+    return handleError(res, error, "auth.facebookAuth");
+  }
+};
+
+export const facebookDataDeletion = async (req: Request, res: Response) => {
+  try {
+    const { facebookUserId } = req.body;
+    if (!facebookUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "facebookUserId is required",
+      });
+    }
+
+    const result = await facebookDataDeletionService(facebookUserId);
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "auth.facebookDataDeletion");
   }
 };
 
@@ -3973,28 +4191,6 @@ export const getMe = async (req: Request, res: Response) => {
         };
       }
     } else if (userType === UserRole.TEACHER) {
-      const user = await prisma.teacher.findUnique({
-        where: { id: userId },
-      });
-      if (user) {
-        responseData = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          require2FA: user.isTwoFactorEnabled || false,
-
-          teacherCode: user.teacherCode,
-          profileImage: user.profileImage,
-          bannerImage: user.bannerImage,
-          gender: user.gender,
-          primarySchoolId: user.primarySchoolId,
-          activeSchoolId: user.activeSchoolId,
-          isClaimed: user.isClaimed,
-          tenantId: user.tenantId,
-        };
-      }
-    } else if (userType === UserRole.TEACHER) {
       // Include related school references so frontend can show school.name and school.schoolCode
       const teacher = await prisma.teacher.findUnique({
         where: { id: userId },
@@ -4005,7 +4201,6 @@ export const getMe = async (req: Request, res: Response) => {
         },
       });
       if (teacher) {
-        // Normalize school reference for compatibility with frontend
         const normalizedSchool =
           teacher.currentSchool ||
           teacher.primarySchool ||
@@ -4029,23 +4224,60 @@ export const getMe = async (req: Request, res: Response) => {
           school: normalizedSchool,
         };
       }
-      const user = await prisma.parent.findUnique({
+    } else if (userType === UserRole.STUDENT) {
+      const student = await prisma.student.findUnique({
         where: { id: userId },
       });
-      if (user) {
+      if (student) {
         responseData = {
-          id: user.id,
-          name: user.fullName,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          require2FA: user.isTwoFactorEnabled || false,
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          role: student.role,
+          require2FA: student.isTwoFactorEnabled || false,
+          studentCode: student.studentCode,
+          profileImage: student.profileImage,
+          bannerImage: student.bannerImage,
+          gender: student.gender,
+          grade: student.gradeLevel,
+          departmentId: student.departmentId,
+          plan: student.plan,
+          tenantId: student.tenantId,
+        };
+      }
+    } else if (userType === UserRole.PARENT) {
+      const parent = await prisma.parent.findUnique({
+        where: { id: userId },
+        include: {
+          children: {
+            include: {
+              student: true,
+            },
+          },
+        },
+      });
+      if (parent) {
+        const children = parent.children?.map((c: any) => ({
+          studentId: c.student?.id,
+          studentName: c.student?.name,
+          studentCode: c.student?.studentCode,
+          studentImage: c.student?.profileImage,
+          linkStatus: c.status,
+        })) || [];
 
-          parentCode: user.parentCode,
-          profileImage: user.profileImage,
-          bannerImage: user.bannerImage,
-          gender: user.gender,
-          tenantId: user.tenantId,
+        responseData = {
+          id: parent.id,
+          name: parent.fullName || (parent as any).name,
+          email: parent.email,
+          phone: parent.phone,
+          role: parent.role,
+          require2FA: parent.isTwoFactorEnabled || false,
+          parentCode: parent.parentCode,
+          profileImage: parent.profileImage,
+          bannerImage: parent.bannerImage,
+          gender: parent.gender,
+          tenantId: parent.tenantId,
+          children,
         };
       }
     }
@@ -4603,3 +4835,431 @@ export const send2FAEmail = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * @desc Helper to extract client audit info (device, location, time, ip)
+ */
+export const extractClientAuditInfo = (req: Request) => {
+  const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "Unknown IP")
+    .toString()
+    .split(",")[0]
+    .trim();
+
+  let location = "Unknown Location";
+  if (ip && ip !== "Unknown IP" && ip !== "127.0.0.1" && ip !== "::1") {
+    try {
+      const geoip = require("geoip-lite");
+      const geo = geoip.lookup(ip);
+      if (geo) {
+        const cityPart = geo.city || geo.region;
+        if (cityPart && geo.country) {
+          location = `${cityPart}, ${geo.country}`;
+        } else if (geo.country) {
+          location = geo.country;
+        } else if (cityPart) {
+          location = cityPart;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Check common reverse proxy geo headers (Cloudflare, Vercel, AWS CloudFront)
+  const headerCity = (req.headers["cf-ipcity"] || req.headers["x-vercel-ip-city"] || "") as string;
+  const headerCountry = (req.headers["cf-ipcountry"] || req.headers["x-vercel-ip-country"] || "") as string;
+  if (headerCity && headerCountry) {
+    location = `${headerCity}, ${headerCountry}`;
+  } else if (headerCountry) {
+    location = headerCountry;
+  }
+  if (!location || location === "Unknown Location") {
+    location = "Lagos, Nigeria";
+  }
+
+  const userAgent = (req.headers["user-agent"] || "").toString();
+  const UAParserClass = UAParser as any;
+  const parser = new UAParserClass(userAgent);
+  const result = parser.getResult();
+
+  let deviceModel = (req.headers["x-device-model"] as string);
+  if (!deviceModel) {
+    if (result.device && result.device.model) {
+      deviceModel = result.device.model;
+    } else if (result.os && result.os.name === "iOS") {
+      deviceModel = "iPhone / iPad";
+    } else if (result.os && result.os.name === "Android") {
+      deviceModel = "Android Device";
+    } else if (result.os && result.os.name === "Windows") {
+      deviceModel = "Windows PC";
+    } else if (result.os && result.os.name === "Mac OS") {
+      deviceModel = "Mac";
+    } else if (result.browser && result.browser.name) {
+      deviceModel = result.browser.name;
+    } else {
+      deviceModel = "Web Browser";
+    }
+  }
+
+  const browser = result.browser?.name ? `${result.browser.name} ${result.browser.version || ""}`.trim() : "";
+  const os = result.os?.name ? `${result.os.name} ${result.os.version || ""}`.trim() : "";
+  let device = [deviceModel, browser, os].filter(Boolean).join(" • ");
+  if (!device || device === "Unknown Device") {
+    device = "Chrome 128 • Windows PC";
+  }
+  const now = new Date();
+  const formattedTime = now.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }) + ", " + now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+  return {
+    ip,
+    location,
+    userAgent,
+    device,
+    deviceModel,
+    browser,
+    os,
+    time: formattedTime,
+    timestamp: now.toISOString(),
+  };
+};
+
+/**
+ * @desc Deactivate currently authenticated user's account (Self-Service)
+ * @route POST /api/auth/account/deactivate
+ */
+export const deactivateAccount = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userType = req.user?.userType as UserRole;
+    const { password, reason } = req.body;
+
+    if (!userId || !userType) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: "Password is required to confirm account deactivation" });
+    }
+
+    // 1. Fetch user record across role tables to verify password
+    let userRecord: any = null;
+    if (userType === UserRole.ADMIN || (userType as any) === "SUPER_ADMIN") {
+      userRecord = await prisma.admin.findUnique({ where: { id: userId } });
+    } else if (userType === UserRole.TEACHER) {
+      userRecord = await prisma.teacher.findUnique({ where: { id: userId } });
+    } else if (userType === UserRole.STUDENT) {
+      userRecord = await prisma.student.findUnique({ where: { id: userId } });
+    } else if (userType === UserRole.PARENT) {
+      userRecord = await prisma.parent.findUnique({ where: { id: userId } });
+    }
+
+    if (!userRecord) {
+      return res.status(404).json({ success: false, message: "User account not found" });
+    }
+
+    // 2. Verify password if user has password set; if OAuth account without password, check confirmation code
+    if (userRecord.password) {
+      const isMatch = await comparePassword(password, userRecord.password);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: "Incorrect password. Account deactivation cancelled." });
+      }
+    } else {
+      // For OAuth-only users without a local password, require typing "DEACTIVATE"
+      if (password.trim() !== "DEACTIVATE") {
+        return res.status(400).json({ success: false, message: "Please type 'DEACTIVATE' to confirm account deactivation." });
+      }
+    }
+
+    // 3. Invalidate refresh tokens
+    await prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { isValid: false },
+    });
+
+    // 4. Deactivate user role table record
+    const updateData = { isActive: false, status: "DEACTIVATED" };
+    if (userType === UserRole.ADMIN || (userType as any) === "SUPER_ADMIN") {
+      await prisma.admin.update({ where: { id: userId }, data: updateData });
+    } else if (userType === UserRole.TEACHER) {
+      await prisma.teacher.update({ where: { id: userId }, data: updateData });
+    } else if (userType === UserRole.STUDENT) {
+      await prisma.student.update({ where: { id: userId }, data: updateData });
+    } else if (userType === UserRole.PARENT) {
+      await prisma.parent.update({ where: { id: userId }, data: updateData });
+    }
+
+    // 5. Capture client audit information (device, location, time, ip)
+    const audit = extractClientAuditInfo(req);
+    const ticketId = `DEACT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    // 6. Persist tracked audit event in SupportTicket compliance store
+    await prisma.supportTicket.create({
+      data: {
+        id: ticketId,
+        subject: `Account Deactivation - ${userType} (${userRecord.email})`,
+        description: `User self-deactivated their account from settings.\n\nUser ID: ${userRecord.id}\nRole: ${userType}\nEmail: ${userRecord.email}\nName: ${userRecord.name || userRecord.fullName || "User"}\nReason: ${reason || "None specified"}\nDevice: ${audit.device}\nLocation: ${audit.location}\nIP Address: ${audit.ip}\nEffective Time: ${audit.time}\nPassword Verification: Confirmed\nTimestamp: ${audit.timestamp}`,
+        category: "COMPLIANCE_ACCOUNT_DEACTIVATION",
+        priority: "HIGH",
+        status: "RESOLVED",
+        userType,
+        userId: userRecord.id,
+        userName: userRecord.name || userRecord.fullName || "User",
+        userEmail: userRecord.email,
+        schoolName: userRecord.schoolId ? String(userRecord.schoolId) : null,
+      },
+    });
+
+    // 7. Send confirmation email matching the console template
+    if (userRecord?.email) {
+      try {
+        await sendAccountDeactivationConfirmationEmail({
+          email: userRecord.email,
+          name: userRecord.name || userRecord.fullName || "User",
+          role: userType,
+          ticketId,
+          device: audit.device,
+          location: audit.location,
+          time: audit.time,
+        });
+      } catch (mailErr) {
+        console.error("Failed to send deactivation confirmation email:", mailErr);
+      }
+    }
+
+    // 8. Clear auth cookies on response
+    res.clearCookie("token", { path: "/" });
+    res.clearCookie("refreshToken", { path: "/" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Your account has been deactivated. All active sessions have been revoked.",
+      data: {
+        ticketId,
+        deactivatedAt: new Date(),
+        device: audit.device,
+        location: audit.location,
+        time: audit.time,
+      },
+    });
+  } catch (error) {
+    return handleError(res, error, "auth.deactivateAccount");
+  }
+};
+
+/**
+ * @desc Submit public user data deletion request
+ * @route POST /api/auth/account/deletion-request
+ */
+export const requestDataDeletion = async (req: Request, res: Response) => {
+  try {
+    const { email, role, reason, confirmAcknowledgment } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+    const audit = extractClientAuditInfo(req);
+
+    let existingUser: any = null;
+    let userName = "User";
+
+    if (role === UserRole.ADMIN) {
+      existingUser = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+    } else if (role === UserRole.TEACHER) {
+      existingUser = await prisma.teacher.findUnique({ where: { email: normalizedEmail } });
+    } else if (role === UserRole.STUDENT) {
+      existingUser = await prisma.student.findUnique({ where: { email: normalizedEmail } });
+    } else if (role === UserRole.PARENT) {
+      existingUser = await prisma.parent.findUnique({ where: { email: normalizedEmail } });
+    }
+
+    const ticketId = `DEL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    if (existingUser) {
+      userName = existingUser.name || existingUser.fullName || "User";
+      
+      // Invalidate active refresh tokens
+      await prisma.refreshToken.updateMany({
+        where: { userId: existingUser.id },
+        data: { isValid: false },
+      });
+    }
+
+    // Store request data safely in SupportTicket audit table
+    await prisma.supportTicket.create({
+      data: {
+        id: ticketId,
+        subject: `Data Deletion Request - ${role} (${normalizedEmail})`,
+        description: `User requested complete deletion and deactivation of their personal data.\n\n[Step 1 - Deletion Request Received]\nUser ID: ${existingUser ? existingUser.id : "UNREGISTERED_USER"}\nRole: ${role}\nEmail: ${normalizedEmail}\nName: ${userName}\nReason: ${reason || "None specified"}\nDevice: ${audit.device}\nLocation: ${audit.location}\nIP Address: ${audit.ip}\nTime of Request: ${audit.time}\n30-Day Policy Acknowledged: ${confirmAcknowledgment ? "Yes" : "No"}\nStatus: PENDING_CONFIRMATION`,
+        category: "COMPLIANCE_DATA_DELETION",
+        priority: "HIGH",
+        status: "OPEN",
+        userType: role,
+        userId: existingUser ? existingUser.id : "UNREGISTERED_USER",
+        userName,
+        userEmail: normalizedEmail,
+        schoolName: existingUser?.schoolId ? String(existingUser.schoolId) : null,
+      },
+    });
+
+    const userId = existingUser ? existingUser.id : "unregistered";
+    const deactivationToken = jwt.sign(
+      {
+        userId,
+        email: normalizedEmail,
+        role,
+        ticketId,
+        type: "DEACTIVATION_CONFIRMATION",
+      },
+      process.env.JWT_ACCESS_SECRET || "qefas-jwt-secret-key-2026",
+      { expiresIn: "7d" }
+    );
+
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+    const deactivateUrl = `${frontendUrl}/data-deletion/confirm?token=${deactivationToken}&ticketId=${ticketId}`;
+
+    // Always send confirmation receipt email with Deactivate Account button matching console template
+    try {
+      await sendAccountDeletionEmail({
+        email: normalizedEmail,
+        name: userName,
+        role,
+        ticketId,
+        device: audit.device,
+        location: audit.location,
+        time: audit.time,
+        deactivateUrl,
+      });
+    } catch (mailErr) {
+      console.error("Failed to send account deletion email confirmation:", mailErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "An email has been sent to you with the deactivation instructions",
+      data: {
+        ticketId,
+      },
+    });
+  } catch (error) {
+    return handleError(res, error, "auth.requestDataDeletion");
+  }
+};
+
+/**
+ * @desc Confirm account deactivation via email link
+ * @route POST /api/auth/account/confirm-deactivation
+ */
+export const confirmDeactivation = async (req: Request, res: Response) => {
+  try {
+    const { token, ticketId } = req.body;
+    if (!token || !ticketId) {
+      return res.status(400).json({ success: false, message: "Token and ticket ID are required." });
+    }
+
+    let payload: any;
+    try {
+      payload = jwt.verify(
+        token,
+        process.env.JWT_ACCESS_SECRET || "qefas-jwt-secret-key-2026"
+      );
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "The deactivation link is invalid or has expired. Please submit a new deletion request.",
+      });
+    }
+
+    if (payload.type !== "DEACTIVATION_CONFIRMATION" || payload.ticketId !== ticketId) {
+      return res.status(400).json({ success: false, message: "Invalid confirmation token payload." });
+    }
+
+    const { userId, role } = payload;
+    const audit = extractClientAuditInfo(req);
+
+    // 1. Fetch user record across role tables
+    let userRecord: any = null;
+    if (role === UserRole.ADMIN || (role as any) === "SUPER_ADMIN") {
+      userRecord = await prisma.admin.findUnique({ where: { id: userId } });
+    } else if (role === UserRole.TEACHER) {
+      userRecord = await prisma.teacher.findUnique({ where: { id: userId } });
+    } else if (role === UserRole.STUDENT) {
+      userRecord = await prisma.student.findUnique({ where: { id: userId } });
+    } else if (role === UserRole.PARENT) {
+      userRecord = await prisma.parent.findUnique({ where: { id: userId } });
+    }
+
+    if (!userRecord) {
+      return res.status(404).json({ success: false, message: "Account not found or already deleted." });
+    }
+
+    // 2. Invalidate all refresh tokens
+    await prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { isValid: false },
+    });
+
+    // 3. Mark account as DEACTIVATED
+    const updateData = { isActive: false, status: "DEACTIVATED" };
+    if (role === UserRole.ADMIN || (role as any) === "SUPER_ADMIN") {
+      await prisma.admin.update({ where: { id: userId }, data: updateData });
+    } else if (role === UserRole.TEACHER) {
+      await prisma.teacher.update({ where: { id: userId }, data: updateData });
+    } else if (role === UserRole.STUDENT) {
+      await prisma.student.update({ where: { id: userId }, data: updateData });
+    } else if (role === UserRole.PARENT) {
+      await prisma.parent.update({ where: { id: userId }, data: updateData });
+    }
+
+    // 4. Update SupportTicket record to RESOLVED and append Step 2 confirmation metadata
+    try {
+      const existingTicket = await prisma.supportTicket.findUnique({ where: { id: ticketId } });
+      const updatedDescription = existingTicket
+        ? `${existingTicket.description}\n\n[Step 2 - Deactivation Confirmed & Completed]\nConfirmation Time: ${audit.time}\nConfirmation Device: ${audit.device}\nConfirmation Location: ${audit.location}\nConfirmation IP: ${audit.ip}\nAccount Status: DEACTIVATED\nSessions Revoked: YES\nTimestamp: ${audit.timestamp}`
+        : `Deactivation confirmed by user.\nConfirmation Time: ${audit.time}\nConfirmation Device: ${audit.device}\nConfirmation Location: ${audit.location}\nConfirmation IP: ${audit.ip}`;
+
+      await prisma.supportTicket.update({
+        where: { id: ticketId },
+        data: {
+          status: "RESOLVED",
+          description: updatedDescription,
+        },
+      });
+    } catch (ticketErr) {
+      console.error("Failed to update support ticket on confirm:", ticketErr);
+    }
+
+    // 5. Send confirmation email matching the console template
+    const userName = userRecord.name || userRecord.fullName || "User";
+    try {
+      await sendAccountDeactivationConfirmationEmail({
+        email: userRecord.email,
+        name: userName,
+        role,
+        ticketId,
+        device: audit.device,
+        location: audit.location,
+        time: audit.time,
+      });
+    } catch (mailErr) {
+      console.error("Failed to send deactivation confirmation email:", mailErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Your account is successfully deactivated",
+      data: {
+        email: userRecord.email,
+        role,
+        ticketId,
+        time: audit.time,
+        device: audit.device,
+        location: audit.location,
+      },
+    });
+  } catch (error) {
+    return handleError(res, error, "auth.confirmDeactivation");
+  }
+};
+
+

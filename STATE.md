@@ -39,6 +39,639 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Thursday, October 15, 2026
+
+- **Public Data Deletion & Self-Service Account Deactivation Workflow (`/data-deletion`)**:
+    - [x] **Client Audit Telemetry Helper (`auth.controller.ts`)**:
+        - Implemented `extractClientAuditInfo(req)` extracting client IP address, geographical location via `geoip-lite`, device model, browser version, and operating system via `ua-parser-js`, and human-readable timestamp.
+    - [x] **Public Deletion Request Processing & Signed Confirmation Flow (`auth.controller.ts`, `auth.routes.ts`, `auth.zod.ts`)**:
+        - Updated `requestDataDeletion` to log incoming deletion requests in `SupportTicket` with full client audit payload (IP, location, device, time, policy acknowledgment, role, email) under `COMPLIANCE_DATA_DELETION`.
+        - Generates signed JWT deactivation token (`expiresIn: '7d'`) containing user ID, role, email, and ticket ID.
+        - Dispatches `sendAccountDeletionEmail` with dynamic `deactivateUrl: ${appUrl}/data-deletion/confirm?token=...&ticketId=...` and audit summary table.
+        - Returns toast message: `"An email has been sent to you with the deactivation instructions"`.
+    - [x] **Email Confirmation Route & 2-Step Deactivation (`auth.controller.ts`, `auth.routes.ts`, `auth.zod.ts`)**:
+        - Implemented `confirmDeactivation` (`POST /api/auth/account/confirm-deactivation`) validating token and ticket ID.
+        - Records Step 2 confirmation telemetry (confirmation device, location, IP, and time).
+        - Deactivates user account (`isActive: false, status: 'DEACTIVATED'`) and revokes all active refresh tokens.
+        - Updates `SupportTicket` status to `RESOLVED` and appends Step 2 audit log.
+        - Dispatches `sendAccountDeactivationConfirmationEmail` with confirmation details.
+        - Returns `{ success: true, message: "Your account is successfully deactivated" }`.
+    - [x] **Self-Service Deactivation Enhancements (`auth.controller.ts`)**:
+        - Updated `deactivateAccount` to capture client audit info (device, location, time) into `SupportTicket` and dispatch `sendAccountDeactivationConfirmationEmail`.
+    - [x] **Email Templates Redesign & Telemetry Guarantees (`auth.service.ts` & `console/email-templates/page.tsx`)**:
+        - Positioned `Account Deactivation Request` and `Account Deactivation Confirmation` as the primary default templates at the top of `/console/email-templates`.
+        - Verified that `Device`, `Location`, and `Time` rows are unconditionally rendered with defaults and explicit labels on both the console preview and the actual emails dispatched by backend `sendAccountDeletionEmail` and `sendAccountDeactivationConfirmationEmail`.
+        - Added `RESEND_TEST` support (`isTest ? TEST_EMAIL : email`) and test banner integration in `auth.service.ts` so emails are never dropped by Resend in testing environments.
+        - Added URL search parameter support (`?template=account-deactivation-request`) wrapped in `<Suspense>` on `/console/email-templates`.
+    - [x] **Frontend User Interface Polish (`/data-deletion` & `/data-deletion/confirm`)**:
+        - Updated Tab 1 on `/data-deletion`: displays toast notification `"An email has been sent to you with the deactivation instructions"` on submit and renders clear instructions on the queued receipt screen.
+        - Updated Tab 2 on `/data-deletion`: prominently informs users that self-service deactivation is located in their Settings page (`Settings → Security → Deactivate Account`), with direct navigation links to student, teacher, admin, and parent settings.
+        - Created `/data-deletion/confirm` page wrapped in `<Suspense>`: calls `confirmDeactivation`, renders *"Your account is successfully deactivated"* with complete Step 2 audit breakdown, and provides Return to Login navigation.
+    - [x] **Strict Type Safety & Verification**:
+        - Fixed `ComplianceTicket['status']` typing in `deletions/page.tsx` line 230.
+        - Verified both `backend` and `frontend` pass `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Server-Side Facebook OAuth Integration & Console SSO**:
+    - [x] **Database Schema**:
+        - Added `facebookId String? @unique` to `Student`, `Teacher`, `Admin`, `Parent`, and `PlatformStaff` models in `backend/prisma/schema.prisma`.
+        - Added `googleId String? @unique` to `PlatformStaff` for unified Console SSO.
+    - [x] **Backend Authentication Layer (`auth.service.ts`, `auth.controller.ts`, `auth.routes.ts`, `auth.validation.ts`)**:
+        - Implemented `facebookAuthService` with platform feature guards, `STAFF` role support, role-based account creation, welcome email, in-app notification dispatch, and quota initialization.
+        - Enforced strict **No Auto-Linking on Email Match** rule: if Facebook returns an email matching an existing account without Facebook linked, returns a clear notice advising users to sign in with their usual credentials and link Facebook from settings.
+        - Implemented **Option A** missing email handling: if Facebook returns no email, returns `EMAIL_REQUIRED` to trigger the profile completion flow.
+        - Added `POST /api/auth/facebook` with `facebookAuthSchema` validation.
+        - Implemented `facebookDataDeletionService` and `POST /api/auth/facebook/data-deletion` to decouple `facebookId` and log compliance tickets in `SupportTicket`.
+        - Updated password login error messages in `loginUser` to reference social sign-in.
+        - Enhanced `googleAuthService` to support the `STAFF` role for Platform Console SSO.
+    - [x] **Frontend OAuth Routes & Handlers (`frontend/src/app/api/auth/`)**:
+        - Configured server-side `arctic` Facebook client in `frontend/src/lib/facebook.ts`.
+        - Created OAuth initialization route `GET /api/auth/facebook` requesting `public_profile` and `email` scopes with CSRF state protection.
+        - Created callback route `GET /api/auth/facebook/callback` with token exchange, Graph API profile retrieval, staff console SSO redirect, and session cookie configuration.
+        - Added `Option A` email fallback handling: if Facebook returns no email, sets temporary `fb_pending_oauth` cookie and routes to `/auth/complete-profile?provider=facebook`.
+        - Implemented `POST /api/auth/facebook/complete` to finalize profile registration with user-provided email.
+        - Created public status verification page and unified GDPR/compliance portal at `/data-deletion` (Public Deletion Form, Authenticated Self-Service Deactivation, Meta confirmation banner, and Data Retention Schedule).
+    - [x] **Staff Invite-Activation Flow & Platform Operations**:
+        - Supported 1-click social activation via Google and Facebook on staff account activation page (`/auth/setup?token=...`), persisting `inviteToken` through OAuth state/cookies.
+        - Created `/console/join?token=...` convenience redirect route forwarding securely to `/auth/setup`.
+        - Added `facebook_auth_enabled` toggle to System Sovereignty settings (`/console/settings`).
+        - Created reusable `SocialAuthRow.tsx` providing a unified, centered divider and circular SSO buttons matching the Operations Console login design (`or sign up with` / `or sign in with`).
+        - Replaced bulky stacked rectangular buttons with `SocialAuthRow` across all user registration cards (`StudentCard`, `TeacherCard`, `ParentCard`, `SchoolCard`) and login forms.
+        - Resolved database feature enablement for `googleLogin` and `facebookLogin` in `PlatformFeature`, and exposed `facebook_auth_enabled` in `getPublicPlatformSettings` so Google and Facebook signups are always enabled and visible.
+        - Updated `.env.example` with `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET`.
+
+- **Google Registration Onboarding & Welcome Communications Fix**:
+    - [x] **Universal Onboarding Redirection (`route.ts`)**:
+        - Updated `frontend/src/app/api/auth/google/callback/route.ts` to remove the role filter that restricted onboarding redirection to `ADMIN` and `TEACHER` only.
+        - All new users (`isNewUser === true`) registering via Google Sign-In across all roles (`ADMIN`, `TEACHER`, `STUDENT`, `PARENT`) are now redirected to `/onboarding?type=${userRole.toLowerCase()}`.
+    - [x] **Smart Onboarding Routing & Suspense Safety (`onboarding/page.tsx`)**:
+        - Supported role query params (`?type=` / `?role=`) in `OnboardingContent`.
+        - Replaced hardcoded completion route to login (`getLoginRoute`) with smart direct dashboard routing (`getDashboardRoute`) for authenticated users (`isAuthenticated || user`), while keeping the login route as fallback.
+        - Dynamically updated the completion action button to read `"Go to your Dashboard"` when authenticated instead of `"Login to your Dashboard"`.
+        - Added a `"Skip Tour & Go to Dashboard"` quick-exit button in the stepper header for authenticated users.
+        - Wrapped component in `<Suspense>` to adhere to Next.js App Router static optimization requirements.
+        - Adapted `SuccessStep` description copy to reflect role-specific goals (`STUDENT`, `PARENT`, `TEACHER`, `ADMIN`).
+    - [x] **Welcome Email & In-App Notification Dispatch (`auth.service.ts`)**:
+        - In `googleAuthService` (`backend/src/modules/auth/auth.service.ts`), added non-blocking dispatch of `sendWelcomeEmail` upon new user registration via Google, sending their account codes (`studentCode`, `teacherCode`, `adminCode`, `parentCode`) and login URL.
+        - In `sendWelcomeEmail`, added `parentCode` support and case-insensitive role matching (`(role || '').toLowerCase()`) to prevent role match misses.
+        - Dispatched in-app welcome notification via `createNotification` welcoming the user to their respective portal.
+    - [x] **Self-Service Account Deactivation & Audit Event Logging**:
+        - **Backend (`auth.controller.ts`, `auth.zod.ts`, `auth.service.ts`)**:
+            - Updated `POST /api/auth/account/deactivate` to strictly enforce password verification using `comparePassword(password, userRecord.password)` (or require `"DEACTIVATE"` for OAuth accounts with no local password).
+            - Enforced `password` in `deactivateAccountSchema` using Zod validation.
+            - Revokes all active user refresh tokens and device sessions (`deviceSession.updateMany`).
+            - Persists a tracked compliance audit event in `SupportTicket` (`category: "COMPLIANCE_ACCOUNT_DEACTIVATION"`, `priority: "HIGH"`, `status: "RESOLVED"`) storing the exact event payload: user ID, role, email, name, IP address, user agent, reason, and timestamp.
+            - Dispatches deactivation confirmation email via `sendAccountDeactivationConfirmationEmail`.
+            - Added `isActive === false || status === "DEACTIVATED"` guard in `googleAuthService` preventing deactivated accounts from signing in via Google.
+        - **Frontend (`DeactivateAccountSection.tsx`)**:
+            - Created shared Danger Zone component with confirmation dialog, reason selection, password input with show/hide toggle, and confirmation banner.
+            - Integrated into all 4 role dashboard Settings pages (`Security` tab):
+                - Student Settings: `frontend/src/app/dashboard/student/settings/page.tsx`
+                - Teacher Settings: `frontend/src/app/dashboard/teacher/settings/page.tsx`
+                - School Admin Settings: `frontend/src/app/dashboard/admin/settings/page.tsx`
+            - On successful deactivation: displays toast, removes session cookies, clears Zustand auth store, and routes to the role login page.
+    - [x] **Operations Console Data Deletions & Inactive Accounts Center (`/console/deletions`)**:
+        - **Backend (`support.controller.ts`, `support.route.ts`)**:
+            - Added `GET /api/platform/support/compliance-requests` returning real-time compliance tickets (`COMPLIANCE_DATA_DELETION`, `COMPLIANCE_ACCOUNT_DEACTIVATION`) and real-time deactivated accounts across all 4 roles (`Student`, `Teacher`, `Admin`, `Parent`) with tenant attribution, codes, and timestamps.
+            - Added `PATCH /api/platform/support/admins/:id/status` (`toggleAdminStatus`) and `DELETE /api/platform/support/admins/:id` (`deleteAdmin`) with staff password verification and audit logging.
+            - Fixed `auth.controller.ts` and `support.controller.ts` typing and removed non-existent `deviceSession` queries.
+        - **Frontend Hooks (`usePlatformSupport.ts`, `usePlatformSchools.ts`)**:
+            - Added `usePlatformComplianceRequests` query hook (`staleTime: 2min`).
+            - Added `useUpdateAdminStatus` and `useDeletePlatformAdmin` mutation hooks.
+            - Updated user deletion mutations to invalidate `["compliance-requests"]` on purge.
+        - **Frontend Management UI (`console/deletions/page.tsx`)**:
+            - Designed full tabbed console interface adhering to `list_grid_design` skill:
+                - Tab 1: **Data Deletion Requests** — reviews public GDPR/compliance requests, displays ticket metadata and status pills, and enables immediate user purge or status updates.
+                - Tab 2: **Deactivated Accounts** — lists all inactive/deactivated students, teachers, admins, and parents across all tenants with one-click **Reactivate Account** and **Delete Record** (with password modal).
+                - Tab 3: **Self-Service Deactivations Audit Ledger** — displays self-service deactivation audit events logged when users deactivated their accounts from settings.
+            - Top metrics strip: Pending Deletion Requests, Deactivated Accounts count, Self-Service Deactivations, and 30-Day Safe Recovery grace period.
+            - Integrated `DeleteConfirmationModal` and `TicketInspectionDialog`.
+        - **Console Navigation (`ConsoleSidebar.tsx`, `ConsoleMobileDrawer.tsx`, `console/page.tsx`)**:
+            - Added `Deletions & Deactivations` nav item with `UserX` icon to desktop sidebar and mobile drawer.
+            - Added quick action card to main Operations Console HQ overview (`/console`).
+
+### Wednesday, October 14, 2026
+
+- **Internal Console HQ Dashboard Mobile Responsiveness & Live Flutterwave Revenue (`/console`)**:
+    - [x] **Live Flutterwave Revenue Telemetry (`analytics.controller.ts`)**:
+        - Updated `getGlobalStats` and `getGrowthStats` to aggregate real payments processed through the live Flutterwave gateway (`gateway: 'FLUTTERWAVE'`, `status: 'SUCCESS'`) from the `Transaction` model rather than empty fee payment tables or test Paystack transactions.
+        - Calculated actual processed revenue (`flutterwaveRevenue`), live 30-day MRR, and platform metrics.
+    - [x] **Platform Revenue Card Redesign (`console/page.tsx`)**:
+        - Configured the card to reflect actual payments processed to Flutterwave (`₦27,100`).
+        - Added green live gateway status indicator badge with animated pulsing dot (`Flutterwave Live`).
+        - Updated card description to clarify: `"Actual processed (Flutterwave)"`.
+        - Synchronized right column Platform Summary card to display live Flutterwave revenue and MRR.
+    - [x] **Mobile Responsiveness Across Dashboard (`console/page.tsx` & `SubscriptionAnalytics.tsx`)**:
+        - **Balanced 2-Column Metrics Grid on Mobile**: Upgraded from restrictive `minmax(280px, 1fr)` to `grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5` with compact touch padding (`p-3 sm:p-4 md:p-5`), eliminating single-column vertical bloating on phones.
+        - **Responsive Header & Badges**: Made page header and live engine status pill stack and align responsively on small screens (`flex-col sm:flex-row`).
+        - **Responsive Charts**: Scaled Ecosystem Growth and User Registration trend charts with mobile-tailored heights (`h-[240px] sm:h-[300px] md:h-[320px]`), margins to eliminate left gutter clipping, and responsive stacking headers for titles and multi-series legends.
+        - **Subscription Analytics Polish**: Adapted pie chart breakdown and line chart for small viewports.
+    - [x] **Typecheck Validation**: Verified both `backend` and `frontend` pass `npx tsc --noEmit` with zero errors.
+
+- **Direct "Sign in with Google" OAuth Integration (`arctic`)**:
+    - [x] **Database Migration & Schema Audit (`migration.sql`)**: Verified columns across all 4 user models (`Admin`, `Teacher`, `Student`, `parents`) in Supabase PostgreSQL (`googleId` unique text, `password` nullable text). Prepared idempotent DDL migration script at `backend/prisma/migrations/20261014_add_google_auth/migration.sql`.
+    - [x] **Arctic Client Initialization (`frontend/src/lib/google.ts`)**: Initialized standard `Google` OAuth client with PKCE support using `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and redirect URI `${NEXT_PUBLIC_APP_URL}/api/auth/google/callback`.
+    - [x] **OAuth Initiation Route (`frontend/src/app/api/auth/google/route.ts`)**: Implemented `GET /api/auth/google` generating cryptographic `state` and PKCE `codeVerifier`, persisting them in 10-minute HttpOnly Lax cookies, and redirecting with scopes `openid email profile`.
+    - [x] **OAuth Callback Route (`frontend/src/app/api/auth/google/callback/route.ts`)**: Implemented `GET /api/auth/google/callback` with CSRF state verification, PKCE code exchange, ID token decoding, `email_verified` enforcement, server-to-server user resolution, cookie cleanup, and session token cookie establishment.
+    - [x] **Backend Authentication Controller & Service (`auth.controller.ts`, `auth.service.ts`, `auth.validation.ts`)**:
+        - Updated `googleAuthSchema` to support server-to-server verified Google payload.
+        - Enhanced `googleAuthService` to resolve or create users across all 4 role tables (`Admin`, `Teacher`, `Student`, `Parent`), link `googleId`, enforce portal role matching, initialize free subscription plan for new signups, and issue dual `accessToken` + `refreshToken` pairs.
+        - Added null password guard in standard password login returning 400: `"This account was created with Google Sign-in. Please sign in using Google."`
+    - [x] **Login Components & Flow Polish (`GoogleLoginButton.tsx`, `LoginForm.tsx`, `callback/page.tsx`)**:
+        - Refactored `GoogleLoginButton` to trigger direct Next.js route without Supabase Auth client.
+        - Fixed missing Google Login button on `/login/school-admin`: added `<GoogleLoginButton userType="school-admin" pill />` directly to `school-admin/components/LoginForm.tsx`.
+        - Added `<GoogleLoginButton />` to dedicated portal login forms: `TeacherLoginForm.tsx`, `StudentLoginForm.tsx`, and `ParentLoginForm.tsx`.
+        - Enhanced `GoogleLoginButton.tsx` with `pill` support to match form aesthetics and added `'admin': 'admin'` alias in `roleMap`.
+        - Added enum role normalization in `/api/auth/google/callback/route.ts` mapping `'school-admin'` to `'ADMIN'` for backend validation.
+        - Integrated "Sign up with Google" across all 4 signup portal pages: `SchoolCard.tsx` (`/signup/school`), `TeacherCard.tsx` (`/signup/teacher`), `StudentCard.tsx` (`/signup/student`), and `ParentCard.tsx` (`/signup/parent`).
+        - Enhanced `GoogleLoginButton` to accept `mode="signup"` rendering `"Or sign up with"` and `"Sign up with Google"`.
+        - Updated `LoginForm` to detect and display OAuth error query parameters.
+        - Fixed 404 in `/auth/me` profile hydration (`auth.controller.ts` `getMe`): added missing `UserRole.STUDENT` and `UserRole.PARENT` handlers, resolving `AxiosError: Request failed with status code 404`.
+        - Refactored `/login/callback` to hydrate Zustand `useAuthStore` via `/auth/me` and route to the target dashboard.
+    - [x] **Typecheck Validation**: Verified both `backend` and `frontend` pass `npx tsc --noEmit` with zero errors.
+
+- **User Data Deletion & Account Deactivation (`/data-deletion`)**:
+    - [x] **Backend Endpoints & Zod Validation (`auth.routes.ts`, `auth.controller.ts`, `auth.zod.ts`, `auth.service.ts`)**:
+        - `POST /api/auth/account/deactivate`: Authenticated self-service endpoint invalidating active refresh tokens, revoking device sessions, and updating status to `DEACTIVATED` across all role models (`Admin`, `Teacher`, `Student`, `Parent`).
+        - `POST /api/auth/account/deletion-request`: Public, rate-limited submission endpoint with Zod validation (`dataDeletionRequestSchema`). Generates tracked `SupportTicket` (`category: "COMPLIANCE_DATA_DELETION"`) with high priority for compliance audit trails and sends automated reference receipt email via Resend (`sendAccountDeletionEmail`).
+    - [x] **Public & Self-Service Data Deletion Page (`frontend/src/app/data-deletion/page.tsx`)**:
+        - Built comprehensive, dual-tab page with Self-Service Deactivation (interactive card with confirmation modal for authenticated users) and Public Request Form (for unauthenticated / app-uninstalled users).
+        - Detailed Data Retention & Deletion Schedule breakdown table explaining 30-day purge schedules for profile data, media files, and credentials versus statutory educational record retention.
+    - [x] **Global Footer & Privacy Integration (`Footer.tsx`, `privacy/page.tsx`)**:
+        - Linked `User Data Deletion` directly under the **Legal** column in [`frontend/src/components/reusable/Footer.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/reusable/Footer.tsx).
+        - Embedded cross-link in Section 7 of [`frontend/src/app/privacy/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/privacy/page.tsx).
+
+- **Internal Console Mobile Navigation Menu (`/console`)**:
+    - [x] **Mobile Drawer Component (`ConsoleMobileDrawer.tsx`)**: Created dedicated, responsive mobile navigation sheet using Radix UI `Sheet` (`frontend/src/app/(internal-console)/console/components/ConsoleMobileDrawer.tsx`). Features:
+        - Structured navigation categories: *Ecosystem Management*, *Platform & Billing Architecture*, *Operations & Telemetry*, and *Administration*.
+        - Active route highlighting based on `usePathname()`.
+        - Automatically closes sheet on item click navigation.
+        - Staff account status footer with quick logout (`clearStaff`) button.
+    - [x] **TopBar Mobile Integration (`ConsoleTopBar.tsx`)**:
+        - Replaced desktop-only chevron button on mobile with `<ConsoleMobileDrawer />` triggering a clean hamburger icon (`<Menu size={20} />`).
+        - Preserves existing responsive branding, environment badge, notifications, and profile controls.
+
+- **Student Academy Affiliation & Academic Settings Isolation (`/dashboard/student`)**:
+    - [x] **Student Profile Academy Fallback (`dashboard/student/profile/page.tsx`)**:
+        - Replaced hardcoded `'Qefas-Prep Academy'` fallback with `{profile.school?.name || 'Independent / Not Enrolled'}` when a student is not linked to an enrolled institution.
+    - [x] **Academics Settings Deactivation for Independent Students (`dashboard/student/settings/page.tsx`)**:
+        - Added `hasSchool` check (`Boolean(profile?.schoolId || profile?.school?.id)`).
+        - **Department Selection**: Disabled the Department `<Select>` and `Lock In` `<Button>` when `!hasSchool`. Replaced the placeholder with `"No School Connected"` and displayed an amber advisory notice explaining that department selection requires institutional enrollment.
+        - **Grade Level Selection**: Disabled the Grade Level `<Select>` and `Lock In` `<Button>` when `!hasSchool`. Replaced the placeholder with `"No School Connected"` and displayed an amber advisory notice informing the user that level selection requires connecting with a school code.
+        - Preserved desktop sidebar collapse toggle on `md:flex` viewports.
+
+- **Console Email Templates Expansion (`/console/email-templates`)**:
+    - [x] **Account Deactivation Confirmation Template**:
+        - Added interactive preview card and generator on `/console/email-templates` (`account-deactivation-confirmation`) with rose badge styling, security hero illustration, deactivation details table, advisory callouts, data retention guidelines, and support CTA.
+        - Created `sendAccountDeactivationConfirmationEmail` in `backend/src/modules/auth/auth.service.ts` and wired into `deactivateAccount` in `auth.controller.ts`.
+        - Wired test email dispatch in `backend/src/modules/platform/email/email.controller.ts`.
+    - [x] **Account Deactivation Request Template**:
+        - Added interactive preview card and generator on `/console/email-templates` (`account-deactivation-request`) with amber badge styling, reset hero illustration, formal compliance reference ticket table, 30-day statutory grace period notification, and cancellation CTA.
+        - Wired test email dispatch in `backend/src/modules/platform/email/email.controller.ts` connecting to `sendAccountDeletionEmail`.
+    - [x] **Typecheck Validation**: Verified `frontend` passes `npx tsc --noEmit` with zero errors.
+
+- **Console Account Deactivation Across Schools, Students, Teachers, and Parents**:
+    - [x] **Platform Support Endpoints (`backend/src/modules/platform/support/`)**:
+        - `PATCH /api/platform/support/schools/:id/status` (`toggleSchoolStatus`): Enhanced to support toggling `DEACTIVATED` / `ACTIVE`, automatically synchronizing all associated `SchoolAdmin` records (`active: false / true`), deactivating linked `Admin` accounts (`isActive: false, status: 'DEACTIVATED'`), and invalidating active refresh tokens.
+        - `PATCH /api/platform/support/students/:id/status` (`toggleStudentStatus`): Created endpoint to update `Student.isActive` and `Student.status`, automatically revoking active refresh token sessions upon deactivation and recording platform activity logs.
+        - `PATCH /api/platform/support/teachers/:id/status` (`toggleTeacherStatus`): Created endpoint to update `Teacher.isActive` and `Teacher.status`, invalidating refresh tokens and logging activity.
+        - `PATCH /api/platform/support/parents/:id/status` (`toggleParentStatus`): Created endpoint to update `Parent.isActive` and `Parent.status`, invalidating refresh tokens and logging activity.
+        - Registered routes in `support.route.ts` protected by `authenticatePlatformStaff` and authorized platform roles.
+    - [x] **Permanent User & School Deletion with Administrator Password Authorization**:
+        - Created `DELETE /api/platform/support/schools/:id`, `DELETE /api/platform/support/students/:id`, `DELETE /api/platform/support/teachers/:id`, `DELETE /api/platform/support/parents/:id` requiring `OWNER` or `TECH_ADMIN` privileges.
+        - Strictly verifies administrator password using `bcrypt.compare` against `platformStaff.password` before executing deletion.
+        - Cleanly unlinks/destroys records within transactions without breaking database foreign key constraints.
+        - Records comprehensive audit trail in `platformActivityLog` via `createActivityLog` documenting staff email, action, entity code/name, reason, and timestamp.
+    - [x] **Frontend Deletion Hooks & Password Confirmation Modal**:
+        - Created `useDeletePlatformSchool`, `useDeletePlatformStudent`, `useDeletePlatformTeacher`, and `useDeletePlatformParent` in `usePlatformSchools.ts`.
+        - Created reusable `DeleteConfirmationModal.tsx` in `frontend/src/app/(internal-console)/console/components/DeleteConfirmationModal.tsx` requiring staff password and recording optional reason.
+        - Fixed double toaster bug by removing redundant manual `toast.success` calls in page components and enforcing unique `toastId` in hooks.
+        - Redesigned and integrated permanent deletion actions and status management across all 4 console detail pages (`/console/schools/[id]`, `/console/students/[id]`, `/console/teachers/[id]`, `/console/parents/[id]`).
+        - Updated `PlatformSchoolDetails`, `PlatformStudentDetails`, `PlatformTeacherDetails`, and `PlatformParentDetails` interfaces with `isActive?: boolean` and `status?: string`.
+    - [x] **Console Detail Pages (`frontend/src/app/(internal-console)/console/`)**:
+        - **Schools Detail (`/console/schools/[id]`)**: Replaced basic browser window confirm with a dedicated, high-fidelity **Account Status Dialog** modal (`Dialog`, `DialogContent`). It presents:
+            - Live current status pill (`ACTIVE`, `DEACTIVATED`, `SUSPENDED`, `INACTIVE`).
+            - Selectable cards for all 4 available statuses with dedicated color badges, descriptions, and active check indicators.
+            - Security notice callout explaining admin session revocation and 403 login blocking.
+            - Integrated `react-toastify` toaster notifications (`toast.success` / `toast.error`) on status changes.
+        - **Students Detail (`/console/students/[id]`)**: Wired up `toggleStatusMutation` with a clear "Deactivate Account" / "Activate Account" button, confirmation dialog explaining login blocking, and visual status badge in the identity card.
+        - **Teachers Detail (`/console/teachers/[id]`)**: Added header action bar button and identity card status badge to toggle teacher active status with confirmation.
+        - **Parents Detail (`/console/parents/[id]`)**: Replaced raw subscription toggle with full account deactivation (`useUpdateParentStatus`), confirmation dialog, and visual status badge.
+    - [x] **End-to-End Typecheck**: Both `backend` and `frontend` pass `npx tsc --noEmit` with zero errors.
+
+- **Cross-Role Account Deactivation & Login-Blocking Architecture (`Student`, `Teacher`, `Parent`, `Admin`)**:
+    - [x] **Schema Columns Added (`schema.prisma`)**: Added `isActive Boolean @default(true)` and `status String @default("ACTIVE")` to `Student`, `Teacher`, `Parent`, and `Admin` models.
+    - [x] **PostgreSQL Synchronization (`npx prisma db push`)**: Synchronized live Supabase database and regenerated Prisma Client v6.19.3. All existing users safely default to active.
+    - [x] **Login Endpoint Guard (`auth.controller.ts`)**: Integrated account status check in `/auth/login` blocking deactivated users (`user.isActive === false || user.status === 'DEACTIVATED' || user.status === 'SUSPENDED'`) with a `403 Forbidden` response: `"Your account has been deactivated. Please contact your school administrator or support."`
+    - [x] **JWT Token Session Guard (`authMiddleware.ts`)**: Updated token verification middleware across all roles so any incoming request from an account with `isActive === false` is immediately rejected (`401 Unauthorized`), preventing continued API access with existing tokens.
+    - [x] **Typecheck Validation**: Verified `backend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Parent Dashboard Mobile Redesign (`/dashboard/parent`)**:
+    - [x] **Container Layout & Double Padding Elimination**: Replaced legacy `p-4 md:p-0` and `w-[95%] mx-auto flex flex-col gap-10` in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/page.tsx) with standard `w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500`, eliminating screen pinching and excessive gutters on mobile devices.
+    - [x] **Student Profile Hero Mobile Polish (`StudentHero.tsx`)**:
+        - Re-engineered layout into a mobile-first responsive container (`flex-col md:flex-row gap-5 sm:gap-6 md:gap-8`).
+        - Scaled avatar dynamically (`size-16 sm:size-20 md:size-24`) with ambient glowing ring and live status dot.
+        - Transformed scattered text into structured quick chips with Lucide icons (`Hash` for Student ID, `BookOpen` for Class, `MapPin` for School).
+        - Added 1-tap quick child switcher pills right in the hero banner when multiple children are linked (`children.length > 1`).
+        - Full-width touch-friendly "View Full Profile" CTA button on mobile viewports.
+    - [x] **2-Column Compact Insights Grid (`InsightsGrid.tsx`)**:
+        - Upgraded grid from `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` to `grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`, allowing parents on mobile to see all 4 key metrics (Attendance, Performance, Exams, Grades) at a glance without endless scrolling.
+        - Refined all 4 metric cards ([AttendanceCard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/AttendanceCard.tsx), [PerformanceCard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/PerformanceCard.tsx), [ExamsCard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/ExamsCard.tsx), [AssignmentsCard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/AssignmentsCard.tsx)) with mobile-proportional font sizing, mini-charts, radial progress rings, and truncated subtitles.
+    - [x] **Recent Academic Trend Chart Polish (`RecentPerformanceChart.tsx`)**:
+        - Replaced unstyled Google Material symbols with crisp Lucide React icons (`BarChart3`, `TrendingUp`, `AlertCircle`).
+        - Added comprehensive header tooltip detailing grade percentage normalization and color-coded threshold zones (>=70% Green, 50-69% Amber, <50% Red).
+        - Harmonized chart colors with parent orange palette and set responsive height (`h-[210px] sm:h-[260px] md:h-[280px]`).
+    - [x] **School Activity & Financial Status Polish (`Announcements.tsx` & `FinancialSummaryCard.tsx`)**:
+        - Replaced Material symbols with Lucide icons (`Bell`, `BellOff`, `Wallet`, `Lock`, `CreditCard`).
+        - Added comprehensive analytical tooltips to section headers.
+        - Passed `primaryColor="#f97316"` to [UsageLimitsCard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/subscription/UsageLimitsCard.tsx) to match Parent brand theme.
+    - [x] **TopNavBar Child Selector Availability (`TopNavBar.tsx`)**:
+        - Relaxed child selector visibility from `hidden xl:block` to `hidden sm:block min-w-[150px] md:min-w-[180px] lg:min-w-[200px]`, making it easily accessible on tablet and small laptop viewports.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors.
+
+- **Cross-Role Notification Feed Cards Mobile Responsive Fix (`Student`, `Parent`, `Admin`, `Teacher`)**:
+    - [x] **Date Overflow & Badge Squishing Elimination**: Resolved issue on [student/notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/notifications/page.tsx), [parent/notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/notifications/page.tsx), [admin/notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/notifications/page.tsx), and [teacher/notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/notifications/page.tsx) where notification date badges overflowed past the right border of cards on mobile viewports.
+    - [x] **Responsive Title & Date Stacking**: Upgraded header flex container to `flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-1.5`, allowing date badge to neatly stack below titles with `self-start` on narrow mobile screens while maintaining side-by-side alignment on desktop.
+    - [x] **Flex-Shrink & Truncation Guard**: Added `min-w-0 flex-1` to the title wrapper, enabling clean ellipsis truncation on long titles before colliding with dates, and added `shrink-0` to the "New" badge.
+    - [x] **Touch-Friendly Padding & Actions**: Adjusted card content padding on mobile to `p-4 sm:p-5 flex gap-3.5 sm:gap-5` and ensured delete action button is visible on touch screens (`opacity-100 sm:opacity-0 sm:group-hover:opacity-100`).
+    - [x] **Typecheck Validation**: Verified strict type safety across all updated notification pages.
+
+- **Cross-Role Top Navigation Notification Pop-Up Mobile Optimization (`NotificationCenter.tsx` & `NotificationDetailModal.tsx`)**:
+    - [x] **Role-Adaptive Visual Theme (`Student`, `Teacher`, `Parent`, `Admin`)**: Implemented dynamic theme tokens (`getRoleTheme` and `getModalRoleTheme`) automatically adapting primary badges, unread accent bars, notification counter pills, icon backgrounds, and interactive buttons to each role's color palette (Pink for Students, Emerald for Teachers, Orange for Parents, Blue for Admins).
+    - [x] **Dynamic Role Navigation**: Configured "View All Notifications" footer button and modal links to navigate to the authenticated role's notification center (`/dashboard/student/notifications`, `/dashboard/teacher/notifications`, `/dashboard/parent/notifications`, or `/dashboard/admin/notifications`).
+    - [x] **Viewport-Fitted Dropdown Width**: Replaced hardcoded `w-[380px]` with fluid responsive container `w-[calc(100vw-24px)] sm:w-[390px] max-w-[420px]` with `sideOffset={8}`, eliminating screen cutoff and horizontal scrollbars on mobile across all role top navbars.
+    - [x] **Internal Console TopBar Mobile Polish**: Updated [ConsoleTopBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/components/ConsoleTopBar.tsx) notification dropdown to `w-[calc(100vw-24px)] sm:w-80 max-w-[380px]` for mobile viewports.
+    - [x] **Replaced Dummy Bell Buttons with Live NotificationCenter**: Replaced static/dummy bell buttons across secondary headers in [parent/performance/components/Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/Header.tsx), [parent/performance/subject-performance/components/TopHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/subject-performance/components/TopHeader.tsx), [parent/my-children/details/components/Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/my-children/details/components/Header.tsx), and [student/documents/components/Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/documents/components/Header.tsx).
+    - [x] **Admin NotificationCenter Canonicalization**: Re-exported canonical [NotificationCenter](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/notifications/NotificationCenter.tsx) from [admin/components/NotificationCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/NotificationCenter.tsx) to guarantee single source of truth.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Sidebar Subscription Button Deactivation (`/dashboard/student`)**:
+    - [x] **Disabled Feature Flag**: Set `billing: false` in [studentFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/studentFeatureFlags.ts).
+    - [x] **Hidden in Navigation**: Updated `menuSections` in [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/app-sidebar.tsx) to explicitly filter out `item.featureKey === 'billing'`, ensuring the deactivated Subscription button is completely hidden from the student sidebar.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Settings Page Redesign & Mobile Polish (`/dashboard/student/settings`)**:
+    - [x] **Container Layout & Double Padding Elimination**: Replaced legacy `w-[95%] max-w-[1600px] mx-auto py-8 ... px-4 md:px-8` in [settings/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/settings/page.tsx) with standard `w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500`, eliminating mobile viewport pinching and horizontal scrolling bugs.
+    - [x] **Header with Tooltip & Action Button**: Added pink gradient icon badge (`from-pink-600 to-rose-500`), [HeaderTooltip](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/dashboard/HeaderTooltip.tsx), and touch-friendly "Revisit Onboarding" shortcut button.
+    - [x] **Pure Black Dark Mode (`zinc-950` / `zinc-900` / `border-zinc-800`)**: Converted all cards, tabs, inputs, and badges from slate to pure black `zinc-950`, `zinc-900`, and `border-zinc-800`.
+    - [x] **Mobile Tabs Switcher**: Upgraded `TabsList` into a 4-column responsive pill navigation (`Account`, `Academic`, `Security`, `Plan`) with pink active states (`data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400`).
+    - [x] **Account & Identity Tab**:
+        - Student identity card with verified badge, student ID code, and "View Profile" shortcut.
+        - Linked Academy card showing school name, verification status pill, and enrolled class badges with pink theme styling.
+    - [x] **Academic Faculty & Level Tab Fix (`/dashboard/student/settings`)**:
+        - Resolved department display issue where locked students saw an empty/placeholder "Choose Department" dropdown due to an ID/code mapping mismatch and lack of a dedicated locked display card.
+        - Switched from legacy `departmentService` to canonical `schoolService.getDepartments(schoolId)` with query key `['schoolDepartments', schoolId]` and 10min staleTime per rule 2.8.
+        - Updated locked state resolution to verify `profile?.departmentId || profile?.department?.id || profile?.department?.name`.
+        - Created a prominent enrolled department banner displaying `Building2` icon, verified department name, department code badge (e.g. `SCI`), and locked-in administration note, mirroring the Enrolled Level card.
+        - When locked, disabled/empty `<Select>` triggers are cleanly omitted from DOM, preventing confusing placeholder states.
+        - Synchronized grade level locked state styling for perfect visual balance.
+    - [x] **Security & Session Tab**:
+        - Password management card triggering [ChangePasswordModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/auth/ChangePasswordModal.tsx) with pink button styling.
+        - Two-factor authentication card triggering [TwoFactorSetup.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/auth/TwoFactorSetup.tsx) with live auth status.
+        - Embedded active login sessions tracking via [DeviceSessions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/DeviceSessions.tsx).
+    - [x] **Subscription & Plan Tab**:
+        - Linked institutional license and student plan card routing directly to billing.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Connect Hub Page Redesign & Mobile Polish (`/dashboard/student/linking`)**:
+    - [x] **Container Layout & Double Padding Elimination**: Replaced legacy `min-h-screen bg-[#F8FAFC] dark:bg-black/95 p-4 md:p-8 w-[95%] max-w-[1600px]` in [linking/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/page.tsx) with standard `w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500`, removing nested page gutters on mobile.
+    - [x] **Header Tooltip & Responsive Header**: Updated [StudentLinkingHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentLinkingHeader.tsx) with a pink gradient icon badge (`from-pink-600 to-rose-500`), [HeaderTooltip](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/dashboard/HeaderTooltip.tsx), and touch-friendly mobile action buttons.
+    - [x] **Digital Student Passport Upgrades**: Refactored [StudentLinkingPassport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentLinkingPassport.tsx) with student identity banner, 1-click personal linking code copy trigger, responsive QR code scan module, and pure black quick stats sidebar (`dark:bg-zinc-950`, `dark:border-zinc-800`).
+    - [x] **Interactive Tabs & Filter Bar**: Refactored [StudentLinkingTabs.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentLinkingTabs.tsx) with pink/purple active pill switchers, live pending count badges, and real-time search input with 1-click clear.
+    - [x] **Active Links & Pending Requests Grids**:
+        - Updated [StudentActiveLinksGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentActiveLinksGrid.tsx) and [StudentPendingRequestsGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentPendingRequestsGrid.tsx) with 2-to-4 column responsive layouts (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6`).
+        - Pure black card styling (`dark:bg-zinc-950`, `dark:border-zinc-800`), glowing animated connection pulse lines, and options dropdowns with code copying and revocation.
+    - [x] **Modals & Dialogs Modernization**:
+        - Refactored [StudentConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentConnectModal.tsx) with pure black dropdown selects and styled input fields.
+        - Refactored [StudentQRCodeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentQRCodeModal.tsx) with pink gradient header, dual QR passport panels (Parent Linking & Student Verification), and responsive max-height scroll bounds.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Attendance Registry Page Redesign & Mobile Polish (`/dashboard/student/attendance`)**:
+    - [x] **Container Layout & Double Padding Elimination**: Replaced legacy `relative flex min-h-screen w-full` and `p-6 lg:p-8 w-[95%] max-w-[1600px]` in [attendance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/attendance/page.tsx) with standard `w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6`, eliminating mobile viewport pinching and horizontal scrolling issues.
+    - [x] **Pure Black Dark Mode (`zinc-950` / `zinc-900` / `border-zinc-800`)**: Converted all cards, charts, headers, and modal dialogs from slate to pure black `zinc-950`, `zinc-900`, and `border-zinc-800`.
+    - [x] **Header Tooltip Integration**: Integrated comprehensive `HeaderTooltip` components across the page header, attendance overview chart, and each statistical card (`Present Sessions`, `Unexcused / Absent`, `Late Arrivals`, and `Evaluated Days`).
+    - [x] **StatCard System Upgrades**: Upgraded metric cards with Lucide icons (`CheckCircle2`, `XCircle`, `Clock`, `Calendar`), count sub-descriptions, custom color tokens, and a responsive **2-column grid on mobile** (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6`) with scaled padding, typography, and icon bounds.
+    - [x] **Attendance Trend Chart & Time-Range Controls**:
+        - Pink gradient fill (`#ec4899`) on the presence area chart, smooth line plots for tardiness and absences.
+        - Dark-mode tooltip with zinc-900 translucent styling and shadow.
+        - Time-range selector (`Day`, `Week`, `Month`, `Term`) using pink active pill styling (`bg-pink-600 text-white`).
+    - [x] **Grid & Table View Switcher (Defaults to Grid on Mobile)**:
+        - Added client-side viewport check (`window.innerWidth < 768`) defaulting to `'grid'` on mobile screens.
+        - Card view for mobile/touch devices and dense tabular ledger for desktop view.
+        - Status filter pills (`ALL`, `PRESENT`, `LATE`, `ABSENT`) and real-time search filtering.
+        - Integrated [Pagination.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/Pagination.tsx) with `theme="pink"`.
+    - [x] **Institutional Policy & Term Filters**:
+        - Info banner detailing the school's 75% attendance threshold for examination eligibility.
+        - Date-filtered modal dialogs for `This Month`, `Last Month`, and `This Term` attendance audits.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Termly Results Page Redesign & Mobile Polish (`/dashboard/student/result/termly`)**:
+    - [x] **Container Layout & Double Padding Elimination**: Replaced `w-[95%] mx-auto py-8` in both [termly/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/result/termly/page.tsx) and [termly/view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/result/termly/view/page.tsx) with `w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6`, removing side gutter pinching on mobile screens.
+    - [x] **Pure Black Dark Mode (`zinc-950` / `zinc-900` / `border-zinc-800`)**: Converted all background and border tokens from `slate-900`/`slate-800` to pure black `zinc-950`, `zinc-900`, and `border-zinc-800`.
+    - [x] **Header Tooltip & Quick Summary Metrics Grid**:
+        - Integrated contextual `HeaderTooltip` next to the main page title explaining official termly report cards and grade statements.
+        - Created a 4-metric summary bar (**Published Terms**, **Total Subjects**, **Fully Released Coverage**, and **Academic Session**) with pink/indigo/emerald accents that adapts from 2-columns on mobile to 4-columns on desktop.
+    - [x] **Grid & Table View Switcher (Defaults to Grid on Mobile)**:
+        - Added client-side viewport check (`window.innerWidth < 768`) defaulting to `'grid'` on mobile while preserving the ability to toggle between visual card perspective and dense tabular ledger.
+        - Added instant client search input filtering by class name, session, or term.
+    - [x] **Term Result Sheet View Page Refinement (`termly/view`)**:
+        - Added mobile Card vs Table view toggle for subject scores with WAEC letter grade pills (A1-F9) and component scores (Assignment, CA/Quiz, Exam).
+        - Upgraded back button, hero gradient banner, and aggregate summary footer with printing support.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Profile Page Redesign & Mobile Polish (`/dashboard/student/profile`)**:
+    - [x] **Container & Compounding Padding Elimination**: Replaced restrictive `w-[95%] max-w-[1600px] mx-auto py-8 ... px-4 md:px-8` layout in both the loading skeleton and main return with `w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6`, eliminating mobile side pinching and horizontal scroll bugs.
+    - [x] **Pure Black Dark Mode (`zinc-950` / `zinc-900`)**: Converted all background and border tokens from `slate-950`/`slate-900` to pure black `zinc-950/80`, `zinc-900`, and `border-zinc-800` matching the student dashboard design constitution.
+    - [x] **Hero Banner & Avatar Mobile Touch Targets**:
+        - Re-engineered cover banner (`h-40 sm:h-52 md:h-64`) with vibrant pink-to-rose gradient fallback (`from-pink-500 via-rose-500 to-pink-600`) and touch-accessible mobile edit trigger (`opacity-95 sm:opacity-0 sm:group-hover:opacity-100`).
+        - Avatar with pure black border and mobile tap badge (`Edit3`), plus verified student checkmark badge.
+        - Added active scholar status badge and prefect role recognition tag (`Award` icon).
+        - Added quick-access "Edit Profile", "Security" (with dynamic 2FA green indicator), and "Support" buttons to the hero identity bar.
+    - [x] **Responsive Quick Stats Grid**:
+        - Converted Reg ID, Cohort Level, and Department cards to a balanced 3-column mobile-friendly grid (`grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-6`).
+        - Integrated contextual `HeaderTooltip` components to each stat card explaining official academic codes, syllabus grade levels, and department designations.
+    - [x] **Section Cards & Comprehensive Header Tooltips**:
+        - **Personal Data**: Added HeaderTooltip explaining legal name records and official identity maintenance with responsive 2-column info layout.
+        - **Extracurricular & Bio**: Added HeaderTooltip explaining club affiliations and physical metrics, along with guardian emergency contact sub-card and tooltip.
+        - **Academy Institution**: Styled with subtle pink border/tint, verified compliance checkmark, and institution affiliation HeaderTooltip.
+        - **Services & Shortcuts**: Direct navigation quick-actions for Home Address, Emergency Contact, Grades & Results, and Attendance with HeaderTooltip.
+    - [x] **Edit Modal Mobile Refinement**:
+        - Re-styled modal to pure black `dark:bg-zinc-950`, sleek `border-zinc-800`, responsive max height `max-h-[88vh]`, and horizontal scrollable tabs (`scrollbar-hide`).
+        - Zero TypeScript `any` types by typing `ExtendedStudentProfile`.
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Dashboard — Grid View Option & Pink Pagination Focus**:
+    - [x] **Assessment Grid / Table View Option (`/dashboard/student/exams&quizzes`)**:
+        - Updated [AssessmentList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/components/AssessmentList.tsx) to support `viewMode: 'grid' | 'table'`. When in Grid mode, assessments render as a responsive multi-column card grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6`) featuring pure black card backgrounds (`dark:bg-zinc-950/80`), icon badges, 3-metric statistics bars (duration, question count, color-coded score), status pills, and interactive links.
+        - Updated [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/page.tsx) with a `viewMode` state toggle in the toolbar alongside Search and TimeFilter, featuring `LayoutGrid` and `List` icon buttons styled with pink accents.
+        - **Default Grid on Mobile**: Automatically detects viewport width `< 768px` on client mount and initializes `viewMode` to `'grid'`, ensuring mobile devices default to touch cards while giving users the freedom to toggle views.
+    - [x] **Student Grades Page Grid View & Dropdown Select Re-arrangement (`/dashboard/student/grades`)**:
+        - **Dropdown Selects Re-arranged**: Re-architected Session and Term filter dropdowns from unaligned header text spans into a balanced side-by-side 2-column responsive layout (`grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3`), featuring custom `ChevronDown` dropdown indicators, sleek dark mode borders (`dark:border-zinc-800`), focus rings (`focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500`), and zero text wrapping issues on mobile.
+        - **Grid View Option Across All Grade Tabs**: Added `viewMode: 'grid' | 'table'` state to [grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx) defaulting to `'grid'` on mobile (`window.innerWidth < 768`). Kept clean tab-level `LayoutGrid` and `List` toggle buttons in each content header (`Main Examinations`, `Assessments`, `Final Result Grades`) while keeping the top header exclusively focused on the Session and Term filter dropdowns.
+        - **Responsive Card Grids**: Built dedicated card grids (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4`) for:
+            - **Main Examinations**: Grade badge circle (`A`, `B`, `C`, `F`), exam title/code, score chip, subject papers count, and direct link.
+            - **Assessments (Continuous Assessments/Quizzes/Assignments)**: Assessment icon, subject name, creation date, score pill, type badge, and details link.
+            - **Final Result Grades**: Published subject title, class, term/session, WAEC letter grade, total percentage, and breakdown trigger.
+    - [x] **Student Dashboard Pagination Pink Focus & Theming**:
+        - Enhanced [Pagination.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/Pagination.tsx) so `theme="pink"` applies vibrant pink gradient (`from-pink-500 via-rose-500 to-pink-600`), ring offsets, and high-visibility focus states (`focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500 dark:focus:border-pink-500 focus:outline-none`) across active page numbers, inactive numbers, and Previous/Next buttons.
+        - Updated all student dashboard pages with pagination to explicitly pass `theme="pink"`:
+            - `/dashboard/student/exams&quizzes`
+            - `/dashboard/student/grades` (all 3 tabs: Exams, Continuous Assessments, and Final Results)
+            - `/dashboard/student/notifications`
+            - `/dashboard/student/linking`
+            - `/dashboard/student/my-classes/[id]/components/subjects`
+    - [x] **Typecheck Validation**: Verified entire `frontend` passes `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Student Grades Page — Mobile Responsiveness & Tooltips (`/dashboard/student/grades`)**:
+    - [x] **Compounding Padding Elimination**: Replaced nested `min-h-screen bg-[#F8FAFC]`, `p-6 lg:p-10 pb-32`, and `w-[95%] max-w-[95%] mx-auto` inside [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx) with `w-full space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6` to remove screen pinching and side gutters on mobile.
+    - [x] **2-Column Mobile Grid for Metric Cards**: Converted the 4 summary metrics (**Overall GPA**, **Distinction Track**, **Exams Taken**, and **Assessments**) from a single-column vertical stack to a balanced 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`). Added context-rich `HeaderTooltip` components to each card.
+    - [x] **Responsive Tab Switcher**: Made the main tab bar (`exams`, `assessments`, `transcript`, `final`) and the assessments sub-tab bar (`ALL`, `CA`, `ASSIGNMENT`, `TEST/QUIZ`, `SUBJECT PAPER`) horizontally scrollable with compact touch targets and zero layout clipping.
+    - [x] **Header Tooltips Across All Tab Views**: Integrated analytical `HeaderTooltip` explanations into:
+        - **Grades Overview**: Overall academic grade ledger.
+        - **Main Examinations**: Formal exam papers with expandable subject paper accordion views.
+        - **Assessments**: Continuous assessment, tests, and homework breakdown.
+        - **Final Result Grades**: Published report cards with WAEC letter grades (A1-F9) and behavioral marks.
+        - **Academic Transcript**: Official transcript compilation with AI remarks and PDF export.
+    - [x] **Modals & Pure Black Dark Mode**: Styled the Class Top 5 leaderboard modal and the Final Result distribution modal with pure black (`dark:bg-zinc-950`, `dark:border-zinc-800`), verified with `npx tsc --noEmit` (0 errors).
+
+
+- **Student Exams & Quizzes Page — Mobile Responsiveness & Tooltips (`/dashboard/student/exams&quizzes`)**:
+    - [x] **Compounding Padding Elimination**: Replaced nested `flex min-h-screen`, `flex-1 p-6 lg:p-8`, and `w-[95%]` in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/page.tsx) with `w-full space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6` to remove horizontal gutter clipping on mobile screens.
+    - [x] **Mobile Assessment Cards (`AssessmentList.tsx`)**: Upgraded assessment presentation so on viewports `< 768px`, assessments render as touch-friendly cards displaying subject badges, schedule dates, live countdowns, duration/question chips, score highlights, and status pills, avoiding wide table scrolling on phones. Retained full tabular view on tablet/desktop.
+    - [x] **Balanced 2-Column Mobile Stats Grid (`StatsCards.tsx`)**: Replaced single-column mobile stack with a 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`): **Upcoming**, **Completed**, **Average Score**, and **Class Position**, each equipped with contextual `HeaderTooltip` components.
+    - [x] **Academic Standing Progress Polish (`PerformanceChart.tsx`)**: Scaled progress circle to responsive dimensions (`160px`), added contextual `HeaderTooltip` for cohort percentile and rank, and styled with pure black background.
+    - [x] **Assessment Search & Filter Bar**: Added a live search input to filter exams, quizzes, CAs, and assignments by title or subject, alongside responsive category tabs and time filter toggles with `HeaderTooltip` explanations.
+    - [x] **Zero TypeScript Errors & Pure Black Dark Mode**: Replaced `any` in assessment and attempt mappings with explicit interfaces (`RawExamItem`, `RawAssignmentItem`, `RawSubjectPaper`, `RawAttempt`), ensuring clean `npx tsc --noEmit` passage.
+
+
+- **Student My Classes Page — Mobile Responsiveness & Tooltips (`/dashboard/student/my-classes`)**:
+    - [x] **Compounding Padding & Width Fix**: Eliminated nested `min-h-screen bg-slate-50 p-6 lg:p-10 pb-40` and restrictive `w-[90%] mx-auto` inside [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/page.tsx). Replaced with `w-full space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6`, giving mobile screens full edge-to-edge content area without redundant margins.
+    - [x] **Academic Overview Mount & Responsive Polish (`AcademicSummary.tsx`)**: Mounted the unrendered `AcademicSummary` hero section with responsive padding (`p-6 sm:p-8 md:p-12`), rose/pink branding, full-width mobile action buttons (`w-full sm:w-auto`), and direct links to `/dashboard/student/timetable` and `/dashboard/student/exams&quizzes`.
+    - [x] **Real Metric Stats Grid (`ClassStats.tsx`)**: Removed hardcoded clinic placeholder text (`Md Rayhan Islam ▼`, `Central Clinic, Dhaka ▼`) and static numbers. Built a responsive 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`) displaying live data: **Enrolled Classes**, **Active Subjects**, **Exam Attempts**, and **Stream Position**, each equipped with contextual `HeaderTooltip` components.
+    - [x] **Interactive Controls & View Mode Toggle (`ClassHeader.tsx`)**: Added a functional live search input for filtering classes by title, subject, teacher, or description, plus a dual **Grid View / Table View** toggle that automatically defaults to Grid on mobile screens (`window.innerWidth < 768`).
+    - [x] **Responsive Card Grid & Refined Table**:
+        - Created [ClassCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassCard.tsx) for the Grid view with subject tags, room location pills, teacher avatar/name, schedule pills, and a "View Class" button.
+        - Refactored [ClassTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassTable.tsx) to remove dummy `Situation` bells and non-functional check/cross icons, replacing them with a streamlined table with "View Details" action buttons.
+        - Updated [ClassList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassList.tsx) to dynamically render grid or table with matching responsive skeletons and empty state.
+    - [x] **Pure Black Dark Mode & TypeScript Strictness**: Styled with `dark:bg-zinc-950/80` and `dark:border-zinc-800`, fully typed enrollment and grade interfaces, achieving zero TypeScript compilation errors.
+
+
+- **Student Dashboard — Mobile Responsiveness & Header Tooltips (`/dashboard/student`)**:
+    - [x] **Double-Padding Elimination**: Removed compounding `min-h-screen bg-slate-50 p-4 md:p-8 lg:p-10 pb-32` from `student/page.tsx` since `student/layout.tsx` already wraps `{children}` in `p-4 md:p-6 lg:p-8`. Changed outer container to `w-full space-y-6 sm:space-y-8 font-sans pb-12 md:pb-6`, reclaiming 32px-64px of blank side margins on mobile screens.
+    - [x] **Mobile Assessment Call to Action**: Unhid the "View Details" button in the Recent Activity assessment card (which previously was `hidden md:flex`, making it completely invisible on mobile) by making it full-width on mobile (`flex w-full md:w-auto shrink-0 justify-center md:justify-start`).
+    - [x] **Comprehensive Header Tooltips (`comprehensive_header_tooltips` skill)**:
+        - Created student-themed [HeaderTooltip.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/dashboard/HeaderTooltip.tsx) with dark glassmorphic card styling and rose/pink hover states.
+        - Integrated tooltips across all key metrics and sections:
+            - **Exams Taken**: Total completed assessments and graded quizzes logged on Qefas Hub.
+            - **Active Subjects**: Number of registered course subjects currently configured in your class curriculum.
+            - **Current GPA**: Cumulative Grade Point Average calculated on a standard 5.0 scale across all evaluated exams and assignments.
+            - **Overall Mastery**: Aggregated syllabus proficiency percentage computed from your scores across all examined subjects.
+            - **Recent Activity**: Score breakdown, performance progress bar, and direct access to question-level analysis.
+            - **Enrolled Subjects**: Class curriculum subjects mapped to academic program with dialog details on tap.
+            - **Performance Overview**: Combined longitudinal trajectory and historical exam logs.
+            - **Performance Trend**: Chronological scoring progression tracking normalized exam percentages and assignment grades.
+            - **Academic History**: Verified exam attempts with WAEC-standard letter grades (A1, C5, F9).
+            - **Subject Mastery**: Multi-dimensional radar chart measuring competency across all evaluated subject domains.
+            - **Latest Assignments**: Active homework tasks, project submissions, and graded coursework assigned by teachers.
+    - [x] **Pure Black Dark Mode & Skeleton Alignment**: Updated cards, dialogues, and loading skeletons to pure-black dark mode (`dark:bg-zinc-950/80`, `dark:border-zinc-800`, `dark:bg-zinc-900`), eliminating white glare.
+    - [x] **TypeScript Strict Adherence**: Fully typed all raw attempt and grade records, removed `any` types from `analysis`, `gpa`, and chart tooltips.
+
+
+- **Teacher Dashboard — Mobile Responsiveness & Bottom Navigation**:
+    - [x] **Responsive Insights Grid (`InsightsGrid.tsx`)**: Refactored the top 5 stats cards to a balanced 2-column mobile grid (`grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6`), eliminating the single-column long vertical scroll. The 5th card spans 2 columns on mobile/tablet for symmetrical alignment. Scaled card paddings, font sizes, trend indicators, and badges cleanly. Replaced `any` types with typed `CardItem` interface.
+    - [x] **Skeleton Synchronization (`DashboardPage.tsx`)**: Updated `DashboardSkeleton` to match the exact same responsive grid geometry as `InsightsGrid`. Removed unused `StatsCards` import. Adjusted page wrapper padding on mobile from `p-6` to `p-4 sm:p-6 md:p-8`.
+    - [x] **Cards Mobile Responsiveness**:
+        - `TeacherHero.tsx`: Scaled padding to `p-5 sm:p-8 md:p-10` and heading size on mobile.
+        - `AssignmentsExams.tsx`: Adapted container padding (`p-4 sm:p-6 md:p-8`), rounded corners, item rows, icons, and action buttons for compact mobile viewports.
+        - `TeacherSchedule.tsx`: Added responsive paddings, timeline dot sizing, and item spacing.
+        - `PerformanceAnalytics.tsx`: Scaled card padding and time-range filter button controls.
+        - `StudentPerformanceWidget.tsx`: Optimized avatar sizing and row spacing on mobile.
+        - `RecentPersonalActivity.tsx`: Scaled icon boxes and card padding for small screens.
+        - `MessagesAnnouncements.tsx`: Scaled communication hub card and status badges.
+        - `QuickTool` (`DashboardPage.tsx`): Replaced `any` with `React.ElementType` and tuned mobile dimensions.
+    - [x] **Teacher Bottom Navigation (`TeacherBottomNav.tsx`)**: Created `TeacherBottomNav` component with the emerald role palette (`#059669`) linking to the 5 primary teacher destinations: Home (`/dashboard/teacher`), Classes (`/dashboard/teacher/my-classes`), Students (`/dashboard/teacher/students`), Exams (`/dashboard/teacher/exams&quizzes`), and Grades (`/dashboard/teacher/grades`).
+    - [x] **Teacher Layout Integration (`layout.tsx`)**: Integrated `TeacherBottomNav` into `SidebarProvider` with `pb-[4.5rem] md:pb-0` on `SidebarInset` to prevent bottom-nav content collisions on mobile devices.
+    - [x] **Comprehensive Header Tooltips (`comprehensive_header_tooltips` skill)**:
+        - Created reusable [HeaderTooltip.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/HeaderTooltip.tsx) with dark glassmorphic container, emerald hover states, and Radix Tooltip primitives.
+        - Added analytical, user-empowering tooltips across all cards:
+            - **Total Students, Total Classes, Avg Performance, Upcoming Classes, Attendance Rate** (`InsightsGrid.tsx`)
+            - **Assessments** (`AssignmentsExams.tsx`)
+            - **Timeline / Daily Agenda** (`TeacherSchedule.tsx`)
+            - **Academic Velocity** (`PerformanceAnalytics.tsx`) — dynamically incorporates selected time range (`week`, `month`, `semester`)
+            - **Academic Pulse / Top Performers** (`StudentPerformanceWidget.tsx`)
+            - **Recent Activity** (`RecentPersonalActivity.tsx`)
+            - **Inbox & Alerts** (`MessagesAnnouncements.tsx`)
+            - **Quick Tools** (`DashboardPage.tsx`)
+            - **Hero Overview** (`TeacherHero.tsx`) — dynamically reflects active term and class count.
+    - [x] **Teacher My-Classes Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/my-classes`)**:
+        - `PageHeader.tsx`: Responsive layout (`flex-col sm:flex-row`), scaled action buttons, and added `HeaderTooltip` for Academic Registry.
+        - `MyClassesPage.tsx`:
+            - Refactored top stat cards from single column on mobile to a clean 2-column grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`).
+            - Upgraded `StatCard` with responsive icon sizing, compact typography, and analytical `HeaderTooltip` for **Active Modules**, **Enrolled Scholars**, **Avg. Session Attendance**, and **Pending Assessments**.
+            - Made Class Intelligence filter card responsive (`p-4 sm:p-6`) with `HeaderTooltip` explaining dynamic filtering and view toggling.
+            - Set **Grid View** as the default layout on mobile viewports (`window.innerWidth < 768`) while retaining user toggle capability.
+            - Adjusted main page wrapper padding to `p-4 sm:p-6 md:p-8 lg:p-10` with matching section spacing.
+        - `ClassCard.tsx`: Optimized mobile card padding (`p-4 sm:p-6`), banner image height (`h-28 sm:h-32`), metric bar spacing (`p-3 sm:p-4 mb-4 sm:mb-6`), and button touch target.
+        - `ClassGrid.tsx`: Reduced huge mobile spacing (`gap-10`) to responsive `gap-4 sm:gap-6 lg:gap-8`.
+        - `FilterChips.tsx`: Scaled filter pill buttons (`h-9 sm:h-10`, `px-3 sm:px-4`) and clear filters button for compact mobile viewports without overflowing.
+        - `ClassesSkeleton.tsx`: Synced grid geometry and item sizing with the responsive `ClassGrid` and `ClassList`.
+        - `ClassList.tsx`: Scaled table cell padding (`px-3 sm:px-6 py-3 sm:py-4`) and image sizing for mobile viewports.
+    - [x] **Teacher Students Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/students`)**:
+        - `StudentPage.tsx`:
+            - Added top stat cards in a responsive 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`): **Total Scholars**, **Avg. Attendance**, **Academic Average**, and **Active Cohorts**, each equipped with comprehensive `HeaderTooltip` components.
+            - Configured **Grid View** as the automatic default on mobile devices (`window.innerWidth < 768`) via `useEffect`, keeping List View default on desktop.
+            - Adjusted main page wrapper padding to `p-4 sm:p-6 md:p-8 lg:p-10`.
+            - Strongly typed student export handler, eliminating banned `any` types.
+        - `HeaderTitle.tsx`: Added `HeaderTooltip` next to "Students" heading with detailed context and scaled font sizes for small screens.
+        - `HeaderActions.tsx`: Transformed actions into an adaptive mobile grid where secondary actions share row 1 and primary "Quick Attendance" spans full-width below.
+        - `ControlsBar.tsx`: Redesigned as a comprehensive "Scholar Directory" card with icon badge, title, `HeaderTooltip`, responsive view toggle, and unified search/filter layout.
+        - `FilterChips.tsx`: Made dropdown full-width on mobile (`w-full sm:w-auto h-12`) and replaced `any` types with explicit `ClassItem` interface.
+        - `StudentCard.tsx`: Optimized card padding (`p-4 sm:p-6`), avatar sizing (`w-14 h-14 sm:w-16 sm:h-16`), metric spacing, and button touch target.
+        - `StudentGrid.tsx`: Reduced mobile grid gap from `gap-6` to `gap-4 sm:gap-6` and fixed `error` typing.
+        - `StudentList.tsx`: Replaced `any` with `unknown` and adapted table cells (`px-3 sm:px-6 py-3 sm:py-4`) and badges for mobile viewports.
+        - `StudentSkeleton.tsx`: Synced grid geometry and skeleton card dimensions with responsive student card styles.
+    - [x] **Teacher Exams & Quizzes Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/exams&quizzes`)**:
+        - `PageHeader.tsx`: Responsive title/action flex layout (`flex-col sm:flex-row`), full-width mobile button, and added `HeaderTooltip` for assessment registry command center.
+        - `ExamsQuizzesOverview.tsx`:
+            - Added top summary stat cards in a responsive 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`): **Total Assessments**, **Active / Published**, **Draft Assessments**, and **My Modules**, each equipped with comprehensive `HeaderTooltip` components following the `comprehensive_header_tooltips` skill.
+            - Configured **Grid View** as the automatic default layout on mobile devices (`window.innerWidth < 768`) via `useEffect`, while preserving user toggle preferences.
+            - Upgraded category tabs with full-width mobile container (`w-full`), smooth horizontal scrolling (`no-scrollbar scroll-smooth overscroll-x-contain`), `shrink-0` & `whitespace-nowrap` guard against text breakage, `whileTap={{ scale: 0.96 }}` touch feedback, active count badges, and dedicated full-width mobile view layout switcher row.
+            - Scaled main page wrapper padding to `p-4 sm:p-6 md:p-8 lg:p-10`.
+        - `ExamsTable.tsx`:
+            - Enhanced Grid container to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-2` and card padding to `rounded-2xl sm:rounded-3xl p-4 sm:p-5`.
+            - Made list view cards stack cleanly on mobile (`flex-col lg:flex-row`, items start-aligned, metrics row wrapping with responsive borders, status + action buttons grouped properly).
+            - Made expanded subject paper rows responsive on small viewports with wrapped teacher tags and spaced metrics.
+        - `FilterChips.tsx`: Redesigned and rearranged the filter toolbar into a cohesive 2-column mobile grid and flex-row desktop layout with emerald styling:
+            - Ordered filters logically: **Class** (`GraduationCap`), **Subject** (`BookOpen`), **Status** (`Sparkles`), and **Date / Timeframe** (`Calendar`), with an active filter badge and dedicated **Reset Filters** button (`FilterX`).
+            - Replaced fragile hover menus with robust touch-friendly click-to-toggle dropdowns, animated popovers via `framer-motion`, and outside-click dismissal.
+            - Anchored dropdown popover coordinates (`top-full`, `z-50`, with right-aligned mobile positioning for column 2 items) to eliminate screen-edge overflow and clipping.
+        - `ExamsSkeleton.tsx`: Synced row skeleton padding and border-radius (`p-4 sm:p-6 rounded-xl sm:rounded-2xl`) with responsive card styling.
+    - [x] **Teacher Grades Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/grades`)**:
+        - `PageHeader.tsx`: Responsive layout (`flex-col sm:flex-row`), scaled action buttons (AI OCR Camera, CSV Upload, Settings, and Record Grade), and added `HeaderTooltip` for academic gradebook console.
+        - `GradeStatsCards.tsx`:
+            - Refactored top stat cards from single column on mobile to a responsive 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`).
+            - Added comprehensive `HeaderTooltip` components following the `comprehensive_header_tooltips` skill: **Class Average**, **Completion**, **Top Students**, and **To Review**.
+            - Scaled paddings and typography for compact mobile viewports (`p-4 sm:p-5`, `text-xl sm:text-2xl md:text-3xl`).
+        - `GradeCard.tsx`: Created a modern, mobile-responsive card component for the new Grid View displaying scholar avatar, name, student code, big letter grade, subject paper, assessment type, score metrics, and actions menu.
+        - `GradesTable.tsx`: Integrated dual-view support (Grid View & Table View) with responsive card grid and loading skeleton states.
+        - `TableToolbar.tsx`: Made search bar full width on mobile, aligned Filter/Sort controls, and integrated a Grid / Table view toggle with `HeaderTooltip`.
+        - `Filters.tsx`: Made dropdown filters responsive on small viewports with full touch targets and high z-index.
+    - [x] **Teacher Subjects Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/subjects`)**:
+        - `PageHeader.tsx`: Responsive title/action flex layout, scaled action buttons, and added `HeaderTooltip` for academic curricula directory.
+        - `SubjectsPage.tsx`:
+            - Added top summary stat cards in a responsive 2-column mobile grid (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6`): **Assigned Subjects**, **Active Cohorts**, **Avg. Syllabus Progress**, and **Total Scholars**, each equipped with comprehensive `HeaderTooltip` components.
+            - Configured **Grid View** as the automatic default layout on mobile devices (`window.innerWidth < 768`) via `useEffect`.
+            - Scaled main page wrapper padding to `p-4 sm:p-6 md:p-8 lg:p-10`.
+        - `SubjectCard.tsx`: Optimized mobile card padding, tag sizing, and button touch targets.
+        - `SubjectsSkeleton.tsx`: Synced grid geometry and skeleton card dimensions with responsive subject card styles, ensuring pure black dark mode backgrounds.
+    - [x] **Teacher Assignments Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/assignments`)**:
+        - `PageHeader.tsx`: Made `action` ("+ Create Assignment" button) visible on mobile screens (`flex items-center w-full sm:w-auto` instead of `hidden md:block`), scaled typography responsively (`text-2xl sm:text-3xl md:text-4xl`), and integrated `HeaderTooltip`.
+        - `page.tsx`:
+            - Added 4 top summary stat cards in a responsive 2-column mobile / 4-column desktop grid: **Active Deliverables** (`BookOpen`, Emerald), **Submissions Received** (`GraduationCap`, Blue), **Action Required** (`Clock`, Amber), and **Turn-in Rate** (`CheckCircle2`, Purple), each equipped with comprehensive `HeaderTooltip` components following the `comprehensive_header_tooltips` skill.
+            - Configured **Grid View** as automatic default layout on mobile viewports (< 768px) via `useEffect`, syncing state with filter view toggle buttons.
+            - Added analytical `HeaderTooltip` for both the main header and the Assignment Registry directory filter card.
+            - Scaled main page wrapper padding to `p-3.5 sm:p-6 md:p-8` with max width `max-w-[1600px]`.
+            - Enhanced mobile empty state with clear guidance and a direct "Create Assignment" CTA button.
+        - `AssignmentCard.tsx`: Sized container padding responsively to `p-4 sm:p-6 md:p-8` for mobile screens, optimized badge/action spacing, and aligned theme backgrounds with `bg-white dark:bg-emerald-950/40`.
+        - `AssignmentFilters.tsx`:
+            - Replaced cramped inputs and selects with touch-friendly `h-11` controls and legible `text-xs sm:text-sm font-semibold` labels.
+            - Arranged filters into responsive mobile grid (`grid-cols-1 sm:grid-cols-3 gap-2.5 w-full lg:w-auto`).
+            - Connected `currentView` prop to visually reflect active Grid / List view selection.
+        - `AssignmentsSkeleton.tsx`: Overhauled dark mode styling to use pure black backgrounds (`dark:bg-black`, `dark:border-zinc-800`) with dark gray placeholders (`dark:bg-zinc-900`) with zero white glare.
+    - [x] **Teacher Dashboard — Unified Pagination System (`TeacherPagination.tsx`)**:
+        - Created canonical shared [TeacherPagination.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TeacherPagination.tsx) with Lucide `ChevronLeft` and `ChevronRight` icons, responsive layout (`flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4`), touch-friendly targets, and emerald styling (`bg-emerald-500 text-white shadow-sm shadow-emerald-500/30`, `dark:bg-emerald-950/40`, `dark:border-emerald-800/50`).
+        - Integrated dynamic numbered buttons with intelligent ellipsis calculation (`1, 2, 3 ... N`) and customizable item nouns via `itemName` prop (`"assignments"`, `"scholars"`, `"grade records"`, `"assessments"`, `"submissions"`).
+        - Applied across all teacher dashboard pages to ensure consistent design and behavior ("rhyming"):
+            - **Assignments** (`/dashboard/teacher/assignments`): Upgraded `Pagination.tsx`, preview pages, and student submissions table.
+            - **Students** (`/dashboard/teacher/students`): Replaced simple `< 1 / 3 >` pagination with the full numbered `TeacherPagination`.
+            - **Grades** (`/dashboard/teacher/grades`): Replaced ad-hoc `TablePagination` with `TeacherPagination`.
+    - [x] **Teacher Final Results & Records Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/records`)**:
+        - `RecordsStatsCards.tsx`: Created responsive 4-KPI stat cards in a balanced 2-column mobile / 4-column desktop grid with comprehensive `HeaderTooltip` components: **Total Subjects / Students**, **Completed Records**, **Pending Drafts**, and **Cohort Average Score**.
+        - `SubjectResultCard.tsx`: Designed mobile-responsive grid cards for Subject Final Results displaying class badges, subject names, session & term, published status pills, and direct "Edit Sheet" / "Preview" action buttons.
+        - `StudentResultCard.tsx`: Created mobile-responsive grid cards for Student Final Results displaying scholar avatar, class, term, average score, class rank position, and "View Report Card" actions.
+        - `CreateResultDialog.tsx`: Transformed the "Add Final Result" configuration modal into a mobile-adaptive dialog with collapsible column layouts (`grid-cols-1 sm:grid-cols-3`), scrollable container (`max-h-[90vh] overflow-y-auto`), pure black dark mode styling, and `HeaderTooltip` for assessment weights.
+        - `RecordsSkeleton.tsx`: Pure black dark-mode loading skeleton (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) supporting both Grid and Table view modes.
+        - `page.tsx`:
+            - Replaced hardcoded static filters with live dynamic dropdowns for Class, Session, Term, and Status connected to data hooks.
+            - Added live client-side search across subject names, scholar names, and classes.
+            - Integrated view mode switcher with automatic **Grid View** default on mobile viewports (< 768px).
+            - Replaced ad-hoc pagination controls with the unified `TeacherPagination` component.
+            - Added analytical `HeaderTooltip` for page header, stat cards, and directory controls.
+    - [x] **Teacher Linking Hub — Mobile Responsiveness & Tooltips (`/dashboard/teacher/linking`)**:
+        - `TeacherLinkingHeader.tsx`: Scaled typography to `text-2xl sm:text-3xl md:text-4xl font-black`, added comprehensive `HeaderTooltip` for institutional code linking and QR badge onboarding, and converted actions to a responsive mobile layout.
+        - `TeacherLinkingStats.tsx`: Redesigned stats into a balanced 2-column mobile / 3-column desktop grid with comprehensive `HeaderTooltip` components on each metric card (**Active Connections**, **Pending Requests**, **Active Workspace Context**), with the workspace card spanning 2 columns symmetrically on mobile.
+        - `TeacherLinkingCodeCards.tsx`: Made code pills and copy buttons responsive on small mobile viewports (360px-390px) and added `HeaderTooltip` explaining direct scholar/guardian connection workflows.
+        - `TeacherLinkingTabs.tsx`: Upgraded tab categories (Network/Classroom), status pills (Connected/Pending), and search bar into a responsive mobile layout with touch-friendly `h-10 sm:h-11` targets.
+        - `TeacherActiveLinksGrid.tsx` & `TeacherPendingRequestsGrid.tsx`: Enhanced grid breakpoints (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`) and pure black dark-mode empty states.
+        - `page.tsx`:
+            - Replaced generic pagination with unified `TeacherPagination` with dynamic item naming (`"connections"` / `"requests"`).
+            - Upgraded `LinkingSkeleton` to use pure black backgrounds (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) removing white glare.
+    - [x] **Teacher Notifications Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/notifications`)**:
+        - `NotificationStatsCard.tsx`: Styled with theme-aligned emerald palette, responsive layout, category breakdown indicators, and added `HeaderTooltip` components.
+        - `NotificationsSkeleton.tsx`: Overhauled `NotificationFeedSkeleton` and `NotificationStatsSkeleton` with pure black dark-mode styling (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) removing white glare.
+        - `page.tsx`:
+            - Added analytical `HeaderTooltip` next to "Notifications" heading explaining real-time broadcasts and alert classifications.
+            - Enhanced mobile responsiveness of filter pills (`h-9 sm:h-10`, horizontal smooth scroll with no scrollbar clipping) and search input (`h-10 sm:h-11`).
+            - Sized notification cards responsively (`p-3.5 sm:p-5`, icon containers `h-10 w-10 sm:h-12 sm:w-12`), aligning theme borders and active/unread states with emerald role accents.
+            - Replaced generic pagination with unified `TeacherPagination` with `itemName="notifications"`.
+            - Scaled page wrapper padding to `p-3.5 sm:p-6 md:p-8` with max width `max-w-[1600px]`.
+    - [x] **Teacher Profile Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/profile`)**:
+        - `page.tsx`:
+            - **Header / Hero Section**:
+                - Scaled banner height responsively (`h-40 sm:h-52 md:h-64`).
+                - Made the "Edit Banner" action button always accessible on mobile/touch viewports (`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 text-white backdrop-blur-md shadow-sm sm:opacity-0 sm:group-hover:opacity-100`), eliminating hover-only traps on touchscreens.
+                - Scaled avatar overlay responsively (`-mt-14 sm:-mt-16 md:-mt-20`, `h-28 w-28 sm:h-36 sm:w-36 md:h-40 md:w-40`) with emerald role identity and verified educator badge.
+                - Enhanced identity row with responsive typography (`text-xl sm:text-2xl md:text-3xl`), role badges, and an intuitive "Edit Profile" primary CTA alongside Security and Support buttons.
+            - **Quick Stats Grid**:
+                - Responsive 1-column mobile / 3-column tablet & desktop grid with compact paddings.
+                - Integrated comprehensive `HeaderTooltip` components following the `comprehensive_header_tooltips` skill: **Educator ID**, **Pedagogical Role**, and **Account Status**.
+            - **Main Content Grids & Shortcuts**:
+                - Added analytical `HeaderTooltip` components to **Personal Data**, **Professional Details**, **Primary Academy Institution**, and **Services & Shortcuts**.
+                - Sized data items and quick action buttons with comfortable touch targets.
+            - **Edit Profile Modal**:
+                - Overhauled modal for mobile screens with pure-black dark-mode styling (`bg-white dark:bg-black border border-slate-200 dark:border-zinc-800`), responsive heights (`max-h-[90vh] sm:max-h-[85vh]`), touch-friendly form inputs (`h-11 sm:h-10 rounded-xl`), and full mobile tab scrolling.
+                - Added direct shortcut to security / 2FA settings within the security tab.
+            - **Loading Skeleton**:
+                - Overhauled skeleton to use pure black backgrounds in dark mode (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) completely eliminating white glare.
+            - **TypeScript & Cleanliness**:
+                - Strongly typed `TeacherProfile` interface, eliminating banned `any` casts.
+    - [x] **Teacher Settings Page — Mobile Responsiveness & Tooltips (`/dashboard/teacher/settings`)**:
+        - `page.tsx`:
+            - **Header & Navigation**:
+                - Scaled page wrapper padding to `p-3.5 sm:p-6 md:p-8` with max width `max-w-[1600px]`.
+                - Added analytical `HeaderTooltip` next to "Settings" title explaining account governance, multi-factor security, connected devices, and visual preferences.
+                - Converted action buttons into a flexible mobile wrap layout (`flex-wrap sm:flex-nowrap`, full width on mobile viewports).
+                - Scaled tab bar navigation (`Account`, `Security`, `Display`) with comfortable touch targets (`h-10 text-xs sm:text-sm`).
+            - **Account Tab**:
+                - Sized Educator Identity preview card responsively (`flex-col sm:flex-row`, centered on mobile, full width "Edit Profile" touch button).
+                - Added `HeaderTooltip` for **Educator Identity** and **Linked Academy**.
+                - Scaled form inputs and logout action card to touch-friendly `h-11 sm:h-10` heights.
+            - **Security Tab**:
+                - Added comprehensive `HeaderTooltip` components to **Password** and **Two-Factor Authentication**.
+                - Sized password change action and TwoFactorSetup dialogs cleanly for mobile screens.
+                - Enhanced `DeviceSessions.tsx` with typed error handling, eliminating banned `any` types.
+            - **Display Preferences Tab**:
+                - Added `HeaderTooltip` explaining ambient lighting theme options (Light, Dark, System).
+                - Upgraded theme toggle buttons with clear active states and touch targets.
+            - **Loading Skeleton**:
+                - Overhauled skeleton to use pure black backgrounds in dark mode (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) completely eliminating white glare.
+            - **TypeScript & Cleanliness**:
+                - Defined typed `TeacherProfileData` interface, eliminating banned `any` assertions.
+    - [x] **Teacher Exams & Quizzes Page — Full Width Optimization (`/dashboard/teacher/exams&quizzes`)**:
+        - `ExamsQuizzesOverview.tsx`:
+            - Removed redundant inner side margins (`w-[95%] mx-auto`) and horizontal padding (`p-3.5 sm:p-6 md:p-8`) that were compounding with the outer layout's padding, allowing the assessment console, stat cards, categories bar, and assessment grid to cleanly expand to `w-full` across the available canvas without artificial empty side gaps.
+            - Cleaned up TypeScript `any` casts in `examToDelete`, `deleteMutation`, and `myItemsCount`.
+    - [x] **Teacher Grades Page — Full Width Optimization (`/dashboard/teacher/grades`)**:
+        - `GradesOverview.tsx`:
+            - Removed redundant inner side margins (`w-[90%] mx-auto`) and horizontal padding (`p-4 sm:p-6 md:p-8 lg:p-10`) that were compounding with the outer layout's padding, allowing the academic gradebook, stat cards, toolbar, and student rows to cleanly expand to `w-full` across the available canvas without artificial empty side gaps.
+    - [x] **Student Login Page — Mobile Card Width Fit (`/login/student`)**:
+        - `page.tsx`:
+            - Made card padding responsive (`p-5 sm:p-10 md:p-12`) and outer container padding `px-3.5 sm:px-8 lg:px-12` so the card has great breathing room while keeping maximum internal space for the form on small viewports.
+        - `RightPanel.tsx`:
+            - Stripped redundant nested `p-8 sm:p-10 lg:p-12` and `max-w-md` constraints from `RightPanel`, allowing the student login form to fit 100% of the card's internal width on mobile.
+        - `StudentLoginForm.tsx`:
+            - Optimized input sizing (`h-12 sm:h-14`) and gaps (`gap-4 sm:gap-5`) with full-width buttons and inputs.
+    - [x] **Build Verification**: Clean compilation with `npx tsc --noEmit` (zero errors).
+
 ### Wednesday, September 24, 2026
 
 - **Records & Results — Permission Bug Fix**:
@@ -1256,3 +1889,30 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
 - [x] Updated TrendChartTooltip to dynamically display the breakdown of the daily average by individual subjects instead of plotting separate lines per subject.
 
 - [x] Replaced the basic loading text on the class Analytics tab with a detailed UI skeleton loader that perfectly mimics the layout of the loaded charts.
+
+### Wednesday, October 14, 2026
+- [x] **Teacher Login Width & Mobile Scale Optimization (`/login/teacher`)**:
+    - [x] Increased the width of the inputs and buttons by 20%+ (from 480px to 584px width, expanding card max width to `680px` and trimming horizontal padding).
+    - [x] Streamlined mobile and tablet card padding to `px-4 sm:px-8 md:px-12`, allowing inputs and buttons to utilize full device width on mobile screens.
+    - [x] Expanded the right-hand form container on medium/large viewports to `md:w-[54%] lg:w-[50%]` with the left background spacer dynamically adjusted.
+    - [x] Ensured form, input containers, inputs, and submit button elements explicitly span `w-full` with zero horizontal bottlenecks.
+    - [x] Sized input heights to `h-14 sm:h-15` (56px–60px) and buttons with `text-base sm:text-lg font-bold` for superior touch ergonomics on mobile.
+    - [x] Ensured font sizes are >= 16px to prevent iOS Safari auto-zooming.
+    - [x] Replaced broken icons with Lucide icons with comfortable 56px touch targets for password toggle.
+- [x] **Mobile Sidebar Drawer Clean-up (`TeacherMobileDrawer.tsx` & `app-sidebar.tsx`)**:
+    - [x] Completely hid all disabled and 'Soon' navigation items in the mobile drawer instead of rendering disabled items with 'Soon' badges.
+    - [x] Connected runtime platform feature toggles (`useGlobalFeatures('teacher')`) layered on top of static `FEATURE_FLAGS_TEACHERS`.
+    - [x] Filtered out empty menu groups so headers for categories with no active items (e.g. Communication, Ecosystem) are not shown.
+    - [x] Applied empty-group suppression to the desktop teacher sidebar (`app-sidebar.tsx`) for UI consistency across viewports.
+    - [x] Resolved JSX parenthesis matching in `app-sidebar.tsx` by pre-computing `activeMenuGroups` via `useMemo`.
+- [x] **Teacher Students Loading Skeleton Dark Mode Fix (`StudentSkeleton.tsx` & `StudentList.tsx`)**:
+    - [x] Fixed invalid Tailwind opacity syntax (`dark:bg-emerald-950/60/70`) which was causing skeleton cards to fall back to bright white (`bg-white/70`) in dark mode.
+    - [x] Set dark mode skeleton card backgrounds to pure black (`dark:bg-black`) with subtle dark borders (`dark:border-zinc-800`).
+    - [x] Explicitly styled all pulsing skeleton bars with dark gray tones (`dark:bg-zinc-900`) across both Grid and List loading states, completely eliminating white elements in dark mode.
+- [x] **Teacher Subjects Mobile Optimization & Comprehensive Tooltips (`/dashboard/teacher/subjects`)**:
+    - [x] Added dynamic comprehensive HeaderTooltip next to the main title and stat cards following the `Comprehensive Header Tooltips` skill.
+    - [x] Defaulted view mode to Grid View on mobile viewports (< 768px).
+    - [x] Added mobile-responsive 2-column (mobile) / 4-column (desktop) metric stat cards (Total Subjects, Class Cohorts, Institutional Core, Departments).
+    - [x] Refined `SubjectCard.tsx` with mobile-responsive padding (`p-4 sm:p-6`), permanent touch action visibility, and mobile course code badge in List view.
+    - [x] Implemented dark mode pure-black loading skeletons (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) with zero white glare.
+

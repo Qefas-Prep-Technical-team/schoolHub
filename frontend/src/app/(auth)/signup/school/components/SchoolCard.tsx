@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useSchoolRegistration, useAdminSelfRegistration } from '../../services/useRegistrationMutations';
 import { SchoolFormData, schoolSchema, AdminJoinFormData, adminJoinSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
+import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
 
 /* ─── Design tokens — Admin / School = Blue ─── */
 const BLUE      = '#1d4ed8'; // blue-700
@@ -426,6 +427,8 @@ export default function SchoolCard() {
                   )}
                 </span>
               </button>
+
+              <SocialAuthRow userType="admin" mode="signup" />
 
               {/* Footer */}
               <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">

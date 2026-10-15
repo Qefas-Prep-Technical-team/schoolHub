@@ -1,47 +1,43 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, School, ChevronRight, User2, LogOut, type LucideIcon } from "lucide-react";
+import { Menu, ChevronRight, User2, LogOut } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { FEATURE_FLAGS_TEACHERS, type FeatureTeacherFlagKey } from "@/lib/config/featureFlags";
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { menuGroups } from "./app-sidebar";
-
-// ✅ import from where you export it (your sidebar file)
-
-
-interface MenuItem {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  featureKey: FeatureTeacherFlagKey;
-}
-
-function getFilteredMenuItems(items: MenuItem[]) {
-  // filter by feature flags + remove duplicates by href/label
-  const filtered = items.filter((i) => FEATURE_FLAGS_TEACHERS[i.featureKey]);
-
-  const seen = new Set<string>();
-  return filtered.filter((i) => {
-    const key = `${i.href}::${i.label}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
 
 export function TeacherMobileDrawer() {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
+  const { data: dynamicFeatures } = useGlobalFeatures('teacher');
+
+  const currentFeatures = React.useMemo(() => {
+    return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}) } as Record<FeatureTeacherFlagKey, boolean>;
+  }, [dynamicFeatures]);
+
+  // Filter groups: strictly hide disabled / "soon" links and exclude empty groups completely
+  const activeMenuGroups = React.useMemo(() => {
+    return menuGroups
+      .map((group) => {
+        const enabledItems = group.items.filter((item) => {
+          return !!currentFeatures[item.featureKey];
+        });
+        return {
+          ...group,
+          items: enabledItems,
+        };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [currentFeatures]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -52,6 +48,8 @@ export function TeacherMobileDrawer() {
       </SheetTrigger>
 
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
+        <SheetTitle className="sr-only">Teacher Navigation Menu</SheetTitle>
+
         {/* Header */}
         <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5">
           <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">
@@ -65,57 +63,40 @@ export function TeacherMobileDrawer() {
           </Link>
         </div>
 
-        {/* Menu */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar space-y-8">
-            {menuGroups.map((group) => (
-                <div key={group.label} className="space-y-2">
-                    <div className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                        {group.label}
-                    </div>
+        {/* Menu - Only active and available links */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar space-y-6">
+          {activeMenuGroups.map((group) => (
+            <div key={group.label} className="space-y-2">
+              <div className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                {group.label}
+              </div>
 
-                    <div className="space-y-1.5">
-                        {group.items.map((item) => {
-                            const Icon = item.icon;
-                            const isEnabled = !!(FEATURE_FLAGS_TEACHERS as any)[item.featureKey];
-                            const isActive = pathname === item.href;
+              <div className="space-y-1.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
 
-                            return (
-                                <Link
-                                    key={item.href + item.label}
-                                    href={isEnabled ? item.href : "#"}
-                                    onClick={(e) => {
-                                        if (!isEnabled) {
-                                            e.preventDefault();
-                                            return;
-                                        }
-                                        setOpen(false);
-                                    }}
-                                    className={cn(
-                                        "flex items-center gap-3 rounded-xl px-3 py-3.5 transition-all duration-200",
-                                        isActive 
-                                            ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm" 
-                                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98]",
-                                        !isEnabled && "opacity-50 grayscale-[0.5] cursor-not-allowed"
-                                    )}
-                                >
-                                    <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
-                                    <div className="flex flex-1 items-center justify-between min-w-0">
-                                        <span className="text-[14px] tracking-tight truncate">{item.label}</span>
-                                        {!isEnabled && (
-                                            <Badge className="ml-auto text-[8px] px-1.5 py-0 bg-slate-100 text-slate-500 border-none font-black uppercase tracking-tighter shrink-0">
-                                                Soon
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    {isEnabled && (
-                                        <ChevronRight className={cn("h-4 w-4 transition-transform", isActive ? "opacity-100 translate-x-0" : "opacity-30 -translate-x-1")} />
-                                    )}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </div>
-            ))}
+                  return (
+                    <Link
+                      key={item.href + item.label}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200",
+                        isActive 
+                          ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm" 
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98]"
+                      )}
+                    >
+                      <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} />
+                      <span className="text-[14px] font-semibold tracking-tight truncate flex-1">{item.label}</span>
+                      <ChevronRight className={cn("h-4 w-4 transition-transform", isActive ? "opacity-100 translate-x-0 text-emerald-600 dark:text-emerald-400" : "opacity-30 -translate-x-1")} />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Footer */}

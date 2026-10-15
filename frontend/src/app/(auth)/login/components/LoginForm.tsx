@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // components/forms/LoginForm.tsx
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { LoginFormData, loginSchema } from "../services/auth-schema";
@@ -9,7 +10,7 @@ import InputField from "../parent/components/InputField";
 import LoginButton from "./LoginButton";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
-import GoogleLoginButton from "./GoogleLoginButton";
+import SocialAuthRow from "./SocialAuthRow";
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 
@@ -38,10 +39,18 @@ export default function LoginForm({
     forgotPasswordLink,
     onForgotPassword
 }: LoginFormProps) {
+    const searchParams = useSearchParams();
     const { data: globalFeatures } = useGlobalFeatures(userType.toLowerCase() as any);
 
     const [serverError, setServerError] = useState("");
     const [isPending, setIsPending] = useState(false);
+
+    useEffect(() => {
+        const errorMsg = searchParams.get("error");
+        if (errorMsg) {
+            setServerError(errorMsg);
+        }
+    }, [searchParams]);
 
     const {
         register,
@@ -174,9 +183,7 @@ export default function LoginForm({
                 )}
 
 
-                {globalFeatures?.googleLogin !== false && (
-                    <GoogleLoginButton userType={userType} />
-                )}
+                <SocialAuthRow userType={userType} mode="signin" />
             </form>
         </div>
     );

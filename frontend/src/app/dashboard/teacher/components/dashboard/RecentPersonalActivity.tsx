@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Activity
 } from 'lucide-react';
+import { HeaderTooltip } from './HeaderTooltip';
 
 interface ActivityItem {
   id: string;
@@ -48,18 +49,24 @@ const RecentPersonalActivity: React.FC<RecentPersonalActivityProps> = ({ activit
   };
 
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-6 shadow-sm h-full transition-all duration-300">
-      <div className="flex items-center justify-between mb-5">
+    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4 sm:p-6 shadow-sm h-full transition-all duration-300">
+      <div className="flex items-center justify-between mb-4 sm:mb-5">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Activity</h3>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Latest Events</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Recent Activity</h3>
+            <HeaderTooltip 
+              content="Maintains an audit trail of critical classroom events, newly submitted assignments, grade updates, and student milestones. Use this live stream to quickly catch up on what happened since your last login and verify that automated notifications were dispatched." 
+              size={14} 
+            />
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">Latest Events</p>
         </div>
-        <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700">
-           <History size={16} className="text-slate-400" />
+        <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 shrink-0">
+           <History size={15} className="sm:w-4 sm:h-4 text-slate-400" />
         </div>
       </div>
 
-      <div className="space-y-3 flex-1">
+      <div className="space-y-2.5 sm:space-y-3 flex-1">
         {activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 h-full">
             <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2 opacity-50" />
@@ -73,13 +80,13 @@ const RecentPersonalActivity: React.FC<RecentPersonalActivityProps> = ({ activit
                 key={item.id}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="flex items-center gap-4 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300"
+                transition={{ delay: idx * 0.05 }}
+                className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300"
               >
-                <div className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${
+                <div className={`h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg flex items-center justify-center ${
                   item.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
                 }`}>
-                  <IconComponent size={18} />
+                  <IconComponent size={15} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-0.5">

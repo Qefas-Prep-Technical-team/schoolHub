@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HeaderTooltip } from "@/app/dashboard/teacher/components/dashboard/HeaderTooltip";
 import { 
   AlertCircle, 
   Settings2,
@@ -67,6 +68,14 @@ const GradesOverview: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<{ field: string, order: 'asc' | 'desc' } | null>(null);
   const [selectedGradeForDetails, setSelectedGradeForDetails] = useState<StudentGrade | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+
+  // Default to Grid View on mobile devices
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
   
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
@@ -337,37 +346,26 @@ const GradesOverview: React.FC = () => {
   };
 
   return (
-    <div className="relative flex h-auto min-h-screen w-full flex-col bg-slate-50/50 dark:bg-slate-950/50">
-      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 w-[95%] mx-auto">
-        <div className="flex flex-col flex-1">
+    <div className="relative flex h-auto w-full flex-col">
+      <main className="w-full space-y-6 py-2">
+        <div className="flex flex-col flex-1 w-full">
           
           {/* Header Section */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4"
+            className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4"
           >
             <PageHeader 
               onAddGrade={() => setIsEntryModalOpen(true)}
               onOCRClick={handleOpenOCR}
               onUploadClick={handleOpenUploadModal}
+              onSettingsClick={() => setIsSettingsOpen(true)}
               hasOCRAccess={!!hasOCRAccess}
               hasCSVAccess={hasCSVAccess}
               selectedSchoolName={selectedSchoolName}
               isPersonal={isPersonal}
             />
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 rounded-xl px-4 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 backdrop-blur-sm text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings2 className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </div>
           </motion.div>
 
           <GradeSettingsModal
@@ -392,8 +390,9 @@ const GradesOverview: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="flex flex-col flex-1"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-200">Record Management</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-200">Record Management</h2>
+              <HeaderTooltip content="Manage student marks, evaluate grade distributions, review pending deliverables, publish grades, or export CSV grade sheets for this class cohort." />
             </div>
 
             <AnimatePresence>
@@ -463,6 +462,8 @@ const GradesOverview: React.FC = () => {
                     totalItems={apiPagination.total || mappedGrades.length}
                     onPageChange={handlePageChange}
                     isLoading={isLoading}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
                   />
                 </motion.div>
               )}

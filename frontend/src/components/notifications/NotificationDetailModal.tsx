@@ -40,7 +40,55 @@ interface NotificationDetailModalProps {
   onMarkAsRead?: (id: string) => void;
   onRespondToLink?: (notificationId: string, linkId: string, action: 'ACCEPT' | 'REJECT') => void;
   isResponding?: boolean;
+  userType?: string | null;
 }
+
+const getModalRoleTheme = (userType?: string | null) => {
+  const role = userType?.toLowerCase();
+  switch (role) {
+    case 'student':
+      return {
+        accentText: 'text-pink-600 dark:text-pink-400',
+        alertBg: 'bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-900/30',
+        alertText: 'text-pink-600 dark:text-pink-400',
+        dotBg: 'bg-pink-500',
+        primaryBtn: 'bg-pink-600 hover:bg-pink-700 shadow-pink-500/20',
+        avatarBg: 'bg-pink-600',
+        hoverGhost: 'hover:bg-pink-50 dark:hover:bg-pink-950/30 text-pink-600 dark:text-pink-400',
+      };
+    case 'teacher':
+      return {
+        accentText: 'text-emerald-600 dark:text-emerald-400',
+        alertBg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/30',
+        alertText: 'text-emerald-600 dark:text-emerald-400',
+        dotBg: 'bg-emerald-500',
+        primaryBtn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20',
+        avatarBg: 'bg-emerald-600',
+        hoverGhost: 'hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400',
+      };
+    case 'parent':
+      return {
+        accentText: 'text-orange-600 dark:text-orange-400',
+        alertBg: 'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900/30',
+        alertText: 'text-orange-600 dark:text-orange-400',
+        dotBg: 'bg-orange-500',
+        primaryBtn: 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/20',
+        avatarBg: 'bg-orange-600',
+        hoverGhost: 'hover:bg-orange-50 dark:hover:bg-orange-950/30 text-orange-600 dark:text-orange-400',
+      };
+    case 'admin':
+    default:
+      return {
+        accentText: 'text-blue-600 dark:text-blue-400',
+        alertBg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/30',
+        alertText: 'text-blue-600 dark:text-blue-400',
+        dotBg: 'bg-blue-500',
+        primaryBtn: 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20',
+        avatarBg: 'bg-blue-600',
+        hoverGhost: 'hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-600 dark:text-blue-400',
+      };
+  }
+};
 
 export default function NotificationDetailModal({
   notification,
@@ -48,9 +96,11 @@ export default function NotificationDetailModal({
   onClose,
   onMarkAsRead,
   onRespondToLink,
-  isResponding
+  isResponding,
+  userType,
 }: NotificationDetailModalProps) {
   const router = useRouter();
+  const theme = getModalRoleTheme(userType);
   const { user } = useAuthStore();
   const linkId = notification?.linkRequestId || ((notification?.meta || notification?.data) as Record<string, unknown> & { linkId?: string })?.linkId;
   const { data: linkRequest, isLoading: isLoadingLink } = useSingleLinkRequest(
@@ -129,51 +179,54 @@ export default function NotificationDetailModal({
     }
   };
 
+  const metaRecord = notification?.meta as Record<string, unknown> | undefined;
+  const priority = metaRecord?.priority ? String(metaRecord.priority) : null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border border-gray-200 dark:border-gray-800 shadow-2xl rounded-[2rem] bg-white dark:bg-gray-950">
-        <div className="relative p-8 pb-0">
-           <div className="flex items-center justify-between mb-6">
-              <Badge variant="outline" className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2", getTypeColor(notification.type))}>
+      <DialogContent className="w-[calc(100vw-24px)] sm:max-w-[480px] p-0 overflow-hidden border border-slate-200/80 dark:border-zinc-800 shadow-2xl rounded-2xl sm:rounded-[2rem] bg-white dark:bg-zinc-950">
+        <div className="relative p-5 sm:p-8 pb-0">
+           <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+              <Badge variant="outline" className={cn("px-3 py-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest border", getTypeColor(notification.type))}>
                 {notification.type.replace('_', ' ')}
               </Badge>
-              {(notification.meta as any)?.priority && (notification.meta as any)?.priority !== 'NORMAL' && (
-                <Badge variant="outline" className={cn("px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2", (notification.meta as any)?.priority === 'URGENT' ? 'border-rose-500 text-rose-500' : 'border-amber-500 text-amber-500')}>
-                  {(notification.meta as any).priority}
+              {priority && priority !== 'NORMAL' && (
+                <Badge variant="outline" className={cn("px-3 py-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest border", priority === 'URGENT' ? 'border-rose-500 text-rose-500' : 'border-amber-500 text-amber-500')}>
+                  {priority}
                 </Badge>
               )}
               {!notification.isRead && (
-                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-xl">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">New Alert</span>
+                <div className={cn("flex items-center gap-1.5 border px-2.5 py-1 rounded-lg sm:rounded-xl", theme.alertBg)}>
+                  <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", theme.dotBg)} />
+                  <span className={cn("text-[9px] sm:text-[10px] font-black uppercase tracking-widest", theme.alertText)}>New Alert</span>
                 </div>
               )}
            </div>
 
-           <DialogHeader className="space-y-4">
-              <div className="flex items-center gap-5">
+           <DialogHeader className="space-y-3 sm:space-y-4">
+              <div className="flex items-start sm:items-center gap-3.5 sm:gap-5">
                 <div className={cn(
-                  "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg border-2",
+                  "w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-[1.5rem] flex items-center justify-center shadow-md border shrink-0",
                    getTypeColor(notification.type)
                 )}>
                   {getTypeIcon(notification.type)}
                 </div>
-                <div className="flex-1">
-                  <DialogTitle className="text-2xl font-black leading-tight tracking-tight text-gray-900 dark:text-white mb-1">
+                <div className="flex-1 min-w-0">
+                  <DialogTitle className="text-base sm:text-2xl font-black leading-snug tracking-tight text-zinc-900 dark:text-white mb-1">
                     {notification.title}
                   </DialogTitle>
-                   <DialogDescription className="text-gray-500 font-bold flex items-center gap-4 text-[10px] uppercase tracking-wider">
-                      <span className="flex items-center gap-1.5"><Calendar size={14} className="text-gray-400" /> {new Date(notification.createdAt).toLocaleDateString()}</span>
-                      <span className="flex items-center gap-1.5"><Clock size={14} className="text-gray-400" /> {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                   <DialogDescription className="text-zinc-500 dark:text-zinc-400 font-bold flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-wider">
+                      <span className="flex items-center gap-1.5"><Calendar size={13} className="text-zinc-400" /> {new Date(notification.createdAt).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1.5"><Clock size={13} className="text-zinc-400" /> {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                    </DialogDescription>
                 </div>
               </div>
            </DialogHeader>
         </div>
 
-        <div className="p-8 pt-8 space-y-6">
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800">
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-bold text-sm italic">
+        <div className="p-5 sm:p-8 pt-5 sm:pt-6 space-y-4 sm:space-y-6">
+          <div className="bg-slate-50 dark:bg-zinc-900/60 rounded-xl sm:rounded-[1.5rem] p-4 sm:p-6 border border-slate-100 dark:border-zinc-800">
+            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed font-semibold text-xs sm:text-sm">
               &quot;{notification.message}&quot;
             </p>
           </div>
@@ -182,26 +235,26 @@ export default function NotificationDetailModal({
           {!!linkId && (
             <div className="space-y-4">
               {isLoadingLink ? (
-                <div className="flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-[1.5rem] border-2 border-dashed">
-                  <Loader2 className="animate-spin text-primary mr-3" />
-                  <span className="font-black text-xs uppercase tracking-widest text-slate-500">Retrieving details...</span>
+                <div className="flex items-center justify-center p-6 sm:p-8 bg-slate-50 dark:bg-zinc-900/50 rounded-xl sm:rounded-[1.5rem] border-2 border-dashed border-slate-200 dark:border-zinc-800">
+                  <Loader2 className={cn("animate-spin mr-2.5 h-4 w-4", theme.accentText)} />
+                  <span className="font-bold text-xs uppercase tracking-widest text-zinc-500">Retrieving details...</span>
                 </div>
               ) : details ? (
-                <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-5 border-2 border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 group">
-                   <Avatar className="h-16 w-16 rounded-2xl shadow-md border-2 border-white dark:border-slate-800">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl sm:rounded-[1.5rem] p-4 sm:p-5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center gap-3.5 sm:gap-4 group">
+                   <Avatar className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 shrink-0">
                       <AvatarImage src={details.image || ''} className="object-cover" />
-                      <AvatarFallback className="bg-primary text-white font-black text-xl rounded-2xl">
+                      <AvatarFallback className={cn("text-white font-black text-base sm:text-xl rounded-xl sm:rounded-2xl", theme.avatarBg)}>
                         {details.name.charAt(0)}
                       </AvatarFallback>
                    </Avatar>
-                   <div className="flex-1">
-                      <h4 className="font-black text-lg text-slate-900 dark:text-white leading-tight">{details.name}</h4>
-                      <p className="text-xs font-bold text-slate-400 mb-2 truncate max-w-[200px]">{details.email}</p>
+                   <div className="flex-1 min-w-0">
+                      <h4 className="font-black text-sm sm:text-lg text-zinc-900 dark:text-white leading-tight truncate">{details.name}</h4>
+                      <p className="text-xs font-medium text-zinc-400 mb-1.5 truncate max-w-[200px]">{details.email}</p>
                       <div className="flex items-center gap-2">
-                        <UIBadge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-[8px] font-black rounded-md px-2 py-0.5">
+                        <UIBadge variant="secondary" className="bg-slate-100 dark:bg-zinc-800 text-[8px] font-black rounded-md px-2 py-0.5">
                           {details.type}
                         </UIBadge>
-                        <span className="text-[10px] font-black text-primary tracking-widest">{details.code}</span>
+                        <span className={cn("text-[10px] font-black tracking-widest", theme.accentText)}>{details.code}</span>
                       </div>
                    </div>
                 </div>
@@ -209,29 +262,29 @@ export default function NotificationDetailModal({
 
               {/* Action Buttons if Pending */}
               {lr?.status === 'PENDING' && (
-                <div className="pt-2">
+                <div className="pt-1">
                   {lr.requesterId === user?.id ? (
-                    <div className="flex items-center justify-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
-                      <Loader2 className="animate-spin text-orange-500 mr-2" size={16} />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-orange-600">
+                    <div className="flex items-center justify-center p-3 sm:p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl sm:rounded-2xl border border-amber-200 dark:border-amber-900/30">
+                      <Loader2 className="animate-spin text-amber-500 mr-2" size={15} />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
                         Waiting for response...
                       </span>
                     </div>
                   ) : (
-                    <div className="flex gap-4">
+                    <div className="flex gap-2.5 sm:gap-4">
                       <Button 
                         onClick={() => onRespondToLink?.(notification.id, linkId!, 'ACCEPT')}
                         disabled={isResponding || isLoadingLink}
-                        className="flex-[2] h-14 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-95 text-xs uppercase tracking-widest"
+                        className={cn("flex-[2] h-11 sm:h-14 text-white font-bold rounded-xl sm:rounded-2xl shadow-lg transition-all hover:scale-[1.01] active:scale-95 text-xs uppercase tracking-wider cursor-pointer", theme.primaryBtn)}
                       >
-                        {isResponding ? <Loader2 className="animate-spin mr-2" size={18} /> : <Check size={20} className="mr-2" />} 
+                        {isResponding ? <Loader2 className="animate-spin mr-2" size={16} /> : <Check size={18} className="mr-1.5" />} 
                         {isResponding ? "Processing..." : "Accept Request"}
                       </Button>
                       <Button 
                         onClick={() => onRespondToLink?.(notification.id, linkId!, 'REJECT')}
                         disabled={isResponding || isLoadingLink}
                         variant="outline"
-                        className="flex-1 h-14 border-2 border-slate-100 dark:border-slate-800 font-black rounded-2xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 dark:hover:bg-red-950/20 transition-all text-[10px] uppercase tracking-widest"
+                        className="flex-1 h-11 sm:h-14 border border-slate-200 dark:border-zinc-800 font-bold rounded-xl sm:rounded-2xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/20 transition-all text-[10px] uppercase tracking-wider cursor-pointer"
                       >
                         Decline
                       </Button>
@@ -241,30 +294,30 @@ export default function NotificationDetailModal({
               )}
 
               {lr?.status && lr.status !== 'PENDING' && (
-                <div className="flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">
-                    This request is already <span className="text-primary font-black ml-1">{lr.status}</span>
+                <div className="flex items-center justify-center p-3.5 bg-slate-50 dark:bg-zinc-900/50 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-zinc-800">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 italic">
+                    This request is already <span className={cn("font-black ml-1", theme.accentText)}>{lr.status}</span>
                   </span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="mt-6 flex flex-col gap-2">
-            {notification.link && (
+          {notification.link && (
+            <div className="pt-1">
               <Button 
                 variant="ghost" 
                 onClick={handleAction}
-                className="w-full h-12 rounded-xl text-primary font-black text-xs hover:bg-primary/5 group"
+                className={cn("w-full h-10 sm:h-11 rounded-xl font-bold text-xs group cursor-pointer", theme.hoverGhost)}
               >
-                Go to details <ChevronRight size={16} className="ml-1 transition-transform group-hover:translate-x-1" />
+                Go to details <ChevronRight size={15} className="ml-1 transition-transform group-hover:translate-x-1" />
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-100 dark:border-slate-800">
-           <Button variant="outline" onClick={onClose} className="w-full h-10 rounded-xl font-bold text-xs border-slate-200">
+        <DialogFooter className="bg-slate-50/70 dark:bg-zinc-900/50 p-3.5 sm:p-4 border-t border-slate-100 dark:border-zinc-800/80">
+           <Button variant="outline" onClick={onClose} className="w-full h-10 rounded-xl font-bold text-xs border-slate-200 dark:border-zinc-800 cursor-pointer">
              Close
            </Button>
         </DialogFooter>

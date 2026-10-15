@@ -4,10 +4,13 @@ import { useParams, useRouter } from "next/navigation"
 import { 
     usePlatformTeacherDetails,
     useUpdateTeacherPlan,
+    useUpdateTeacherStatus,
+    useDeletePlatformTeacher,
     useAllPlatformPlans,
     PlatformTeacherDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetTeacherSubscription } from "@/lib/api/hooks/usePlatformBilling"
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal"
 import { 
     GraduationCap as TeacherIcon, 
     ChevronLeft as ChevronLeftIcon, 
@@ -17,6 +20,8 @@ import {
     School as SchoolIcon,
     ShieldCheck as ShieldCheckIcon, 
     ExternalLink as ExternalLinkIcon,
+    Lock as LockIcon,
+    Unlock as UnlockIcon,
     Users as UsersIcon,
     BookOpen as BookOpenIcon,
     FileText as FileTextIcon,
@@ -26,7 +31,8 @@ import {
     CreditCard as CreditCardIcon,
     AlertTriangle as AlertTriangleIcon,
     CheckCircle as CheckCircleIcon,
-    XCircle as XCircleIcon
+    XCircle as XCircleIcon,
+    Trash2 as TrashIcon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -43,9 +49,12 @@ export default function TeacherDetailsPage() {
     const { data: teacher, isLoading } = usePlatformTeacherDetails(id as string)
     const { data: plans } = useAllPlatformPlans()
     const updatePlanMutation = useUpdateTeacherPlan()
+    const toggleStatusMutation = useUpdateTeacherStatus()
     const resetSubscriptionMutation = useResetTeacherSubscription()
+    const deleteTeacherMutation = useDeletePlatformTeacher()
     
     const [activeTab, setActiveTab] = useState("overview")
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isEditingPlan, setIsEditingPlan] = useState(false)
     const [editData, setEditData] = useState({
         plan: "",
@@ -121,19 +130,34 @@ export default function TeacherDetailsPage() {
         }
     }
 
+    const isDeactivated = teacher.isActive === false || teacher.status === "DEACTIVATED" || teacher.subscriptionStatus === "DEACTIVATED" || teacher.subscriptionStatus === "SUSPENDED"
+
     const handleToggleStatus = async () => {
-        const newStatus = teacher.subscriptionStatus === "SUSPENDED" ? "ACTIVE" : "SUSPENDED"
-        if (!confirm(`Are you sure you want to ${newStatus === "ACTIVE" ? "restore" : "suspend"} this teacher's access?`)) return
+        const action = isDeactivated ? "activate" : "deactivate"
+        if (!confirm(`Are you sure you want to ${action} this teacher account? ${isDeactivated ? "The teacher will regain platform access." : "The teacher will be deactivated and unable to log in."}`)) return
         
         try {
-            await updatePlanMutation.mutateAsync({
+            await toggleStatusMutation.mutateAsync({
                 id: teacher.id,
-                planData: {
-                    subscriptionStatus: newStatus
-                }
+                isActive: isDeactivated,
+                status: isDeactivated ? "ACTIVE" : "DEACTIVATED"
             })
         } catch (error) {
             console.error("Failed to toggle status:", error)
+        }
+    }
+
+    const handleDeleteTeacher = async ({ adminPassword, reason }: { adminPassword: string; reason?: string }) => {
+        try {
+            await deleteTeacherMutation.mutateAsync({
+                id: teacher.id,
+                adminPassword,
+                reason
+            })
+            setIsDeleteModalOpen(false)
+            router.push("/console/teachers")
+        } catch (error) {
+            console.error("Failed to delete teacher:", error)
         }
     }
 
@@ -160,6 +184,27 @@ export default function TeacherDetailsPage() {
                             </Link>
                         </Button>
                     )}
+                    <Button 
+                        disabled={toggleStatusMutation.isPending}
+                        className={cn(
+                            "shadow-xl font-bold transition-all",
+                            !isDeactivated 
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20" 
+                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-400/20"
+                        )}
+                        onClick={handleToggleStatus}
+                    >
+                        {!isDeactivated ? <LockIcon size={16} className="mr-2" /> : <UnlockIcon size={16} className="mr-2" />}
+                        {!isDeactivated ? "Deactivate Account" : "Activate Account"}
+                    </Button>
+                    <Button 
+                        variant="destructive"
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20"
+                        onClick={() => setIsDeleteModalOpen(true)}
+                    >
+                        <TrashIcon size={16} className="mr-2" />
+                        Delete Teacher
+                    </Button>
                 </div>
             </div>
 
@@ -190,6 +235,14 @@ export default function TeacherDetailsPage() {
                                 <div className="flex flex-wrap items-center gap-3 mt-2">
                                     <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-wider">
                                         {teacher.teacherCode}
+                                    </Badge>
+                                    <Badge className={cn(
+                                        "px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-wider border",
+                                        isDeactivated
+                                            ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                    )}>
+                                        {isDeactivated ? "DEACTIVATED" : "ACTIVE"}
                                     </Badge>
                                     <code className="text-sm text-slate-500 font-mono bg-slate-100 dark:bg-slate-950 px-2 py-0.5 rounded border border-slate-200 dark:border-white/5">
                                         ID: {teacher.id}
@@ -578,20 +631,11 @@ export default function TeacherDetailsPage() {
                                 </Button>
                                 <Button 
                                     variant="outline" 
-                                    className={cn(
-                                        "w-full h-12 rounded-2xl font-bold",
-                                        teacher.subscriptionStatus === "SUSPENDED" 
-                                            ? "border-emerald-500/10 text-emerald-500 hover:bg-emerald-500/5" 
-                                            : "border-red-500/10 text-red-500 hover:bg-red-500/5"
-                                    )}
-                                    onClick={handleToggleStatus}
-                                    disabled={updatePlanMutation.isPending}
+                                    className="w-full border-red-200 dark:border-red-950/60 bg-red-50/50 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 h-12 rounded-2xl font-bold"
+                                    onClick={() => setIsDeleteModalOpen(true)}
                                 >
-                                    {teacher.subscriptionStatus === "SUSPENDED" ? (
-                                        <><CheckCircleIcon size={16} className="mr-2" /> Restore Access</>
-                                    ) : (
-                                        <><XCircleIcon size={16} className="mr-2" /> Suspend Access</>
-                                    )}
+                                    <TrashIcon size={16} className="mr-2" />
+                                    Delete Teacher Record
                                 </Button>
                             </div>
                         </div>
@@ -619,6 +663,16 @@ export default function TeacherDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            <DeleteConfirmationModal 
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteTeacher}
+                entityName={teacher.name}
+                entityType="Teacher"
+                identifier={teacher.teacherCode}
+                isLoading={deleteTeacherMutation.isPending}
+            />
         </div>
     )
 }

@@ -378,13 +378,14 @@ export default function AssignmentDetailsPage() {
                                     )})}
                                     
                                     {assignment.questions.length > questionsPerPage && (
-                                        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                                        <div className="mt-6">
                                             <Pagination
                                                 currentPage={questionsPage}
                                                 totalPages={Math.ceil(assignment.questions.length / questionsPerPage)}
                                                 totalItems={assignment.questions.length}
                                                 itemsPerPage={questionsPerPage}
                                                 onPageChange={setQuestionsPage}
+                                                itemName="questions"
                                             />
                                         </div>
                                     )}
