@@ -5103,6 +5103,10 @@ export const requestDataDeletion = async (req: Request, res: Response) => {
     });
 
     const userId = existingUser ? existingUser.id : "unregistered";
+    const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT_ACCESS_SECRET is not configured on the server");
+    }
     const deactivationToken = jwt.sign(
       {
         userId,
@@ -5111,7 +5115,7 @@ export const requestDataDeletion = async (req: Request, res: Response) => {
         ticketId,
         type: "DEACTIVATION_CONFIRMATION",
       },
-      process.env.JWT_ACCESS_SECRET || "qefas-jwt-secret-key-2026",
+      jwtSecret,
       { expiresIn: "7d" }
     );
 
@@ -5157,11 +5161,15 @@ export const confirmDeactivation = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Token and ticket ID are required." });
     }
 
+    const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT_ACCESS_SECRET is not configured on the server");
+    }
     let payload: any;
     try {
       payload = jwt.verify(
         token,
-        process.env.JWT_ACCESS_SECRET || "qefas-jwt-secret-key-2026"
+        jwtSecret
       );
     } catch {
       return res.status(400).json({

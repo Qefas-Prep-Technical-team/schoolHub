@@ -67,9 +67,10 @@
         - Updated Tab 1 on `/data-deletion`: displays toast notification `"An email has been sent to you with the deactivation instructions"` on submit and renders clear instructions on the queued receipt screen.
         - Updated Tab 2 on `/data-deletion`: prominently informs users that self-service deactivation is located in their Settings page (`Settings → Security → Deactivate Account`), with direct navigation links to student, teacher, admin, and parent settings.
         - Created `/data-deletion/confirm` page wrapped in `<Suspense>`: calls `confirmDeactivation`, renders *"Your account is successfully deactivated"* with complete Step 2 audit breakdown, and provides Return to Login navigation.
-    - [x] **Strict Type Safety & Verification**:
+    - [x] **Strict Type Safety & Secret Remediation**:
+        - Fixed GitGuardian / GitHub Secret Scanning alert: completely removed hardcoded JWT secret fallback (`"qefas-jwt-secret-key-2026"`) from `auth.controller.ts` in both `requestDataDeletion` and `confirmDeactivation`. Replaced with strictly validated environment variable (`process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET`) that throws if missing.
         - Fixed `ComplianceTicket['status']` typing in `deletions/page.tsx` line 230.
-        - Verified both `backend` and `frontend` pass `npx tsc --noEmit` with zero errors (exit code 0).
+        - Verified both `backend` and `frontend` pass `npx tsc --noEmit` and `npm run build` with zero errors (exit code 0).
 
 - **Server-Side Facebook OAuth Integration & Console SSO**:
     - [x] **Database Schema**:
