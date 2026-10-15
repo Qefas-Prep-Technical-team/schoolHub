@@ -7,6 +7,7 @@ import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
 import { useChildResults, useParentChildren } from "@/lib/api/hooks/useParentChildren";
 import { useParentStore } from "@/lib/api/hooks/useParentStore";
+import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip";
 
 function getWAECGradeAndRemark(score: number): { grade: string; remark: string } {
   if (score >= 75) return { grade: "A1", remark: "EXCELLENT" };
@@ -78,24 +79,29 @@ export default function FinalResults() {
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Header banner */}
-      <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-purple-500/20 flex flex-wrap items-start justify-between gap-4">
+      <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg shadow-purple-500/20 flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <GraduationCap size={20} className="text-purple-200" />
-            <span className="text-sm font-semibold text-purple-200">Final Result Grades</span>
+            <span className="text-xs sm:text-sm font-semibold text-purple-200">Final Result Grades</span>
+            <HeaderTooltip
+              content={`Official terminal grade transcripts compiling verified marks across all assessment components (Assignments, Quizzes, CA, and Exams) mapped to standard WAEC grades (A1 through F9). You are currently viewing data for ${selectedSession === 'ALL' ? 'all recorded sessions' : selectedSession} and ${selectedTerm === 'ALL' ? 'all terms' : `${selectedTerm} TERM`}.`}
+              size={14}
+              className="text-purple-200 hover:text-white"
+            />
           </div>
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-xl sm:text-2xl font-bold">
             {selectedChild ? `${selectedChild.name}'s Results` : "Child's Results"}
           </h2>
-          <p className="text-purple-200 text-sm mt-1">
+          <p className="text-purple-200 text-xs sm:text-sm mt-1">
             {filteredResults.length} subject{filteredResults.length !== 1 ? "s" : ""} found
           </p>
         </div>
-        <div className="flex flex-col gap-2 items-end">
+        <div className="flex flex-row flex-wrap sm:flex-col gap-2 items-start sm:items-end w-full sm:w-auto">
           <select
             value={selectedSession}
             onChange={(e) => handleFilterChange("session", e.target.value)}
-            className="bg-white/10 text-white border border-white/20 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:border-white/50 cursor-pointer"
+            className="flex-1 sm:flex-none bg-white/10 text-white border border-white/20 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium outline-none focus:border-white/50 cursor-pointer"
           >
             <option value="ALL" className="text-slate-800">All Sessions</option>
             {sessionOptions.map(([id, name]) => (
@@ -105,7 +111,7 @@ export default function FinalResults() {
           <select
             value={selectedTerm}
             onChange={(e) => handleFilterChange("term", e.target.value)}
-            className="bg-white/10 text-white border border-white/20 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:border-white/50 cursor-pointer"
+            className="flex-1 sm:flex-none bg-white/10 text-white border border-white/20 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium outline-none focus:border-white/50 cursor-pointer"
           >
             {["ALL", "FIRST", "SECOND", "THIRD"].map((t) => (
               <option key={t} value={t} className="text-slate-800">
@@ -122,12 +128,28 @@ export default function FinalResults() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40">
-                <th className="px-5 py-4 w-14">#</th>
-                <th className="px-5 py-4">Subject</th>
-                <th className="px-5 py-4">Class</th>
-                <th className="px-5 py-4">Term</th>
-                <th className="px-5 py-4 text-center">Score</th>
-                <th className="px-5 py-4">Behavior</th>
+                <th className="px-3.5 sm:px-5 py-3 sm:py-4 w-12 sm:w-14">#</th>
+                <th className="px-3.5 sm:px-5 py-3 sm:py-4">Subject</th>
+                <th className="px-3.5 sm:px-5 py-3 sm:py-4">Class</th>
+                <th className="px-3.5 sm:px-5 py-3 sm:py-4">Term</th>
+                <th className="px-3.5 sm:px-5 py-3 sm:py-4 text-center">
+                  <span className="inline-flex items-center gap-1">
+                    Score
+                    <HeaderTooltip
+                      content="Weighted cumulative terminal percentage mapped to WAEC standards (A1: 75+, B2: 70–74, B3: 65–69, C4-C6: 50–64, D7-E8: 40–49, F9: <40)."
+                      size={12}
+                    />
+                  </span>
+                </th>
+                <th className="px-3.5 sm:px-5 py-3 sm:py-4">
+                  <span className="inline-flex items-center gap-1">
+                    Behavior
+                    <HeaderTooltip
+                      content="Subject teacher evaluation ratings for student politeness, punctuality, and assignment handwriting rated on a 1 to 5 scale."
+                      size={12}
+                    />
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">

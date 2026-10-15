@@ -24,8 +24,48 @@ import Link from "next/link";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { apiClient } from "@/lib/api/client";
 import { toast } from "react-toastify";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type RoleType = "STUDENT" | "TEACHER" | "PARENT" | "ADMIN";
+
+function HeaderTooltip({
+  content,
+  size = 15,
+  side = "top",
+  className = "",
+}: {
+  content: string;
+  size?: number;
+  side?: "top" | "right" | "bottom" | "left";
+  className?: string;
+}) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="More information"
+            className={`inline-flex items-center justify-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shrink-0 ${className}`}
+          >
+            <Info size={size} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side={side}
+          className="max-w-xs sm:max-w-sm md:max-w-md p-3.5 text-xs leading-relaxed bg-slate-950 text-slate-100 dark:bg-slate-900 dark:text-slate-200 border border-slate-800 shadow-2xl rounded-xl text-left z-50 font-normal normal-case tracking-normal"
+        >
+          {content}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 function DataDeletionContent() {
   const searchParams = useSearchParams();
@@ -134,7 +174,7 @@ function DataDeletionContent() {
 
       {/* Navigation Header */}
       <header className="border-b border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-2.5 sm:px-4 lg:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-md shadow-indigo-600/20 group-hover:scale-105 transition-transform">
               <ShieldCheck className="w-5 h-5" />
@@ -166,32 +206,36 @@ function DataDeletionContent() {
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 relative z-10 space-y-8">
+      {/* Main Container - Reduced left/right margins on web (max-w-5xl, px-2 to px-6) and mobile (px-2) */}
+      <main className="max-w-5xl mx-auto px-2 sm:px-4 lg:px-6 py-6 sm:py-10 relative z-10 space-y-6 sm:space-y-8">
         
         {/* Hero Section */}
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
+        <div className="text-center space-y-3 max-w-3xl mx-auto px-1 sm:px-2">
           <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
             <ShieldCheck className="w-4 h-4" />
             Data Protection & Privacy Governance
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            User Data Deletion & Account Governance
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center flex-wrap gap-2 text-center">
+            <span>User Data Deletion &amp; Account Governance</span>
+            <HeaderTooltip
+              content="This portal provides comprehensive data erasure and account deactivation governance in accordance with GDPR Article 17 ('Right to be Forgotten'), CCPA, and Meta Platform Policies. Use this interface if you have uninstalled the application, are concluding your enrollment or employment, or wish to sever third-party social linkages. Deactivation terminates active sessions immediately, while permanent deletion purges personal credentials and media assets following a 30-day grace period."
+              size={18}
+            />
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
             In compliance with Meta Platform Policies, GDPR, and global data privacy standards, you have the right to request permanent deletion of your personal data or deactivate your account at any time.
           </p>
         </div>
 
         {/* Facebook Callback Confirmation Banner (Shown if code is present) */}
         {code && (
-          <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/40 dark:border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/40 dark:border-emerald-500/30 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 md:p-8 shadow-xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-300">
             <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-                  <CheckCircle2 className="w-6 h-6" />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -202,13 +246,13 @@ function DataDeletionContent() {
                       Verified
                     </span>
                   </div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">
                     Facebook Account Data Unlinked
                   </h2>
                 </div>
               </div>
 
-              <div className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-2.5 flex items-center justify-between sm:justify-start gap-3">
+              <div className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between sm:justify-start gap-3">
                 <div className="text-left">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Confirmation Code</p>
                   <code className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 break-all">
@@ -226,21 +270,21 @@ function DataDeletionContent() {
               </div>
             </div>
 
-            <div className="pt-6 space-y-4">
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <div className="pt-5 sm:pt-6 space-y-4">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                 Your Facebook OAuth linkage has been severed from Qefas Hub. In compliance with Meta Platform Terms, your Facebook user ID, social access tokens, and cached authentication cookies have been dissociated.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 sm:p-3.5">
                   <p className="text-[11px] font-bold text-slate-900 dark:text-white">Social ID Dissociated</p>
                   <p className="text-[10px] text-slate-500 mt-0.5">Stored Facebook ID unlinked from user record</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5">
+                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 sm:p-3.5">
                   <p className="text-[11px] font-bold text-slate-900 dark:text-white">Active Sessions Revoked</p>
                   <p className="text-[10px] text-slate-500 mt-0.5">OAuth tokens expired and invalidated</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5">
+                <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 sm:p-3.5">
                   <p className="text-[11px] font-bold text-slate-900 dark:text-white">Compliance Logged</p>
                   <p className="text-[10px] text-slate-500 mt-0.5">Audit ticket logged under high priority</p>
                 </div>
@@ -251,11 +295,11 @@ function DataDeletionContent() {
 
         {/* Tab Selection */}
         <div className="flex items-center justify-center">
-          <div className="bg-slate-200/80 dark:bg-slate-900/90 p-1.5 rounded-2xl flex items-center gap-1 border border-slate-300 dark:border-slate-800 w-full sm:w-auto">
+          <div className="bg-slate-200/80 dark:bg-slate-900/90 p-1 sm:p-1.5 rounded-2xl flex items-center gap-1 border border-slate-300 dark:border-slate-800 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab("request")}
-              className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
                 activeTab === "request"
                   ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -267,7 +311,7 @@ function DataDeletionContent() {
             <button
               type="button"
               onClick={() => setActiveTab("deactivate")}
-              className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
                 activeTab === "deactivate"
                   ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -279,7 +323,7 @@ function DataDeletionContent() {
             <button
               type="button"
               onClick={() => setActiveTab("retention")}
-              className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
                 activeTab === "retention"
                   ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -293,13 +337,17 @@ function DataDeletionContent() {
 
         {/* TAB 1: Public Deletion Request Form */}
         {activeTab === "request" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 md:p-8 shadow-xl space-y-5 sm:space-y-6">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-                <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                Submit a Data Deletion Request
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400" />
+                <span>Submit a Data Deletion Request</span>
+                <HeaderTooltip
+                  content="Submitting this form initiates an auditable data deletion request that is logged directly into the compliance system. The platform verifies your account email, records client telemetry for verification, and automatically emails you secure deactivation instructions with a confirmation token. Use this method if you cannot sign into your account or have uninstalled the mobile app. Once confirmed, all active device sessions and authentication refresh tokens are terminated within 24 hours."
+                  size={16}
+                />
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
                 If you have uninstalled the application, cannot access your account, or wish to exercise your statutory right to be forgotten under GDPR/CCPA, please submit your request below.
               </p>
             </div>
@@ -416,13 +464,17 @@ function DataDeletionContent() {
 
         {/* TAB 2: Authenticated Self-Service Deactivation */}
         {activeTab === "deactivate" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 md:p-8 shadow-xl space-y-5 sm:space-y-6">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-                <UserX className="w-6 h-6 text-rose-500" />
-                Self-Service Account Deactivation
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <UserX className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
+                <span>Self-Service Account Deactivation</span>
+                <HeaderTooltip
+                  content="Direct self-service deactivation allows authenticated users to immediately revoke account access with password verification. Executing deactivation terminates all active browser sessions and mobile refresh tokens instantly, logs you out across all platforms, and flags your profile as inactive across school rosters. Use this when you require immediate credential revocation without waiting for email turnaround. School administrators retain the ability to reactivate verified accounts upon institutional request."
+                  size={16}
+                />
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
                 Deactivate your personal account credentials immediately. All active sessions across all devices will be revoked instantly.
               </p>
             </div>
@@ -614,18 +666,22 @@ function DataDeletionContent() {
 
         {/* TAB 3: Data Retention & Purge Schedule */}
         {activeTab === "retention" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 md:p-8 shadow-xl space-y-5 sm:space-y-6">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-                <Clock className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                Data Retention & Purge Schedule
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400" />
+                <span>Data Retention &amp; Purge Schedule</span>
+                <HeaderTooltip
+                  content="This schedule outlines the legal and technical retention windows across all user data categories. Ephemeral authentication tokens and OAuth bindings are shredded immediately upon deactivation. User-generated media and uploaded files are irreversibly deleted after the 30-day recovery grace period. Certain academic transcripts, attendance logs, and formal grades are retained under school institutional custody in an anonymized state to comply with statutory national educational record-keeping requirements."
+                  size={16}
+                />
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
                 Overview of how different classes of data are handled upon deactivation or statutory deletion requests.
               </p>
             </div>
 
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">

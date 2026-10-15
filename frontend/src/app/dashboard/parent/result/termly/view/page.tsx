@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronLeft, BookOpen, GraduationCap, Lock, TrendingUp, Award, BarChart3, CheckCircle2, Eye } from "lucide-react";
+import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip";
 
 function getTermLabel(term: string): string {
   const map: Record<string, string> = { FIRST: "1st Term", SECOND: "2nd Term", THIRD: "3rd Term" };
@@ -45,7 +46,7 @@ function ResultViewInner() {
 
   if (isLoading) {
     return (
-      <div className="w-[95%] mx-auto py-8 space-y-5">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 w-full space-y-5">
         <Skeleton className="h-10 w-48 rounded-xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
@@ -58,7 +59,7 @@ function ResultViewInner() {
 
   if (!group) {
     return (
-      <div className="w-[95%] mx-auto py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 w-full">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors mb-8">
           <ChevronLeft className="w-4 h-4" /> Back to Results
         </button>
@@ -88,7 +89,7 @@ function ResultViewInner() {
   const noneReleased = revealedCount === 0;
 
   return (
-    <div className="w-[95%] mx-auto py-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 w-full">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors mb-6 group">
         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
         Back to Results
@@ -169,14 +170,23 @@ function ResultViewInner() {
       )}
 
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-500" />
-          <h2 className="font-bold text-slate-800 dark:text-slate-200">Subject Scores</h2>
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-indigo-500" />
+            <h2 className="font-bold text-slate-800 dark:text-slate-200">Subject Scores</h2>
+            <HeaderTooltip
+              content="This breakdown details the continuous assessment components that calculate your child's final terminal grade. Scores include daily assignments, weekly quizzes/continuous assessments (CA), and final terminal examination papers. Subjects marked as 'Pending' are still awaiting final verification and publication by the respective subject teacher or school management."
+            />
+          </div>
+          <span className="text-xs font-semibold text-slate-400">
+            {subjectResults.length} Enrolled Subject{subjectResults.length !== 1 ? 's' : ''}
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900/60">
               <tr>
+                <th className="px-3 sm:px-4 py-4 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">#</th>
                 <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Subject</th>
                 <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignment</th>
                 <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">CA / Quiz</th>
@@ -186,11 +196,14 @@ function ResultViewInner() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {subjectResults.map((subject: any) => {
+              {subjectResults.map((subject: any, idx: number) => {
                 const released = subject.scoresRevealed;
                 const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
                 return (
                   <tr key={subject.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="px-3 sm:px-4 py-4 text-center font-bold text-xs text-slate-400 dark:text-slate-500 w-12">
+                      {idx + 1}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${released ? "bg-indigo-50 dark:bg-indigo-900/30" : "bg-slate-50 dark:bg-slate-800"}`}>
@@ -217,7 +230,7 @@ function ResultViewInner() {
                 );
               })}
               {subjectResults.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-14 text-center text-slate-400 italic">No subjects available yet.</td></tr>
+                <tr><td colSpan={7} className="px-6 py-14 text-center text-slate-400 italic">No subjects available yet.</td></tr>
               )}
             </tbody>
           </table>

@@ -96,7 +96,7 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
             }
           }}
           className={cn(
-            "flex flex-col items-center justify-center gap-4 rounded-[20px] border-2 border-dashed p-8 h-full min-h-[300px] transition-all relative overflow-hidden group cursor-pointer",
+            "flex flex-col items-center justify-center gap-4 rounded-[20px] border-2 border-dashed p-5 sm:p-6 md:p-8 h-full min-h-[280px] sm:min-h-[300px] transition-all relative overflow-hidden group cursor-pointer",
             isLimitReached
               ? "border-orange-200 bg-orange-50 dark:border-orange-500/20 dark:bg-orange-500/5 cursor-default"
               : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 hover:border-orange-400 dark:hover:border-orange-500/50 hover:shadow-md"

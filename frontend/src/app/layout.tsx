@@ -25,6 +25,9 @@ export const metadata: Metadata = {
     description: 'Manage academic operations with ease.',
     images: ['/meta-image.png'],
   },
+  other: {
+    'facebook-domain-verification': 'lwr3ngrhcgad8uzwyrekjv3x2yip0l',
+  },
 };
 
 const lexend = Lexend({

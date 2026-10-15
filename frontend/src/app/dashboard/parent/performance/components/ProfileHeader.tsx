@@ -1,15 +1,26 @@
 "use client"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Download, Mail, Calendar } from 'lucide-react';
 import { useChildExams } from '@/lib/api/hooks/useChildExams';
+import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
+import { cn } from '@/lib/utils';
 
 export default function ProfileHeader() {
-    const { selectedChildId } = useParentStore();
+    const { selectedChildId, setSelectedChildId } = useParentStore();
+    const { data: children = [] } = useParentChildren();
     const { data: student, isLoading } = useChildExams(selectedChildId);
     const [imgError, setImgError] = useState(false);
+
+    // Auto-select first child if none is active
+    useEffect(() => {
+        if (!selectedChildId && children.length > 0) {
+            setSelectedChildId(children[0].id);
+        }
+    }, [selectedChildId, children, setSelectedChildId]);
 
     if (isLoading) {
         return <Skeleton className="h-40 w-full rounded-2xl mb-8" />;
@@ -50,9 +61,14 @@ export default function ProfileHeader() {
                 </div>
 
                 <div className="flex flex-col justify-center py-2">
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tight">
-                        {student.name}
-                    </h2>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tight">
+                            {student.name}
+                        </h2>
+                        <HeaderTooltip
+                            content="This profile section summarizes your child's official student identity, enrolled class, academic session, and current enrollment status. Real-time metrics reflect only the curriculum and assessment results your child is actively enrolled in."
+                        />
+                    </div>
                     <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-widest mt-2 flex items-center gap-2 justify-center sm:justify-start">
                         {student.school?.name || 'School Hub Academy'} <span className="size-1 bg-slate-300 rounded-full"></span> ID: {student.id?.slice(-6).toUpperCase() || 'N/A'}
                     </p>
@@ -63,6 +79,13 @@ export default function ProfileHeader() {
                                 {student.classes?.[0]?.class?.name || 'Class N/A'}
                             </span>
                         </div>
+                        {student.department?.name && (
+                            <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-xl border border-indigo-200/50 dark:border-indigo-800/40 shadow-sm">
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    {student.department.name}
+                                </span>
+                            </div>
+                        )}
                         <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
                             <Calendar className="h-3.5 w-3.5" />
                             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -70,6 +93,27 @@ export default function ProfileHeader() {
                             </span>
                         </div>
                     </div>
+
+                    {/* Child Switcher if multiple children exist */}
+                    {children.length > 1 && (
+                        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar justify-center sm:justify-start">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">Child:</span>
+                            {children.map((c) => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => setSelectedChildId(c.id)}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer",
+                                        selectedChildId === c.id
+                                            ? "bg-orange-600 text-white shadow-sm"
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                                    )}
+                                >
+                                    {c.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

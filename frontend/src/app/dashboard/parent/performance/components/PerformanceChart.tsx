@@ -15,6 +15,7 @@ import { useChildExams } from '@/lib/api/hooks/useChildExams';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 export default function PerformanceChart() {
     const { selectedChildId } = useParentStore();
@@ -54,9 +55,14 @@ export default function PerformanceChart() {
         <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2rem] shadow-sm border border-slate-200 dark:border-white/10 p-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
                 <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-                        Academic Trend
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                            Academic Trend
+                        </h3>
+                        <HeaderTooltip
+                            content={`This area chart visualizes your child's chronological score trajectory across consecutive assessments. Filter by specific subjects to analyze focused mastery progression, identify performance volatility, and track improvement over time.`}
+                        />
+                    </div>
                     <p className="text-[12px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest">
                         Analysis of recent assessments
                     </p>

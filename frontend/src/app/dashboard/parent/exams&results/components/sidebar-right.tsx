@@ -18,6 +18,7 @@ import { useParentStore } from "@/lib/api/hooks/useParentStore"
 import { useChildExams } from "@/lib/api/hooks/useChildExams"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
+import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip"
 
 ChartJS.register(
   RadialLinearScale,
@@ -135,26 +136,32 @@ export default function SidebarRight() {
   }
 
   return (
-    <div className="w-full lg:w-80 flex flex-col gap-6">
+    <div className="w-full lg:w-80 flex flex-col gap-4 sm:gap-6">
 
       {/* Performance Radar */}
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Performance Radar</h3>
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-sm">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Performance Radar</h3>
+            <HeaderTooltip
+              content="Visual radar map comparing performance percentages across the top 5 academic subjects. Use this polygon to identify subject symmetry or spot specific subjects falling behind the benchmark."
+              size={13}
+            />
+          </div>
           <Link href="/dashboard/parent/exams&results/analytics" className="text-orange-600 text-[10px] font-black uppercase tracking-widest hover:underline">
             Details
           </Link>
         </div>
 
-        <div className="w-full h-60 flex items-center justify-center">
+        <div className="w-full h-52 sm:h-60 flex items-center justify-center">
           <Radar data={chartData} options={chartOptions as any} />
         </div>
 
-        <div className="mt-6 flex flex-col gap-2.5">
+        <div className="mt-4 sm:mt-6 flex flex-col gap-2 sm:gap-2.5">
           {subjectPerformance.map((item) => (
             <div key={item.subject} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">{item.subject}</span>
-              <span className="text-[12px] font-black text-slate-900 dark:text-white">{item.score}%</span>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">{item.subject}</span>
+              <span className="text-[11px] sm:text-[12px] font-black text-slate-900 dark:text-white">{item.score}%</span>
             </div>
           ))}
           {subjectPerformance.length === 0 && (
@@ -164,22 +171,28 @@ export default function SidebarRight() {
       </div>
 
       {/* Upcoming Exams */}
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 shadow-sm">
-        <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-900 dark:text-white mb-6">Upcoming Exams</h3>
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-sm">
+        <div className="flex items-center gap-1.5 mb-4 sm:mb-6">
+          <h3 className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Upcoming Exams</h3>
+          <HeaderTooltip
+            content="Timetable of upcoming examination papers, test sittings, and submission milestones scheduled by subject teachers for this academic term."
+            size={13}
+          />
+        </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
           {upcomingExams.map((exam, index) => (
-            <div key={index} className="flex gap-4 items-center group cursor-pointer p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
-              <div className="flex flex-col items-center justify-center bg-orange-600/10 dark:bg-orange-600/20 rounded-xl size-12 shrink-0 border border-orange-500/10">
-                <span className="text-[9px] font-black text-orange-600 uppercase leading-none">{exam.month}</span>
-                <span className="text-lg font-black text-slate-900 dark:text-white leading-none mt-1">{exam.day}</span>
+            <div key={index} className="flex gap-3 sm:gap-4 items-center group cursor-pointer p-2 rounded-xl sm:rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+              <div className="flex flex-col items-center justify-center bg-orange-600/10 dark:bg-orange-600/20 rounded-xl size-11 sm:size-12 shrink-0 border border-orange-500/10">
+                <span className="text-[8px] sm:text-[9px] font-black text-orange-600 uppercase leading-none">{exam.month}</span>
+                <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-none mt-1">{exam.day}</span>
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="font-black text-slate-900 dark:text-white text-[13px] truncate tracking-tight">
+                <p className="font-black text-slate-900 dark:text-white text-xs sm:text-[13px] truncate tracking-tight">
                   {exam.title}
                 </p>
-                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 truncate">
+                <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 truncate">
                   {exam.subject} • {exam.time}
                 </p>
               </div>
@@ -193,8 +206,8 @@ export default function SidebarRight() {
           )}
         </div>
         
-        <Link href="/dashboard/parent/exams&results/calender" className="block w-full mt-6">
-          <button className="w-full py-3.5 rounded-2xl bg-orange-600 text-white font-black text-[10px] uppercase tracking-widest hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20 active:scale-95">
+        <Link href="/dashboard/parent/exams&results/calender" className="block w-full mt-4 sm:mt-6">
+          <button className="w-full py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-orange-600 text-white font-black text-[9px] sm:text-[10px] uppercase tracking-widest hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20 active:scale-95">
             Full Schedule
           </button>
         </Link>

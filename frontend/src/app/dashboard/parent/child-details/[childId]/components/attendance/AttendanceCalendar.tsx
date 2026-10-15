@@ -19,6 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip";
 
 interface AttendanceCalendarProps {
   childId: string;
@@ -130,91 +131,96 @@ export default function AttendanceCalendar({ childId, themeColor = "#2563eb" }: 
   return (
     <div className="space-y-8">
       {/* Header & Stats */}
-      <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-8 rounded-[2.5rem] shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="size-16 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
-            <CalendarIcon size={32} />
+      <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm">
+        <div className="flex items-center gap-4 sm:gap-6 w-full md:w-auto">
+          <div className="size-12 sm:size-16 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
+            <CalendarIcon size={28} className="sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-4">
-              <button onClick={handlePrevMonth} className="hover:text-primary transition-colors"><ChevronLeft size={24}/></button>
-              {MONTHS[month]} {year}
-              <button onClick={handleNextMonth} className="hover:text-primary transition-colors"><ChevronRight size={24}/></button>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2 sm:gap-4">
+              <button onClick={handlePrevMonth} className="hover:text-primary transition-colors p-1"><ChevronLeft size={20} className="sm:w-6 sm:h-6"/></button>
+              <span>{MONTHS[month]} {year}</span>
+              <button onClick={handleNextMonth} className="hover:text-primary transition-colors p-1"><ChevronRight size={20} className="sm:w-6 sm:h-6"/></button>
             </h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Monthly Attendance Overview</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Attendance Overview</p>
+              <HeaderTooltip content="Comprehensive calendar log tracking daily student presence, punctuality infractions, and recorded absences for the selected academic month." size={14} />
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Present</p>
-            <p className="text-xl font-black text-emerald-500">{presentCount}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 w-full md:w-auto">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[70px] sm:min-w-[100px]">
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Present</p>
+            <p className="text-lg sm:text-xl font-black text-emerald-500">{presentCount}</p>
           </div>
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Late</p>
-            <p className="text-xl font-black text-amber-500">{lateCount}</p>
+          <div className="px-3 sm:px-6 py-3 sm:py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[70px] sm:min-w-[100px]">
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Late</p>
+            <p className="text-lg sm:text-xl font-black text-amber-500">{lateCount}</p>
           </div>
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absent</p>
-            <p className="text-xl font-black text-rose-500">{absentCount}</p>
+          <div className="px-3 sm:px-6 py-3 sm:py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[70px] sm:min-w-[100px]">
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absent</p>
+            <p className="text-lg sm:text-xl font-black text-rose-500">{absentCount}</p>
           </div>
-          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rate</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white">{attendanceRate}%</p>
+          <div className="px-3 sm:px-6 py-3 sm:py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[70px] sm:min-w-[100px]">
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rate</p>
+            <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">{attendanceRate}%</p>
           </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm">
-        <div className="grid grid-cols-7 gap-4 mb-4">
-          {DAYS.map(day => (
-            <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {day}
-            </div>
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-7 gap-4">
-          {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-24 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
-          ))}
-          
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1;
-            const record = getAttendanceForDate(day);
-            const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-            
-            return (
-              <div 
-                key={day} 
-                onClick={() => handleDayClick(day)}
-                className={cn(
-                  "h-24 rounded-2xl border p-3 flex flex-col justify-between transition-all cursor-pointer hover:shadow-md hover:scale-[1.02]",
-                  record ? getStatusColor(record.status) : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-slate-300",
-                  isToday && !record && "border-primary/50 shadow-sm"
-                )}
-                style={isToday && !record ? { borderColor: themeColor } : {}}
-              >
-                <div className="flex justify-between items-start">
-                  <span className={cn(
-                    "text-sm font-black", 
-                    record ? "opacity-90" : "text-slate-400",
-                    isToday && !record && "text-slate-900 dark:text-white"
-                  )}>
-                    {day}
-                  </span>
-                  {record && getStatusDot(record.status)}
-                </div>
-                
-                {record && (
-                  <div className="text-[9px] font-black uppercase tracking-widest mt-auto">
-                    {record.status}
-                  </div>
-                )}
+      <div className="bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-2xl sm:rounded-[2rem] p-3 sm:p-6 md:p-8 shadow-sm overflow-x-auto">
+        <div className="min-w-[520px] sm:min-w-0">
+          <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4">
+            {DAYS.map(day => (
+              <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                {day}
               </div>
-            );
-          })}
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-2 sm:gap-4">
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-16 sm:h-20 md:h-24 rounded-xl sm:rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
+            ))}
+            
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const record = getAttendanceForDate(day);
+              const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+              
+              return (
+                <div 
+                  key={day} 
+                  onClick={() => handleDayClick(day)}
+                  className={cn(
+                    "h-16 sm:h-20 md:h-24 rounded-xl sm:rounded-2xl border p-2 sm:p-3 flex flex-col justify-between transition-all cursor-pointer hover:shadow-md hover:scale-[1.02]",
+                    record ? getStatusColor(record.status) : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-slate-300",
+                    isToday && !record && "border-primary/50 shadow-sm"
+                  )}
+                  style={isToday && !record ? { borderColor: themeColor } : {}}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className={cn(
+                      "text-xs sm:text-sm font-black", 
+                      record ? "opacity-90" : "text-slate-400",
+                      isToday && !record && "text-slate-900 dark:text-white"
+                    )}>
+                      {day}
+                    </span>
+                    {record && getStatusDot(record.status)}
+                  </div>
+                  
+                  {record && (
+                    <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest mt-auto truncate">
+                      {record.status}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

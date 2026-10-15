@@ -15,7 +15,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { PARENT_FEATURE_FLAGS, type ParentFeatureFlagKey } from "./parentFeatureFlags";
@@ -71,6 +71,9 @@ export function ParentMobileDrawer() {
       </SheetTrigger>
 
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
+        <SheetTitle className="sr-only">Parent Navigation Menu</SheetTitle>
+        <SheetDescription className="sr-only">Mobile navigation links for Parent Hub</SheetDescription>
+
         {/* Header */}
         <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5">
           <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">

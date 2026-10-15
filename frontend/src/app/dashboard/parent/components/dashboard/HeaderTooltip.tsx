@@ -26,7 +26,7 @@ export function HeaderTooltip({ content, size = 13, side = 'top', className = ''
         </TooltipTrigger>
         <TooltipContent 
           side={side} 
-          className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-slate-200 border border-slate-700/60 shadow-2xl rounded-xl text-left z-50 font-normal normal-case tracking-normal"
+          className="max-w-xs sm:max-w-sm md:max-w-md p-3.5 text-xs leading-relaxed bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-slate-200 border border-slate-700/60 shadow-2xl rounded-xl text-left z-50 font-normal normal-case tracking-normal"
         >
           {content}
         </TooltipContent>

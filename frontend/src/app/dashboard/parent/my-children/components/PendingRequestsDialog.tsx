@@ -13,6 +13,7 @@ import { linkService, LinkRequest } from '@/lib/api/services/linkService'
 import { useToast } from '@/lib/hooks/useToast'
 import { Loader2, XCircle, Clock, Users, UserPlus, ShieldCheck } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip'
 
 interface PendingRequestsDialogProps {
   isOpen: boolean
@@ -79,7 +80,11 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-2xl font-black uppercase tracking-tight">
               <Users className="w-6 h-6 text-orange-500" />
-              Link Requests
+              <span>Link Requests</span>
+              <HeaderTooltip
+                content="Manage outbound link invitations and active family relationships. Student link requests require confirmation from the student or school administration before academic performance metrics become visible on your dashboard."
+                size={16}
+              />
             </DialogTitle>
             <DialogDescription className="text-slate-400 font-medium">
               Manage student connections and pending linking requests.

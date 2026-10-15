@@ -131,6 +131,11 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
         include: {
           class: {
             include: {
+              subjects: {
+                include: {
+                  subject: true,
+                }
+              },
               teachers: {
                 include: {
                   teacher: {
@@ -160,6 +165,7 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
           subjectPaper: {
             include: {
               subject: true,
+              teacher: true,
             }
           },
         },
@@ -289,7 +295,7 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
   const totalMax = allGrades.reduce((s, g) => s + g.maxMarks, 0);
   const averageGrade = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 
-  // Upcoming exams for the student's current class/school/department
+  // Upcoming exams strictly for the student's eligibility (not whole class if targeted to other departments)
   const studentInfo = childLink?.student;
   const classIds = studentInfo?.classes.map(c => c.classId) || [];
   const departmentId = studentInfo?.departmentId;
@@ -298,10 +304,22 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
   const orConditions: any[] = [];
   
   if (studentSchoolId) {
-    orConditions.push({
-      schoolId: studentSchoolId,
-      scope: "SCHOOL",
-    });
+    if (departmentId) {
+      orConditions.push({
+        schoolId: studentSchoolId,
+        scope: "SCHOOL",
+        OR: [
+          { departments: { none: {} } },
+          { departments: { some: { departmentId } } }
+        ]
+      });
+    } else {
+      orConditions.push({
+        schoolId: studentSchoolId,
+        scope: "SCHOOL",
+        departments: { none: {} }
+      });
+    }
   }
 
   if (studentSchoolId && departmentId) {
@@ -313,22 +331,37 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
   }
 
   if (classIds.length > 0) {
-    orConditions.push({
-      schoolId: studentSchoolId,
-      scope: "CLASS",
-      classId: { in: classIds },
-    });
+    if (departmentId) {
+      orConditions.push({
+        schoolId: studentSchoolId,
+        scope: "CLASS",
+        classId: { in: classIds },
+        OR: [
+          { departments: { none: {} } },
+          { departments: { some: { departmentId } } }
+        ]
+      });
+    } else {
+      orConditions.push({
+        schoolId: studentSchoolId,
+        scope: "CLASS",
+        classId: { in: classIds },
+        departments: { none: {} }
+      });
+    }
   }
 
-  const upcomingExams = studentInfo
+  const upcomingExams = studentInfo && orConditions.length > 0
     ? await prisma.exam.findMany({
         where: {
           status: "PUBLISHED",
           startDate: { gte: new Date() },
-          OR: orConditions.length > 0 ? orConditions : undefined,
+          examAttempts: { none: { studentId: studentInfo.id } },
+          grades: { none: { studentId: studentInfo.id } },
+          OR: orConditions,
         },
         orderBy: { startDate: "asc" },
-        take: 5,
+        take: 20,
         select: {
           id: true,
           title: true,

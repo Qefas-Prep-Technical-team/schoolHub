@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EditChildModal from './EditChildModal';
 import { cn } from '@/lib/utils';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 interface ChildCardProps {
   child: {
@@ -93,12 +94,12 @@ export default function ChildCard({ child }: ChildCardProps) {
 
   return (
     <>
-      <article className="bg-white dark:bg-slate-900 rounded-[20px] shadow-sm border border-slate-100 dark:border-slate-800 p-6 flex flex-col hover:shadow-md transition-shadow">
+      <article className="bg-white dark:bg-slate-900 rounded-[20px] shadow-sm border border-slate-100 dark:border-slate-800 p-4 sm:p-5 md:p-6 flex flex-col hover:shadow-md transition-shadow">
         
         {/* Card Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative size-16 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex justify-between items-start mb-5 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="relative size-14 sm:size-16 rounded-full overflow-hidden border border-slate-100 dark:border-slate-800 shrink-0">
               <Image
                 src={displayImage}
                 alt={child.name}
@@ -111,7 +112,7 @@ export default function ChildCard({ child }: ChildCardProps) {
             </div>
             
             <div className="flex flex-col">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                 {child.name}
               </h3>
               <div className="flex items-center gap-1.5 mt-1 text-[11px] font-medium text-slate-500">
@@ -152,23 +153,35 @@ export default function ChildCard({ child }: ChildCardProps) {
         </div>
 
         {/* Visual Analytics */}
-        <div className="flex flex-col gap-4 mb-6">
-           <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/50">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-5 sm:mb-6">
+           <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/50">
              <div className="flex flex-col">
                <span className="text-[11px] text-slate-500 font-medium">Class</span>
                <span className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{child.class}</span>
              </div>
              <div className="flex flex-col items-end">
-               <span className="text-[11px] text-slate-500 font-medium">Avg Grade</span>
+               <div className="flex items-center gap-1">
+                 <span className="text-[11px] text-slate-500 font-medium">Avg Grade</span>
+                 <HeaderTooltip
+                   content="Cumulative academic grade average across all assessments and exams recorded for this student in the current session."
+                   size={11}
+                 />
+               </div>
                <div className="flex items-baseline gap-1 mt-0.5">
                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{child.gradePercentage}</span>
                </div>
              </div>
            </div>
 
-           <div className="flex flex-col p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/50">
+           <div className="flex flex-col p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/50">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] text-slate-500 font-medium">Attendance</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] text-slate-500 font-medium">Attendance</span>
+                  <HeaderTooltip
+                    content="Percentage of regular school session days present out of total scheduled instructional days."
+                    size={11}
+                  />
+                </div>
                 <span className="text-xs font-semibold text-slate-900 dark:text-white">{child.attendance}%</span>
               </div>
               <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">

@@ -41,6 +41,87 @@
 
 ### Thursday, October 15, 2026
 
+- **Parent Dashboard List & Grid View Modes (Default: Grid)**:
+    - [x] **Linked Students (`/dashboard/parent/my-children`)**:
+        - Added `viewMode` toggle (`'grid' | 'list'`) to `PageHeading` with `grid` set as the default view.
+        - Implemented responsive table/list view in `ChildrenGrid` (`ChildListRow`) displaying avatar, student code, enrolled class, attendance pill, academic average pill, active status indicator, and quick actions (Dashboard & Dropdown).
+        - Preserved `AddChildCard` action across both grid and list views.
+    - [x] **Exams & Results Assessment Records (`/dashboard/parent/exams&results`)**:
+        - Added `viewMode` toggle (`'grid' | 'list'`) to `ExamList` with `grid` set as the default view.
+        - Implemented modern assessment cards in grid view displaying subject icon, assessment type badge, status pill, subject teacher, score / grade badge, and direct details link.
+        - Maintained table list view with seamless switching and unified pagination.
+        - Added row numbering `#` column (`(currentPage - 1) * itemsPerPage + index + 1`) to the table header and rows on desktop and mobile.
+    - [x] **Termly Results Dashboard (`/dashboard/parent/result/termly`)**:
+        - Added `viewMode` toggle (`'grid' | 'list'`) with `grid` as default view.
+        - Implemented List/Table view with `#` numbering column (`idx + 1`), term badge, session, class, subjects count pill, score status badge, and "View Result" button.
+        - Added card index `#${idx + 1}` to `ResultGroupCard` in grid view.
+        - Added search filter input (by session, class, term) and term dropdown selector (`All`, `1st Term`, `2nd Term`, `3rd Term`).
+        - Added comprehensive `HeaderTooltip` explaining official term transcripts, cumulative grades, and score publication schedules.
+        - Normalized responsive layout to `max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8`.
+        - Added multi-child switcher tabs with automatic first-child fallback.
+    - [x] **Termly Result Detail View (`/dashboard/parent/result/termly/view`)**:
+        - Added `#` numbering column to Subject Scores table header and rows (`idx + 1`).
+        - Added comprehensive `HeaderTooltip` next to Subject Scores section describing assignment, CA/quiz, exam components, and grading weights.
+        - Normalized responsive container layout to `max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8`.
+    - [x] **Student Performance & Subject Mastery Breakdown (`/dashboard/parent/performance`)**:
+        - Created `SubjectPerformanceList` component with `viewMode` toggle (`'grid' | 'list'`) with `grid` as default view.
+        - Added `#` row numbering column (`index + 1`) to list view, subject icons, teachers, cumulative averages, total assessment counts, performance tier badges, and direct details links.
+        - Added `#${index + 1}` card badges to grid view.
+        - Replaced mock "Alex Johnson" data in `subject-performance` with live, eligible curriculum subjects derived from student's enrolled classes and published grades.
+        - Updated `backend/src/modules/parent/parent.service.ts` (`getChildDetailsService`) to include class subjects and subject paper teachers.
+        - Added multi-child switcher tabs to `ProfileHeader` with automatic first-child fallback.
+        - Added context-rich `HeaderTooltip` components across `ProfileHeader`, `StatsGrid`, `PerformanceChart`, and `SubjectPerformanceList`.
+
+- **Row Numbering & Student Exam Eligibility Filtering**:
+    - [x] **Table View Numbering (`ChildrenGrid.tsx` & `exam-list.tsx`)**:
+        - Added `#` column header and explicit row index numbers (`index + 1`) to `ChildrenGrid` (`ChildListRow`).
+        - Added `#` column header and paginated row index numbers (`(currentPage - 1) * itemsPerPage + index + 1`) to `exam-list.tsx` assessment records on both desktop and mobile views.
+    - [x] **Student-Specific Exam Eligibility Filtering**:
+        - Enhanced `getParentDashboardService` in `backend/src/modules/parent/parent.service.ts`: Upcoming exams are now strictly filtered by student department eligibility (for `CLASS` and `SCHOOL` scoped assessments with department restrictions, only matching students are returned; general assessments with no department restrictions remain accessible).
+        - Filtered out exams already attempted or graded for the student (`examAttempts: { none: { studentId } }` and `grades: { none: { studentId } }`) from upcoming exams.
+        - Enhanced `getExamsService` in `backend/src/modules/exam/exam.service.ts` with identical student department eligibility constraints across `CLASS` and `SCHOOL` scopes.
+        - Added frontend deduplication and exclusion in `exam-list.tsx` to guarantee completed exams are never shown under pending assessments.
+
+- **Parent Exams & Results Page Mobile Responsiveness & Comprehensive Tooltips (`/dashboard/parent/exams&results`)**:
+    - [x] **Page Layout & Margin Normalization (`page.tsx`)**:
+        - Updated container from rigid `p-6 md:p-8` to responsive `max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8`.
+        - Added clear page header with title, subtitle, and comprehensive HeaderTooltip describing the continuous assessment portal and grade trajectories.
+        - Made tab buttons wrap and fit seamlessly on mobile devices (`overflow-x-auto no-scrollbar`).
+    - [x] **Responsive Stat Cards (`components/stat-cards.tsx`)**:
+        - Restructured grid from single-column vertical stack on mobile to `grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6` with compact padding `p-3.5 sm:p-5 md:p-6 rounded-2xl`.
+        - Integrated context-aware HeaderTooltips for Term Average, Attendance, Current Class, and Recent Grades.
+    - [x] **Assessment List & Filter Toolbar (`components/exam-list.tsx`)**:
+        - Added Parent Insight tooltip and Continuous Assessment Records section title with HeaderTooltip and live record count.
+        - Enhanced search input and subject/status dropdowns to fluidly adapt between mobile column and desktop row layouts.
+        - Upgraded assessment card padding and container border radius for mobile screens.
+    - [x] **Sidebar Insights (`components/sidebar-right.tsx`)**:
+        - Added comprehensive tooltips to Performance Radar (explaining multi-subject symmetry) and Upcoming Exams (tracking exam sitting milestones).
+        - Adjusted card padding and radar canvas sizing to scale cleanly without layout shifts.
+    - [x] **Final Result Grades Transcript (`components/final-results.tsx`)**:
+        - Added comprehensive tooltips to the Final Result Grades header, Score column (detailing WAEC grading breakdown A1–F9), and Behavior rating column.
+        - Made gradient header banner and session/term dropdown filters responsive on small viewports.
+
+- **Parent Child Details Page Mobile Responsiveness & Comprehensive Tooltips (`/dashboard/parent/child-details/[childId]`)**:
+    - [x] **Container Padding & Gutter Elimination**:
+        - Normalized horizontal padding across profile header, tabs bar, and tab content containers to `px-3 sm:px-6 lg:px-8` (replacing rigid `px-12` / `md:px-12` / `p-12`), eliminating excessive margins on mobile viewports.
+    - [x] **Adaptive Mobile Tabs & Avatar Layout**:
+        - Restructured the 8-tab grid navigation from vertical 2-column stacking to responsive `grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-3` with compact button padding (`p-2 sm:p-4`), cleanly fitting all tabs in 2 rows on mobile.
+        - Adjusted student avatar dimensions to `size-24 sm:size-28 md:size-44` with responsive top offset `-mt-12 md:-mt-20`.
+    - [x] **Comprehensive Header Tooltips (`HeaderTooltip`)**:
+        - Integrated context-rich, analytical tooltips following `.agents/skills/comprehensive_header_tooltips/SKILL.md` across:
+            - Profile Header (Student Dossier summary)
+            - Overview Tab (Personal Information, Academic Context, Quick Actions, Guardian Details)
+            - History Tab (Student Timeline)
+            - Behaviour Tab (Conduct Standing, Core Strengths, Conduct Timeline)
+            - Academic Tab (Performance by Subject, Academic Progress, Recent Grades)
+            - Attendance Tab (Monthly Attendance Overview with daily presence logs and attendance rate breakdown)
+            - Timetable Tab (Weekly Schedule master timetable)
+            - Teachers Tab (Class Teachers directory)
+            - Assignments Tab (Student Assignments continuous assessment)
+    - [x] **Responsive Cards & Grid Systems**:
+        - Modernized `SectionCard` with `rounded-2xl md:rounded-[2rem] p-4 sm:p-6 md:p-8` and flexible header actions.
+        - Optimized `AttendanceCalendar` stats into a responsive `grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4` with horizontal scroll protection for calendar grid.
+
 - **Public Data Deletion & Self-Service Account Deactivation Workflow (`/data-deletion`)**:
     - [x] **Client Audit Telemetry Helper (`auth.controller.ts`)**:
         - Implemented `extractClientAuditInfo(req)` extracting client IP address, geographical location via `geoip-lite`, device model, browser version, and operating system via `ua-parser-js`, and human-readable timestamp.
@@ -71,6 +152,24 @@
         - Fixed GitGuardian / GitHub Secret Scanning alert: completely removed hardcoded JWT secret fallback (`"qefas-jwt-secret-key-2026"`) from `auth.controller.ts` in both `requestDataDeletion` and `confirmDeactivation`. Replaced with strictly validated environment variable (`process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET`) that throws if missing.
         - Fixed `ComplianceTicket['status']` typing in `deletions/page.tsx` line 230.
         - Verified both `backend` and `frontend` pass `npx tsc --noEmit` and `npm run build` with zero errors (exit code 0).
+    - [x] **Responsive Layout Margin Optimization & Comprehensive Header Tooltips (`/data-deletion`)**:
+        - Significantly reduced left and right border margins across both web and mobile screens: expanded main container from `max-w-4xl` to `max-w-5xl`, reduced container side padding to `px-2 sm:px-4 lg:px-6`, and optimized card padding from `p-6 sm:p-10` to `p-3.5 sm:p-6 md:p-8`, eliminating wasted horizontal space.
+        - Added `overflow-x-auto` to the data retention schedule table to ensure smooth, responsive mobile rendering without clipping.
+        - Added Comprehensive Header Tooltips adhering strictly to the `comprehensive_header_tooltips` skill guidelines across all key sections:
+            - **Hero Section**: Context-rich legal explanation covering GDPR Article 17, CCPA, and Meta Platform Policies, distinguishing between immediate deactivation and 30-day permanent shredding.
+            - **Tab 1 ("Submit a Data Deletion Request")**: Explains the auditable compliance ticketing workflow, client telemetry logging, and 24-hour token revocation.
+            - **Tab 2 ("Self-Service Account Deactivation")**: Details real-time password-verified revocation across web, iOS, and Android platforms.
+            - **Tab 3 ("Data Retention & Purge Schedule")**: Clarifies the difference between immediately purged authentication tokens vs legally retained anonymized academic transcripts.
+    - [x] **Parent Dashboard My Children Page Optimization (`/dashboard/parent/my-children`)**:
+        - Reduced excessive margins and padding across both web and mobile:
+            - Parent Layout (`dashboard/parent/layout.tsx`): trimmed padding from `p-4 md:p-6 lg:p-10` to `p-3 sm:p-5 md:p-6 lg:p-8`.
+            - Page Container (`my-children/page.tsx`): removed redundant nested `<main px-4 md:px-0>` and artificial `w-[95%] mx-auto` constraint, switching to a responsive `max-w-[1600px] mx-auto` layout matching the main parent dashboard.
+            - Page Heading (`PageHeading.tsx`): removed `px-2 mb-4` to align flush with the grid cards.
+            - Children Grid & Cards: tightened grid gap to `gap-4 sm:gap-6` and card padding to `p-4 sm:p-5 md:p-6`, maximizing usable horizontal space for mobile devices.
+        - Integrated Comprehensive Header Tooltips adhering strictly to the skill:
+            - **Page Header ("Linked Students")**: Analytical tooltip explaining central directory management, drilling down into academics, and connecting additional wards via Link Student or Pending Requests.
+            - **Card Metrics**: Contextual tooltips explaining **Avg Grade** calculation and **Attendance** session percentage on individual student cards.
+            - **Pending Requests Dialog**: Header tooltip clarifying the outbound invitation and school confirmation workflow.
 
 - **Server-Side Facebook OAuth Integration & Console SSO**:
     - [x] **Database Schema**:

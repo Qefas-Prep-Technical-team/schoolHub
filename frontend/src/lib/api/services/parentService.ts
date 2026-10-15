@@ -59,9 +59,17 @@ export interface ChildDetails {
   school?: {
     name: string;
   };
+  department?: {
+    name: string;
+  };
   classes?: {
     class?: {
       name: string;
+      subjects?: {
+        subject?: {
+          name: string;
+        };
+      }[];
     }
   }[];
 }

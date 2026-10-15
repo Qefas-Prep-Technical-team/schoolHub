@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <SidebarInset className="flex flex-col h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950/50 transition-all duration-300 ease-in-out">
                 <TopNavBar />
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <div className="p-4 md:p-6 lg:p-10">
+                    <div className="p-3 sm:p-5 md:p-6 lg:p-8">
                         <TrialBanner />
                         <FeatureGuard role="parent">
                             {children}

@@ -24,6 +24,7 @@ import {
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
 import { ExamDetailsModal } from './components/ExamDetailsModal'
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip'
 
 import { StudentHistoryTimeline } from '@/app/dashboard/admin/students/components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
@@ -75,12 +76,27 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
     )
 }
 
-function SectionCard({ title, children, className = '', headerAction }: { title: string; children: React.ReactNode; className?: string; headerAction?: React.ReactNode }) {
+function SectionCard({ 
+    title, 
+    children, 
+    className = '', 
+    headerAction,
+    info
+}: { 
+    title: string; 
+    children: React.ReactNode; 
+    className?: string; 
+    headerAction?: React.ReactNode;
+    info?: string;
+}) {
     return (
-        <div className={cn("bg-white dark:bg-slate-900 border-y md:border border-slate-200 dark:border-slate-800 rounded-none md:rounded-[2rem] overflow-hidden", className)}>
-            <div className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
+        <div className={cn("bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-[2rem] overflow-hidden shadow-sm", className)}>
+            <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+                <div className="flex items-center justify-between flex-wrap gap-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
+                        {info && <HeaderTooltip content={info} size={16} />}
+                    </div>
                     {headerAction}
                 </div>
                 {children}
@@ -91,9 +107,9 @@ function SectionCard({ title, children, className = '', headerAction }: { title:
 
 function StatBadge({ label, value, icon: Icon, themeColor, trend }: { label: string; value: string | number; icon: React.ElementType; themeColor: string; trend?: string }) {
     return (
-        <div className="p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-3 sm:space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-                <div className="size-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
+                <div className="size-9 sm:size-10 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
                     <Icon size={18} />
                 </div>
                 {trend && (
@@ -104,7 +120,7 @@ function StatBadge({ label, value, icon: Icon, themeColor, trend }: { label: str
             </div>
             <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{value}</p>
             </div>
         </div>
     )
@@ -664,31 +680,37 @@ export default function StudentProfilePage() {
             </section>
 
             {/* ── Profile Header ───────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative">
                 <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20">
 
                     {/* Avatar */}
-                    <div className="size-28 md:size-44 rounded-3xl md:rounded-[2rem] bg-white dark:bg-slate-900 p-1.5 shadow-3xl border-[4px] border-slate-100 dark:border-slate-950 flex items-center justify-center shrink-0 overflow-hidden group">
+                    <div className="size-24 sm:size-28 md:size-44 rounded-3xl md:rounded-[2rem] bg-white dark:bg-slate-900 p-1.5 shadow-3xl border-[4px] border-slate-100 dark:border-slate-950 flex items-center justify-center shrink-0 overflow-hidden group">
                         <img src={avatar} alt={name} className="w-full h-full rounded-2xl md:rounded-[1.5rem] object-cover group-hover:scale-110 transition-transform duration-700" />
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 pt-2 md:pt-20 space-y-4">
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="flex-1 pt-1 md:pt-20 space-y-3 sm:space-y-4">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 sm:gap-4">
                             <div className="space-y-1">
-                                <h1 className="text-2xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.85]">
-                                    {name}<span style={{ color: primaryColor }}>.</span>
-                                </h1>
-                                <p className="text-sm md:text-lg font-bold text-slate-500 dark:text-slate-400 mt-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.85]">
+                                        {name}<span style={{ color: primaryColor }}>.</span>
+                                    </h1>
+                                    <HeaderTooltip
+                                        content={`Comprehensive student dossier for ${name}. Review real-time grade distributions, timeline milestones, attendance roll-calls, and class instructor contacts.`}
+                                        size={20}
+                                    />
+                                </div>
+                                <p className="text-xs sm:text-sm md:text-lg font-bold text-slate-500 dark:text-slate-400 mt-1 sm:mt-2">
                                     {classNameLabel} · {department}
                                 </p>
-                                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-2">
-                                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                        <Hash size={14} style={{ color: primaryColor }} />
+                                <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1.5 pt-1.5 sm:pt-2">
+                                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                        <Hash size={13} style={{ color: primaryColor }} />
                                         {studentCode}
                                     </span>
                                     <span className={cn(
-                                        "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
+                                        "flex items-center gap-1 px-3 sm:px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
                                         isVerified
                                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
                                             : 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
@@ -698,17 +720,15 @@ export default function StudentProfilePage() {
                                     </span>
                                 </div>
                             </div>
-
-
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* ── Tabs (Grid View) ────────────────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-10 md:mt-12">
-                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-4 sm:p-6 shadow-xl border border-slate-100 dark:border-slate-800">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2rem] p-2.5 sm:p-5 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-3">
                         {TABS.map((tab, idx) => {
                             const icons = [BarChart3, BookOpen, Activity, Clock, GraduationCap, Calendar, Users, FileText]
                             const colors = ["#6366f1", "#ea580c", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#f97316"]
@@ -720,17 +740,17 @@ export default function StudentProfilePage() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={cn(
-                                        "flex flex-col items-center justify-center p-4 sm:p-5 rounded-[1.5rem] transition-all duration-300 gap-3 border shadow-sm",
+                                        "flex flex-col items-center justify-center p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 gap-1.5 sm:gap-2.5 border shadow-sm",
                                         activeTab === tab.id
                                             ? "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-md scale-[1.02]"
                                             : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md"
                                     )}
                                 >
-                                    <div className="p-3 rounded-2xl" style={{ backgroundColor: `${iconColor}15` }}>
-                                        <Icon size={24} style={{ color: iconColor }} />
+                                    <div className="p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl" style={{ backgroundColor: `${iconColor}15` }}>
+                                        <Icon className="size-4 sm:size-5" style={{ color: iconColor }} />
                                     </div>
                                     <span className={cn(
-                                        "text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-center leading-tight",
+                                        "text-[8px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-center leading-tight line-clamp-1",
                                         activeTab === tab.id ? "text-slate-900 dark:text-white" : "text-slate-500"
                                     )}>
                                         {tab.label}
@@ -744,11 +764,11 @@ export default function StudentProfilePage() {
 
             {/* ── Overview Tab ─────────────────────────────────────────────── */}
             {activeTab === 'overview' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 pb-20">
 
-                    <div className="lg:col-span-2 space-y-6 md:space-y-10">
+                    <div className="lg:col-span-2 space-y-6 md:space-y-8">
                         {/* Summary Metrics */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <StatBadge 
                                 label="Academic Average" 
                                 value={`${performanceStats.avg}%`} 
@@ -766,8 +786,11 @@ export default function StudentProfilePage() {
                         </div>
 
                         {/* Personal Information */}
-                        <SectionCard title="Personal Information">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <SectionCard 
+                            title="Personal Information"
+                            info="Official student demographic and identity data recorded on the school registry, including verified email contact, date of birth, gender, and current academic grade level progression."
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-8">
                                 <InfoRow icon={Mail} label="Email Address" value={email} themeColor={primaryColor} />
                                 <InfoRow icon={Calendar} label="Date of Birth" value={dob} themeColor={primaryColor} />
                                 <InfoRow icon={Users} label="Gender" value={gender} themeColor={primaryColor} />
@@ -776,8 +799,11 @@ export default function StudentProfilePage() {
                         </SectionCard>
 
                         {/* Institutional Links */}
-                        <SectionCard title="Academic Context">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <SectionCard 
+                            title="Academic Context"
+                            info="Institutional placement details identifying the student's enrolled school campus, assigned classroom section, department division, and unique student ID code."
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-8">
                                 <InfoRow icon={Building2} label="Current School" value={student.school?.name || 'Not linked'} themeColor={primaryColor} />
                                 <InfoRow icon={BookOpen} label="Assigned Class" value={classNameLabel} themeColor={primaryColor} />
                                 <InfoRow icon={Briefcase} label="Department" value={department} themeColor={primaryColor} />
@@ -787,10 +813,13 @@ export default function StudentProfilePage() {
                     </div>
 
                     {/* ── Sidebar ──────────────────────────────────────────── */}
-                    <div className="space-y-6 md:space-y-10">
+                    <div className="space-y-6 md:space-y-8">
 
                         {/* Quick Actions */}
-                        <SectionCard title="Quick Actions">
+                        <SectionCard 
+                            title="Quick Actions"
+                            info="Parental self-service actions allowing you to generate and download official signed academic transcripts and student records."
+                        >
                              <div className="space-y-3">
                                 {[
                                     { label: 'Issue Transcript', icon: Award, onClick: () => setIsTranscriptModalOpen(true) },
@@ -798,7 +827,7 @@ export default function StudentProfilePage() {
                                     <button 
                                         key={i} 
                                         onClick={act.onClick}
-                                        className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/5 transition-all group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                                        className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/5 transition-all group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
                                     >
                                         <div className="flex items-center gap-3">
                                             <act.icon size={16} className="text-slate-400 group-hover:text-primary transition-colors" style={{ color: 'inherit' }} />
@@ -811,11 +840,14 @@ export default function StudentProfilePage() {
                         </SectionCard>
 
                         {/* Guardian Details */}
-                        <SectionCard title="Guardian Details">
+                        <SectionCard 
+                            title="Guardian Details"
+                            info="Registered emergency contacts and primary guardian affiliations on file for school correspondence, urgent notices, and attendance verification."
+                        >
                             {student.parentLinks && student.parentLinks.length > 0 ? (
                                 <div className="space-y-4">
                                     {student.parentLinks.map((link: any, i: number) => (
-                                        <div key={i} className="p-5 rounded-[1.5rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-3">
+                                        <div key={i} className="p-4 sm:p-5 rounded-[1.5rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-3">
                                             <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{link.parent.fullName || link.parent.name}</p>
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold">
@@ -843,8 +875,11 @@ export default function StudentProfilePage() {
 
             {/* ── History Tab ─────────────────────────────────────────────── */}
             {activeTab === 'history' && (
-                <main className="max-w-4xl mx-auto px-4 md:px-12 mt-10 pb-20">
-                    <SectionCard title="Student Timeline">
+                <main className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
+                    <SectionCard 
+                        title="Student Timeline"
+                        info="Chronological lifecycle timeline recording major academic transitions, term promotions, award recognitions, and administrative milestones since enrollment."
+                    >
                         {isHistoryLoading ? (
                             <div className="py-20 flex flex-col items-center justify-center space-y-4">
                                 <div className="size-10 rounded-full border-2 border-slate-200 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
@@ -859,16 +894,16 @@ export default function StudentProfilePage() {
 
             {/* ── Behaviour Tab ────────────────────────────────────────────── */}
             {activeTab === 'behaviour' && isBehaviourLoading && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                     <div className="space-y-6">
                         {/* Conduct Standing Skeleton */}
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-6 animate-pulse">
                             <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/2" />
                             <div className="size-36 rounded-full bg-slate-200 dark:bg-slate-800 mx-auto" />
                             <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-3/4 mx-auto" />
                         </div>
                         {/* Core Strengths Skeleton */}
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-6 animate-pulse">
                             <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/2" />
                             <div className="space-y-4">
                                 <div className="h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-full" />
@@ -877,7 +912,7 @@ export default function StudentProfilePage() {
                         </div>
                     </div>
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-6 animate-pulse">
                             <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/3" />
                             <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
                             <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
@@ -887,11 +922,12 @@ export default function StudentProfilePage() {
             )}
 
             {activeTab === 'behaviour' && !isBehaviourLoading && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                     {/* Left Panel: Score and Strengths */}
                     <div className="space-y-6">
                         <SectionCard 
                             title="Conduct Standing"
+                            info="Real-time behavioural standing score dynamically computed from documented disciplinary occurrences, teacher infractions, and positive recognitions. Scores of 85+ indicate exemplary conduct."
                         >
                             <div className="flex flex-col items-center justify-center py-6 relative">
                                 {/* SVG Circular Progress */}
@@ -1003,6 +1039,7 @@ export default function StudentProfilePage() {
 
                         <SectionCard 
                             title="Core Strengths"
+                            info="Core character traits, extracurricular capabilities, and socio-emotional strengths endorsed by classroom educators and mentors."
                         >
                             <div className="space-y-4">
                                 {paginatedStrengths.length > 0 ? (
@@ -1011,7 +1048,7 @@ export default function StudentProfilePage() {
                                             {paginatedStrengths.map((str: any, index: number) => {
                                                 const Icon = STRENGTH_ICONS[str.icon] || Star
                                                 return (
-                                                    <div key={index} className="flex gap-4 p-5 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 items-start">
+                                                    <div key={index} className="flex gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 items-start">
                                                         <div className="size-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
                                                              style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                                             <Icon size={16} />
@@ -1065,6 +1102,7 @@ export default function StudentProfilePage() {
                     <div className="lg:col-span-2 space-y-6">
                         <SectionCard 
                             title="Conduct Timeline"
+                            info="Live log of behavioural incidents, pastoral intervention notices, and teacher reports filed for this student, categorized by severity level and resolution status."
                         >
                             {!classId ? (
                                 <div className="py-16 text-center space-y-4">
@@ -1161,14 +1199,17 @@ export default function StudentProfilePage() {
 
             {/* ── Academic Tab ─────────────────────────────────────────────── */}
             {activeTab === 'academic' && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 space-y-10">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20 space-y-6 sm:space-y-8">
                     
                     {/* Charts Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                         
                         {/* Radar Chart: Subject Mastery */}
-                        <SectionCard title="Performance by Subject">
-                            <div className="h-[400px] w-full">
+                        <SectionCard 
+                            title="Performance by Subject"
+                            info="Radial mastery distribution comparing percentage proficiency across all core subjects. Spikes denote subjects of notable academic strength, while inward dips highlight curriculum areas requiring focused study."
+                        >
+                            <div className="h-[320px] sm:h-[400px] w-full">
                                 {performanceStats.subjectData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceStats.subjectData}>
@@ -1195,8 +1236,11 @@ export default function StudentProfilePage() {
                         </SectionCard>
 
                         {/* Area Chart: Performance Trend */}
-                        <SectionCard title="Academic Progress">
-                            <div className="h-[400px] w-full">
+                        <SectionCard 
+                            title="Academic Progress"
+                            info="Term-by-term assessment progress chart tracking changes in cumulative scores over time across continuous assessment tests and formal examinations."
+                        >
+                            <div className="h-[320px] sm:h-[400px] w-full">
                                 {performanceStats.trendData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={performanceStats.trendData}>
@@ -1226,6 +1270,7 @@ export default function StudentProfilePage() {
                     {/* Recent Grades Table */}
                     <SectionCard 
                         title="Recent Grades"
+                        info="Historical and active session examination results and standalone Continuous Assessment (CA) test papers, detailing individual scores and passing benchmarks."
                         headerAction={
                             <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
                                 <button
@@ -1421,18 +1466,19 @@ export default function StudentProfilePage() {
 
             {/* ── Attendance Tab ─────────────────────────────────────────────── */}
             {activeTab === 'attendance' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 pb-20">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
                      <AttendanceCalendar childId={childId} themeColor={primaryColor} />
                 </main>
             )}
 
             {/* ── Time Table Tab ────────────────────────────────────────────── */}
             {activeTab === 'timetable' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 pb-20">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
                      <SectionCard 
                         title="Weekly Schedule"
+                        info="Official weekly master timetable detailing allocated class hours, assigned academic subjects, and scheduled instructional rooms for each school day."
                         headerAction={
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                                 <WeekControls 
                                     currentDate={scheduleDate}
                                     onPrev={() => setScheduleDate(d => addWeeks(d, -1))}
@@ -1957,8 +2003,11 @@ export default function StudentProfilePage() {
 
             {/* ── Teachers Tab ─────────────────────────────────────────────── */}
             {activeTab === 'teachers' && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20">
-                    <SectionCard title="Class Teachers">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
+                    <SectionCard 
+                        title="Class Teachers"
+                        info="Contact directory of lead form teachers, class mentors, and subject educators currently assigned to instruct this student's class section."
+                    >
                         {student.classes && student.classes.length > 0 && student.classes[0].class.teachers && student.classes[0].class.teachers.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {student.classes[0].class.teachers.map((ct: any) => {
@@ -2015,8 +2064,11 @@ export default function StudentProfilePage() {
 
             {/* ── Assignments Tab ──────────────────────────────────────────── */}
             {activeTab === 'assignments' && (
-                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20">
-                    <SectionCard title="Student Assignments">
+                <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
+                    <SectionCard 
+                        title="Student Assignments"
+                        info="Continuous assessment assignments, project deliverables, and homework tasks assigned to this student, tracking submission deadlines, grading status, and instructor feedback."
+                    >
                         {isAssignmentsLoading ? (
                             <div className="py-20 flex flex-col items-center justify-center space-y-4">
                                 <div className="size-10 rounded-full border-2 border-slate-200 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />

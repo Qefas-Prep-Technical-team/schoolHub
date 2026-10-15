@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 interface StatCardProps {
     title: string;
@@ -12,6 +13,7 @@ interface StatCardProps {
     subtitle: string;
     icon: React.ReactNode;
     link: string;
+    info?: string;
     trend?: {
         value: string;
         isPositive: boolean;
@@ -19,7 +21,7 @@ interface StatCardProps {
     color?: 'orange' | 'green' | 'blue' | 'slate';
 }
 
-const StatCard = ({ title, value, subtitle, icon, trend, color = 'orange', link }: StatCardProps) => {
+const StatCard = ({ title, value, subtitle, icon, trend, color = 'orange', link, info }: StatCardProps) => {
     const colorClasses = {
         orange: 'text-orange-500 bg-orange-500/10 border-orange-500/10',
         green: 'text-green-500 bg-green-500/10 border-green-500/10',
@@ -31,7 +33,10 @@ const StatCard = ({ title, value, subtitle, icon, trend, color = 'orange', link 
         <Link href={link || "#"}>
             <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-white/10 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                 <div className="flex justify-between items-start mb-4">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{title}</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{title}</p>
+                        {info && <HeaderTooltip content={info} />}
+                    </div>
                     <div className={`p-2 rounded-xl border ${colorClasses[color]} group-hover:scale-110 transition-transform`}>
                         {icon}
                     </div>
@@ -88,6 +93,7 @@ export default function StatsGrid() {
             icon: <TrendingUp size={20} />,
             trend: { value: '2.1%', isPositive: true },
             link: "",
+            info: "Cumulative grade percentage aggregated across all published continuous assessments, tests, and examinations for this student.",
             color: 'blue' as const
         },
         {
@@ -96,14 +102,16 @@ export default function StatsGrid() {
             subtitle: 'Overall academic standing',
             icon: <Award size={20} />,
             color: 'green' as const,
+            info: "Official academic performance tier and letter grade evaluated from overall cumulative term coursework.",
             link: "/dashboard/parent/performance/subject-performance"
         },
         {
-            title: 'Assignments',
+            title: 'Assessments',
             value: data?.child?.recentGrades?.length.toString() || '0',
             subtitle: 'Assessments this term',
             icon: <Trophy size={20} />,
             color: 'orange' as const,
+            info: "Count of all recorded tests, assignments, and examination papers taken by this student.",
             link: ''
         },
         {
@@ -112,6 +120,7 @@ export default function StatsGrid() {
             subtitle: 'Presence recorded',
             icon: <Clock size={20} />,
             color: 'slate' as const,
+            info: "Verified attendance rate tracking physical presence in scheduled school sessions and classes.",
             link: ""
         },
     ];

@@ -163,14 +163,26 @@ export const getExamsService = async (filters: {
     where.status = AssessmentStatus.PUBLISHED;
     const classIds = student.classes.map((c) => c.classId);
     
-    // SCHOOL-scope: visible to ALL students of that school, ignore classId
+    // SCHOOL-scope: visible to students of that school (respecting department restriction if present)
     const orConditions: any[] = [];
     
     if (resolvedSchoolId) {
-      orConditions.push({
-        schoolId: resolvedSchoolId,
-        scope: "SCHOOL",
-      });
+      if (student.departmentId) {
+        orConditions.push({
+          schoolId: resolvedSchoolId,
+          scope: "SCHOOL",
+          OR: [
+            { departments: { none: {} } },
+            { departments: { some: { departmentId: student.departmentId } } }
+          ]
+        });
+      } else {
+        orConditions.push({
+          schoolId: resolvedSchoolId,
+          scope: "SCHOOL",
+          departments: { none: {} }
+        });
+      }
     }
 
     // DEPARTMENT-scope: visible to students of matching department
@@ -182,12 +194,24 @@ export const getExamsService = async (filters: {
       });
     }
 
-    // CLASS-scope: visible to students enrolled in matching class
+    // CLASS-scope: visible to students enrolled in matching class (respecting department restriction if present)
     if (classIds.length > 0) {
-      orConditions.push({
-        scope: "CLASS",
-        classId: { in: classIds },
-      });
+      if (student.departmentId) {
+        orConditions.push({
+          scope: "CLASS",
+          classId: { in: classIds },
+          OR: [
+            { departments: { none: {} } },
+            { departments: { some: { departmentId: student.departmentId } } }
+          ]
+        });
+      } else {
+        orConditions.push({
+          scope: "CLASS",
+          classId: { in: classIds },
+          departments: { none: {} }
+        });
+      }
     }
     
     // Fallback: if student has NO school and NO classes, return nothing
