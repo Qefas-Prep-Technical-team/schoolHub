@@ -45,8 +45,22 @@ export const handleError = (res: Response, error: any, location: string) => {
     }
   }
 
-  return res.status(statusCode).json({
+  const responsePayload: Record<string, any> = {
     success: false,
-    message: errorMessage
-  });
+    message: errorMessage,
+  };
+
+  if ((error as any)?.code) {
+    responsePayload.code = (error as any).code;
+  }
+  if ((error as any)?.detectedRole) {
+    responsePayload.detectedRole = (error as any).detectedRole;
+  }
+  if ((error as any)?.correctPortal) {
+    responsePayload.correctPortal = (error as any).correctPortal;
+  }
+
+  const finalStatus = (error as any)?.code === "WRONG_PORTAL" ? 403 : statusCode;
+
+  return res.status(finalStatus).json(responsePayload);
 };

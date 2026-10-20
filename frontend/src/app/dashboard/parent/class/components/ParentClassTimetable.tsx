@@ -120,8 +120,29 @@ export default function ParentClassTimetable({ classId, schoolId = "" }: ParentC
 
   if (isLoading) {
     return (
-      <div className="h-[400px] w-full rounded-[20px] border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 animate-pulse flex items-center justify-center">
-        <span className="text-sm font-semibold text-slate-400">Loading Schedule...</span>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+            <div className="h-3 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="rounded-[20px] border border-slate-200/80 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+          <div className="grid grid-cols-6 gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-6 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />
+            ))}
+          </div>
+          {[1, 2, 3, 4].map((row) => (
+            <div key={row} className="grid grid-cols-6 gap-2">
+              <div className="h-16 bg-slate-50 dark:bg-slate-800/40 rounded-xl animate-pulse" />
+              {[1, 2, 3, 4, 5].map((col) => (
+                <div key={col} className="h-16 bg-slate-100/70 dark:bg-slate-800/60 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

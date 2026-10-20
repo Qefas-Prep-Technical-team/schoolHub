@@ -66,8 +66,12 @@ export function ParentMobileDrawer() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="rounded-xl md:hidden">
-          <Menu className="h-5 w-5" />
+        <Button 
+          variant="outline" 
+          aria-label="Open mobile navigation menu"
+          className="size-11 sm:size-12 rounded-2xl md:hidden flex items-center justify-center border-slate-200/90 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 hover:bg-orange-50 dark:hover:bg-orange-950/30 hover:border-orange-500/40 text-slate-700 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-400 transition-all shadow-xs active:scale-95 shrink-0"
+        >
+          <Menu className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.2} />
         </Button>
       </SheetTrigger>
 
@@ -77,7 +81,7 @@ export function ParentMobileDrawer() {
 
         {/* Header */}
         <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5">
-          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">
+          <Link href="/?view=landing" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
               <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>

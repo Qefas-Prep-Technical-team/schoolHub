@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, Bell, Menu, Search, Mail } from 'lucide-react';
+import { Bell, Menu, Search, Mail } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 
@@ -24,9 +24,10 @@ export default function TopHeader({ title, studentName, grade }: TopHeaderProps)
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsSidebarOpen(true)}
-                        className="lg:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                        aria-label="Open navigation menu"
+                        className="lg:hidden size-11 flex items-center justify-center -ml-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors shrink-0"
                     >
-                        <Menu className="h-5 w-5" />
+                        <Menu className="h-6 w-6" strokeWidth={2.2} />
                     </button>
 
                     {/* Breadcrumbs */}
@@ -38,12 +39,6 @@ export default function TopHeader({ title, studentName, grade }: TopHeaderProps)
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Export Button */}
-                    <button className="hidden sm:flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <Download className="h-4 w-4" />
-                        <span>Export Report</span>
-                    </button>
-
                     {/* Notifications */}
                     <NotificationCenter />
                 </div>

@@ -6,7 +6,8 @@ import {
     Search,
     Bell,
     Sun,
-    Moon
+    Moon,
+    GraduationCap
 } from 'lucide-react';
 import Image from 'next/image';
 import NotificationCenter from "@/components/notifications/NotificationCenter";
@@ -20,7 +21,7 @@ export default function Header() {
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                        <span className="material-symbols-outlined">school</span>
+                        <GraduationCap className="w-5 h-5" />
                     </div>
                     <h1 className="text-xl font-bold tracking-tight text-text-main dark:text-white font-display">
                         EduParent

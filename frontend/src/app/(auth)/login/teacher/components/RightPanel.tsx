@@ -1,7 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import TeacherLoginForm from "./TeacherLoginForm";
 import TwoFactorForm from "../../components/TwoFactorForm";
+import WrongPortalAlert from "../../components/WrongPortalAlert";
 import { useAuthStore } from "../../services/auth-store";
 
 export default function RightPanel() {
@@ -26,6 +28,10 @@ export default function RightPanel() {
           Sign in to manage classes, attendance, exams and grades
         </p>
       </div>
+
+      <Suspense fallback={null}>
+        <WrongPortalAlert currentPortalName="Teacher Portal" />
+      </Suspense>
 
       {user?.require2FA ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden mt-6">

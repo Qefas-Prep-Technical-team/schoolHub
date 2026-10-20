@@ -1,6 +1,9 @@
 "use client";
+
+import { Suspense } from "react";
 import ParentLoginForm from "./ParentLoginForm";
 import TwoFactorForm from "../../components/TwoFactorForm";
+import WrongPortalAlert from "../../components/WrongPortalAlert";
 import { useAuthStore } from "../../services/auth-store";
 import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip";
 
@@ -29,6 +32,10 @@ export default function RightPanel() {
                         Access student grades, attendance, and school updates
                     </p>
                 </div>
+
+                <Suspense fallback={null}>
+                    <WrongPortalAlert currentPortalName="Parent Portal" />
+                </Suspense>
 
                 {user?.require2FA ? (
                     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden mt-6">

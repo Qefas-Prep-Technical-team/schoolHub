@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateState } from "arctic";
-import { facebook } from "@/lib/facebook";
+import { getFacebookClient, getFacebookRedirectUri } from "@/lib/facebook";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +10,12 @@ export async function GET(request: NextRequest) {
 
     const state = generateState();
 
+    const origin = request.nextUrl.origin;
+    const redirectUri = getFacebookRedirectUri(origin);
+    const client = getFacebookClient(redirectUri);
+
     // Facebook OAuth URL with scopes public_profile and email only
-    const url = facebook.createAuthorizationURL(state, [
+    const url = client.createAuthorizationURL(state, [
       "public_profile",
       "email",
     ]);
@@ -29,6 +33,7 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set("facebook_oauth_state", state, cookieOptions);
     response.cookies.set("facebook_intended_role", role, cookieOptions);
+    response.cookies.set("facebook_redirect_uri", redirectUri, cookieOptions);
     if (inviteToken) {
       response.cookies.set("facebook_invite_token", inviteToken, cookieOptions);
     }

@@ -41,8 +41,8 @@ export default function Home() {
       </div>
       
       {/* Bottom Section: Feed & Financials */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
-        <div className="xl:col-span-2 space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8 items-start">
+        <div className="xl:col-span-2 space-y-4 sm:space-y-6 flex flex-col w-full">
           <div className="flex items-center justify-between px-1 sm:px-2">
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
@@ -59,7 +59,7 @@ export default function Home() {
           <Announcements />
         </div>
         
-        <div className="xl:col-span-1 space-y-4 sm:space-y-6">
+        <div className="xl:col-span-1 space-y-4 sm:space-y-6 flex flex-col w-full">
           <div className="flex items-center justify-between px-1 sm:px-2">
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">

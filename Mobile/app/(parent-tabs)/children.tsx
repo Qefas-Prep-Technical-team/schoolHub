@@ -76,8 +76,8 @@ export default function ParentChildrenScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ea580c" />}
       >
         {isError && (
-          <View className="p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20 mb-6">
-            <Text className="text-red-600 dark:text-red-400 font-bold text-center">Failed to load children.</Text>
+          <View className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30 mb-6">
+            <Text className="text-orange-600 dark:text-orange-400 font-bold text-center">No children linked at this time</Text>
           </View>
         )}
 

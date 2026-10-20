@@ -153,7 +153,7 @@ export function ParentSidebar() {
                 "h-20 flex flex-row items-center border-b border-slate-100 dark:border-white/5 relative",
                 isCollapsed ? "justify-center px-0" : "justify-between px-4"
             )}>
-                <Link href="/" className={cn("flex items-center overflow-hidden", isCollapsed ? "justify-center" : "gap-3")}>
+                <Link href="/?view=landing" className={cn("flex items-center overflow-hidden", isCollapsed ? "justify-center" : "gap-3")} title="Visit Landing Page">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 transition-transform duration-500 group-hover:scale-105">
                         <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>

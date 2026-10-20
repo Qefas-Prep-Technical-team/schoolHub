@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decodeIdToken } from "arctic";
-import { google } from "@/lib/google";
+import { getGoogleClient } from "@/lib/google";
 import axios from "axios";
 
 export async function GET(request: NextRequest) {
@@ -11,13 +11,22 @@ export async function GET(request: NextRequest) {
 
   const storedRole =
     request.cookies.get("google_intended_role")?.value || "student";
+  const storedRedirectUri = request.cookies.get("google_redirect_uri")?.value;
   const inviteToken = request.cookies.get("google_invite_token")?.value;
+
+  const rolePathMap: Record<string, string> = {
+    student: "/login/student",
+    teacher: "/login/teacher",
+    admin: "/login/school-admin",
+    "school-admin": "/login/school-admin",
+    school: "/login/school-admin",
+    parent: "/login/parent",
+    staff: "/auth/login",
+  };
 
   const loginPath = inviteToken
     ? `/auth/setup?token=${encodeURIComponent(inviteToken)}`
-    : storedRole === "staff"
-    ? "/auth/login"
-    : "/login";
+    : rolePathMap[storedRole.toLowerCase()] || "/login";
   const loginUrl = new URL(loginPath, request.url);
 
   // 1. Handle user denied consent or OAuth provider errors
@@ -56,8 +65,9 @@ export async function GET(request: NextRequest) {
 
   let tokens;
   try {
-    // 4. Exchange authorization code with Google using PKCE codeVerifier
-    tokens = await google.validateAuthorizationCode(code, codeVerifier);
+    // 4. Exchange authorization code with Google using PKCE codeVerifier and matching redirect URI
+    const client = getGoogleClient(storedRedirectUri || request.nextUrl.origin);
+    tokens = await client.validateAuthorizationCode(code, codeVerifier);
   } catch (err: unknown) {
     console.error("Token exchange failed:", err instanceof Error ? err.message : err);
     loginUrl.searchParams.set(
@@ -166,6 +176,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("google_oauth_state");
     response.cookies.delete("google_code_verifier");
     response.cookies.delete("google_intended_role");
+    response.cookies.delete("google_redirect_uri");
 
     // 10. Set session cookies
     response.cookies.set("token", accessToken, {
@@ -188,14 +199,67 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (err: unknown) {
-    const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+    const axiosError = err as {
+      response?: {
+        data?: {
+          message?: string;
+          code?: string;
+          detectedRole?: string;
+          correctPortal?: string;
+        };
+      };
+      message?: string;
+    };
+    const errorData = axiosError.response?.data;
     const errorMessage =
-      axiosError.response?.data?.message ||
+      errorData?.message ||
       axiosError.message ||
       "Failed to log in with Google.";
 
     console.error("Backend Google authentication error:", errorMessage);
+
+    const isWrongPortal =
+      errorData?.code === "WRONG_PORTAL" ||
+      errorMessage.toLowerCase().includes("please login through the correct portal") ||
+      errorMessage.toLowerCase().includes("registered as a");
+
+    let detectedRole = errorData?.detectedRole;
+    let correctPortal = errorData?.correctPortal;
+
+    if (!detectedRole && isWrongPortal) {
+      if (errorMessage.toLowerCase().includes("school admin") || errorMessage.toLowerCase().includes("admin")) {
+        detectedRole = "School Admin";
+        correctPortal = "/login/school-admin";
+      } else if (errorMessage.toLowerCase().includes("teacher")) {
+        detectedRole = "Teacher";
+        correctPortal = "/login/teacher";
+      } else if (errorMessage.toLowerCase().includes("student")) {
+        detectedRole = "Student";
+        correctPortal = "/login/student";
+      } else if (errorMessage.toLowerCase().includes("parent")) {
+        detectedRole = "Parent";
+        correctPortal = "/login/parent";
+      } else if (errorMessage.toLowerCase().includes("staff")) {
+        detectedRole = "Platform Staff";
+        correctPortal = "/auth/login";
+      }
+    }
+
     loginUrl.searchParams.set("error", errorMessage);
-    return NextResponse.redirect(loginUrl);
+
+    if (isWrongPortal && detectedRole) {
+      loginUrl.searchParams.set("wrong_portal", "true");
+      loginUrl.searchParams.set("detected_role", detectedRole);
+      if (correctPortal) {
+        loginUrl.searchParams.set("correct_portal", correctPortal);
+      }
+    }
+
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("google_oauth_state");
+    response.cookies.delete("google_code_verifier");
+    response.cookies.delete("google_intended_role");
+    response.cookies.delete("google_redirect_uri");
+    return response;
   }
 }

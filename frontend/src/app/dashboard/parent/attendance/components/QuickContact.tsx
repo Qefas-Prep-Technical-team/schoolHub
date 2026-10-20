@@ -1,4 +1,5 @@
 import { CalendarPlus as CalendarEdit } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface QuickContactProps {
     title?: string;
@@ -11,8 +12,18 @@ export default function QuickContact({
     title = "Need to report an absence?",
     description = "Quickly notify the school office if Alex will be absent.",
     buttonText = "Submit Absence Note",
-    onButtonClick = () => console.log('Report absence'),
+    onButtonClick,
 }: QuickContactProps) {
+    const handleClick = () => {
+        if (onButtonClick) {
+            onButtonClick();
+        } else {
+            toast.info("Submit Absence Note feature is coming soon!", {
+                toastId: "absence-note-coming-soon",
+            });
+        }
+    };
+
     return (
         <div className="bg-orange-500 rounded-[20px] p-6 shadow-sm border border-orange-600 text-white">
             <div className="flex items-start justify-between mb-4">
@@ -24,8 +35,9 @@ export default function QuickContact({
             </div>
 
             <button
-                onClick={onButtonClick}
-                className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/20 text-white rounded-lg py-2.5 text-sm font-semibold transition-colors"
+                type="button"
+                onClick={handleClick}
+                className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/20 text-white rounded-lg py-2.5 text-sm font-semibold transition-colors cursor-pointer"
             >
                 {buttonText}
             </button>

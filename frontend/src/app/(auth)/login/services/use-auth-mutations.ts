@@ -106,6 +106,33 @@ export const useLoginMutation = () => {
         return;
       }
 
+      if (
+        error.response?.data?.code === "WRONG_PORTAL" ||
+        errorMessage.toLowerCase().includes("please login through the correct portal")
+      ) {
+        const detectedRole = error.response?.data?.detectedRole || "";
+        const correctPortal = error.response?.data?.correctPortal || "";
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("error", errorMessage);
+          url.searchParams.set("wrong_portal", "true");
+          if (detectedRole) url.searchParams.set("detected_role", detectedRole);
+          if (correctPortal) url.searchParams.set("correct_portal", correctPortal);
+          window.history.replaceState({}, "", url.pathname + url.search);
+
+          window.dispatchEvent(
+            new CustomEvent("wrong_portal_event", {
+              detail: {
+                error: errorMessage,
+                wrong_portal: true,
+                detected_role: detectedRole,
+                correct_portal: correctPortal,
+              },
+            })
+          );
+        }
+      }
+
       errorToast.show(errorMessage);
       console.error("Login failed:", error);
       throw error;

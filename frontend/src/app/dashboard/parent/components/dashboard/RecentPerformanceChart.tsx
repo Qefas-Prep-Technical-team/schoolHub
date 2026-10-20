@@ -38,7 +38,7 @@ export default function RecentPerformanceChart() {
   const hasData = chartData.length > 0
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col h-full w-full transition-all duration-300 hover:shadow-md overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col w-full transition-all duration-300 hover:shadow-md overflow-hidden">
       <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 sm:p-2.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl sm:rounded-2xl border border-orange-500/20 shrink-0">

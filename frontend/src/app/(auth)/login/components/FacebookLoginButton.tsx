@@ -3,6 +3,7 @@
 import { FaFacebook } from "react-icons/fa6";
 import { useState } from "react";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
+import { toast } from "react-toastify";
 
 interface FacebookLoginButtonProps {
     userType: string;
@@ -19,7 +20,6 @@ export default function FacebookLoginButton({
     mode = "signin",
     showDivider = false,
 }: FacebookLoginButtonProps) {
-    const [isLoading, setIsLoading] = useState(false);
     const { data: settings, isLoading: settingsLoading } = usePublicPlatformSettings();
 
     const fbAuthEnabledGlobal = settings ? String(settings.facebook_auth_enabled) !== "false" : true;
@@ -48,12 +48,14 @@ export default function FacebookLoginButton({
 
     if (!isEnabled) return null;
 
-    const handleFacebookLogin = () => {
-        setIsLoading(true);
-        window.location.href = `/api/auth/facebook?role=${encodeURIComponent(backendRole)}`;
-    };
-
     const isSignUp = mode === "signup";
+
+    const handleFacebookLogin = () => {
+        toast.info(
+            `${isSignUp ? "Facebook sign up" : "Facebook sign in"} is coming soon!`,
+            { toastId: "facebook-auth-coming-soon" }
+        );
+    };
 
     return (
         <div className={`w-full ${className}`}>
@@ -72,26 +74,18 @@ export default function FacebookLoginButton({
             <button
                 type="button"
                 onClick={handleFacebookLogin}
-                disabled={isLoading}
+                title={`${isSignUp ? "Sign up" : "Sign in"} with Facebook (Coming Soon)`}
                 className={`flex items-center justify-center w-full h-14 gap-3 cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 ${pill ? 'rounded-full' : 'rounded-2xl'} hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden`}
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/5 to-blue-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
                 
-                {isLoading ? (
-                    <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-[#1877F2] border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-                            Connecting Facebook...
-                        </span>
-                    </div>
-                ) : (
-                    <>
-                        <FaFacebook size={22} className="text-[#1877F2] group-hover:scale-110 transition-transform duration-200" />
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200 tracking-wide">
-                            {isSignUp ? "Sign up with Facebook" : "Sign in with Facebook"}
-                        </span>
-                    </>
-                )}
+                <FaFacebook size={22} className="text-[#1877F2] group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 tracking-wide flex items-center gap-2">
+                    <span>{isSignUp ? "Sign up with Facebook" : "Sign in with Facebook"}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                        Coming Soon
+                    </span>
+                </span>
             </button>
         </div>
     );

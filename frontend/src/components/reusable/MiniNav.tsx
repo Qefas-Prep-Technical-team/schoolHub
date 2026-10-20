@@ -7,11 +7,15 @@ import { ThemeToggle } from "@/app/theme-toggle";
 import NavBarDrawer from "./NavBarDrawer";
 import { mainTab } from "../Types/Nav";
 
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+
 interface MiniNavProps {
     pages: mainTab[];
 }
 
 export const MiniNav: FC<MiniNavProps> = ({ pages }) => {
+    const { isAuthenticated } = useAuthStore();
+
     return (
         <Box className="flex items-center justify-between w-full px-4 py-2" sx={{ display: { xs: 'flex', md: 'none' } }}>
             {/* Left: Drawer Toggle */}
@@ -20,7 +24,7 @@ export const MiniNav: FC<MiniNavProps> = ({ pages }) => {
             </div>
 
             {/* Center: Logo and Branding */}
-            <Link href="/" className="flex items-center gap-2">
+            <Link href={isAuthenticated ? "/?view=landing" : "/"} className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-lg shadow-blue-600/10 border border-slate-200 dark:border-slate-800 p-1.5 relative">
                     <Image src="/logo/favicon.svg" alt="Qefas Hub" fill className="object-contain p-1.5" />
                 </div>

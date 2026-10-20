@@ -1,139 +1,124 @@
 "use client"
 
-interface StudentInfo {
-  name: string
-  studentId: string
-  grade: string
-  age: number
-  avatar: string
+import React from 'react'
+import Image from 'next/image'
+import { User, Award, CheckCircle2, TrendingUp, Calendar, BookOpen } from 'lucide-react'
+import { ReportCardData } from './types'
+
+interface StudentInfoProps {
+  data: ReportCardData
 }
 
-interface StatCard {
-  title: string
-  value: string
-  unit: string
-  description: string
-  trend?: string
-  icon: string
-  color: string
-  bgColor: string
-  borderColor: string
-  textColor: string
-}
-
-export default function StudentInfo() {
-  const student: StudentInfo = {
-    name: 'Alex Doe',
-    studentId: 'STU-2023-042',
-    grade: 'Grade 5-B',
-    age: 11,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCXw3iuBlRx86Js8a1_U39P-ZPm8vimarW8cauo5g4fB-aWsGQidD_mZzgn5OzIWdQm6LDLjJ1CEe6IxD5ES2fuXp8rsRN5En_YFndPwbjYCblPzmy3U7zbDADACcGkpxjqI8DUGpxPdlGfqvtaXb5H4m8Pcar2JvVvYsV9O7oKtf5_OudiWo1o_lVPOUM7cysFWHKTRlcXcb0tof-aGsNbKC8g9X2HnarjcprLeRqPVEnAg1a8RJKCkSC7NPXARPsYYUvn2rFtwjs'
-  }
-
-  const stats: StatCard[] = [
-    {
-      title: 'Average Score',
-      value: '82.5',
-      unit: '%',
-      description: '+2.4% vs last term',
-      trend: 'trending_up',
-      icon: 'monitoring',
-      color: 'blue',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/10',
-      borderColor: 'border-blue-100 dark:border-blue-900/30',
-      textColor: 'text-blue-600 dark:text-blue-400'
-    },
-    {
-      title: 'Class Position',
-      value: '4',
-      unit: 'th',
-      description: 'Top 15% of class',
-      icon: 'military_tech',
-      color: 'purple',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/10',
-      borderColor: 'border-purple-100 dark:border-purple-900/30',
-      textColor: 'text-purple-600 dark:text-purple-400'
-    },
-    {
-      title: 'Attendance',
-      value: '96',
-      unit: '%',
-      description: '58 / 60 Days present',
-      icon: 'check_circle',
-      color: 'teal',
-      bgColor: 'bg-teal-50 dark:bg-teal-900/10',
-      borderColor: 'border-teal-100 dark:border-teal-900/30',
-      textColor: 'text-teal-600 dark:text-teal-400'
-    }
-  ]
-
+export default function StudentInfo({ data }: StudentInfoProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-      {/* Student Details */}
-      <div className="lg:col-span-1 flex flex-col gap-4">
-        <div className="flex gap-4 items-center">
-          <div 
-            className="w-20 h-20 rounded-xl bg-cover bg-center border-2 border-slate-100 dark:border-slate-700 shadow-sm"
-            style={{ backgroundImage: `url('${student.avatar}')` }}
-          />
-          <div>
-            <h4 className="text-lg font-bold text-slate-900 dark:text-white">
-              {student.name}
-            </h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              ID: <span className="font-mono text-slate-700 dark:text-slate-300">{student.studentId}</span>
+    <div className="p-5 sm:p-8 lg:p-10 border-b border-slate-100 dark:border-slate-800">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-center">
+        {/* Student Profile Identity */}
+        <div className="flex items-center gap-4">
+          {data.studentImage ? (
+            <div className="relative size-18 sm:size-20 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">
+              <Image
+                src={data.studentImage}
+                alt={data.studentName}
+                fill
+                sizes="80px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="size-18 sm:size-20 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border-2 border-orange-200 dark:border-orange-800/40 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold shrink-0 shadow-xs">
+              <User size={36} />
+            </div>
+          )}
+
+          <div className="space-y-1 min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Student Record
+            </span>
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white truncate">
+              {data.studentName}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Student ID: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{data.studentCode}</span>
             </p>
-            <div className="flex gap-2 mt-2">
-              <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 rounded">
-                {student.grade}
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 rounded-md">
+                {data.currentClass || 'General Class'}
               </span>
-              <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 rounded">
-                Age: {student.age}
+              <span className="px-2.5 py-0.5 bg-orange-50 dark:bg-orange-950/40 text-[11px] font-bold text-orange-600 dark:text-orange-400 rounded-md border border-orange-500/20">
+                {data.session}
               </span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Key Stats Cards */}
-      <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.title}
-            className={`p-4 rounded-xl ${stat.bgColor} border ${stat.borderColor} flex flex-col justify-between`}
-          >
+        {/* 3 Academic Metric Highlights */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {/* 1. Average Score */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-2">
-              <p className={`text-xs font-semibold ${stat.textColor} uppercase`}>
-                {stat.title}
-              </p>
-              <span className={`material-symbols-outlined text-xl text-${stat.color}-500`}>
-                {stat.icon}
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Average Score
+              </span>
+              <Award size={16} className="text-orange-500" />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                {data.averageScore}%
+              </span>
+              <span className="text-xs font-bold text-orange-600">
+                Grade {data.overallGrade}
               </span>
             </div>
-            
-            <div className="flex items-baseline">
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">
-                {stat.value}
-                {stat.unit === 'th' ? (
-                  <span className="text-base align-super">{stat.unit}</span>
-                ) : (
-                  <span className="text-lg text-slate-400 dark:text-slate-500 font-medium">
-                    {stat.unit}
-                  </span>
-                )}
-              </p>
-            </div>
-            
-            <p className={`text-xs ${stat.textColor} mt-1 flex items-center gap-1`}>
-              {stat.trend && (
-                <span className="material-symbols-outlined text-sm">
-                  {stat.trend}
-                </span>
-              )}
-              {stat.description}
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 flex items-center gap-1">
+              <TrendingUp size={12} />
+              <span>{data.standing}</span>
             </p>
           </div>
-        ))}
+
+          {/* 2. Evaluated Subjects */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Curriculum Load
+              </span>
+              <BookOpen size={16} className="text-orange-500" />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                {data.totalSubjects}
+              </span>
+              <span className="text-xs font-bold text-slate-400">
+                Subjects
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+              100% Evaluated & Released
+            </p>
+          </div>
+
+          {/* 3. Attendance */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Term Attendance
+              </span>
+              <Calendar size={16} className="text-orange-500" />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                {data.attendanceRate}%
+              </span>
+              <span className="text-xs font-bold text-emerald-600">
+                Present
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1">
+              <CheckCircle2 size={12} className="text-emerald-500" />
+              <span>Regular Attendance</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

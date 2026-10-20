@@ -7,13 +7,15 @@ interface AttendanceExportProps {
     onExport: () => void;
     onRequestLeave: () => void;
     childName?: string;
+    studentClass?: string;
     className?: string;
 }
 
 export default function AttendanceExport({
     onExport,
     onRequestLeave,
-    childName = 'Alex Johnson',
+    childName = 'Student',
+    studentClass = 'Class Cohort',
     className = '',
 }: AttendanceExportProps) {
     const [isExporting, setIsExporting] = useState(false);
@@ -34,7 +36,7 @@ export default function AttendanceExport({
                     Attendance Record
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                    {childName} • Grade 5B
+                    {childName} • {studentClass}
                 </p>
             </div>
 

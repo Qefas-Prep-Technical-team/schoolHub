@@ -13,9 +13,10 @@ export default function MonthlyHeader({ onMenuClick }: MonthlyHeaderProps) {
       <div className="flex items-center gap-2">
         <button
           onClick={onMenuClick}
-          className="p-1 rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          aria-label="Open navigation menu"
+          className="size-11 flex items-center justify-center rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" strokeWidth={2.2} />
         </button>
         <span className="font-bold text-lg text-slate-900 dark:text-white">
           EduConnect

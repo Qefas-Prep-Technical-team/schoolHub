@@ -5,7 +5,7 @@ import { HeaderTooltip } from './HeaderTooltip'
 
 export default function FinancialSummaryCard() {
   return (
-    <div className="group relative bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col h-full transition-all duration-300 hover:shadow-md overflow-hidden">
+    <div className="group relative bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col w-full transition-all duration-300 hover:shadow-md overflow-hidden">
       {/* Decorative gradient */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/[0.08] to-transparent pointer-events-none" />
 

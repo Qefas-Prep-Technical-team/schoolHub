@@ -151,7 +151,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
         >
             {/* Header */}
             <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
-                <Link href="/" className="flex items-center gap-3">
+                <Link href="/?view=landing" className="flex items-center gap-3" title="Visit Landing Page">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 transition-transform duration-500 group-hover:scale-105">
                         <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>

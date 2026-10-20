@@ -4,7 +4,11 @@ import { getAssignmentByIdService } from "../assignment/assignment.service";
 
 export const getChildAssignmentDetailsService = async (parentId: string, studentId: string, assignmentId: string) => {
   const childLink = await prisma.parentChildLink.findFirst({
-    where: { parentId, studentId, status: "active" },
+    where: { 
+      parentId, 
+      studentId, 
+      status: { in: ["active", "ACCEPTED", "Active"] } 
+    },
   });
 
   if (!childLink) {
@@ -17,7 +21,10 @@ export const getChildAssignmentDetailsService = async (parentId: string, student
 
 export const getParentChildrenService = async (parentId: string) => {
   const childrenLinks = await prisma.parentChildLink.findMany({
-    where: { parentId, status: "active" },
+    where: { 
+      parentId, 
+      status: { in: ["active", "ACCEPTED", "Active"] } 
+    },
     include: {
       student: {
         include: {
@@ -63,8 +70,8 @@ export const getParentChildrenService = async (parentId: string) => {
     const student = link.student;
     
     // Calculate Average Grade
-    const totalScore = student.grades.reduce((sum, g) => sum + g.score, 0);
-    const totalMax = student.grades.reduce((sum, g) => sum + g.maxMarks, 0);
+    const totalScore = (student.grades || []).reduce((sum, g) => sum + (g.score || 0), 0);
+    const totalMax = (student.grades || []).reduce((sum, g) => sum + (g.maxMarks || 0), 0);
     const averageGrade = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 
     // Calculate Attendance Rate (Current Month Only)
@@ -72,25 +79,28 @@ export const getParentChildrenService = async (parentId: string) => {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    const monthlyAttendances = student.attendances.filter(a => {
+    const monthlyAttendances = (student.attendances || []).filter(a => {
+      if (!a.date) return false;
       const d = a.date instanceof Date ? a.date : new Date(a.date);
+      if (isNaN(d.getTime())) return false;
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
     const totalAttendance = monthlyAttendances.length;
     const presentCount = monthlyAttendances.filter(a => {
-      const s = a.status.toLowerCase();
+      const s = (a.status || '').toLowerCase();
       return s === 'present' || s === 'late';
     }).length;
     const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
 
     // Today's Attendance
     const todayStr = new Date().toISOString().split('T')[0];
-    const todayRecord = student.attendances.find(a => {
+    const todayRecord = (student.attendances || []).find(a => {
+      if (!a.date) return false;
       const d = a.date instanceof Date ? a.date.toISOString() : (typeof a.date === 'string' ? a.date : '');
       return d.split('T')[0] === todayStr;
     });
-    const todayAttendance = todayRecord ? todayRecord.status : 'None';
+    const todayAttendance = todayRecord?.status || 'None';
 
     return {
       id: student.id,
@@ -115,7 +125,11 @@ export const getParentChildrenService = async (parentId: string) => {
 export const getChildDetailsService = async (parentId: string, childId: string) => {
   // First verify the link exists and is accepted
   const link = await prisma.parentChildLink.findFirst({
-    where: { parentId, studentId: childId, status: "active" },
+    where: { 
+      parentId, 
+      studentId: childId, 
+      status: { in: ["active", "ACCEPTED", "Active"] } 
+    },
   });
 
   if (!link) {
@@ -126,7 +140,15 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
     where: { id: childId },
     include: {
       school: true,
-      department: true,
+      department: {
+        include: {
+          subjects: {
+            include: {
+              subject: true,
+            }
+          }
+        }
+      },
       classes: {
         include: {
           class: {
@@ -159,12 +181,15 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
       grades: {
         where: { status: GradeStatus.PUBLISHED },
         orderBy: { createdAt: 'desc' },
-        take: 100,
         include: {
           exam: true,
           subjectPaper: {
             include: {
-              subject: true,
+              subject: {
+                include: {
+                  departments: true,
+                }
+              },
               teacher: true,
             }
           },
@@ -208,12 +233,12 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
 };
 
 export const getParentDashboardService = async (parentId: string, childId?: string) => {
-  // Find the selected child link (or the first active one if no childId provided)
-  const childLink = await prisma.parentChildLink.findFirst({
+  // Find the selected child link (first verify requested childId, or fallback to first active link)
+  let childLink = childId ? await prisma.parentChildLink.findFirst({
     where: { 
       parentId, 
-      status: "active",
-      ...(childId ? { studentId: childId } : {}),
+      studentId: childId,
+      status: { in: ["active", "ACCEPTED", "Active"] },
     },
     include: {
       student: {
@@ -254,7 +279,57 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
         },
       },
     },
-  });
+  }) : null;
+
+  // If requested childId is not linked to this parent (e.g. stale ID in client localStorage from another user),
+  // fallback automatically to the parent's first linked child
+  if (!childLink) {
+    childLink = await prisma.parentChildLink.findFirst({
+      where: { 
+        parentId, 
+        status: { in: ["active", "ACCEPTED", "Active"] },
+      },
+      include: {
+        student: {
+          include: {
+            school: { select: { id: true, name: true, schoolCode: true, subscriptionStatus: true, isTrialActive: true, motto: true, address: true } },
+            classes: {
+              orderBy: { enrolledAt: "desc" },
+              take: 1,
+              include: { class: { select: { id: true, name: true, section: true } } },
+            },
+            grades: {
+              where: { status: GradeStatus.PUBLISHED },
+              orderBy: { createdAt: "desc" },
+              take: 20,
+              select: {
+                id: true,
+                subject: true,
+                score: true,
+                maxMarks: true,
+                assessmentType: true,
+                createdAt: true,
+                examId: true,
+                exam: { select: { id: true, title: true } },
+                subjectPaper: {
+                  select: {
+                    subject: {
+                      select: { name: true }
+                    }
+                  }
+                }
+              },
+            },
+            attendances: {
+              orderBy: { date: "desc" },
+              take: 30,
+              select: { status: true, date: true },
+            },
+          },
+        },
+      },
+    });
+  }
 
 
   // Attendance rate for the child (Current Month Only)
@@ -468,7 +543,11 @@ export const updateChildProfileService = async (parentId: string, childId: strin
 }) => {
   // First verify the link exists and is accepted
   const link = await prisma.parentChildLink.findFirst({
-    where: { parentId, studentId: childId, status: "active" },
+    where: { 
+      parentId, 
+      studentId: childId, 
+      status: { in: ["active", "ACCEPTED", "Active"] } 
+    },
   });
 
   if (!link) {

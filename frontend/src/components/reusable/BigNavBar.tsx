@@ -19,7 +19,7 @@ const BigNavBar: FC<BigNavBarProps> = ({ pages }) => {
             className="w-full px-6 hidden md:flex items-center justify-between py-1"
         >
             {/* Left: Logo */}
-            <Link href="/" className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105">
+            <Link href={isAuthenticated ? "/?view=landing" : "/"} className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105">
                 <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-lg shadow-blue-600/10 group-hover:rotate-6 transition-transform overflow-hidden p-1.5 border border-slate-200 dark:border-slate-800">
                     <NextImage src="/logo/favicon.svg" alt="Qefas Hub Logo" width={40} height={40} className="h-full w-full object-contain" />
                 </div>

@@ -1,49 +1,117 @@
 "use client"
 
-export default function ParentTools() {
-  const handleMessageTeacher = () => {
-    // Implement message teacher functionality
-    // console.log('Message teacher clicked')
-  }
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { Download, FileText, BarChart3, Loader2 } from 'lucide-react'
+import { ExamDetailData } from './types'
+import { generatePDF } from '@/utils/pdfGenerator'
+import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck'
 
-  const handleDownloadReport = () => {
-    // Implement download report functionality
-    // console.log('Download report clicked')
-  }
+interface ParentToolsProps {
+  data: ExamDetailData
+}
 
-  const handleViewSubjectHistory = () => {
-    // Implement view subject history functionality
-    // console.log('View subject history clicked')
+export default function ParentTools({ data }: ParentToolsProps) {
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExportPDF = async () => {
+    if (!assertSchoolPayingPlan(data.schoolProfile)) {
+      return
+    }
+
+    try {
+      setIsExporting(true)
+
+      const tableHeaders = [
+        ['#', 'Subject / Paper', 'Teacher / Faculty', 'Score', 'Max Marks', 'Percentage', 'Remarks']
+      ]
+
+      const tableData = data.subjects.length > 0 
+        ? data.subjects.map((s, idx) => [
+            (idx + 1).toString(),
+            s.name,
+            s.teacher || '—',
+            s.score.toString(),
+            s.totalMarks.toString(),
+            `${s.percentage}%`,
+            s.remarks || '—'
+          ])
+        : [
+            ['1', data.title, 'Subject Faculty', data.score.toString(), data.totalScore.toString(), `${data.percentage}%`, 'Completed Assessment']
+          ]
+
+      const additionalTables = (data.questions && data.questions.length > 0) ? [
+        {
+          title: 'Question Breakdown & Evaluation',
+          headers: [['Q#', 'Question / Topic', 'Points', 'Awarded', 'Status']],
+          data: data.questions.map(q => [
+            q.number.toString(),
+            q.title,
+            q.points,
+            q.scoreAwarded.toString(),
+            q.isCorrect === true ? 'CORRECT' : q.isCorrect === false ? 'INCORRECT' : 'REVIEWED'
+          ])
+        }
+      ] : undefined
+
+      await generatePDF({
+        title: `${data.title} - Examination Dossier`,
+        filename: `${data.studentName.replace(/\s+/g, '_')}_${data.title.replace(/\s+/g, '_')}_Exam_Slip.pdf`,
+        schoolProfile: data.schoolProfile,
+        metaData: [
+          { label: 'Student Name', value: data.studentName },
+          { label: 'Student ID', value: data.studentCode },
+          { label: 'Class / Grade', value: data.currentClass || 'N/A' },
+          { label: 'Assessment Date', value: data.date },
+          { label: 'Assessment Title', value: data.title },
+          { label: 'Category', value: data.category },
+          { label: 'Total Score', value: `${data.score} / ${data.totalScore}` },
+          { label: 'Percentage', value: `${data.percentage}%` },
+          { label: 'Grade Awarded', value: data.grade },
+          { label: 'Proficiency Standing', value: data.proficiency || 'N/A' },
+        ],
+        tableHeaders,
+        tableData,
+        additionalTables,
+        orientation: 'portrait',
+      })
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
-    <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-      <h3 className="text-sm uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-4">
-        Actions
-      </h3>
-      <div className="flex flex-col gap-3">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs">
+      <span className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-slate-400 block mb-3">
+        Parent Actions
+      </span>
+
+      <div className="flex flex-col gap-2.5">
         <button
-          onClick={handleMessageTeacher}
-          className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+          type="button"
+          onClick={handleExportPDF}
+          disabled={isExporting}
+          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
         >
-          <span className="material-symbols-outlined text-[20px]">chat</span>
-          Message Teacher
+          {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+          <span>Export Official PDF</span>
         </button>
-        
-        <button
-          onClick={handleDownloadReport}
-          className="flex items-center justify-center gap-2 w-full py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors"
+
+        <Link
+          href={`/dashboard/parent/exams&results/report-card?childId=${data.studentId}`}
+          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs sm:text-sm font-bold transition-all"
         >
-          <span className="material-symbols-outlined text-[20px]">download</span>
-          Download Report
-        </button>
-        
-        <button
-          onClick={handleViewSubjectHistory}
-          className="flex items-center justify-center gap-2 w-full py-2.5 text-primary dark:text-blue-400 hover:underline text-sm font-medium"
+          <FileText size={15} />
+          <span>Full Term Report Card</span>
+        </Link>
+
+        <Link
+          href="/dashboard/parent/attendance"
+          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 hover:text-orange-600 rounded-xl text-xs sm:text-sm font-bold transition-all"
         >
-          View Subject History
-        </button>
+          <BarChart3 size={15} />
+          <span>Attendance & Record</span>
+        </Link>
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { facebook } from "@/lib/facebook";
+import { getFacebookClient } from "@/lib/facebook";
 import axios from "axios";
 
 export async function GET(request: NextRequest) {
@@ -11,13 +11,22 @@ export async function GET(request: NextRequest) {
 
   const storedRole =
     request.cookies.get("facebook_intended_role")?.value || "student";
+  const storedRedirectUri = request.cookies.get("facebook_redirect_uri")?.value;
   const inviteToken = request.cookies.get("facebook_invite_token")?.value;
+
+  const rolePathMap: Record<string, string> = {
+    student: "/login/student",
+    teacher: "/login/teacher",
+    admin: "/login/school-admin",
+    "school-admin": "/login/school-admin",
+    school: "/login/school-admin",
+    parent: "/login/parent",
+    staff: "/auth/login",
+  };
 
   const loginPath = inviteToken
     ? `/auth/setup?token=${encodeURIComponent(inviteToken)}`
-    : storedRole === "staff"
-    ? "/auth/login"
-    : "/login";
+    : rolePathMap[storedRole.toLowerCase()] || "/login";
   const loginUrl = new URL(loginPath, request.url);
 
   // 1. Handle user denied consent or Facebook OAuth errors
@@ -56,7 +65,8 @@ export async function GET(request: NextRequest) {
   // 4. Exchange authorization code for Facebook access token
   let tokens;
   try {
-    tokens = await facebook.validateAuthorizationCode(code);
+    const client = getFacebookClient(storedRedirectUri || request.nextUrl.origin);
+    tokens = await client.validateAuthorizationCode(code);
   } catch (err: unknown) {
     console.error("Facebook token exchange failed:", err instanceof Error ? err.message : "OAuth error");
     loginUrl.searchParams.set(
@@ -202,6 +212,7 @@ export async function GET(request: NextRequest) {
     // Clear temporary OAuth cookies
     response.cookies.delete("facebook_oauth_state");
     response.cookies.delete("facebook_intended_role");
+    response.cookies.delete("facebook_redirect_uri");
 
     // Set session cookies
     response.cookies.set("token", accessToken, {
@@ -224,14 +235,66 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (err: unknown) {
-    const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+    const axiosError = err as {
+      response?: {
+        data?: {
+          message?: string;
+          code?: string;
+          detectedRole?: string;
+          correctPortal?: string;
+        };
+      };
+      message?: string;
+    };
+    const errorData = axiosError.response?.data;
     const errorMessage =
-      axiosError.response?.data?.message ||
+      errorData?.message ||
       axiosError.message ||
       "Failed to log in with Facebook.";
 
     console.error("Backend Facebook authentication error:", errorMessage);
+
+    const isWrongPortal =
+      errorData?.code === "WRONG_PORTAL" ||
+      errorMessage.toLowerCase().includes("please login through the correct portal") ||
+      errorMessage.toLowerCase().includes("registered as a");
+
+    let detectedRole = errorData?.detectedRole;
+    let correctPortal = errorData?.correctPortal;
+
+    if (!detectedRole && isWrongPortal) {
+      if (errorMessage.toLowerCase().includes("school admin") || errorMessage.toLowerCase().includes("admin")) {
+        detectedRole = "School Admin";
+        correctPortal = "/login/school-admin";
+      } else if (errorMessage.toLowerCase().includes("teacher")) {
+        detectedRole = "Teacher";
+        correctPortal = "/login/teacher";
+      } else if (errorMessage.toLowerCase().includes("student")) {
+        detectedRole = "Student";
+        correctPortal = "/login/student";
+      } else if (errorMessage.toLowerCase().includes("parent")) {
+        detectedRole = "Parent";
+        correctPortal = "/login/parent";
+      } else if (errorMessage.toLowerCase().includes("staff")) {
+        detectedRole = "Platform Staff";
+        correctPortal = "/auth/login";
+      }
+    }
+
     loginUrl.searchParams.set("error", errorMessage);
-    return NextResponse.redirect(loginUrl);
+
+    if (isWrongPortal && detectedRole) {
+      loginUrl.searchParams.set("wrong_portal", "true");
+      loginUrl.searchParams.set("detected_role", detectedRole);
+      if (correctPortal) {
+        loginUrl.searchParams.set("correct_portal", correctPortal);
+      }
+    }
+
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("facebook_oauth_state");
+    response.cookies.delete("facebook_intended_role");
+    response.cookies.delete("facebook_redirect_uri");
+    return response;
   }
 }

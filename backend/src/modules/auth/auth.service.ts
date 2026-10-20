@@ -614,6 +614,19 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
 
 
 
+export class WrongPortalError extends Error {
+  code = "WRONG_PORTAL";
+  detectedRole: string;
+  correctPortal: string;
+
+  constructor(detectedRole: string, correctPortal: string, message?: string) {
+    super(message || `This email is registered as a ${detectedRole}. Please login through the correct portal.`);
+    this.name = "WrongPortalError";
+    this.detectedRole = detectedRole;
+    this.correctPortal = correctPortal;
+  }
+}
+
 export const googleAuthService = async (
   supabaseTokenOrData: string | { googleId: string; email: string; name?: string; emailVerified?: boolean; inviteToken?: string },
   userRole?: UserRole | "STAFF",
@@ -772,14 +785,15 @@ export const googleAuthService = async (
   let actualRole: UserRole = requestedRole;
 
   // Global lookup to detect "Wrong Portal" logins or existing account linking
-  const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+  const [existingStudent, existingTeacher, existingAdmin, existingParent, existingStaff] = await Promise.all([
     prisma.student.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
     prisma.teacher.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
     prisma.admin.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] }, include: { schoolAdmins: true } }),
     prisma.parent.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
+    prisma.platformStaff.findFirst({ where: { OR: [{ googleId: googleId || undefined }, { email }] } }),
   ]);
 
-  const existingUser = existingStudent || existingTeacher || existingAdmin || existingParent;
+  const existingUser = existingStudent || existingTeacher || existingAdmin || existingParent || existingStaff;
 
   if (existingUser) {
     let foundInRequestedRole = false;
@@ -796,22 +810,32 @@ export const googleAuthService = async (
     } else if (userRole === UserRole.PARENT && existingParent) {
       user = existingParent;
       foundInRequestedRole = true;
+    } else if ((userRole as string) === "STAFF" && existingStaff) {
+      user = existingStaff;
+      foundInRequestedRole = true;
     } else if (!userRole) {
       // If no portal role was specified, accept the existing account's role
       if (existingStudent) { user = existingStudent; actualRole = UserRole.STUDENT; foundInRequestedRole = true; }
       else if (existingTeacher) { user = existingTeacher; actualRole = UserRole.TEACHER; foundInRequestedRole = true; }
       else if (existingAdmin) { user = existingAdmin; actualRole = UserRole.ADMIN; foundInRequestedRole = true; }
       else if (existingParent) { user = existingParent; actualRole = UserRole.PARENT; foundInRequestedRole = true; }
+      else if (existingStaff) { user = existingStaff; actualRole = "STAFF" as any; foundInRequestedRole = true; }
     }
 
     if (!foundInRequestedRole) {
       let detectedRole = "";
-      if (existingAdmin) detectedRole = "School Admin";
-      else if (existingTeacher) detectedRole = "Teacher";
-      else if (existingStudent) detectedRole = "Student";
-      else if (existingParent) detectedRole = "Parent";
+      let correctPortal = "/login";
+      if (existingAdmin) { detectedRole = "School Admin"; correctPortal = "/login/school-admin"; }
+      else if (existingTeacher) { detectedRole = "Teacher"; correctPortal = "/login/teacher"; }
+      else if (existingStudent) { detectedRole = "Student"; correctPortal = "/login/student"; }
+      else if (existingParent) { detectedRole = "Parent"; correctPortal = "/login/parent"; }
+      else if (existingStaff) { detectedRole = "Platform Staff"; correctPortal = "/auth/login"; }
 
-      throw new Error(`This email is registered as a ${detectedRole}. Please login through the correct portal.`);
+      throw new WrongPortalError(
+        detectedRole,
+        correctPortal,
+        `This email is registered as a ${detectedRole}. Please login through the correct portal.`
+      );
     }
 
     if (userRole) {
@@ -1105,14 +1129,15 @@ export const facebookAuthService = async (
   }
 
   // 4. Global lookup by facebookId across all standard roles
-  const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+  const [existingStudent, existingTeacher, existingAdmin, existingParent, existingStaff] = await Promise.all([
     prisma.student.findFirst({ where: { facebookId } }),
     prisma.teacher.findFirst({ where: { facebookId } }),
     prisma.admin.findFirst({ where: { facebookId }, include: { schoolAdmins: true } }),
     prisma.parent.findFirst({ where: { facebookId } }),
+    prisma.platformStaff.findFirst({ where: { facebookId } }),
   ]);
 
-  const existingFbUser = existingStudent || existingTeacher || existingAdmin || existingParent;
+  const existingFbUser = existingStudent || existingTeacher || existingAdmin || existingParent || existingStaff;
 
   let user: any;
   let requestedRole: UserRole = (userRole as UserRole) || UserRole.STUDENT;
@@ -1133,21 +1158,31 @@ export const facebookAuthService = async (
     } else if (userRole === UserRole.PARENT && existingParent) {
       user = existingParent;
       foundInRequestedRole = true;
+    } else if ((userRole as string) === "STAFF" && existingStaff) {
+      user = existingStaff;
+      foundInRequestedRole = true;
     } else if (!userRole) {
       if (existingStudent) { user = existingStudent; actualRole = UserRole.STUDENT; foundInRequestedRole = true; }
       else if (existingTeacher) { user = existingTeacher; actualRole = UserRole.TEACHER; foundInRequestedRole = true; }
       else if (existingAdmin) { user = existingAdmin; actualRole = UserRole.ADMIN; foundInRequestedRole = true; }
       else if (existingParent) { user = existingParent; actualRole = UserRole.PARENT; foundInRequestedRole = true; }
+      else if (existingStaff) { user = existingStaff; actualRole = "STAFF" as any; foundInRequestedRole = true; }
     }
 
     if (!foundInRequestedRole) {
       let detectedRole = "";
-      if (existingAdmin) detectedRole = "School Admin";
-      else if (existingTeacher) detectedRole = "Teacher";
-      else if (existingStudent) detectedRole = "Student";
-      else if (existingParent) detectedRole = "Parent";
+      let correctPortal = "/login";
+      if (existingAdmin) { detectedRole = "School Admin"; correctPortal = "/login/school-admin"; }
+      else if (existingTeacher) { detectedRole = "Teacher"; correctPortal = "/login/teacher"; }
+      else if (existingStudent) { detectedRole = "Student"; correctPortal = "/login/student"; }
+      else if (existingParent) { detectedRole = "Parent"; correctPortal = "/login/parent"; }
+      else if (existingStaff) { detectedRole = "Platform Staff"; correctPortal = "/auth/login"; }
 
-      throw new Error(`This Facebook account is registered as a ${detectedRole}. Please login through the correct portal.`);
+      throw new WrongPortalError(
+        detectedRole,
+        correctPortal,
+        `This Facebook account is registered as a ${detectedRole}. Please login through the correct portal.`
+      );
     }
 
     if (userRole) {
@@ -1166,15 +1201,40 @@ export const facebookAuthService = async (
     }
 
     // Rule: NO AUTO-LINKING on email match. Check if existing user has this email.
-    const [emailStudent, emailTeacher, emailAdmin, emailParent] = await Promise.all([
+    const [emailStudent, emailTeacher, emailAdmin, emailParent, emailStaff] = await Promise.all([
       prisma.student.findFirst({ where: { email } }),
       prisma.teacher.findFirst({ where: { email } }),
       prisma.admin.findFirst({ where: { email }, include: { schoolAdmins: true } }),
       prisma.parent.findFirst({ where: { email } }),
+      prisma.platformStaff.findFirst({ where: { email } }),
     ]);
 
-    const existingByEmail = emailStudent || emailTeacher || emailAdmin || emailParent;
+    const existingByEmail = emailStudent || emailTeacher || emailAdmin || emailParent || emailStaff;
     if (existingByEmail) {
+      let detectedRole = "";
+      let correctPortal = "/login";
+      if (emailAdmin) { detectedRole = "School Admin"; correctPortal = "/login/school-admin"; }
+      else if (emailTeacher) { detectedRole = "Teacher"; correctPortal = "/login/teacher"; }
+      else if (emailStudent) { detectedRole = "Student"; correctPortal = "/login/student"; }
+      else if (emailParent) { detectedRole = "Parent"; correctPortal = "/login/parent"; }
+      else if (emailStaff) { detectedRole = "Platform Staff"; correctPortal = "/auth/login"; }
+
+      const isSameRole = (
+        (userRole === UserRole.STUDENT && emailStudent) ||
+        (userRole === UserRole.TEACHER && emailTeacher) ||
+        (userRole === UserRole.ADMIN && emailAdmin) ||
+        (userRole === UserRole.PARENT && emailParent) ||
+        (userRole === "STAFF" && emailStaff)
+      );
+
+      if (!isSameRole) {
+        throw new WrongPortalError(
+          detectedRole,
+          correctPortal,
+          `This email is registered as a ${detectedRole}. Please login through the correct portal.`
+        );
+      }
+
       throw new Error(
         "An account with this email already exists. Please sign in with your usual method, then connect Facebook from your settings."
       );

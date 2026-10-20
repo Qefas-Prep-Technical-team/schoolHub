@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateState, generateCodeVerifier } from "arctic";
-import { google } from "@/lib/google";
+import { getGoogleClient, getGoogleRedirectUri } from "@/lib/google";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
 
-    const url = google.createAuthorizationURL(state, codeVerifier, [
+    const origin = request.nextUrl.origin;
+    const redirectUri = getGoogleRedirectUri(origin);
+    const client = getGoogleClient(redirectUri);
+
+    const url = client.createAuthorizationURL(state, codeVerifier, [
       "openid",
       "email",
       "profile",
@@ -31,6 +35,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set("google_oauth_state", state, cookieOptions);
     response.cookies.set("google_code_verifier", codeVerifier, cookieOptions);
     response.cookies.set("google_intended_role", role, cookieOptions);
+    response.cookies.set("google_redirect_uri", redirectUri, cookieOptions);
     if (inviteToken) {
       response.cookies.set("google_invite_token", inviteToken, cookieOptions);
     }

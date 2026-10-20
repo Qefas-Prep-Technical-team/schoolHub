@@ -93,14 +93,14 @@ export const useAuthStore = create<AuthState>()(
       isLoggingOut: false,
 
       setAuth: (user: User, token: string) => {
-        // We no longer set the client-side 'token' cookie here because
-        // the backend sets it as HttpOnly. Attempting to set it here
-        // conflicts with the HttpOnly cookie and causes issues.
-
-        console.log(
-          "DEBUG: setAuth called with token:",
-          token ? "PRESENT" : "MISSING",
-        );
+        if (token && typeof document !== "undefined") {
+          Cookies.set("token", token, {
+            expires: 1,
+            path: "/",
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+          });
+        }
 
         set({
           user: normalizeUser(user),
@@ -171,14 +171,21 @@ export const useAuthStore = create<AuthState>()(
       initialize: () => {
         const state = get();
 
-        // Since the 'token' cookie is HttpOnly, we cannot reliably check its existence via Cookies.get("token").
-        // We must rely on the persisted 'accessToken' and 'isAuthenticated' state.
-        // If the session is actually expired, the next API call will return 401 and trigger handleSessionExpiry().
-        
+        // Restore auth state from persisted storage if accessToken is present
         if (state.accessToken && state.user && !state.isAuthenticated) {
           console.log("🔄 Restoring auth state from persisted storage");
           set({
             isAuthenticated: true,
+          });
+        }
+
+        // Keep client-side cookie synchronized if present in storage but missing in cookies
+        if (state.accessToken && typeof document !== "undefined" && !Cookies.get("token")) {
+          Cookies.set("token", state.accessToken, {
+            expires: 1,
+            path: "/",
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
           });
         }
 
@@ -202,3 +209,46 @@ const normalizeUser = (user: User) => {
     user.isTwoFactorEnabled ?? user.require2FA ?? false;
   return { ...user, require2FA: isTwoFactorEnabled, isTwoFactorEnabled };
 };
+
+export const resolveUserDashboard = (
+  user?: Partial<User> | null,
+  userType?: UserType | string | null
+): string => {
+  // 1. Direct code/entity attribute check (100% unequivocal)
+  if (user?.adminCode || user?.adminRole) return "/dashboard/admin";
+  if (user?.teacherCode) return "/dashboard/teacher";
+  if (user?.studentCode) return "/dashboard/student";
+  if (user?.parentCode || (Array.isArray(user?.children) && user.children.length > 0)) {
+    return "/dashboard/parent";
+  }
+
+  // 2. Normalize candidate role/type string
+  const candidate = (userType || user?.userType || user?.role || "").toUpperCase().trim();
+
+  if (
+    candidate === "ADMIN" ||
+    candidate.includes("ADMIN") ||
+    candidate.includes("SCHOOL") ||
+    candidate === "PRINCIPAL" ||
+    candidate === "REGISTRAR" ||
+    candidate === "BURSAR" ||
+    candidate === "OWNER"
+  ) {
+    return "/dashboard/admin";
+  }
+
+  if (candidate === "TEACHER" || candidate.includes("TEACH")) {
+    return "/dashboard/teacher";
+  }
+
+  if (candidate === "STUDENT" || candidate.includes("STUD")) {
+    return "/dashboard/student";
+  }
+
+  if (candidate === "PARENT" || candidate.includes("PARENT") || candidate.includes("GUARDIAN")) {
+    return "/dashboard/parent";
+  }
+
+  return "/dashboard";
+};
+

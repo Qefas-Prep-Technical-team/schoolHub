@@ -11,6 +11,7 @@ import LoginButton from "./LoginButton";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
 import SocialAuthRow from "./SocialAuthRow";
+import WrongPortalAlert from "./WrongPortalAlert";
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 
@@ -158,11 +159,11 @@ export default function LoginForm({
                     )}
                 </div>
 
-                {serverError && (
-                    <div className="p-3 text-sm text-red-500 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400 animate-fadeIn">
-                        {serverError}
-                    </div>
-                )}
+                <WrongPortalAlert
+                    serverError={serverError}
+                    currentPortalName={`${userType.charAt(0) + userType.slice(1).toLowerCase()} Portal`}
+                    onDismiss={() => setServerError("")}
+                />
 
                 <LoginButton
                     disabled={isSubmitDisabled}

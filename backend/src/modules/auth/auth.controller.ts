@@ -1845,23 +1845,29 @@ export const login = async (req: Request, res: Response) => {
       );
 
       // Check if they exist in another portal to give a better error message
-      const [existingStudent, existingTeacher, existingAdmin, existingParent] =
+      const [existingStudent, existingTeacher, existingAdmin, existingParent, existingStaff] =
         await Promise.all([
           prisma.student.findFirst({ where: { email: normalizedEmail } }),
           prisma.teacher.findFirst({ where: { email: normalizedEmail } }),
           prisma.admin.findFirst({ where: { email: normalizedEmail } }),
           prisma.parent.findFirst({ where: { email: normalizedEmail } }),
+          prisma.platformStaff.findFirst({ where: { email: normalizedEmail } }),
         ]);
 
       let detectedRole = "";
-      if (existingAdmin) detectedRole = "School Admin";
-      else if (existingTeacher) detectedRole = "Teacher";
-      else if (existingStudent) detectedRole = "Student";
-      else if (existingParent) detectedRole = "Parent";
+      let correctPortal = "/login";
+      if (existingAdmin) { detectedRole = "School Admin"; correctPortal = "/login/school-admin"; }
+      else if (existingTeacher) { detectedRole = "Teacher"; correctPortal = "/login/teacher"; }
+      else if (existingStudent) { detectedRole = "Student"; correctPortal = "/login/student"; }
+      else if (existingParent) { detectedRole = "Parent"; correctPortal = "/login/parent"; }
+      else if (existingStaff) { detectedRole = "Platform Staff"; correctPortal = "/auth/login"; }
 
       if (detectedRole) {
         return res.status(403).json({
           success: false,
+          code: "WRONG_PORTAL",
+          detectedRole,
+          correctPortal,
           message: `This email is registered as a ${detectedRole}. Please login through the correct portal.`,
         });
       }
@@ -3498,6 +3504,15 @@ export const googleAuth = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
+    if (error.code === "WRONG_PORTAL" || error.detectedRole) {
+      return res.status(403).json({
+        success: false,
+        code: "WRONG_PORTAL",
+        message: error.message,
+        detectedRole: error.detectedRole,
+        correctPortal: error.correctPortal,
+      });
+    }
     return handleError(res, error, "auth.googleAuth");
   }
 };
@@ -3608,6 +3623,15 @@ export const facebookAuth = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
+    if (error.code === "WRONG_PORTAL" || error.detectedRole) {
+      return res.status(403).json({
+        success: false,
+        code: "WRONG_PORTAL",
+        message: error.message,
+        detectedRole: error.detectedRole,
+        correctPortal: error.correctPortal,
+      });
+    }
     return handleError(res, error, "auth.facebookAuth");
   }
 };

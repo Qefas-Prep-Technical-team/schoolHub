@@ -9,7 +9,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get("/dashboard", checkSubscription, getParentDashboard);
-router.get("/children", checkSubscription, getChildren);
+router.get("/children", getChildren);
 router.get("/children/:childId", checkSubscription, getChildDetails);
 router.get("/children/:childId/results", checkSubscription, getChildResults);
 router.get("/children/:childId/assignments", checkSubscription, getChildAssignments);

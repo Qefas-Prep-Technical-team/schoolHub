@@ -8,6 +8,7 @@ import {
   Flame,
   BookMarked,
   Award,
+  ArrowRight,
 } from 'lucide-react';
 import {
   Radar,
@@ -21,6 +22,7 @@ import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 import { useLinkProfile } from '@/lib/api/hooks/useLinks';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useMyPublishedResults } from '@/lib/api/hooks/useRecords';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -81,11 +83,13 @@ export default function StudentHomeDashboard() {
   const { data: standaloneGradesData } = useGrades();
   const { data: profileResponse } = useLinkProfile();
   const { data: studentProfile, isLoading: isLoadingProfile } = useStudentProfile();
+  const { data: publishedResultsData } = useMyPublishedResults();
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
 
   const attempts: RawExamAttempt[] = (attemptsData?.attempts as RawExamAttempt[]) || [];
   const standaloneGrades: RawGradeRecord[] = (standaloneGradesData?.grades as RawGradeRecord[]) || [];
   const studentCode = profileResponse?.data?.linkingCode || "";
+  const hasPublishedResults = Boolean(Array.isArray(publishedResultsData) && publishedResultsData.length > 0);
 
   const activeClass = studentProfile?.classes?.[0]?.class;
   const enrolledSubjectsCount = activeClass?.subjects?.length || 0;
@@ -221,7 +225,7 @@ export default function StudentHomeDashboard() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Link href={latestAttempt ? "/dashboard/student/result" : "/dashboard/student/exams&quizzes"} className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto bg-white text-pink-600 hover:bg-slate-50 dark:hover:bg-zinc-100 rounded-xl h-11 sm:h-12 px-6 sm:px-8 font-bold text-sm sm:text-base shadow-sm">
-                  Resume Last Activity
+                  {latestAttempt ? "Resume Last Activity" : "Explore Assessments"}
                 </Button>
               </Link>
               <Link href="/dashboard/student/timetable" className="w-full sm:w-auto">
@@ -243,18 +247,20 @@ export default function StudentHomeDashboard() {
           </div>
         </div>
 
-        {/* Result Banner */}
-        <div className="bg-emerald-600 dark:bg-emerald-700 rounded-3xl p-5 sm:p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Final Results Available!</h2>
-            <p className="text-emerald-100 text-xs sm:text-sm font-medium">Your published academic report card and term summaries are ready for review.</p>
+        {/* Result Banner - Only display when published termly results are available */}
+        {hasPublishedResults && (
+          <div className="bg-emerald-600 dark:bg-emerald-700 rounded-3xl p-5 sm:p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-1">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Final Results Available!</h2>
+              <p className="text-emerald-100 text-xs sm:text-sm font-medium">Your published academic report card and term summaries are ready for review.</p>
+            </div>
+            <Link href="/dashboard/student/result/termly" className="w-full sm:w-auto shrink-0">
+               <Button className="w-full sm:w-auto bg-white text-emerald-600 hover:bg-slate-50 dark:hover:bg-zinc-100 font-bold rounded-xl h-11 sm:h-12 px-6 sm:px-8 shadow-sm text-sm sm:text-base">
+                 View Final Result
+               </Button>
+            </Link>
           </div>
-          <Link href="/dashboard/student/result/termly" className="w-full sm:w-auto shrink-0">
-             <Button className="w-full sm:w-auto bg-white text-emerald-600 hover:bg-slate-50 dark:hover:bg-zinc-100 font-bold rounded-xl h-11 sm:h-12 px-6 sm:px-8 shadow-sm text-sm sm:text-base">
-               View Final Result
-             </Button>
-          </Link>
-        </div>
+        )}
 
         {/* Stat Cards Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
@@ -295,49 +301,79 @@ export default function StudentHomeDashboard() {
                 <HeaderTooltip content="Your most recent assessment activity, showing attained score vs total marks and direct access to question-level analysis." />
               </div>
 
-              <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row items-center gap-4 sm:gap-6 group hover:shadow-md transition-shadow">
-                <div className="w-full md:w-56 h-36 sm:h-40 bg-slate-100 dark:bg-zinc-900 rounded-2xl overflow-hidden relative shrink-0 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-pink-500/10 group-hover:bg-pink-500/20 transition-colors" />
-                  <BookOpen className="w-12 h-12 text-pink-500 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-md" strokeWidth={1.5} />
+              {latestAttempt ? (
+                <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row items-center gap-4 sm:gap-6 group hover:shadow-md transition-shadow">
+                  <div className="w-full md:w-56 h-36 sm:h-40 bg-slate-100 dark:bg-zinc-900 rounded-2xl overflow-hidden relative shrink-0 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-pink-500/10 group-hover:bg-pink-500/20 transition-colors" />
+                    <BookOpen className="w-12 h-12 text-pink-500 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-md" strokeWidth={1.5} />
+                  </div>
+                  
+                  <div className="flex-1 space-y-3 sm:space-y-4 w-full">
+                    <div>
+                      <span className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 bg-pink-100 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 text-[10px] sm:text-xs font-bold rounded-lg uppercase tracking-wider mb-2">
+                        Latest Assessment
+                      </span>
+                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 dark:text-white line-clamp-1">
+                        {latestAttempt.exam?.title || "Assessment"}
+                      </h3>
+                      <p className="text-slate-500 dark:text-zinc-400 mt-1 font-medium text-xs sm:text-sm">
+                        Score: {latestAttempt.totalScore} / {latestAttempt.totalMarks || 100}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <div className="flex justify-between text-xs sm:text-sm font-semibold">
+                        <span className="text-pink-600 dark:text-pink-400">Score Percentage</span>
+                        <span className="text-slate-700 dark:text-zinc-300">
+                          {Math.round((latestAttempt.totalScore / (latestAttempt.totalMarks || 1)) * 100)}%
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-zinc-900 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-pink-600 dark:bg-pink-500 rounded-full transition-all duration-1000"
+                          style={{ width: `${Math.round((latestAttempt.totalScore / (latestAttempt.totalMarks || 1)) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex w-full md:w-auto shrink-0 justify-center md:justify-start pt-2 md:pt-0">
+                    <Link href="/dashboard/student/result" className="w-full md:w-auto">
+                      <Button className="w-full md:w-auto bg-pink-600 hover:bg-pink-700 text-white rounded-xl h-11 sm:h-12 px-6 shadow-sm font-bold text-sm">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-                
-                <div className="flex-1 space-y-3 sm:space-y-4 w-full">
-                  <div>
-                    <span className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 bg-pink-100 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 text-[10px] sm:text-xs font-bold rounded-lg uppercase tracking-wider mb-2">
-                      {latestAttempt ? "Latest Assessment" : "Onboarding"}
+              ) : (
+                <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center gap-6 group hover:shadow-md transition-shadow">
+                  <div className="w-full md:w-48 h-32 sm:h-36 bg-gradient-to-br from-pink-50 to-pink-100/50 dark:from-zinc-900 dark:to-zinc-800 rounded-2xl shrink-0 flex flex-col items-center justify-center border border-pink-100 dark:border-zinc-800">
+                    <Sparkles className="w-10 h-10 text-pink-500 mb-2 drop-shadow-sm" strokeWidth={1.8} />
+                    <span className="text-[11px] font-semibold text-pink-600 dark:text-pink-400">Ready to Start</span>
+                  </div>
+                  
+                  <div className="flex-1 space-y-2 text-center md:text-left">
+                    <span className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 text-[10px] sm:text-xs font-bold rounded-lg uppercase tracking-wider">
+                      No Assessments Yet
                     </span>
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 dark:text-white line-clamp-1">
-                      {latestAttempt ? latestAttempt.exam?.title : "Welcome to your Dashboard"}
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+                      Welcome to your Student Hub!
                     </h3>
-                    <p className="text-slate-500 dark:text-zinc-400 mt-1 font-medium text-xs sm:text-sm">
-                      {latestAttempt ? `Score: ${latestAttempt.totalScore} / ${latestAttempt.totalMarks || 100}` : "Get started by exploring your classes and exams."}
+                    <p className="text-slate-500 dark:text-zinc-400 font-medium text-xs sm:text-sm max-w-xl">
+                      You haven&apos;t taken any exams or quizzes yet. Once you complete an assessment, your scores, percentage breakdown, and progress tracking will show up here.
                     </p>
                   </div>
-
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <div className="flex justify-between text-xs sm:text-sm font-semibold">
-                      <span className="text-pink-600 dark:text-pink-400">Score Percentage</span>
-                      <span className="text-slate-700 dark:text-zinc-300">
-                        {latestAttempt ? Math.round((latestAttempt.totalScore / (latestAttempt.totalMarks || 1)) * 100) : 0}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-pink-600 dark:bg-pink-500 rounded-full transition-all duration-1000"
-                        style={{ width: `${latestAttempt ? Math.round((latestAttempt.totalScore / (latestAttempt.totalMarks || 1)) * 100) : 0}%` }}
-                      />
-                    </div>
+                  
+                  <div className="flex w-full md:w-auto shrink-0 justify-center md:justify-start">
+                    <Link href="/dashboard/student/exams&quizzes" className="w-full md:w-auto">
+                      <Button className="w-full md:w-auto bg-pink-600 hover:bg-pink-700 text-white rounded-xl h-11 sm:h-12 px-6 shadow-sm font-bold text-sm gap-2">
+                        <span>Browse Exams &amp; Quizzes</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-                
-                <div className="flex w-full md:w-auto shrink-0 justify-center md:justify-start pt-2 md:pt-0">
-                  <Link href={latestAttempt ? "/dashboard/student/result" : "/dashboard/student/exams&quizzes"} className="w-full md:w-auto">
-                    <Button className="w-full md:w-auto bg-pink-600 hover:bg-pink-700 text-white rounded-xl h-11 sm:h-12 px-6 shadow-sm font-bold text-sm">
-                      View Details
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+              )}
             </section>
 
             {/* Enrolled Subjects Section */}

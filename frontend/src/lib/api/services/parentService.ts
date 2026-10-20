@@ -1,15 +1,30 @@
 import { apiClient } from "../client";
 
+export interface SchoolInfo {
+  id?: string;
+  name: string;
+  schoolCode?: string;
+  plan?: string;
+  subscriptionStatus?: string;
+  isTrialActive?: boolean;
+  subscriptionEnd?: string | Date;
+  logo?: string;
+  schoolLogo?: string;
+  address?: string;
+  schoolEmail?: string;
+  contactEmail?: string;
+  phone?: string;
+  contactPhone?: string;
+  motto?: string;
+  [key: string]: unknown;
+}
+
 export interface ChildSummary {
   id: string;
   name: string;
   studentCode: string;
   profileImage?: string;
-  school?: {
-    id: string;
-    name: string;
-    schoolCode: string;
-  };
+  school?: SchoolInfo;
   currentClass?: {
     id: string;
     name: string;
@@ -32,6 +47,20 @@ export interface Grade {
   maxMarks: number;
   createdAt: string;
   subject?: string;
+  examId?: string;
+  assessmentType?: string;
+  category?: string;
+  subjectPaperId?: string;
+  teacher?: {
+    id?: string;
+    name?: string;
+  };
+  remarks?: string;
+  term?: string;
+  session?: {
+    id?: string;
+    name?: string;
+  };
   exam?: {
     id: string;
     title: string;
@@ -56,11 +85,20 @@ export interface ChildDetails {
   studentCode: string;
   profileImage?: string;
   grades: Grade[];
-  school?: {
-    name: string;
-  };
+  school?: SchoolInfo;
   department?: {
+    id?: string;
     name: string;
+    code?: string;
+    subjects?: {
+      id?: string;
+      subjectId?: string;
+      subject?: {
+        id?: string;
+        name: string;
+        code?: string;
+      };
+    }[];
   };
   classes?: {
     class?: {
@@ -76,11 +114,17 @@ export interface ChildDetails {
 
 export const parentService = {
   getChildren: async () => {
-    const response = await apiClient.get<{
-      success: boolean;
-      data: ChildSummary[];
-    }>("/parents/children");
-    return response.data.data;
+    try {
+      const response = await apiClient.get<{
+        success: boolean;
+        data: ChildSummary[];
+      }>("/parents/children");
+      const list = response.data?.data || (Array.isArray(response.data) ? response.data : []);
+      return Array.isArray(list) ? list : [];
+    } catch (error) {
+      console.warn("[parentService.getChildren] returning empty list on failure:", error);
+      return [];
+    }
   },
 
   getChildDetails: async (childId: string) => {

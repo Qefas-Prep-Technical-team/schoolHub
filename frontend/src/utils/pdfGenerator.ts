@@ -33,24 +33,36 @@ export const generatePDF = async (options: PDFExportOptions) => {
   let leftTextOffset = 15;
 
   // 2. Add Header Logo
-  if (options.schoolProfile?.logo) {
+  const logoSrc = options.schoolProfile?.logo || options.schoolProfile?.schoolLogo || '/schoolhub.png';
+  if (logoSrc) {
     try {
       const img = new Image();
       img.crossOrigin = 'Anonymous';
-      img.src = options.schoolProfile.logo;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => {
+          // If custom logo fails to load (e.g. CORS or broken URL), try institutional fallback
+          if (img.src !== window.location.origin + '/schoolhub.png' && !img.src.endsWith('/schoolhub.png')) {
+            img.src = '/schoolhub.png';
+          } else {
+            reject(new Error('Failed to load logo'));
+          }
+        };
+        img.src = logoSrc;
       });
       
       const maxH = 22;
-      const ratio = img.width / img.height;
-      const w = maxH * ratio;
+      const ratio = (img.width && img.height) ? img.width / img.height : 1;
+      const w = Math.min(32, maxH * ratio);
       
-      doc.addImage(img, 'PNG', 15, 12, w, maxH);
+      // Determine format from source or default to PNG
+      const isJpeg = logoSrc.toLowerCase().includes('.jpg') || logoSrc.toLowerCase().includes('.jpeg');
+      const format = isJpeg ? 'JPEG' : 'PNG';
+      
+      doc.addImage(img, format, 15, 12, w, maxH);
       leftTextOffset = 18 + w;
     } catch (e) {
-      console.error("Failed to load school logo for PDF", e);
+      console.warn("Could not render logo in PDF, proceeding with text header:", e);
     }
   }
 

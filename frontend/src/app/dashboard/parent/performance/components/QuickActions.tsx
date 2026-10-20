@@ -1,75 +1,90 @@
+"use client";
+
 import {
-    TrendingUp,
-    History,
-    ChevronRight,
-    FileText,
-    Target
+  ChevronRight,
+  FileText,
+  Target,
+  Sparkles,
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
 
 interface QuickAction {
-    id: number;
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    iconColor: string;
-    iconBg: string;
-    href: string;
+  id: number;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  iconColor: string;
+  iconBg: string;
+  href: string;
 }
 
 export default function QuickActions() {
-    const actions: QuickAction[] = [
-        {
-            id: 1,
-            title: 'Subject Analysis',
-            description: 'In-depth performance breakdown',
-            icon: <Target className="h-5 w-5" />,
-            iconColor: 'text-blue-600 dark:text-blue-400',
-            iconBg: 'bg-blue-100 dark:bg-blue-900/30',
-            href: '/dashboard/parent/performance/subject-performance'
-        },
-        {
-            id: 2,
-            title: 'Exam Records',
-            description: 'View full history of results',
-            icon: <FileText className="h-5 w-5" />,
-            iconColor: 'text-orange-600 dark:text-orange-400',
-            iconBg: 'bg-orange-100 dark:bg-orange-900/30',
-            href: '/dashboard/parent/exams&results'
-        },
-    ];
+  const actions: QuickAction[] = [
+    {
+      id: 1,
+      title: 'Subject Breakdown',
+      description: 'In-depth mastery by topic & syllabus',
+      icon: <Target className="h-4.5 w-4.5" />,
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      iconBg: 'bg-blue-100 dark:bg-blue-950/60',
+      href: '/dashboard/parent/performance/subject-performance'
+    },
+    {
+      id: 2,
+      title: 'Termly Result Sheets',
+      description: 'Official continuous assessment sheets',
+      icon: <ClipboardList className="h-4.5 w-4.5" />,
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-950/60',
+      href: '/dashboard/parent/result/termly'
+    },
+    {
+      id: 3,
+      title: 'Exam Records & Tests',
+      description: 'Full attempt history & paper reviews',
+      icon: <FileText className="h-4.5 w-4.5" />,
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      iconBg: 'bg-orange-100 dark:bg-orange-950/60',
+      href: '/dashboard/parent/exams&results'
+    },
+  ];
 
-    return (
-        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-white/10 flex-1 flex flex-col justify-center">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">
-                Quick Actions
-            </h3>
+  return (
+    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-center">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+          Quick Portals
+        </h3>
+        <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-widest">
+          Shortcuts
+        </span>
+      </div>
 
-            <div className="flex flex-col gap-4">
-                {actions.map((action) => (
-                    <Link
-                        key={action.id}
-                        href={action.href}
-                        className="flex items-center justify-between w-full group p-4 bg-slate-50 dark:bg-white/5 hover:bg-orange-600 hover:text-white rounded-[1.5rem] transition-all duration-300 border border-slate-100 dark:border-white/5 hover:border-orange-500 shadow-sm hover:shadow-xl hover:shadow-orange-600/20 active:scale-95"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className={`${action.iconBg} ${action.iconColor} p-3 rounded-2xl group-hover:bg-white/20 group-hover:text-white transition-colors`}>
-                                {action.icon}
-                            </div>
-                            <div className="text-left">
-                                <p className="text-[13px] font-black uppercase tracking-tight">
-                                    {action.title}
-                                </p>
-                                <p className="text-[10px] font-bold opacity-60 group-hover:opacity-100 uppercase tracking-widest mt-0.5">
-                                    {action.description}
-                                </p>
-                            </div>
-                        </div>
-                        <ChevronRight className="h-5 w-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                    </Link>
-                ))}
+      <div className="flex flex-col gap-2.5">
+        {actions.map((action) => (
+          <Link
+            key={action.id}
+            href={action.href}
+            className="flex items-center justify-between w-full group p-3 sm:p-3.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-orange-50 dark:hover:bg-slate-800/90 rounded-2xl transition-all duration-200 border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-900/40 active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`${action.iconBg} ${action.iconColor} p-2.5 rounded-xl shrink-0 transition-transform group-hover:scale-105`}>
+                {action.icon}
+              </div>
+              <div className="text-left min-w-0">
+                <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tight truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                  {action.title}
+                </p>
+                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                  {action.description}
+                </p>
+              </div>
             </div>
-        </div>
-    );
+            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-orange-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
-

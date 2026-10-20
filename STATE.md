@@ -39,7 +39,438 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Tuesday, October 20, 2026 (Parent Dashboard Export Standardization & Paid Plan Gate)
+
+- **Production Build & Type Check Verification**:
+    - [x] Ran full production build (`npm run build`) in `frontend` — Turbopack compilation and page generation succeeded with **0 errors** (exit code 0).
+    - [x] Verified `backend` TypeScript compilation (`npx tsc --noEmit`) with **0 errors** (exit code 0).
+    - [x] Verified `Mobile` React Native Expo TypeScript compilation (`npx tsc --noEmit`) with **0 errors** (exit code 0).
+
+- **Facebook Authentication Coming Soon Notification (All Auth Pages)**:
+    - [x] Configured all Facebook login and sign-up buttons across the authentication system ([SocialAuthRow.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/SocialAuthRow.tsx), [FacebookLoginButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/FacebookLoginButton.tsx), [console login](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/auth/login/page.tsx), and [console setup](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/auth/setup/page.tsx)) to display a "Coming Soon" toast notification upon clicking (`toast.info("Facebook sign in / sign up is coming soon!")`).
+    - [x] Added visual "Coming Soon" badges and accessible titles (`title="Sign in with Facebook (Coming Soon)"`) across all auth pages (School Admin, Teacher, Student, Parent, and Console Staff).
+
+- **Parent Attendance Absence Note Feature (`/dashboard/parent/attendance`)**:
+    - [x] Wired "Submit Absence Note" action in [QuickContact.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/attendance/components/QuickContact.tsx) and [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/attendance/page.tsx) to trigger a `toast.info("Submit Absence Note feature is coming soon!", { toastId: "absence-note-coming-soon" })` notification instead of opening verified record breakdowns.
+
+- **Universal Paid Plan Validator (`frontend/src/utils/subscriptionPlanCheck.ts`)**:
+    - [x] Implemented `isSchoolOnPayingPlan` and `assertSchoolPayingPlan` utility functions to guard all parent export features.
+    - [x] Validates that `school.plan` is not `'FREE'` and that `subscriptionStatus === 'ACTIVE'` or `isTrialActive === true`.
+    - [x] Displays a user-friendly, actionable toast notification directing parents to contact school administration to activate export permissions when on a free plan.
+
+- **Standardization of All Parent Dashboard Exports (Matching Admin Portal Design)**:
+    - [x] **Page 1: Performance Overview (`/dashboard/parent/performance`)**:
+        - Integrated `generatePDF` into [ProfileHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/ProfileHeader.tsx) with institutional double border, school logo, shaded metadata grid, and department subject table. Guarded by `assertSchoolPayingPlan(student.school)`. Removed redundant Quick Print button per user request.
+    - [x] **Page 2: Subject Breakdown (`/dashboard/parent/performance/subject-performance`)**:
+        - Added "Export Report" button to [subject-performance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/subject-performance/page.tsx) and [TopHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/subject-performance/components/TopHeader.tsx), exporting department subjects via `generatePDF` guarded by `assertSchoolPayingPlan(student.school)`.
+    - [x] **Page 3: Term Report Card (`/dashboard/parent/exams&results/report-card`)**:
+        - Passed `schoolProfile` into `reportData` in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/page.tsx) and [types.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/components/types.ts).
+        - Guarded `handleDownloadPDF` in [breadcrumb-actions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/components/breadcrumb-actions.tsx) with `assertSchoolPayingPlan(data.schoolProfile)`.
+    - [x] **Page 4: Published Termly Result Sheets (`/dashboard/parent/result/termly/view`)**:
+        - Added "Export PDF" button to the toolbar and footer of [result/termly/view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/view/page.tsx).
+        - Integrated `generatePDF` mapping subjectContinuous assessment, CA/Quiz, and Exam scores into formal table rows, guarded by `assertSchoolPayingPlan(childDetails?.school)`.
+    - [x] **Page 5: Exam Attempt Details (`/dashboard/parent/exams&results/details`)**:
+        - Updated [parent-tools.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/details/components/parent-tools.tsx) with "Export Official PDF" generating assessment dossiers and question evaluations via `generatePDF`, guarded by `assertSchoolPayingPlan(data.schoolProfile)`.
+    - [x] **Page 6: Assignments Hub (`/dashboard/parent/assignments`)**:
+        - Re-architected [DownloadReportButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/assignments/components/DownloadReportButton.tsx) using `generatePDF` with school logo, formal table formatting, and affective/psychomotor domains, guarded by `assertSchoolPayingPlan(student?.school)`. Strictly removed all `any` types.
+    - [x] **Page 7: Monthly Attendance Log (`/dashboard/parent/attendance/monthly`)**:
+        - Replaced placeholder alert in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/attendance/monthly/page.tsx) and [AttendanceExport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/attendance/monthly/components/AttendanceExport.tsx) with real `generatePDF` attendance register, guarded by `assertSchoolPayingPlan(school)`.
+    - [x] **Exams & Results Mobile Status & Filter Bar Modernization (`/dashboard/parent/exams&results`)**:
+        - Re-engineered the Status dropdown in [exam-list.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/components/exam-list.tsx) with `appearance-none`, custom `ChevronDown`, dynamic status indicator pills (emerald for completed, amber for pending, filter icon for all), and matching height/border/focus styling.
+        - Synchronized Subject dropdown with `BookOpen` icon, `appearance-none`, and responsive mobile touch target (`h-10 sm:h-9`).
+        - Added active filter reset action chip when any search or filter criteria are applied.
+    - [x] **Page 8: Billing Receipts & Financial Logs (`/dashboard/parent/billing`)**:
+        - Wired "Download PDF Logs" button in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/billing/page.tsx) to generate official subscription and dispatch statements via `generatePDF`, guarded by active paying plan validation.
+    - [x] **Systematic Removal of Non-PDF Quick Print Buttons Across Parent Dashboard**:
+        - Removed `Quick Print Slip` button from [parent-tools.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/details/components/parent-tools.tsx) (`/dashboard/parent/exams&results/details`).
+        - Removed `Print Result Sheet` button from [result/termly/view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/view/page.tsx) (`/dashboard/parent/result/termly/view`).
+        - Removed pseudo-export print button from [TopHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/subject-performance/components/TopHeader.tsx) (`/dashboard/parent/performance/subject-performance`).
+        - Removed `Print Report` button from [breadcrumb-actions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/components/breadcrumb-actions.tsx) (`/dashboard/parent/exams&results/report-card`).
+        - Removed `Print Schedule` button from [calender/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/calender/page.tsx) (`/dashboard/parent/exams&results/calender`).
+        - Removed `Print Analytics` button from [breadcrumb-actions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/analytics/components/breadcrumb-actions.tsx) (`/dashboard/parent/exams&results/analytics`).
+        - Cleaned all unreferenced `Printer` and `window.print()` calls across the entire Parent portal.
+
+### Tuesday, October 20, 2026
+
+- **Student Department-Driven Performance Analysis & Full Grade Fetching (`/dashboard/parent/performance`)**:
+    - [x] **Backend Department Subjects & Uncapped Grade Query ([parent.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/parent/parent.service.ts))**:
+        - Updated `getChildDetailsService` to include department subjects (`department: { include: { subjects: { include: { subject: true } } } }`), resolving the missing subjects attached to the student's assigned department.
+        - Removed the artificial `take: 100` limit on student grades in `getChildDetailsService`, ensuring every published continuous assessment, test, quiz, and examination grade is fetched for analysis.
+        - Included subject department relations on `subjectPaper` (`subject: { include: { departments: true } }`).
+    - [x] **Department Subject Analysis in UI ([SubjectPerformanceList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/SubjectPerformanceList.tsx))**:
+        - Filtered and structured the subject mastery breakdown specifically around the subjects attached to the student's assigned department (`student.department.subjects`).
+        - Aggregated every recorded grade attached to those department subjects to calculate cumulative average score, letter grade (A1-F9 / A+-F), status tier, and assessment counts.
+        - Handled pending evaluations gracefully for registered department subjects that haven't been tested yet.
+    - [x] **Department Filter in Academic Trend ([PerformanceChart.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/PerformanceChart.tsx))**:
+        - Populated the chart subject selector strictly with subjects attached to the student's department.
+        - Plotted chronological score trajectory across every grade attached to those department subjects.
+    - [x] **Department Score Metrics in KPIs ([StatsGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/StatsGrid.tsx))**:
+        - Re-computed overall average score and total assessments directly from the grades attached to the student's department subjects.
+
+- **Parent Portal Performance Page Mobile & Web Overhaul (`/dashboard/parent/performance`)**:
+    - [x] **Container & Responsive Layout Modernization**:
+        - Replaced restrictive `max-w-7xl` constraint with modern `w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8` in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/page.tsx) and [subject-performance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/subject-performance/page.tsx).
+        - Upgraded spacing and responsive hierarchy (`space-y-5 sm:space-y-6 md:space-y-8`) so mobile devices do not experience vertical fatigue.
+    - [x] **Eliminated Broken Unrendered Material Symbols**:
+        - Replaced unrendered `material-symbols-outlined` text glyphs across [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/page.tsx), [ProfileHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/ProfileHeader.tsx), and [Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/Header.tsx) with crisp, accessible Lucide React icons (`BarChart3`, `GraduationCap`, `School`, `UserCheck`).
+    - [x] **Profile Header Redesign ([ProfileHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/ProfileHeader.tsx))**:
+        - Modernized student card with ambient background gradient and subtle watermark styling.
+        - Responsive avatar container (`size-20 sm:size-24 md:size-26`) with rounded corners, verified active status badge, and robust DiceBear fallback.
+        - Redesigned student metadata badges (School Name, Student ID, Enrolled Class, Department, Academic Session) with Lucide icons.
+        - Horizontal multi-child switcher with smooth scrolling, indicator dots, and active glow rings for multi-ward parents.
+        - Responsive action buttons: "Print Report" (`window.print()`) and "Result Sheets" (direct navigation to `/dashboard/parent/result/termly`).
+    - [x] **2-Column Mobile & 4-Column Desktop Stats Grid ([StatsGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/StatsGrid.tsx))**:
+        - Redesigned 4 KPI metrics (Average Score, Academic Standing, Assessments, Attendance) into a 2-column mobile and 4-column desktop layout (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5`), eliminating awkward 1-column mobile card stacks.
+        - Added color-themed icon badges, trend indicators, header tooltips, and direct links to subject breakdowns and exam records.
+    - [x] **Interactive Academic Trend Chart ([PerformanceChart.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/PerformanceChart.tsx))**:
+        - Enhanced Recharts AreaChart with smooth gradient (`#ea580c` to transparent) and responsive canvas height (`h-[260px] sm:h-[300px] md:h-[320px]`).
+        - Replaced clumsy inputs with a custom styled subject dropdown and reset filter button.
+        - Implemented custom dark glass tooltip displaying assessment date, subject badge, and exact percentage.
+        - Added a graceful illustrated empty state when no evaluations are recorded.
+    - [x] **Quick Portals & Subject Analysis Callout ([QuickActions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/QuickActions.tsx))**:
+        - Redesigned the subject analysis banner with a vibrant gradient, badge pill, subtle background graphic, and active micro-interactions.
+        - Added quick portal navigation cards to Subject Breakdown, Termly Result Sheets, and Exam Records.
+    - [x] **Subject Mastery Breakdown Overhaul ([SubjectPerformanceList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/SubjectPerformanceList.tsx))**:
+        - Upgraded both Grid (default) and List views with numbering (`#1`, `#2`), subject icons, instructor lines, WAEC letter grades, status tier badges, and animated mastery progress bars.
+        - Clean search input with instant clear button (`X`) and responsive tier filter selector.
+        - Strictly enforced TypeScript types with zero `any` usage.
+
+- **Parent Portal Termly Results Hub Parity with Student Portal (`/dashboard/parent/result/termly`)**:
+    - [x] **Full Parity with Student Termly Grouping & Flow**:
+        - Updated [parent/result/termly/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/page.tsx) to match the grouping architecture and design flow of [student/result/termly/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/result/termly/page.tsx).
+        - Replicated the 4 quick summary metric KPI cards (Published Terms, Total Subjects, Fully Released, Academic Session) at the top of the hub.
+        - Replicated the live search filter input and Grid / Table perspective toggle toolbar.
+        - Replicated the responsive 3-column Cards Grid (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-3`) with top term gradients, term badge pill, class cohort title, session line, evaluated subjects counter, dynamic status badge, and "View Result" bottom action navigating to `/dashboard/parent/result/termly/view`.
+        - Replicated the Table perspective with Academic Session, Class Cohort, Term, Evaluated Subjects, Release Status, and "View Sheet" action.
+        - Preserved multi-child student switcher bar and refresh controls, while strictly eliminating all `any` types with `PublishedResultGroup`.
+
+- **Parent Portal Termly Result View Flow & Design Parity with Student Portal (`/dashboard/parent/result/termly/view`)**:
+    - [x] **Full Parity with Student Termly View Flow & Design**:
+        - Updated [parent/result/termly/view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/view/page.tsx) to work identically to the student termly view (`/dashboard/student/result/termly/view`).
+        - Replicated the top navigation bar with back action to published results and term/session breadcrumb.
+        - Replicated the hero header banner with gradient matching the term, class cohort title, evaluated count, and summary score cards (Average, Highest, Lowest, or partial coverage).
+        - Replicated the score sheet section header with live search input and Grid/Table perspective toggle (defaulting to Grid on mobile and desktop).
+        - Replicated the 3-column Cards Grid featuring subject icon, title, course code, square WAEC letter grade badge (A1, B2, B3, C4, C5, C6, D7, E8, F9), 3-col micro-grid for Assignment, CA/Quiz, and Terminal Exam marks, and Cumulative Total footer.
+        - Replicated the tabular perspective and the aggregate summary footer with Term Average, Highest Score, Released Coverage, and Print Result Sheet action (`window.print()`).
+        - **Fixed React Rules of Hooks Order**: Declared all `useMemo`, `useState`, and `useEffect` hooks unconditionally at the top of `ResultViewInner` before any early returns (`if (isLoading)` and `if (!group)`), eliminating the "change in the order of Hooks" console error.
+        - Maintained zero `any` types throughout with `SubjectResultRecord` and `TermResultGroup`.
+
+- **Mobile Top Nav Hamburger Menu Accessibility Enhancement**:
+    - [x] **Enlarged Touch Target & Menu Icon**:
+        - Scaled the mobile top navigation hamburger button from `size-9` (36px) up to `size-11 sm:size-12` (44px-48px touch target) in [ParentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/ParentMobileDrawer.tsx), satisfying mobile accessibility guidelines.
+        - Enlarged the Lucide `Menu` hamburger icon from `h-5 w-5` (20px) to `h-6 w-6 sm:h-7 sm:w-7` with `strokeWidth={2.2}` for clear visibility and crisp rendering.
+        - Applied consistent sizing, active scale micro-interactions (`active:scale-95`), and theme-aware borders across [StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx), [TeacherMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TeacherMobileDrawer.tsx), [AdminMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/AdminMobileDrawer.tsx), and secondary header triggers ([TopHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/subject-performance/components/TopHeader.tsx), [ParentHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/attendance/components/ParentHeader.tsx), [MonthlyHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/attendance/monthly/components/MonthlyHeader.tsx), and [NavBarDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/reusable/NavBarDrawer.tsx)).
+
+- **Parent Portal Exams & Results Page Decluttering & Layout Streamlining (`/dashboard/parent/exams&results`)**:
+    - [x] **Unified Executive Header**:
+        - Consolidated the redundant child-switcher pill bar and oversized hero container into a single, compact, modern header ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/page.tsx)).
+        - Incorporated student avatar, student name, child dropdown switcher (when parent has >1 linked child), copyable student access code, class cohort, and school name.
+        - Unified quick navigation buttons for **Analytics**, **Dashboard Report**, and **Timetable**.
+    - [x] **Streamlined Stat Cards**:
+        - Decluttered [stat-cards.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/components/stat-cards.tsx) from verbose repetitive labels into 4 breathable KPI cards: Term Average, Attendance, Current Class, and Graded Records.
+        - Fixed TypeScript typing using `LucideIcon` without any `any` types.
+    - [x] **Consolidated Command & Filter Bar**:
+        - Removed the 100px vertical academic insight banner to bring exam cards into immediate view.
+        - Unified search, category filter tabs (All, Exams, C.A., Assignments, Tests), subject/status dropdowns, and grid/list view toggles into one cohesive toolbar in [exam-list.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/components/exam-list.tsx).
+        - Strictly typed `grade: Grade` and `exam: UpcomingExam`, eliminating all `any` types.
+    - [x] **Streamlined Right Sidebar**:
+        - Overhauled [sidebar-right.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/components/sidebar-right.tsx) by removing the bulky Chart.js Radar polygon (which is already fully featured on `/analytics`), eliminating unnecessary canvas DOM weight and visual height overload.
+        - Highlighted **Upcoming Papers** with clean date chips, subject, and time badges, accompanied by a clean **Grading Scale Reference Guide** (A+ through F) and quick link to in-depth radar analytics.
+
+    - [x] **Removed Final Result Tab & Updated Navigation Button**:
+        - Removed the "Final Result Grades" tab button, tab state (`activeTab`), and conditional tab switcher from [exams&results/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/page.tsx).
+        - Streamlined the view to directly display the primary Continuous Assessment & Exams list (`<ExamList />`) alongside `<SidebarRight />` without redundant tab wrapper friction.
+        - Updated the quick action and card navigation buttons linking to the report card page from "Report Card" to **"Dashboard Report"**.
+
+- **Parent Portal Report Card Disclosure & PDF Export Design (`/dashboard/parent/exams&results/report-card`)**:
+    - [x] **Platform Disclosure & Final Report Card Notice**:
+        - Added prominent informative banner above the report card document informing parents that this document is an interim record of all student activities, continuous assessments, quizzes, and learning tasks on Qefas Hub, not the final official school report card.
+        - Notified parents that the official final terminal school report card issued by the school administration appears on the **Final Results** page, complete with a quick action button to navigate there.
+        - Updated document classification in [report-header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/components/report-header.tsx) and [footer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/components/footer.tsx) with explicit interim disclosure badges and official disclaimers.
+    - [x] **PDF Export Design Pattern Alignment (`pdf_export_design`)**:
+        - Overhauled `handleDownloadPDF` in [breadcrumb-actions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/report-card/components/breadcrumb-actions.tsx) strictly adhering to the `pdf_export_design` skill and [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts).
+        - Integrated `react-toastify` toasts (`toast.loading("Generating PDF...", { autoClose: false })` updated to success/error on completion).
+        - Added an even number of key-value pairs (10 pairs) to the formal shaded metadata grid at the top.
+        - Formatted table headers: `[['S/N', 'Subject Name', 'C.A. (40)', 'Terminal Exam (60)', 'Total Mark (100)', 'Grade', 'Teacher Remark']]`.
+        - Injected formal additional table for "Institutional Notice & Platform Disclosure" clarifying the document's continuous assessment scope and noting that the final official school report card appears on the Final Results portal.
+        - **School Logo Integration**: Connected [useSchoolProfile](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useSchool.ts) to retrieve the real school brand logo, rendering it in the report card UI and embedding it at top-left in the PDF export via [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts) with automatic aspect ratio calculation and institutional fallback.
+
+- **Parent Portal Exam Calendar Overhaul & Real Data Integration (`/dashboard/parent/exams&results/calender`)**:
+    - [x] **Real Assessment & Exam Data Integration**:
+        - Replaced hardcoded October 2023 mock data with real data synthesized from [useParentDashboard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentDashboard.ts) (upcoming exams) and [useChildDetails](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentChildren.ts) (graded assessments/exams).
+        - Added linked child dropdown selector synchronized with [useParentStore](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentStore.ts).
+        - Built robust date matching and summary statistics calculation in [calendarUtils.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/calender/components/calendarUtils.ts) using `date-fns`.
+    - [x] **Responsive Month Grid & Mobile Agenda View**:
+        - Redesigned [CalendarGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/calender/components/CalendarGrid.tsx) with a responsive Month Grid and dedicated Agenda / List view for seamless mobile navigation.
+        - Month navigation with previous/next controls and instant "Today" reset button.
+        - Event chips displaying title, category, status dots, and overflow badges (+N more).
+        - Interactive day selection allowing parents to filter exams for any specific date with an instant clear/reset button.
+    - [x] **Stats Overview & Upcoming Panel**:
+        - Overhauled [StatsOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/calender/components/StatsOverview.tsx) with 4 real metrics: Upcoming Exams, Completed Tests, Total Tracked, and Average Score.
+        - Overhauled [UpcomingPanel.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/calender/components/UpcomingPanel.tsx) with real upcoming assessments, selected day schedule, quick link to exam details (`/details?id=...`), and parent tip card.
+    - [x] **Styling, Layout & Dark Mode**:
+        - Expanded layout to fit 98% of the page (`w-full max-w-[98%] mx-auto px-2 sm:px-4 py-4 sm:py-6`).
+        - Full dark mode support using `dark:bg-slate-900`, `dark:border-slate-800`, and `dark:text-white`.
+        - Replaced all unrendered material symbols with Lucide React icons.
+        - Zero tolerance for `any` types throughout all calendar components.
+
+- **Parent Portal Term Report Card Overhaul & Dark Mode Redesign (`/dashboard/parent/exams&results/report-card`)**:
+    - [x] **Real Academic Data Integration & Dynamic Term Selector**:
+        - Replaced mock data ("Alex Doe", "Springfield International School", "EduSmart 2023", etc.) with live student data from [useChildDetails](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentChildren.ts), [useParentStore](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentStore.ts), and [useParentDashboard](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentDashboard.ts).
+        - Added interactive Term Selector (`All Terms`, `Term 1`, `Term 2`, `Term 3`) and multi-child dropdown switcher.
+        - Computes real subject breakdown with Continuous Assessment (C.A.), Exam mark, combined Total (100), letter grade (`A1` to `F9`), and verified evaluator remarks.
+        - Computes cumulative average score, academic standing (`Distinction`, `Good Standing`), attendance rate, and institutional advancement status.
+    - [x] **Dark Mode Fixes & Institutional Branding**:
+        - Eliminated broken `dark:bg-card-dark` classes, replacing with standard `dark:bg-slate-900` and `dark:border-slate-800`.
+        - Replaced unrendered material symbols with Lucide React icons.
+        - Standardized decorative accents with Qefas Hub warm Orange gradient (`from-orange-500 via-amber-500 to-orange-600`).
+        - Updated official verification footer to Qefas Hub Educational Systems Directorate.
+    - [x] **PDF Export & Print Optimization**:
+        - Connected "Download PDF" action to the institutional [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts) utility to generate clean official PDF downloads.
+        - Configured clean `@media print` rules ensuring the report card prints without browser chrome artifacts or background distortions.
+        - Responsive layout: mobile card view on phones and clean tabular document on desktop fitting 98% of the available page width (`w-full max-w-[98%] mx-auto`).
+        - Enhanced `<ReportCardSkeleton />` with a comprehensive 98%-width layout and foolproof query hydration guards that prevent empty-state flickering.
+
+- **Parent Portal Subject Analytics Page Overhaul & Dark Mode Redesign (`/dashboard/parent/exams&results/analytics`)**:
+    - [x] **Real Academic Data Integration & Reactive Subject Filter**:
+        - Connected with [useParentStore](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentStore.ts), [useParentChildren](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentChildren.ts), and [useChildDetails](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useParentChildren.ts) to eliminate all dummy mock data ("Sarah", "Winter Math Project", etc.).
+        - Dynamically extracts all distinct curriculum subjects evaluated for the selected child.
+        - Provides interactive subject switcher dropdown permitting seamless switching between `All Curriculum Subjects` and specific subjects (e.g. Mathematics, English Language, Physics).
+        - Computes real weighted average scores, letter grades (`A1` to `F9`), longitudinal progression trajectory, category distributions (Exams vs Tests vs Quizzes), score extremes (peak & lowest marks), and teacher remarks.
+    - [x] **Dark Mode Fixes & Brand Aesthetics (Orange Parent Theme)**:
+        - Replaced unconfigured `dark:bg-card-dark` classes with standard `dark:bg-slate-900` and `dark:border-slate-800` across all cards.
+        - Replaced hardcoded blue `#3670e2` fills with the Qefas Hub Orange palette (`#f97316` / `#ea580c`) and SVG gradient fills.
+        - Redesigned SVG chart with dark-mode grid borders, interactive node hovers, floating tooltips, and dashed cohort benchmark line.
+        - Replaced unrendered material symbols with sharp Lucide React icons.
+    - [x] **Full Mobile & Web Responsiveness**:
+        - Expanded layout to fit 98% of viewport width without cramped clipping.
+        - **AssessmentsTable**: Added responsive mobile card view for small screens and desktop tabular layout with 5-per-page `<Pagination theme="orange" />`.
+        - **BreadcrumbActions**: Breadcrumbs with active child selector dropdown and print/report card actions.
+        - Added shimmering `<AnalyticsSkeleton />` for zero layout shift during query hydration.
+
+- **Parent Portal Exam Details Page Full Revamp (`/dashboard/parent/exams&results/details?id=...`)**:
+    - [x] **Connected Real-Time Data & Correct Query Parameter Consumption**:
+        - Fixed query parameter resolution by extracting `id` via `useSearchParams()` instead of `useParams()` (which returned `undefined` for query parameters in Next.js App Router).
+        - Wrapped component tree in `<Suspense fallback={<ExamDetailsSkeleton />}>` to satisfy Next.js streaming conventions.
+        - Integrated student selector with `useParentStore` and `useParentChildren`, enabling parents with multiple children to inspect exam details per child seamlessly.
+        - Fetches full academic dossier combining `useChildDetails` (`student.grades`, teachers, subjects, remarks), `useExamResult` (class benchmark, position, global percentile, grade letter, velocity), and `useExamReview` (per-question attempts, student responses, answer key, teacher scoring notes).
+        - Provided graceful fallback synthesis when viewing offline terminal papers or continuous assessments.
+    - [x] **Premium Mobile & Web Responsive Aesthetics**:
+        - **PageHeader**: Added back navigation to Exams & Results, dynamic category / term badges, verified student name/code/class/school badges, total score summary pill, and responsive child switcher dropdown.
+        - **KPICards**: 4 responsive metric cards (Total Score & Grade, Class Benchmark with visual comparison bar, Academic Standing & Position, and Curriculum Breadth) in a 2x2 grid on mobile and 4x1 on desktop.
+        - **PerformanceBreakdown**: Detailed subject-by-subject cards with mark progress bars, teacher evaluators, percentage badges, and verified remarks.
+        - **QuestionReview Subject Paper Separation & 10-per-page Pagination**:
+            - Added dynamic Subject Paper separation tabs (`All Subject Papers`, `Mathematics Paper`, `English Language Paper`, etc.) with count badges and paper score summary pills.
+            - Integrated 10-per-page pagination with the global `<Pagination theme="orange" itemsPerPage={10} ... />` component, automatically resetting to page 1 upon paper tab or correctness filter changes.
+            - Per-question card indexing displays both the subject paper question number (`#Q{number}`) and global page item index with subject badge chips.
+            - Filter pills allow isolating `All`, `Correct`, and `Incorrect` answers within any selected subject paper.
+            - Offline written assessment fallback also supports subject paper separation tabs and 10-per-page pagination across evaluated curriculum components.
+        - **Sidebar Modules**: Parent Action Tools (full report card link, print/save slip), dynamic Strengths & Focus Areas, and verified Teacher Evaluation note.
+        - Styled with Qefas Hub Orange theme (`orange-500`, `orange-600`), dark-mode support, and zero horizontal page overflow.
+
+- **Parent Portal Exams & Results Main Exams Consolidation & Pagination (`/dashboard/parent/exams&results`)**:
+    - [x] **Consolidated Main Exams (Eliminated Fragmented Subject Papers)**:
+        - Refactored grade mapping in [exam-list.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/exams&results/components/exam-list.tsx) to group subject paper grades by their parent `Exam` record (`grade.examId` / `grade.exam.title`), displaying the actual Main Exam (e.g. "First Term Examination 2026", "Mid-Term Examination") instead of fragmented raw paper entries ("Mathematics Paper 1", "Paper 2").
+        - Multi-subject main exams aggregate overall cumulative scores (`totalScore / totalMaxMarks`), weighted percentage, letter grades, and subject breadth count pills (e.g. `5 Papers Graded`).
+        - Standalone non-exam assessments sanitize raw paper names to clean assessment titles (`${subject} ${assessmentType}`).
+        - Details buttons now pass the main exam's ID (`exam.examId || exam.id`), ensuring the examination dossier properly loads the full exam details.
+    - [x] **Full-Featured Pagination System**:
+        - Added the brand-aligned `'orange'` theme to the global [Pagination.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/Pagination.tsx) component.
+        - Integrated `<Pagination />` with 6 items per page (`itemsPerPage = 6`, giving a balanced 2x3 grid) with previous/next controls, numbered page buttons, and active orange gradient pills.
+        - Added single-page count confirmation state when `totalPages === 1`.
+        - Numbering badges in both Grid View and Table List View dynamically compute page offsets `(currentPage - 1) * itemsPerPage + index + 1`.
+
+- **Parent Dashboard Mobile Financial Status Overlap Resolution (`/dashboard/parent`)**:
+    - [x] **Eliminated Cyclic Grid Sizing & Card Overlap on Mobile**:
+        - Removed problematic `h-full` on [Announcements.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/Announcements.tsx), which previously caused browsers to treat the row track height cyclically as 0 / min-content of the header on single-column mobile viewports, placing the subsequent "Financial Status" header directly on top of the Announcements card.
+        - Replaced with `w-full flex-1 flex flex-col overflow-hidden` to ensure the Announcements card correctly reports its natural intrinsic height to the grid layout.
+        - Removed redundant `h-full` declarations on [FinancialSummaryCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/FinancialSummaryCard.tsx) and [RecentPerformanceChart.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/RecentPerformanceChart.tsx) to prevent vertical stretching distortion inside unconstrained block containers.
+        - Added `items-start` and explicit `w-full flex flex-col` on grid column containers in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/page.tsx) to ensure independent column auto-sizing and guaranteed vertical spacing (`gap-6 sm:gap-8`) between the activity feed and financial status section on mobile screens.
+
+- **Parent Portal Settings Page 98% Viewport Width & Mobile/Desktop Polish (`/dashboard/parent/settings`)**:
+    - [x] **98% Viewport Space Fit & Layout Optimization**:
+        - Removed rigid `max-w-7xl` outer constraint and nested `max-w-6xl` constraints on all 4 tab panels (Profile, Appearance, Security, Notifications).
+        - Replaced with `w-full max-w-[99%] mx-auto`, allowing form cards and widget panels to spread evenly across 98% of the browser width on wide desktop screens.
+        - Eliminated redundant outer gutters to prevent double-padding on mobile screens.
+    - [x] **Modern Hero Header & User Avatar Badge**:
+        - Upgraded header banner with ambient gradient, account avatar with DiceBear initials fallback, email badge, "Parent Account Security" status pill, and analytical HeaderTooltip.
+        - Streamlined mobile action buttons into a full-width 2-column grid (`grid-cols-2 sm:flex`).
+    - [x] **Responsive Mobile Tab Navigation**:
+        - Positioned icons strictly on the left of the tab labels (`[User] Profile`, `[Palette] Theme`, `[Lock] Security`, `[Bell] Alerts`) using horizontal flex (`flex-row items-center gap-2`), keeping both icons and labels visible across mobile and desktop.
+        - Enabled smooth horizontal scrolling with `overflow-x-auto no-scrollbar` to prevent squishing on narrow mobile screens.
+    - [x] **Multi-Tab Polish (Profile, Theme, Security, Notifications)**:
+        - Profile: 2-column desktop layout (`lg:col-span-2` + widget sidebar) with verified guardian card, public profile link, and subscription tier widget.
+        - Appearance: Enhanced Light and Dark mode interactive cards with active border highlights, radio checkmarks, and responsive system sync switch.
+        - Security: Clean security cards for password reset, 2FA setup, active device sessions, and account deactivation.
+        - Notifications: High-contrast unread alert rows, type icons, and responsive pagination controls.
+
+- **Parent Portal Termly Results Hub 98% Space Fit & Mobile Polish (`/dashboard/parent/result/termly` & `/view`)**:
+    - [x] **98% Viewport Utilization & Zero-Waste Spacing**:
+        - Removed artificial `max-w-7xl` constraint and redundant outer padding across `/result/termly` and `/result/termly/view`.
+        - Replaced with `w-full max-w-[99%] mx-auto`, allowing the report card grid (`1-4 responsive columns`), search toolbar, and subject score tables to fill 98% of the viewport.
+    - [x] **Mobile Responsiveness & Multi-Child Switcher**:
+        - Added validated multi-child switcher pill bar with class badges, horizontal scrolling, and automatic fallback to verified active ward.
+        - Streamlined mobile card layouts with responsive badges, status pills, and touch targets.
+        - Redesigned empty states for unlinked accounts (3-step guide) and unreleased results with manual refresh action.
+
+- **Parent Portal Examinations & Results Hub Complete Redesign (`/dashboard/parent/exams&results`)**:
+    - [x] **Authenticated Session & Multi-Child State Management**:
+        - Connected `useParentChildren()` to validate `selectedChildId` strictly belongs to the logged-in parent, automatically resolving or falling back to the verified linked child (`children[0].id`).
+        - Added interactive **Child Switcher Pill Bar** allowing parents with multiple linked children to switch between each child's assessment dossier in 1 click.
+    - [x] **Unified Shimmering Modern Loading Skeleton (`ExamsResultsPageSkeleton`)**:
+        - Built an authentic skeleton matching the full page layout (breadcrumbs, child switcher, hero card, 4 KPI cards, tabs, exam list, and radar chart sidebar) with smooth pulsing animations.
+    - [x] **Premium Hero Card & Onboarding States**:
+        - Upgraded Hero Card with ambient gradient, student avatar with initials fallback, student code with 1-click copy feedback, class badge, quick action buttons ("Performance Analytics", "Official Report Card", "Exam Timetable"), and comprehensive analytical tooltip adhering to `comprehensive_header_tooltips`.
+        - Added dedicated onboarding empty state when 0 children are linked with 3-step guidance and a direct CTA to `/dashboard/parent/my-children`.
+    - [x] **Modernized 4 KPI Stat Cards (`stat-cards.tsx`)**:
+        - Upgraded to 4 modern KPI cards with Lucide icons (`TrendingUp`, `CalendarCheck`, `GraduationCap`, `Award`), glassmorphic hover lift, and analytical tooltips for Term Average, Attendance, Current Class, and Graded Records.
+    - [x] **Enhanced Assessment List & Empty States (`exam-list.tsx`)**:
+        - Added a reassuring **"No Assessment Records Posted Yet"** empty state with manual refresh action for new students.
+        - Added a dedicated **"No Assessments Match Your Filters"** state with 1-click filter reset button.
+        - Polished search input with clear button, styled dropdown filters, and modernized card and table views.
+    - [x] **98% Viewport Utilization & Zero-Waste Spacing**:
+        - Removed artificial `max-w-7xl` constraint and redundant nested `px-6 py-6` padding, allowing the continuous assessment and exam dossiers to expand and fill 98% of the browser width.
+        - Eliminated nested `overflow-y-auto` container to prevent double vertical scrollbars and provide seamless native window scrolling.
+        - Optimized `ParentLayout` inner padding from rigid `p-6 lg:p-8` to responsive `p-2 sm:p-3 md:p-4`.
+    - [x] **Mobile-First Responsiveness Polish**:
+        - Redesigned Hero Card actions into an adaptive 3-column touch grid (`grid-cols-3 sm:flex`) on mobile screens to prevent overflow and wrapping.
+        - Tuned 4 KPI cards (`min-h-[125px]`, `gap-2 sm:gap-3.5`) and segmented tab controls for clean display on 360px–414px smartphone viewports.
+        - Reconfigured two-column layout (`ExamList` + `SidebarRight`) to stack smoothly on mobile/tablet and sit side-by-side on wide screens.
+
+- **Parent Portal Attendance Hub Bug Fix & Complete Redesign (`/dashboard/parent/attendance`)**:
+    - [x] **Resolved Cross-User Stale Child Attendance Bug**:
+        - Fixed root cause where `ParentAttendancePage` previously read `selectedChildId` directly from Zustand local storage without validating if the child actually belonged to the active logged-in parent.
+        - Connected `useParentChildren()` to validate `selectedChildId`; automatically auto-selects or resets to the logged-in parent's verified child ID.
+        - Updated backend `getParentDashboardService` and `getChildDetailsService` to fall back to the authenticated parent's linked child if an invalid or stale `childId` from another user's session is passed.
+        - Synchronized link status checks in backend to consistently support `["active", "ACCEPTED", "Active"]` across all parent endpoints.
+    - [x] **Multi-Child Switcher & Empty States**:
+        - Added interactive **Child Switcher Pill Bar** allowing parents with multiple linked children to switch between each child's real-time attendance in 1 click.
+        - Added dedicated onboarding empty state when 0 children are linked with step-by-step guidance.
+        - Added a reassuring **"No Attendance Records Logged Yet"** empty state when no daily roll-call records have been posted yet, with a manual refresh action.
+    - [x] **Unified Shimmering Modern Loading Skeleton (`AttendancePageSkeleton`)**:
+        - Built an authentic skeleton matching the full page layout (breadcrumbs, hero card, alert banner, circular attendance chart, monthly trend chart, and recent activity feed).
+    - [x] **Upgraded Hero Header & Tooltips (`StudentProfile.tsx`)**:
+        - Upgraded `StudentProfile` with ambient gradients, student avatar with DiceBear initials fallback, school name, grade badge, 1-click copyable student ID, and comprehensive analytical header tooltip following `comprehensive_header_tooltips`.
+    - [x] **TypeScript Verification**: Passed `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Parent Portal Assignments & Coursework Hub Complete Redesign (`/dashboard/parent/assignments`)**:
+    - [x] **Refined Empty & Student Switcher States**:
+        - Replaced generic single-sentence empty box with a reassuring **"All Coursework is Up to Date!"** state showing the student's name, clean checkmark badge, and quick-action refresh button.
+        - Added an onboarding state when 0 children are linked, giving parents direct step-by-step instructions to link their child.
+        - Added an interactive **Child Switcher Pill Bar** allowing parents with multiple children to switch and monitor each child's assignments in 1 click.
+        - Added a dedicated "No Matching Assignments Found" state with a 1-click filter reset button.
+    - [x] **Unified, Shimmering Modern Loading Skeleton (`AssignmentsPageSkeleton`)**:
+        - Built an authentic skeleton matching the full page layout (breadcrumbs, hero card, 4 KPI metric cards, filter toolbar, and card grid/list) with smooth pulsing animations.
+    - [x] **Premium Hero Card & 4-Card KPI Overview Widgets**:
+        - Ambient gradient hero card with student context badge, comprehensive analytical header tooltip following `comprehensive_header_tooltips`, List/Grid view toggle, and PDF dossier download button.
+        - Upgraded OverviewWidgets to 4 responsive KPI cards: **Total Deliverables**, **Graded & Scored**, **Assignment Average**, and **Action Required** (pending/late).
+    - [x] **Dynamic Search & Multi-Criteria Filter Toolbar (`FilterToolbar.tsx`)**:
+        - Connected real-time search across assignment titles, subjects, and departments.
+        - Dynamically populated subject filter pills extracted from loaded assignments (`['All', ...uniqueSubjects]`).
+        - Added status dropdown filter (All, Not Started, In Progress, Graded, Overdue) and sorting dropdown (due dates, highest score, newest).
+    - [x] **TypeScript Verification**: Passed `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Parent Portal Classroom Hub Complete Redesign & State Handling (`/dashboard/parent/class`)**:
+    - [x] **Redesigned Empty & "No Class" States**:
+        - Replaced generic red `AlertTriangle` "Class Not Found" modal with a dedicated, reassuring **"No Classroom Cohort Assigned Yet"** state showing the student's profile context (name, code, school), reasons (Term Transitions, Roster Finalization), and quick-action buttons ("Refresh Status", "View Linked Students").
+        - Added an onboarding state when 0 children are linked, giving parents direct step-by-step instructions to link their child.
+        - Added an interactive **Child Switcher Pill Bar** allowing parents with multiple linked children to toggle between their children's classrooms in 1 click directly on this page.
+    - [x] **Unified, Shimmering Modern Loading Skeleton (`ClassPageSkeleton`)**:
+        - Built an authentic skeleton matching the full page layout (breadcrumbs, hero card, 4 KPI metric cards, tabs, and content grid) with subtle ambient gradients and zero visual jarring.
+    - [x] **Premium Classroom Hero & KPI Metric Grid**:
+        - Implemented an ambient gradient hero with active cohort pill, school name, grade level, section, and a comprehensive analytical header tooltip following the `comprehensive_header_tooltips` skill.
+        - Added metadata pills with 1-click copy feedback for the official Class Code.
+        - Added 4 KPI insight cards: **Class Roster** (enrolled students), **Curriculum** (course count), **Class Teacher** (lead teacher), and **Class Section** (section / arm).
+    - [x] **Enhanced Subjects & Timetable Views (`ParentClassSubjects.tsx` & `ParentClassTimetable.tsx`)**:
+        - Upgraded subjects cards with subject-category color themes (Math, Science, Language, Humanities, Arts), teacher avatars, and assessment paper badges.
+        - Upgraded timetable skeleton loader and schedule grid rendering.
+    - [x] **TypeScript Verification**: Passed `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Parent Portal "My Children" API Authentication & Onboarding Empty-State Fix (`/dashboard/parent/my-children`)**:
+    - [x] **API Client Request Interceptor Token Resolution (`frontend/src/lib/api/client.ts`)**:
+        - Fixed root cause of 401 Unauthorized errors on cross-port / cross-domain API calls: `apiClient` previously read `token` exclusively from `Cookies.get("token")`.
+        - Because `setAuth` stopped writing non-HttpOnly client cookies, `Cookies.get("token")` returned `undefined`, causing requests to `/parents/children` to omit the `Authorization: Bearer <token>` header and fail.
+        - Updated request interceptor to resolve authentication credentials prioritizing persisted Zustand storage (`useAuthStore.getState().accessToken`) with `Cookies.get("token")` fallback.
+    - [x] **Client Auth Storage & Cookie Synchronization (`frontend/src/app/(auth)/login/services/auth-store.ts`)**:
+        - Synchronized `Cookies.set("token", token, ...)` in `setAuth` upon successful login/verification and in `initialize` when hydrated from local storage.
+    - [x] **Unblocked Children Listing from Subscription Middleware (`backend/src/modules/parent/parent.route.ts` & `parent.controller.ts`)**:
+        - Removed `checkSubscription` from `GET /api/parents/children` so unlinked or free-tier parents are never blocked from viewing their linked children.
+        - Updated `getChildren` controller to gracefully return `{ success: true, message: "No children linked at this time", data: [] }` if an unexpected query issue occurs, avoiding hard 500 error cascades.
+        - Updated `parentService.getChildren` in `frontend/src/lib/api/services/parentService.ts` to safely return `[]` fallback on any network or parsing error.
+    - [x] **Explicit "No children linked at this time" UI State (`frontend/src/app/dashboard/parent/my-children/components/ChildrenGrid.tsx` & `Mobile/app/(parent-tabs)/children.tsx`)**:
+        - Replaced generic error banner with an explicit **"No children linked at this time"** onboarding card in Grid view and an informative empty-state row in List/Table view.
+        - Synchronized Mobile app `children.tsx` to display **"No children linked at this time"** consistently across both web and mobile platforms.
+        - Gated and guarded all child properties with optional chaining and `filter(Boolean)` against null or undefined values.
+        - Provides immediate access to the "Link Student" dialog with clear step-by-step guidance.
+    - [x] **TypeScript Verification**: Both `frontend` and `backend` passed `npx tsc --noEmit` with zero errors (exit code 0).
+
+- **Landing Page Authenticated Redirection & Dashboard Sidebar Logo Landing Access (`/?view=landing`)**:
+    - [x] **Server-Side Edge Middleware Redirection (`frontend/src/middleware.ts`)**:
+        - Updated platform routing logic for the landing page (`/`): automatically checks for an active session (`token` or `platform_token` cookies).
+        - If session exists and user is not in bypass mode, decodes JWT `userType` and immediately issues a fast HTTP 307 redirect to their respective dashboard (`/dashboard/admin`, `/dashboard/teacher`, `/dashboard/student`, `/dashboard/parent`, or `/console`).
+        - Added `?view=landing` query parameter inspection: allows logged-in users who intentionally click the dashboard sidebar logo to visit and browse the landing page without redirect.
+    - [x] **Client-Side Hydration Guard & Zero-Flash UI (`frontend/src/app/page.tsx`)**:
+        - Created `LandingContent` wrapped in `<Suspense>` adhering to Next.js App Router query parameter guidelines.
+        - Synchronized client-side redirection with Zustand `useAuthStore` and `usePlatformStaffStore`.
+        - Prevents redirection when `isLoggingOut` is active or when `view === 'landing'`.
+        - Added clean transition loading state during redirects to prevent visual flashing of landing page sections.
+    - [x] **Dashboard Sidebars & Mobile Drawers Update**:
+        - Updated the brand logo links across all 4 user dashboard sidebars and responsive mobile drawers from `href="/"` to `href="/?view=landing"`:
+            - School Admin: `frontend/src/app/dashboard/admin/components/app-sidebar.tsx` & `AdminMobileDrawer.tsx`
+            - Teacher Hub: `frontend/src/app/dashboard/teacher/components/app-sidebar.tsx` & `TeacherMobileDrawer.tsx`
+            - Student Portal: `frontend/src/app/dashboard/student/components/app-sidebar.tsx` & `StudentMobileDrawer.tsx`
+            - Parent Portal: `frontend/src/app/dashboard/parent/components/app-sidebar.tsx` & `ParentMobileDrawer.tsx`
+    - [x] **Public Navigation Bar Polish (`BigNavBar.tsx` & `MiniNav.tsx`)**:
+        - Updated navbar logo link to dynamically render `href={isAuthenticated ? "/?view=landing" : "/"}` so logged-in users exploring the website can click the brand logo to return to the top of the landing page without triggering a redirect back to their dashboard.
+        - Kept the prominent "Dashboard" button (`/dashboard`) in both desktop navbar and mobile drawer for one-click return to their dashboard.
+    - [x] **TypeScript Verification**: Verified `npx tsc --noEmit` completes with zero errors (exit code 0).
+
+### Sunday, October 18, 2026
+
+- **Full Project Build & TypeScript Verification**:
+    - [x] **Frontend Production Build**: Successfully completed `npm run build` in `frontend` with exit code `0`. All 120+ static and dynamic routes compiled, validated, and optimized without errors.
+    - [x] **Backend Type Check**: Successfully completed `npx tsc --noEmit` in `backend` with exit code `0` and zero TypeScript errors.
+
+### Saturday, October 17, 2026
+
+- **Social Login Wrong Portal Indication & Seamless Portal Switching (`Google` & `Facebook`)**:
+    - [x] **Root Cause Remediation for Missing Indication**:
+        - Identified that when a user authenticated via Google or Facebook using credentials registered in another portal (e.g. Student attempting login from `/login/teacher`, or Teacher from `/login/student`), backend OAuth services (`googleAuthService` & `facebookAuthService`) threw a generic error which the OAuth callback routes redirected to hardcoded `/login?error=...`.
+        - The main `/login` portals hub and individual portal forms (`StudentLoginForm`, `TeacherLoginForm`, `ParentLoginForm`, and `school-admin/components/LoginForm`) never inspected `useSearchParams()` for error parameters or wrong portal indicators, causing users to be dumped on the portal hub or form with zero visual indication, toast, or guidance.
+    - [x] **Backend Structured Wrong Portal Error Model (`auth.service.ts`, `auth.controller.ts`, `error-handler.ts`)**:
+        - Created `WrongPortalError` error class carrying `code: "WRONG_PORTAL"`, `detectedRole` ("Student", "Teacher", "School Admin", "Parent", "Platform Staff"), and `correctPortal` route (`/login/student`, `/login/teacher`, `/login/school-admin`, `/login/parent`, `/auth/login`).
+        - Updated `googleAuthService` and `facebookAuthService` to include `PlatformStaff` in the global role lookup and throw `WrongPortalError` with target redirection metadata when portal role mismatch occurs.
+        - Updated `auth.controller.ts` (`googleAuth`, `facebookAuth`, and password `login`) and `error-handler.ts` to return HTTP 403 with `{ success: false, code: "WRONG_PORTAL", detectedRole, correctPortal, message }`.
+    - [x] **Frontend OAuth Callback Route Intelligence (`google/callback/route.ts` & `facebook/callback/route.ts`)**:
+        - Replaced hardcoded fallback redirection to `/login` with dynamic portal mapping (`rolePathMap[storedRole]`) so failed attempts redirect back to the user's attempted portal in context.
+        - Handled `code: "WRONG_PORTAL"` and extracted `detectedRole` / `correctPortal`, appending `wrong_portal=true`, `detected_role=${detectedRole}`, and `correct_portal=${correctPortal}` to the redirection URL.
+        - Ensured `/login/callback` preserves all error search parameters when redirecting.
+    - [x] **Dedicated Wrong Portal Alert Banner & Portal Highlighting (`WrongPortalAlert.tsx`, `PortalCard.tsx`, `page.tsx`)**:
+        - Created reusable `WrongPortalAlert` component featuring an animated warning badge, clear role discrepancy explanation, role-specific badge styling, and an eye-catching direct action button: **"Go to {detectedRole} Portal →"**.
+        - Integrated `toast.error(message)` auto-dispatch on mount for instant visual/audio feedback.
+        - Integrated `WrongPortalAlert` across all 5 login screens: Student (`RightPanel.tsx`), Teacher (`RightPanel.tsx`), Parent (`RightPanel.tsx`), School Admin (`LoginCard.tsx`), and Platform Operations Console (`auth/login/page.tsx`).
+        - Enhanced the main `/login` portals hub (`page.tsx` & `PortalCard.tsx`): dynamically detects `detected_role` and renders a prominent **"✨ Your Registered Portal"** pulsating ring, gradient glow, and direct sign-in button around the card matching the user's true account role.
+    - [x] **Email & Password Login Wrong Portal Indicator Support**:
+        - Updated backend `auth.controller.ts` `login` handler to verify existence across all 5 roles (`Student`, `Teacher`, `Admin`, `Parent`, and `PlatformStaff`) and return HTTP 403 `code: "WRONG_PORTAL"`.
+        - Wired `useLoginMutation` in `use-auth-mutations.ts` to dispatch `wrong_portal_event` on error.
+        - `WrongPortalAlert` listens to both URL search parameters and client-side `wrong_portal_event`, rendering both the toast and the interactive **"Go to {detectedRole} Portal →"** banner dynamically on email/password submission without needing a page refresh.
+
+- **Student Dashboard Empty-State & Final Results Banner Refinement (`/dashboard/student`)**:
+    - [x] **Conditional Final Results Banner**:
+        - Gated the emerald *"Final Results Available! Your published academic report card and term summaries are ready for review."* banner using `useMyPublishedResults()` hook so it only appears when published term results actually exist (`hasPublishedResults`).
+    - [x] **Eliminated Misleading "Score Percentage 0%" Onboarding State**:
+        - Replaced the confusing empty state under **Recent Activity** (which rendered "Score Percentage: 0%" and a 0% progress bar for new students without exam attempts) with a dedicated, welcoming empty-state card.
+        - Designed a clean *"No Assessments Yet"* card with supportive guidance explaining that grades and progress will display after completing an exam, paired with a direct *"Browse Exams & Quizzes"* action button (`/dashboard/student/exams&quizzes`).
+        - Updated top hero action button from a static *"Resume Last Activity"* to dynamically show *"Explore Assessments"* when no attempts exist yet, ensuring intuitive navigation for new users.
+
 ### Thursday, October 15, 2026
+
+- **Dynamic OAuth Redirect URI Resolution (`Google` & `Facebook`)**:
+    - [x] **Root Cause Remediation for Localhost Fallback**:
+        - Identified that `frontend/src/lib/google.ts` and `facebook.ts` statically read `NEXT_PUBLIC_APP_URL || "http://localhost:3000"` at module initialization time. When accessed from a mobile phone (via local LAN IP or tunnel) or deployed on a remote domain/preview without setting `NEXT_PUBLIC_APP_URL`, Google OAuth redirected the browser to `http://localhost:3000/api/auth/google/callback`.
+        - Replaced rigid static singletons with dynamic client factories (`getGoogleClient(originOrUri)` & `getFacebookClient(originOrUri)`) and URI resolvers (`getGoogleRedirectUri`, `getFacebookRedirectUri`).
+        - Integrated request origin detection (`request.nextUrl.origin`), `VERCEL_URL` environment support, and explicit non-localhost `NEXT_PUBLIC_APP_URL` precedence.
+        - Persisted the exact `redirect_uri` sent to OAuth providers in an encrypted HttpOnly session cookie (`google_redirect_uri` / `facebook_redirect_uri`) so token validation in step 2 precisely matches step 1, preventing OAuth `redirect_uri_mismatch` errors.
 
 - **Parent Settings Page Mobile Responsiveness & Comprehensive Header Tooltips (`/dashboard/parent/settings`)**:
     - [x] **Container Layout & Edge Padding Normalization**: Replaced unconstrained `w-[95%] px-4 md:px-8 py-8` with standardized `max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8`, preventing screen edge clipping on mobile viewports.

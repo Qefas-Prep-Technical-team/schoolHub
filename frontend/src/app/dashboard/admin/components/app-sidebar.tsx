@@ -220,7 +220,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             {/* Header */}
             <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
                 <div className="flex items-center gap-3">
-                    <Link href="/" className="flex items-center gap-3">
+                    <Link href="/?view=landing" className="flex items-center gap-3" title="Visit Landing Page">
                         <div 
                             className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 border border-primary/10 overflow-hidden p-1"
                             style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}

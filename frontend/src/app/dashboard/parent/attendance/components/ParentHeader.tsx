@@ -13,9 +13,10 @@ export default function ParentHeader({ onMenuClick }: ParentHeaderProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="text-gray-600 dark:text-gray-300 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+          aria-label="Open navigation menu"
+          className="text-gray-700 dark:text-gray-300 size-11 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors shrink-0"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" strokeWidth={2.2} />
         </button>
         <span className="text-lg font-bold text-gray-900 dark:text-white">
           Attendance

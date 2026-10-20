@@ -1,86 +1,72 @@
 "use client"
 
-interface ComparisonItem {
-  category: string
-  studentScore: number
-  classAverage: number
-  status: string
-  statusColor: string
-  barColor: string
+import React from 'react'
+import { SubjectAnalyticsData } from './types'
+
+interface ComparisonChartProps {
+  data: SubjectAnalyticsData
 }
 
-export default function ComparisonChart() {
-  const comparisons: ComparisonItem[] = [
-    {
-      category: 'Quizzes',
-      studentScore: 85,
-      classAverage: 70,
-      status: 'Above Avg',
-      statusColor: 'text-slate-900 dark:text-white',
-      barColor: 'bg-primary/80'
-    },
-    {
-      category: 'Exams',
-      studentScore: 92,
-      classAverage: 65,
-      status: 'Excellent',
-      statusColor: 'text-slate-900 dark:text-white',
-      barColor: 'bg-primary'
-    },
-    {
-      category: 'Homework',
-      studentScore: 72,
-      classAverage: 80,
-      status: 'Needs Focus',
-      statusColor: 'text-orange-500',
-      barColor: 'bg-orange-400'
-    }
-  ]
+export default function ComparisonChart({ data }: ComparisonChartProps) {
+  const categories = data.categories || []
 
   return (
-    <div className="bg-white dark:bg-card-dark p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-        Vs. Class Average
-      </h3>
-      <div className="space-y-5">
-        {comparisons.map((item, index) => (
-          <div key={index}>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="font-medium text-slate-700 dark:text-slate-300">
-                {item.category}
-              </span>
-              <span className={`font-bold ${item.statusColor}`}>
-                {item.status}
-              </span>
-            </div>
-            <div className="h-8 flex w-full bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden relative">
-              {/* Marker for Class Avg */}
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-slate-400 z-10 opacity-50"
-                style={{ left: `${item.classAverage}%` }}
-              ></div>
-              {/* Bar */}
-              <div
-                className={`h-full bar-animate ${item.barColor}`}
-                style={{
-                  width: `${item.studentScore}%`,
-                  animationDelay: `${index * 0.2}s`
-                }}
-              ></div>
-              <span className={`absolute right-2 top-1.5 text-xs font-bold ${
-                item.barColor.includes('primary') && item.studentScore > 90
-                  ? 'text-white'
-                  : 'text-slate-500'
-              }`}>
-                {item.studentScore}%
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-1 text-right">
-              Avg: {item.classAverage}%
-            </p>
-          </div>
-        ))}
+    <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+      <div>
+        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+          Vs. Class Average
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Performance by assessment category vs cohort
+        </p>
       </div>
+
+      {categories.length === 0 ? (
+        <p className="text-xs text-slate-400 py-4 text-center">
+          No category distribution data available yet.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {categories.map((item, index) => {
+            const isAbove = item.score >= item.classAverage
+            return (
+              <div key={index} className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {item.category} ({item.count})
+                  </span>
+                  <span className={`font-black ${
+                    isAbove ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {item.score}% {isAbove ? '• Above Avg' : '• Near Avg'}
+                  </span>
+                </div>
+
+                <div className="h-4 flex w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
+                  {/* Marker for Class Avg */}
+                  <div
+                    className="absolute top-0 bottom-0 w-1 bg-slate-400 dark:bg-slate-500 z-10"
+                    style={{ left: `${Math.min(100, Math.max(5, item.classAverage))}%` }}
+                    title={`Class Avg: ${item.classAverage}%`}
+                  />
+                  {/* Student Score Bar */}
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isAbove ? 'bg-orange-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.max(5, item.score))}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-[10px] text-slate-400">
+                  <span>Student: {item.score}%</span>
+                  <span>Cohort Avg: {item.classAverage}%</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

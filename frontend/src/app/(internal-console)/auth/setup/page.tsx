@@ -191,16 +191,17 @@ function StaffSetupForm() {
 
                         <button
                             type="button"
-                            title="Register & Activate with Facebook"
+                            title="Register & Activate with Facebook (Coming Soon)"
                             onClick={() => {
-                                window.location.href = `/api/auth/facebook?role=staff&inviteToken=${encodeURIComponent(token || "")}`;
+                                toast.info("Facebook authentication is coming soon!");
                             }}
-                            className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all font-semibold text-xs text-slate-700 dark:text-slate-200 shadow-sm hover:scale-[1.02]"
+                            className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all font-semibold text-xs text-slate-700 dark:text-slate-200 shadow-sm hover:scale-[1.02] cursor-pointer"
                         >
                             <svg className="w-4 h-4 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                             </svg>
                             <span>Facebook</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Soon</span>
                         </button>
                     </div>
                 </CardContent>

@@ -26,7 +26,11 @@ export default function GoogleAuthCallback() {
 
             if (errorParam) {
                 toast.error(errorParam);
-                router.replace("/login");
+                const params = new URLSearchParams();
+                searchParams.forEach((val, key) => {
+                    params.set(key, val);
+                });
+                router.replace(`/login?${params.toString()}`);
                 return;
             }
 

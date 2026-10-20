@@ -19,7 +19,8 @@ import {
   CheckCircle2, 
   ChevronRight,
   TrendingUp,
-  Award
+  Award,
+  Users
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import {
@@ -234,7 +235,7 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
 }
 
 export default function ChildrenGrid({ viewMode = 'grid' }: ChildrenGridProps) {
-  const { data: children = [], isLoading, isError } = useParentChildren()
+  const { data: children = [], isLoading, isError, refetch } = useParentChildren()
 
   if (isLoading) {
     return (
@@ -242,20 +243,6 @@ export default function ChildrenGrid({ viewMode = 'grid' }: ChildrenGridProps) {
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-[300px] bg-slate-100 dark:bg-slate-800 rounded-2xl" />
         ))}
-      </div>
-    )
-  }
-
-  if (isError) {
-    return (
-      <div className="p-8 text-center bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20">
-        <p className="text-red-600 dark:text-red-400 font-medium">Failed to load children. Please try again later.</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Try Again
-        </button>
       </div>
     )
   }
@@ -269,25 +256,68 @@ export default function ChildrenGrid({ viewMode = 'grid' }: ChildrenGridProps) {
     return 'F'
   }
 
-  // Map backend children to frontend Child interface
-  const mappedChildren: Child[] = children.map((c) => ({
-    id: c.id,
-    name: c.name,
-    age: 0,
-    grade: getGradeLabel(c.stats.averageGrade),
-    class: c.currentClass ? `${c.currentClass.name} ${c.currentClass.section || ''}` : 'No Class Assigned',
-    studentId: c.studentCode,
-    imageUrl: c.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=ea580c&color=fff`,
-    attendance: c.stats.attendanceRate,
-    gradeValue: getGradeLabel(c.stats.averageGrade),
-    gradePercentage: `${c.stats.averageGrade}%`,
-    status: (c.linkStatus === 'ACCEPTED' || c.linkStatus === 'active') ? 'active' : 'inactive',
-    badge: {
-      text: c.stats.averageGrade >= 70 ? 'Top Performer' : 'Needs Improvement',
-      color: c.stats.averageGrade >= 70 ? 'green' : c.stats.averageGrade >= 50 ? 'blue' : 'purple',
-      icon: c.stats.averageGrade >= 70 ? 'stars' : 'trending_down',
-    },
-  }))
+  // Map backend children to frontend Child interface safely
+  const mappedChildren: Child[] = (Array.isArray(children) ? children : [])
+    .filter(Boolean)
+    .map((c) => ({
+      id: c?.id || '',
+      name: c?.name || "Student",
+      age: 0,
+      grade: getGradeLabel(c?.stats?.averageGrade || 0),
+      class: c?.currentClass ? `${c.currentClass.name} ${c.currentClass.section || ''}` : 'No Class Assigned',
+      studentId: c?.studentCode || '',
+      imageUrl: c?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(c?.name || 'Student')}&background=ea580c&color=fff`,
+      attendance: c?.stats?.attendanceRate || 0,
+      gradeValue: getGradeLabel(c?.stats?.averageGrade || 0),
+      gradePercentage: `${c?.stats?.averageGrade || 0}%`,
+      status: (c?.linkStatus === 'ACCEPTED' || c?.linkStatus === 'active') ? 'active' : 'inactive',
+      badge: {
+        text: (c?.stats?.averageGrade || 0) >= 70 ? 'Top Performer' : 'Needs Improvement',
+        color: (c?.stats?.averageGrade || 0) >= 70 ? 'green' : (c?.stats?.averageGrade || 0) >= 50 ? 'blue' : 'purple',
+        icon: (c?.stats?.averageGrade || 0) >= 70 ? 'stars' : 'trending_down',
+      },
+    }))
+
+  if (isError) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="md:col-span-2 rounded-[20px] bg-gradient-to-br from-orange-50 via-white to-amber-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-orange-950/20 border border-orange-100 dark:border-slate-800 p-6 sm:p-8 flex flex-col justify-between shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mr-8 -mt-8 size-48 rounded-full bg-orange-400/10 blur-2xl pointer-events-none" />
+            <div className="space-y-4 relative z-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-wider">
+                <Users size={14} />
+                Parent Portal
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  No children linked at this time
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                  You currently have no children linked to your parent account. Connect your child using their unique school-issued Student Access Code (e.g. STU-2024-001) to begin tracking attendance, assessment grades, scheduled exams, and school updates.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="p-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                  <p className="text-xs font-bold text-orange-600 dark:text-orange-400">Step 1</p>
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">Obtain your child&apos;s unique Student Access Code from their school.</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                  <p className="text-xs font-bold text-orange-600 dark:text-orange-400">Step 2</p>
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">Click &quot;Link Student&quot; on the card to submit your connection request.</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                  <p className="text-xs font-bold text-orange-600 dark:text-orange-400">Step 3</p>
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">Once approved by the school, their complete academic profile will display here.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <AddChildCard childrenCount={0} />
+        </div>
+      </div>
+    )
+  }
 
   if (viewMode === 'list') {
     return (
@@ -307,9 +337,21 @@ export default function ChildrenGrid({ viewMode = 'grid' }: ChildrenGridProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {mappedChildren.map((child, index) => (
-                  <ChildListRow key={child.id} child={child} index={index + 1} />
-                ))}
+                {mappedChildren.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Users className="size-8 text-slate-300 dark:text-slate-600 mb-1" />
+                        <p className="text-base font-bold text-slate-800 dark:text-slate-200">No children linked at this time</p>
+                        <p className="text-xs text-slate-400">Authorize a student node using their Student Access Code below.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  mappedChildren.map((child, index) => (
+                    <ChildListRow key={child.id} child={child} index={index + 1} />
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -325,6 +367,40 @@ export default function ChildrenGrid({ viewMode = 'grid' }: ChildrenGridProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-in fade-in duration-300">
+      {mappedChildren.length === 0 ? (
+        <div className="md:col-span-2 rounded-[20px] bg-gradient-to-br from-orange-50 via-white to-amber-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-orange-950/20 border border-orange-100 dark:border-slate-800 p-6 sm:p-8 flex flex-col justify-between shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-8 -mt-8 size-48 rounded-full bg-orange-400/10 blur-2xl pointer-events-none" />
+          <div className="space-y-4 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-wider">
+              <Users size={14} />
+              Welcome to Your Parent Portal
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                No children linked at this time
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                Connect your child&apos;s student profile to start tracking real-time academic intelligence—including daily attendance consistency, term-by-term assessment scores, upcoming exams, and direct teacher communications.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="p-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                <p className="text-xs font-bold text-orange-600 dark:text-orange-400">Step 1</p>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">Obtain your child&apos;s unique Student Access Code (e.g. STU-2024-001).</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                <p className="text-xs font-bold text-orange-600 dark:text-orange-400">Step 2</p>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">Click &quot;Link Student&quot; on the card to submit your connection request.</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                <p className="text-xs font-bold text-orange-600 dark:text-orange-400">Step 3</p>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">Once approved by the school, their complete dossier appears here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {mappedChildren.map((child) => (
         <ChildCard key={child.id} child={child} />
       ))}

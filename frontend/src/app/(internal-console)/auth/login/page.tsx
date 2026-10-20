@@ -7,6 +7,7 @@ import { ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { toast } from "react-toastify"
+import WrongPortalAlert from "@/app/(auth)/login/components/WrongPortalAlert"
 
 function PlatformLoginForm() {
     const searchParams = useSearchParams()
@@ -114,14 +115,7 @@ function PlatformLoginForm() {
                             Operations <br/> Login
                         </h2>
 
-                        {errorParam && (
-                            <div className="w-full mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                                <div className="text-xs text-red-700 dark:text-red-300 font-medium leading-relaxed">
-                                    {errorParam}
-                                </div>
-                            </div>
-                        )}
+                        <WrongPortalAlert currentPortalName="Operations Console" className="mb-6" />
 
                         <form onSubmit={handleSubmit} className="w-full space-y-5">
                             <div className="relative">
@@ -189,15 +183,20 @@ function PlatformLoginForm() {
                             </button>
                             <button
                                 type="button"
-                                title="Sign in with Facebook"
+                                title="Sign in with Facebook (Coming Soon)"
                                 onClick={() => {
-                                    window.location.href = "/api/auth/facebook?role=staff"
+                                    toast.info("Facebook sign in is coming soon!", {
+                                        toastId: "facebook-auth-coming-soon",
+                                    });
                                 }}
-                                className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm hover:scale-105"
+                                className="relative w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm hover:scale-105 cursor-pointer"
                             >
                                 <svg className="w-5 h-5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                                 </svg>
+                                <span className="absolute -top-1.5 -right-2 bg-blue-600 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm border border-white dark:border-slate-900 pointer-events-none">
+                                    Soon
+                                </span>
                             </button>
                         </div>
 

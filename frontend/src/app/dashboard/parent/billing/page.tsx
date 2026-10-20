@@ -31,6 +31,8 @@ import { PricingData } from '@/components/Types/Pricing';
 import { cn } from '@/lib/utils';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { toast } from 'react-toastify';
 
 export default function ParentBillingPage() {
     const router = useRouter();
@@ -125,6 +127,72 @@ export default function ParentBillingPage() {
     };
 
     const studentPercentage = Math.min(((usage?.students || 0) / currentLimits.students) * 100, 100);
+
+    const handleDownloadPDFLogs = async () => {
+        const isPayingPlan = (plan !== 'FREE' && subscription?.subscriptionStatus?.toUpperCase() === 'ACTIVE') || subscription?.isTrialActive;
+        if (!isPayingPlan) {
+            toast.info("Official financial PDF logs are available exclusively on active paying plans.", {
+                toastId: "paying-plan-billing-required"
+            });
+            return;
+        }
+
+        const tableHeaders = [
+            ['#', 'Reference Code', 'Date', 'Plan Tier', 'Billing Cycle', 'Amount', 'Status']
+        ];
+
+        interface TxnItem {
+            id: number | string;
+            reference?: string | null;
+            date?: string;
+            createdAt?: string;
+            amount: number;
+            plan?: string | null;
+            status: string;
+            billingCycle?: string | null;
+        }
+
+        const rawTxns = (transactions || []) as TxnItem[];
+        const tableData: string[][] = rawTxns.map((t, idx) => {
+            const dateStr = t.date || t.createdAt 
+                ? new Date(t.date || t.createdAt!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) 
+                : 'N/A';
+            return [
+                (idx + 1).toString(),
+                t.reference || `TXN-${t.id}`,
+                dateStr,
+                (t.plan || plan).toUpperCase(),
+                (t.billingCycle || cycle).toUpperCase(),
+                `₦${t.amount.toLocaleString()}`,
+                t.status.toUpperCase(),
+            ];
+        });
+
+        if (tableData.length === 0) {
+            tableData.push(['1', 'TXN-INITIAL', 'Active Cycle', plan, cycle.toUpperCase(), `₦${subscriptionInfo.amount.toLocaleString()}`, 'ACTIVE']);
+        }
+
+        await generatePDF({
+            title: 'Parent Subscription & Transaction History',
+            filename: `Parent_Billing_Transactions_${user?.name?.replace(/\s+/g, '_') || 'Statement'}.pdf`,
+            schoolProfile: {
+                name: 'QEFAS HUB PARENT PORTAL',
+                address: 'Parent Financial Management & Subscription Record',
+            },
+            metaData: [
+                { label: 'Parent Account', value: user?.name || user?.email || 'Parent Account' },
+                { label: 'Active Plan Tier', value: plan },
+                { label: 'Billing Cycle', value: cycle.toUpperCase() },
+                { label: 'Subscription Status', value: subscriptionInfo.status },
+                { label: 'Renewal Date', value: subscriptionInfo.renewalDate },
+                { label: 'Family Capacity', value: `${usage?.students || 0} / ${currentLimits.students} Linked Students` },
+                { label: 'Total Recorded Dispatches', value: `${billingData.totalTransactions || rawTxns.length}` },
+            ],
+            tableHeaders,
+            tableData,
+            orientation: 'portrait',
+        });
+    };
 
     return (
         <div className="space-y-12 pb-12 p-4 md:p-0 animate-in fade-in duration-700">
@@ -266,7 +334,11 @@ export default function ParentBillingPage() {
                             Dispatch History
                         </h2>
                     </div>
-                    <Button variant="ghost" className="hidden md:flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-orange-600">
+                    <Button 
+                        onClick={handleDownloadPDFLogs}
+                        variant="ghost" 
+                        className="hidden md:flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-orange-600 cursor-pointer"
+                    >
                         <Download size={14} /> Download PDF Logs
                     </Button>
                 </div>

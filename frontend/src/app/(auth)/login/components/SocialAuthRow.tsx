@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 import { Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 interface SocialAuthRowProps {
   userType: string;
@@ -56,8 +57,10 @@ export default function SocialAuthRow({
   };
 
   const handleFacebookClick = () => {
-    setLoadingProvider("facebook");
-    window.location.href = `/api/auth/facebook?role=${encodeURIComponent(backendRole)}`;
+    toast.info(
+      `${mode === "signup" ? "Facebook sign up" : "Facebook sign in"} is coming soon!`,
+      { toastId: "facebook-auth-coming-soon" }
+    );
   };
 
   return (
@@ -112,18 +115,16 @@ export default function SocialAuthRow({
         {facebookEnabled && (
           <button
             type="button"
-            title={`${mode === "signup" ? "Sign up" : "Sign in"} with Facebook`}
-            disabled={!!loadingProvider}
+            title={`${mode === "signup" ? "Sign up" : "Sign in"} with Facebook (Coming Soon)`}
             onClick={handleFacebookClick}
-            className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="relative w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer group"
           >
-            {loadingProvider === "facebook" ? (
-              <Loader2 className="w-5 h-5 animate-spin text-[#1877F2]" />
-            ) : (
-              <svg className="w-5 h-5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            )}
+            <svg className="w-5 h-5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+            </svg>
+            <span className="absolute -top-1.5 -right-2 bg-blue-600 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm border border-white dark:border-slate-900 pointer-events-none">
+              Soon
+            </span>
           </button>
         )}
       </div>

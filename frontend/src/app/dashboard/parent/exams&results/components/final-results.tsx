@@ -199,8 +199,10 @@ export default function FinalResults() {
                     onClick={() => setSelectedResult({ ...result, grade, totalScore, behavior, isRevealed })}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer"
                   >
-                    <td className="px-5 py-5 text-sm font-semibold text-slate-400">
-                      <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                    <td className="px-5 py-5 text-sm font-semibold">
+                      <span className="inline-flex items-center justify-center min-w-[26px] h-7 px-2 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 text-xs font-black">
+                        #{(currentPage - 1) * itemsPerPage + index + 1}
+                      </span>
                     </td>
                     <td className="px-5 py-5">
                       <div className="font-bold text-slate-800 dark:text-white text-sm line-clamp-1">{result.resultName || result.subject?.name || "Unknown"}</div>

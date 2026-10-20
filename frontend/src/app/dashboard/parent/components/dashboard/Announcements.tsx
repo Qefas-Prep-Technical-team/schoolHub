@@ -25,7 +25,7 @@ export default function Announcements() {
   const notifications = data?.notifications ?? []
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 h-full flex flex-col overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800 w-full flex-1 flex flex-col overflow-hidden">
       <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
         <div className="flex items-center gap-3">
           <div className="p-2 sm:p-2.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl sm:rounded-2xl border border-orange-500/20 shrink-0">

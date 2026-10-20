@@ -3,16 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_7ownjy.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_7ownjy.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1785850973637,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "npm start",
-      "timestamp": 1785850994145,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
       "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_sueso.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_sueso.ps1\" -ErrorAction SilentlyContinue",
       "timestamp": 1785851001346,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
@@ -2501,7 +2491,17 @@
       "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_cqzfkx.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_cqzfkx.ps1\" -ErrorAction SilentlyContinue",
       "timestamp": 1792019284860,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_s6rii.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_s6rii.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1792090779138,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_sg3nf.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_sg3nf.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1792090827185,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
     }
   ],
-  "lastUpdated": 1792019284860
+  "lastUpdated": 1792090827185
 }
