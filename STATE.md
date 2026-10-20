@@ -41,6 +41,39 @@
 
 ### Tuesday, October 20, 2026 (Parent Dashboard Export Standardization & Paid Plan Gate)
 
+- **Parent Onboarding Redesign ([onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx))**:
+    - [x] Redesigned the parent onboarding tour using the warm Orange/Amber theme (`THEME_MAP.PARENT`) to match the Admin, Teacher, and Student onboarding layouts.
+    - [x] Configured 5 parent-specific feature steps in `getSteps('PARENT')` and hooked up dedicated step components:
+        1. **My Children & Multi-Student Hub (`ParentChildrenStep`)**: Children Directory & Profile Switching and Rapid Student Linking via QR Code or ID.
+        2. **Grades, Exams & Academic Results (`ParentPerformanceStep`)**: Continuous Assessment (CA) & Subject Strengths and Official Report Cards & Class Standing.
+        3. **Daily Attendance & Roll Call Logs (`ParentAttendanceStep`)**: Classroom Attendance & Arrival Monitoring and Digital Absence Notes & Medical Excuses.
+        4. **Homework, Assignments & Learning Resources (`ParentAssignmentsStep`)**: Active Homework & Due Date Tracker and Teacher Feedback & Curriculum Resources.
+        5. **School Fees, Invoices & Communication (`ParentFinanceCommunicationStep`)**: Fee Statements, Invoices & Instant Receipts and School Announcements & Teacher Messaging.
+    - [x] Designed all cards to be full-width with clean typography, navigation breadcrumbs, and bullet points, ready for custom parent screenshot assets when available.
+    - [x] Verified complete TypeScript compilation (`npx tsc --noEmit`) with **0 errors**.
+
+- **Student Onboarding Redesign ([onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx))**:
+    - [x] Redesigned the student onboarding tour using the vibrant Rose/Pink theme (`THEME_MAP.STUDENT`) to match the Admin and Teacher onboarding layout.
+    - [x] Configured 5 student-focused feature steps in `getSteps('STUDENT')` and hooked up dedicated step components:
+        1. **Classrooms & Daily Timetable (`StudentClassesStep`)**: Enrolled Classes & Subjects and Daily Timetable & Schedule.
+        2. **Assignments & Coursework Tasks (`StudentAssignmentsStep`)**: Active Assignments & Due Date Tracker and Digital Submissions & Teacher Feedback.
+        3. **CBT Exams, Quizzes & Assessments (`StudentExamsStep`)**: Online Assessment & CBT Exam Center and Rich Question Engine (LaTeX/KaTeX formulas) & Performance Review.
+        4. **Academic Performance, Grades & Results (`StudentGradesStep`)**: Continuous Assessment (CA) & Grade Tracker and Termly Report Cards & Class Standing.
+        5. **Attendance, Documents & Parent Linking (`StudentAttendanceLinkingStep`)**: Daily Attendance Records & Digital Documents and Parent QR Linking Hub.
+    - [x] Designed cards to be full-width with clean typography, navigation breadcrumbs, and bullet points, ready for custom student screenshot assets when available.
+    - [x] Verified complete TypeScript compilation (`npx tsc --noEmit`) with **0 errors**.
+
+- **Teacher Onboarding Redesign ([onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx))**:
+    - [x] Redesigned the teacher onboarding tour to match the Admin onboarding layout, featuring structured cards with themed icons, breadcrumb paths (`Navigate to Dashboard > ...`), feature summaries, detailed actionable bullet points, and modal zoom preview images.
+    - [x] Configured 5 distinct, pedagogical teacher feature steps in `getSteps('TEACHER')`:
+        1. **Classrooms & Assigned Subjects (`TeacherClassesStep`)**: My Classes Hub and Assigned Subjects & Curriculum.
+        2. **Exams, Quizzes & Question Engine (`TeacherExamsStep`)**: Multi-Paper Assessment Engine and Advanced Question Bank with LaTeX / KaTeX support.
+        3. **Assignments & Rapid Bulk Grading (`TeacherAssignmentsStep`)**: Homework & Project Distribution and One-Click Bulk Grading & Feedback.
+        4. **Gradebook, Scores & Academic Records (`TeacherGradesStep`)**: Continuous Assessment (CA) & Exam Recording and Student Records, Dossiers & Remarks.
+        5. **Daily Schedule, Attendance & Linking (`TeacherScheduleAttendanceStep`)**: Today's Teaching Schedule & Roll Call and Student QR Linking & Parent Directory.
+    - [x] Removed temporary admin preview images from all 5 teacher onboarding step cards so the feature cards span full width cleanly until custom teacher screenshots are provided.
+    - [x] Verified complete TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
+
 - **Production Build & Type Check Verification**:
     - [x] Ran full production build (`npm run build`) in `frontend` — Turbopack compilation and page generation succeeded with **0 errors** (exit code 0).
     - [x] Verified `backend` TypeScript compilation (`npx tsc --noEmit`) with **0 errors** (exit code 0).

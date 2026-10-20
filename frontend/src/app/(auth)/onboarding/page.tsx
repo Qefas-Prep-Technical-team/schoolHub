@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, CheckCircle2, ChevronRight, Mail, Shield, UploadCloud, Settings, Sparkles, Users, CreditCard, MessageSquare, GraduationCap, LayoutDashboard, Calendar, Layers, BookOpen, FileSpreadsheet, Maximize2, X, Info } from 'lucide-react';
+import { Building2, CheckCircle2, ChevronRight, Mail, Shield, UploadCloud, Settings, Sparkles, Users, CreditCard, MessageSquare, GraduationCap, LayoutDashboard, Calendar, Layers, BookOpen, FileSpreadsheet, Maximize2, X, Info, FileText, Clock, QrCode, ClipboardList, FileCheck2, BarChart3, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CheerAnimation from './_components/CheerAnimation';
@@ -79,6 +79,39 @@ const getSteps = (userType: string) => {
           { id: 'assessments', label: 'Records' },
           { id: 'finance', label: 'Finance' },
           { id: 'success', label: 'Ready to Launch' }
+        ];
+    }
+    if (userType === 'TEACHER') {
+        return [
+          { id: 'welcome', label: 'Welcome' },
+          { id: 'classes', label: 'Classes & Subjects' },
+          { id: 'exams', label: 'Exams & Quizzes' },
+          { id: 'assignments', label: 'Assignments & Grading' },
+          { id: 'grades', label: 'Gradebook & Records' },
+          { id: 'schedule', label: 'Schedule & Attendance' },
+          { id: 'success', label: 'Ready to Teach' }
+        ];
+    }
+    if (userType === 'STUDENT') {
+        return [
+          { id: 'welcome', label: 'Welcome' },
+          { id: 'classes', label: 'Classes & Schedule' },
+          { id: 'assignments', label: 'Assignments & Tasks' },
+          { id: 'exams', label: 'Exams & Quizzes' },
+          { id: 'grades', label: 'Grades & Results' },
+          { id: 'attendance', label: 'Attendance & Linking' },
+          { id: 'success', label: 'Ready to Excel' }
+        ];
+    }
+    if (userType === 'PARENT') {
+        return [
+          { id: 'welcome', label: 'Welcome' },
+          { id: 'children', label: 'My Children' },
+          { id: 'performance', label: 'Grades & Results' },
+          { id: 'attendance', label: 'Attendance' },
+          { id: 'assignments', label: 'Homework & Tasks' },
+          { id: 'billing', label: 'Fees & Communication' },
+          { id: 'success', label: 'Ready to Support' }
         ];
     }
     return [
@@ -271,6 +304,33 @@ function OnboardingContent() {
                                     {currentStep === 3 && <StaffStudentStep theme={theme} />}
                                     {currentStep === 4 && <AssessmentsStep theme={theme} />}
                                     {currentStep === 5 && <FinanceStep theme={theme} />}
+                                    {currentStep === 6 && <SuccessStep theme={theme} userType={userType} />}
+                                </>
+                            ) : userType === 'TEACHER' ? (
+                                <>
+                                    {currentStep === 1 && <TeacherClassesStep theme={theme} />}
+                                    {currentStep === 2 && <TeacherExamsStep theme={theme} />}
+                                    {currentStep === 3 && <TeacherAssignmentsStep theme={theme} />}
+                                    {currentStep === 4 && <TeacherGradesStep theme={theme} />}
+                                    {currentStep === 5 && <TeacherScheduleAttendanceStep theme={theme} />}
+                                    {currentStep === 6 && <SuccessStep theme={theme} userType={userType} />}
+                                </>
+                            ) : userType === 'STUDENT' ? (
+                                <>
+                                    {currentStep === 1 && <StudentClassesStep theme={theme} />}
+                                    {currentStep === 2 && <StudentAssignmentsStep theme={theme} />}
+                                    {currentStep === 3 && <StudentExamsStep theme={theme} />}
+                                    {currentStep === 4 && <StudentGradesStep theme={theme} />}
+                                    {currentStep === 5 && <StudentAttendanceLinkingStep theme={theme} />}
+                                    {currentStep === 6 && <SuccessStep theme={theme} userType={userType} />}
+                                </>
+                            ) : userType === 'PARENT' ? (
+                                <>
+                                    {currentStep === 1 && <ParentChildrenStep theme={theme} />}
+                                    {currentStep === 2 && <ParentPerformanceStep theme={theme} />}
+                                    {currentStep === 3 && <ParentAttendanceStep theme={theme} />}
+                                    {currentStep === 4 && <ParentAssignmentsStep theme={theme} />}
+                                    {currentStep === 5 && <ParentFinanceCommunicationStep theme={theme} />}
                                     {currentStep === 6 && <SuccessStep theme={theme} userType={userType} />}
                                 </>
                             ) : (
@@ -1130,6 +1190,1040 @@ function FinanceStep({ theme }: { theme: any }) {
                         </ul>
                     </div>
                     <PreviewableImageSlider images={["/onboarding/Billing & Finance - pricing -1.png", "/onboarding/Billing & Finance - pricing -2.png"]} alt="Pricing on Landing Page" theme={theme} />
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function TeacherClassesStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Classrooms & Assigned Subjects</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Access your assigned classrooms, review enrolled student rosters, and manage subject curricula.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Users className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">My Classes Hub</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">My Classes</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Central workspace for all classrooms and homerooms assigned to you.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>View class rosters, total student counts, and individual student academic dossiers.</li>
+                            <li>Track student engagement, special learning accommodations, and homeroom logs.</li>
+                            <li>Quickly access timetable schedules, exams, and attendance for each assigned class arm.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <BookOpen className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Assigned Subjects & Curriculum</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Subjects</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Manage the curriculum scope and topics for your assigned courses.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Review all subjects assigned to you across classes and grade levels.</li>
+                            <li>Track syllabus completion and organize lesson plans for upcoming terms.</li>
+                            <li>Prepare structured continuous assessments and term examination papers per subject.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function TeacherExamsStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Exams, Quizzes & Question Engine</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Design multi-paper exams, build rich question banks with LaTeX math formatting, and monitor student tests.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Layers className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Multi-Paper Assessment Engine</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Academics</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Exams & Quizzes</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Create Exam</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Deploy formal term exams, Computer-Based Tests (CBT), and periodic class quizzes.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Create multi-paper exams (e.g. Paper 1 Objectives + Paper 2 Essay/Theory).</li>
+                            <li>Configure strict time windows, automatic question shuffling, and pass thresholds.</li>
+                            <li>Monitor live student attempts and review test completion metrics in real time.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <FileText className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Advanced Question Bank with LaTeX</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Exams & Quizzes</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Question List</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Add Question</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Author versatile questions with equations, multiple-choice options, and scoring keys.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Native LaTeX / KaTeX rendering for math symbols, scientific equations, and chemical notation.</li>
+                            <li>Support for Single Choice, Multiple Choice, and open-ended Theory questions.</li>
+                            <li>Reuse verified questions from your subject bank across different assessment papers.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function TeacherAssignmentsStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Assignments & Rapid Bulk Grading</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Distribute homework, attach reference study files, and grade classroom cohorts with one-click bulk tools.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <FileSpreadsheet className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Homework & Project Distribution</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Academics</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Assignments</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Create Assignment</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Send homework tasks, reading exercises, and term projects directly to students.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Set strict submission deadlines and attach reference documents or PDF guidelines.</li>
+                            <li>Target assignments to specific class arms or multiple classes simultaneously.</li>
+                            <li>Monitor live submission statuses (Submitted on time, Late, or Pending).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <CheckCircle2 className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">One-Click Bulk Grading & Feedback</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Assignments</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Submissions</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Bulk Grading</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Review and grade an entire classroom roster on a single unified screen.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Grade students in batch mode without opening separate pages for each submission.</li>
+                            <li>Preview student document attachments directly in-browser while entering scores.</li>
+                            <li>Provide tailored feedback that instantly reflects in student and parent portals.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function TeacherGradesStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Gradebook, Scores & Academic Records</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Record continuous assessment scores, calculate final grades, and compile remarks for term report cards.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <GraduationCap className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Continuous Assessment (CA) & Exam Recording</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Academics</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Grades</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Record Grades</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Maintain the official score ledger for all subjects and classroom arms.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Input Continuous Assessment (tests, quizzes, homework) and final examination marks.</li>
+                            <li>Automated calculation of total percentage scores, letter grades (A1–F9 / A+–F), and grade points.</li>
+                            <li>Perform batch score adjustments before submitting grades for administrative sign-off.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <FileSpreadsheet className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Student Records, Dossiers & Remarks</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Records</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">New Record</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Document behavioral observations, conduct remarks, and psychomotor evaluations.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Enter teacher remarks, attendance summaries, and character assessments for each pupil.</li>
+                            <li>Track longitudinal performance trajectories across past terms to support student growth.</li>
+                            <li>Comments and ratings feed directly into institutional report cards and parent result dossiers.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function TeacherScheduleAttendanceStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Daily Schedule, Attendance & Linking</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Keep track of your timetable, roll-call attendance, and connect with parents and students.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Calendar className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Today's Teaching Schedule & Roll Call</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Home Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Schedule & Attendance</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Daily classroom operational schedule and quick attendance roll call.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>View scheduled periods, assigned subject classrooms, and room allocations at a glance.</li>
+                            <li>Mark daily student roll call (Present, Late, Excused, Absent) in seconds.</li>
+                            <li>Real-time attendance logs synchronize immediately with school administration and parents.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <QrCode className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Student QR Linking & Parent Directory</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Linking</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Parents & Students</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Bridge your classroom with students and verify parent communication channels.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Display class QR codes and invite keys for rapid student device onboarding.</li>
+                            <li>Access the verified guardian directory for parent-teacher consultations and inquiries.</li>
+                            <li>Send academic alerts and progress updates directly to involved parents.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function StudentClassesStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Classrooms & Daily Timetable</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Explore your enrolled subjects, view assigned teachers, and stay on top of your daily schedule.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <BookOpen className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Enrolled Classes & Subjects</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Classes</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">My Subjects</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Access every course you are taking this academic term with complete syllabus visibility.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>View your assigned subject teachers, weekly topics, and official curriculum syllabi.</li>
+                            <li>Access teacher-shared lecture notes, reading materials, and classroom guidelines.</li>
+                            <li>Stay informed about subject announcements and class-specific study recommendations.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Clock className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Daily Timetable & Schedule</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Timetable</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Schedule View</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Plan your school days efficiently with clear timetables for all periods and sessions.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Real-time display of daily classroom periods, designated room numbers, and subject order.</li>
+                            <li>View break times, laboratory practicals, sports activities, and school assemblies.</li>
+                            <li>Never miss a class transition or an upcoming period with an organized daily schedule.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function StudentAssignmentsStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Assignments & Coursework Tasks</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Track coursework deadlines, submit homework digitally, and view teacher grading and remarks.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <ClipboardList className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Active Assignments & Due Date Tracker</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Assignments</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Homework Hub</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Stay organized and never miss homework deadlines with categorized task boards.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Color-coded badges for assignment statuses (Pending, Submitted, Graded, and Overdue).</li>
+                            <li>Read detailed project briefs, rubrics, and download teacher-attached worksheets or PDFs.</li>
+                            <li>Clear countdown timers and submission cutoffs to help you prioritize your study time.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <UploadCloud className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Digital Submissions & Teacher Feedback</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Assignments</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Submit Coursework</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Hand in your homework directly through your student portal and receive fast feedback.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Upload essays, documents, scanned handwritten solutions, or project files in multiple formats.</li>
+                            <li>Add private submission comments or clarification questions for your subject teacher.</li>
+                            <li>Review graded assignments with teacher annotations, correction notes, and earned points.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function StudentExamsStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">CBT Exams, Quizzes & Assessments</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Take timed computer-based assessments, practice quizzes, and review your performance.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <FileCheck2 className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Online Assessment & CBT Exam Center</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Exams/Quizzes</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Assessment Hub</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Clean, distraction-free environment for midterms, mocks, and official examinations.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Real-time countdown timer with automated warnings before your exam duration expires.</li>
+                            <li>Automatic answer auto-saving ensures your progress is protected even during network hiccups.</li>
+                            <li>Multi-paper support for continuous assessments, mock drills, and final term exams.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Sparkles className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Rich Question Engine & Performance Review</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Exams/Quizzes</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Exam Review</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Interactive question interface featuring formulas, diagrams, and instant attempt scoring.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Crisp mathematical formulas and chemical equations rendered seamlessly with LaTeX/KaTeX.</li>
+                            <li>Supports multiple-choice, true/false, fill-in-the-blank, and written theory response questions.</li>
+                            <li>Instant objective score feedback and detailed question-by-question reviews once published.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function StudentGradesStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Academic Performance, Grades & Results</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Monitor continuous assessment scores, calculate term averages, and view official report cards.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <BarChart3 className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Continuous Assessment (CA) & Grade Tracker</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Grades</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Gradebook</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Transparent gradebook showing test, quiz, homework, and midterm scores.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Continuous scoring breakdown showing how classwork and tests contribute to your final mark.</li>
+                            <li>Visual progress indicators and subject averages to help identify areas needing improvement.</li>
+                            <li>Compare current term results against your past academic trends across the school year.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <GraduationCap className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Termly Report Cards & Class Standing</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Final Results</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Report Cards</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Official end-of-term academic records, class standings, and principal remarks.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Download and print official term report cards with grade distributions and GPA calculations.</li>
+                            <li>View class ranking, overall position, and total aggregate scores across all enrolled subjects.</li>
+                            <li>Read formal character assessments, behavioral remarks, and promotion recommendations.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function StudentAttendanceLinkingStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Attendance, Documents & Parent Linking</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Verify your attendance record, access official school documents, and connect your parents.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Calendar className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Daily Attendance Records & Digital Documents</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Attendance</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Attendance Log</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Complete log of classroom roll call and centralized storage for school credentials.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Check your present, late, and excused absence tallies alongside term attendance percentages.</li>
+                            <li>Access your digital student ID, certificates, admission letters, and school clearances.</li>
+                            <li>Keep a verifiable record of academic standing for transfers and scholarship applications.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <QrCode className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Parent QR Linking Hub</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Linking</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Parent Connect</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Connect with your parents or guardians so they can stay updated on your education.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Share your unique student QR code or 6-character linking code with your parent or guardian.</li>
+                            <li>Parents can link their accounts to view report cards, fee receipts, and attendance notifications.</li>
+                            <li>Simple one-tap linking maintains transparent communication between school and home.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function ParentChildrenStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">My Children & Multi-Student Hub</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Monitor all your children from a single dashboard, switch between profiles, and link new students.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Users className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Children Directory & Profile Switching</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>My Children</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Child Overview</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Centralized family dashboard keeping tabs on each of your children's educational journeys.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>View individual profiles for each child with their current grade level, classroom, and school.</li>
+                            <li>Effortlessly switch between multiple children without needing separate logins or accounts.</li>
+                            <li>View key metrics at a glance: upcoming tasks, term GPA, and recent attendance roll calls.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <QrCode className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Rapid Student Linking via QR Code or ID</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>My Children</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Link Child</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Connect new students to your guardian account using their secure linking credentials.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Scan your child's student QR code or enter their 6-character linking code issued by the school.</li>
+                            <li>Instant verification establishes private, authorized parental access to academic records.</li>
+                            <li>Support for multiple schools and institutions within one unified parent dashboard.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function ParentPerformanceStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Grades, Exams & Academic Results</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Track ongoing continuous assessments, subject breakdowns, and official termly report cards.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <BarChart3 className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Continuous Assessment & Subject Strengths</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Performance</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Subject Analytics</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Granular visibility into tests, quizzes, and project scores across all subjects.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Real-time score updates as teachers grade quizzes, midterms, and class presentations.</li>
+                            <li>Visual performance graphs highlighting subject strengths and areas requiring support.</li>
+                            <li>Longitudinal tracking showing progress and grade trends across terms.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <GraduationCap className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Official Report Cards & Class Standing</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Final Results</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Report Sheets</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Access authenticated end-of-term report sheets and teacher-principal remarks.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>View term GPA, overall class ranking, grade distributions, and total cumulative marks.</li>
+                            <li>Read detailed behavioral comments, character assessments, and teacher remarks.</li>
+                            <li>Download and print official, tamper-proof PDF report cards directly for your records.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function ParentAttendanceStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Daily Attendance & Roll Call Logs</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Stay informed on your child's classroom presence, punctuality, and absence records.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <Calendar className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Classroom Attendance & Arrival Monitoring</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Attendance</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Attendance Records</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Live updates on daily school attendance recorded directly by classroom teachers.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Daily roll call status: Present, Late, Excused, or Unexcused Absence.</li>
+                            <li>Monthly attendance rate indicators with term-wide consistency tracking.</li>
+                            <li>Instant alerts when an unverified absence or late arrival is recorded.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <FileText className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Digital Absence Notes & Medical Excuses</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Attendance</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Absence Notices</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Communicate planned absences or medical leaves directly with school administration.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Submit absence notices with dates and medical reasonings in advance.</li>
+                            <li>Attach doctor notes or official documentation directly through the portal.</li>
+                            <li>Track approval status from class teachers and the principal's office.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function ParentAssignmentsStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Homework, Assignments & Learning Resources</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Guide your child's learning at home by monitoring assignment cutoffs and homework briefs.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <ClipboardList className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Active Homework & Due Date Tracker</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Assignments</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Tasks Board</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Keep track of all pending, submitted, and overdue coursework across all subjects.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Review assignment requirements, deadlines, and teacher-attached worksheets.</li>
+                            <li>Track your child's submission status to help them stay accountable and avoid overdue work.</li>
+                            <li>View teacher grading rubrics and specific scoring criteria for projects.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <BookOpen className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Teacher Feedback & Curriculum Resources</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Assignments</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Teacher Feedback</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Understand teacher evaluations and access supplementary study materials.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Read personalized teacher corrections, commendations, and guidance on submitted tasks.</li>
+                            <li>Access recommended textbooks, curriculum syllabi, and practice materials.</li>
+                            <li>Empower productive home discussions about academic progress and study habits.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+function ParentFinanceCommunicationStep({ theme }: { theme: any }) {
+    return (
+        <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} className="space-y-6">
+            <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-4">School Fees, Invoices & Communication</h3>
+                <p className="text-slate-500 text-xl leading-relaxed">
+                    Manage tuition payments, view financial receipts, and message school teachers directly.
+                </p>
+            </div>
+            <div className="space-y-4 max-w-4xl">
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <CreditCard className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">Fee Statements, Invoices & Instant Receipts</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Billing</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">Invoices & Fees</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Transparent billing with clear tuition schedules and instant payment confirmation.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>View itemized fee invoices for tuition, books, uniforms, bus services, and examination fees.</li>
+                            <li>Pay school dues securely online via card, bank transfer, or mobile money.</li>
+                            <li>Download and print official payment receipts with unique transaction reference numbers.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                    <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={`p-2 rounded-lg ${theme.primaryBgSubtle}`}>
+                                <MessageSquare className={`${theme.primaryText} size-5`} />
+                            </div>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-lg">School Announcements & Teacher Messaging</h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <span>Navigate to Dashboard</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Sidebar</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span>Messages</span>
+                            <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-bold">School Chat</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Direct line of communication with class teachers and school administrators.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-slate-500 dark:text-slate-400 space-y-1">
+                            <li>Send private messages to subject teachers and guidance counselors regarding child progress.</li>
+                            <li>Receive urgent school-wide announcements, emergency notices, and term calendar updates.</li>
+                            <li>Schedule parent-teacher conferences and academic consultation sessions seamlessly.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </motion.div>
