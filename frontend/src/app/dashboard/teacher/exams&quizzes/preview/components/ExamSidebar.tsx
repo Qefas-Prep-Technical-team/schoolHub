@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle2, Circle } from 'lucide-react';
 
 interface ExamSidebarProps {
   timeRemaining: string;
@@ -10,6 +10,7 @@ interface ExamSidebarProps {
   onNavigateToQuestion: (questionNumber: number) => void;
   onSubmitExam: () => void;
   isPreview: boolean;
+  hideTimer?: boolean;
 }
 
 export default function ExamSidebar({
@@ -20,6 +21,7 @@ export default function ExamSidebar({
   onNavigateToQuestion,
   onSubmitExam,
   isPreview,
+  hideTimer = false,
 }: ExamSidebarProps) {
   const getQuestionStatus = (questionNumber: number) => {
     if (questionNumber === currentQuestion) {
@@ -32,14 +34,14 @@ export default function ExamSidebar({
   };
 
   const getQuestionButtonClass = (status: string) => {
-    const baseClass = "flex h-10 w-10 items-center justify-center rounded-lg transition-all font-semibold text-sm";
+    const baseClass = "flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl transition-all font-bold text-xs sm:text-sm";
     switch (status) {
       case 'current':
-        return `${baseClass} bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 ring-2 ring-emerald-600 dark:ring-emerald-500 ring-offset-2 dark:ring-offset-gray-900 scale-105`;
+        return `${baseClass} bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-slate-900 scale-105`;
       case 'answered':
-        return `${baseClass} bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60`;
+        return `${baseClass} bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60`;
       default:
-        return `${baseClass} bg-white dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/60`;
+        return `${baseClass} bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700`;
     }
   };
 
@@ -47,33 +49,36 @@ export default function ExamSidebar({
   const unansweredCount = totalQuestions - answeredCount;
 
   return (
-    <div className="sticky top-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-900/10 p-6">
-      {/* Timer */}
-      <div className="flex flex-col items-center mb-6">
-        <div className="flex items-center gap-2 text-lg font-medium text-gray-600 dark:text-gray-400">
-          <Clock className="w-5 h-5" />
-          <span>Time Remaining</span>
-        </div>
-        <div className="mt-2 text-4xl font-bold text-gray-900 dark:text-white font-mono">
-          {timeRemaining}
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="h-px w-full bg-gray-200 dark:bg-gray-700 mb-6" />
-
-      {/* Questions Grid */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
-            Questions
-          </h3>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {answeredCount}/{totalQuestions} answered
+    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 sm:p-6 shadow-sm">
+      {/* Timer (optional if shown in mobile sticky bar) */}
+      {!hideTimer && (
+        <>
+          <div className="flex flex-col items-center mb-5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+              <span>Time Remaining</span>
+            </div>
+            <div className="mt-1 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+              {timeRemaining}
+            </div>
           </div>
+          <div className="h-px w-full bg-slate-100 dark:bg-slate-800 mb-5" />
+        </>
+      )}
+
+      {/* Questions Grid Header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            Questions Map
+          </h3>
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            {answeredCount} of {totalQuestions} answered
+          </span>
         </div>
 
-        <div className="grid grid-cols-5 gap-2">
+        {/* Responsive Grid: 5 columns on phones, 5-6 on tablets */}
+        <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-2 justify-items-center">
           {Array.from({ length: totalQuestions }, (_, i) => {
             const questionNumber = i + 1;
             const status = getQuestionStatus(questionNumber);
@@ -81,6 +86,7 @@ export default function ExamSidebar({
             return (
               <button
                 key={questionNumber}
+                type="button"
                 onClick={() => onNavigateToQuestion(questionNumber)}
                 className={getQuestionButtonClass(status)}
                 title={`Question ${questionNumber} - ${status}`}
@@ -93,38 +99,38 @@ export default function ExamSidebar({
       </div>
 
       {/* Status Legend */}
-      <div className="mb-6 space-y-2">
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded-full bg-emerald-600 ring-2 ring-emerald-600/30"></div>
-          <span className="text-gray-600 dark:text-gray-400 font-medium">Current</span>
+      <div className="my-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-1.5 text-center">
+        <div className="flex flex-col items-center p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 mb-1" />
+          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">Current</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700"></div>
-          <span className="text-gray-600 dark:text-gray-400 font-medium">Answered</span>
+        <div className="flex flex-col items-center p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 border border-emerald-500 mb-1" />
+          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">Answered</span>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-3 h-3 rounded-full bg-white dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-700"></div>
-          <span className="text-gray-600 dark:text-gray-400 font-medium">Unanswered</span>
+        <div className="flex flex-col items-center p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-1" />
+          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">Pending</span>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+      {/* Stats Summary */}
+      <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-2 gap-3 text-center">
+          <div>
+            <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
               {answeredCount}
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Answered
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Completed
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div>
+            <div className="text-lg font-black text-slate-700 dark:text-slate-300">
               {unansweredCount}
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Unanswered
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Remaining
             </div>
           </div>
         </div>
@@ -132,28 +138,24 @@ export default function ExamSidebar({
 
       {/* Submit Button */}
       <button
+        type="button"
         onClick={onSubmitExam}
         disabled={isPreview}
-        className={`w-full py-3 rounded-lg text-center font-semibold transition-all ${
+        className={`w-full py-2.5 sm:py-3 rounded-xl text-center text-xs sm:text-sm font-bold transition-all ${
           isPreview
-            ? 'bg-emerald-600/50 text-white cursor-not-allowed'
-            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+            : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
         }`}
       >
-        {isPreview ? 'Preview Mode (Submit Disabled)' : 'Submit Exam'}
+        {isPreview ? 'Simulation Only (No Submit)' : 'Submit Assessment'}
       </button>
 
       {/* Preview Mode Notice */}
       {isPreview && (
-        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              Preview Mode
-            </span>
-          </div>
-          <p className="text-xs text-yellow-700 dark:text-yellow-300">
-            Submit button is disabled. This is how students will see the exam.
+        <div className="mt-3 p-2.5 bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-xl flex items-center gap-2 text-left">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">
+            Read-only simulation preview.
           </p>
         </div>
       )}

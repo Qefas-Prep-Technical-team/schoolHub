@@ -15,7 +15,10 @@ interface GradesTableProps {
   onSearchChange: (query: string) => void;
   onFilter: () => void;
   onSort: () => void;
-  onExport: () => void;
+  onExport?: () => void;
+  onExportPDF?: () => void;
+  onExportCSV?: () => void;
+  isExporting?: boolean;
   onEditGrade: (grade: StudentGrade) => void;
   onPublishGrade: (grade: StudentGrade) => void;
   publishingGradeId?: string | null;
@@ -39,6 +42,9 @@ const GradesTable: React.FC<GradesTableProps> = ({
   onFilter,
   onSort,
   onExport,
+  onExportPDF,
+  onExportCSV,
+  isExporting,
   onEditGrade,
   onPublishGrade,
   publishingGradeId,
@@ -65,6 +71,9 @@ const GradesTable: React.FC<GradesTableProps> = ({
         onFilter={onFilter}
         onSort={onSort}
         onExport={onExport}
+        onExportPDF={onExportPDF}
+        onExportCSV={onExportCSV}
+        isExporting={isExporting}
         onPublishAll={onPublishAll}
         isPublishingAll={isPublishingAll}
         viewMode={viewMode}

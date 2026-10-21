@@ -92,7 +92,14 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {
       newSocket.disconnect();
     };
-  }, [anyAuthenticated, currentUserId, socket]);
+  }, [anyAuthenticated, socket]);
+
+  // Reactive subscription: guarantees user room is joined even if currentUserId resolves after initial connection
+  useEffect(() => {
+    if (socket && isConnected && currentUserId) {
+      socket.emit("join:user", currentUserId);
+    }
+  }, [socket, isConnected, currentUserId]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

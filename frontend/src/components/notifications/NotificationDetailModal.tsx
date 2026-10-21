@@ -32,6 +32,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from 'lucide-react';
 import { Badge as UIBadge } from "@/components/ui/badge";
+import { resolveNotificationSender } from '@/lib/utils/notificationSender';
 
 interface NotificationDetailModalProps {
   notification: Notification | null;
@@ -140,6 +141,7 @@ export default function NotificationDetailModal({
   };
 
   const details = getRequesterDetails();
+  const senderInfo = resolveNotificationSender(notification);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -230,6 +232,30 @@ export default function NotificationDetailModal({
               &quot;{notification.message}&quot;
             </p>
           </div>
+
+          {/* Sender Information Card (when not a full Link Request card) */}
+          {!details && senderInfo && senderInfo.name && senderInfo.name.toLowerCase() !== 'system' && (
+            <div className="bg-white dark:bg-zinc-900 rounded-xl sm:rounded-[1.5rem] p-4 sm:p-5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center gap-3.5 sm:gap-4">
+              <Avatar className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 shrink-0">
+                <AvatarFallback className={cn("text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl", theme.avatarBg)}>
+                  {senderInfo.avatarText}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">From</span>
+                  {senderInfo.role && (
+                    <UIBadge variant="secondary" className="bg-slate-100 dark:bg-zinc-800 text-[8px] font-black rounded-md px-1.5 py-0.2">
+                      {senderInfo.role}
+                    </UIBadge>
+                  )}
+                </div>
+                <h4 className="font-black text-xs sm:text-sm text-zinc-900 dark:text-white leading-tight truncate">
+                  {senderInfo.name}
+                </h4>
+              </div>
+            </div>
+          )}
 
           {/* Detailed Person Info for Link Requests */}
           {!!linkId && (

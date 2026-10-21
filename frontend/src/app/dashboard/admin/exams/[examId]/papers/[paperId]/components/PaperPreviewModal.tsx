@@ -29,12 +29,12 @@ export default function PaperPreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[98vw] max-w-[98vw] w-[98vw] h-[98vh] rounded-[1.5rem] p-0 overflow-hidden border-none shadow-2xl focus:outline-none">
+      <DialogContent className="w-full max-w-full sm:max-w-[96vw] sm:w-[96vw] h-full sm:h-[95vh] rounded-none sm:rounded-3xl p-0 overflow-hidden border-none shadow-2xl focus:outline-none flex flex-col [&>button]:hidden">
         <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
           <DialogHeader className="sr-only">
             <DialogTitle>Paper Preview - {paper.title}</DialogTitle>
           </DialogHeader>
-          <Suspense fallback={<div className="flex min-h-[50vh] items-center justify-center">Loading Preview...</div>}>
+          <Suspense fallback={<div className="flex min-h-[50vh] items-center justify-center text-slate-500 font-medium">Loading Preview...</div>}>
             <ExamPreviewPage providedId={paper.id} providedType="subject_paper" onClose={onClose} />
           </Suspense>
         </div>

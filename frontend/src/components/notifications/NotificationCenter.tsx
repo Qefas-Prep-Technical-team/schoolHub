@@ -36,6 +36,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import NotificationDetailModal from './NotificationDetailModal';
 import { Notification } from '@/lib/api/services/notificationService';
+import { resolveNotificationSender } from '@/lib/utils/notificationSender';
 
 function formatRelativeTime(dateString: string): string {
   try {
@@ -358,7 +359,7 @@ export default function NotificationCenter() {
                       
                       {/* Body */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <Badge variant="outline" className={cn("text-[9px] font-bold px-1.5 py-0 rounded-md uppercase tracking-wider shrink-0 border", cfg.badgeClass)}>
                               {cfg.label}
@@ -374,6 +375,24 @@ export default function NotificationCenter() {
                             {formatRelativeTime(n.createdAt)}
                           </span>
                         </div>
+
+                        {/* Sender info */}
+                        {(() => {
+                          const senderInfo = resolveNotificationSender(n);
+                          return (
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">From</span>
+                              <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 truncate max-w-[140px]">
+                                {senderInfo.name}
+                              </span>
+                              {senderInfo.role && senderInfo.role.toLowerCase() !== senderInfo.name.toLowerCase() && (
+                                <span className="text-[8px] font-black uppercase tracking-wider px-1 py-0 rounded bg-slate-100 dark:bg-zinc-800 text-zinc-500 shrink-0">
+                                  {senderInfo.role}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         
                         <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
                           {n.message}

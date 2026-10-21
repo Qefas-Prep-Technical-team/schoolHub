@@ -1136,8 +1136,23 @@ export const sendClassAnnouncementService = async (
 
   if (!foundClass) throw new Error("Class not found");
 
+  // Resolve sender name and role
+  const teacherSender = await prisma.teacher.findUnique({
+    where: { id: senderId },
+    select: { id: true, name: true },
+  });
+  const adminSender = !teacherSender
+    ? await prisma.admin.findUnique({
+        where: { id: senderId },
+        select: { id: true, name: true },
+      })
+    : null;
+
+  const senderName = teacherSender?.name || adminSender?.name || "Teacher";
+  const senderRole = adminSender ? "School Admin" : "Teacher";
+  const senderType = adminSender ? "ADMIN" : "TEACHER";
+
   const notificationsToCreate = [];
-  const senderType = "TEACHER";
 
   for (const enrollment of foundClass.enrollments) {
     const student = enrollment.student;
@@ -1151,7 +1166,13 @@ export const sendClassAnnouncementService = async (
         type: "GENERAL" as any,
         title,
         message,
-        meta: { priority },
+        meta: {
+          priority,
+          senderName,
+          senderRole,
+          className: foundClass.name,
+          classId: foundClass.id,
+        },
       });
     }
 
@@ -1166,7 +1187,13 @@ export const sendClassAnnouncementService = async (
             type: "GENERAL" as any,
             title,
             message,
-            meta: { priority },
+            meta: {
+              priority,
+              senderName,
+              senderRole,
+              className: foundClass.name,
+              classId: foundClass.id,
+            },
           });
         }
       }
@@ -1184,7 +1211,13 @@ export const sendClassAnnouncementService = async (
           type: "GENERAL" as any,
           title,
           message,
-          meta: { priority },
+          meta: {
+            priority,
+            senderName,
+            senderRole,
+            className: foundClass.name,
+            classId: foundClass.id,
+          },
         });
       }
     }

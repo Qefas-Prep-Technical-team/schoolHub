@@ -42,6 +42,7 @@ export default function GradesPage() {
     queryKey: ['class-grades', classId],
     queryFn: () => teacherService.getClassGrades(classId),
     enabled: !!classId,
+    staleTime: 1000 * 60 * 2,
   })
 
   const updateGradeMutation = useMutation({

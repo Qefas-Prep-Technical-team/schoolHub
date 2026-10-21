@@ -536,20 +536,45 @@ export const getExamPapersService = async (examId: string, schoolId?: string, us
     include: {
       subjectPaper: {
         include: {
-          subject: true,
+          subject: {
+            include: {
+              teacher: true,
+              teacherSubjects: {
+                include: {
+                  teacher: true,
+                },
+              },
+            },
+          },
           teacher: true,
           questions: {
             select: { id: true },
           },
-        }
+        },
       },
     },
   });
 
-  const allPapers = links.map(link => ({
-    ...link.subjectPaper,
-    examId: link.examId,
-  }));
+  const allPapers = links.map(link => {
+    const paper = link.subjectPaper;
+    const directTeacher = paper.teacher ? [{ ...paper.teacher, isCreator: true }] : [];
+    const subjectLeadTeacher = paper.subject?.teacher ? [{ ...paper.subject.teacher, isCreator: false }] : [];
+    const subjectAssignedTeachers = (paper.subject as any)?.teacherSubjects?.map((ts: any) => ({
+      ...ts.teacher,
+      isCreator: false,
+    })).filter(Boolean) || [];
+
+    const teacherMap = new Map();
+    [...directTeacher, ...subjectLeadTeacher, ...subjectAssignedTeachers].forEach(t => {
+      if (t && t.id && !teacherMap.has(t.id)) teacherMap.set(t.id, t);
+    });
+
+    return {
+      ...paper,
+      examId: link.examId,
+      assignedTeachers: Array.from(teacherMap.values()),
+    };
+  });
 
   // Authorization filter for teachers: hide papers they're not connected to before exam ends
   if (user && user.userType?.toUpperCase() === "TEACHER") {

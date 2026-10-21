@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { Plus, Sparkles, FileText, Trash2, Edit2, GripVertical, Check, Loader2, Image as ImageIcon } from "lucide-react";
+import { Plus, Sparkles, FileText, Trash2, Edit2, GripVertical, Check, Loader2, Image as ImageIcon, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -184,31 +184,32 @@ export default function QuestionManager({
           <p className="text-sm text-gray-500">Manage questions for this subject paper</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
            {paper?.status === 'PUBLISHED' && (
-             <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 rounded-xl text-xs font-bold mr-2 hidden md:block flex items-center">
-               Paper is Published. Unpublish to edit.
+             <div className="bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 px-3.5 py-1.5 rounded-xl text-xs font-bold w-full md:w-auto flex items-center gap-1.5 shadow-xs">
+               <Info size={14} className="shrink-0" />
+               <span>Paper is published. Unpublish to edit.</span>
              </div>
            )}
            {selectedIds.length > 0 && paper?.status !== 'PUBLISHED' && (
              <Button
                onClick={() => setBulkDeleteType("selected")}
                variant="destructive"
-               className="h-10 px-4 rounded-xl gap-2 font-bold shadow-sm"
+               className="h-9 px-3.5 rounded-xl gap-2 font-bold shadow-sm text-xs"
              >
-               <Trash2 size={16} /> Delete Selected ({selectedIds.length})
+               <Trash2 size={14} /> Delete Selected ({selectedIds.length})
              </Button>
            )}
            {questions.length > 0 && paper?.status !== 'PUBLISHED' && (
              <Button
                onClick={() => setBulkDeleteType("all")}
                variant="outline"
-               className="h-10 px-4 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 font-bold shadow-sm"
+               className="h-9 px-3.5 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 font-bold shadow-sm text-xs"
              >
                Delete All
              </Button>
            )}
-           <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full md:w-auto overflow-x-auto scroller-none">
+           <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto no-scrollbar">
               {[
                 { id: 'list', label: 'List', icon: FileText },
                 { id: 'add', label: 'Add', icon: Plus },
@@ -221,17 +222,41 @@ export default function QuestionManager({
                     setActiveTab(tab.id);
                     if (tab.id !== 'edit') setEditingQuestion(null);
                   }}
-                  className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                     activeTab === tab.id 
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
                       : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
                   <tab.icon size={14} className={tab.color || ''} />
-                  {tab.label}
+                  <span>{tab.label}</span>
                 </button>
               ))}
            </div>
+        </div>
+      </div>
+
+      {/* Mobile & Tablet Paper Metrics Strip */}
+      <div className="xl:hidden grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Questions</span>
+          <span className="text-sm font-black text-slate-900 dark:text-white">{questions.length}</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Marks</span>
+          <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+            {questions.reduce((acc: number, q: Question) => acc + (q.marks || 0), 0)} Marks
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</span>
+          <span className="text-sm font-black text-slate-900 dark:text-white">{paper?.durationMinutes || 0} mins</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</span>
+          <span className="text-sm font-black text-slate-900 dark:text-white truncate" title={paper?.subject?.name || 'General'}>
+            {paper?.subject?.name || 'General'}
+          </span>
         </div>
       </div>
 

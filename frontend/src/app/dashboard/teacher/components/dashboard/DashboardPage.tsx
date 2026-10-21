@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -14,9 +16,12 @@ import InsightsGrid from './InsightsGrid';
 import MessagesAnnouncements from './MessagesAnnouncements';
 import TeacherSchedule from './TeacherSchedule';
 import RecentPersonalActivity from './RecentPersonalActivity';
+import TeacherAnnouncementModal from './TeacherAnnouncementModal';
+import TeacherWeeklyReportModal from './TeacherWeeklyReportModal';
 import { HeaderTooltip } from './HeaderTooltip';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import { useNotifications } from '@/lib/api/hooks/useNotifications';
+import { resolveNotificationSender } from '@/lib/utils/notificationSender';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { 
@@ -30,6 +35,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalClasses: 0,
     classNames: [] as string[],
@@ -46,12 +52,30 @@ export default function DashboardPage() {
   });
   const [recentExams, setRecentExams] = useState<any[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<any[]>([]);
+  const [isAnnounceModalOpen, setIsAnnounceModalOpen] = useState(false);
+  const [isWeeklyReportModalOpen, setIsWeeklyReportModalOpen] = useState(false);
+
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const isPersonal = selectedSchoolId === user?.id;
+
+  // Fetch teacher classes for announcement & report modals
+  const { data: rawTeacherClasses = [] } = useQuery({
+    queryKey: ['teacher-classes', selectedSchoolId],
+    queryFn: () => teacherService.getClasses({ schoolId: isPersonal ? undefined : selectedSchoolId }),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const teacherClasses = (rawTeacherClasses || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    section: c.section,
+    studentCount: c._count?.enrollments ?? c.enrollments?.length ?? c.studentCount ?? 0,
+    classCode: c.classCode,
+  }));
 
   const loadInitialData = async () => {
     try {
@@ -114,14 +138,21 @@ export default function DashboardPage() {
 
   const { data: notifications = [] } = useNotifications({ limit: 5 });
 
-  const messages = notifications.map((n: any) => ({
-    id: n.id,
-    title: n.title,
-    description: n.message,
-    sender: n.type === 'ANNOUNCEMENT' ? 'School' : (n.data?.senderName || 'System'),
-    isUnread: !n.isRead,
-    isAnnouncement: n.type === 'ANNOUNCEMENT',
-  }));
+  const messages = notifications.map((n: any) => {
+    const senderInfo = resolveNotificationSender(n);
+    return {
+      id: n.id,
+      title: n.title,
+      description: n.message,
+      sender: senderInfo.name,
+      senderRole: senderInfo.role,
+      isUnread: !n.isRead,
+      isAnnouncement: n.type === 'ANNOUNCEMENT',
+      createdAt: n.createdAt,
+      type: n.type,
+      rawNotification: n,
+    };
+  });
 
   const recentActivities = [
     ...recentExams.map(exam => ({
@@ -188,6 +219,8 @@ export default function DashboardPage() {
             sessionName={stats.session}
             classNames={stats.classNames}
             subjectNames={stats.subjectNames}
+            onAnnounce={() => setIsAnnounceModalOpen(true)}
+            onViewWeeklyReport={() => setIsWeeklyReportModalOpen(true)}
           />
 
           <AnimatePresence mode="wait">
@@ -208,7 +241,7 @@ export default function DashboardPage() {
                 <div className="lg:col-span-8">
                   <AssignmentsExams   
                     assignments={dashboardAssignments as any} 
-                    onViewAll={() => {}}
+                    onViewAll={() => router.push('/dashboard/teacher/exams&quizzes')}
                   />
                 </div>
 
@@ -253,14 +286,27 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                      <QuickTool icon={Plus} label="Grade" sub="New Entry" color="bg-emerald-500" />
-                      <QuickTool icon={Share2} label="Reports" sub="Export Data" color="bg-blue-500" />
+                      <QuickTool 
+                        icon={Plus} 
+                        label="Grade" 
+                        sub="New Entry" 
+                        color="bg-emerald-500" 
+                        onClick={() => router.push('/dashboard/teacher/exams&quizzes')}
+                      />
+                      <QuickTool 
+                        icon={Share2} 
+                        label="Reports" 
+                        sub="Export Data" 
+                        color="bg-blue-500" 
+                        onClick={() => setIsWeeklyReportModalOpen(true)}
+                      />
                     </div>
                   </div>
                   
                   <MessagesAnnouncements 
                     messages={messages} 
-                    onViewAll={() => {}}
+                    onViewAll={() => router.push('/dashboard/teacher/notifications')}
+                    onCompose={() => setIsAnnounceModalOpen(true)}
                   />
                 </div>
 
@@ -268,6 +314,27 @@ export default function DashboardPage() {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Teacher Class Announcement Modal */}
+        <TeacherAnnouncementModal
+          isOpen={isAnnounceModalOpen}
+          onClose={() => setIsAnnounceModalOpen(false)}
+          classes={teacherClasses}
+        />
+
+        {/* Teacher Weekly Report Modal */}
+        <TeacherWeeklyReportModal
+          isOpen={isWeeklyReportModalOpen}
+          onClose={() => setIsWeeklyReportModalOpen(false)}
+          stats={stats}
+          performanceMetrics={performanceMetrics}
+          recentExams={recentExams}
+          todaySchedule={todaySchedule}
+          classes={teacherClasses}
+          schoolName={selectedSchoolName}
+          teacherName={user?.name || 'Educator'}
+          schoolProfile={(user as any)?.school || (user as any)?.schools?.[0]}
+        />
       </main>
     </div>
   );
@@ -326,9 +393,24 @@ function DashboardSkeleton() {
 }
 
 
-function QuickTool({ icon: Icon, label, sub, color }: { icon: React.ElementType; label: string; sub: string; color: string }) {
+function QuickTool({ 
+  icon: Icon, 
+  label, 
+  sub, 
+  color, 
+  onClick 
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  sub: string; 
+  color: string; 
+  onClick?: () => void; 
+}) {
   return (
-    <button className="flex flex-col items-center justify-center p-3 sm:p-4 bg-white dark:bg-slate-800/80 rounded-xl sm:rounded-[1.5rem] shadow-lg shadow-slate-200/50 dark:shadow-none hover:translate-y-[-4px] active:scale-95 transition-all duration-300">
+    <button 
+      onClick={onClick}
+      className="flex flex-col items-center justify-center p-3 sm:p-4 bg-white dark:bg-slate-800/80 rounded-xl sm:rounded-[1.5rem] shadow-lg shadow-slate-200/50 dark:shadow-none hover:translate-y-[-4px] active:scale-95 transition-all duration-300 w-full"
+    >
       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${color} flex items-center justify-center mb-2 sm:mb-3 shadow-lg shadow-current/20`}>
         <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
       </div>

@@ -51,7 +51,8 @@ apiClient.interceptors.request.use(
 
     if (config.headers) {
       config.headers["x-device-type"] = "mobile";
-      config.headers["x-device-model"] = Device.modelName || Device.deviceName || (Platform.OS === "ios" ? "iPhone" : "Android Device");
+      const deviceName = Device.modelName || Device.deviceName || (Platform.OS === "ios" ? "iPhone" : "Android Device");
+      config.headers["x-device-model"] = `${deviceName} (Mobile App)`;
       config.headers["x-os-version"] = `${Device.osName || (Platform.OS === "ios" ? "iOS" : "Android")} ${Device.osVersion || Platform.Version}`;
     }
 

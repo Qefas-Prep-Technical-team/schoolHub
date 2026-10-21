@@ -42,6 +42,7 @@ import GradeEntryModal from '@/app/dashboard/admin/grades/components/GradeEntryM
 import GradeUploadModal from '@/app/dashboard/admin/grades/components/GradeUploadModal';
 import GradeUploadInstructionsModal from '@/app/dashboard/admin/grades/components/GradeUploadInstructionsModal';
 import GradeOCRModal from '@/app/dashboard/admin/grades/components/GradeOCRModal';
+import { generatePDF } from '@/utils/pdfGenerator';
 
 const GradesOverview: React.FC = () => {
   const queryClient = useQueryClient();
@@ -52,6 +53,7 @@ const GradesOverview: React.FC = () => {
   const [editingGrade, setEditingGrade] = useState<StudentGrade | null>(null);
   const [gradeToDelete, setGradeToDelete] = useState<StudentGrade | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
   
   // Standalone Grade options modal states
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
@@ -339,6 +341,121 @@ const GradesOverview: React.FC = () => {
     setCurrentPage(page);
   };
 
+  const handleExportPDF = async () => {
+    if (!mappedGrades || mappedGrades.length === 0) {
+      toast.warning("No grade records found to export.");
+      return;
+    }
+    setIsExporting(true);
+    const toastId = toast.loading("Generating Continuous Assessment Pad PDF...", { autoClose: false });
+
+    try {
+      const currentSession = (sessionsData as any[])?.find((s: any) => s.id === selectedSessionId)?.name || 'All Sessions';
+      const currentClass = (classesData as any[])?.find((c: any) => c.id === selectedClassId)?.name || 'All Classes';
+      const categoryLabel = selectedCategory !== 'all' ? selectedCategory : 'All Categories';
+
+      const profileForExport = schoolProfile || {
+        name: selectedSchoolName && selectedSchoolName !== 'Personal Account' ? selectedSchoolName : (user?.schools?.[0]?.name || 'School'),
+        schoolLogo: schoolProfile?.logo || schoolProfile?.schoolLogo || '/schoolhub.png',
+        address: schoolProfile?.address || ''
+      };
+
+      const metaData = [
+        { label: 'Academic Session', value: currentSession },
+        { label: 'Class Cohort', value: currentClass },
+        { label: 'Assessment Type', value: categoryLabel },
+        { label: 'Total Evaluated', value: `${mappedGrades.length} records` },
+        { label: 'Instructor', value: user?.name || user?.email || 'Teacher' },
+        { label: 'Export Date', value: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) },
+      ];
+
+      const tableData = mappedGrades.map((g, idx) => [
+        String(idx + 1),
+        g.name,
+        g.studentCode,
+        g.subjectPaper || '-',
+        g.assessmentType || '-',
+        g.score,
+        g.totalScore,
+        g.grade,
+        g.status,
+        g.remarks || '-'
+      ]);
+
+      const schoolSafeName = (profileForExport.name || 'School').replace(/[^a-zA-Z0-9]/g, '_');
+      await generatePDF({
+        title: `${profileForExport.name || 'School'} - Continuous Assessment Pad`,
+        filename: `${schoolSafeName}_Grade_Pad_${new Date().toISOString().split('T')[0]}.pdf`,
+        schoolProfile: profileForExport,
+        metaData,
+        tableHeaders: [['#', 'Student Name', 'Student ID', 'Subject / Paper', 'Type', 'Score', '%', 'Grade', 'Status', 'Remarks']],
+        tableData,
+        orientation: 'landscape'
+      });
+
+      toast.update(toastId, { render: "PDF Exported Successfully!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast.update(toastId, { render: "Failed to export PDF", type: "error", isLoading: false, autoClose: 3000 });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!mappedGrades || mappedGrades.length === 0) {
+      toast.warning("No grade records found to export.");
+      return;
+    }
+
+    const currentSession = (sessionsData as any[])?.find((s: any) => s.id === selectedSessionId)?.name || 'All Sessions';
+    const currentClass = (classesData as any[])?.find((c: any) => c.id === selectedClassId)?.name || 'All Classes';
+    const categoryLabel = selectedCategory !== 'all' ? selectedCategory : 'All Categories';
+
+    const profileForExport = schoolProfile || {
+      name: selectedSchoolName && selectedSchoolName !== 'Personal Account' ? selectedSchoolName : (user?.schools?.[0]?.name || 'School'),
+      address: schoolProfile?.address || ''
+    };
+
+    const schoolName = profileForExport.name || 'School';
+    const schoolAddress = profileForExport.address || '';
+    const headers = ['S/N', 'Student Name', 'Student ID', 'Subject / Paper', 'Assessment Type', 'Score', 'Percentage', 'Grade', 'Status', 'Remarks'];
+
+    const rows = mappedGrades.map((g, idx) => [
+      idx + 1,
+      `"${g.name.replace(/"/g, '""')}"`,
+      `"${g.studentCode.replace(/"/g, '""')}"`,
+      `"${(g.subjectPaper || '-').replace(/"/g, '""')}"`,
+      `"${(g.assessmentType || '-').replace(/"/g, '""')}"`,
+      `"${g.score}"`,
+      `"${g.totalScore}"`,
+      `"${g.grade}"`,
+      `"${g.status}"`,
+      `"${(g.remarks || '-').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [
+      `"${schoolName}"`,
+      `"${schoolAddress}"`,
+      `"Module: Continuous Assessment & Grade Pad"`,
+      `"Session: ${currentSession} | Class: ${currentClass} | Type: ${categoryLabel}"`,
+      `"Export Date: ${new Date().toLocaleDateString('en-GB')}"`,
+      '',
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const schoolSafeName = schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${schoolSafeName}_Grade_Pad_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV Exported Successfully!");
+  };
+
   const fadeInUp = {
     initial: { y: 20, opacity: 0 },
     animate: { y: 0, opacity: 1 },
@@ -449,7 +566,9 @@ const GradesOverview: React.FC = () => {
                     onSearchChange={setSearchQuery}
                     onFilter={() => setShowFilters(!showFilters)}
                     onSort={handleSortToggle}
-                    onExport={() => {}}
+                    onExportPDF={handleExportPDF}
+                    onExportCSV={handleExportCSV}
+                    isExporting={isExporting}
                     onPublishAll={() => bulkPublishMutation.mutate()}
                     isPublishingAll={bulkPublishMutation.isPending}
                     onEditGrade={setEditingGrade}

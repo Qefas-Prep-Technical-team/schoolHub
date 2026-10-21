@@ -124,23 +124,23 @@ export default function ClassDetails() {
 
   return (
     <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-neutral-950">
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
         <div className="w-full">
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             <Breadcrumbs items={breadcrumbItems} />
           </div>
           
           {/* Page Heading & Button Group (Mirroring Admin Layout exactly) */}
-          <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
-            <div className="flex flex-col gap-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex flex-col gap-1 sm:gap-1.5">
               {loading ? (
-                <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
+                <div className="h-9 sm:h-10 w-48 sm:w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
               ) : (
-                <p className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-tight">
+                <h1 className="text-gray-900 dark:text-white text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight">
                   {classData?.name} {classData?.section ? `- ${classData.section}` : ""}
-                </p>
+                </h1>
               )}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400 text-sm font-medium">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium">
                 {loading ? (
                   <>
                     <span className="flex items-center gap-1.5 animate-pulse">

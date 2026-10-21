@@ -115,7 +115,7 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {sessions.length > 0 && (
                         <FilterButton
                             label="Session"

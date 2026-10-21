@@ -89,7 +89,43 @@ export default function StudentHomeDashboard() {
   const attempts: RawExamAttempt[] = (attemptsData?.attempts as RawExamAttempt[]) || [];
   const standaloneGrades: RawGradeRecord[] = (standaloneGradesData?.grades as RawGradeRecord[]) || [];
   const studentCode = profileResponse?.data?.linkingCode || "";
-  const hasPublishedResults = Boolean(Array.isArray(publishedResultsData) && publishedResultsData.length > 0);
+
+  // Only display if a new final result was published in the last 7 days
+  const hasRecentFinalResults = useMemo(() => {
+    if (!Array.isArray(publishedResultsData) || publishedResultsData.length === 0) {
+      return false;
+    }
+
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    return publishedResultsData.some((group: Record<string, any>) => {
+      // Check individual subject results in this published group
+      const subjectResults = group.subjectResults;
+      if (Array.isArray(subjectResults) && subjectResults.length > 0) {
+        return subjectResults.some((r: Record<string, any>) => {
+          const rawDate = r.releaseDate || r.updatedAt || r.createdAt;
+          if (!rawDate) return false;
+          const time = new Date(rawDate).getTime();
+          if (isNaN(time)) return false;
+          const diff = now - time;
+          return diff >= 0 && diff <= SEVEN_DAYS_MS;
+        });
+      }
+
+      // Check group-level timestamps as fallback
+      const groupDate = group.releaseDate || group.updatedAt || group.createdAt;
+      if (groupDate) {
+        const time = new Date(groupDate).getTime();
+        if (!isNaN(time)) {
+          const diff = now - time;
+          return diff >= 0 && diff <= SEVEN_DAYS_MS;
+        }
+      }
+
+      return false;
+    });
+  }, [publishedResultsData]);
 
   const activeClass = studentProfile?.classes?.[0]?.class;
   const enrolledSubjectsCount = activeClass?.subjects?.length || 0;
@@ -247,8 +283,8 @@ export default function StudentHomeDashboard() {
           </div>
         </div>
 
-        {/* Result Banner - Only display when published termly results are available */}
-        {hasPublishedResults && (
+        {/* Result Banner - Only display when a new final result was published in the last 7 days */}
+        {hasRecentFinalResults && (
           <div className="bg-emerald-600 dark:bg-emerald-700 rounded-3xl p-5 sm:p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="space-y-1">
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Final Results Available!</h2>

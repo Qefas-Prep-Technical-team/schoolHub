@@ -28,6 +28,7 @@ import { useRespondToLinkRequest } from '@/lib/api/hooks/useLinks';
 import { cn } from '@/lib/utils';
 import NotificationDetailModal from '@/components/notifications/NotificationDetailModal';
 import { Notification } from '@/lib/api/services/notificationService';
+import { resolveNotificationSender } from '@/lib/utils/notificationSender';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 import { TeacherPagination } from '@/app/dashboard/teacher/components/TeacherPagination';
 import { NotificationStatsCard } from './components/NotificationStatsCard';
@@ -238,54 +239,70 @@ export default function TeacherNotificationsPage() {
             </div>
           ) : (
             <div className="space-y-3 sm:space-y-3.5">
-              {paginatedNotifications.map((n: Notification) => (
-                <div 
-                  key={n.id} 
-                  className={cn(
-                    "rounded-2xl border transition-all duration-200 group overflow-hidden cursor-pointer p-3.5 sm:p-5 flex gap-3 sm:gap-4 items-start shadow-sm",
-                    !n.isRead 
-                      ? "bg-white dark:bg-emerald-950/40 border-emerald-500/40 dark:border-emerald-800/60 shadow-md shadow-emerald-500/5 hover:-translate-y-0.5" 
-                      : "bg-white dark:bg-black border-slate-200/80 dark:border-zinc-800 hover:bg-slate-50/50 dark:hover:bg-zinc-950"
-                  )}
-                  onClick={() => handleOpenModal(n)}
-                >
-                  {/* Category Icon */}
-                  <div className={cn(
-                    "p-2.5 sm:p-3 rounded-xl shrink-0 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center transition-all",
-                    !n.isRead 
-                      ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" 
-                      : "bg-slate-100 dark:bg-zinc-900 text-slate-400 border border-slate-200/60 dark:border-zinc-800"
-                  )}>
-                    {getTypeIcon(n.type, n.isRead)}
-                  </div>
+              {paginatedNotifications.map((n: Notification) => {
+                const senderInfo = resolveNotificationSender(n);
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <h3 className={cn(
-                          "text-sm sm:text-base leading-tight truncate tracking-tight font-bold",
-                          !n.isRead ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"
-                        )}>
-                          {n.title}
-                        </h3>
-                        {!n.isRead && (
-                          <Badge className="bg-emerald-500 text-white text-[9px] font-black uppercase py-0.5 px-1.5 shadow-none shrink-0">
-                            New
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                        <Clock size={11} /> {new Date(n.createdAt).toLocaleDateString()}
-                      </span>
+                return (
+                  <div 
+                    key={n.id} 
+                    className={cn(
+                      "rounded-2xl border transition-all duration-200 group overflow-hidden cursor-pointer p-3.5 sm:p-5 flex gap-3 sm:gap-4 items-start shadow-sm",
+                      !n.isRead 
+                        ? "bg-white dark:bg-emerald-950/40 border-emerald-500/40 dark:border-emerald-800/60 shadow-md shadow-emerald-500/5 hover:-translate-y-0.5" 
+                        : "bg-white dark:bg-black border-slate-200/80 dark:border-zinc-800 hover:bg-slate-50/50 dark:hover:bg-zinc-950"
+                    )}
+                    onClick={() => handleOpenModal(n)}
+                  >
+                    {/* Category Icon */}
+                    <div className={cn(
+                      "p-2.5 sm:p-3 rounded-xl shrink-0 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center transition-all",
+                      !n.isRead 
+                        ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" 
+                        : "bg-slate-100 dark:bg-zinc-900 text-slate-400 border border-slate-200/60 dark:border-zinc-800"
+                    )}>
+                      {getTypeIcon(n.type, n.isRead)}
                     </div>
 
-                    <p className={cn(
-                      "text-xs sm:text-sm leading-relaxed mb-2.5 line-clamp-2",
-                      !n.isRead ? "text-slate-600 dark:text-slate-300 font-medium" : "text-slate-400 dark:text-slate-500"
-                    )}>
-                      {n.message}
-                    </p>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <h3 className={cn(
+                            "text-sm sm:text-base leading-tight truncate tracking-tight font-bold",
+                            !n.isRead ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"
+                          )}>
+                            {n.title}
+                          </h3>
+                          {!n.isRead && (
+                            <Badge className="bg-emerald-500 text-white text-[9px] font-black uppercase py-0.5 px-1.5 shadow-none shrink-0">
+                              New
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                          <Clock size={11} /> {new Date(n.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      {/* Sender Attribution */}
+                      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">From</span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+                          {senderInfo.name}
+                        </span>
+                        {senderInfo.role && senderInfo.role.toLowerCase() !== senderInfo.name.toLowerCase() && (
+                          <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-zinc-700/50">
+                            {senderInfo.role}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className={cn(
+                        "text-xs sm:text-sm leading-relaxed mb-2.5 line-clamp-2",
+                        !n.isRead ? "text-slate-600 dark:text-slate-300 font-medium" : "text-slate-400 dark:text-slate-500"
+                      )}>
+                        {n.message}
+                      </p>
 
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -307,7 +324,8 @@ export default function TeacherNotificationsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
               
               {/* Pagination */}
               {totalPages > 1 && (

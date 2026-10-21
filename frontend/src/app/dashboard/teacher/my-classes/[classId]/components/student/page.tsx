@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Toolbar, StudentFilters } from './components/Toolbar';
 import { StudentTable } from './components/StudentTable';
@@ -15,6 +15,7 @@ import { TabSkeleton } from '../TabSkeleton';
 
 export default function StudentsPage() {
   const params = useParams();
+  const router = useRouter();
   const classId = params.classId as string;
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,6 +28,7 @@ export default function StudentsPage() {
     queryKey: ['class-detail', classId],
     queryFn: () => teacherService.getClassDetail(classId),
     enabled: !!classId,
+    staleTime: 1000 * 60 * 5,
   });
 
   const classInfo = classDetailData?.classInfo;
@@ -36,6 +38,7 @@ export default function StudentsPage() {
     queryKey: ['class-students', classId],
     queryFn: () => teacherService.getStudents({ classId, page: 1, limit: 500 }),
     enabled: !!classId,
+    staleTime: 1000 * 60 * 5,
   });
 
   const allStudents: Student[] = useMemo(() => (data?.students ?? []).map((s: {
@@ -239,7 +242,7 @@ export default function StudentsPage() {
       ) : (
         <StudentTable 
           students={paginated} 
-          onView={() => {}} 
+          onView={(student) => router.push(`/dashboard/teacher/students/${student.id}`)} 
           onCall={() => {}} 
           viewMode={viewMode} 
           startIndex={(currentPage - 1) * itemsPerPage} 

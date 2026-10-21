@@ -39,6 +39,7 @@ export default function AssignmentsPage() {
     queryKey: ['class-assignments', classId],
     queryFn: () => teacherService.getClassAssignments(classId),
     enabled: !!classId,
+    staleTime: 1000 * 60 * 2,
   })
 
   const assignments: Assignment[] = useMemo(() => {

@@ -10,8 +10,10 @@ import { teacherService } from '@/lib/api/services/teacherService';
 import { examService } from '@/lib/api/services/examService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { generatePDF } from '@/utils/pdfGenerator';
 import { ExamsTableSkeleton } from './ExamsSkeleton';
-import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen, LayoutGrid, List } from 'lucide-react';
+import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen, LayoutGrid, List, Info, ChevronDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,7 @@ export default function ExamsQuizzesOverview() {
   const [createCategory, setCreateCategory] = useState<'EXAM' | 'QUIZ' | 'CA'>('EXAM');
   const [examToDelete, setExamToDelete] = useState<Exam | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -217,6 +220,158 @@ export default function ExamsQuizzesOverview() {
     }).length;
   }, [filteredData, user?.id]);
 
+  const activeSchoolId = filterId || user?.schools?.[0]?.schoolId || (user as any)?.tenantId || '';
+  const { data: schoolProfile } = useSchoolProfile(activeSchoolId);
+
+  const handleExportPDF = async () => {
+    if (!filteredData || filteredData.length === 0) {
+      toast.warning("No assessment records found to export.");
+      return;
+    }
+    setIsExporting(true);
+    const toastId = toast.loading("Generating Assessments PDF...", { autoClose: false });
+
+    try {
+      const tabLabels: Record<string, string> = {
+        'exams': 'Exams',
+        'quizzes': 'Quizzes',
+        'subject-papers': 'Subject Papers',
+        'ca': 'Continuous Assessment (CA)',
+        'assignment': 'Assignments',
+      };
+      const currentTabLabel = tabLabels[activeTab] || 'Assessments';
+
+      const selectedClassName = classesData?.find((c: any) => c.id === filters.class)?.name || 'All Classes';
+      const selectedSubjectName = subjectsData?.find((s: any) => (s.id || s.subjectId) === filters.subject)?.name || 'All Subjects';
+
+      const profileForExport = schoolProfile || {
+        name: selectedSchoolName && selectedSchoolName !== 'Personal Account' ? selectedSchoolName : (user?.schools?.[0]?.name || 'School'),
+        schoolLogo: schoolProfile?.logo || schoolProfile?.schoolLogo || '/schoolhub.png',
+        address: schoolProfile?.address || ''
+      };
+
+      const metaData = [
+        { label: 'Assessment Category', value: currentTabLabel },
+        { label: 'Target Class', value: selectedClassName },
+        { label: 'Subject Scope', value: selectedSubjectName },
+        { label: 'Status Filter', value: filters.status ? filters.status.toUpperCase() : 'All Statuses' },
+        { label: 'Total Records', value: `${filteredData.length} records` },
+        { label: 'Generated On', value: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) },
+      ];
+
+      const tableData = filteredData.map((item: any, idx: number) => {
+        const title = item.title || item.name || 'Untitled';
+        const cat = item.category || (activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM');
+        const subName = item.subject?.name || item.subjectExamPapers?.[0]?.subjectPaper?.subject?.name || '-';
+        const clsName = item.class?.name || classesData?.find((c: any) => c.id === item.classId)?.name || '-';
+        const marks = item.totalMarks !== undefined ? String(item.totalMarks) : '-';
+        const duration = item.durationMinutes ? `${item.durationMinutes}m` : '-';
+        const status = (item.status || 'DRAFT').toUpperCase();
+        const date = item.createdAt || item.startDate 
+          ? new Date(item.createdAt || item.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : '-';
+        return [
+          String(idx + 1),
+          title,
+          cat,
+          subName,
+          clsName,
+          marks,
+          duration,
+          status,
+          date
+        ];
+      });
+
+      const schoolSafeName = (profileForExport.name || 'School').replace(/[^a-zA-Z0-9]/g, '_');
+      await generatePDF({
+        title: `${profileForExport.name || 'School'} - Assessment Directory`,
+        filename: `${schoolSafeName}_Assessments_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`,
+        schoolProfile: profileForExport,
+        metaData,
+        tableHeaders: [['#', 'Title', 'Category', 'Subject', 'Class', 'Marks', 'Duration', 'Status', 'Date']],
+        tableData,
+        orientation: 'landscape'
+      });
+
+      toast.update(toastId, { render: "PDF Exported Successfully!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast.update(toastId, { render: "Failed to export PDF", type: "error", isLoading: false, autoClose: 3000 });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!filteredData || filteredData.length === 0) {
+      toast.warning("No assessment records found to export.");
+      return;
+    }
+
+    const tabLabels: Record<string, string> = {
+      'exams': 'Exams',
+      'quizzes': 'Quizzes',
+      'subject-papers': 'Subject Papers',
+      'ca': 'Continuous Assessment (CA)',
+      'assignment': 'Assignments',
+    };
+    const currentTabLabel = tabLabels[activeTab] || 'Assessments';
+
+    const profileForExport = schoolProfile || {
+      name: selectedSchoolName && selectedSchoolName !== 'Personal Account' ? selectedSchoolName : (user?.schools?.[0]?.name || 'School'),
+      address: schoolProfile?.address || ''
+    };
+
+    const schoolName = profileForExport.name || 'School';
+    const schoolAddress = profileForExport.address || '';
+    const headers = ['S/N', 'Title', 'Category', 'Subject', 'Class', 'Total Marks', 'Duration (mins)', 'Status', 'Date'];
+    
+    const rows = filteredData.map((item: any, idx: number) => {
+      const title = (item.title || item.name || 'Untitled').replace(/"/g, '""');
+      const cat = item.category || (activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM');
+      const subName = (item.subject?.name || item.subjectExamPapers?.[0]?.subjectPaper?.subject?.name || '-').replace(/"/g, '""');
+      const clsName = (item.class?.name || classesData?.find((c: any) => c.id === item.classId)?.name || '-').replace(/"/g, '""');
+      const marks = item.totalMarks !== undefined ? item.totalMarks : '-';
+      const duration = item.durationMinutes || '-';
+      const status = (item.status || 'DRAFT').toUpperCase();
+      const date = item.createdAt || item.startDate 
+        ? new Date(item.createdAt || item.startDate).toLocaleDateString('en-GB')
+        : '-';
+      return [
+        idx + 1,
+        `"${title}"`,
+        `"${cat}"`,
+        `"${subName}"`,
+        `"${clsName}"`,
+        `"${marks}"`,
+        `"${duration}"`,
+        `"${status}"`,
+        `"${date}"`
+      ];
+    });
+
+    const csvContent = [
+      `"${schoolName}"`,
+      `"${schoolAddress}"`,
+      `"Assessment Category: ${currentTabLabel}"`,
+      `"Export Date: ${new Date().toLocaleDateString('en-GB')}"`,
+      '',
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const schoolSafeName = schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${schoolSafeName}_Assessments_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV Exported Successfully!");
+  };
+
   return (
     <main className="w-full space-y-6 sm:space-y-8 py-2">
       <div className="flex flex-col flex-1 w-full">
@@ -225,6 +380,9 @@ export default function ExamsQuizzesOverview() {
           onCreateNew={handleCreateNew}
           onAddPaper={() => setIsAddPaperModalOpen(true)}
           activeTab={activeTab}
+          onExportPDF={handleExportPDF}
+          onExportCSV={handleExportCSV}
+          isExporting={isExporting}
         />
 
         {/* Top Stat Cards — 2 Columns on Mobile */}
@@ -353,6 +511,22 @@ export default function ExamsQuizzesOverview() {
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
           />
+
+          {/* Teacher Tip: Click Dropdown to see assigned subject papers */}
+          {activeTab !== 'subject-papers' && activeTab !== 'assignment' && (
+            <div className="mt-4 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 dark:border-emerald-500/15 flex items-start sm:items-center gap-3 text-slate-700 dark:text-slate-300">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 shrink-0 shadow-2xs">
+                <Info size={16} strokeWidth={2.5} />
+              </div>
+              <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                <span className="font-black text-emerald-700 dark:text-emerald-400">Teacher Tip:</span> Click the{' '}
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-emerald-500/30 font-bold text-emerald-700 dark:text-emerald-300 text-xs shadow-2xs">
+                  <ChevronDown size={13} className="inline stroke-[2.5]" /> dropdown
+                </span>{' '}
+                on any exam to view the specific subject papers, question counts, and instructors assigned to you. Click any assessment card to manage its papers.
+              </p>
+            </div>
+          )}
 
           <div className="mt-4 sm:mt-6">
             <AnimatePresence mode="wait">

@@ -39,6 +39,271 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, October 21, 2026 (Full Project Build Verification & Fixes)
+
+- **Build & Compilation Audit ([notification.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/notification.controller.ts), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/notifications/page.tsx))**:
+    - [x] **Backend Type Check**:
+        - Resolved TS2367 comparison error in `notification.controller.ts` by safely narrowing `n.type` with string type casting.
+        - Verified `npx tsc --noEmit` on the backend: **0 errors**.
+    - [x] **Frontend Production Build**:
+        - Resolved missing outer card `</div>` nesting syntax error in `TeacherNotificationsPage` (`frontend/src/app/dashboard/teacher/notifications/page.tsx`).
+        - Successfully executed full Next.js production build (`npm run build`):
+            - Compiled successfully in 98s.
+            - Finished TypeScript validation in 2.4min with **0 errors**.
+            - Generated all 195 static and dynamic routes with **0 errors**.
+
+### Wednesday, October 21, 2026 (Alert Sender Attribution & Resolution Fix)
+
+- **Alert Sender Attribution & Resolution ([notification.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/notification.controller.ts), [class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts), [notificationSender.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/utils/notificationSender.ts), [MessagesAnnouncements.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/MessagesAnnouncements.tsx), [DashboardPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/DashboardPage.tsx), [NotificationDetailModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/notifications/NotificationDetailModal.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/notifications/page.tsx))**:
+    - [x] **Backend Sender Enrichment**:
+        - Updated `getMyNotifications` in `notification.controller.ts` to include `linkRequest` relations (requester student, teacher, parent, school).
+        - Added batch lookups for notifications with `senderType` and `senderId` to resolve the actual sender's name (`Student.name`, `Teacher.name`, `Parent.fullName`, `Admin.name`, `School.name`).
+        - Enriched each notification object and its `meta` payload with `senderName` and `senderRole`.
+    - [x] **Class Announcement Sender Retention**:
+        - Updated `sendClassAnnouncementService` in `class.service.ts` to resolve the broadcaster's name and role and attach them into `meta.senderName` and `meta.senderRole`.
+    - [x] **Centralized Frontend Sender Resolver**:
+        - Created `resolveNotificationSender` in `frontend/src/lib/utils/notificationSender.ts` supporting `senderName`, `senderRole`, link request requester data, meta entity fields, and intelligent regex extraction from message patterns.
+    - [x] **Dashboard Inbox & Alerts Update**:
+        - Removed hardcoded fallback `'System'` / `'School'` in `DashboardPage.tsx` and `MessagesAnnouncements.tsx`.
+        - Added clean sender name with role badge pills (`Student`, `Teacher`, `Parent`, `School Admin`).
+    - [x] **Detail Modal & Feed Cards**:
+        - Added dedicated Sender Attribution cards in `NotificationDetailModal` and notification feed cards in `TeacherNotificationsPage`.
+
+### Wednesday, October 21, 2026 (Teacher Dashboard Inbox & Alerts Activated)
+
+- **Teacher Inbox & Alerts ([MessagesAnnouncements.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/MessagesAnnouncements.tsx), [DashboardPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/DashboardPage.tsx))**:
+    - [x] **Unlocked & Activated Live Communications Feed**:
+        - Replaced the hardcoded "Locked" and "Coming Soon" construction placeholder in `MessagesAnnouncements`.
+        - Connected real live notifications and alerts from `useNotifications`.
+        - Added category filter pills: `All`, `Alerts` (`Megaphone`), and `Direct Messages` (`Mail`).
+        - Formatted relative timestamps using `date-fns/formatDistanceToNow`.
+        - Added unread badge indicator with pulsating state.
+    - [x] **Interactive Reading & Optimistic Read State**:
+        - Integrated `NotificationDetailModal` directly into the component. Clicking any alert or message opens its full details and automatically marks it as read via `useMarkAsRead`.
+    - [x] **Connected Broadcast Action**:
+        - Replaced the disabled compose button with an active **"Broadcast Alert / Announce"** button wired to `TeacherAnnouncementModal`.
+
+### Wednesday, October 21, 2026 (Teacher Assessment & Grades Pad Export Standardization)
+
+- **Teacher Assessment & Grades Export Alignment ([ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/components/ExamsQuizzesOverview.tsx), [PageHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/components/PageHeader.tsx), [GradesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx), [TableToolbar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/TableToolbar.tsx), [GradesTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesTable.tsx), [TeacherPaperDetailPage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/papers/%5Bid%5D/page.tsx))**:
+    - [x] **Assessment Central Export ([ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/components/ExamsQuizzesOverview.tsx), [PageHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/components/PageHeader.tsx))**:
+        - Added the Admin-style Export dropdown menu right alongside `Create New` in `PageHeader`.
+        - Options: **Export as PDF** (rose FileText icon) and **Export as CSV** (emerald FileSpreadsheet icon) with real-time spin state.
+        - PDF Export uses central `generatePDF` utility (`pdfGenerator.ts`) incorporating school logo, active category tab, class/subject/status filter metadata, and formatted landscape assessment tables.
+        - CSV Export generates formatted RFC 4180 CSV blob with institutional headers and metadata.
+    - [x] **Continuous Assessment & Grades Pad Export ([GradesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx), [TableToolbar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/TableToolbar.tsx), [GradesTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesTable.tsx))**:
+        - Replaced dead `onExport={() => {}}` stub with full PDF and CSV export logic.
+        - Upgraded `TableToolbar` button to Admin's clean `DropdownMenu` format with `Export as PDF` and `Export as CSV`.
+        - Exports all filtered student grades (Student name, Student ID, Subject/Paper, Type, Score, Percentage, Letter Grade, Status, Remarks).
+    - [x] **Paper Detail Grades Export ([TeacherPaperDetailPage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/papers/%5Bid%5D/page.tsx))**:
+        - Replaced legacy `@react-pdf/renderer` single button with Admin-style DropdownMenu offering both `Export as PDF` (via `generatePDF`) and `Export as CSV`.
+        - Fixed undefined school reference by querying `useSchoolProfile`.
+
+### Wednesday, October 21, 2026 (Teacher Dashboard Announce & View Weekly Report Buttons Activated)
+
+- **Teacher Hero & Dashboard Actions ([TeacherHero.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/TeacherHero.tsx), [DashboardPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/DashboardPage.tsx), [TeacherAnnouncementModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/TeacherAnnouncementModal.tsx), [TeacherWeeklyReportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/TeacherWeeklyReportModal.tsx))**:
+    - [x] **"Announce" Button Wired**:
+        - Replaced dead button in `TeacherHero` with interactive modal trigger connected to `onAnnounce`.
+        - Created `TeacherAnnouncementModal` allowing teachers to:
+          - Select target cohort: "All My Assigned Classes" or a specific assigned class.
+          - Multi-select recipient audience (`Students`, `Parents`).
+          - Select priority (`NORMAL`, `HIGH`, `URGENT`) with color-coded chips.
+          - Input announcement title and rich message body with real-time character counter.
+          - Concurrently dispatches announcements via `classService.sendAnnouncement`.
+    - [x] **"View Weekly Report" Button Wired**:
+        - Replaced dead button in `TeacherHero` with interactive modal trigger connected to `onViewWeeklyReport`.
+        - Created `TeacherWeeklyReportModal` rendering:
+          - Executive summary for the current academic week (`Monday – Friday` date range).
+          - Live metric cards: Weekly Attendance Rate (+3.2% trend), Class Cohort Avg Score, Total Enrolled Students, and Upcoming Lessons.
+          - Academic Grade Distribution visualization (A, B, C, D, F progress bars with percentage share).
+          - Assigned Classes & Curriculum Cohorts summary table.
+          - **Download PDF Report**: Generates and downloads publication-ready PDF using `generatePDF` from `@/utils/pdfGenerator.ts`.
+          - **Print**: In-browser print trigger.
+    - [x] **Dashboard Header Dynamic Date & Quick Tools**:
+        - Replaced hardcoded date `"MONDAY • JUNE 29, 2026"` in `TeacherHero` with dynamic locale-formatted date string.
+        - Connected Quick Tool "Reports (Export Data)" to open `TeacherWeeklyReportModal`.
+        - Connected Quick Tool "Grade (New Entry)" to navigate to `/dashboard/teacher/exams&quizzes`.
+        - Connected "View All" on recent assignments to `/dashboard/teacher/exams&quizzes` and alerts to `/dashboard/teacher/notifications`.
+    - [x] **Build Verification**:
+        - Ran `npx tsc --noEmit` on `frontend` — compiled with **0 errors**.
+
+### Wednesday, October 21, 2026 (Teacher Class Details Page Mobile Responsiveness & Tabs Optimization)
+
+- **Teacher Class Detail Page Overhaul ([ClassDetails.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/ClassDetails.tsx), [TabNavigation.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/TabNavigation.tsx), [TeacherTimetableGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/timetable/TeacherTimetableGrid.tsx), [AttendanceTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/attendance/components/AttendanceTable.tsx), [StudentTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/student/components/StudentTable.tsx), [Overview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/Overview.tsx))**:
+    - [x] **Tab Navigation Mobile Optimization**:
+        - Converted tab bar from `inline-flex flex-wrap` (which broke 7 buttons across 4-5 jagged rows on mobile) into a smooth, horizontal scrollable container (`overflow-x-auto no-scrollbar`).
+        - Positioned tab icons strictly to the left of the tab label (`[Icon] [Text]`).
+        - Fixed dark-mode active text contrast: changed active tab text from `text-white dark:text-slate-900` on emerald background to high-contrast `text-white` across all themes.
+    - [x] **Timetable Tab Mobile Day Schedule View**:
+        - Engineered an adaptive mobile view switcher in `TeacherTimetableGrid` with `Daily Schedule` (Card List) vs `Weekly Matrix` (Full Grid).
+        - Added day-of-week selector pills (`[Mon] [Tue] [Wed] [Thu] [Fri]`) with a live pulse indicator for Today.
+        - Built period schedule cards showing 12-hour formatted time badges, subject name, teacher badge, room pill, `Live Now` pulse indicator, and recess/break highlights.
+        - Made session and term filter buttons wrap cleanly on mobile screens (`flex-wrap gap-2 sm:gap-3`).
+    - [x] **Attendance Tab Mobile & Teacher Route Integration**:
+        - Updated `AttendanceTable.tsx` to dynamically detect `/dashboard/teacher` pathname via `usePathname()`, routing student profile clicks to `/dashboard/teacher/students/...` instead of admin route.
+        - Maintained responsive mobile card view (`md:hidden`) with full badge and comment preview.
+    - [x] **Student Tab Mobile View & Navigation**:
+        - Refactored `ListRow` in `StudentTable.tsx` with responsive layout: on phones (`< md`), adapts from rigid 12-column grid into an identity header (avatar, name, ID, status badge, eye action) with a 3-metric subgrid (Class, Performance, Attendance).
+        - Connected `onView` prop in `StudentsPage` to navigate to `/dashboard/teacher/students/${student.id}`.
+        - Added standard `staleTime: 1000 * 60 * 5` on student list queries.
+    - [x] **Overview, Exams, and Grades Tabs**:
+        - Made `Overview.tsx` grid gaps and margins responsive (`mt-4 sm:mt-8 gap-4 sm:gap-6 lg:gap-8`).
+        - Supported `params.classId` as primary route param for stats & attendance summary queries.
+        - Added explicit `staleTime: 1000 * 60 * 2` on exam and grade list queries to comply with query caching rules.
+    - [x] **Build Verification**:
+        - Ran `npx tsc --noEmit` on `frontend` — compiled with **0 errors**.
+
+### Wednesday, October 21, 2026 (Teacher Student Detail Page Mobile Responsiveness & Tabs Optimization)
+
+- **Teacher Student Profile Page Enhancements ([students/[studentId]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/students/[studentId]/page.tsx) & [AttendanceCalendar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/students/[studentId]/components/attendance/AttendanceCalendar.tsx))**:
+    - [x] **Tab Navigation Icons & Layout**:
+        - Attached Lucide icon components to all profile tabs in `TABS` array (`Overview`, `Academic`, `Attendance`, `Time Table`, `Behaviour`, `History`).
+        - Positioned tab icons strictly to the left of the tab label (`<Icon size={16} /> <span>{tab.label}</span>`) with active emerald styling and smooth horizontal scroll padding (`no-scrollbar`).
+    - [x] **Timetable Tab Mobile Day Schedule View**:
+        - Engineered an adaptive mobile view in `ScheduleGrid` with interactive `Daily View` vs `Weekly Matrix` toggle.
+        - In Daily View, added day-of-week selector pills (`[Mon 20] [Tue 21] [Wed 22] [Thu 23] [Fri 24]`) displaying period cards with time pill badges, subject tags (`Mathematics`, `English`), and room numbers (`RM 204`), completely eliminating the need for unwieldy 1000px horizontal scrolling on phones.
+        - Preserved full 12-hour matrix view on desktop and when toggled.
+    - [x] **Attendance Tab Mobile Optimization**:
+        - Converted horizontal stat overflow cards into a clean 2x2 grid on mobile (`grid-cols-2 sm:grid-cols-4`).
+        - Optimized monthly calendar grid cells (`h-14 sm:h-20 md:h-24`) with status dot indicators on mobile viewports so long status labels never wrap awkwardly.
+        - Added responsive modal sizing (`max-w-[calc(100vw-2rem)] sm:max-w-md`) for attendance status edit dialog.
+    - [x] **General Mobile Layout & Container Paddings**:
+        - Replaced `px-0 md:px-12` across Overview, Attendance, and Timetable tabs with responsive `px-4 sm:px-6 lg:px-12`, preventing cards from stretching flush against mobile screen edges.
+        - Refined Hero Profile Card with responsive padding (`p-5 sm:p-8 md:p-12`), avatar sizing, and touch-adapted contact button.
+        - Made `SectionCard` headers and `WeekControls` flex-wrap cleanly on small phone screens.
+    - [x] **Build Verification**:
+        - Ran `npx tsc --noEmit` on `frontend` — compiled with **0 errors**.
+
+### Wednesday, October 21, 2026 (Exam & Paper Preview Pop-up Mobile Redesign)
+
+- **Exam & Paper Preview Modal Mobile Overhaul ([PaperPreviewModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/PaperPreviewModal.tsx), [ExamPreviewPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/preview/components/ExamPreviewPage.tsx), [ExamInfo.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/preview/components/ExamInfo.tsx), [QuestionViewer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/preview/components/QuestionViewer.tsx), [ExamSidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/preview/components/ExamSidebar.tsx))**:
+    - [x] **Full-Bleed Mobile Modal**:
+        - Updated `PaperPreviewModal` `DialogContent` to `w-full max-w-full sm:max-w-[96vw] sm:w-[96vw] h-full sm:h-[95vh] rounded-none sm:rounded-3xl [&>button]:hidden`, converting the desktop floating dialog into a native-feeling full-screen experience on mobile devices without clipping gutters.
+    - [x] **Sticky App Navigation Header**:
+        - Replaced bulky static header with a mobile-responsive sticky top app bar (`sticky top-0 z-30 backdrop-blur-md`).
+        - Integrated clean Exit Preview button (`<ArrowLeft />`), centered paper title with subject and `Preview` mode badge, live ticking timer chip, and mobile question map sheet trigger.
+    - [x] **Mobile Bottom Sheet Question Navigator**:
+        - Integrated Radix UI `Sheet` for small screens, allowing teachers to view the full question grid (`Q1`, `Q2`...) with answered badges from anywhere on the page without scrolling down.
+    - [x] **Quick Question Jump Scrubber**:
+        - Added a horizontal scrollable question pill strip right above questions on mobile screens for rapid single-tap navigation between questions.
+    - [x] **Responsive Exam Info 2x2 Grid**:
+        - Converted 4-row vertical stack into an optimized 2x2 grid (`grid-cols-2 lg:grid-cols-4`) on mobile, saving vertical space.
+        - Enhanced with icons for Class, Duration, Subject, and Questions count, plus compact simulation notice.
+    - [x] **Question Viewer & LaTeX Overflow Protection**:
+        - Added LaTeX equation horizontal scrolling container (`overflow-x-auto`) to safeguard formula blocks from breaking mobile screen layouts.
+        - Redesigned options as tap-accessible cards with letter badges (`A`, `B`, `C`, `D`), high-contrast answers reveal toggle (`<Eye />`), and responsive navigation controls (`Prev` / `Next`).
+    - [x] **Questions Map & Sidebar Refinement**:
+        - Refined grid styling with 5-column touch buttons, visual legend, and answered vs remaining statistics.
+
+### Wednesday, October 21, 2026 (Teacher Paper Detail Page Mobile Optimization & Tab Icons Alignment)
+
+- **Teacher Paper Detail Page Enhancements ([papers/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/papers/[id]/page.tsx) & [tabs.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/tabs.tsx))**:
+    - [x] **Tab Icon Left Alignment**:
+        - Updated `TabsTrigger` wrapper in `components/ui/tabs.tsx` to `<span className="relative z-10 flex items-center justify-center gap-2 w-full">` to maintain inline flex alignment across all tabs.
+        - Positioned icons (`<FileText />` and `<GraduationCap />`) directly to the left of the tab title text (`[Icon] [Text] [Count Badge]`) in `papers/[id]/page.tsx`.
+    - [x] **Grades Tab Mobile Grid View**:
+        - Added reactive window resize listener defaulting `gradesViewMode` to `'grid'` on mobile viewports (< 768px).
+        - Enforced responsive grid container (`gradesViewMode === 'grid' ? "grid" : "grid md:hidden"`), guaranteeing card grid presentation on mobile regardless of desktop table settings.
+        - Styled individual mobile grade cards with left status accent strips (`border-l-emerald-500` / `border-l-rose-500`), student numbering chips, score breakdown, progress bar, inline edit score controls, and full detail popup modal trigger.
+        - Concealed the wide HTML table on mobile (`hidden md:block`) and upgraded the empty grades state to a responsive card.
+        - Set `max-w-[calc(100vw-2rem)]` on the grade detail modal dialog for small phone displays.
+    - [x] **Build & Type Safety**:
+        - Ran `npx tsc --noEmit` on `frontend` — compiled with **0 errors**.
+
+### Wednesday, October 21, 2026 (Exam Papers Page Mobile Optimization & Grid View Implementation)
+
+- **Teacher Paper Detail Page Rules of Hooks Fix ([papers/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/papers/[id]/page.tsx))**:
+    - [x] Fixed React Rules of Hooks violation (`React has detected a change in the order of Hooks called by TeacherPaperDetailPage`).
+    - [x] Moved all `useMemo` hooks (`onlineResults`, `gradesResults`, `allResults`, `paginatedResults`, `avgScore`, `highBox`, `lowBox`) and their calculations above the early returns (`isLoadingPaper`, `isErrorPaper || !paper`, `!canAccess`), guaranteeing an identical, unconditional hook invocation order on every render.
+    - [x] Verified complete TypeScript compilation (`npx tsc --noEmit`) with **0 errors**.
+
+- **Teacher Exam Papers Page Mobile Overhaul & Grid View Integration ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/[examId]/papers/page.tsx))**:
+    - [x] **Grid & List Display Toggle**:
+        - Added `viewMode` state (`'list' | 'grid'`) with automatic detection to default to Grid view on mobile screens (`window.innerWidth < 768`) and List view on desktop screens.
+        - Integrated sleek switch buttons matching the Qefas Hub design system (`<List />` and `<LayoutGrid />`).
+    - [x] **Grid View Cards for Subject Papers**:
+        - Designed a modern, responsive 2-column card grid (`grid grid-cols-1 sm:grid-cols-2 gap-4`) for subject papers.
+        - Equipped each card with top status accent strip, `#01` number badges, status badges, `Your Subject` / `Creator` / `Locked` indicators, explicit `Edit` button, `Unpublish` & `Unlink` buttons, paper title, subject pill, and bottom metrics strip (duration, marks, teacher, updated date).
+    - [x] **Mobile First Layout Reordering**:
+        - Reordered page DOM on mobile (`order-1 lg:order-2` for Papers, `order-2 lg:order-1` for sidebar) so teachers immediately view and edit existing subject papers without needing to scroll past the lengthy creation form.
+        - Added a quick "Add Paper" mobile button in the header that smoothly scrolls down to the creation section.
+    - [x] **Dark Mode Button Contrast Fix**:
+        - Replaced `bg-primary text-white` (which resolved to near-white on white text due to dark mode `--primary: oklch(0.922 0 0)`) with an emerald theme (`text-white bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 border border-emerald-500/40 dark:border-emerald-400/30`), ensuring high contrast and visual consistency across themes.
+    - [x] **Exam Participants Grid View for Mobile**:
+        - Added `participantsViewMode` (`'table' | 'grid'`) state defaulting to `'grid'` on mobile screens (`window.innerWidth < 768`) and `'table'` on desktop.
+        - Added interactive Table/Grid toggle buttons in the Exam Participants header.
+        - Designed a responsive grid of participant cards displaying student avatar, name, student code, attempt status pill, grade approval status, total score / marks, percentage, papers completed progress bar, and touch-accessible "Clear Record" action button.
+    - [x] **Hero Header & Participants Responsiveness**:
+        - Converted Hero Header stats into a 2x2 responsive grid on mobile screens (`grid grid-cols-2 sm:flex`) to eliminate horizontal overflow.
+        - Refined Hero Header typography, paddings, and button wrapping across phones and tablets.
+        - Ensured Participants table action buttons ("Clear") are always visible on touch screens (`opacity-100 sm:opacity-0`).
+    - [x] **Build Verification**:
+        - Ran `npx tsc --noEmit` on `frontend` — compiled with **0 errors**.
+
+### Wednesday, October 21, 2026 (Teacher Subject Papers Edit Access & Subject Assignment Integration)
+
+- **Teacher Subject Paper Edit Button & Permission Matching ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/[examId]/papers/page.tsx) & [exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts))**:
+    - [x] **Backend Subject Teacher Relationship Population**:
+        - Updated `getExamPapersService` in `exam.service.ts` to include `subject.teacherSubjects.teacher` when fetching exam subject papers.
+        - Dynamically populated `assignedTeachers` for each paper with the paper creator, subject lead teacher (`subject.teacher`), and teachers mapped via `subject.teacherSubjects`.
+    - [x] **Frontend Permission Evaluation & Edit Button**:
+        - Added teacher subject assignment query via `teacherService.getSubjects` to retrieve the current teacher's assigned subjects (`mySubjectIds`).
+        - Expanded `canAccess` permissions to grant access if the logged-in teacher is assigned to the paper's subject (via subject lead teacher, `teacherSubjects`, or `mySubjectIds`).
+        - Unlocked the subject paper card for teachers assigned to that subject (removing false `cursor-not-allowed` / `Locked` states).
+        - Added an explicit **Edit** button (`<Edit size={14} /> Edit`) alongside "Preview" and "Start Grading" on subject papers assigned to the teacher, routing to `/dashboard/teacher/exams&quizzes/papers/${paper.id}`.
+        - Added descriptive `Your Subject` badge tags to clarify why the paper is editable for the teacher.
+        - Fixed card click handler to navigate to the paper edit view `/dashboard/teacher/exams&quizzes/papers/${paper.id}`.
+    - [x] **Type Safety & Build Verification**:
+        - Ran `npx tsc --noEmit` on both backend and frontend — all passed with 0 errors.
+
+### Wednesday, October 21, 2026 (Teacher Exams & Quizzes Page Enhancement)
+
+- **Teacher Assessment List & Grid View Navigation Overhaul ([ExamsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/components/ExamsTable.tsx))**:
+    - [x] **Card & Row Direct Navigation**:
+        - Wired assessment cards in Grid view and assessment rows in List view to navigate to `/dashboard/teacher/exams&quizzes/[examId]/papers` upon click.
+        - Preserved `e.stopPropagation()` on nested interactive actions (Edit, Preview, Delete, and expanded paper cards) to avoid triggering parent navigation.
+        - Created redirect page at `[examId]/paper/page.tsx` redirecting to `[examId]/papers` to seamlessly support both singular `/paper` and plural `/papers` URLs.
+    - [x] **List & Grid Numbering Badges**:
+        - Added styled font-mono numbered badge chips (`#01`, `#02`, etc.) to both List and Grid views based on `(currentPage - 1) * itemsPerPage + idx + 1`.
+        - Added numbered badge chips (`#01`, `#02`, etc.) to each subject paper inside the expanded subject paper breakdown.
+    - [x] **Informative Teacher Tip & Dropdown Enhancements ([ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams%26quizzes/components/ExamsQuizzesOverview.tsx))**:
+        - Added an informative Teacher Tip banner above assessment listings informing teachers: *"Click the dropdown on any exam to view the specific subject papers, question counts, and instructors assigned to you. Click any assessment card to manage its papers."*
+        - Upgraded the multi-paper exam dropdown toggle button with explicit styling, hover states, and informative tooltips.
+        - Enabled direct navigation to the paper edit view when clicking any expanded subject paper.
+
+### Wednesday, October 21, 2026 (Notification Setup Comprehensive Audit & New Device Detection Overhaul)
+
+- **Root Cause Resolution for Missing New Device Login Notifications**:
+    - [x] **Device Fingerprint Granularity ([auth.device.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.device.ts))**:
+        - Previously, `finalDeviceModel` in [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) collapsed all Windows computers into `"Windows PC"` and all Macs into `"Mac"`. When logging in from another computer, incognito window, or different browser (Chrome, Edge, Firefox, Brave), `existingDeviceCount` evaluated to `> 0`, falsely treating new devices as existing and silently dropping notifications and emails.
+        - Created `extractDeviceInfo` utility generating rich, distinct identifiers including browser name (e.g., `"Windows PC (Chrome)"`, `"Windows PC (Firefox)"`, `"Mac (Safari)"`, `"Android Device (Chrome)"`).
+    - [x] **Centralized Device Verification & New Device Alert Dispatch ([auth.device.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.device.ts) & [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts))**:
+        - Implemented `verifyDeviceCookie`, `setDeviceVerifiedCookie`, and `processNewDeviceLogin`.
+        - Verified persistent 365-day `deviceVerified` cookie on web clients; if a user logs in from an unrecognized browser/computer without the cookie, `isNewDevice` triggers.
+        - Ensured that when `preAuthToken` OTP verification completes, `isPreAuthVerified: true` guarantees the "New Device Login Detected" in-app notification and email are dispatched immediately.
+        - Integrated device tracking and alerts across standard login, `login2FA`, and `googleAuth`.
+    - [x] **Notification Query & Role Fallback Enhancement ([notification.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/notification.controller.ts))**:
+        - Added full query parameter support for `limit` (1–100, default 50), `offset`, and `isRead` (`"true"` | `"false"`).
+        - Added institutional fallback matching: School Admins now receive notifications directed to their user account (`recipientId: userId`) as well as institutional notifications addressed to their school (`recipientType: "SCHOOL", recipientId: schoolId`).
+        - Updated `markNotificationAsRead`, `markAllNotificationsAsRead`, and `getUnreadCount` to support school-level notification matching.
+    - [x] **Frontend WebSocket Room Re-Subscription Guarantee ([SocketContext.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/context/SocketContext.tsx))**:
+        - Resolved issue where `SocketContext` checked `if (socket) return;` on re-render, failing to emit `join:user` if `currentUserId` resolved after the initial socket handshake.
+        - Added dedicated reactive subscription effect guaranteeing that `socket.emit("join:user", currentUserId)` is executed whenever `currentUserId` or socket connectivity activates/updates.
+    - [x] **Mobile App Device Tagging ([client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/Mobile/lib/api/client.ts))**:
+        - Appended `(Mobile App)` to the `x-device-model` header to clearly distinguish mobile app logins from mobile web browser sessions.
+    - [x] **Type Safety & Build Verification**:
+        - Ran `npx tsc --noEmit` across `backend`, `frontend`, and `Mobile` — all 3 passed with **0 errors**.
+
+### Wednesday, October 21, 2026 (Student Dashboard 7-Day Final Results Banner Gating)
+
+- **Student Dashboard Home Final Results Banner ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx))**:
+    - [x] **7-Day Recency Condition**:
+        - Replaced naive `hasPublishedResults` check (which showed the banner permanently if any results ever existed) with `hasRecentFinalResults`.
+        - Evaluates timestamps (`releaseDate`, `updatedAt`, `createdAt`) across all published subject results and group headers against a 7-day window (`Date.now() - timestamp <= 7 * 24 * 60 * 60 * 1000`).
+        - The green banner ("Final Results Available! Your published academic report card and term summaries are ready for review.") now only renders when a final result was published or updated within the last 7 days.
+    - [x] **Verification**:
+        - TypeScript check (`npx tsc --noEmit`) completed with **0 errors**.
+
 ### Wednesday, October 21, 2026 (Student & Admin Result Export Standardization & Subscription Tier Gating)
 
 - **Student Assignments Layout Optimization ([assignments/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/page.tsx))**:

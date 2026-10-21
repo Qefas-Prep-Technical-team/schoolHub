@@ -81,7 +81,7 @@ export function TabsTrigger({ value, children, className }: { value: string; chi
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 flex items-center justify-center gap-2 w-full">{children}</span>
     </button>
   );
 }

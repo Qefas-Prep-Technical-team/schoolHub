@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AttendanceRecord } from './types';
 
 interface AttendanceTableProps {
@@ -16,6 +17,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   onEdit,
   isLoading
 }) => {
+  const pathname = usePathname();
+  const isTeacher = pathname?.includes('/dashboard/teacher');
+  const studentBaseRoute = isTeacher ? '/dashboard/teacher/students' : '/dashboard/admin/students';
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -121,7 +126,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                   </td>
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                     <Link
-                      href={`/dashboard/admin/students/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
+                      href={`${studentBaseRoute}/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
                       className="hover:underline text-primary font-bold cursor-pointer"
                     >
                       {name}
@@ -163,7 +168,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <Link
-                    href={`/dashboard/admin/students/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
+                    href={`${studentBaseRoute}/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
                     className="hover:underline text-primary font-bold text-base truncate block"
                   >
                     {name}

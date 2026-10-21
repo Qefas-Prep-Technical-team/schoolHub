@@ -33,6 +33,11 @@ import { getIO } from "../../socket";
 import { createNotification } from "../notification/notification.service";
 import UAParser from "ua-parser-js";
 import {
+  extractDeviceInfo,
+  verifyDeviceCookie,
+  processNewDeviceLogin,
+} from "./auth.device";
+import {
   enforceStudentLimit,
   enforceTeacherLimit,
 } from "../subscription/quota.helpers";
@@ -1995,64 +2000,13 @@ export const login = async (req: Request, res: Response) => {
     const accessToken = generateAccessToken(user.id, actualRole);
     console.log("DEBUG: Access token generated");
 
-    // Extract device information for tracking
-    const userAgent = req.headers["user-agent"] || "";
-    const UAParserClass = UAParser as any;
-    const parser = new UAParserClass(userAgent);
-    const result = parser.getResult();
-
-    let finalDeviceModel = (req.headers["x-device-model"] as string);
-    if (!finalDeviceModel) {
-        if (result.device.model) {
-            finalDeviceModel = result.device.model;
-        } else if (result.os.name === 'iOS') {
-            finalDeviceModel = 'iPhone';
-        } else if (result.os.name === 'Android') {
-            finalDeviceModel = 'Android Device';
-        } else if (result.os.name === 'Windows') {
-            finalDeviceModel = 'Windows PC';
-        } else if (result.os.name === 'Mac OS') {
-            finalDeviceModel = 'Mac';
-        } else {
-            finalDeviceModel = result.browser.name || "Unknown Device";
-        }
-    }
-
-    const deviceInfo = {
-      deviceType:
-        (req.headers["x-device-type"] as string) ||
-        result.device.type ||
-        "desktop",
-      deviceModel: finalDeviceModel,
-      osVersion:
-        (req.headers["x-os-version"] as string) ||
-        (result.os.name
-          ? `${result.os.name} ${result.os.version || ""}`.trim()
-          : "Unknown OS"),
-      ipAddress:
-        (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
-          .toString()
-          .split(",")[0]
-          .trim() || "Unknown IP",
-    };
+    // Extract rich, accurate device and browser information
+    const deviceInfo = extractDeviceInfo(req);
 
     // Device Verification Check
-    // Mobile clients (React Native) cannot set/read cookies, so we skip the cookie-based
-    // device check for them. They are trusted via the x-device-type header.
-    // Web clients still go through the full device cookie + refreshToken validation.
     const isMobileClient = req.headers["x-device-type"] === "mobile";
-    let isDeviceVerified = isMobileClient || !!preAuthToken;
-
-    if (!isDeviceVerified && req.cookies?.deviceVerified) {
-      try {
-        const payload = jwt.verify(req.cookies.deviceVerified, process.env.JWT_SECRET || "default_secret") as any;
-        if (payload.userId === user.id) {
-          isDeviceVerified = true;
-        }
-      } catch (e) {
-        // Invalid or old "true" token
-      }
-    }
+    const hasValidDeviceCookie = verifyDeviceCookie(req, user.id);
+    let isDeviceVerified = isMobileClient || hasValidDeviceCookie || !!preAuthToken;
 
     if (!isDeviceVerified) {
       const validDevice = await prisma.refreshToken.findFirst({
@@ -2080,32 +2034,16 @@ export const login = async (req: Request, res: Response) => {
       }
     }
 
-    // Check if this device has ever been used by this user before
-    const existingDeviceCount = await prisma.refreshToken.count({
-      where: {
-        userId: user.id,
-        deviceModel: deviceInfo.deviceModel,
-        osVersion: deviceInfo.osVersion,
-      },
+    // Process new device login detection, real-time in-app notification, and security email
+    await processNewDeviceLogin({
+      req,
+      res,
+      userId: user.id,
+      userEmail: user.email,
+      userRole: actualRole,
+      deviceInfo,
+      isPreAuthVerified: !!preAuthToken,
     });
-
-    if (existingDeviceCount === 0) {
-      // Only alert if the user has logged in before (skip the very first login)
-      const totalPriorSessions = await prisma.refreshToken.count({
-        where: { userId: user.id },
-      });
-
-      if (totalPriorSessions > 0) {
-        await createNotification({
-          recipientType: actualRole as any,
-          recipientId: user.id,
-          type: "GENERAL",
-          title: "New Device Login Detected",
-          message: `We detected a new login to your account from a ${deviceInfo.deviceModel} on ${deviceInfo.osVersion}. If this wasn't you, please secure your account immediately by changing your password.`,
-        });
-        sendNewDeviceLoginEmail(user.email, deviceInfo).catch(console.error);
-      }
-    }
 
     const refreshToken = await generateRefreshToken(
       user.id,
@@ -2128,20 +2066,6 @@ export const login = async (req: Request, res: Response) => {
       sameSite: "strict",
       path: "/",
       maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    // Give them a persistent device token
-    const deviceToken = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || "default_secret",
-      { expiresIn: "365d" }
-    );
-    res.cookie("deviceVerified", deviceToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 365 * 24 * 60 * 60 * 1000,
     });
 
     // ===== Build response data =====
@@ -3408,46 +3332,8 @@ export const googleAuth = async (req: Request, res: Response) => {
       });
     }
 
-    // Extract device information for session tracking
-    const userAgent = req.headers["user-agent"] || "";
-    const UAParserClass = UAParser as any;
-    const parser = new UAParserClass(userAgent);
-    const result = parser.getResult();
-
-    let finalDeviceModel = (req.headers["x-device-model"] as string);
-    if (!finalDeviceModel) {
-      if (result.device.model) {
-        finalDeviceModel = result.device.model;
-      } else if (result.os.name === "iOS") {
-        finalDeviceModel = "iPhone";
-      } else if (result.os.name === "Android") {
-        finalDeviceModel = "Android Device";
-      } else if (result.os.name === "Windows") {
-        finalDeviceModel = "Windows PC";
-      } else if (result.os.name === "Mac OS") {
-        finalDeviceModel = "Mac";
-      } else {
-        finalDeviceModel = result.browser.name || "Unknown Device";
-      }
-    }
-
-    const deviceInfo = {
-      deviceType:
-        (req.headers["x-device-type"] as string) ||
-        result.device.type ||
-        "desktop",
-      deviceModel: finalDeviceModel,
-      osVersion:
-        (req.headers["x-os-version"] as string) ||
-        (result.os.name
-          ? `${result.os.name} ${result.os.version || ""}`.trim()
-          : "Unknown OS"),
-      ipAddress:
-        (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
-          .toString()
-          .split(",")[0]
-          .trim() || "Unknown IP",
-    };
+    // Extract rich device information
+    const deviceInfo = extractDeviceInfo(req);
 
     const tokenOrData = idToken || { googleId, email, name, emailVerified, inviteToken };
     const authResult = await googleAuthService(
@@ -3457,6 +3343,17 @@ export const googleAuth = async (req: Request, res: Response) => {
     );
 
     const { user, accessToken, refreshToken, token, isNewUser, userRole: actualRole, isPlatformStaff } = authResult as any;
+
+    if (user && !isNewUser) {
+      await processNewDeviceLogin({
+        req,
+        res,
+        userId: user.id,
+        userEmail: user.email,
+        userRole: actualRole,
+        deviceInfo,
+      });
+    }
 
     // Set HttpOnly cookies if accessed directly
     if (accessToken) {
@@ -4632,13 +4529,16 @@ export const login2FA = async (req: Request, res: Response) => {
     // Reuse login logic for tokens and response
     const accessToken = generateAccessToken(user.id, userType);
 
-    // basic device info (dummy for this specific route since we don't recalculate it all)
-    const deviceInfo = {
-      deviceType: "desktop",
-      deviceModel: "Unknown Browser",
-      osVersion: "Unknown OS",
-      ipAddress: "Unknown IP",
-    };
+    // Extract device info and process new device login tracking
+    const deviceInfo = extractDeviceInfo(req);
+    await processNewDeviceLogin({
+      req,
+      res,
+      userId: user.id,
+      userEmail: user.email,
+      userRole: userType,
+      deviceInfo,
+    });
     const refreshToken = await generateRefreshToken(
       user.id,
       userType,

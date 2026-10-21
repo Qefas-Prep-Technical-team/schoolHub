@@ -16,7 +16,7 @@ import { useParams } from "next/navigation";
 
 const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomingExams }) => {
   const params = useParams();
-  const classId = (params.id as string) || classData?.id;
+  const classId = (params.classId as string) || (params.id as string) || classData?.id;
   const { data: attendanceSummary, isLoading: isAttendanceSummaryLoading } = useClassAttendanceSummary(classId);
   const { data: stats, isLoading: isStatsLoading } = useClassStats(classId);
 
@@ -31,10 +31,10 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
   }));
 
   return (
-    <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+    <div className="mt-4 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
       
       {/* Left Column */}
-      <div className="lg:col-span-2 flex flex-col gap-8">
+      <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6 lg:gap-8">
         {/* Performance Chart */}
         <PerformanceChart 
           performanceTrend={stats?.performanceTrend} 
@@ -47,10 +47,10 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
       </div>
 
       {/* Right Column */}
-      <div className="lg:col-span-1 flex flex-col gap-8">
+      <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-6 lg:gap-8">
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6 lg:gap-8">
           <StatsCard 
             title="Class Average Score" 
             value={stats ? `${stats.overallAvgScore}%` : "0%"} 

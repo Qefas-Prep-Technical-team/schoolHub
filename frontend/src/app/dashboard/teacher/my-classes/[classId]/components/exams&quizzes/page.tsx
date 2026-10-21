@@ -43,6 +43,7 @@ export default function ExamsPage() {
       return { exams: examsRes || [], papers: papersRes || [] };
     },
     enabled: !!classId,
+    staleTime: 1000 * 60 * 2,
   })
 
   // Fetch class detail to reliably get schoolId (cached by other tabs, so usually free)

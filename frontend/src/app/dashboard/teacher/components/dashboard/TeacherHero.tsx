@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, GraduationCap, School, BookOpen } from 'lucide-react';
+import { Sparkles, GraduationCap, School, BookOpen, Megaphone } from 'lucide-react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { HeaderTooltip } from './HeaderTooltip';
 
@@ -13,6 +13,8 @@ interface TeacherHeroProps {
   sessionName?: string;
   classNames?: string[];
   subjectNames?: string[];
+  onAnnounce?: () => void;
+  onViewWeeklyReport?: () => void;
 }
 
 export default function TeacherHero({ 
@@ -21,12 +23,20 @@ export default function TeacherHero({
   totalClasses = 0, 
   sessionName = "Session Not Set", 
   classNames = [],
-  subjectNames = []
+  subjectNames = [],
+  onAnnounce,
+  onViewWeeklyReport
 }: TeacherHeroProps) {
   const { user } = useAuthStore();
   
   const displaySession = sessionName === "Session Not Set" ? "No Session" : sessionName;
   const greetingName = user?.name?.split(' ')[0] || 'Educator';
+  const todayFormatted = new Date().toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric', 
+    year: 'numeric' 
+  }).toUpperCase();
 
   const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
 
@@ -42,7 +52,7 @@ export default function TeacherHero({
     <div className="mb-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-1">MONDAY • JUNE 29, 2026</p>
+          <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-1">{todayFormatted}</p>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
             Good morning, Teacher {greetingName} 👋
           </h1>
@@ -72,10 +82,17 @@ export default function TeacherHero({
           </p>
           
           <div className="flex items-center gap-3">
-            <button className="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-full text-sm hover:bg-slate-100 transition-colors shadow-sm">
+            <button 
+              onClick={onViewWeeklyReport}
+              className="px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-full text-sm hover:bg-slate-100 transition-all shadow-sm active:scale-95"
+            >
               View weekly report
             </button>
-            <button className="px-5 py-2.5 bg-transparent border border-white/20 text-white font-semibold rounded-full text-sm hover:bg-white/10 transition-colors">
+            <button 
+              onClick={onAnnounce}
+              className="px-5 py-2.5 bg-transparent border border-white/20 text-white font-semibold rounded-full text-sm hover:bg-white/10 transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <Megaphone size={14} className="text-emerald-400" />
               Announce
             </button>
           </div>

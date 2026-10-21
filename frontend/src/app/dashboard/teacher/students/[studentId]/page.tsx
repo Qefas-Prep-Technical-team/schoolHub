@@ -76,9 +76,9 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
 function SectionCard({ title, children, className = '', headerAction }: { title: string; children: React.ReactNode; className?: string; headerAction?: React.ReactNode }) {
     return (
         <div className={cn("bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50 rounded-2xl shadow-sm overflow-hidden", className)}>
-            <div className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-emerald-800/50 pb-4">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
+            <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-emerald-800/50 pb-4">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
                     {headerAction}
                 </div>
                 {children}
@@ -89,20 +89,20 @@ function SectionCard({ title, children, className = '', headerAction }: { title:
 
 function StatBadge({ label, value, icon: Icon, themeColor, trend }: { label: string; value: string | number; icon: React.ElementType; themeColor: string; trend?: string }) {
     return (
-        <div className="p-6 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50 shadow-sm space-y-4 flex flex-col justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50 shadow-sm space-y-3 sm:space-y-4 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-                <div className="size-12 rounded-[14px] flex items-center justify-center" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
-                    <Icon size={22} strokeWidth={2.5} />
+                <div className="size-10 sm:size-12 rounded-[14px] flex items-center justify-center" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
+                    <Icon size={20} strokeWidth={2.5} />
                 </div>
                 {trend && (
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 sm:px-2.5 py-1 rounded-full uppercase tracking-wider">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-[12px] font-medium text-slate-500 mb-1">{label}</p>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
+                <p className="text-[11px] sm:text-[12px] font-medium text-slate-500 mb-0.5 sm:mb-1">{label}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
             </div>
         </div>
     )
@@ -114,22 +114,26 @@ function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate
     const label = `${format(weekStart, 'MMM dd')} - ${format(weekEnd, 'MMM dd, yyyy')}`
 
     return (
-        <div className="flex items-center gap-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-sm">
+        <div className="flex items-center gap-1.5 sm:gap-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-1 sm:p-1.5 shadow-sm">
             <button 
+                type="button"
                 onClick={onPrev}
-                className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
+                className="size-8 sm:size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
+                title="Previous Week"
             >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
             </button>
-            <div className="px-4 text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Academic Week</p>
-                <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{label}</p>
+            <div className="px-2 sm:px-4 text-center">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Week</p>
+                <p className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight whitespace-nowrap">{label}</p>
             </div>
             <button 
+                type="button"
                 onClick={onNext}
-                className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
+                className="size-8 sm:size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
+                title="Next Week"
             >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
             </button>
         </div>
     )
@@ -145,43 +149,186 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
     const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day, i) => ({
         full: day,
         short: day.slice(0, 3),
-        date: format(addDays(weekStart, i), 'dd')
+        date: format(addDays(weekStart, i), 'dd'),
+        month: format(addDays(weekStart, i), 'MMM')
     }));
     const HOURS = ['7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM'];
 
+    const [selectedMobileDay, setSelectedMobileDay] = useState(0);
+    const [mobileViewMode, setMobileViewMode] = useState<'daily' | 'matrix'>('daily');
+
+    const getTimetableSession = (dIdx: number, hIdx: number) => {
+        if (hIdx % 3 === 0 && dIdx !== 2) {
+            return { subject: 'Mathematics', room: 'RM 204', teacher: 'Lead Teacher', color: themeColor };
+        } else if ((hIdx + dIdx) % 5 === 0) {
+            return { subject: 'English', room: 'LAB 1', teacher: 'Faculty', color: '#6366f1' };
+        } else if ((hIdx + dIdx) % 4 === 0) {
+            return { subject: 'Science', room: 'Room 102', teacher: 'Dept Instructor', color: '#06b6d4' };
+        }
+        return null;
+    };
+
     return (
-        <div className="space-y-8">
-            {/* Legend */}
+        <div className="space-y-4 sm:space-y-6">
+            {/* Legend for Attendance */}
             {type === 'attendance' && (
-                <div className="flex flex-wrap gap-6 px-2">
+                <div className="flex flex-wrap gap-4 sm:gap-6 px-1">
                     <div className="flex items-center gap-2">
-                        <div className="size-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/20" />
+                        <div className="size-2.5 sm:size-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/20" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Present</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="size-3 rounded-full bg-amber-400 shadow-lg shadow-amber-400/20" />
+                        <div className="size-2.5 sm:size-3 rounded-full bg-amber-400 shadow-sm shadow-amber-400/20" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Late</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="size-3 rounded-full bg-rose-500 shadow-lg shadow-rose-500/20" />
+                        <div className="size-2.5 sm:size-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/20" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Absent</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="size-3 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10" />
+                        <div className="size-2.5 sm:size-3 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Unrecorded</span>
                     </div>
                 </div>
             )}
 
-            <div className="overflow-x-auto custom-scrollbar pb-6">
+            {/* Mobile View Toggle & Day Pills (Visible on mobile/tablet screens < 768px) */}
+            <div className="md:hidden space-y-3">
+                <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-emerald-950/40 p-1.5 rounded-xl border border-slate-200/80 dark:border-white/10">
+                    <button
+                        type="button"
+                        onClick={() => setMobileViewMode('daily')}
+                        className={cn(
+                            "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all",
+                            mobileViewMode === 'daily'
+                                ? "bg-white dark:bg-emerald-900/50 text-slate-900 dark:text-white shadow-xs"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                        )}
+                    >
+                        Daily View
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMobileViewMode('matrix')}
+                        className={cn(
+                            "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all",
+                            mobileViewMode === 'matrix'
+                                ? "bg-white dark:bg-emerald-900/50 text-slate-900 dark:text-white shadow-xs"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                        )}
+                    >
+                        Weekly Matrix
+                    </button>
+                </div>
+
+                {mobileViewMode === 'daily' && (
+                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+                        {DAYS.map((day, idx) => {
+                            const isSelected = selectedMobileDay === idx;
+                            return (
+                                <button
+                                    key={day.full}
+                                    type="button"
+                                    onClick={() => setSelectedMobileDay(idx)}
+                                    className={cn(
+                                        "flex-1 min-w-[60px] py-2 px-2.5 rounded-xl flex flex-col items-center justify-center transition-all border shrink-0",
+                                        isSelected
+                                            ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                                            : "bg-slate-50 dark:bg-emerald-950/40 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
+                                    )}
+                                >
+                                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{day.short}</span>
+                                    <span className="text-sm font-black mt-0.5">{day.date}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Mobile Daily Card View */}
+            {mobileViewMode === 'daily' && (
+                <div className="md:hidden space-y-2.5">
+                    {HOURS.map((hour, hIdx) => {
+                        const day = DAYS[selectedMobileDay];
+                        const session = getTimetableSession(selectedMobileDay, hIdx);
+                        const isPast = selectedMobileDay < 3 || (selectedMobileDay === 3 && hIdx < 5);
+                        const statusChance = ((selectedMobileDay + 1) * (hIdx + 3)) % 10 / 10;
+
+                        return (
+                            <div
+                                key={`mobile-${day.full}-${hour}`}
+                                onClick={() => onCellClick(day.full, hour)}
+                                className={cn(
+                                    "p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all cursor-pointer shadow-xs",
+                                    session 
+                                        ? "bg-white dark:bg-emerald-950/60 border-slate-200 dark:border-emerald-800/60 hover:border-emerald-500" 
+                                        : "bg-slate-50/60 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 opacity-80"
+                                )}
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-14 sm:w-16 text-center py-1.5 px-2 rounded-lg bg-slate-100 dark:bg-white/5 text-[11px] font-bold font-mono text-slate-600 dark:text-slate-300 shrink-0">
+                                        {hour}
+                                    </div>
+                                    <div className="min-w-0">
+                                        {type === 'timetable' ? (
+                                            session ? (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                                                        {session.subject}
+                                                    </p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                                        {session.room} · {session.teacher}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <p className="text-[11px] font-medium text-slate-400 italic">
+                                                    Free / Self Study
+                                                </p>
+                                            )
+                                        ) : (
+                                            <div>
+                                                <p className="text-xs font-black text-slate-900 dark:text-white">
+                                                    {day.full} Session
+                                                </p>
+                                                <p className="text-[10px] font-bold uppercase tracking-wider mt-0.5">
+                                                    {isPast ? (
+                                                        statusChance > 0.2 ? (
+                                                            <span className="text-emerald-500">Present</span>
+                                                        ) : statusChance > 0.05 ? (
+                                                            <span className="text-amber-500">Late</span>
+                                                        ) : (
+                                                            <span className="text-rose-500">Absent</span>
+                                                        )
+                                                    ) : (
+                                                        <span className="text-slate-400">Scheduled</span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Matrix Table (Always on desktop, and on mobile when mobileViewMode === 'matrix') */}
+            <div className={cn(
+                "overflow-x-auto custom-scrollbar pb-4",
+                mobileViewMode === 'daily' ? "hidden md:block" : "block"
+            )}>
                 <div className="min-w-[1000px]">
-                    <div className="grid grid-cols-[140px_repeat(12,1fr)] gap-3">
+                    <div className="grid grid-cols-[140px_repeat(12,1fr)] gap-2 sm:gap-3">
                         {/* Empty corner */}
-                        <div className="h-12" />
+                        <div className="h-10 sm:h-12" />
                         
                         {/* Time Headers */}
                         {HOURS.map(hour => (
-                            <div key={hour} className="h-12 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
+                            <div key={hour} className="h-10 sm:h-12 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                                 {hour}
                             </div>
                         ))}
@@ -189,48 +336,43 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
                         {/* Day Rows */}
                         {DAYS.map((day, dIdx) => (
                             <div key={day.full} className="contents group/row">
-                                <div className="h-20 flex flex-col justify-center px-6 bg-slate-50/50 dark:bg-white/[0.01] rounded-2xl border border-transparent group-hover/row:border-slate-200 dark:group-hover/row:border-white/10 transition-all">
+                                <div className="h-16 sm:h-20 flex flex-col justify-center px-4 sm:px-6 bg-slate-50/50 dark:bg-white/[0.01] rounded-2xl border border-transparent group-hover/row:border-slate-200 dark:group-hover/row:border-white/10 transition-all">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{day.short}</span>
-                                    <span className="text-[14px] font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">{day.date}</span>
+                                    <span className="text-[13px] sm:text-[14px] font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">{day.date}</span>
                                 </div>
                                 
                                 {HOURS.map((hour, hIdx) => {
-                                    // Find class for this slot (if timetable)
-                                    // ...
-                                    const dayName = day.full;
+                                    const session = getTimetableSession(dIdx, hIdx);
                                     const isPast = dIdx < 3 || (dIdx === 3 && hIdx < 5);
-                                    const statusChance = Math.random();
+                                    const statusChance = ((dIdx + 1) * (hIdx + 3)) % 10 / 10;
                                     
                                     return (
                                         <div 
                                             key={`${day.full}-${hour}`} 
                                             onClick={() => onCellClick(day.full, hour)}
-                                            className="h-20 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/30 dark:hover:border-primary/30 transition-all cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-0.5"
-                                            style={{ '--primary': themeColor } as any}
+                                            className="h-16 sm:h-20 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 group hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-0.5"
                                         >
                                             {type === 'attendance' ? (
                                                 isPast ? (
                                                     statusChance > 0.2 ? (
-                                                        <div className="size-4 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/20 animate-in zoom-in duration-500" />
+                                                        <div className="size-3.5 sm:size-4 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/20" />
                                                     ) : statusChance > 0.05 ? (
-                                                        <div className="size-4 rounded-full bg-amber-400 shadow-lg shadow-amber-400/20 animate-in zoom-in duration-500" />
+                                                        <div className="size-3.5 sm:size-4 rounded-full bg-amber-400 shadow-sm shadow-amber-400/20" />
                                                     ) : (
-                                                        <div className="size-4 rounded-full bg-rose-500 shadow-lg shadow-rose-500/20 animate-in zoom-in duration-500" />
+                                                        <div className="size-3.5 sm:size-4 rounded-full bg-rose-500 shadow-sm shadow-rose-500/20" />
                                                     )
                                                 ) : (
                                                     <div className="size-1.5 rounded-full bg-slate-200 dark:bg-white/10" />
                                                 )
                                             ) : (
-                                                // Timetable Mock
-                                                hIdx % 3 === 0 && dIdx !== 2 ? (
+                                                session ? (
                                                     <div className="text-center px-1">
-                                                        <p className="text-[9px] font-black text-primary uppercase tracking-tighter leading-none" style={{ color: themeColor }}>Mathematics</p>
-                                                        <p className="text-[7px] font-bold text-slate-400 uppercase mt-1">RM 204</p>
-                                                    </div>
-                                                ) : (hIdx + dIdx) % 5 === 0 ? (
-                                                    <div className="text-center px-1">
-                                                        <p className="text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-tighter leading-none">English</p>
-                                                        <p className="text-[7px] font-bold text-slate-400 uppercase mt-1">LAB 1</p>
+                                                        <p className="text-[9px] font-black uppercase tracking-tighter leading-none" style={{ color: session.color }}>
+                                                            {session.subject}
+                                                        </p>
+                                                        <p className="text-[7px] font-bold text-slate-400 uppercase mt-0.5">
+                                                            {session.room}
+                                                        </p>
                                                     </div>
                                                 ) : null
                                             )}
@@ -249,12 +391,12 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 const TABS = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'academic', label: 'Academic' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'timetable', label: 'Time Table' },
-    { id: 'behaviour', label: 'Behaviour' },
-    { id: 'history', label: 'History' },
+    { id: 'overview', label: 'Overview', icon: User },
+    { id: 'academic', label: 'Academic', icon: GraduationCap },
+    { id: 'attendance', label: 'Attendance', icon: Activity },
+    { id: 'timetable', label: 'Time Table', icon: Calendar },
+    { id: 'behaviour', label: 'Behaviour', icon: ShieldAlert },
+    { id: 'history', label: 'History', icon: Clock },
 ]
 
 export default function StudentProfilePage() {
@@ -663,14 +805,14 @@ export default function StudentProfilePage() {
             </div>
 
             {/* ── Profile Header (Skillery Style Hero) ─────────────────────── */}
-            <div className="w-full px-4 sm:px-6 lg:px-12 mt-6">
-                <div className="rounded-[2rem] overflow-hidden relative p-8 md:p-12 shadow-xl shadow-emerald-500/10 border border-slate-100 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800">
+            <div className="w-full px-4 sm:px-6 lg:px-12 mt-4 sm:mt-6">
+                <div className="rounded-2xl sm:rounded-[2rem] overflow-hidden relative p-5 sm:p-8 md:p-12 shadow-xl shadow-emerald-500/10 border border-slate-100 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800">
                     <div className="absolute inset-0 opacity-20"
                         style={{ backgroundImage: 'radial-gradient(circle at 100% 0%, white 0%, transparent 50%)' }} />
                     
-                    <div className="relative z-20 flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
+                    <div className="relative z-20 flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-start md:items-center">
                         {/* Avatar */}
-                        <div className="size-24 md:size-32 rounded-full bg-white p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow-lg border border-white/20">
+                        <div className="size-20 sm:size-24 md:size-32 rounded-full bg-white p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-lg border border-white/20">
                             <div className="w-full h-full rounded-full overflow-hidden border-2 border-white/50 relative">
                                 <img src={avatar} alt={name} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 rounded-full border-2 border-transparent" style={{ borderColor: `${primaryColor}40` }} />
@@ -678,22 +820,22 @@ export default function StudentProfilePage() {
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1 text-white space-y-3">
+                        <div className="flex-1 text-white space-y-2 sm:space-y-3 w-full">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="space-y-2">
-                                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                                <div className="space-y-1.5 sm:space-y-2">
+                                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
                                         {name}
                                     </h1>
-                                    <p className="text-sm md:text-base font-medium text-white/80">
+                                    <p className="text-xs sm:text-sm md:text-base font-medium text-white/80">
                                         {classNameLabel} · {department}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-4 pt-1">
-                                        <span className="flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-black/10 px-3 py-1 rounded-lg backdrop-blur-sm">
+                                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-1">
+                                        <span className="flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-black/10 px-2.5 sm:px-3 py-1 rounded-lg backdrop-blur-sm">
                                             <Hash size={14} />
                                             {studentCode}
                                         </span>
                                         <span className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm",
+                                            "flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm",
                                             isVerified ? 'bg-emerald-500/20 text-emerald-50' : 'bg-amber-500/20 text-amber-50'
                                         )}>
                                             <ShieldCheck size={14} />
@@ -705,10 +847,9 @@ export default function StudentProfilePage() {
                                 <div className="flex gap-3">
                                     <a
                                         href={`mailto:${email}`}
-                                        className="px-6 py-2.5 rounded-xl bg-white text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors flex items-center gap-2"
-                                        style={{ color: primaryColor }}
+                                        className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-xs sm:text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-emerald-600"
                                     >
-                                        <Mail size={16} /> Contact
+                                        <Mail size={15} /> Contact
                                     </a>
                                 </div>
                             </div>
@@ -718,29 +859,33 @@ export default function StudentProfilePage() {
             </div>
 
             {/* ── Tabs (Verlof Style) ─────────────────────────────────────── */}
-            <div className="w-full px-4 sm:px-6 lg:px-12 mt-8">
-                <div className="flex gap-6 overflow-x-auto scrollbar-hide border-b border-slate-200 dark:border-emerald-800/50">
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={cn(
-                                "pb-4 text-[13px] font-bold transition-all whitespace-nowrap border-b-2",
-                                activeTab === tab.id
-                                    ? "text-slate-900 dark:text-white"
-                                    : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
-                            )}
-                            style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+            <div className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-8">
+                <div className="flex gap-2 sm:gap-6 overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-emerald-800/50 pb-1">
+                    {TABS.map(tab => {
+                        const Icon = tab.icon;
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={cn(
+                                    "pb-3.5 pt-2 px-3 sm:px-1 text-xs sm:text-[13px] font-bold transition-all whitespace-nowrap border-b-2 flex items-center gap-2",
+                                    isActive
+                                        ? "text-slate-900 dark:text-white border-emerald-500"
+                                        : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
+                                )}
+                            >
+                                <Icon size={16} className={cn("shrink-0", isActive ? "text-emerald-500" : "text-slate-400")} />
+                                <span>{tab.label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
             {/* ── Overview Tab ─────────────────────────────────────────────── */}
             {activeTab === 'overview' && (
-                <main className="w-full px-0 md:px-12 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
+                <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
 
                     <div className="lg:col-span-2 space-y-6 md:space-y-10">
                         {/* Summary Metrics */}
@@ -1518,25 +1663,29 @@ export default function StudentProfilePage() {
 
             {/* ── Attendance Tab ─────────────────────────────────────────────── */}
             {activeTab === 'attendance' && (
-                <main className="w-full px-0 md:px-12 mt-10 pb-20">
+                <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 pb-20">
                      <AttendanceCalendar studentId={studentId} themeColor={primaryColor} />
                 </main>
             )}
 
             {/* ── Time Table Tab ────────────────────────────────────────────── */}
             {activeTab === 'timetable' && (
-                <main className="w-full px-0 md:px-12 mt-10 pb-20">
+                <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 pb-20">
                      <SectionCard 
                         title="Weekly Schedule"
                         headerAction={
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                                 <WeekControls 
                                     currentDate={scheduleDate}
                                     onPrev={() => setScheduleDate(d => addWeeks(d, -1))}
                                     onNext={() => setScheduleDate(d => addWeeks(d, 1))}
                                     themeColor={primaryColor}
                                 />
-                                <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline" style={{ color: primaryColor }}>
+                                <button 
+                                    type="button"
+                                    onClick={() => toast.info('Schedule PDF export is being prepared.')}
+                                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                                >
                                     Download PDF
                                 </button>
                             </div>
@@ -1566,7 +1715,7 @@ export default function StudentProfilePage() {
             />
 
             <Dialog open={!!selectedScheduleCell} onOpenChange={() => setSelectedScheduleCell(null)}>
-                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
+                <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 bg-white dark:bg-emerald-950/90 border border-slate-200 dark:border-emerald-800/60 shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 

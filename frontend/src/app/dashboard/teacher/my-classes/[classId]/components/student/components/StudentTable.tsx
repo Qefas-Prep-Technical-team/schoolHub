@@ -60,69 +60,89 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.04 }}
-      className="group grid grid-cols-12 gap-4 px-6 py-4 bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200/80 dark:border-emerald-800/50 shadow-sm hover:shadow-md hover:border-emerald-600/20 dark:hover:border-emerald-600/20 transition-all items-center"
+      className="group bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200/80 dark:border-emerald-800/50 shadow-sm hover:shadow-md hover:border-emerald-600/20 dark:hover:border-emerald-600/20 transition-all p-4 md:px-6 md:py-4 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center"
     >
-      {/* Identity */}
-      <div className="col-span-4 flex items-center gap-4">
-        <span className="w-4 text-xs font-black text-slate-300 dark:text-slate-600 text-right shrink-0">{startIndex + idx + 1}</span>
-        <Avatar student={student} />
-        <div>
-          <p className="text-sm font-bold text-slate-900 dark:text-white">{student.name}</p>
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-            {student.studentCode || student.studentId}
-            <span className="w-1 h-1 rounded-full bg-slate-300" />
-            {student.gender}
-          </p>
-          {student.email && (
-            <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-              <Mail size={9} /> {student.email}
+      {/* Identity (and Mobile top bar) */}
+      <div className="md:col-span-4 flex items-center justify-between md:justify-start gap-3 md:gap-4">
+        <div className="flex items-center gap-3 md:gap-4 min-w-0">
+          <span className="w-4 text-xs font-black text-slate-300 dark:text-slate-600 text-right shrink-0">{startIndex + idx + 1}</span>
+          <Avatar student={student} />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{student.name}</p>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+              {student.studentCode || student.studentId}
+              <span className="w-1 h-1 rounded-full bg-slate-300" />
+              {student.gender}
             </p>
-          )}
-        </div>
-      </div>
-
-      {/* Class */}
-      <div className="col-span-2">
-        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-          <BookOpen size={12} className="text-emerald-600" />
-          {student.grade || '—'}
-        </p>
-        <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Class</p>
-      </div>
-
-      {/* Performance */}
-      <div className="col-span-2 flex items-center gap-4">
-        <div>
-          <div className={`flex items-center gap-1 font-black text-sm ${performanceColors[student.performance || 'Medium']}`}>
-            <Award size={13} />
-            {student.performance || 'Medium'}
+            {student.email && (
+              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+                <Mail size={9} className="shrink-0" /> {student.email}
+              </p>
+            )}
           </div>
-          <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Performance</p>
+        </div>
+
+        {/* Mobile-only status & action */}
+        <div className="flex md:hidden items-center gap-2 shrink-0">
+          <span className={`px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-widest ${statusColors[student.status] || statusColors.active}`}>
+            {student.status}
+          </span>
+          <button
+            onClick={() => onView(student)}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-emerald-900/60 text-slate-500 dark:text-slate-400 hover:bg-emerald-600 hover:text-white transition-all"
+            aria-label={`View profile for ${student.name}`}
+          >
+            <Eye size={14} strokeWidth={2.5} />
+          </button>
         </div>
       </div>
 
-      {/* Attendance */}
-      <div className="col-span-2">
-        <div className="flex items-center gap-1.5">
-          <div className="flex-1 h-1.5 bg-slate-100 dark:bg-emerald-900/40 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full ${attendanceNum >= 80 ? 'bg-emerald-500' : attendanceNum >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
-              style={{ width: `${Math.min(attendanceNum, 100)}%` }}
-            />
+      {/* Sub-metrics: Grid on mobile, columns on desktop */}
+      <div className="grid grid-cols-3 md:contents gap-2 pt-2 md:pt-0 border-t border-slate-100 dark:border-emerald-800/30 md:border-t-0">
+        {/* Class */}
+        <div className="md:col-span-2">
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 truncate">
+            <BookOpen size={12} className="text-emerald-600 shrink-0" />
+            {student.grade || '—'}
+          </p>
+          <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Class</p>
+        </div>
+
+        {/* Performance */}
+        <div className="md:col-span-2 flex items-center gap-4">
+          <div>
+            <div className={`flex items-center gap-1 font-black text-xs md:text-sm ${performanceColors[student.performance || 'Medium']}`}>
+              <Award size={13} className="shrink-0" />
+              {student.performance || 'Medium'}
+            </div>
+            <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Performance</p>
           </div>
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{attendanceNum}%</span>
         </div>
-        <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Attendance</p>
+
+        {/* Attendance */}
+        <div className="md:col-span-2">
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 h-1.5 bg-slate-100 dark:bg-emerald-900/40 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${attendanceNum >= 80 ? 'bg-emerald-500' : attendanceNum >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                style={{ width: `${Math.min(attendanceNum, 100)}%` }}
+              />
+            </div>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">{attendanceNum}%</span>
+          </div>
+          <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Attendance</p>
+        </div>
       </div>
 
-      {/* Status + Action */}
-      <div className="col-span-2 flex items-center justify-end gap-3">
+      {/* Desktop Status + Action */}
+      <div className="hidden md:flex md:col-span-2 items-center justify-end gap-3">
         <span className={`px-2.5 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${statusColors[student.status] || statusColors.active}`}>
           {student.status}
         </span>
         <button
           onClick={() => onView(student)}
           className="p-2.5 rounded-xl bg-slate-100 dark:bg-emerald-900/60 text-slate-500 dark:text-slate-400 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600/20 dark:hover:text-emerald-600 transition-all hover:scale-105"
+          aria-label={`View profile for ${student.name}`}
         >
           <Eye size={15} strokeWidth={2.5} />
         </button>
