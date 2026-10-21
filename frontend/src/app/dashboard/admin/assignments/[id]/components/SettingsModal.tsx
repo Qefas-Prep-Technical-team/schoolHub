@@ -66,7 +66,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings size={18} className="text-primary" />
@@ -91,7 +91,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Users size={14} className="text-gray-500" />
@@ -130,7 +130,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="maxScore">Maximum Score</Label>
               <Input 
@@ -155,7 +155,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
               />
             </div>
 
-            <div className="space-y-2 col-span-2">
+            <div className="space-y-2 col-span-1 sm:col-span-2">
               <Label htmlFor="scoreReleaseDate" className="flex items-center gap-2">
                 <Calendar size={14} className="text-gray-500" />
                 Result Release Date
@@ -172,14 +172,14 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
             </div>
           </div>
 
-          <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="pt-4 flex flex-col-reverse sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={updateMutation.isPending}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               {updateMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               Save Changes

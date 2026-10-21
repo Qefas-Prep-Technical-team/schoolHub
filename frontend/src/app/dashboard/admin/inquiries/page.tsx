@@ -505,6 +505,9 @@ export default function AdminInquiriesPage() {
                       onChange={() => handleSelectOne(iq.id)}
                       className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
                     />
+                    <span className="text-xs font-black text-slate-400 select-none">
+                      #{(page - 1) * limit + index + 1}
+                    </span>
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                         {iq.name}
@@ -553,6 +556,14 @@ export default function AdminInquiriesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <th className="px-6 py-4 font-semibold w-12">
+                    <input 
+                      type="checkbox" 
+                      checked={inquiries.length > 0 && selectedIds.length === inquiries.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
+                    />
+                  </th>
                   <th className="px-6 py-4 font-semibold w-16">#</th>
                   <th className="px-6 py-4 font-semibold">Contact Info</th>
                   <th className="px-6 py-4 font-semibold">Message</th>

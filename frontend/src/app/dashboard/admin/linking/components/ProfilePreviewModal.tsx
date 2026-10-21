@@ -107,13 +107,13 @@ export function ProfilePreviewModal({
               </div>
             </div>
 
-            <div className="mt-8 space-y-1.5">
-              <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">
+            <div className="mt-8 space-y-1.5 w-full min-w-0 px-4">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 dark:text-white leading-tight break-words">
                 {details.name}
               </h2>
-              <p className="text-base font-bold text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
-                <Mail size={16} className="text-slate-400" />
-                {details.email}
+              <p className="text-sm sm:text-base font-bold text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 truncate">
+                <Mail size={16} className="text-slate-400 shrink-0" />
+                <span className="truncate">{details.email}</span>
               </p>
             </div>
 

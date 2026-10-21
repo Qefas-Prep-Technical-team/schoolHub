@@ -790,18 +790,21 @@ export default function RecordsPage() {
                           <td className="px-4 py-4 text-slate-900 dark:text-slate-100">{res.subject?.name}</td>
                           <td className="px-4 py-4 text-slate-500">{new Date(res.createdAt).toLocaleDateString()}</td>
                           <td className="px-4 py-4">
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shadow-xs ${
                               res.status === "PUBLISHED" 
-                                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                                : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60" 
+                                : "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60"
                             }`}>
-                              {res.status}
+                              <span className={`h-1.5 w-1.5 rounded-full ${
+                                res.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                              }`} />
+                              {res.status || "DRAFT"}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <button 
                               onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)}
-                              className="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded text-xs font-bold transition-colors"
+                              className="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded-lg text-xs font-bold transition-colors"
                             >
                               Edit
                             </button>
@@ -814,43 +817,75 @@ export default function RecordsPage() {
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-slate-50/50 dark:bg-slate-900/20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 p-3 sm:p-5 bg-slate-50/50 dark:bg-slate-900/20">
               {isLoadingSubjects ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-32 animate-pulse" />
+                  <div key={i} className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 h-44 animate-pulse" />
                 ))
               ) : filteredSubjectResults.length === 0 ? (
-                <div className="col-span-full py-8 text-center text-slate-500">No subject results found.</div>
+                <div className="col-span-full py-12 text-center text-slate-500 font-medium">No subject results found.</div>
               ) : (
                 filteredSubjectResults.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
                   const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
                   return (
-                  <div key={res.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
-                     <div className="flex justify-between items-start">
-                       <div className="flex gap-2 max-w-[70%]">
-                         <span className="text-xs font-black text-slate-400/70 mt-1 select-none">#{globalIdx}</span>
-                         <div>
-                           <h3 className="font-bold text-slate-900 dark:text-white truncate pr-2" title={res.name}>{res.name}</h3>
-                           <p className="text-xs text-slate-500 truncate">{res.session?.name} • {res.term}</p>
+                  <div key={res.id} className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 space-y-3.5 hover:border-[#5B5CE6]/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between">
+                     {/* Top Row: Index + Session/Term on Left, Published Badge on Right */}
+                     <div className="space-y-2">
+                       <div className="flex items-center justify-between gap-2">
+                         <div className="flex items-center gap-1.5 min-w-0">
+                           <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 select-none shrink-0">
+                             #{globalIdx}
+                           </span>
+                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+                             {res.session?.name || "Session"} • {res.term || "Term"}
+                           </span>
                          </div>
+                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 border shadow-xs ${
+                           res.status === "PUBLISHED" 
+                             ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60" 
+                             : "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60"
+                         }`}>
+                           <span className={`h-1.5 w-1.5 rounded-full ${
+                             res.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                           }`} />
+                           {res.status || "DRAFT"}
+                         </span>
                        </div>
-                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${res.status === "PUBLISHED" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"}`}>
-                         {res.status}
-                       </span>
+
+                       {/* Title Row */}
+                       <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#5B5CE6] transition-colors pt-0.5" title={res.name}>
+                         {res.name}
+                       </h3>
                      </div>
+
+                     {/* Details Badges */}
                      <div className="grid grid-cols-2 gap-2 text-xs">
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
-                         <p className="text-slate-400 mb-0.5">Class</p>
-                         <p className="font-semibold text-slate-700 dark:text-slate-300 truncate" title={res.class?.name}>{res.class?.name}</p>
+                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
+                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
+                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={res.class?.name || "General"}>
+                           {res.class?.name || "General"}
+                         </p>
                        </div>
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
-                         <p className="text-slate-400 mb-0.5">Subject</p>
-                         <p className="font-semibold text-slate-700 dark:text-slate-300 truncate" title={res.subject?.name}>{res.subject?.name}</p>
+                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
+                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Subject</p>
+                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={res.subject?.name || "All Subjects"}>
+                           {res.subject?.name || "All Subjects"}
+                         </p>
                        </div>
                      </div>
-                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                       <span className="text-[10px] text-slate-400">{new Date(res.createdAt).toLocaleDateString()}</span>
-                       <button onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)} className="text-xs font-bold text-[#5B5CE6] hover:text-[#4a4be5]">Edit Results</button>
+
+                     {/* Footer Row */}
+                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                       <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
+                         <Clock className="w-3.5 h-3.5 text-slate-400" />
+                         {new Date(res.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                       </span>
+                       <button 
+                         onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)} 
+                         className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B5CE6]/10 text-[#5B5CE6] hover:bg-[#5B5CE6] hover:text-white dark:bg-[#5B5CE6]/20 dark:hover:bg-[#5B5CE6] transition-all"
+                       >
+                         Edit Results
+                       </button>
                      </div>
                   </div>
                   )
@@ -1028,39 +1063,49 @@ export default function RecordsPage() {
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-slate-50/50 dark:bg-slate-900/20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 p-3 sm:p-5 bg-slate-50/50 dark:bg-slate-900/20">
               {isLoadingStudents ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-32 animate-pulse" />
+                  <div key={i} className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 h-44 animate-pulse" />
                 ))
               ) : filteredStudentResults.length === 0 ? (
-                <div className="col-span-full py-8 text-center text-slate-500">No student results found.</div>
+                <div className="col-span-full py-12 text-center text-slate-500 font-medium">No student results found.</div>
               ) : (
                 filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
                   const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
                   return (
-                  <div key={res.id} onClick={() => router.push('/dashboard/admin/records/student/' + res.id)} className="cursor-pointer bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-sm relative group">
-                     <div className="flex justify-between items-start">
-                       <div className="flex gap-2 max-w-[70%]">
-                         <span className="text-xs font-black text-slate-400/70 mt-1 select-none">#{globalIdx}</span>
-                         <div>
-                           <h3 className="font-bold text-slate-900 dark:text-white truncate pr-2" title={`${res.name} ${res.lastName || ''}`}>{res.name} {res.lastName || ''}</h3>
-                           <p className="text-xs text-slate-500 truncate">{res.studentCode || "No Student Code"}</p>
+                  <div key={res.id} onClick={() => router.push('/dashboard/admin/records/student/' + res.id)} className="cursor-pointer bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 space-y-3.5 hover:border-[#5B5CE6]/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between">
+                     <div className="space-y-2">
+                       <div className="flex items-center justify-between gap-2">
+                         <div className="flex items-center gap-1.5 min-w-0">
+                           <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 select-none shrink-0">
+                             #{globalIdx}
+                           </span>
+                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+                             {res.studentCode || "No Student ID"}
+                           </span>
                          </div>
                        </div>
+                       <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#5B5CE6] transition-colors pt-0.5" title={`${res.name} ${res.lastName || ''}`}>
+                         {res.name} {res.lastName || ''}
+                       </h3>
                      </div>
+
                      <div className="grid grid-cols-2 gap-2 text-xs">
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded text-center">
-                         <p className="text-slate-400 mb-0.5">Gender</p>
+                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl text-center">
+                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Gender</p>
                          <p className="font-black text-[#5B5CE6]">{res.gender || "-"}</p>
                        </div>
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded text-center">
-                         <p className="text-slate-400 mb-0.5">Class</p>
-                         <p className="font-black text-slate-700 dark:text-slate-300">{res.classes?.[0]?.class?.name || res.gradeLevel || "-"}</p>
+                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl text-center">
+                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
+                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{res.classes?.[0]?.class?.name || res.gradeLevel || "-"}</p>
                        </div>
                      </div>
-                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center">
-                       <button className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0">View Record</button>
+
+                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center">
+                       <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B5CE6]/10 text-[#5B5CE6] group-hover:bg-[#5B5CE6] group-hover:text-white transition-all">
+                         View Record
+                       </span>
                      </div>
                   </div>
                   )

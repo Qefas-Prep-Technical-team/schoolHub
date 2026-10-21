@@ -47,7 +47,7 @@ export function SearchableSelect({
 
   if (isLoading) {
     return (
-      <div className="w-full h-14 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-4 flex items-center justify-between overflow-hidden cursor-wait">
+      <div className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-3.5 sm:px-4 flex items-center justify-between overflow-hidden cursor-wait">
         <div className="flex items-center gap-2 w-full">
           {icon && <span className="text-slate-300 dark:text-slate-600 shrink-0">{icon}</span>}
           <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 animate-pulse"></div>
@@ -63,7 +63,7 @@ export function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-14 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-4 flex items-center justify-between transition-all font-medium text-left ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-primary/20 focus:ring-2 focus:ring-primary/20"}`}
+        className={`w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-3.5 sm:px-4 flex items-center justify-between transition-all font-medium text-left text-sm sm:text-base ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-primary/20 focus:ring-2 focus:ring-primary/20"}`}
       >
         <div className="flex items-center gap-2 truncate">
           {icon && <span className="text-slate-400 shrink-0">{icon}</span>}
@@ -75,7 +75,7 @@ export function SearchableSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-slate-50/50 dark:bg-slate-900/50">
             <Search size={16} className="text-slate-400 shrink-0 ml-2" />
             <input

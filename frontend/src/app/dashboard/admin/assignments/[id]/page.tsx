@@ -44,20 +44,19 @@ export default function AssignmentDetailPage() {
       <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30 animate-pulse">
         {/* Sticky Header Skeleton */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-          <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-3 w-32 rounded-md" />
-                <Skeleton className="h-5 w-48 rounded-md" />
+          <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Skeleton className="h-9 w-9 sm:h-10 sm:w-10 rounded-full" />
+              <div className="flex flex-col gap-1.5 sm:gap-2">
+                <Skeleton className="h-3 w-24 sm:w-32 rounded-md" />
+                <Skeleton className="h-4 sm:h-5 w-36 sm:w-48 rounded-md" />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-6 w-24 rounded-full hidden md:block" />
-              <Skeleton className="h-8 w-24 rounded-lg" />
-              <Skeleton className="h-8 w-24 rounded-lg" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Skeleton className="h-8 w-20 sm:w-24 rounded-lg" />
+              <Skeleton className="h-8 w-8 sm:w-24 rounded-lg" />
               <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
-              <div className="flex flex-col gap-1 items-end">
+              <div className="hidden sm:flex flex-col gap-1 items-end">
                 <Skeleton className="h-4 w-16 rounded-md" />
                 <Skeleton className="h-3 w-20 rounded-md" />
               </div>
@@ -66,17 +65,16 @@ export default function AssignmentDetailPage() {
         </div>
 
         {/* Main Content Skeleton */}
-        <main className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Skeleton className="h-12 w-full max-w-2xl rounded-xl mb-8" />
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center mb-8">
-                <Skeleton className="h-8 w-1/4 rounded-lg" />
-                <Skeleton className="h-10 w-32 rounded-lg" />
+        <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <Skeleton className="h-10 sm:h-12 w-full max-w-2xl rounded-xl mb-6 sm:mb-8" />
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex justify-between items-center mb-6 sm:mb-8">
+                <Skeleton className="h-7 sm:h-8 w-1/3 sm:w-1/4 rounded-lg" />
+                <Skeleton className="h-9 sm:h-10 w-28 sm:w-32 rounded-lg" />
               </div>
-              <Skeleton className="h-32 w-full rounded-2xl" />
-              <Skeleton className="h-32 w-full rounded-2xl" />
-              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-28 sm:h-32 w-full rounded-xl sm:rounded-2xl" />
+              <Skeleton className="h-28 sm:h-32 w-full rounded-xl sm:rounded-2xl" />
             </div>
           </div>
         </main>
@@ -99,42 +97,44 @@ export default function AssignmentDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4 truncate">
-            <Button 
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          {/* Main Top Row */}
+          <div className="h-16 flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => router.back()}
-                className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <div className="truncate flex flex-col justify-center">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider hidden sm:inline">Assignment Details</span>
-                <span className="text-gray-300 dark:text-gray-700 hidden sm:inline">/</span>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white capitalize truncate">
-                  {assignment.title}
-                </h1>
-              </div>
-              {assignment.creator && (
-                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-gray-500">
+                className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0 h-9 w-9"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wider hidden sm:inline">Assignment</span>
+                  <span className="text-gray-300 dark:text-gray-700 hidden sm:inline">/</span>
+                  <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white capitalize truncate">
+                    {assignment.title}
+                  </h1>
+                </div>
+                {assignment.creator && (
+                  <div className="hidden sm:flex items-center gap-1.5 mt-0.5 text-[11px] text-gray-500">
                     <span>Created by</span>
                     {assignment.creator.profileImage ? (
-                        <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-4 h-4 rounded-full object-cover" />
+                      <img src={assignment.creator.profileImage} alt={assignment.creator.name} className="w-4 h-4 rounded-full object-cover" />
                     ) : (
-                        <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
-                            {assignment.creator.name.charAt(0)}
-                        </div>
+                      <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-bold text-primary">
+                        {assignment.creator.name.charAt(0)}
+                      </div>
                     )}
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">{assignment.creator.name}</span>
-                </div>
-              )}
+                    <span className="font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[150px]">{assignment.creator.name}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
+            
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Desktop Status Badge */}
               <div className={`hidden md:flex px-3 py-1 rounded-full text-[10px] font-bold border items-center gap-1.5 shadow-sm ${
                 assignment.status === "PUBLISHED" 
                   ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20"
@@ -143,90 +143,120 @@ export default function AssignmentDetailPage() {
                 {assignment.status === "PUBLISHED" ? <Check size={12} /> : <EyeOff size={12} />} 
                 {assignment.status || "PUBLISHED"}
               </div>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              disabled={isUpdatingStatus}
-              onClick={() => {
-                const newStatus = assignment.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-                updateStatus({ assignmentId, status: newStatus }, {
-                  onSuccess: () => toast.success(`Assignment ${newStatus.toLowerCase()} successfully`),
-                  onError: (error: any) => toast.error(error?.response?.data?.error || "Failed to update status")
-                });
-              }}
-              className={`h-8 rounded-lg text-xs px-3 font-semibold flex items-center gap-1.5 ${
-                assignment.status === "PUBLISHED"
-                  ? "text-amber-600 border-amber-200 hover:bg-amber-50"
-                  : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              }`}
-            >
-              {isUpdatingStatus ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : assignment.status === "PUBLISHED" ? (
-                <EyeOff size={14} />
-              ) : (
-                <Eye size={14} />
-              )}
-              {isUpdatingStatus 
-                ? (assignment.status === "PUBLISHED" ? "Unpublishing..." : "Publishing...")
-                : (assignment.status === "PUBLISHED" ? "Unpublish" : "Publish")}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-semibold"
-            >
-              <Trash2 size={14} className="mr-1.5" />
-              Delete
-            </Button>
+              
+              {/* Publish / Unpublish Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={isUpdatingStatus}
+                onClick={() => {
+                  const newStatus = assignment.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+                  updateStatus({ assignmentId, status: newStatus }, {
+                    onSuccess: () => toast.success(`Assignment ${newStatus.toLowerCase()} successfully`),
+                    onError: (error: unknown) => {
+                      const err = error as { response?: { data?: { error?: string } } };
+                      toast.error(err?.response?.data?.error || "Failed to update status");
+                    }
+                  });
+                }}
+                className={`h-8 rounded-lg text-xs px-2.5 sm:px-3 font-semibold flex items-center gap-1 sm:gap-1.5 ${
+                  assignment.status === "PUBLISHED"
+                    ? "text-amber-600 border-amber-200 hover:bg-amber-50"
+                    : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                }`}
+              >
+                {isUpdatingStatus ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : assignment.status === "PUBLISHED" ? (
+                  <EyeOff size={14} />
+                ) : (
+                  <Eye size={14} />
+                )}
+                <span className="hidden sm:inline">
+                  {isUpdatingStatus 
+                    ? (assignment.status === "PUBLISHED" ? "Unpublishing..." : "Publishing...")
+                    : (assignment.status === "PUBLISHED" ? "Unpublish" : "Publish")}
+                </span>
+              </Button>
 
-            <Button 
+              {/* Settings Button */}
+              <Button 
                 variant="default" 
                 size="sm" 
                 onClick={() => setIsSettingsOpen(true)}
-                className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 shadow-sm"
-            >
-                <SettingsIcon size={14} /> Settings
-            </Button>
-            
-            <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
-            <div className="flex flex-col items-end">
-              <span className="text-xs font-black text-gray-900 dark:text-white leading-none">
+                className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 sm:px-3 font-semibold flex items-center gap-1.5 shadow-sm"
+              >
+                <SettingsIcon size={14} /> 
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
+              
+              {/* Desktop Marks & Due date */}
+              <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-xs font-black text-gray-900 dark:text-white leading-none">
+                  {assignment.maxScore || 100} Marks
+                </span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                  {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Secondary Sub-strip (shown only on sm:hidden) */}
+          <div className="sm:hidden flex items-center justify-between pb-2.5 pt-1 border-t border-gray-100 dark:border-gray-800 text-xs">
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border inline-flex items-center gap-1 ${
+                assignment.status === "PUBLISHED" 
+                  ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20"
+                  : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20"
+              }`}>
+                {assignment.status === "PUBLISHED" ? <Check size={10} /> : <EyeOff size={10} />} 
+                {assignment.status || "PUBLISHED"}
+              </span>
+              {assignment.creator && (
+                <span className="text-[10px] text-gray-500 truncate max-w-[120px]">
+                  by <strong className="text-gray-700 dark:text-gray-300">{assignment.creator.name}</strong>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <span className="font-black text-gray-900 dark:text-white">
                 {assignment.maxScore || 100} Marks
               </span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline"}
+              <span className="text-gray-300 dark:text-gray-700">•</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">
+                {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "No Deadline"}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <Tabs defaultValue="questions" className="w-full">
-          <TabsList className="mb-8 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl w-full max-w-2xl grid grid-cols-3">
-            <TabsTrigger value="questions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
-              <div className="flex items-center gap-2">
-                <LayoutList size={16} /> <span>Questions</span>
+          <TabsList className="mb-6 sm:mb-8 p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl sm:rounded-xl w-full max-w-2xl grid grid-cols-3 h-auto">
+            <TabsTrigger value="questions" className="rounded-xl sm:rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2 sm:py-2.5 font-bold transition-all text-xs sm:text-sm">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <LayoutList size={15} /> <span>Questions</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="submissions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
-              <div className="flex items-center gap-2">
-                <Users size={16} /> <span>Submissions</span>
+            <TabsTrigger value="submissions" className="rounded-xl sm:rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2 sm:py-2.5 font-bold transition-all text-xs sm:text-sm">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <Users size={15} /> <span>Submissions</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="instructions" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all whitespace-nowrap">
-              <div className="flex items-center gap-2">
-                <FileText size={16} /> <span>Instructions & Files</span>
+            <TabsTrigger value="instructions" className="rounded-xl sm:rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2 sm:py-2.5 font-bold transition-all text-xs sm:text-sm">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                <FileText size={15} /> 
+                <span className="sm:hidden">Details</span>
+                <span className="hidden sm:inline">Instructions</span>
               </div>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="questions" className="mt-0">
-             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
+             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm">
                 <QuestionManager 
                   assignmentId={assignmentId} 
                   assignment={assignment} 
@@ -242,7 +272,7 @@ export default function AssignmentDetailPage() {
           </TabsContent>
 
           <TabsContent value="instructions">
-            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm prose dark:prose-invert max-w-none">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm prose dark:prose-invert max-w-none">
                 <h3>Instructions</h3>
                 <p>{assignment.instructions || "No instructions provided."}</p>
                 

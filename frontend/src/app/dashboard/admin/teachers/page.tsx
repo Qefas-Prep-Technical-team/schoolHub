@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { apiClient } from '@/lib/api/client'
@@ -17,16 +17,37 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import {
     Users, UserPlus, Search, ShieldCheck, Zap, Activity,
     Download, ChevronRight, ChevronLeft, ClipboardList, Info,
+    LayoutGrid, List, BookOpen, GraduationCap,
 } from 'lucide-react'
 import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Button } from "@/components/ui/button"
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { EditTeacherModal } from './components/EditTeacherModal'
+import { TeacherGrid } from './components/TeacherGrid'
 import { AnimatePresence, motion } from 'framer-motion'
 
 export default function ManageTeachersPage() {
     const [searchTerm, setSearchTerm] = useState('')
+    const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+    const [hasUserToggledView, setHasUserToggledView] = useState(false)
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const handleResize = () => {
+            if (!hasUserToggledView) {
+                setViewMode(window.innerWidth < 768 ? 'grid' : 'list')
+            }
+        }
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [hasUserToggledView])
+
+    const handleViewModeChange = (mode: 'list' | 'grid') => {
+        setViewMode(mode)
+        setHasUserToggledView(true)
+    }
     const [currentPage, setCurrentPage] = useState(0)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isAttendanceModeModalOpen, setIsAttendanceModeModalOpen] = useState(false)
@@ -306,8 +327,8 @@ export default function ManageTeachersPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8">
-                <div className="w-[95%] max-w-[1600px] mx-auto space-y-5">
+            <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-3.5 sm:p-6 lg:p-8">
+                <div className="w-full sm:w-[95%] max-w-[1600px] mx-auto space-y-4 sm:space-y-5">
                     {/* Header Skeleton */}
                     <div>
                         <Skeleton className="h-7 w-48 mb-2" />
@@ -315,7 +336,7 @@ export default function ManageTeachersPage() {
                     </div>
 
                     {/* Stats Skeleton */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                         {[...Array(4)].map((_, i) => (
                             <div key={i} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
                                 <div className="flex items-center justify-between mb-3">
@@ -387,8 +408,8 @@ export default function ManageTeachersPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8">
-            <div className="w-[95%] max-w-[1600px] mx-auto space-y-5">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-3.5 sm:p-6 lg:p-8">
+            <div className="w-full sm:w-[95%] max-w-[1600px] mx-auto space-y-4 sm:space-y-5">
 
                 <div>
                     <div className="flex items-center gap-2">
@@ -409,9 +430,9 @@ export default function ManageTeachersPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage and monitor faculty members</p>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     {stats.map((stat, i) => (
-                        <div key={i} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
+                        <div key={i} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-3.5 sm:p-5 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</span>
@@ -434,7 +455,7 @@ export default function ManageTeachersPage() {
                                     <stat.icon size={15} />
                                 </div>
                             </div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                                 {isLoading ? <Skeleton className="h-8 w-16 rounded" /> : stat.value}
                             </div>
                             <p className="text-[11px] text-gray-400 mt-1">{stat.note}</p>
@@ -442,7 +463,7 @@ export default function ManageTeachersPage() {
                     ))}
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-3.5 sm:p-5 shadow-sm">
                     <div className="mb-4">
                         <div className="flex items-center gap-2">
                             <h3 className="text-sm font-bold text-gray-800 dark:text-white">Attendance Trend</h3>
@@ -476,29 +497,78 @@ export default function ManageTeachersPage() {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm">
-                    <div className="flex flex-wrap items-center gap-2 p-3">
-                        <div className="relative flex-1 min-w-[180px] max-w-xs">
+                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm p-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div className="relative w-full sm:max-w-xs">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                             <input type="text" placeholder="Search by name, code or subject..." value={searchTerm}
                                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(0) }}
                                 className="w-full h-9 pl-8 pr-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
                         </div>
-                        <div className="ml-auto flex items-center gap-2">
-                            <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 hover:bg-gray-50">
-                                <Download size={14} /> Export
+                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                            {/* View Switcher: List vs Grid */}
+                            <div className="flex items-center p-0.5 bg-gray-100 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-white/10 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => handleViewModeChange('grid')}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                                        viewMode === 'grid'
+                                            ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-xs"
+                                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                    )}
+                                    title="Grid view"
+                                >
+                                    <LayoutGrid size={14} />
+                                    <span className="text-[11px]">Grid</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleViewModeChange('list')}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                                        viewMode === 'list'
+                                            ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-xs"
+                                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                    )}
+                                    title="List view"
+                                >
+                                    <List size={14} />
+                                    <span className="text-[11px]">List</span>
+                                </button>
+                            </div>
+
+                            <Button variant="outline" onClick={() => setIsExportModalOpen(true)} className="h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium gap-1.5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800">
+                                <Download size={13} /> <span className="hidden sm:inline">Export</span>
                             </Button>
-                            <Button variant="outline" onClick={() => setIsAttendanceModeModalOpen(true)} className="h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 hover:bg-gray-50">
-                                <ClipboardList size={14} /> Attendance
+                            <Button variant="outline" onClick={() => setIsAttendanceModeModalOpen(true)} className="h-9 px-2.5 sm:px-3 rounded-lg text-xs font-medium gap-1.5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800">
+                                <ClipboardList size={13} /> <span className="hidden sm:inline">Attendance</span>
                             </Button>
-                            <Button onClick={() => setIsAddModalOpen(true)} disabled={atLimit} className="h-9 px-4 rounded-lg text-sm font-semibold text-white gap-2 shadow-sm disabled:opacity-50" style={{ backgroundColor: primaryColor }}>
-                                <UserPlus size={14} /> {atLimit ? 'Limit Reached' : 'Add Teacher'}
+                            <Button onClick={() => setIsAddModalOpen(true)} disabled={atLimit} className="h-9 px-3 sm:px-4 rounded-lg text-xs font-semibold text-white gap-1.5 shadow-sm disabled:opacity-50" style={{ backgroundColor: primaryColor }}>
+                                <UserPlus size={13} /> <span>{atLimit ? 'Limit' : 'Add Teacher'}</span>
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm overflow-hidden">
+                {filteredTeachers.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-2xl py-16 px-4 text-center shadow-sm">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="size-14 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-400">
+                                <Users size={28} />
+                            </div>
+                            <p className="text-sm font-semibold text-gray-700 dark:text-white">No Teachers Found</p>
+                            <p className="text-xs text-gray-400">Try adjusting your search criteria.</p>
+                        </div>
+                    </div>
+                ) : viewMode === 'grid' ? (
+                    <TeacherGrid
+                        teachers={paginatedTeachers}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                    />
+                ) : (
+                    <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm border-collapse">
                             <thead>
@@ -587,12 +657,14 @@ export default function ManageTeachersPage() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
 
                     {!isLoading && filteredTeachers.length > 0 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-slate-800/20 text-xs text-gray-500">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm text-xs text-gray-500">
                             <span>Showing <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage * itemsPerPage + 1}–{Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)}</span> of <span className="font-semibold text-gray-700 dark:text-gray-200">{filteredTeachers.length}</span></span>
                             <div className="flex items-center gap-1">
-                                <span className="mr-2 text-gray-400">Rows per page: {itemsPerPage}</span>
+                                <span className="hidden sm:inline mr-2 text-gray-400">Rows per page: {itemsPerPage}</span>
                                 <Button variant="outline" size="icon" className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40" onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}><ChevronLeft size={14} /></Button>
                                 {getPageNumbers().map((p, i) => p === '...' ? <span key={`e${i}`} className="px-1 text-gray-400">…</span> : (
                                     <Button key={p} variant={p === currentPage + 1 ? 'default' : 'ghost'} className={cn('size-7 rounded-lg text-xs font-medium p-0', p === currentPage + 1 ? 'text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')} style={p === currentPage + 1 ? { backgroundColor: primaryColor } : {}} onClick={() => setCurrentPage((p as number) - 1)}>{p}</Button>
@@ -601,7 +673,7 @@ export default function ManageTeachersPage() {
                             </div>
                         </div>
                     )}
-                </div>
+            {/* pagination end */}
             </div>
 
             <AddTeacherModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} primaryColor={primaryColor} onSuccess={() => refetchTeachers()} schoolId={schoolId} />

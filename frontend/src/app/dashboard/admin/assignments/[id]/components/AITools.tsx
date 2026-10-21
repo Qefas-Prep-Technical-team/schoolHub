@@ -271,16 +271,16 @@ export default function AITools({
   if (previewQuestions.length > 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Review Generated Questions ({previewQuestions.length})</h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPreviewQuestions([])} className="rounded-xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <h3 className="text-base sm:text-lg font-bold">Review Generated Questions ({previewQuestions.length})</h3>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => setPreviewQuestions([])} className="rounded-xl flex-1 sm:flex-initial">
               <RefreshCw size={14} className="mr-2" /> Start Over
             </Button>
             <Button
               onClick={() => addQuestionsMutation.mutate()}
               disabled={addQuestionsMutation.isPending}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex-1 sm:flex-initial"
             >
               {addQuestionsMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <Check size={16} className="mr-2" />}
               Add to Assignment
@@ -301,7 +301,7 @@ export default function AITools({
                 <LaTeXRenderer content={q.question} />
               </div>
               {q.type === 'MULTIPLE_CHOICE' && (
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                   {['A', 'B', 'C', 'D'].map(opt => (
                     <div key={opt} className={`p-1.5 rounded border ${(q as any)[`option${opt}`] ? 'bg-white dark:bg-gray-800 flex items-center gap-2' : 'opacity-50'} ${q.correctAnswer === opt ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-100 dark:border-gray-700'}`}>
                       <span className="font-bold mr-1 shrink-0">{opt}:</span> 
@@ -375,7 +375,7 @@ export default function AITools({
                 className="min-h-[120px] rounded-xl border-gray-200 dark:border-gray-800 focus:ring-primary/20"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label>Number of Questions</Label>
                 <Input
@@ -431,7 +431,7 @@ export default function AITools({
         </div>
       )}
 
-      <div className="flex justify-between items-center gap-3 pt-4 border-t">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 border-t">
         <div>
           {aiUsage && (
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
@@ -440,12 +440,12 @@ export default function AITools({
             </div>
           )}
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onCancel} className="rounded-xl">Cancel</Button>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+          <Button variant="outline" onClick={onCancel} className="rounded-xl w-full sm:w-auto">Cancel</Button>
           <Button
             disabled={isGenerating}
             onClick={handleAction}
-            className={`rounded-xl min-w-[160px] gap-2 shadow-lg ${isLimitReached ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/10' : 'shadow-primary/10'}`}
+            className={`rounded-xl w-full sm:w-auto min-w-[160px] gap-2 shadow-lg ${isLimitReached ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/10' : 'shadow-primary/10'}`}
           >
             {isGenerating ? (
               <>

@@ -64,7 +64,6 @@ import GradeUploadModal from './GradeUploadModal';
 import GradeUploadInstructionsModal from './GradeUploadInstructionsModal';
 import GradeOCRModal from './GradeOCRModal';
 import GradeEditModal from './GradeEditModal';
-import GradeDetailSheet from './GradeDetailSheet';
 import Pagination from './Pagination';
 
 interface GradeHubProps {
@@ -99,7 +98,6 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [viewingGrade, setViewingGrade] = useState<any | null>(null);
   
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -121,7 +119,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
 
   const handleGradeClick = (grade: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setViewingGrade(grade);
+    router.push(`/dashboard/admin/grades/${grade.id}`);
   };
 
 
@@ -603,7 +601,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                                 <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
                                   <Edit size={14} /> Edit Grade
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); }}>
+                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}>
                                   <Eye size={14} /> View Details
                                 </DropdownMenuItem>
                                 {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
@@ -724,6 +722,9 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
+                                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}>
+                                                    <Eye size={14} /> View Details
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
                                                     <Edit size={14} /> Edit
                                                 </DropdownMenuItem>
@@ -891,26 +892,6 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Grade Detail Sheet */}
-      <GradeDetailSheet
-        grade={viewingGrade}
-        onClose={() => setViewingGrade(null)}
-        primaryColor={primaryColor}
-        onEdit={(g) => {
-          setViewingGrade(null);
-          setSelectedGrade(g);
-          setIsEditModalOpen(true);
-        }}
-        onPublish={(g) => {
-          setViewingGrade(null);
-          handlePublish(g);
-        }}
-        onDelete={(g) => {
-          setViewingGrade(null);
-          handleDeleteClick(g);
-        }}
-      />
     </div>
   );
 }

@@ -310,7 +310,7 @@ export default function ManualAddForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-0">
       {/* ── Top Bar ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
             {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
@@ -339,22 +339,22 @@ export default function ManualAddForm({
       }`}>
         
         {/* Left: Question editor */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           
           {/* Type + Marks row — all in one flex row */}
           <div className="space-y-2">
             <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Question Type
             </Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
               {/* Type chips */}
-              <div className="flex-1 flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden divide-x divide-slate-200 dark:divide-slate-700 bg-slate-50 dark:bg-slate-800/60">
+              <div className="flex-1 grid grid-cols-2 sm:flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-700 bg-slate-50 dark:bg-slate-800/60">
                 {TYPES.map((t) => (
                   <button
                     key={t.value}
                     type="button"
                     onClick={() => setType(t.value)}
-                    className={`flex-1 py-2 px-2 text-[11px] font-bold transition-all whitespace-nowrap ${
+                    className={`py-2 px-2 text-[11px] font-bold transition-all text-center ${
                       type === t.value
                         ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900"
                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200"
@@ -365,7 +365,7 @@ export default function ManualAddForm({
                 ))}
               </div>
               {/* Marks — inline on same row */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center justify-between sm:justify-start gap-2 flex-shrink-0 pt-1 sm:pt-0">
                 <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 whitespace-nowrap">
                   Marks
                 </Label>
@@ -587,19 +587,19 @@ export default function ManualAddForm({
       </div>
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
         <Button
           type="button"
           variant="ghost"
           onClick={onCancel}
-          className="rounded-xl font-bold"
+          className="rounded-xl font-bold w-full sm:w-auto"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={addQuestionMutation.isPending}
-          className="rounded-xl gap-2 min-w-[160px] font-bold shadow-lg"
+          className="rounded-xl gap-2 w-full sm:w-auto sm:min-w-[160px] font-bold shadow-lg"
         >
           {addQuestionMutation.isPending ? (
             <>

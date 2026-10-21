@@ -65,32 +65,32 @@ export default function SubmissionReviewModal({ isOpen, onClose, submission, ass
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-950 p-0 border-none rounded-2xl">
-        <div className="sticky top-0 z-10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 p-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-950 p-0 border-none rounded-2xl">
+        <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
             <img 
               src={submission.student?.profileImage || "/logo/favicon.svg"} 
               alt={submission.student?.name || "Student"} 
-              className="w-12 h-12 rounded-full bg-slate-100 object-cover"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100 object-cover shrink-0"
             />
             <div>
-              <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                 {submission.student?.name}'s Submission
               </DialogTitle>
-              <p className="text-sm text-slate-500">
-                {submission.student?.email} • Submitted {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : "Unknown"}
+              <p className="text-xs sm:text-sm text-slate-500">
+                {submission.student?.email} • {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString() : "Unknown"}
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-sm font-semibold text-slate-500">Calculated Score</span>
-            <span className="text-2xl font-black text-slate-900 dark:text-white">
-              {totalCurrentScore} <span className="text-sm text-slate-500 font-medium">/ {assignment.maxScore || 100}</span>
+          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">Score</span>
+            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              {totalCurrentScore} <span className="text-xs sm:text-sm text-slate-500 font-medium">/ {assignment.maxScore || 100}</span>
             </span>
           </div>
         </div>
 
-        <div className="p-6 space-y-8">
+        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
           {assignment.questions?.map((q: any, index: number) => {
             const answer = submission.answers?.find((a: any) => a.questionId === q.id);
             const currentGrade = answer ? grades[answer.id] : null;
@@ -168,11 +168,11 @@ export default function SubmissionReviewModal({ isOpen, onClose, submission, ass
           })}
         </div>
 
-        <div className="sticky bottom-0 z-10 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 p-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose} disabled={isPending}>
+        <div className="sticky bottom-0 z-10 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 p-4 sm:p-6 flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3">
+          <Button variant="outline" onClick={onClose} disabled={isPending} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isPending} className="font-bold">
+          <Button onClick={handleSave} disabled={isPending} className="font-bold w-full sm:w-auto">
             {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save & Publish Grade
           </Button>

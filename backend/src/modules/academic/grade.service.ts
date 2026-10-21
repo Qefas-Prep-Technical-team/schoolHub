@@ -88,6 +88,35 @@ export const getGradeByIdService = async (id: string) => {
   const grade = await prisma.grade.findUnique({
     where: { id },
     include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          studentCode: true,
+          gender: true,
+          gradeLevel: true,
+          profileImage: true,
+        },
+      },
+      class: {
+        select: {
+          id: true,
+          name: true,
+          section: true,
+        },
+      },
+      teacher: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      session: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       exam: true,
       subjectPaper: true,
       examAttempt: {
@@ -97,11 +126,11 @@ export const getGradeByIdService = async (id: string) => {
               subjectPaper: {
                 include: {
                   subject: true,
-                }
-              }
-            }
-          }
-        }
+                },
+              },
+            },
+          },
+        },
       },
     },
   });

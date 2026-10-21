@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import { Users, GraduationCap, CheckCircle2, CreditCard, ClipboardList , Info} from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -19,6 +20,8 @@ import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 
 // Charts
 import DashboardCharts from './components/dashboard/DashboardCharts';
+import AdminAnnouncementModal, { ClassItem } from './components/dashboard/AdminAnnouncementModal';
+import AdminWeeklyReportModal from './components/dashboard/AdminWeeklyReportModal';
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
@@ -26,7 +29,22 @@ export default function AdminDashboard() {
   const schoolName = user?.schools?.[0]?.name || user?.name || 'Future Academy';
   const userName = user?.name || 'Admin';
 
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
+  const [isWeeklyReportOpen, setIsWeeklyReportOpen] = useState(false);
+
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const { data: rawClasses = [] } = useClasses(schoolId);
+
+  const classesList: ClassItem[] = Array.isArray(rawClasses)
+    ? rawClasses.map((c: { id: string; name: string; section?: string; _count?: { enrollments?: number }; studentCount?: number; classCode?: string }) => ({
+        id: c.id,
+        name: c.name,
+        section: c.section,
+        studentCount: c._count?.enrollments || c.studentCount || 0,
+        classCode: c.classCode,
+      }))
+    : [];
   const { data: settings } = useSchoolSettings(schoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
 
@@ -76,10 +94,18 @@ export default function AdminDashboard() {
                     </p>
                     
                     <div className="flex items-center gap-3">
-                        <button className="bg-white text-slate-900 hover:bg-slate-50 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all">
+                        <button 
+                            type="button"
+                            onClick={() => setIsWeeklyReportOpen(true)}
+                            className="bg-white text-slate-900 hover:bg-slate-50 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                        >
                             View weekly report
                         </button>
-                        <button className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-full text-sm font-semibold transition-all">
+                        <button 
+                            type="button"
+                            onClick={() => setIsAnnouncementOpen(true)}
+                            className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-full text-sm font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95"
+                        >
                             Announce
                         </button>
                     </div>
@@ -281,6 +307,27 @@ export default function AdminDashboard() {
                 <AlertsPanel primaryColor={primaryColor} />
              </div>
         </div>
+
+        {/* Modals for Hero Banner Actions */}
+        <AdminAnnouncementModal
+          isOpen={isAnnouncementOpen}
+          onClose={() => setIsAnnouncementOpen(false)}
+          classes={classesList}
+          schoolName={schoolName}
+        />
+
+        <AdminWeeklyReportModal
+          isOpen={isWeeklyReportOpen}
+          onClose={() => setIsWeeklyReportOpen(false)}
+          stats={stats}
+          analysis={analysis}
+          classes={classesList}
+          schoolName={schoolName}
+          adminName={userName}
+          currentTerm={currentTerm}
+          currentSession={currentSession}
+          schoolProfile={schoolProfile}
+        />
 
       </div>
     </div>

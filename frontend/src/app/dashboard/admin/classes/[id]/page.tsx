@@ -293,18 +293,18 @@ export default function ClassDetailsPage() {
 
   if (!classData && !loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md border border-gray-200 dark:border-gray-700">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="text-center p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md border border-slate-200 dark:border-slate-800">
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="text-red-500" size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Class Not Found</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6 font-medium">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Class Not Found</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">
             The class you're looking for doesn't exist or you don't have permission to view it.
           </p>
           <button 
             onClick={() => router.push('/dashboard/admin/classes')}
-            className="w-full py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 dark:shadow-none transition-all active:scale-95 cursor-pointer"
           >
             Back to Classes
           </button>
@@ -314,35 +314,35 @@ export default function ClassDetailsPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-      <main className="flex-1 p-4 md:p-8 w-full max-w-full">
+    <div className="relative flex min-h-screen w-full bg-slate-50/60 dark:bg-slate-950 overflow-x-hidden">
+      <main className="flex-1 p-3 sm:p-6 md:p-8 w-full max-w-full">
         <div className="w-full">
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             <Breadcrumbs items={breadcrumbItems} />
           </div>
           {/* New Page Header Layout */}
-          <div className="bg-white dark:bg-[#1b2232] rounded-3xl p-6 md:p-8 mb-8 border border-gray-150 dark:border-[#364563] shadow-sm flex flex-col md:flex-row gap-8 justify-between items-start md:items-center relative overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-5 md:gap-8 justify-between items-start md:items-center relative overflow-hidden">
             {/* Background Accent */}
-            <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
             
-            <div className="flex flex-col gap-2 z-10">
+            <div className="flex flex-col gap-2 z-10 w-full md:w-auto">
               {loading ? (
                 <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
               ) : (
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl border border-primary/20">
+                <div className="flex items-center gap-3.5 sm:gap-4">
+                  <div className="size-13 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xl sm:text-2xl border border-indigo-200 dark:border-indigo-800/60 shrink-0">
                     {classData?.name?.charAt(0) || "C"}
                   </div>
-                  <div>
-                    <h1 className="text-gray-900 dark:text-white text-3xl font-black tracking-tight">
-                      {classData?.name} {classData?.section ? <span className="text-primary">{classData.section}</span> : ""}
+                  <div className="min-w-0">
+                    <h1 className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-black tracking-tight truncate">
+                      {classData?.name} {classData?.section ? <span className="text-indigo-600 dark:text-indigo-400">{classData.section}</span> : ""}
                     </h1>
-                    <div className="text-gray-500 dark:text-gray-400 mt-1.5 font-medium flex items-center gap-3 text-sm">
-                      <span className="flex items-center gap-1.5">
+                    <div className="text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-2 sm:gap-3 text-xs sm:text-sm flex-wrap">
+                      <span className="flex items-center gap-1.5 shrink-0">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> Active Class
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                      <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                      <span className="font-mono text-[11px] sm:text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 shrink-0">
                         Code: {classData?.classCode}
                       </span>
                     </div>
@@ -351,26 +351,26 @@ export default function ClassDetailsPage() {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-5 sm:gap-8 w-full md:w-auto z-10 items-start sm:items-center">
-               <div className="flex items-center gap-6 sm:gap-8 w-full sm:w-auto justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 w-full md:w-auto z-10 items-stretch sm:items-center pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800/80">
+               <div className="flex items-center justify-between sm:justify-start gap-6 sm:gap-8 w-full sm:w-auto">
                  {/* Quick Stats */}
-                 <div className="flex flex-col gap-1">
-                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Students</span>
-                   <span className="text-2xl font-black text-gray-900 dark:text-white">
+                 <div className="flex flex-col gap-0.5">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Students</span>
+                   <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                      {loading ? "..." : (classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0)}
                    </span>
                  </div>
                  
-                 <div className="w-px h-10 bg-gray-200 dark:bg-[#364563]" />
+                 <div className="w-px h-8 sm:h-10 bg-slate-200 dark:bg-slate-800" />
                  
-                 <div className="flex flex-col gap-1">
-                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Teachers</span>
-                   <span className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                 <div className="flex flex-col gap-0.5">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teachers</span>
+                   <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                      {loading ? "..." : (classData?.teachers?.length || 0)}
                      {classData?.teachers?.length > 0 && (
                        <button
                           onClick={() => setIsTeachersModalOpen(true)}
-                          className="text-primary hover:underline text-xs font-bold transition-colors align-middle"
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline text-xs font-bold transition-colors align-middle cursor-pointer"
                           title="View all assigned teachers"
                         >
                           View
@@ -380,22 +380,22 @@ export default function ClassDetailsPage() {
                  </div>
                </div>
                
-               <div className="hidden sm:block w-px h-10 bg-gray-200 dark:bg-[#364563]" />
+               <div className="hidden sm:block w-px h-10 bg-slate-200 dark:bg-slate-800" />
                
-               <div className="flex gap-3 w-full sm:w-auto items-center mt-2 sm:mt-0">
+               <div className="flex gap-2 sm:gap-3 w-full sm:w-auto items-center">
                  <button 
                     onClick={() => setIsQRModalOpen(true)}
-                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0"
+                    className="size-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-all shadow-2xs hover:shadow-sm hover:-translate-y-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
                     title="QR Access"
                   >
-                    <QrCode size={20} />
+                    <QrCode size={19} />
                   </button>
                   <button 
                     onClick={() => setIsManageModalOpen(true)}
-                    className="flex-1 sm:flex-none sm:px-6 h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white dark:text-gray-900 font-bold shadow-md shadow-primary/20 hover:bg-primary/90 transition-all hover:-translate-y-0.5"
+                    className="flex-1 sm:flex-none px-4 sm:px-6 h-11 sm:h-12 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm shadow-indigo-600/20 dark:shadow-none transition-all hover:-translate-y-0.5 text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 cursor-pointer"
                   >
-                    <UserCog size={18} />
-                    <span>Manage</span>
+                    <UserCog size={17} />
+                    <span>Manage Class</span>
                   </button>
                </div>
             </div>

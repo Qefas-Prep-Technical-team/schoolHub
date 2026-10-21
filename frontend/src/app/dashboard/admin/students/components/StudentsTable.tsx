@@ -190,10 +190,11 @@ export default function StudentsTable({
     <div className="flex flex-col">
       {viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-1">
-          {students.map((student: any) => {
+          {students.map((student: any, index: number) => {
             const isSelected = selectedIds.includes(student.id);
             const studentClass = student.classes?.[0]?.class;
             const studentCode = student.studentCode ? String(student.studentCode).padStart(8, "0") : "—";
+            const rowNumber = (page - 1) * 10 + index + 1;
             return (
               <div
                 key={student.id}
@@ -202,14 +203,20 @@ export default function StudentsTable({
                   isSelected && "border-indigo-400 dark:border-indigo-500 ring-1 ring-indigo-400 dark:ring-indigo-500"
                 )}
               >
-                <div className="absolute top-4 left-4 z-10">
+                <div className="absolute top-3.5 left-3.5 z-10 flex items-center gap-1.5">
                   <input
                     type="checkbox"
-                    className="size-4.5 rounded border-gray-300 dark:border-white/20 cursor-pointer accent-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                    className="size-4 rounded border-gray-300 dark:border-white/20 cursor-pointer accent-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
                     style={{ opacity: isSelected ? 1 : undefined }}
                     checked={isSelected}
                     onChange={(e) => toggleSelect(e, student.id)}
                   />
+                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md tabular-nums border border-slate-200/60 dark:border-slate-700/60">
+                    #{rowNumber}
+                  </span>
+                </div>
+                <div className="absolute top-3.5 right-3.5 z-10">
+                  <StatusDot verified={student.verified} />
                 </div>
                 
                 <div className="flex flex-col items-center text-center mt-2">
@@ -400,50 +407,104 @@ export default function StudentsTable({
       </div>
 
       {/* ── Mobile cards ──────────────────────────────────────────────────── */}
-      <div className="md:hidden flex flex-col divide-y divide-gray-100 dark:divide-white/5">
+      {selectedIds.length > 0 && (
+        <div className="md:hidden flex items-center justify-between p-2.5 px-3.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 m-2.5 mb-1 shadow-2xs">
+          <span>{selectedIds.length} student{selectedIds.length > 1 ? 's' : ''} selected</span>
+          <button type="button" onClick={() => setSelectedIds([])} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+            Clear
+          </button>
+        </div>
+      )}
+
+      <div className="md:hidden flex flex-col gap-2.5 p-2.5 sm:p-4 bg-slate-50/50 dark:bg-slate-950/30">
         {students.map((student: any, index: number) => {
           const isSelected = selectedIds.includes(student.id);
           const studentClass = student.classes?.[0]?.class;
+          const rowNumber = (page - 1) * 10 + index + 1;
+          const studentCode = student.studentCode
+            ? String(student.studentCode).padStart(8, "0")
+            : "—";
 
           return (
             <div
               key={student.id}
               className={cn(
-                "flex items-start gap-3 p-4 transition-colors",
-                isSelected && "bg-indigo-50/40 dark:bg-indigo-500/5"
+                "bg-white dark:bg-slate-900 border rounded-2xl p-3.5 shadow-2xs transition-all relative",
+                isSelected 
+                  ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20 ring-1 ring-indigo-400" 
+                  : "border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               )}
             >
-              <input
-                type="checkbox"
-                className="mt-1 size-4 rounded border-gray-300 cursor-pointer accent-indigo-600"
-                checked={isSelected}
-                onChange={(e) => toggleSelect(e, student.id)}
-              />
-              <div className="size-9 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center shrink-0">
-                {student.profileImage ? (
-                  <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
-                ) : (
-                  <User size={15} className="text-gray-400" />
-                )}
+              {/* Header row: Checkbox + Numbering + Student Code + Status */}
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="size-4 rounded border-gray-300 dark:border-slate-700 cursor-pointer accent-indigo-600 shrink-0"
+                    checked={isSelected}
+                    onChange={(e) => toggleSelect(e, student.id)}
+                  />
+                  <span className="inline-flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md tabular-nums border border-slate-200/70 dark:border-slate-700/70">
+                    #{rowNumber}
+                  </span>
+                  <span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                    {studentCode}
+                  </span>
+                </div>
+                
+                <StatusDot verified={student.verified} />
               </div>
-              <div className="flex-1 min-w-0">
-                <Link href={`/dashboard/admin/students/${student.id}`}>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">{student.name}</p>
-                </Link>
-                <p className="text-[11px] text-gray-400 truncate">{student.email}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  {studentClass && (
-                    <span className="text-[11px] text-gray-500 font-medium">
+
+              {/* Student main info: Avatar + Name + Email */}
+              <Link
+                href={`/dashboard/admin/students/${student.id}`}
+                className="flex items-center gap-3 pt-3 group"
+              >
+                <div className="size-11 rounded-full overflow-hidden border-2 border-slate-200/80 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-indigo-400 transition-colors">
+                  {student.profileImage ? (
+                    <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={18} className="text-slate-400" />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {student.name}
+                    </p>
+                    {student.verified && (
+                      <ShieldCheck size={13} className="text-blue-500 shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                    {student.email || "No email registered"}
+                  </p>
+                </div>
+
+                <ChevronRight size={16} className="text-slate-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-0.5 shrink-0" />
+              </Link>
+
+              {/* Attributes / Details chips: Class, Gender, Parent/Guardian */}
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {studentClass ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-700/50">
+                      <GraduationCap size={11} className="text-slate-400" />
                       {studentClass.name}{studentClass.section ? `-${studentClass.section}` : ""}
                     </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 italic">No class</span>
                   )}
                   <GenderBadge gender={student.gender} />
-                  <StatusDot verified={student.verified} />
                 </div>
+
+                {(student.parentName || student.guardianName) && (
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Guardian:</span> {student.parentName || student.guardianName}
+                  </span>
+                )}
               </div>
-              <Button variant="ghost" size="icon" className="size-7 rounded-lg text-gray-400 shrink-0">
-                <MoreHorizontal size={15} />
-              </Button>
             </div>
           );
         })}
@@ -477,7 +538,7 @@ export default function StudentsTable({
           </span>
 
           <div className="flex items-center gap-1">
-            <span className="mr-2 text-gray-400">Rows per page: 10</span>
+            <span className="mr-2 text-gray-400 hidden sm:inline-block">Rows per page: 10</span>
             <Button
               variant="outline"
               size="icon"

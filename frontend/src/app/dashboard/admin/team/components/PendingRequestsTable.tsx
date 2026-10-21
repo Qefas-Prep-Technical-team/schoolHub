@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useApproveAdmin, useRejectAdmin, usePendingAdmins } from "@/lib/api/hooks/useAdmin"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
-import { Clock, CheckCircle, XCircle, ChevronDown } from "lucide-react"
+import { Clock, CheckCircle2, XCircle, Calendar, ShieldCheck, UserCheck, AlertCircle, Loader2 } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 type ApprovableRole = "PRINCIPAL" | "REGISTRAR" | "ACCOUNTANT" | "SUPPORT"
 
@@ -30,11 +31,31 @@ interface PendingAdmin {
     requestedAt: string
 }
 
-const ROLE_OPTIONS: { value: ApprovableRole; label: string; description: string }[] = [
-    { value: "PRINCIPAL", label: "Principal", description: "Can approve/reject admins, manage all school operations" },
-    { value: "REGISTRAR", label: "Registrar", description: "Manages teachers, students, classes, exams" },
-    { value: "ACCOUNTANT", label: "Accountant", description: "Manages finance, billing, and transactions" },
-    { value: "SUPPORT", label: "Support", description: "View-only access to dashboard and stats" },
+const ROLE_OPTIONS: { value: ApprovableRole; label: string; description: string; badgeColor: string }[] = [
+    { 
+        value: "PRINCIPAL", 
+        label: "Principal", 
+        description: "Full management authority — approves team requests & manages all operational branches",
+        badgeColor: "text-violet-700 bg-violet-50 dark:text-violet-300 dark:bg-violet-950/40"
+    },
+    { 
+        value: "REGISTRAR", 
+        label: "Registrar", 
+        description: "Academic controller — manages student rosters, teacher profiles, classes, and exams",
+        badgeColor: "text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/40"
+    },
+    { 
+        value: "ACCOUNTANT", 
+        label: "Accountant", 
+        description: "Financial administrator — manages school billing, invoices, fee collection, and records",
+        badgeColor: "text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40"
+    },
+    { 
+        value: "SUPPORT", 
+        label: "Support Staff", 
+        description: "View-only administrative access — inspects statistics and provides helpdesk services",
+        badgeColor: "text-slate-700 bg-slate-100 dark:text-slate-300 dark:bg-slate-800"
+    },
 ]
 
 interface PendingRequestsTableProps {
@@ -56,16 +77,17 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
     const [selectedRole, setSelectedRole] = useState<ApprovableRole>("REGISTRAR")
     const [rejectReason, setRejectReason] = useState("")
 
-    const pending: PendingAdmin[] = (data?.data || []).filter((m: PendingAdmin) =>
+    const rawPending = data?.data || []
+    const pending: PendingAdmin[] = rawPending.filter((m: PendingAdmin) =>
         m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.email?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     if (isLoading) {
         return (
-            <div className="p-8 space-y-3">
+            <div className="p-4 sm:p-6 space-y-3">
                 {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                    <div key={i} className="h-18 rounded-2xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
                 ))}
             </div>
         )
@@ -73,59 +95,140 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
 
     if (pending.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-                <CheckCircle className="text-slate-300 dark:text-slate-600 mb-4" size={48} />
-                <p className="text-slate-500 font-medium">No pending requests</p>
-                <p className="text-slate-400 text-sm mt-1">New join requests will appear here for review</p>
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                <div className="size-16 rounded-3xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+                    <CheckCircle2 size={28} />
+                </div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                    {searchTerm ? "No matching pending requests" : "No pending requests"}
+                </h3>
+                <p className="text-xs text-slate-400 max-w-sm mt-1">
+                    {searchTerm 
+                        ? `No applicants matched "${searchTerm}".` 
+                        : "All authorization requests have been handled. New join requests will appear here for review."}
+                </p>
             </div>
         )
     }
 
     return (
         <>
-            <div className="overflow-x-auto">
-                <table className="w-full">
+            {/* ── Mobile View (< 768px): Responsive Cards ─────────────────────── */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60">
+                {pending.map((member) => (
+                    <div key={member.id} className="p-4 space-y-3.5 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                        {/* Applicant Identity */}
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(member.name)}&backgroundColor=64748b&fontFamily=Arial&fontSize=40`}
+                                    alt={member.name}
+                                    className="size-11 rounded-2xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 shadow-2xs grayscale opacity-80 shrink-0"
+                                />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                        {member.name}
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-mono mt-0.5">
+                                        {member.email}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 shrink-0">
+                                <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                Pending
+                            </span>
+                        </div>
+
+                        {/* Request Timestamp */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                            <Calendar size={13} />
+                            <span>
+                                Requested on {member.requestedAt
+                                    ? new Date(member.requestedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                    : "Recently"}
+                            </span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        {canApprove && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        setApproveDialog(member)
+                                        setSelectedRole("REGISTRAR")
+                                    }}
+                                    className="flex-1 h-10 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white border-none shadow-sm gap-1.5"
+                                >
+                                    <CheckCircle2 size={14} />
+                                    <span>Approve & Assign</span>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setRejectDialog(member)
+                                        setRejectReason("")
+                                    }}
+                                    className="h-10 px-4 rounded-xl text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/40 dark:hover:bg-rose-950/30 gap-1.5"
+                                >
+                                    <XCircle size={14} />
+                                    <span>Reject</span>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Desktop View (>= 768px): Structured Table ─────────────────────── */}
+            <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-4">Applicant</th>
-                            <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-4">Requested</th>
-                            <th className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-4">Status</th>
+                        <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+                            <th className="text-left text-[11px] font-black text-slate-400 uppercase tracking-widest px-6 py-4">Applicant</th>
+                            <th className="text-left text-[11px] font-black text-slate-400 uppercase tracking-widest px-6 py-4">Requested On</th>
+                            <th className="text-left text-[11px] font-black text-slate-400 uppercase tracking-widest px-6 py-4">Status</th>
                             {canApprove && (
-                                <th className="text-right text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-4">Actions</th>
+                                <th className="text-right text-[11px] font-black text-slate-400 uppercase tracking-widest px-6 py-4">Actions</th>
                             )}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                         {pending.map((member) => (
-                            <tr key={member.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                            <tr key={member.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors group">
                                 <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3.5">
                                         <img
                                             src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(member.name)}&backgroundColor=64748b&fontFamily=Arial&fontSize=40`}
                                             alt={member.name}
-                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-slate-900 grayscale opacity-70"
+                                            className="size-10 rounded-2xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 shadow-2xs grayscale opacity-75 shrink-0"
                                         />
-                                        <div>
-                                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{member.name}</p>
-                                            <p className="text-xs text-slate-400">{member.email}</p>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                                {member.name}
+                                            </p>
+                                            <p className="text-xs text-slate-400 truncate font-mono mt-0.5">{member.email}</p>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className="text-sm text-slate-500">
+                                    <span className="text-xs font-semibold text-slate-500">
                                         {member.requestedAt
                                             ? new Date(member.requestedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                                             : "—"}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20">
-                                        <Clock size={11} />
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50">
+                                        <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
                                         Pending Review
                                     </span>
                                 </td>
                                 {canApprove && (
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <Button
                                                 size="sm"
@@ -133,10 +236,10 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
                                                     setApproveDialog(member)
                                                     setSelectedRole("REGISTRAR")
                                                 }}
-                                                className="h-8 px-3 text-xs font-semibold bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg"
+                                                className="h-8 px-3.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-2xs gap-1.5"
                                             >
-                                                <CheckCircle size={13} className="mr-1.5" />
-                                                Approve
+                                                <CheckCircle2 size={13} />
+                                                <span>Approve</span>
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -145,10 +248,10 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
                                                     setRejectDialog(member)
                                                     setRejectReason("")
                                                 }}
-                                                className="h-8 px-3 text-xs font-semibold text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                                                className="h-8 px-3 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl gap-1.5"
                                             >
-                                                <XCircle size={13} className="mr-1.5" />
-                                                Reject
+                                                <XCircle size={13} />
+                                                <span>Reject</span>
                                             </Button>
                                         </div>
                                     </td>
@@ -159,41 +262,48 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
                 </table>
             </div>
 
-            {/* Approve Dialog */}
+            {/* ── Approve Request Modal ─────────────────────────────────────────── */}
             <Dialog open={!!approveDialog} onOpenChange={() => setApproveDialog(null)}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="w-[95%] sm:max-w-md rounded-3xl p-6">
                     <DialogHeader>
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                <CheckCircle className="text-blue-600 dark:text-blue-400" size={20} />
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="size-11 rounded-2xl bg-blue-100 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <CheckCircle2 size={22} />
                             </div>
-                            <DialogTitle>Approve Admin Request</DialogTitle>
+                            <div>
+                                <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+                                    Approve Staff Request
+                                </DialogTitle>
+                                <p className="text-xs text-slate-400 font-medium">Assign System Governance Role</p>
+                            </div>
                         </div>
-                        <DialogDescription className="text-sm text-slate-500">
-                            You are approving <strong className="text-slate-800 dark:text-slate-200">{approveDialog?.name}</strong>. Select the role to assign them.
+                        <DialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                            You are granting dashboard access to <strong className="text-slate-900 dark:text-white">{approveDialog?.name}</strong> (<span className="font-mono text-xs">{approveDialog?.email}</span>). Select the organizational role they will hold:
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-3 py-2">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Assign Role</label>
+                    <div className="space-y-2 py-2">
+                        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                            Select Administrative Role
+                        </label>
                         <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as ApprovableRole)}>
-                            <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-700 h-12 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 px-4">
+                            <SelectTrigger className="w-full rounded-2xl border-slate-200 dark:border-slate-800 h-12 bg-slate-50/50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 px-4">
                                 <SelectValue>
-                                    <span className="font-medium text-sm text-slate-800 dark:text-slate-200">
+                                    <span className="font-bold text-sm text-slate-900 dark:text-white">
                                         {ROLE_OPTIONS.find(opt => opt.value === selectedRole)?.label || "Select Role"}
                                     </span>
                                 </SelectValue>
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden p-1">
+                            <SelectContent className="rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 max-h-80">
                                 {ROLE_OPTIONS.map((opt) => (
                                     <SelectItem 
                                         key={opt.value} 
                                         value={opt.value}
-                                        className="py-3 px-3 rounded-lg cursor-pointer focus:bg-blue-50 dark:focus:bg-blue-900/20"
+                                        className="py-3 px-3 rounded-xl cursor-pointer focus:bg-blue-50 dark:focus:bg-blue-950/30 my-0.5"
                                     >
-                                        <div className="flex flex-col gap-0.5 ml-1">
-                                            <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">{opt.label}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight">{opt.description}</p>
+                                        <div className="flex flex-col gap-0.5">
+                                            <p className="font-bold text-sm text-slate-900 dark:text-white">{opt.label}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">{opt.description}</p>
                                         </div>
                                     </SelectItem>
                                 ))}
@@ -201,8 +311,10 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
                         </Select>
                     </div>
 
-                    <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setApproveDialog(null)}>Cancel</Button>
+                    <DialogFooter className="gap-2 sm:gap-0 mt-3">
+                        <Button variant="outline" className="rounded-xl font-bold" onClick={() => setApproveDialog(null)}>
+                            Cancel
+                        </Button>
                         <Button
                             onClick={() => {
                                 if (approveDialog) {
@@ -213,44 +325,55 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
                                 }
                             }}
                             disabled={isApproving}
-                            className="bg-blue-500 hover:bg-blue-600 text-white border-none"
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold border-none shadow-sm gap-2"
                         >
-                            {isApproving ? "Approving..." : "Approve & Assign Role"}
+                            {isApproving && <Loader2 size={14} className="animate-spin" />}
+                            <span>{isApproving ? "Authorizing..." : "Authorize & Grant Access"}</span>
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Reject Dialog */}
+            {/* ── Reject Request Modal ──────────────────────────────────────────── */}
             <Dialog open={!!rejectDialog} onOpenChange={() => setRejectDialog(null)}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="w-[95%] sm:max-w-md rounded-3xl p-6">
                     <DialogHeader>
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                <XCircle className="text-red-600 dark:text-red-400" size={20} />
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="size-11 rounded-2xl bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                                <XCircle size={22} />
                             </div>
-                            <DialogTitle>Reject Admin Request</DialogTitle>
+                            <div>
+                                <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+                                    Decline Authorization Request
+                                </DialogTitle>
+                                <p className="text-xs text-slate-400 font-medium">Reject Join Application</p>
+                            </div>
                         </div>
-                        <DialogDescription className="text-sm text-slate-500">
-                            You are rejecting <strong className="text-slate-800 dark:text-slate-200">{rejectDialog?.name}</strong>{"'s"} request. Optionally provide a reason.
+                        <DialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                            You are declining <strong className="text-slate-900 dark:text-white">{rejectDialog?.name}</strong>{"'s"} request to join the administrative team.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-2 py-2">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reason (Optional)</label>
+                    <div className="space-y-1.5 py-2">
+                        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                            Reason for Declining (Optional)
+                        </label>
                         <textarea
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
-                            placeholder="e.g. Unrecognized applicant, please contact support..."
+                            placeholder="e.g. Unverified staff member, please contact the principal's office..."
                             rows={3}
-                            className="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none"
+                            className="w-full text-xs sm:text-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 px-4 py-3 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 resize-none shadow-2xs"
                         />
                     </div>
 
-                    <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setRejectDialog(null)}>Cancel</Button>
+                    <DialogFooter className="gap-2 sm:gap-0 mt-2">
+                        <Button variant="outline" className="rounded-xl font-bold" onClick={() => setRejectDialog(null)}>
+                            Cancel
+                        </Button>
                         <Button
                             variant="destructive"
+                            className="rounded-xl font-bold gap-2"
                             onClick={() => {
                                 if (rejectDialog) {
                                     rejectAdmin(
@@ -261,7 +384,8 @@ export default function PendingRequestsTable({ schoolId, searchTerm }: PendingRe
                             }}
                             disabled={isRejecting}
                         >
-                            {isRejecting ? "Rejecting..." : "Reject Request"}
+                            {isRejecting && <Loader2 size={14} className="animate-spin" />}
+                            <span>{isRejecting ? "Declining..." : "Decline Request"}</span>
                         </Button>
                     </DialogFooter>
                 </DialogContent>

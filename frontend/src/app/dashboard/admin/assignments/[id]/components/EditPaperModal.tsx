@@ -100,8 +100,8 @@ export default function EditPaperModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-[2rem]">
-        <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-8 pb-4 shrink-0">
+      <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl sm:rounded-[2rem]">
+        <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-4 sm:p-8 pb-3 sm:pb-4 shrink-0">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
               <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
@@ -115,7 +115,7 @@ export default function EditPaperModal({
           </DialogHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 pt-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-2 custom-scrollbar">
           <div className="flex justify-end mb-6">
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
               <button
@@ -256,11 +256,11 @@ export default function EditPaperModal({
           </form>
         </div>
 
-        <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0">
+        <div className="p-4 sm:p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3 shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
-            className="rounded-2xl font-bold h-12 px-6 border-slate-200"
+            className="rounded-2xl font-bold h-11 sm:h-12 px-6 border-slate-200 w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -268,7 +268,7 @@ export default function EditPaperModal({
             form="edit-paper-form"
             type="submit"
             disabled={isPending}
-            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-12 px-8 flex items-center gap-2"
+            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-11 sm:h-12 px-8 flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             {isPending ? (
               <Loader2 className="animate-spin h-4 w-4" />

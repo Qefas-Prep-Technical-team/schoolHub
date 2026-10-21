@@ -14,7 +14,7 @@ interface CustomTabsProps {
 
 const CustomTabs: React.FC<CustomTabsProps> = ({ tabs, activeTab, onTabChange }) => {
   return (
-    <div className="inline-flex gap-1 p-1.5 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md rounded-[20px] overflow-x-auto scrollbar-none w-full sm:w-auto shadow-inner border border-gray-200/50 dark:border-gray-700/50">
+    <div className="inline-flex gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-slate-100/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl sm:rounded-[20px] overflow-x-auto no-scrollbar w-full sm:w-auto shadow-2xs border border-slate-200/80 dark:border-slate-800">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -23,10 +23,11 @@ const CustomTabs: React.FC<CustomTabsProps> = ({ tabs, activeTab, onTabChange })
             type="button"
             onClick={() => onTabChange(tab.id)}
             className={`
-              px-6 py-2.5 text-sm font-bold tracking-wide transition-all duration-300 rounded-2xl whitespace-nowrap focus:outline-none flex-shrink-0
+              px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 rounded-xl sm:rounded-2xl whitespace-nowrap flex-shrink-0 cursor-pointer
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900
               ${isActive 
-                ? 'bg-white dark:bg-[#253046] text-primary dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10 transform scale-100' 
-                : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/25 dark:bg-indigo-600 dark:text-white dark:shadow-indigo-900/50' 
+                : 'bg-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-white/70 dark:hover:bg-slate-800/80'
               }
             `}
           >

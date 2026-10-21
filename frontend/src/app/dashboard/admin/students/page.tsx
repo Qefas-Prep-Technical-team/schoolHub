@@ -305,8 +305,8 @@ export default function StudentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8 transition-colors duration-300">
-      <div className="w-[95%] max-w-[1600px] mx-auto space-y-5">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-3.5 sm:p-6 lg:p-8 transition-colors duration-300">
+      <div className="w-full sm:w-[95%] max-w-[1600px] mx-auto space-y-4 sm:space-y-5">
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -341,11 +341,11 @@ export default function StudentsPage() {
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {stats.map((stat, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm"
+              className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-3.5 sm:p-5 shadow-2xs"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1.5">
@@ -372,14 +372,14 @@ export default function StudentsPage() {
                   <stat.icon size={15} />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
               <p className="text-[11px] text-gray-400 mt-1">{stat.note}</p>
             </div>
           ))}
         </div>
 
         {/* Filter Bar */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm p-3">
+        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-2xs p-3 sm:p-3.5">
           <div className="flex flex-col md:flex-row gap-3">
             {/* Search */}
             <div className="relative w-full md:max-w-xs shrink-0">
@@ -508,7 +508,7 @@ export default function StudentsPage() {
         </div>
 
         {/* Table / Grid */}
-        <div className={cn("bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden", viewMode === "list" ? "border border-gray-100 dark:border-white/5" : "bg-transparent shadow-none dark:bg-transparent")}>
+        <div className={cn("bg-white dark:bg-slate-900 rounded-2xl shadow-2xs overflow-hidden", viewMode === "list" ? "border border-gray-150 dark:border-white/10" : "bg-transparent shadow-none dark:bg-transparent border-none")}>
           <StudentsTable
             searchTerm={searchTerm}
             filters={filters}

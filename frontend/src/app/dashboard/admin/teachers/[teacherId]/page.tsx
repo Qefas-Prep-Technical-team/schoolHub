@@ -172,8 +172,8 @@ export default function TeacherProfilePage() {
     const subjects: any[] = teacher.professionalInfo?.subjects || []
     const classes: any[] = teacher.professionalInfo?.assignedClasses || []
     
-    const subjectNames = subjects.map((s: any) => typeof s === 'string' ? s : s.name);
-    const classNames = classes.map((c: any) => typeof c === 'string' ? c : c.name);
+    const subjectNames = subjects.map((s: any) => typeof s === 'string' ? s : (s?.name || s?.subject?.name || '')).filter(Boolean);
+    const classNames = classes.map((c: any) => typeof c === 'string' ? c : (c?.name || c?.class?.name || '')).filter(Boolean);
     const formatter = typeof Intl !== 'undefined' && Intl.ListFormat ? new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }) : { format: (arr: string[]) => arr.join(', ') };
     const formattedSubjects = subjectNames.length > 0 ? formatter.format(subjectNames) : 'multiple subjects';
     const formattedClasses = classNames.length > 0 ? formatter.format(classNames) : '';
@@ -222,7 +222,7 @@ export default function TeacherProfilePage() {
                                     {name}
                                 </h1>
                                 <p className="text-sm md:text-base font-bold text-slate-500 dark:text-slate-400">
-                                    {department} {subjects.length > 0 ? `· ${subjects.slice(0, 2).join(', ')}` : ''}
+                                    {department}{subjectNames.length > 0 ? ` · ${subjectNames.slice(0, 2).join(', ')}` : ''}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
                                     <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
@@ -287,13 +287,13 @@ export default function TeacherProfilePage() {
 
             {/* ── Tabs ────────────────────────────────────────────────────── */}
             <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-6 md:mt-8">
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide bg-white dark:bg-slate-900 rounded-none md:rounded-2xl border-y md:border border-slate-200 dark:border-slate-800 p-2">
+                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide bg-white dark:bg-slate-900 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800 p-1.5 sm:p-2">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex-1 min-w-[140px] px-6 md:px-10 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                                "flex-1 min-w-[100px] sm:min-w-[140px] px-3 sm:px-6 md:px-10 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap",
                                 activeTab === tab.id
                                     ? "text-white shadow-md"
                                     : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"

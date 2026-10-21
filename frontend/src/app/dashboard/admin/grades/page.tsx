@@ -219,155 +219,181 @@ export default function AdminGradesDashboard() {
         {/* Overview Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {/* Card 1: Total Exams */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-blue-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm sm:text-lg">Total Exams</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="size-10 sm:size-11 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 group-hover:scale-105 transition-transform">
+                        <Trophy size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            Recorded
+                        </span>
                         <TooltipProvider>
                             <Tooltip delayDuration={300}>
                                 <TooltipTrigger asChild>
-                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
-                                        <Info size={16} />
+                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
+                                        <Info size={14} />
                                     </button>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The total number of exams created and recorded across the school.
+                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The total number of formal examinations recorded across the school.
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <Trophy size={18} className="opacity-80" />
                 </div>
-                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
-                    <div className="space-y-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                <div>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+                        Total Exams
+                    </span>
+                    <div className="flex items-baseline justify-between mt-1">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                             {isLoadingExams ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
                                 exams?.length || 0
                             )}
                         </h3>
-                        <p className="text-sm text-slate-500 font-medium tracking-wide">Recorded</p>
-                    </div>
-                    <div className="flex gap-1 items-end h-10">
-                        <div className="w-1.5 h-full bg-slate-100 dark:bg-slate-800 rounded-full" />
-                        <div className="w-1.5 h-3/4 bg-slate-200 dark:bg-slate-700 rounded-full" />
-                        <div className="w-1.5 h-1/2 bg-blue-500 rounded-full" />
-                        <div className="w-1.5 h-5/6 bg-blue-400 rounded-full" />
+                        <div className="flex gap-1 items-end h-6">
+                            <div className="w-1 h-3 bg-blue-200 dark:bg-blue-900/60 rounded-full" />
+                            <div className="w-1 h-4 bg-blue-300 dark:bg-blue-800 rounded-full" />
+                            <div className="w-1 h-6 bg-blue-500 rounded-full" />
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Card 2: Subject Papers */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-purple-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm sm:text-lg">Subject Papers</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="size-10 sm:size-11 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40 group-hover:scale-105 transition-transform">
+                        <Layers size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            Papers
+                        </span>
                         <TooltipProvider>
                             <Tooltip delayDuration={300}>
                                 <TooltipTrigger asChild>
-                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
-                                        <Info size={16} />
+                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
+                                        <Info size={14} />
                                     </button>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The total number of subject papers recorded.
+                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The total number of subject test and examination papers recorded.
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <Layers size={18} className="opacity-80" />
                 </div>
-                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
-                    <div className="space-y-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                <div>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+                        Subject Papers
+                    </span>
+                    <div className="flex items-baseline justify-between mt-1">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                             {isLoadingPapers ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
                                 subjectPapers?.length || 0
                             )}
                         </h3>
-                        <p className="text-sm text-slate-500 font-medium tracking-wide">Papers</p>
-                    </div>
-                    <div className="size-10 rounded-full border-4 border-purple-100 dark:border-slate-800 border-t-purple-500 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">All</span>
+                        <div className="flex gap-1 items-end h-6">
+                            <div className="w-1 h-2.5 bg-purple-200 dark:bg-purple-900/60 rounded-full" />
+                            <div className="w-1 h-5 bg-purple-300 dark:bg-purple-800 rounded-full" />
+                            <div className="w-1 h-6 bg-purple-500 rounded-full" />
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Card 3: Graded Students */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-rose-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm sm:text-lg">Students Graded</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="size-10 sm:size-11 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-900/40 group-hover:scale-105 transition-transform">
+                        <Users size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            Attempts
+                        </span>
                         <TooltipProvider>
                             <Tooltip delayDuration={300}>
                                 <TooltipTrigger asChild>
-                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
-                                        <Info size={16} />
+                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
+                                        <Info size={14} />
                                     </button>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The total number of students with recorded grades.
+                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The total number of exam submissions and graded student attempts.
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <Users size={18} className="opacity-80" />
                 </div>
-                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
-                    <div className="space-y-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                <div>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+                        Students Graded
+                    </span>
+                    <div className="flex items-baseline justify-between mt-1">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                             {isLoadingExams ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
                                 totalAttemptsCount
                             )}
                         </h3>
-                        <p className="text-sm text-slate-500 font-medium tracking-wide">Attempts</p>
-                    </div>
-                    <div className="flex gap-1 items-end h-10">
-                        <div className="w-1.5 h-1/2 bg-slate-100 dark:bg-slate-800 rounded-full" />
-                        <div className="w-1.5 h-full bg-slate-200 dark:bg-slate-700 rounded-full" />
-                        <div className="w-1.5 h-3/4 bg-rose-500 rounded-full" />
-                        <div className="w-1.5 h-2/3 bg-rose-400 rounded-full" />
+                        <div className="flex gap-1 items-end h-6">
+                            <div className="w-1 h-3.5 bg-rose-200 dark:bg-rose-900/60 rounded-full" />
+                            <div className="w-1 h-5 bg-rose-300 dark:bg-rose-800 rounded-full" />
+                            <div className="w-1 h-6 bg-rose-500 rounded-full" />
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Card 4: Average Score */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col group hover:shadow-lg transition-all">
-                <div className="bg-emerald-500 p-3 sm:p-4 flex justify-between items-center text-white">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm sm:text-lg">Average Score</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="size-10 sm:size-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40 group-hover:scale-105 transition-transform">
+                        <Award size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            Overall Mean
+                        </span>
                         <TooltipProvider>
                             <Tooltip delayDuration={300}>
                                 <TooltipTrigger asChild>
-                                    <button type="button" className="text-white/70 hover:text-white focus:outline-none">
-                                        <Info size={16} />
+                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
+                                        <Info size={14} />
                                     </button>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The overall average score.
+                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                                    The global average percentage score computed across all evaluated students.
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <Award size={18} className="opacity-80" />
                 </div>
-                <div className="p-4 sm:p-6 flex items-center justify-between gap-2">
-                    <div className="space-y-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                <div>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+                        Average Score
+                    </span>
+                    <div className="flex items-baseline justify-between mt-1">
+                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                             {isLoadingExams ? (
                                 <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                             ) : (
                                 `${globalScoreAverage}%`
                             )}
                         </h3>
-                        <p className="text-sm text-slate-500 font-medium tracking-wide">Overall Mean</p>
-                    </div>
-                    <div className="size-10 rounded-full border-4 border-emerald-100 dark:border-slate-800 border-t-emerald-500 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">Avg</span>
+                        <div className="flex gap-1 items-end h-6">
+                            <div className="w-1 h-3 bg-emerald-200 dark:bg-emerald-900/60 rounded-full" />
+                            <div className="w-1 h-4 bg-emerald-300 dark:bg-emerald-800 rounded-full" />
+                            <div className="w-1 h-6 bg-emerald-500 rounded-full" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -375,92 +401,36 @@ export default function AdminGradesDashboard() {
 
 
         {/* Operational Control Tabs */}
-        <div className="mb-6 lg:mb-8 bg-slate-100/50 dark:bg-slate-800/20 p-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                <button 
-                    onClick={() => setActiveTab('exams')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'exams' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'exams' ? primaryColor : 'transparent' }}
-                >
-                    Exams
-                </button>
-                <button 
-                    onClick={() => setActiveTab('ca')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'ca' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'ca' ? primaryColor : 'transparent' }}
-                >
-                    CA
-                </button>
-                <button 
-                    onClick={() => setActiveTab('assignment')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'assignment' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'assignment' ? primaryColor : 'transparent' }}
-                >
-                    Assignments
-                </button>
-                <button 
-                    onClick={() => setActiveTab('test')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'test' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'test' ? primaryColor : 'transparent' }}
-                >
-                    Quizzes/Test
-                </button>
-                <button 
-                    onClick={() => setActiveTab('papers')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'papers' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'papers' ? primaryColor : 'transparent' }}
-                >
-                    Papers
-                </button>
-                <button 
-                    onClick={() => setActiveTab('standalone')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'standalone' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'standalone' ? primaryColor : 'transparent' }}
-                >
-                    All Grades
-                </button>
-                <button 
-                    onClick={() => setActiveTab('final')}
-                    className={cn(
-                        "px-4 py-2.5 text-sm transition-all whitespace-nowrap rounded-xl",
-                        activeTab === 'final' 
-                          ? "font-bold text-white shadow-sm" 
-                          : "font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
-                    )}
-                    style={{ backgroundColor: activeTab === 'final' ? primaryColor : 'transparent' }}
-                >
-                    Final Results
-                </button>
+        <div className="mb-6 lg:mb-8 bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
+                {[
+                  { id: 'exams', label: 'Exams', icon: Trophy },
+                  { id: 'ca', label: 'Continuous Assessments', icon: CheckCircle2 },
+                  { id: 'assignment', label: 'Assignments', icon: BookOpen },
+                  { id: 'test', label: 'Quizzes / Tests', icon: FileText },
+                  { id: 'papers', label: 'Papers', icon: Layers },
+                  { id: 'standalone', label: 'All Grades', icon: Award },
+                  { id: 'final', label: 'Final Results', icon: BarChart3 },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={cn(
+                        "flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all whitespace-nowrap rounded-xl",
+                        isActive
+                          ? "text-white shadow-sm shadow-blue-500/20"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                      )}
+                      style={{ backgroundColor: isActive ? primaryColor : 'transparent' }}
+                    >
+                      <Icon size={15} className={isActive ? "text-white" : "text-slate-400"} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
             </div>
         </div>
 

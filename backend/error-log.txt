@@ -54131,4 +54131,96 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
     at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at getPublicPlatformSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\settings\settings.controller.ts:39:22)
+    at getPublicPlatformSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\settings\settings.controller.ts:39:22)PrismaClientKnownRequestError: 
+Invalid `prisma.subject.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:251:22
+
+  248 // D. Base Counts
+  249 prisma.class.count({ where: { schoolId: resolvedId } }),
+  250 prisma.exam.count({ where: { schoolId: resolvedId } }),
+→ 251 prisma.subject.count(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 5)
+    at getSchoolStatsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:216:5)
+    at async Promise.all (index 0)
+    at getSchoolBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:751:7)
+    at getSchoolBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:374:18)PrismaClientKnownRequestError: 
+Invalid `prisma.class.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:289:25
+
+  286   throw new Error("You are not allowed to view classes in this school");
+  287 }
+  288 
+→ 289 return prisma.class.findMany(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:197:18)PrismaClientKnownRequestError: 
+Invalid `prisma.relationshipLink.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:80:29
+
+  77 // 3. Fetch robust real-time usage stats (Aligning with school.service.ts)
+  78 const [studentLinks, studentEnrollments, teacherLinks, examCount, classCount, storageMetric, adminCount] = await Promise.all([
+  79   // A. Student Links
+→ 80   prisma.relationshipLink.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:78:110)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2824:47
+
+  2821   });
+  2822 }
+  2823 
+→ 2824 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2824:21)Error: schoolId is required for admin class listing
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:274:13)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:197:41)
+    at Layer.handleRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\route.js:157:13)
+    at authenticateToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\middleware\authMiddleware.ts:158:5)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)Error: schoolId is required for admin class listing
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:274:13)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:197:41)
+    at Layer.handleRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\route.js:157:13)
+    at authenticateToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\middleware\authMiddleware.ts:158:5)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2824:47
+
+  2821   });
+  2822 }
+  2823 
+→ 2824 const dbToken = await prisma.refreshToken.findFirst(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2824:21)

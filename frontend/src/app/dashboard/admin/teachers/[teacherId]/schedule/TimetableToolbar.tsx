@@ -1,5 +1,6 @@
-import Button from '../components/ui/Button'
-import { Loader2 } from 'lucide-react'
+"use client"
+import React from 'react'
+import { ChevronLeft, ChevronRight, Download, Plus, Loader2 } from 'lucide-react'
 
 interface TimetableToolbarProps {
   currentWeek: string
@@ -8,6 +9,7 @@ interface TimetableToolbarProps {
   onAddClass: () => void
   onPrint: () => void
   isExporting?: boolean
+  primaryColor?: string
 }
 
 export default function TimetableToolbar({ 
@@ -16,53 +18,69 @@ export default function TimetableToolbar({
   onNextWeek, 
   onAddClass,
   onPrint,
-  isExporting
+  isExporting,
+  primaryColor = '#2563eb'
 }: TimetableToolbarProps) {
   return (
-    <div className="flex justify-between items-center gap-2 mb-4 p-4 bg-white dark:bg-[#191e2a] rounded-lg border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-4 p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all">
+      {/* Week Navigator */}
+      <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-800/60 p-1 sm:p-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
         <button 
+          type="button"
           onClick={onPreviousWeek}
-          className="p-2 text-[#0e121b] dark:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50"
+          aria-label="Previous week"
+          className="size-9 sm:size-8 flex items-center justify-center text-slate-600 dark:text-slate-300 rounded-lg hover:bg-white dark:hover:bg-slate-700 hover:shadow-xs transition-all active:scale-95"
         >
-          <span className="material-symbols-outlined">chevron_left</span>
+          <ChevronLeft size={18} />
         </button>
-        <span className="text-sm font-medium text-[#0e121b] dark:text-white whitespace-nowrap">
+        
+        <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 px-2 select-none tracking-tight text-center">
           {currentWeek}
         </span>
+        
         <button 
+          type="button"
           onClick={onNextWeek}
-          className="p-2 text-[#0e121b] dark:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50"
+          aria-label="Next week"
+          className="size-9 sm:size-8 flex items-center justify-center text-slate-600 dark:text-slate-300 rounded-lg hover:bg-white dark:hover:bg-slate-700 hover:shadow-xs transition-all active:scale-95"
         >
-          <span className="material-symbols-outlined">chevron_right</span>
+          <ChevronRight size={18} />
         </button>
       </div>
       
-      <div className="flex gap-2">
-        <Button 
-          variant="secondary" 
-          icon={isExporting ? undefined : "print"}
+      {/* Actions */}
+      <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+        <button 
+          type="button"
           onClick={onPrint}
           disabled={isExporting}
+          className="flex items-center justify-center gap-2 rounded-xl h-10 px-3 sm:px-4 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-2xs"
         >
           {isExporting ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="animate-spin" size={16} />
-              Generating PDF...
-            </span>
+            <>
+              <Loader2 className="animate-spin" size={15} />
+              <span className="truncate">Exporting...</span>
+            </>
           ) : (
-            "Download Timetable"
+            <>
+              <Download size={15} />
+              <span className="truncate sm:hidden">Export</span>
+              <span className="truncate hidden sm:inline">Download Timetable</span>
+            </>
           )}
-        </Button>
+        </button>
+
         <button 
+          type="button"
           onClick={onAddClass}
-          className="flex items-center justify-center gap-2 rounded-xl h-10 px-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md transition-all active:scale-95"
+          className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl h-10 px-3 sm:px-5 text-white text-xs font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all active:scale-95"
+          style={{ backgroundColor: primaryColor }}
         >
-          <span className="material-symbols-outlined text-lg">add</span>
-          <span className="truncate uppercase tracking-widest text-[11px]">Add Period</span>
+          <Plus size={16} strokeWidth={2.5} />
+          <span className="truncate sm:hidden">Add</span>
+          <span className="truncate hidden sm:inline">Add Period</span>
         </button>
       </div>
     </div>
   )
 }
-

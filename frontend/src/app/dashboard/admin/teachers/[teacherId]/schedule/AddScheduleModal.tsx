@@ -128,7 +128,7 @@ export default function AddScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-4 sm:p-6 rounded-2xl">
         {isConfirmingDelete ? (
           <>
             <DialogHeader>
@@ -162,7 +162,7 @@ export default function AddScheduleModal({
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="classId"
@@ -239,7 +239,7 @@ export default function AddScheduleModal({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="startTime"
@@ -282,7 +282,7 @@ export default function AddScheduleModal({
               )}
             />
 
-            <DialogFooter className="flex justify-between items-center pt-4">
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-4">
               {initialData && (
                 <Button
                   type="button"
@@ -294,11 +294,11 @@ export default function AddScheduleModal({
                   Delete
                 </Button>
               )}
-              <div className="flex gap-2 ml-auto">
-                <Button type="button" variant="outline" onClick={onClose}>
+              <div className="flex gap-2 sm:ml-auto w-full sm:w-auto">
+                <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-initial">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={upsertMutation.isPending}>
+                <Button type="submit" disabled={upsertMutation.isPending} className="flex-1 sm:flex-initial">
                   {upsertMutation.isPending && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
                   {initialData ? 'Update Period' : 'Add Period'}
                 </Button>

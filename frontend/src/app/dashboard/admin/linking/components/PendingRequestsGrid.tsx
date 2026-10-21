@@ -45,20 +45,20 @@ export function PendingRequestsGrid({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-primary/5/50 dark:bg-primary/20/10 p-4 rounded-3xl border border-primary/10 dark:border-primary/15/20 shadow-sm transition-all hover:shadow-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-primary/5/50 dark:bg-primary/20/10 p-4 rounded-3xl border border-primary/10 dark:border-primary/15/20 shadow-sm transition-all hover:shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
             <CheckCircle2 className="text-primary" size={24} />
           </div>
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-tight">Batch Actions</h3>
-            <p className="text-[10px] font-bold text-gray-500">You have {requests.length} pending {mainTab} requests</p>
+          <div className="min-w-0">
+            <h3 className="text-sm font-black uppercase tracking-tight truncate">Batch Actions</h3>
+            <p className="text-[10px] font-bold text-gray-500 truncate">You have {requests.length} pending {mainTab} requests</p>
           </div>
         </div>
         <Button 
           onClick={onAcceptAll}
           disabled={isAcceptAllPending}
-          className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
+          className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto"
         >
           {isAcceptAllPending ? (
             <Loader2 className="animate-spin mr-2" size={14} />
@@ -69,7 +69,7 @@ export function PendingRequestsGrid({
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6">
         {requests.map((req) => (
           <ConnectionCard
             key={req.id}

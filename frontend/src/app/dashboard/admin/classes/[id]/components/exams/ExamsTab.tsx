@@ -4,7 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
   Upload, PlusCircle, ChevronLeft, ChevronRight,
-  FileText, Clock, Users, BookOpen, Edit2, BarChart3, CalendarClock, Download, FileSpreadsheet
+  FileText, Clock, Users, BookOpen, Edit2, BarChart3, CalendarClock, Download, FileSpreadsheet,
+  Search, X, CheckCircle2, Award, Calendar, Layers, ArrowUpRight
 } from 'lucide-react';
 import { AssessmentItem, ExamType } from './components/types';
 import { Info } from 'lucide-react';
@@ -18,6 +19,7 @@ import {
 import { generatePDF } from '@/utils/pdfGenerator';
 import { useSchoolProfile, useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { toast } from 'react-toastify';
+import { cn } from '@/lib/utils';
 
 interface ClassExamsPageProps {
   exams?: any[];
@@ -26,27 +28,27 @@ interface ClassExamsPageProps {
 
 const PAGE_SIZE = 10;
 
-const TYPE_META: Record<string, { label: string; bg: string; text: string }> = {
-  exam:       { label: 'Exam',       bg: 'bg-violet-100 dark:bg-violet-900/30', text: 'text-violet-700 dark:text-violet-300' },
-  ca:         { label: 'CA',         bg: 'bg-blue-100 dark:bg-blue-900/30',     text: 'text-blue-700 dark:text-blue-300' },
-  quiz:       { label: 'Quiz',       bg: 'bg-amber-100 dark:bg-amber-900/30',   text: 'text-amber-700 dark:text-amber-300' },
-  assignment: { label: 'Assignment', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300' },
+const TYPE_META: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  exam:       { label: 'Exam',       bg: 'bg-violet-50 dark:bg-violet-950/40', text: 'text-violet-700 dark:text-violet-300', border: 'border-violet-200 dark:border-violet-800/60' },
+  ca:         { label: 'CA',         bg: 'bg-blue-50 dark:bg-blue-950/40',     text: 'text-blue-700 dark:text-blue-300',     border: 'border-blue-200 dark:border-blue-800/60' },
+  quiz:       { label: 'Quiz',       bg: 'bg-amber-50 dark:bg-amber-950/40',   text: 'text-amber-700 dark:text-amber-300',   border: 'border-amber-200 dark:border-amber-800/60' },
+  assignment: { label: 'Assignment', bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800/60' },
 };
 
-const STATUS_META: Record<string, { label: string; dot: string; text: string }> = {
-  active:      { label: 'Active',      dot: 'bg-green-500',  text: 'text-green-700 dark:text-green-400' },
-  scheduled:   { label: 'Scheduled',   dot: 'bg-blue-500',   text: 'text-blue-700 dark:text-blue-400' },
-  expired:     { label: 'Expired',     dot: 'bg-red-400',    text: 'text-red-600 dark:text-red-400' },
-  unpublished: { label: 'Unpublished', dot: 'bg-gray-400',   text: 'text-gray-500 dark:text-gray-400' },
-  draft:       { label: 'Draft',       dot: 'bg-gray-400',   text: 'text-gray-500 dark:text-gray-400' },
-  published:   { label: 'Published',   dot: 'bg-green-500',  text: 'text-green-700 dark:text-green-400' },
-  closed:      { label: 'Closed',      dot: 'bg-slate-500',  text: 'text-slate-600 dark:text-slate-400' },
+const STATUS_META: Record<string, { label: string; dot: string; text: string; bg: string; border: string }> = {
+  active:      { label: 'Active',      dot: 'bg-emerald-500',  text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800' },
+  scheduled:   { label: 'Scheduled',   dot: 'bg-blue-500',     text: 'text-blue-700 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/40',     border: 'border-blue-200 dark:border-blue-800' },
+  expired:     { label: 'Expired',     dot: 'bg-rose-400',     text: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/40',     border: 'border-rose-200 dark:border-rose-800' },
+  unpublished: { label: 'Unpublished', dot: 'bg-slate-400',    text: 'text-slate-600 dark:text-slate-400',     bg: 'bg-slate-100 dark:bg-slate-800',     border: 'border-slate-200 dark:border-slate-700' },
+  draft:       { label: 'Draft',       dot: 'bg-slate-400',    text: 'text-slate-600 dark:text-slate-400',     bg: 'bg-slate-100 dark:bg-slate-800',     border: 'border-slate-200 dark:border-slate-700' },
+  published:   { label: 'Published',   dot: 'bg-emerald-500',  text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800' },
+  closed:      { label: 'Closed',      dot: 'bg-slate-500',    text: 'text-slate-600 dark:text-slate-400',     bg: 'bg-slate-100 dark:bg-slate-800',     border: 'border-slate-200 dark:border-slate-700' },
 };
 
 const TypeBadge = ({ type }: { type: string }) => {
-  const m = TYPE_META[type] ?? { label: type, bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-300' };
+  const m = TYPE_META[type] ?? { label: type, bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${m.bg} ${m.text}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${m.bg} ${m.text} ${m.border}`}>
       {m.label}
     </span>
   );
@@ -54,29 +56,14 @@ const TypeBadge = ({ type }: { type: string }) => {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const key = status?.toLowerCase();
-  const m = STATUS_META[key] ?? { label: status, dot: 'bg-gray-400', text: 'text-gray-500' };
+  const m = STATUS_META[key] ?? { label: status, dot: 'bg-slate-400', text: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200' };
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${m.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${m.dot} inline-block`} />
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${m.bg} ${m.text} ${m.border}`}>
+      <span className={`size-1.5 rounded-full ${m.dot}`} />
       {m.label}
     </span>
   );
 };
-
-const FilterPill = ({
-  label, active, onClick,
-}: { label: string; active: boolean; onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-      active
-        ? 'bg-primary text-white dark:text-gray-900 shadow-sm shadow-primary/30'
-        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/50'
-    }`}
-  >
-    {label}
-  </button>
-);
 
 export default function ClassExamsPage({ exams = [], classData }: ClassExamsPageProps) {
   const router = useRouter();
@@ -89,6 +76,7 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
   const schoolProfile = profileData;
   const settings = settingsData;
   const [isExporting, setIsExporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const mapStatus = (status: string, startDate?: string, endDate?: string): string => {
     const s = status?.toUpperCase();
@@ -151,8 +139,26 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
     let list = allAssessments;
     if (typeFilter !== 'all') list = list.filter(i => i.type === typeFilter);
     if (statusFilter !== 'all') list = list.filter(i => i.status === statusFilter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(i => 
+        i.title.toLowerCase().includes(q) ||
+        i.subjectName.toLowerCase().includes(q) ||
+        (i.subjectNames && i.subjectNames.some(s => s.toLowerCase().includes(q)))
+      );
+    }
     return list;
-  }, [allAssessments, typeFilter, statusFilter]);
+  }, [allAssessments, typeFilter, statusFilter, searchQuery]);
+
+  // Overall metric calculations
+  const totalSubmissions = useMemo(() => 
+    allAssessments.reduce((acc, curr) => acc + (curr.completedStudents || 0), 0),
+    [allAssessments]
+  );
+  const activeAssessmentsCount = useMemo(() =>
+    allAssessments.filter(a => a.status === 'active' || a.status === 'scheduled').length,
+    [allAssessments]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -183,7 +189,7 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
     }, []);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 sm:gap-6">
       <style>{`
         @keyframes subject-slider {
           0% { transform: translateX(0); }
@@ -194,45 +200,127 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
         }
       `}</style>
       
-      {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-4">
+      {/* ── Top Assessment KPI Strip ────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        {/* Metric 1: Total Assessments */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="size-9 sm:size-10 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-100 dark:border-violet-900/40">
+              <Layers size={18} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+              Total
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Assessments
+            </span>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {allAssessments.length}
+            </h3>
+          </div>
+        </div>
+
+        {/* Metric 2: Formal Exams */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="size-9 sm:size-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40">
+              <FileText size={18} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-900/40">
+              Exams
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Formal Exams
+            </span>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {mappedExams.length}
+            </h3>
+          </div>
+        </div>
+
+        {/* Metric 3: Assignments & CA */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="size-9 sm:size-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
+              <BookOpen size={18} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/40">
+              Continuous
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Assignments & CA
+            </span>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {mappedAssignments.length}
+            </h3>
+          </div>
+        </div>
+
+        {/* Metric 4: Active / Scheduled */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="size-9 sm:size-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-900/40">
+              <CalendarClock size={18} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/40">
+              Upcoming
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Active / Scheduled
+            </span>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {activeAssessmentsCount}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Header & Action Controls ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-gray-900 dark:text-white text-xl font-bold">Assessments</h2>
+            <h2 className="text-slate-900 dark:text-white text-xl font-black tracking-tight">Assessments Timeline</h2>
             <TooltipProvider>
               <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
-                  <button type="button" className="text-slate-400 hover:text-primary transition-colors">
+                  <button type="button" className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
                     <Info size={16} />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
                   Chronicles all individual continuous assessments (assignments, quizzes, and midterm tests) scheduled for this class. Use this timeline to monitor short-term student engagement and identify gaps in recent syllabus comprehension.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {filtered.length} record{filtered.length !== 1 ? 's' : ''}
-            {' \u00b7 '}{mappedExams.length} exam{mappedExams.length !== 1 ? 's' : ''}
-            {' \u00b7 '}{mappedAssignments.length} assignment{mappedAssignments.length !== 1 ? 's' : ''}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {filtered.length} showing of {allAssessments.length} total assessments
           </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button disabled={isExporting} className="flex items-center gap-2 rounded-xl h-10 px-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                {isExporting ? <div className="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" /> : <Download size={16} />}
-                {isExporting ? 'Exporting...' : 'Export'}
+              <button disabled={isExporting} className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl h-10 px-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-all disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+                {isExporting ? <div className="size-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" /> : <Download size={15} />}
+                <span>{isExporting ? 'Exporting...' : 'Export'}</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-48 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1.5 shadow-xl text-slate-800 dark:text-slate-200">
               <DropdownMenuItem onClick={() => {
                 if (!filtered.length) { toast.warning("No exams to export"); return; }
                 setIsExporting(true);
                 generatePDF({
                   title: `${classData?.name || 'Class'} - Assessments`,
-                  filename: `${schoolProfile?.name?.replace(/\\s+/g, '_') || 'School'}_${classData?.name?.replace(/\\s+/g, '_') || 'Class'}_Assessments`,
+                  filename: `${schoolProfile?.name?.replace(/\s+/g, '_') || 'School'}_${classData?.name?.replace(/\s+/g, '_') || 'Class'}_Assessments`,
                   schoolProfile: schoolProfile || settings,
                   metaData: [
                     { label: 'Type Filter', value: typeFilter.toUpperCase() },
@@ -256,8 +344,8 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
                   setIsExporting(false);
                   toast.error("Failed to generate PDF");
                 });
-              }} className="cursor-pointer flex items-center gap-2">
-                <FileText size={16} className="text-rose-500" />
+              }} className="cursor-pointer flex items-center gap-2 text-xs font-semibold py-2 px-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 transition-colors">
+                <FileText size={15} className="text-rose-500" />
                 <span>Export as PDF</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
@@ -278,182 +366,235 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
                   `"${schoolName}"`,
                   `"${schoolAddress}"`,
                   `"Class: ${classData?.name || 'Class'}"`,
-                  '', // blank row
+                  '',
                   headers.join(','),
                   ...rows.map(r => r.join(','))
-                ].filter(r => r !== '""').join('\\n');
+                ].filter(r => r !== '""').join('\n');
                 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.setAttribute('download', `${schoolProfile?.name?.replace(/\\s+/g, '_') || 'School'}_${classData?.name?.replace(/\\s+/g, '_') || 'Class'}_Assessments.csv`);
+                link.setAttribute('download', `${schoolProfile?.name?.replace(/\s+/g, '_') || 'School'}_${classData?.name?.replace(/\s+/g, '_') || 'Class'}_Assessments.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 toast.success("CSV Exported Successfully!");
-              }} className="cursor-pointer flex items-center gap-2">
-                <FileSpreadsheet size={16} className="text-emerald-500" />
+              }} className="cursor-pointer flex items-center gap-2 text-xs font-semibold py-2 px-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 transition-colors">
+                <FileSpreadsheet size={15} className="text-emerald-500" />
                 <span>Export as CSV</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
           <button
             onClick={() => router.push(`/dashboard/admin/classes/${classId}/exams/create`)}
-            className="flex items-center gap-2 rounded-full h-10 px-5 bg-primary text-white dark:text-gray-900 text-sm font-semibold shadow-sm hover:bg-primary/90 transition-opacity"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl h-10 px-4 sm:px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-sm shadow-indigo-600/20 dark:shadow-none transition-all active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             <PlusCircle size={16} />
-            Create New
+            <span>Create New</span>
           </button>
-        </div>
-      </header>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-y-3 gap-x-6 items-center">
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</span>
-          {[
-            { label: 'All', value: 'all' },
-            { label: 'Exam', value: 'exam' },
-            { label: 'CA', value: 'ca' },
-            { label: 'Quiz', value: 'quiz' },
-            { label: 'Assignment', value: 'assignment' },
-          ].map(opt => (
-            <FilterPill key={opt.value} label={opt.label} active={typeFilter === opt.value}
-              onClick={() => { setTypeFilter(opt.value); resetPage(); }} />
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
-          {[
-            { label: 'All', value: 'all' },
-            { label: 'Active', value: 'active' },
-            { label: 'Scheduled', value: 'scheduled' },
-            { label: 'Unpublished', value: 'unpublished' },
-            { label: 'Expired', value: 'expired' },
-          ].map(opt => (
-            <FilterPill key={opt.value} label={opt.label} active={statusFilter === opt.value}
-              onClick={() => { setStatusFilter(opt.value); resetPage(); }} />
-          ))}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="hidden md:grid md:grid-cols-[30px_2.5fr_0.8fr_0.9fr_0.9fr_0.7fr_1fr_56px] gap-x-4 px-6 py-3.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
-          {['#', 'Assessment', 'Type', 'Status', 'Subject', 'Marks', 'Date / Due', ''].map((h, i) => (
-            <span key={i} className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{h}</span>
-          ))}
+      {/* ── Search & Filter Pill Controls ───────────────────────────────────── */}
+      <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
+        {/* Search Input */}
+        <div className="relative w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <input
+            type="text"
+            placeholder="Search assessments by title or subject..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); resetPage(); }}
+            className="w-full h-10 pl-9 pr-8 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => { setSearchQuery(''); resetPage(); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
-        {paginated.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-              <FileText className="text-slate-400" size={24} />
-            </div>
-            <p className="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1">No assessments found</p>
-            <p className="text-sm text-slate-400">Try changing the filters or create a new assessment.</p>
+        {/* Filter Pill Carousels (Smooth touch scrolling on mobile) */}
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center sm:justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+          {/* Type Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">Type:</span>
+            {[
+              { label: 'All Types', value: 'all' },
+              { label: 'Exams', value: 'exam' },
+              { label: 'CA', value: 'ca' },
+              { label: 'Quizzes', value: 'quiz' },
+              { label: 'Assignments', value: 'assignment' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { setTypeFilter(opt.value); resetPage(); }}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                  typeFilter === opt.value
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 font-bold border border-transparent"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 font-semibold"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">Status:</span>
+            {[
+              { label: 'All', value: 'all' },
+              { label: 'Active', value: 'active' },
+              { label: 'Scheduled', value: 'scheduled' },
+              { label: 'Draft', value: 'unpublished' },
+              { label: 'Expired', value: 'expired' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { setStatusFilter(opt.value); resetPage(); }}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                  statusFilter === opt.value
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 font-bold border border-transparent"
+                    : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 font-semibold"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Assessments Container ───────────────────────────────────────────── */}
+      {paginated.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-center">
+          <div className="size-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 text-slate-400">
+            <FileText size={24} />
+          </div>
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
+            No assessments found
+          </h3>
+          <p className="text-xs text-slate-400 max-w-sm mb-4">
+            Try adjusting your search query, clearing filters, or creating a new assessment for this class.
+          </p>
+          {(typeFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
+            <button
+              onClick={() => { setTypeFilter('all'); setStatusFilter('all'); setSearchQuery(''); resetPage(); }}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            >
+              Reset All Filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* ── Mobile View (< 768px): Dedicated Assessment Cards ──────────────── */}
+          <div className="block md:hidden space-y-3">
             {paginated.map((item, index) => {
               const globalIdx = (currentPage - 1) * PAGE_SIZE + index + 1;
               const completion = item.totalStudents > 0
                 ? Math.round((item.completedStudents / item.totalStudents) * 100) : 0;
               const durLabel = formatDuration(item.duration);
               const dateLabel = item.source === 'assignment'
-                ? (item.dueDate ? `Due ${formatDate(item.dueDate)}` : `Created ${formatDate(item.date)}`)
-                : formatDate(item.date);
+                ? (item.dueDate ? `Due: ${formatDate(item.dueDate)}` : `Created: ${formatDate(item.date)}`)
+                : `Date: ${formatDate(item.date)}`;
 
               return (
-                <div
+                <div 
                   key={`${item.source}-${item.id}`}
-                  className="flex flex-col md:grid md:grid-cols-[30px_2.5fr_0.8fr_0.9fr_0.9fr_0.7fr_1fr_56px] gap-x-4 items-start md:items-center px-6 py-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group"
+                  className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 hover:shadow-md transition-shadow"
                 >
-                  {/* Numbering */}
-                  <div className="hidden md:flex text-xs font-black text-slate-400/70 select-none">
-                    #{globalIdx}
-                  </div>
-
-                  {/* Title */}
-                  <div className="min-w-0 w-full">
-                    <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{item.title}</p>
-                    <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
-                      {durLabel && (
-                        <span className="flex items-center gap-1"><Clock size={11} />{durLabel}</span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Users size={11} />
-                        {item.completedStudents}/{item.totalStudents}
-                        {item.totalStudents > 0 && <span>({completion}%)</span>}
+                  {/* Card Header: Numbering, Badges & Points */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-black flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60">
+                        #{globalIdx}
                       </span>
-                    </div>
-                    {item.totalStudents > 0 && (
-                      <div className="mt-2 h-1 w-28 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary/60 rounded-full" style={{ width: `${completion}%` }} />
-                      </div>
-                    )}
-                    {/* Mobile-only badges */}
-                    <div className="flex gap-2 mt-2 md:hidden flex-wrap">
                       <TypeBadge type={item.type} />
                       <StatusBadge status={item.status} />
                     </div>
+
+                    <span className="text-xs font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md font-mono border border-slate-200/60 dark:border-slate-700/60">
+                      {item.totalMarks > 0 ? `${item.totalMarks} pts` : '—'}
+                    </span>
                   </div>
 
-                  {/* Type (desktop) */}
-                  <div className="hidden md:flex"><TypeBadge type={item.type} /></div>
-                  {/* Status (desktop) */}
-                  <div className="hidden md:flex"><StatusBadge status={item.status} /></div>
-
-                  {/* Subject */}
-                  <div className="hidden md:flex items-center gap-2 min-w-0 flex-1 overflow-hidden relative">
-                    <BookOpen size={13} className="text-slate-400 shrink-0" />
-                    {item.subjectNames && item.subjectNames.length > 1 ? (
-                      <div className="flex-1 overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)]">
-                        <div className="flex gap-2 animate-subject-slider w-max hover:[animation-play-state:paused] items-center">
-                          {[...item.subjectNames, ...item.subjectNames].map((s, i) => (
-                            <span key={i} className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-600 dark:text-slate-300 truncate">
-                        {item.subjectNames?.[0] || item.subjectName}
+                  {/* Title & Subject */}
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug">
+                      {item.title}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <BookOpen size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">
+                        {item.subjectNames && item.subjectNames.length > 0 
+                          ? item.subjectNames.join(', ') 
+                          : item.subjectName}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Schedule & Duration Pills */}
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
+                    <div className="flex items-center gap-1">
+                      <CalendarClock size={13} className="text-slate-400" />
+                      <span>{dateLabel}</span>
+                    </div>
+                    {durLabel && (
+                      <div className="flex items-center gap-1">
+                        <Clock size={13} className="text-slate-400" />
+                        <span>{durLabel}</span>
+                      </div>
                     )}
                   </div>
 
-                  {/* Marks */}
-                  <div className="hidden md:block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    {item.totalMarks > 0 ? `${item.totalMarks} pts` : '\u2014'}
+                  {/* Submissions & Progress Bar */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-slate-500 font-medium">
+                        <Users size={13} />
+                        <span>Submitted</span>
+                      </span>
+                      <span className="font-black text-slate-800 dark:text-slate-200">
+                        {item.completedStudents}/{item.totalStudents} <span className="text-[10px] text-slate-400 font-bold">({completion}%)</span>
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-500" 
+                        style={{ width: `${Math.min(100, Math.max(0, completion))}%` }} 
+                      />
+                    </div>
                   </div>
 
-                  {/* Date */}
-                  <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <CalendarClock size={12} className="shrink-0" />
-                    {dateLabel}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Action Buttons Row */}
+                  <div className="flex items-center gap-2 pt-1">
                     <button
                       onClick={() => {
                         if (item.source === 'exam') router.push(`/dashboard/admin/exams/${item.id}/papers`);
                         else router.push(`/dashboard/admin/assignments/${item.id}`);
                       }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
-                      title="Edit"
+                      className="flex-1 h-9 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm shadow-indigo-600/20 dark:shadow-none transition-all active:scale-98 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                     >
-                      <Edit2 size={15} />
+                      <Edit2 size={13} />
+                      <span>{item.source === 'exam' ? 'Manage Papers' : 'Edit Assignment'}</span>
                     </button>
-                    {item.source === 'exam' && (item.status === 'active' || item.status === 'expired') && (
+
+                    {item.source === 'exam' && (
                       <button
                         onClick={() => router.push(`/dashboard/admin/exams/${item.id}/results`)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                        title="Results"
+                        className="h-9 px-3.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/80 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                        title="View Class Exam Results"
                       >
-                        <BarChart3 size={15} />
+                        <BarChart3 size={14} className="text-blue-500 dark:text-blue-400" />
+                        <span>Results</span>
                       </button>
                     )}
                   </div>
@@ -461,67 +602,163 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
               );
             })}
           </div>
-        )}
 
-        {/* Pagination */}
-        {filtered.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {(currentPage - 1) * PAGE_SIZE + 1}â€“{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 disabled:opacity-40 hover:bg-white dark:hover:bg-slate-800 transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              {paginationPages.map((p, i) =>
-                p === '...' ? (
-                  <span key={`e-${i}`} className="px-1 text-slate-400 text-sm select-none">&hellip;</span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p as number)}
-                    className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all ${
-                      currentPage === p
-                        ? 'bg-primary text-white dark:text-gray-900 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                    }`}
+          {/* ── Desktop View (>= 768px): Structured Table ─────────────────────── */}
+          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-[36px_2.5fr_0.8fr_0.9fr_1fr_0.7fr_1.1fr_70px] gap-x-4 px-6 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
+              {['#', 'Assessment', 'Type', 'Status', 'Subject', 'Marks', 'Date / Schedule', 'Actions'].map((h, i) => (
+                <span key={i} className={cn("text-[11px] font-black uppercase tracking-wider text-slate-400", i === 7 ? "text-right" : "")}>
+                  {h}
+                </span>
+              ))}
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+              {paginated.map((item, index) => {
+                const globalIdx = (currentPage - 1) * PAGE_SIZE + index + 1;
+                const completion = item.totalStudents > 0
+                  ? Math.round((item.completedStudents / item.totalStudents) * 100) : 0;
+                const durLabel = formatDuration(item.duration);
+                const dateLabel = item.source === 'assignment'
+                  ? (item.dueDate ? `Due ${formatDate(item.dueDate)}` : `Created ${formatDate(item.date)}`)
+                  : formatDate(item.date);
+
+                return (
+                  <div
+                    key={`${item.source}-${item.id}`}
+                    className="grid grid-cols-[36px_2.5fr_0.8fr_0.9fr_1fr_0.7fr_1.1fr_70px] gap-x-4 items-center px-6 py-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group"
                   >
-                    {p}
-                  </button>
-                )
-              )}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 disabled:opacity-40 hover:bg-white dark:hover:bg-slate-800 transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
+                    {/* Index */}
+                    <div className="text-xs font-black text-slate-400 select-none">
+                      #{globalIdx}
+                    </div>
+
+                    {/* Title & Progress */}
+                    <div className="min-w-0 pr-2">
+                      <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{item.title}</p>
+                      <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
+                        {durLabel && (
+                          <span className="flex items-center gap-1"><Clock size={11} />{durLabel}</span>
+                        )}
+                        <span className="flex items-center gap-1 font-medium">
+                          <Users size={11} />
+                          {item.completedStudents}/{item.totalStudents} ({completion}%)
+                        </span>
+                      </div>
+                      {item.totalStudents > 0 && (
+                        <div className="mt-2 h-1.5 w-32 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all" style={{ width: `${completion}%` }} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Type */}
+                    <div><TypeBadge type={item.type} /></div>
+
+                    {/* Status */}
+                    <div><StatusBadge status={item.status} /></div>
+
+                    {/* Subject */}
+                    <div className="flex items-center gap-2 min-w-0 overflow-hidden relative">
+                      <BookOpen size={14} className="text-slate-400 shrink-0" />
+                      {item.subjectNames && item.subjectNames.length > 1 ? (
+                        <div className="flex-1 overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)]">
+                          <div className="flex gap-2 animate-subject-slider w-max hover:[animation-play-state:paused] items-center">
+                            {[...item.subjectNames, ...item.subjectNames].map((s, i) => (
+                              <span key={i} className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                          {item.subjectNames?.[0] || item.subjectName}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Marks */}
+                    <div className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">
+                      {item.totalMarks > 0 ? `${item.totalMarks} pts` : '—'}
+                    </div>
+
+                    {/* Date */}
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <CalendarClock size={13} className="shrink-0 text-slate-400" />
+                      <span className="truncate">{dateLabel}</span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          if (item.source === 'exam') router.push(`/dashboard/admin/exams/${item.id}/papers`);
+                          else router.push(`/dashboard/admin/assignments/${item.id}`);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
+                        title={item.source === 'exam' ? 'Manage Papers' : 'Edit Assignment'}
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      {item.source === 'exam' && (
+                        <button
+                          onClick={() => router.push(`/dashboard/admin/exams/${item.id}/results`)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                          title="View Exam Results"
+                        >
+                          <BarChart3 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Absolute empty state */}
-      {allAssessments.length === 0 && (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-          <div className="w-16 h-16 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-            <PlusCircle className="text-slate-400" size={24} />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No assessments yet</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">
-            This class doesn&apos;t have any exams, CAs, quizzes or assignments yet.
+      {/* ── Responsive Pagination ───────────────────────────────────────────── */}
+      {filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between p-3.5 sm:px-6 sm:py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
           </p>
-          <button
-            onClick={() => router.push(`/dashboard/admin/classes/${classId}/exams/create`)}
-            className="px-5 py-2.5 bg-primary text-white dark:text-gray-900 rounded-full hover:bg-primary/90 font-semibold shadow-sm"
-          >
-            Create First Assessment
-          </button>
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {paginationPages.map((p, i) =>
+              p === '...' ? (
+                <span key={`e-${i}`} className="px-1 text-slate-400 text-xs select-none">&hellip;</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p as number)}
+                  className={cn(
+                    "size-8 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                    currentPage === p
+                      ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 dark:shadow-none"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                  )}
+                >
+                  {p}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
     </div>

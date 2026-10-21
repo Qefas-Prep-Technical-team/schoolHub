@@ -39,6 +39,254 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, October 21, 2026 (Class Details Page & Exams Tab Dark Mode, Header & Tab Focus Polish)
+
+- **Class Details & Exams Tab Dark Mode & Visual Polish ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/page.tsx), [ExamsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/exams/ExamsTab.tsx), [Tabs.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/Tabs.tsx))**:
+    - [x] **Dark Mode Button & Contrast Redesign**:
+        - Fixed the core issue where `bg-primary text-white` inverted in dark mode to near-white (`oklch(0.922 0 0)`), producing invisible white text on white backgrounds.
+        - Replaced all primary actions ("Create New", "Manage Papers", "Manage Class", and active pagination buttons) with solid, vibrant `bg-indigo-600 hover:bg-indigo-700 text-white` with clean dark mode states.
+        - Redesigned "Results" and secondary buttons with distinct dark slate backgrounds (`dark:bg-slate-800`), explicit borders (`dark:border-slate-700/80`), and high contrast text.
+        - Upgraded Export dropdown menu container and items with dark theme support (`dark:bg-slate-800`, `dark:border-slate-700`, `dark:text-slate-200`).
+        - Progress bars upgraded from `bg-primary` to rich indigo (`bg-indigo-600 dark:bg-indigo-500`) across mobile cards and desktop tables.
+    - [x] **Filter Pills Dark Mode Unification**:
+        - Replaced mismatched styles with unified indigo active pills (`bg-indigo-600 text-white shadow-sm`) and distinct dark slate inactive pills (`dark:bg-slate-800/80 dark:border-slate-700/60 dark:text-slate-300`).
+    - [x] **Page Header Harmonization**:
+        - Replaced clashing dark palette (`dark:bg-[#1b2232]` and `dark:border-[#364563]`) with unified `dark:bg-slate-900` and `dark:border-slate-800`.
+        - Replaced class avatar container with `bg-indigo-50 dark:bg-indigo-950/60` and `text-indigo-600 dark:text-indigo-400`.
+        - Fixed header action buttons: "Manage Class" and "QR Access" now feature proper dark borders, subtle hover shifts, and accessible focus rings.
+    - [x] **Tabs Navigation Active & Focus Accessibility ("tabe focus")**:
+        - Eliminated the dull `dark:bg-[#253046]` in `Tabs.tsx`.
+        - Implemented a punchy, unmistakable active state: `bg-indigo-600 text-white shadow-sm shadow-indigo-600/25 dark:bg-indigo-600 dark:text-white dark:shadow-indigo-900/50`.
+        - Added clear accessibility and keyboard focus-visible rings (`focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900`).
+        - Replaced the container with `bg-slate-100/90 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800`.
+    - [x] **Full Production Build & TypeScript Strict Audit**:
+        - Frontend `npm run build` (`next build`) completed with **Exit code 0** across all static and dynamic pages.
+        - Frontend `npx tsc --noEmit` verified with **0 errors**.
+        - Backend `npx tsc --noEmit` verified with **0 errors**.
+
+### Wednesday, October 21, 2026 (Admin Team Management Mobile Overhaul & Governance Polish)
+
+- **Admin Team Management Page & Responsive Governance Flow ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/page.tsx), [ActiveMembersTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/components/ActiveMembersTable.tsx), [PendingRequestsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/components/PendingRequestsTable.tsx))**:
+    - [x] **Mobile-First Responsive Card Overhaul**:
+        - Replaced rigid horizontal-overflow tables on mobile screens (< 768px) with dedicated, touch-friendly cards for both Active Members and Pending Requests.
+        - **Active Members Mobile Cards**: Displays avatar with fallback SVG, School Owner crown indicator, member name with "You" chip for current admin, email address, themed role badge with icon (School Owner, Principal, Registrar, Accountant, Support), joined date pill, and full-featured actions dropdown menu.
+        - **Pending Requests Mobile Cards**: Displays applicant avatar, name, mono email, request timestamp, "Pending Review" amber indicator, and prominent touch action buttons (Approve & Assign, and Reject).
+    - [x] **Desktop Table Polish**:
+        - Retained and polished desktop table view (>= 768px) with crisp typography, hover row states, subtle borders, and quick dropdown menus.
+    - [x] **URL Parameter & Email Deep-Linking Support**:
+        - Added `useSearchParams()` support to read `?tab=pending` directly, matching the email notification approval link generated by the backend (`approvalUrl`). Clicking the link now switches directly to the pending requests tab.
+    - [x] **Executive Overview Stat Cards**:
+        - Added 4 modern executive stat cards at the top of `/dashboard/admin/team`: Active Members count, Pending Requests (with action required highlight), School Owner card with email/name, and Current User's access level.
+    - [x] **Functional Integrity & Permissions**:
+        - Preserved and verified all governance actions: Role modification (`updateAdminRole`), Ownership transfer with confirmation dialog (`transferOwnership`), Admin removal with session revocation (`removeAdmin`), and Request approval with role selection (`approveAdmin`) and rejection with optional reason (`rejectAdmin`).
+        - Responsive dialogs formatted cleanly for mobile and desktop screens.
+    - [x] **TypeScript Strict Audit**:
+        - `npx tsc --noEmit` verified with 0 errors across the frontend.
+
+### Wednesday, October 21, 2026 (Admin Grades Redesign & Dedicated Grade Details Page)
+
+- **Admin Grades Page Redesign & Dedicated Details Flow ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/page.tsx), [GradeHub.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/GradeHub.tsx), [[gradeId]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/[gradeId]/page.tsx), [grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/grade.service.ts))**:
+    - [x] **Eliminated Grade Details Popup Slide-Over**:
+        - Completely removed `GradeDetailSheet` modal/sheet in favor of a full dedicated page.
+        - Updated card click, table row click, and "View Details" dropdown action in `GradeHub.tsx` to directly navigate to `/dashboard/admin/grades/${grade.id}`.
+    - [x] **Created Dedicated Grade Details Page (`/dashboard/admin/grades/[gradeId]`)**:
+        - Back navigation breadcrumb bar with student name and subject link.
+        - Primary Score Hero Card with letter grade chip (`A+`, `A`, `B`, `C`, `D`, `F`), numerical score, max marks, percentage badge, animated progress bar, and pass/fail indicator.
+        - Academic & Grading Metadata grid displaying Subject, Assessment Type, Weight Multiplier, Class Cohort, Term, Session, Linked Exam, Linked Paper, Recorded By teacher, and timestamps.
+        - Teacher Remarks card with quote styling and instructor attribution.
+        - Student Profile summary card with avatar, student code, grade level, and quick link to student profile.
+        - Visual Grading Scale Reference card.
+        - Action controls for Publishing draft grades, Editing grades, Deleting with a confirm dialog, and native Printing.
+    - [x] **Main Grades Dashboard Redesign (`/dashboard/admin/grades`)**:
+        - Redesigned the 4 top stats cards (Total Exams, Subject Papers, Graded Students, Average Score) from outdated saturated header blocks into sleek, modern unified cards with translucent icon pills, live counts, tooltips, and mini trend bars.
+        - Upgraded the Operational Control Tabs bar into a clean pill-style horizontal scrolling navigation bar with active theme pill indicators and icons for each assessment type.
+    - [x] **Backend & Type Consistency**:
+        - Enhanced `getGradeByIdService` in `backend/src/modules/academic/grade.service.ts` to include complete student, class, teacher, session, exam, subjectPaper, and attempt relations.
+        - Extended `Grade` TypeScript interface in `frontend/src/lib/api/services/gradeService.ts`.
+        - Verified `npx tsc --noEmit` on both frontend and backend (0 errors).
+
+### Wednesday, October 21, 2026 (Admin Students Directory Mobile Numbering & Card Polish)
+
+- **Admin Students Directory List Numbering & Mobile UI ([StudentsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/StudentsTable.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/page.tsx))**:
+    - [x] **Sequential Numbering**:
+        - Added pagination-aware sequential numbering `#${(page - 1) * 10 + index + 1}` to both the mobile list view cards and grid view cards in a dedicated high-contrast badge (`tabular-nums font-black`).
+    - [x] **Mobile Card Layout Overhaul**:
+        - Redesigned the mobile cards into structured, modern cards with distinct header (checkbox, numbering badge, mono student code, and active/pending status dot).
+        - Main student row with full-size avatar, verified shield badge (`ShieldCheck`), student email, and direct navigation indicator (`ChevronRight`).
+        - Attributes footer chips showing class pill with `GraduationCap`, gender badge, and guardian name.
+        - Added a responsive multi-selection bar with count and clear button when students are checked on mobile.
+    - [x] **Page Layout & Pagination Responsiveness**:
+        - Adjusted outer container padding `p-3.5 sm:p-6 lg:p-8` and width `w-full sm:w-[95%]`.
+        - Responsive stat cards with `gap-2.5 sm:gap-4`, `p-3.5 sm:p-5`, and number sizing `text-2xl sm:text-3xl`.
+        - Responsive pagination hiding "Rows per page: 10" on mobile screens so page number buttons never get squashed.
+    - [x] **TypeScript Strict Audit**:
+        - 0 errors verified across the workspace with `npx tsc --noEmit`.
+
+### Wednesday, October 21, 2026 (Teacher Profile Header Bug Fix & Schedule Tab Mobile Overhaul)
+
+- **Teacher Profile Header [object Object] Bug Fix ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/%5BteacherId%5D/page.tsx))**:
+    - [x] **Safe Subject Mapping**:
+        - Fixed `subjects.slice(0, 2).join(', ')` which was stringifying raw subject objects directly as `[object Object], [object Object]` next to the Department name ("General · [object Object]").
+        - Updated `subjectNames` mapping to safely extract subject names: `subjects.map((s: any) => typeof s === 'string' ? s : (s?.name || s?.subject?.name || '')).filter(Boolean)`.
+        - Replaced line 225 with `{department}{subjectNames.length > 0 ? ` · ${subjectNames.slice(0, 2).join(', ')}` : ''}`.
+    - [x] **Tabs Component Mobile Refinement**:
+        - Updated tab bar container with rounded corners and border on mobile (`rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800`).
+        - Reduced tab button minimum width and padding on mobile (`min-w-[100px] sm:min-w-[140px] px-3 sm:px-6 md:px-10 py-2 sm:py-3`) for a snug, modern fit.
+
+- **Schedule Tab Mobile Responsiveness & Day Agenda View ([SchedulePage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/%5BteacherId%5D/schedule/SchedulePage.tsx), [TeacherTimetableGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/%5BteacherId%5D/schedule/TeacherTimetableGrid.tsx), [TimetableToolbar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/%5BteacherId%5D/schedule/TimetableToolbar.tsx), [AddScheduleModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/%5BteacherId%5D/schedule/AddScheduleModal.tsx))**:
+    - [x] **Mobile Day Agenda View & View Mode Switcher**:
+        - Added interactive View Mode toggle: **Day Agenda** (`ListOrdered`) and **Week Grid** (`Grid3X3`). Defaults to Day Agenda on mobile devices (<768px) and Week Grid on desktop (>=768px).
+        - Created a touch-friendly horizontal day pill selector: Mon, Tue, Wed, Thu, Fri, Sat, Sun. Each pill displays day name, "Today" chip if active, and a scheduled class counter badge (e.g. `2 classes` / `Free`).
+        - Built a chronological vertical agenda for the selected day with time pills, live "Happening Now" animated indicator, rich subject cards with class tags, room locations, assignment status pills, clash detection alerts, and dedicated amber recess/break banners.
+        - Supported instant one-tap slot scheduling on free periods.
+    - [x] **Week Grid Sticky Column**:
+        - Made the first column (Period / Time Slot) sticky with shadow and background so that horizontal swiping on mobile keeps time labels visible at all times.
+        - Added a helpful mobile horizontal scroll indicator banner.
+    - [x] **Toolbar & Modal Mobile Optimizations**:
+        - Modernized `TimetableToolbar` using Lucide icons (`ChevronLeft`, `ChevronRight`, `Download`, `Plus`), responsive layout, and mobile-friendly button text.
+        - Updated `AddScheduleModal` with `max-h-[90vh] overflow-y-auto`, responsive single/double column form grid (`grid-cols-1 sm:grid-cols-2`), and mobile-first touch-friendly footer actions.
+    - [x] **TypeScript Strict Audit**:
+        - 0 errors verified across the workspace with `npx tsc --noEmit`.
+
+### Wednesday, October 21, 2026 (Admin Teachers Directory Mobile Responsiveness & Grid View Overhaul)
+
+- **Admin Teachers Directory Mobile Overhaul ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/page.tsx), [TeacherGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/teachers/components/TeacherGrid.tsx))**:
+    - [x] **Grid View Implementation**:
+        - Created a dedicated, responsive `TeacherGrid` component featuring rich cards with top header (`#index` + mono `facultyCode` + status pill with pulsing active indicator), avatar, teacher name, email, assigned subjects tags (`BookOpen`), assigned classes tags (`GraduationCap`), and "View Profile" link with `ChevronRight`.
+        - Responsive grid columns: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-5`.
+    - [x] **Default View Mode & View Switcher**:
+        - Configured view mode to automatically default to `grid` on mobile devices (`<768px`) and `list` on desktop (`>=768px`).
+        - Added interactive `Grid` / `List` view toggle switcher in the toolbar with active pill styling and icons (`LayoutGrid` and `List`).
+    - [x] **Mobile UX & Responsive Layout**:
+        - Reduced outer page padding on mobile from `p-6 lg:p-8` to `p-3.5 sm:p-6 lg:p-8` and increased container width from `w-[95%]` to `w-full sm:w-[95%]`.
+        - Compact stats cards gap `gap-2.5 sm:gap-4`, padding `p-3.5 sm:p-5`, and number sizing `text-2xl sm:text-3xl`.
+        - Adjusted attendance chart height `h-[180px] sm:h-[200px]` with negative left margin `left: -20` to prevent horizontal clipping.
+        - Responsive toolbar with full-width search bar on mobile, and responsive action button labels (`Export`, `Attendance`, `Add Teacher`).
+        - Unified standalone pagination card rendered beneath both Grid and List views with responsive row counts.
+    - [x] **TypeScript Strict Audit**:
+        - 0 errors verified across the frontend workspace (`npx tsc --noEmit`).
+
+### Wednesday, October 21, 2026 (Admin Linking Hub Mobile Card Overflow & Responsive Grid Fixes)
+
+- **Admin Linking Hub Mobile Overflow ([ConnectionCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/ConnectionCard.tsx))**:
+    - [x] **Card Boundary & Text Containment**:
+        - Added `w-full min-w-0` to the root `<Card>` container for both active and pending connection cards.
+        - Fixed user name `<h3>` and email `<p>` containers by removing fixed `max-w-[200px]` that extended past card boundaries on mobile screens (~130-160px card widths), replacing with `w-full min-w-0 px-2` and `w-full max-w-full truncate`.
+        - Added native `title` tooltips displaying the complete unabbreviated name and email on hover/tap.
+    - [x] **Responsive Grid Overhaul ([ActiveLinksGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/ActiveLinksGrid.tsx), [PendingRequestsGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/PendingRequestsGrid.tsx), [LinkingSkeleton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/LinkingSkeleton.tsx))**:
+        - Changed hardcoded 2-column mobile layout (`grid-cols-2`) to responsive `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6`, preventing cramped, squished layouts on phones (<640px).
+        - Updated Batch Actions bar in `PendingRequestsGrid.tsx` to stack flexibly (`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4`) with a full-width action button on mobile.
+        - Updated `ProfilePreviewModal.tsx` to safely handle long user names with `w-full min-w-0 px-4 break-words`.
+    - [x] **TypeScript Strict Audit**:
+        - 0 errors verified across the frontend workspace (`npx tsc --noEmit`).
+
+### Wednesday, October 21, 2026 (Admin Website Inquiries List Numbering & Header Alignment)
+
+- **Admin Inquiries List Numbering ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/inquiries/page.tsx))**:
+    - [x] **Desktop Table Header Alignment**:
+        - Restored missing select-all checkbox column in table `<thead>`, resolving a 1-column offset where the `#` number header previously sat misaligned over the checkboxes and `Contact Info` was sitting over numbers.
+        - Verified that the `#` header correctly aligns with sequential numbering (`(page - 1) * limit + index + 1`).
+    - [x] **Mobile List Card Numbering**:
+        - Added `#` numbering badge (`#1`, `#2`, etc.) to the mobile inquiry card items beside the selection checkbox.
+    - [x] **TypeScript Strict Audit**:
+        - 0 errors verified across the frontend workspace.
+
+- **Admin Records Grid Card & Status Badge ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/page.tsx))**:
+    - [x] **Top Header & Status Badge Alignment**:
+        - Re-engineered the Subject Card top row into a dedicated metadata bar: `#ID` badge + Session/Term label on the left, and a polished status pill on the right.
+        - Redesigned the "PUBLISHED" / "DRAFT" badge into an illuminated pill with a colored glowing dot indicator (`bg-emerald-500` / `bg-amber-500`), subtle border, and uppercase tracking (`text-[10px] font-extrabold tracking-wider`).
+        - Moved the record Title to its own row below the metadata header, removing the cramped `max-w-[70%]` squeeze and preventing title collisions.
+    - [x] **Class and Subject Badges**:
+        - Styled Class and Subject badges with distinct background surfaces (`bg-slate-50 dark:bg-slate-900/60`), subtle borders, uppercase metadata labels, and truncated bold text.
+    - [x] **Card Footer & Action Button**:
+        - Replaced raw text links with a calendar date pill with icon and a sleek, styled "Edit Results" action button (`bg-[#5B5CE6]/10 hover:bg-[#5B5CE6] hover:text-white`).
+    - [x] **Student Record Cards Alignment**:
+        - Applied the same visual hierarchy and 2-row layout across the Student Records grid cards.
+    - [x] **Table View Consistency**:
+        - Updated the Status column in list table view to use the identical illuminated pill badge.
+
+- **Admin Create Assessment Mobile Layout & Flow ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/new/page.tsx), [CreateExamForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/new/components/CreateExamForm.tsx), [SearchableSelect.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/new/components/SearchableSelect.tsx))**:
+    - [x] **Navigation Header & Back Route**:
+        - Integrated a touch-friendly back button returning admins to `/dashboard/admin/exams`.
+        - Responsive typography scaling (`text-xl sm:text-2xl md:text-3xl`) and padding (`px-4 sm:px-6 md:px-8 py-4 sm:py-8`).
+    - [x] **Adaptive Stepper (Mobile Pill + Desktop MUI)**:
+        - Resolved mobile horizontal squishing and overflow of MUI Stepper by introducing a dedicated mobile step indicator (`sm:hidden`) featuring active step count, step name, percentage progress badge, and pill tracks.
+        - Preserved standard MUI horizontal stepper for `sm:` and desktop viewports.
+    - [x] **Step Validation & Silent Submit Prevention**:
+        - Integrated `trigger(["title"])` in `handleNext` and `handleStep` to prevent users from silently skipping Step 0 with an invalid title and encountering unresponsive creation buttons on Step 2.
+        - Added scope target checks (`classId` when scope is CLASS, `departmentIds` when scope is DEPARTMENT).
+    - [x] **Responsive Form Fields & Cards**:
+        - Upgraded main card container from fixed `p-8 rounded-3xl` to `p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl`.
+        - Clamped input heights and paddings to `h-12 sm:h-14 rounded-xl sm:rounded-2xl` across text inputs, textareas, datetime-local, and SearchableSelect dropdowns.
+        - Restructured Single Subject Duration and Pass Mark into a clean side-by-side 2-column grid (`grid grid-cols-2 gap-3 sm:gap-6`).
+        - Restructured Target Departments grid into single/double column wrap (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) to eliminate text clipping on 360-390px mobile screens.
+    - [x] **Touch Ergonomics on Bottom Navigation**:
+        - Upgraded Back, Next, and Submit buttons to comfortable `h-11 sm:h-12` heights with responsive icons and state indicators (loading spinner, redirection status).
+    - [x] **Tenant Fallback Security**:
+        - Added `defaultTenantId` fallback for `activeSchoolId` to prevent school session loading failures.
+
+- **Admin Assignment Detail Mobile Layout & Responsiveness ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/page.tsx), [QuestionManager.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/QuestionManager.tsx), [SubmissionList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/SubmissionList.tsx), [ManualAddForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/ManualAddForm.tsx), [AITools.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/AITools.tsx), [EditPaperModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/EditPaperModal.tsx), [SettingsModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/SettingsModal.tsx), [SubmissionReviewModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/assignments/[id]/components/SubmissionReviewModal.tsx))**:
+    - [x] **Sticky Two-Tier Navigation Header**:
+        - Re-engineered the assignment header into an adaptive 2-tier layout:
+            - **Primary Row**: Left side displays the back button and truncated title with responsive font size (`text-sm sm:text-base md:text-lg`). Right side houses compact Action buttons (Publish/Unpublish toggle with label hidden on mobile, and Settings icon).
+            - **Secondary Mobile Sub-strip (`sm:hidden`)**: Neatly presents Published/Draft status chip, Teacher/Creator name, Total Marks badge, and Due Date below the header bar without cramping or horizontal scrolling.
+        - Refined skeleton loader dimensions and paddings to prevent mobile overflow during initial load.
+    - [x] **Responsive Tab Layout & Containers**:
+        - Transformed the 3 tab triggers (`Questions`, `Submissions`, `Instructions/Details`) into an adaptive grid with responsive text (`Details` on mobile, `Instructions` on desktop).
+        - Updated all main tab containers from fixed `p-8 rounded-[2rem]` to `p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem]`.
+    - [x] **Submissions Tracker Mobile Card View**:
+        - Implemented a dedicated native-feel card list (`md:hidden`) showing student avatar, name, email, submission date, status badge, score breakdown, and Review button.
+        - Retained desktop table layout on `md:` breakpoints with smooth horizontal scroll containment.
+    - [x] **Question Manager & Card Ergonomics**:
+        - Upgraded sub-navigation buttons (`Questions List`, `Add Question`, `AI Tools`) to wrap fluidly on small screens (`w-full sm:w-auto`).
+        - Positioned sortable question checkboxes (`top-3 sm:top-4 left-3 sm:left-4`) and optimized card inner padding (`p-3.5 sm:p-5`) to eliminate touch overlap.
+        - Wrapped question marks and correct answer badges to prevent overflow on 360px-400px devices.
+    - [x] **Manual Question Editor & Modals**:
+        - Converted question type chips and marks inputs in `ManualAddForm` into a responsive 2x2 grid on mobile that transforms into inline chips on desktop.
+        - Stamped responsive dialog boundaries (`w-[95vw] sm:max-w-...`, `max-h-[90vh]`, stacked button footers) across `EditPaperModal`, `SettingsModal`, and `SubmissionReviewModal`.
+    - [x] **TypeScript Strict Audit**:
+        - All files verified against zero compile errors.
+
+### Wednesday, October 21, 2026 (Admin Billing Mobile Responsiveness Overhaul)
+
+- **Admin Billing Mobile Layout & Responsiveness ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/billing/page.tsx), [TransactionHistory.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/dashboard/TransactionHistory.tsx), [AtmAccountCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/AtmAccountCard.tsx), [UsageLimitsCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/subscription/UsageLimitsCard.tsx))**:
+    - [x] **Header & Skeleton Loading Optimization**:
+        - Sized skeletons to fit mobile widths with `max-w-[400px]` constraints to eliminate horizontal overflow.
+        - Adjusted title typography with `text-2xl sm:text-4xl md:text-5xl` and responsive tooltips.
+        - Made "Change Plan" button stretch to full width on mobile viewports for clean touch ergonomics.
+    - [x] **Subscription Tier & Metric Cards**:
+        - Replaced fixed large typography in current plan cards with responsive clamps (`text-2xl sm:text-4xl lg:text-5xl`) to prevent word wrapping on small displays.
+        - Wrapped plan features into flexible layouts on mobile.
+        - Enhanced button and card padding (`p-5 sm:p-6`, rounded-2xl / sm:rounded-3xl) for modern mobile aesthetics.
+    - [x] **Transaction History Mobile Card View**:
+        - Replaced the desktop horizontal-scroll table with a sleek, native-feel Mobile Card List (`md:hidden`), displaying invoice references, status badges, amounts, payment icons, and "View receipt" links.
+        - Built a compact mobile pagination control (`Page X of Y` with Previous/Next controls) that never overflows small screens.
+        - Optimized the interactive receipt modal dialog with viewport height boundaries and touch-friendly scrollability.
+    - [x] **Bank Accounts & Payout Nodes Carousel**:
+        - Refined `AtmAccountCard` padding (`p-5 sm:p-7`) and scaled card number font size (`text-base sm:text-2xl` with tracking `0.15em sm:0.3em`) to eliminate text clipping on 360-390px screens.
+        - Set carousel item widths to `w-[86vw] max-w-[340px] sm:w-[380px]` with snap scrolling to ensure adjacent cards peek smoothly into view.
+    - [x] **TypeScript Strict Audit**:
+        - Cleaned all residual `any` usages across `isSuperAdmin`, `analytics.accounts`, `activePlanData`, `latestTxn`, and catch blocks.
+
+### Wednesday, October 21, 2026 (Admin Announce & Weekly Report Feature Activation)
+
+- **Admin Dashboard Hero Actions ([AdminAnnouncementModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/dashboard/AdminAnnouncementModal.tsx), [AdminWeeklyReportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/dashboard/AdminWeeklyReportModal.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/page.tsx))**:
+    - [x] **School-Wide Broadcast Announcement Modal (`AdminAnnouncementModal`)**:
+        - Created interactive modal allowing administrators to send announcements to targeted audiences (`Students`, `Teachers`, `Parents`).
+        - Added class cohort selector with "All Classes / Entire School" option as well as single-class targeting.
+        - Supported priority levels (`Standard`, `Important`, `Urgent`) with appropriate badge styling and icons.
+        - Integrated with `classService.sendAnnouncement` and automatic cache invalidation on `notifications` query key with toast feedback.
+    - [x] **Executive Weekly Briefing & KPI Report Modal (`AdminWeeklyReportModal`)**:
+        - Built executive modal computing current week date span (Monday – Friday).
+        - Provided institutional KPI overview: Total Enrolled Students, Certified Academic Staff, Active Registered Classes, and Academic Standing.
+        - Embedded institutional operational insights card displaying status notes.
+        - Rendered active cohort capacity table with student counts and sections.
+        - Integrated single-click Executive PDF Report generator adhering to standard global export guidelines (`generatePDF` from `@/utils/pdfGenerator.ts`) and direct browser print support (`window.print()`).
+    - [x] **Admin Page Integration (`page.tsx`)**:
+        - Connected hero banner "Announce" and "View weekly report" buttons with dedicated states and click handlers.
+        - Integrated `useClasses` and `useSchoolProfile` hooks for accurate cohort and institutional data.
+        - Enforced strict TypeScript typing with zero `any` usage.
+
 ### Wednesday, October 21, 2026 (Full Project Build Verification & Fixes)
 
 - **Build & Compilation Audit ([notification.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/notification.controller.ts), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/notifications/page.tsx))**:

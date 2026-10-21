@@ -79,8 +79,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col">
-            <div className="overflow-x-auto no-scrollbar">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col">
+            <div className="hidden md:block overflow-x-auto no-scrollbar">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
@@ -169,22 +169,94 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 </table>
             </div>
 
+            {/* Mobile Card List (Visible on phones & small tablets) */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {paginatedTransactions.map((txn, idx) => (
+                    <motion.div
+                        key={txn.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.04 }}
+                        onClick={() => setSelectedTxn(txn)}
+                        className="p-4 sm:p-5 flex flex-col gap-3 active:bg-slate-50 dark:active:bg-slate-800/40 transition-colors cursor-pointer"
+                    >
+                        {/* Top Row: Code / Reference + Status */}
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xs font-bold text-slate-400">
+                                    #{(startIndex + idx + 1).toString().padStart(2, '0')}
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                    {txn.reference || `INV-00${txn.id}`}
+                                </span>
+                            </div>
+                            <div className={cn(
+                                "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider shrink-0",
+                                txn.status === 'SUCCESS' ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                            )}>
+                                {txn.status === 'SUCCESS' ? 'Paid' : 'Pending'}
+                            </div>
+                        </div>
+
+                        {/* Middle Row: Amount & Payment Method */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                                {txn.amount === 0 ? 'Free' : `₦${txn.amount.toLocaleString()}`}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-4 flex relative shrink-0 items-center">
+                                    {txn.paymentMethod?.toLowerCase().includes('transfer') ? (
+                                        <div className="w-full h-full bg-[#192A56] rounded-sm flex items-center justify-center text-[7px] font-bold text-white tracking-widest">TRF</div>
+                                    ) : (
+                                        <>
+                                            <div className="w-3.5 h-3.5 rounded-full bg-[#FF7675] absolute left-0 mix-blend-multiply dark:mix-blend-screen opacity-90" />
+                                            <div className="w-3.5 h-3.5 rounded-full bg-[#FDCB6E] absolute left-1.5 mix-blend-multiply dark:mix-blend-screen opacity-90" />
+                                        </>
+                                    )}
+                                </div>
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 capitalize">
+                                    {txn.paymentMethod?.replace('_', ' ') || 'Card'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Bottom Row: Date + View Receipt link */}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-50 dark:border-slate-800/60 text-xs">
+                            <span className="text-slate-400 font-medium">
+                                {new Date(txn.createdAt || txn.date || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1">
+                                View receipt
+                                <ArrowRight size={12} />
+                            </span>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
             {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/20 dark:bg-transparent border-t border-slate-100 dark:border-slate-800">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                        Showing <span className="text-slate-900 dark:text-white">{startIndex + 1}</span> - <span className="text-slate-900 dark:text-white">{Math.min(startIndex + itemsPerPage, totalCount)}</span> / <span className="text-slate-900 dark:text-white">{totalCount}</span> Transactions
+                <div className="px-4 sm:px-8 py-4 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 bg-slate-50/20 dark:bg-transparent border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center sm:text-left">
+                        Showing <span className="text-slate-900 dark:text-white">{startIndex + 1}</span> - <span className="text-slate-900 dark:text-white">{Math.min(startIndex + itemsPerPage, totalCount)}</span> / <span className="text-slate-900 dark:text-white">{totalCount}</span>
                     </p>
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                             disabled={currentPage === 1}
-                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:text-indigo-600 transition-all shadow-sm active:scale-90"
+                            className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:text-indigo-600 transition-all shadow-sm active:scale-90"
+                            aria-label="Previous Page"
                         >
                             <ChevronLeft size={16} />
                         </button>
                         
-                        <div className="flex items-center gap-1.5">
+                        {/* Mobile compact page indicator */}
+                        <div className="sm:hidden px-3 text-xs font-bold text-slate-700 dark:text-slate-300">
+                            {currentPage} / {totalPages}
+                        </div>
+
+                        {/* Desktop page buttons */}
+                        <div className="hidden sm:flex items-center gap-1.5">
                             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                 <button
                                     key={page}
@@ -204,7 +276,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                         <button 
                             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                             disabled={currentPage === totalPages}
-                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:text-indigo-600 transition-all shadow-sm active:scale-90"
+                            className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:text-indigo-600 transition-all shadow-sm active:scale-90"
+                            aria-label="Next Page"
                         >
                             <ChevronRight size={16} />
                         </button>
@@ -213,19 +286,19 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             )}
             
             {items.length === 0 && (
-                <div className="p-24 text-center">
-                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-slate-200 dark:text-slate-700">
-                       <Search size={40} />
+                <div className="p-8 sm:p-20 text-center">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-slate-800 rounded-2xl sm:rounded-[2rem] flex items-center justify-center mx-auto mb-4 sm:mb-6 text-slate-200 dark:text-slate-700">
+                       <Search size={32} className="sm:w-10 sm:h-10" />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-2">No Transactions Detected</h3>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-1 sm:mb-2">No Transactions Detected</h3>
                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">The financial ledger is currently awaiting initialization.</p>
                 </div>
             )}
 
             <Dialog open={!!selectedTxn} onOpenChange={(open) => !open && setSelectedTxn(null)}>
-                <DialogContent className="p-0 border-none bg-transparent shadow-none w-full max-w-md sm:max-w-md" showCloseButton={false}>
+                <DialogContent className="p-2 sm:p-0 border-none bg-transparent shadow-none w-full max-w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto" showCloseButton={false}>
                     {selectedTxn && (
-                        <div className="relative bg-white dark:bg-slate-900 rounded-t-[2rem] rounded-b-[0.5rem] shadow-2xl dark:shadow-none w-full border border-b-0 border-slate-100 dark:border-slate-800 mx-auto">
+                        <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-t-[2rem] rounded-b-2xl sm:rounded-b-[0.5rem] shadow-2xl dark:shadow-none w-full border border-slate-100 dark:border-slate-800 mx-auto">
                             
                             {/* Close Button overlay */}
                             <button 
@@ -236,16 +309,16 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                             </button>
 
                             {/* Top Section */}
-                            <div className="p-10 pb-6 flex flex-col items-center text-center">
+                            <div className="p-6 sm:p-10 pb-4 sm:pb-6 flex flex-col items-center text-center">
                                 <Lottie 
                                     animationData={SuccessLottie} 
                                     loop={false}
-                                    style={{ height: '140px', width: '140px', marginBottom: '8px' }}
+                                    style={{ height: '110px', width: '110px', marginBottom: '8px' }}
                                 />
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
+                                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
                                     {selectedTxn.status === 'SUCCESS' ? 'Thank you' : selectedTxn.status === 'PENDING' ? 'Pending' : 'Failed'}
                                 </h2>
-                                <p className="text-sm text-slate-500 mt-2 font-medium">
+                                <p className="text-xs sm:text-sm text-slate-500 mt-1 sm:mt-2 font-medium">
                                     {selectedTxn.status === 'SUCCESS' 
                                         ? 'Your payment was processed successfully.' 
                                         : `Transaction is currently ${selectedTxn.status.toLowerCase()}.`
@@ -261,7 +334,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                             </div>
 
                             {/* Bottom Section */}
-                            <div className="p-8 pt-4 space-y-6 rounded-b-[2rem] bg-white dark:bg-slate-900 border border-t-0 border-slate-100 dark:border-slate-800 shadow-2xl dark:shadow-none relative">
+                            <div className="p-5 sm:p-8 pt-4 space-y-4 sm:space-y-6 rounded-b-2xl sm:rounded-b-[2rem] bg-white dark:bg-slate-900 border border-t-0 border-slate-100 dark:border-slate-800 shadow-2xl dark:shadow-none relative">
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ticket ID</p>

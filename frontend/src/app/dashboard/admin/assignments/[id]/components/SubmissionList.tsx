@@ -119,7 +119,7 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Users className="w-5 h-5 text-primary" />
@@ -162,7 +162,7 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
         </DropdownMenu>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800">
@@ -228,6 +228,64 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card List (Visible on phones & small tablets) */}
+      <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 -mx-1">
+        {submissions.map((sub: any) => (
+          <div key={sub.id} className="py-3.5 px-2 flex flex-col gap-2.5">
+            {/* Top row: Avatar, Student Info, Review CTA */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img 
+                  src={sub.student?.profileImage || "/logo/favicon.svg"} 
+                  alt={sub.student?.name || "Student"} 
+                  className="w-9 h-9 rounded-full bg-slate-100 object-cover shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{sub.student?.name || "Unknown Student"}</p>
+                  <p className="text-[11px] text-slate-400 truncate">{sub.student?.email || "No email"}</p>
+                </div>
+              </div>
+              {!readOnly && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="h-8 rounded-lg text-xs font-semibold shrink-0"
+                  onClick={() => setSelectedSubmission(sub)}
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1 text-primary" />
+                  Review
+                </Button>
+              )}
+            </div>
+
+            {/* Bottom row: Status badge, Date, Score */}
+            <div className="flex items-center justify-between pt-1 border-t border-slate-50 dark:border-slate-800/40 text-xs">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                  sub.status === "GRADED" 
+                    ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                    : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                }`}>
+                  {sub.status === "GRADED" ? <CheckCircle2 size={11} /> : <Clock size={11} />}
+                  {sub.status}
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, h:mm a") : "Unknown"}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                  {sub.score ?? 0}
+                </span>
+                <span className="text-[11px] text-slate-400 font-bold ml-0.5">
+                  / {assignment.maxScore || 100}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {selectedSubmission && (

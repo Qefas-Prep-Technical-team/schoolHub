@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function LinkingSkeleton({ count = 3 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 w-full">
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i} className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-sm border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 h-[240px] md:h-[280px]">
           <Skeleton className="h-12 w-12 md:h-16 md:w-16 rounded-full mb-4 mt-2" />

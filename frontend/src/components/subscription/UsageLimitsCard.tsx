@@ -143,8 +143,8 @@ export default function UsageLimitsCard({
   const hasWarning = Object.values(percentages).some((p) => (p as number) >= 80);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col min-h-[400px]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col min-h-[380px] sm:min-h-[400px]">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
           <div 
             className={cn(

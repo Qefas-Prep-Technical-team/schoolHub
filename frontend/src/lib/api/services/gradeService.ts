@@ -4,25 +4,44 @@ export interface Grade {
   id: string;
   studentId: string;
   student?: {
+    id?: string;
     name: string;
     studentCode: string;
+    profileImage?: string | null;
+    gradeLevel?: string | number | null;
+    gender?: string | null;
   };
   schoolId: string;
   teacherId: string | null;
+  teacher?: {
+    id?: string;
+    name: string;
+    email?: string;
+  } | null;
   classId: string | null;
   class?: {
+    id?: string;
     name: string;
     section: string;
   };
   subject: string;
   assessmentType: string;
+  category?: string;
+  weight?: number | null;
+  status?: string;
   score: number;
   maxMarks: number;
   remarks: string | null;
   examId: string | null;
   subjectPaperId: string | null;
   examAttemptId: string | null;
+  subjectExamAttemptId?: string | null;
   sessionId?: string | null;
+  session?: {
+    id?: string;
+    name: string;
+    currentTerm?: string;
+  } | null;
   term?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -34,13 +53,14 @@ export interface Grade {
       id?: string;
       name: string;
       currentTerm?: string;
-    }
+    };
   };
   subjectPaper?: {
+    id?: string;
     title: string;
     subject?: {
       name: string;
-    }
+    };
   };
 }
 

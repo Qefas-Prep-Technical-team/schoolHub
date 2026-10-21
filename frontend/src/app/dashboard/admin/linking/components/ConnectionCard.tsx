@@ -65,7 +65,7 @@ export function ConnectionCard({
   // ── ACTIVE CONNECTION CARD ────────────────────────────────────────────────
   if (type === 'active') {
     return (
-      <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
+      <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] w-full min-w-0">
         
         {/* Options Menu */}
         <div className="absolute top-4 right-4">
@@ -103,11 +103,11 @@ export function ConnectionCard({
         </div>
 
         {/* Name and Email */}
-        <div className="text-center mb-3 md:mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
-          <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
+        <div className="text-center w-full min-w-0 px-2 mb-3 md:mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
+          <h3 className="font-bold text-[#1e293b] dark:text-white text-sm md:text-[15px] mb-0.5 truncate w-full max-w-full tracking-tight" title={details.name}>
             {details.name}
           </h3>
-          <p className="text-[11px] text-[#94a3b8] font-medium truncate max-w-[200px]">
+          <p className="text-[11px] text-[#94a3b8] font-medium truncate w-full max-w-full" title={details.email}>
             {details.email}
           </p>
         </div>
@@ -169,7 +169,7 @@ export function ConnectionCard({
 
   // ── PENDING REQUEST CARD ──────────────────────────────────────────────────
   return (
-    <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
+    <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] w-full min-w-0">
       
       {/* Status Badge */}
       <div className="absolute top-4 left-4">
@@ -195,11 +195,11 @@ export function ConnectionCard({
       </div>
 
       {/* Name and Email */}
-      <div className="text-center mb-3 md:mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
-        <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
+      <div className="text-center w-full min-w-0 px-2 mb-3 md:mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
+        <h3 className="font-bold text-[#1e293b] dark:text-white text-sm md:text-[15px] mb-0.5 truncate w-full max-w-full tracking-tight" title={details.name}>
           {details.name}
         </h3>
-        <p className="text-[11px] text-[#94a3b8] font-medium truncate max-w-[200px]">
+        <p className="text-[11px] text-[#94a3b8] font-medium truncate w-full max-w-full" title={details.email}>
           {details.email}
         </p>
       </div>
