@@ -39,6 +39,202 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, October 21, 2026 (Student & Admin Result Export Standardization & Subscription Tier Gating)
+
+- **Student Assignments Layout Optimization ([assignments/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/page.tsx))**:
+    - [x] **Available Page Space Fit**: Removed redundant `max-w-7xl` and nested horizontal page padding (`px-3.5 sm:px-6 lg:px-8`) which conflicted with `layout.tsx` (`p-4 md:p-6 lg:p-8`). Converted page container to fluid `w-full space-y-5 sm:space-y-6` allowing search bar (`flex-1 min-w-[240px]`), stats grid, and cards to dynamically fill the available space on web desktop without dead margins.
+
+- **Student Result Exports Audit & Admin Parity Alignment**:
+    - [x] **Termly Result Sheet Export ([result/termly/view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/result/termly/view/page.tsx))**:
+        - Upgraded export engine from raw browser printing to institutional `generatePDF` adhering to `.agents/skills/global_export_template/SKILL.md`.
+        - Matched Admin records report design (`admin/records/page.tsx`) and Parent termly view.
+        - Enforced paid subscription plan check via `assertSchoolPayingPlan(school)`.
+    - [x] **Academic Transcript Export ([grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx))**:
+        - Added `handleExportTranscript` with `generatePDF` and `assertSchoolPayingPlan(school)`.
+        - Added "Export Transcript" button in the top action bar next to Session and Term selectors.
+        - Replaced unguarded `@react-pdf/renderer` button in the Academic Transcript tab with a guarded institutional PDF export.
+    - [x] **Assessment & Exam Result Dossier Export ([grades/view/[type]/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx))**:
+        - Added `handleExportOfficialPDF` using `generatePDF` and `assertSchoolPayingPlan(school)` for all types (`exam`, `subject-paper`, `assessment`).
+        - Replaced restrictive conditional `PDFDownloadLink` with guarded "Export Official PDF" action in the header.
+    - [x] **Exam Solution Key & Review Export ([exams&quizzes/[examId]/review/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams%26quizzes/[examId]/review/page.tsx))**:
+        - Added `handleExportReviewPDF` generating an official Exam Review & Solution Key dossier with candidate metadata, score summary, and question breakdown.
+        - Added "Export Solution Key" button in the top header action bar with `assertSchoolPayingPlan(school)`.
+
+- **Subscription Tier Gating (`assertSchoolPayingPlan`)**:
+    - [x] Verified that students whose schools are on the `FREE` tier cannot export result documents. An informative toast error informs them to contact school administration to upgrade. Active trial periods are permitted.
+
+- **Documentation ([STUDENT_ADMIN_RESULT_EXPORTS_AND_SUBSCRIPTION_GATING.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/STUDENT_ADMIN_RESULT_EXPORTS_AND_SUBSCRIPTION_GATING.md))**:
+    - [x] Created comprehensive documentation detailing architecture, student vs admin matrix, layout specifications, and extension guidelines.
+
+- **Verification**:
+    - [x] Ran `npx tsc --noEmit` on `frontend` and achieved **0 errors** (exit code 0).
+
+### Wednesday, October 21, 2026 (Student Assignments Overview Redesign & Class List Numbering Fix)
+
+- **Student Class Assessment List Numbering & Mobile List View ([AssignmentsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/AssignmentsTable.tsx))**:
+    - [x] **Numbering Overflow & Badge Fix**:
+        - Replaced cramped `size-7` (28px square) with flexible `min-w-[28px] h-6 px-1.5 inline-flex items-center justify-center rounded-md font-mono text-[10px] font-black`.
+        - Formatted numbering consistently as `#01`, `#02` (page-aware: `String((safePage - 1) * pageSize + idx + 1).padStart(2, '0')`), eliminating text overflow, wrapping, and clipping on mobile devices.
+    - [x] **Mobile-Responsive List Mode**:
+        - Built a dedicated mobile list perspective (`block md:hidden`) replacing the wide horizontal `<table>` with sleek, touch-friendly list rows showing the `#01` numbering chip, assignment title, due date with icon, grade, and direct preview button.
+
+- **Student Assignments Main Hub Redesign — Web & Mobile ([assignments/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/page.tsx) & components)**:
+    - [x] **Top Hero KPI Stats Grid**:
+        - Moved metrics from the bottom of the page to the prominent top hero strip: Total Assigned (`BookOpen`), Graded Tasks with average percentage (`CheckCircle2`), Pending Work (`Clock`), and Overdue Tasks with live pulse alert (`AlertCircle`).
+    - [x] **Search & Filter Bar with Reset State**:
+        - Built modern SearchBar with Lucide icons (`Search`, `X`), clear action, and responsive FilterChips (`Subject`, `Department`, `Status`, `Due Date`) with active selection indicators and a 1-tap "Reset Filters" button.
+    - [x] **Assignment Card Redesign ([AssignmentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/components/AssignmentCard.tsx))**:
+        - Modernized card aesthetics for both Grid and List modes with ambient status borders, `#01` numbering pill, subject tag, title, due date with `Clock` icon, instructor line, grade badge, and touch targets >= 44px.
+    - [x] **Responsive View Toggle & Mobile Grid Default ([ViewToggle.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/components/ViewToggle.tsx))**:
+        - Replaced radio buttons with Lucide `LayoutGrid` and `List` pill buttons, defaulting smoothly to Grid mode on mobile screens (< 768px).
+    - [x] **Type Safety & Zero Compile Errors**:
+        - Verified full TypeScript compilation (`npx tsc --noEmit`) with **0 errors**.
+
+### Wednesday, October 21, 2026 (Student Class Details Mobile Overhaul & Grid View Option)
+
+- **Student Class Details Navigation & Mobile Overhaul ([my-classes/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/page.tsx) & components)**:
+    - [x] **Horizontally Scrollable Class Tabs Navigation ([ClassTabs.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/ClassTabs.tsx))**:
+        - Fixed navigation tabs moving off screen on mobile devices by making `<TabList>` horizontally scrollable with `overflow-x-auto no-scrollbar scroll-smooth` and `-mb-px` border alignment.
+        - Upgraded each tab into a touch-friendly pill with relevant Lucide icons (`FileText`, `BookOpen`, `Calendar`, `BookText`, `CheckCircle2`, `MessageSquare`).
+    - [x] **Grid View Option & Mobile Default ([AssignmentsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/AssignmentsTable.tsx))**:
+        - Implemented `viewMode` toggle state (`'grid' | 'table'`) with `LayoutGrid` and `List` switcher icons.
+        - Added automatic mobile screen detection defaulting `viewMode` to `'grid'` for screen widths `< 768px`.
+        - Built assessment grid cards featuring `#001` ID badges, type badges, status pills (Graded, Submitted, Upcoming, Overdue), due date with clock icon, score/grade breakdown, and preview links.
+        - Added functional Type and Status filter dropdowns plus search query reset.
+    - [x] **Page Layout & Component Mobile Responsiveness ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/page.tsx), [ClassHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/ClassHeader.tsx), [ClassBanner.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/ClassBanner.tsx), [ClassStats.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/ClassStats.tsx))**:
+        - Replaced brittle `w-[90%]` container with fluid `w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8`.
+        - Optimized `ClassHeader` height, dark gradient, badge metadata, and font sizes.
+        - Enhanced `ClassBanner` with mobile button stacking and fluid padding.
+        - Updated `ClassStats` with compact card heights (`h-28 sm:h-32`), bold tracking, and dark mode backgrounds.
+        - Made `FoldersSidebar.tsx` horizontally scrollable on mobile viewports.
+
+### Wednesday, October 21, 2026 (Student Assignment Mobile Redesign, Assessment Cards & Peer Standing Verification)
+
+- **Student Assignment Details Mobile Overhaul ([assignments/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/page.tsx) & components)**:
+    - [x] **Header & Compact Time Capsule Redesign ([Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/Header.tsx))**:
+        - Added dedicated 1-tap "← Back to Assignments" button directly in the mobile header.
+        - Compacted countdown timer into a sleek high-tech time capsule (`02d : 14h : 35m : 12s`) occupying minimal vertical space on mobile, eliminating massive blocks that pushed content below the fold.
+        - Overhauled status badges and graded/submitted cards with emerald and blue feedback cards.
+    - [x] **Segmented Tab Navigation with Badges ([TabNavigation.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/TabNavigation.tsx))**:
+        - Enabled smooth horizontal scrolling with hidden scrollbar (`no-scrollbar`) and active pink pill highlights.
+        - Added Lucide icons (`BookOpen`, `Zap`, `Paperclip`, `Award`, `FolderOpen`) and dynamic item count badges (`(10)`).
+    - [x] **Document Card Instructions Panel ([InstructionsPanel.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/InstructionsPanel.tsx))**:
+        - Transformed raw prose into a polished document card with an "Assignment Instructions" header, "Teacher Guidance" badge, and clean LaTeX/markdown typography.
+    - [x] **Quiz Question Cards & Real-Time Completion Progress ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/page.tsx))**:
+        - Integrated live Quiz Progress Bar (`Answered X of Y (Z%)`).
+        - Redesigned quiz question options with option letter pills (`A`, `B`, `C`, `D`), active pink rings, `min-h-[48px]` touch targets, and `#01` question index chips.
+    - [x] **Submission Modal Mobile Touch Optimization ([SubmissionModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/SubmissionModal.tsx))**:
+        - Replaced raw SVGs with Lucide icons (`CheckCircle2`, `Upload`, `FileText`, `X`, `Loader2`, `Trash2`).
+        - Designed sheet/dialog modal with top-right dismiss button, file size formatting, and full-width touch buttons on mobile.
+    - [x] **Panels Modernization ([AttachmentsPanel.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/AttachmentsPanel.tsx), [MaterialsPanel.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/MaterialsPanel.tsx), [RubricPanel.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/RubricPanel.tsx))**:
+        - Upgraded all three panels with Lucide icons, touch targets >= 44px, empty states, and responsive cards.
+    - [x] **Sticky Action Footer Resolution & Elimination of Floating "Score Released" Bar ([ActionFooter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/ActionFooter.tsx) & [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/page.tsx))**:
+        - Completely removed the redundant footer when an assignment is already graded (`isGraded`) or submitted without pending history actions, eliminating the empty bar floating in mid-air with just a "Score Released" badge (the score and feedback are already displayed prominently in the hero card).
+        - Replaced `bottom-16` with `bottom-0` so when the footer is active for submissions, it sits flush with the bottom edge rather than hovering 64px up in the air.
+
+- **Student Grades Hub Assessment Tab Assignment Cards & Release Status Preview ([grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx))**:
+    - [x] **Rich Assignment Card Integration**:
+        - Connected `useStudentAssignments({ limit: 100 })` directly into the student grades overview page.
+        - When the user selects `caTab === 'ASSIGNMENT'`, assignments render with the exact rich, polished presentation from `LatestAssignmentsCard.tsx` in both Grid and List/Table view modes.
+        - Includes status icons (emerald `CheckCircle2` for graded, blue for submitted, red `XCircle` for overdue, amber `Clock` for pending), status badges, due dates, total points, and score breakdowns.
+        - Clicking any assignment card navigates directly to `/dashboard/student/assignments/${assignment.id}` where students can preview instructions, review answers, or check their submission receipt based on the release status.
+
+- **Exam Result Peer Standing & Class Average Verification ([grades/view/[type]/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx))**:
+    - [x] **Dynamic Peer Standing & Class Average Calculation Fix**:
+        - Verified backend implementation in `exam-attempt.service.ts`: Peer standing is **not** hardcoded; it dynamically queries `prisma.examAttempt.findMany` for ranking/outperformance and `prisma.examAttempt.aggregate` for class average.
+        - Fixed frontend bug where single-participant exams showed `Top 100%`: now displays `Rank #1 (Single participant / Top score)`. For multiple peers, displays `Top {X}% (Rank #{pos} of {totalP} peers)`.
+        - Fixed Class Average displaying raw points as a percentage (e.g., `25%` for 25/30): now accurately computes `avgPercent = (rawAvg / totalMarks) * 100` and displays both percentage and points breakdown.
+
+### Wednesday, October 21, 2026 (Student Exam Review Mobile Redesign & Assignments Sidebar Fix)
+
+- **Student Exam Review Mobile Responsiveness & Polish ([review/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams%26quizzes/[examId]/review/page.tsx))**:
+    - [x] **Full Mobile-Responsive Redesign**:
+        - Completely redesigned the exam review page (`/dashboard/student/exams&quizzes/[examId]/review`) to look stunning on mobile screens (< 768px), tablets, and desktops.
+        - Built a mobile performance strip featuring a compact subject mastery card, accuracy percentage pill, and score breakdown (`pts`).
+        - Implemented a horizontally scrollable subject selector track with smooth pill badges preventing horizontal screen overflow.
+        - Created a mobile question quick-scroll strip and a dedicated "Question Navigator" Sheet drawer with filter modes (`All`, `Correct`, `Incorrect`) for 1-tap jumping to any question without exhausting scrolling.
+        - Redesigned question option cards (MCQ, True/False, Short Answer) with vivid color-coded answer badges ("Your Answer • Correct", "Correct Key", "Your Choice • Incorrect"), clean LaTeX rendering, responsive image figures, and teacher review notes.
+        - Added touch-friendly navigation controls (`min-h-[44px]` touch targets) with Previous/Next buttons and smooth state transitions.
+        - Fully typed data structures and removed all `any` usages per Rule 4.1.
+
+- **Student Mobile Sidebar Assignments Link Visibility Guarantee ([StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx) & [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/app-sidebar.tsx))**:
+    - [x] **Explicit Core Academic Features Override**:
+        - Added explicit guarantees in both `StudentMobileDrawer.tsx` and `app-sidebar.tsx` ensuring `assignments` and `dashboard` links remain enabled unconditionally, preventing them from being filtered out if dynamic features are loading, stale, or disabled in DB configs.
+
+### Wednesday, October 21, 2026 (Student Assessment Tab Assignment Name Display & Mobile Drawer)
+
+- **Student Grades Hub Assessment & Assignment Name Resolution ([grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx), [grades/view/[type]/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx) & [grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/grade.service.ts))**:
+    - [x] **Data Structure Analysis via `ASSESSMENT_DATA_MODEL.md`**:
+        - Followed the assessment data model specifications: standalone assignments set by teachers are recorded in `Assignment` and lazily or manually synced to the `Grade` model with `assessmentType: "ASSIGNMENT"`, `remarks: assignment.title`, and `subject: subject.name`.
+    - [x] **Backend Subject Paper & Assignment Title Enrichment ([grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/grade.service.ts))**:
+        - Included `subjectPaper: true` in `prisma.grade.findMany` and `getGradeByIdService`.
+        - Added lazy enrichment for assignment grades whose `remarks` field is empty by querying `AssignmentSubmission -> Assignment.title` using the embedded submission ID (`grade.id.replace('grade-assignment-', '')`).
+    - [x] **Frontend Display Title & Subtitle Hierarchy ([grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx))**:
+        - Replaced naive `{grade.subject}` card titles with `getAssessmentDisplayTitle(grade)` across both Grid and List/Table views.
+        - Cards now prominently feature the assignment's actual name (e.g., "test4", "first test teacher assignment") as the primary `<h4>` title, and display the subject and date (e.g., "UTME Government • Jun 8, 2026") in the metadata line.
+        - In the card footer, standardized reading `grade.remarks || grade.remark` so evaluator remarks and assignment descriptions render cleanly.
+    - [x] **Assessment Details View Synchronization ([grades/view/[type]/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx))**:
+        - Updated assessment result resolution so clicking an assignment card opens the assessment view with the assignment title properly displayed in the hero banner.
+
+- **Student Mobile Drawer Navigation Links Restoration ([StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx) & [studentFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/studentFeatureFlags.ts))**:
+    - [x] **Assignments Feature Flag Enabled**:
+        - In [studentFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/studentFeatureFlags.ts), `STUDENT_FEATURE_FLAGS.assignments` was set to `false`, causing the Assignments link (`/dashboard/student/assignments`) to be stripped during menu filtering. Updated default to `true`.
+    - [x] **Dynamic Global Features Sync**:
+        - Integrated `useGlobalFeatures("student")` in [StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx), keeping the mobile drawer in sync with desktop sidebar platform config overrides and role feature maps.
+        - Added `<SheetTitle className="sr-only">` to satisfy Radix UI accessibility requirements.
+
+- **AI Insights Feature Entitlement & School Plan Gating**:
+    - [x] **Backend Plan Entitlement Resolution ([exam-attempt.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-attempt.service.ts))**:
+        - Gated student AI insights based directly on whether the student's school is on an active plan that includes the AI insights feature in the `features` column (`String[]`) of the `subscription_plans` table (`SubscriptionPlan.features`).
+        - Replaced brittle hardcoded `features?.includes('ai_insight')` with case-insensitive normalization matching `"AI Insights"`, `"ai_insight"`, `"ai_insights"`, `"ai_tools"`, or any entry containing `"ai insight"`.
+        - Removed the blocking `sub_enforced_students` condition that previously prevented checking the school's active institutional subscription for students.
+        - Supported school active status validation through both `SchoolSubscription` (with expiration checks) and direct `school.subscriptionPlan` (`ACTIVE` / `isTrialActive`).
+        - Maintained backward-compatible support for individual student user subscription overrides if their school is not yet on an AI plan.
+        - Prevented cached "Premium AI insights are available..." locked strings from overwriting valid pedagogical insights when access is unlocked.
+    - [x] **Frontend TanStack Query Optimization ([useExams.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useExams.ts))**:
+        - Added explicit `staleTime: 1000 * 60 * 2` (2 minutes) and `retry: 1` to `useExamResult` in compliance with `AGENTS.md` Rules 2.1 and 2.5, eliminating duplicate network refetches on tab focus.
+    - [x] **Student Grades Detail View UI Polish ([grades/view/[type]/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx))**:
+        - Added active/locked indicator in the navigation tab bar (pulsing pink dot when unlocked, amber lock badge when school plan is required).
+        - Upgraded AI Insights tab panel with `Active AI Diagnostics` badge when unlocked and `School Plan Required` badge when locked.
+        - Enhanced locked overlay with institutional explanation clarifying that AI Pedagogical Insights require the school's subscription to feature AI Insights.
+        - Added memoized `aiDiagnostics` breakdown displaying dynamic **Academic Strengths** (subjects ≥ 65%) and **Key Focus Areas** (subjects < 50%) with clean pill cards.
+
+### Wednesday, October 21, 2026 (Student Dashboard Mobile Logout Modal Cancel Button Fix)
+
+- **Mobile Logout Modal & Navigation Drawer Event Interception Resolution**:
+    - [x] **Radix UI Sheet & Pointer Event Interception Root Cause**:
+        - In [StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx), clicking the Sign Out button triggered `logout()` without closing the Radix Sheet drawer (`setOpen(false)`).
+        - The open Sheet's `DismissableLayer` remained active, intercepting `pointerdown` outside the drawer as a dismissal event and suppressing the subsequent `click` event on the modal's Cancel button.
+        - Fixed by explicitly dismissing the drawer (`setOpen(false)`) prior to opening the logout modal across [StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx), [TeacherMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TeacherMobileDrawer.tsx), [AdminMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/AdminMobileDrawer.tsx), and [ParentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/ParentMobileDrawer.tsx).
+    - [x] **LogoutModal Touch & Accessibility Overhaul ([LogoutModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/LogoutModal.tsx))**:
+        - Portaled the modal directly to `document.body` via React's `createPortal`, isolating it from nested layout and sheet stacking contexts.
+        - Added `e.preventDefault()` and `e.stopPropagation()` on the Cancel button with `touch-manipulation`, `active:scale-95`, and mobile accessibility-compliant touch targets (`min-h-[44px] min-w-[90px]`).
+        - Added responsive corner close button (`<X />`) with `min-h-[40px] min-w-[40px]` touch target for instant mobile dismissal.
+        - Added backdrop click-to-dismiss (`onClick={onClose}`) on dark glass overlay and keyboard `Escape` dismissal listener.
+        - Locked background body scrolling (`document.body.style.overflow = "hidden"`) while modal is mounted.
+
+- **Student Grades Assessment & Exam View Mobile Overhaul ([grades/view/[type]/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx))**:
+    - [x] **URL Parameter Sanitization**:
+        - Handled trailing comma tags in URLs (e.g. `/exam/241fe964-a406-4dd8-8f44-2182c6db6db1,grid`) by splitting on `,`, ensuring the clean UUID is passed to `useExamResult` and `useGrade` without 404 query errors.
+        - Automatically initializes `viewMode` from URL tag if present.
+    - [x] **Grid & Table View Mode Toggle (Defaulting to Grid Cards on Mobile)**:
+        - Added interactive segmented perspective tabs (`LayoutGrid` and `List`) with active state pills.
+        - Automatically defaults to `grid` on mobile viewports (`window.innerWidth < 768`) and supports instant toggling to `table`.
+    - [x] **Responsive Cards Grid for Evaluated Subjects**:
+        - Designed subject cards with ambient top borders matching score performance, subject book icon, numbering chips (`#01`, `#02`), and square WAEC letter grade badges (`A1`, `B2`, `C6`, `D7`, `E8`, `F9`).
+        - Integrated component scores (`score / totalMarks`), percentage, visual progress bars, and status indicator pills (`Distinction`, `Credit`, `Pass`, `Fail`).
+    - [x] **Mobile-Optimized Header, Hero Card & 2x2 Stats Grid**:
+        - Upgraded 4 KPI cards to a 2-column mobile and 4-column desktop layout (`grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5`), replacing tall 1-column mobile card stacks.
+        - Modernized student card with ambient pink gradient accent, responsive avatar container, and metadata chips.
+        - Added live subject search filter input with instant clear button (`X`).
+
+- **Student Grades Hub Grid Card Numbering Alignment ([dashboard/student/grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx))**:
+    - [x] **Repositioned Numbering to the Left Across All Grid Cards**:
+        - **Exams Grid Cards**: Moved the pagination-aware numbering chip (`#{(examsPage - 1) * itemsPerPage + index + 1}`) from the far right to the top-left of the card header, keeping the title, code, and WAEC grade badge balanced.
+        - **Assessments Grid Cards**: Relocated the numbering chip from the bottom-left to the top-left header before the quiz/test icon, freeing the footer for evaluator remarks.
+        - **Subject Papers Modal / Expanded Cards**: Added standard `#01`, `#02` left numbering chips alongside paper icons.
+        - **Final Published Results Grid Cards**: Added dynamic `#{(finalPage - 1) * itemsPerPage + index + 1}` numbering chips at top-left.
+
 ### Tuesday, October 20, 2026 (Parent Dashboard Export Standardization & Paid Plan Gate)
 
 - **Parent Onboarding Redesign ([onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx))**:

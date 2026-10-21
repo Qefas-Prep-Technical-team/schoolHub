@@ -8,12 +8,12 @@ import { Menu, School, ChevronRight, User2, LogOut, type LucideIcon } from "luci
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { STUDENT_FEATURE_FLAGS, type StudentFeatureFlagKey } from "./studentFeatureFlags";
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { studentMenuItems } from "./app-sidebar";
- // ✅ import from where you export it
 
 const STUDENT_SECTION_TITLES = {
   core: "Learning",
@@ -32,26 +32,37 @@ interface StudentMenuItem {
   section?: string;
 }
 
-function getFilteredStudentMenuItemsBySection(items: StudentMenuItem[]) {
-  const filtered = items.filter((i) => STUDENT_FEATURE_FLAGS[i.featureKey]);
-
-  return {
-    core: filtered.filter((i) => i.section === "core"),
-    communication: filtered.filter((i) => i.section === "communication"),
-    profile: filtered.filter((i) => i.section === "profile"),
-    advanced: filtered.filter((i) => i.section === "advanced"),
-  } satisfies Record<StudentSectionKey, StudentMenuItem[]>;
-}
-
 export function StudentMobileDrawer() {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
+  const { data: dynamicFeatures } = useGlobalFeatures("student");
 
-  const sections = React.useMemo(
-    () => getFilteredStudentMenuItemsBySection(studentMenuItems as any),
-    []
-  );
+  const sections = React.useMemo(() => {
+    const currentFeatures = {
+      ...STUDENT_FEATURE_FLAGS,
+      ...(dynamicFeatures || {}),
+    } as Record<string, boolean>;
+
+    const filtered = (studentMenuItems as StudentMenuItem[]).filter((item) => {
+      // Deactivated: hide subscription button from the sidebar
+      if (item.featureKey === "billing") return false;
+      // Core academic tools are always enabled for students
+      if (item.featureKey === "assignments" || item.featureKey === "dashboard") return true;
+      // Map 'results' to 'grades' for consistency with schema/seed
+      const key = item.featureKey === "results" ? "grades" : item.featureKey;
+      return currentFeatures[key] !== undefined
+        ? !!currentFeatures[key]
+        : !!currentFeatures[item.featureKey];
+    });
+
+    return {
+      core: filtered.filter((i) => i.section === "core"),
+      communication: filtered.filter((i) => i.section === "communication"),
+      profile: filtered.filter((i) => i.section === "profile"),
+      advanced: filtered.filter((i) => i.section === "advanced"),
+    } satisfies Record<StudentSectionKey, StudentMenuItem[]>;
+  }, [dynamicFeatures]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -66,6 +77,7 @@ export function StudentMobileDrawer() {
       </SheetTrigger>
 
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
+        <SheetTitle className="sr-only">Student Navigation Menu</SheetTitle>
         {/* Header */}
         <div className="px-6 py-8 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
           <Link href="/?view=landing" onClick={() => setOpen(false)} className="flex items-center gap-4 group/logo">
@@ -134,8 +146,11 @@ export function StudentMobileDrawer() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
-              onClick={() => logout()}
+              className="rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+              onClick={() => {
+                setOpen(false);
+                logout();
+              }}
               aria-label="Sign out"
             >
               <LogOut className="h-5 w-5" />

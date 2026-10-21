@@ -236,6 +236,8 @@ export const useExamResult = (examId: string, studentId?: string) => {
     queryKey: [...examKeys.detail(examId), "result", studentId || "me"],
     queryFn: () => examService.getExamResult(examId, studentId || ""),
     enabled: !!examId,
+    staleTime: 1000 * 60 * 2,
+    retry: 1,
   });
 };
 

@@ -168,8 +168,11 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
-              onClick={() => logout()}
+              className="rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+              onClick={() => {
+                setOpen(false);
+                logout();
+              }}
               aria-label="Sign out"
             >
               <LogOut className="h-5 w-5" />

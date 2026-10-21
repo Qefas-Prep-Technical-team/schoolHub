@@ -1,7 +1,7 @@
 'use client';
 
 // app/student/classes/[id]/materials/components/MaterialsLayout.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from './PageHeader';
 import FoldersSidebar from './FoldersSidebar';
 import SearchAndView from './SearchAndView';
@@ -19,6 +19,12 @@ export default function MaterialsLayout({ materials, className, description }: M
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [activePreview, setActivePreview] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('grid');
+    }
+  }, []);
 
   const folders = ['All Materials', 'Exams', 'Assignments', 'CA', 'Test (Quiz)'];
 

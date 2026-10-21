@@ -117,8 +117,11 @@ export function TeacherMobileDrawer() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
-              onClick={() => logout()}
+              className="h-10 w-10 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+              onClick={() => {
+                setOpen(false);
+                logout();
+              }}
               aria-label="Sign out"
             >
               <LogOut className="h-5 w-5" />

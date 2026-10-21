@@ -3,7 +3,7 @@ export const STUDENT_FEATURE_FLAGS = {
   // === CORE FEATURES ===
   dashboard: true,
   classes: true,
-  assignments: false,
+  assignments: true,
   results: true,
   attendance: true,
   exams: true,

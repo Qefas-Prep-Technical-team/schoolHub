@@ -283,11 +283,11 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   }
 
   return (
-    <div className="w-[90%] mx-auto py-8 pb-32">
+    <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 pb-32 space-y-4 sm:space-y-6 font-sans">
       <ClassHeader classItem={classItem!} />
       <Breadcrumbs classTitle={classItem!.title} />
 
-      <div className="mt-8 space-y-4">
+      <div className="space-y-4">
         <ClassBanner
           title={classItem!.title}
           description={classItem!.description}
@@ -302,29 +302,31 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         />
       </div>
 
-      <ClassTabs activeTab={activeTab} onTabChange={setActiveTab}>
-        <TabPanel>
-          <AssignmentsTable
-            assignments={classItem!.assessments}
-            hasDepartment={hasDepartment}
-          />
-        </TabPanel>
-        <TabPanel>
-          <MaterialsPage />
-        </TabPanel>
-        <TabPanel>
-          <TimetablePage />
-        </TabPanel>
-        <TabPanel>
-          <SubjectsPage classSubjects={classItem!.subjects} className={classItem!.name} />
-        </TabPanel>
-        <TabPanel>
-          <AttendancePage />
-        </TabPanel>
-        <TabPanel>
-          <DiscussionsPage />
-        </TabPanel>
-      </ClassTabs>
+      <div className="pt-2">
+        <ClassTabs activeTab={activeTab} onTabChange={setActiveTab}>
+          <TabPanel>
+            <AssignmentsTable
+              assignments={classItem!.assessments}
+              hasDepartment={hasDepartment}
+            />
+          </TabPanel>
+          <TabPanel>
+            <MaterialsPage />
+          </TabPanel>
+          <TabPanel>
+            <TimetablePage />
+          </TabPanel>
+          <TabPanel>
+            <SubjectsPage classSubjects={classItem!.subjects} className={classItem!.name} />
+          </TabPanel>
+          <TabPanel>
+            <AttendancePage />
+          </TabPanel>
+          <TabPanel>
+            <DiscussionsPage />
+          </TabPanel>
+        </ClassTabs>
+      </div>
     </div>
   );
 }

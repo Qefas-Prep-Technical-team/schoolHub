@@ -1,4 +1,13 @@
 import { Attachment } from './types';
+import { 
+  FileText, 
+  FileSpreadsheet, 
+  Video, 
+  Image as ImageIcon, 
+  FileCode, 
+  File, 
+  Download 
+} from 'lucide-react';
 
 interface Props {
   attachments: Attachment[];
@@ -6,83 +15,85 @@ interface Props {
 }
 
 export default function AttachmentsPanel({ attachments, onDownload }: Props) {
-  const getIcon = (type: string) => {
+  const renderIcon = (type: string, color: string) => {
+    const iconClass = "h-5 w-5";
     switch (type) {
       case 'pdf':
-        return 'picture_as_pdf';
       case 'document':
-        return 'description';
+        return <FileText className={iconClass} />;
       case 'video':
-        return 'videocam';
+        return <Video className={iconClass} />;
       case 'image':
-        return 'image';
+        return <ImageIcon className={iconClass} />;
       case 'spreadsheet':
-        return 'table_chart';
+        return <FileSpreadsheet className={iconClass} />;
       case 'presentation':
-        return 'slideshow';
+      case 'code':
+        return <FileCode className={iconClass} />;
       default:
-        return 'insert_drive_file';
+        return <File className={iconClass} />;
     }
   };
 
-  const getIconColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      red: 'text-red-600 dark:text-red-400',
-      blue: 'text-pink-600 dark:text-blue-400',
-      green: 'text-green-600 dark:text-green-400',
-      yellow: 'text-yellow-600 dark:text-yellow-400',
-      purple: 'text-purple-600 dark:text-purple-400',
-      orange: 'text-orange-600 dark:text-orange-400',
+  const getStyle = (color: string) => {
+    const colorMap: Record<string, { bg: string; text: string }> = {
+      red: { bg: 'bg-rose-50 dark:bg-rose-950/40', text: 'text-rose-600 dark:text-rose-400' },
+      blue: { bg: 'bg-pink-50 dark:bg-pink-950/40', text: 'text-pink-600 dark:text-pink-400' },
+      green: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400' },
+      yellow: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400' },
+      purple: { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-600 dark:text-purple-400' },
+      orange: { bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-600 dark:text-orange-400' },
     };
-    return colorMap[color] || 'text-slate-600 dark:text-slate-400';
+    return colorMap[color] || { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-300' };
   };
 
-  const getBgColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      red: 'bg-red-100 dark:bg-red-900/50',
-      blue: 'bg-blue-100 dark:bg-blue-900/50',
-      green: 'bg-green-100 dark:bg-green-900/50',
-      yellow: 'bg-yellow-100 dark:bg-yellow-900/50',
-      purple: 'bg-purple-100 dark:bg-purple-900/50',
-      orange: 'bg-orange-100 dark:bg-orange-900/50',
-    };
-    return colorMap[color] || 'bg-slate-100 dark:bg-slate-800/50';
-  };
+  if (!attachments || attachments.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center bg-white dark:bg-slate-900/40">
+        <File className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600 mb-2" />
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No attachments provided</p>
+        <p className="text-xs text-slate-400 mt-1">There are no supplementary files attached to this assignment.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {attachments.map((attachment) => (
-        <div
-          key={attachment.id}
-          className="flex items-center gap-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 hover:shadow-md transition-shadow"
-        >
-          <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg ${getBgColor(attachment.iconColor)}`}>
-            <span className={`material-symbols-outlined ${getIconColor(attachment.iconColor)}`}>
-              {getIcon(attachment.type)}
-            </span>
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
-              {attachment.name}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {attachment.size}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-              {attachment.type} file
-            </p>
-          </div>
-          
-          <button
-            onClick={() => onDownload(attachment)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
-            title={`Download ${attachment.name}`}
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {attachments.map((attachment) => {
+        const style = getStyle(attachment.iconColor);
+        return (
+          <div
+            key={attachment.id}
+            className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-3.5 sm:p-4 hover:shadow-md transition-all group"
           >
-            <span className="material-symbols-outlined text-lg">download</span>
-          </button>
-        </div>
-      ))}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${style.bg} ${style.text}`}>
+                {renderIcon(attachment.type, attachment.iconColor)}
+              </div>
+              
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                  {attachment.name}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                  <span>{attachment.size}</span>
+                  <span>•</span>
+                  <span className="uppercase font-semibold tracking-wider text-[10px]">{attachment.type}</span>
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => onDownload(attachment)}
+              className="flex h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-pink-50 hover:text-pink-600 dark:bg-slate-800/80 dark:text-slate-400 dark:hover:bg-pink-950/40 dark:hover:text-pink-400 transition-colors"
+              title={`Download ${attachment.name}`}
+              aria-label={`Download ${attachment.name}`}
+            >
+              <Download className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

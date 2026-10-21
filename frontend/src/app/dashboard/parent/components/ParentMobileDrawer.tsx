@@ -136,7 +136,10 @@ export function ParentMobileDrawer() {
         {/* Footer */}
         <div className="px-4 py-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
           <button 
-            onClick={() => logout()}
+            onClick={() => {
+              setOpen(false);
+              logout();
+            }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-white/10 hover:border-rose-200 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all text-left cursor-pointer group"
           >
             <div className="h-10 w-10 rounded-xl bg-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform ring-2 ring-rose-500/10 group-hover:ring-rose-500/30">

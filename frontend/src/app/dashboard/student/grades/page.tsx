@@ -20,7 +20,11 @@ import {
   Lock,
   LayoutGrid,
   List,
-  ChevronDown
+  ChevronDown,
+  Clock,
+  CheckCircle,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useStudentExamAttempts, useExamResult } from '@/lib/api/hooks/useExams';
@@ -28,9 +32,10 @@ import { useGrades, useClassLeaderboard } from '@/lib/api/hooks/useGrades';
 import { useMyPublishedResults } from '@/lib/api/hooks/useRecords';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useSessions } from '@/lib/api/hooks/useSessions';
+import { useStudentAssignments, Assignment } from '@/lib/api/hooks/useAssignments';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProgressCircle from '@/components/ui/ProgressCircle';
 import Pagination from '@/components/ui/Pagination';
@@ -38,6 +43,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import dynamic from 'next/dynamic';
 import IndividualStudentReport, { ComprehensiveTranscriptReport } from '@/app/dashboard/admin/grades/components/IndividualStudentReport';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck';
 
 const PDFDownloadLink = dynamic(
   () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
@@ -83,6 +90,92 @@ function getWAECGradeAndRemark(score: number): { grade: string, remark: string }
   return { grade: 'F9', remark: 'FAIL' };
 }
 
+function getAssessmentDisplayTitle(grade: Record<string, any>): { title: string; subtitle: string; isAssignment: boolean } {
+  const type = (grade.assessmentType || grade.category || '').toUpperCase();
+  const rawRemark = (grade.remarks || grade.remark || '').trim();
+  const examTitle = grade.exam?.title?.trim();
+  const paperTitle = grade.subjectPaper?.title?.trim();
+  const subjectName = grade.subject || 'Course';
+
+  // 1. Assignment handling (Assignment titles are stored in remarks or exam.title per ASSESSMENT_DATA_MODEL.md)
+  if (type === 'ASSIGNMENT' || grade.id?.startsWith('grade-assignment-')) {
+    if (rawRemark && !rawRemark.toLowerCase().startsWith('subject results for')) {
+      return {
+        title: rawRemark,
+        subtitle: subjectName,
+        isAssignment: true,
+      };
+    }
+    if (examTitle) {
+      return {
+        title: examTitle,
+        subtitle: subjectName,
+        isAssignment: true,
+      };
+    }
+    return {
+      title: `${subjectName} Assignment`,
+      subtitle: subjectName,
+      isAssignment: true,
+    };
+  }
+
+  // 2. Subject Papers / Tests
+  if (paperTitle) {
+    return {
+      title: paperTitle,
+      subtitle: subjectName,
+      isAssignment: false,
+    };
+  }
+
+  if (examTitle) {
+    return {
+      title: examTitle,
+      subtitle: subjectName,
+      isAssignment: false,
+    };
+  }
+
+  // 3. Fallback for CA / Quiz where remarks has specific assessment title
+  if (rawRemark && !rawRemark.toLowerCase().startsWith('subject results for') && rawRemark.length < 80) {
+    return {
+      title: rawRemark,
+      subtitle: subjectName,
+      isAssignment: false,
+    };
+  }
+
+  return {
+    title: subjectName,
+    subtitle: grade.subjectPaperId ? 'Paper' : (grade.assessmentType || 'Assessment'),
+    isAssignment: false,
+  };
+}
+
+const getAssignmentStatusIcon = (status: Assignment['status'], dueDate: string) => {
+  if (status === 'graded') return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+  if (status === 'submitted') return <CheckCircle2 className="w-4 h-4 text-blue-500" />;
+  if (status === 'overdue' || (status === 'pending' && isPast(new Date(dueDate)))) {
+    return <XCircle className="w-4 h-4 text-rose-500" />;
+  }
+  return <Clock className="w-4 h-4 text-amber-500" />;
+};
+
+const getAssignmentStatusStyle = (status: Assignment['status'], dueDate: string) => {
+  if (status === 'graded') return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30";
+  if (status === 'submitted') return "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-500/30";
+  if (status === 'overdue' || (status === 'pending' && isPast(new Date(dueDate)))) {
+    return "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-200 dark:border-rose-500/30";
+  }
+  return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30";
+};
+
+const getAssignmentStatusText = (status: Assignment['status'], dueDate: string) => {
+  if (status === 'pending' && isPast(new Date(dueDate))) return "Overdue";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
 export default function StudentGradesPage() {
   const router = useRouter();
   const [expandedExamId, setExpandedExamId] = useState<string | null>(null);
@@ -98,6 +191,7 @@ export default function StudentGradesPage() {
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [isExportingTranscript, setIsExportingTranscript] = useState(false);
   const itemsPerPage = 6;
 
   // Detect small screens and prefer grid view by default on mobile
@@ -118,6 +212,8 @@ export default function StudentGradesPage() {
   const { data: allAttemptsRes } = useStudentExamAttempts({ limit: 1000 });
   const { data: allGradesRes } = useGrades(undefined, { limit: 1000 });
   const { data: finalResultsRes, isLoading: isLoadingFinalResults } = useMyPublishedResults();
+  const { data: assignmentsData, isLoading: isLoadingAssignments } = useStudentAssignments({ limit: 100 });
+  const studentAssignments: Assignment[] = assignmentsData?.assignments || [];
 
   const allAttempts = allAttemptsRes?.attempts || [];
   const allGrades = allGradesRes?.grades || [];
@@ -212,6 +308,16 @@ export default function StudentGradesPage() {
   const gradePagination = { 
     total: gradesFilteredForTab.length, 
     totalPages: Math.ceil(gradesFilteredForTab.length / itemsPerPage) 
+  };
+
+  const paginatedAssignments = useMemo(() => {
+    const startIndex = (gradesPage - 1) * itemsPerPage;
+    return studentAssignments.slice(startIndex, startIndex + itemsPerPage);
+  }, [studentAssignments, gradesPage, itemsPerPage]);
+
+  const assignmentPagination = {
+    total: studentAssignments.length,
+    totalPages: Math.max(1, Math.ceil(studentAssignments.length / itemsPerPage)),
   };
 
   const studentClassId = allGrades.find((g: any) => g.classId)?.classId || allAttempts.find((a: any) => a.classId)?.classId;
@@ -421,6 +527,71 @@ export default function StudentGradesPage() {
   const gpa = calculateCumulativeAvg();
   const progressPercent = Math.round((parseFloat(gpa) / 4.0) * 100);
 
+  const handleExportTranscript = async () => {
+    if (!transcriptData) return;
+    const schoolToVerify = profile?.school || user?.schools?.[0];
+    if (!assertSchoolPayingPlan(schoolToVerify)) {
+      return;
+    }
+
+    try {
+      setIsExportingTranscript(true);
+
+      const tableHeaders = [
+        ['#', 'Subject Name', 'C.A. (40)', 'Exam (60)', 'Total (100)', 'Grade', 'Remark']
+      ];
+
+      const tableData = transcriptData.subjects.map((sub: any, idx: number) => [
+        (idx + 1).toString(),
+        sub.subjectName,
+        sub.caScore?.toString() || '-',
+        sub.examScore?.toString() || '-',
+        `${sub.totalScore}%`,
+        sub.grade,
+        sub.remark
+      ]);
+
+      const additionalTables = [
+        {
+          title: 'Overall Academic Evaluation & Remarks',
+          headers: [['Role / Authority', 'Evaluator Remark & Recommendation']],
+          data: [
+            ['Class Teacher Assessment', transcriptData.aiClassTeacherRemark],
+            ['Principal Endorsement', transcriptData.aiGeneralRemark]
+          ]
+        }
+      ];
+
+      const dateStr = format(new Date(), 'PPpp');
+      const studentName = transcriptData.student.name || 'Student';
+
+      await generatePDF({
+        title: 'OFFICIAL ACADEMIC TRANSCRIPT',
+        filename: `${studentName.replace(/\s+/g, '_')}_Academic_Transcript.pdf`,
+        schoolProfile: transcriptData.school || profile?.school || user?.schools?.[0],
+        metaData: [
+          { label: 'Student Name', value: studentName },
+          { label: 'Student ID / Code', value: transcriptData.student.studentCode || 'N/A' },
+          { label: 'Class / Grade', value: transcriptData.className || 'General Class' },
+          { label: 'Academic Session', value: transcriptData.sessionName || 'Current Session' },
+          { label: 'Term Filter', value: selectedTerm === 'ALL' ? 'Cumulative (All Terms)' : `${selectedTerm} Term` },
+          { label: 'Cumulative GPA', value: `${transcriptData.gpa} / 4.0` },
+          { label: 'Overall Average', value: `${transcriptData.overallAverage}%` },
+          { label: 'Total Score Obtained', value: `${transcriptData.totalScore} / ${transcriptData.totalMax}` },
+          { label: 'Issuance Date', value: dateStr }
+        ],
+        tableHeaders,
+        tableData,
+        additionalTables,
+        orientation: 'portrait'
+      });
+    } catch (err) {
+      console.error('Error generating transcript PDF:', err);
+    } finally {
+      setIsExportingTranscript(false);
+    }
+  };
+
   // selectedExamId logic removed to use dedicated route
 
     return (
@@ -473,6 +644,22 @@ export default function StudentGradesPage() {
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
+
+                  {/* Export Transcript Action Button */}
+                  <Button
+                    onClick={handleExportTranscript}
+                    disabled={isExportingTranscript || !transcriptData}
+                    variant="outline"
+                    className="col-span-2 sm:col-span-1 h-9 px-3 sm:px-3.5 text-xs font-bold rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-500/40 shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0"
+                    title="Export Official Transcript as PDF"
+                  >
+                    {isExportingTranscript ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
+                    )}
+                    <span>{isExportingTranscript ? 'Preparing...' : 'Export Transcript'}</span>
+                  </Button>
                 </div>
               </>
             )}
@@ -616,20 +803,20 @@ export default function StudentGradesPage() {
                               className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
                             >
                               <div>
-                                <div className="flex items-start justify-between gap-2 mb-3">
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <span className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-base font-black shadow-sm shrink-0", color)}>
-                                      {grade}
+                                <div className="flex items-start justify-between gap-2.5 mb-3">
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wider bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 size-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 shrink-0 shadow-xs">
+                                      #{(examsPage - 1) * itemsPerPage + index + 1}
                                     </span>
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1">
                                       <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate">
                                         {attempt.exam?.title}
                                       </h4>
                                       <p className="text-[11px] font-medium text-slate-400 truncate">{attempt.exam?.code}</p>
                                     </div>
                                   </div>
-                                  <span className="text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 px-2 py-0.5 rounded-md text-slate-500 dark:text-zinc-400 shrink-0">
-                                    #{(examsPage - 1) * itemsPerPage + index + 1}
+                                  <span className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm sm:text-base font-black shadow-sm shrink-0", color)}>
+                                    {grade}
                                   </span>
                                 </div>
 
@@ -715,12 +902,15 @@ export default function StudentGradesPage() {
                                             const subPercent = Math.round((sub.score / (sub.totalMarks || 1)) * 100);
                                             return (
                                               <div key={i} onClick={() => router.push(`/dashboard/student/grades/view/subject-paper/${sub.subjectPaperId || sub.subjectPaper?.id || sub.id}?examId=${attempt.examId}`)} className="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow cursor-pointer">
-                                                <div className="flex items-center gap-4">
-                                                  <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/20 text-pink-600 flex items-center justify-center shrink-0">
-                                                    <FileText size={18} />
+                                                <div className="flex items-center gap-3">
+                                                  <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 size-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 shrink-0 shadow-xs">
+                                                    #{(i + 1).toString().padStart(2, '0')}
+                                                  </span>
+                                                  <div className="w-9 h-9 rounded-xl bg-pink-50 dark:bg-pink-900/20 text-pink-600 flex items-center justify-center shrink-0">
+                                                    <FileText size={16} />
                                                   </div>
                                                   <div>
-                                                    <p className="text-base font-bold text-slate-800 dark:text-white">{sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || 'Unknown Subject'}</p>
+                                                    <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">{sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || 'Unknown Subject'}</p>
                                                     <p className="text-xs font-medium text-slate-500 mt-0.5">{sub.grade || '-'} • {sub.remark || '-'}</p>
                                                   </div>
                                                 </div>
@@ -806,7 +996,158 @@ export default function StudentGradesPage() {
                 </div>
                 
                 <div className="flex-1 overflow-y-auto max-h-[500px] p-4 sm:p-6">
-                  {isLoadingGrades ? (
+                  {caTab === 'ASSIGNMENT' ? (
+                    isLoadingAssignments ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                        {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}
+                      </div>
+                    ) : studentAssignments.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-900 flex items-center justify-center mb-3">
+                          <CheckCircle className="w-6 h-6 text-slate-400 dark:text-zinc-600" />
+                        </div>
+                        <p className="font-bold text-base text-slate-700 dark:text-zinc-300 mb-1">All caught up!</p>
+                        <p className="text-xs text-slate-500 dark:text-zinc-500">You don't have any assignments recorded for this period.</p>
+                      </div>
+                    ) : viewMode === 'grid' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                        {paginatedAssignments.map((assignment, index) => {
+                          const statusIcon = getAssignmentStatusIcon(assignment.status, assignment.dueDate);
+                          const statusStyle = getAssignmentStatusStyle(assignment.status, assignment.dueDate);
+                          const statusText = getAssignmentStatusText(assignment.status, assignment.dueDate);
+                          const isGraded = assignment.status === 'graded';
+                          const isSubmitted = assignment.status === 'submitted';
+
+                          return (
+                            <div 
+                              key={assignment.id} 
+                              onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
+                              className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
+                            >
+                              <div>
+                                <div className="flex items-start justify-between gap-2.5 mb-3">
+                                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wider bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 size-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 shrink-0 shadow-xs mt-0.5">
+                                      #{(gradesPage - 1) * itemsPerPage + index + 1}
+                                    </span>
+                                    <div className="mt-1 shrink-0">
+                                      {statusIcon}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate" title={assignment.title}>
+                                        {assignment.title}
+                                      </h4>
+                                      <div className="flex items-center gap-2 mt-1 text-[11px] font-medium text-slate-400 flex-wrap">
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="w-3 h-3 text-slate-400" />
+                                          Due {format(new Date(assignment.dueDate), "MMM d, h:mm a")}
+                                        </span>
+                                        {assignment.totalMarks && (
+                                          <>
+                                            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-zinc-700" />
+                                            <span>{assignment.totalMarks} pts</span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className={cn("text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border shrink-0", statusStyle)}>
+                                    {statusText}
+                                  </span>
+                                </div>
+
+                                {/* Score / Release Status Card */}
+                                <div className="flex items-center justify-between py-2 px-3 my-2 bg-white dark:bg-zinc-800/80 rounded-xl border border-slate-100 dark:border-zinc-700/60">
+                                  <span className="text-xs font-semibold text-slate-400">
+                                    {isGraded ? 'Score' : isSubmitted ? 'Status' : 'Submission'}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {isGraded && assignment.grade ? (
+                                      <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400">
+                                        Score: {assignment.grade}
+                                      </span>
+                                    ) : isSubmitted ? (
+                                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                                        Score Pending Release
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                                        Pending Submission
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800/80 text-xs">
+                                <span className="text-[11px] font-medium text-slate-400 truncate max-w-[150px]">
+                                  {isGraded ? 'Review Answers & Score' : isSubmitted ? 'View Submission Receipt' : 'Open & Submit'}
+                                </span>
+                                <span className="inline-flex items-center gap-1 font-bold text-pink-600 dark:text-pink-400 group-hover:translate-x-0.5 transition-transform">
+                                  Preview
+                                  <ChevronRight size={14} />
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 dark:divide-zinc-800">
+                        {paginatedAssignments.map((assignment, index) => {
+                          const statusIcon = getAssignmentStatusIcon(assignment.status, assignment.dueDate);
+                          const statusStyle = getAssignmentStatusStyle(assignment.status, assignment.dueDate);
+                          const statusText = getAssignmentStatusText(assignment.status, assignment.dueDate);
+                          const isGraded = assignment.status === 'graded';
+
+                          return (
+                            <div 
+                              key={assignment.id} 
+                              onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
+                              className="p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors group cursor-pointer gap-3 rounded-xl"
+                            >
+                              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 size-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 shrink-0">
+                                  #{(gradesPage - 1) * itemsPerPage + index + 1}
+                                </span>
+                                <div className="mt-0.5 shrink-0">
+                                  {statusIcon}
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="font-semibold text-xs sm:text-sm md:text-base text-slate-800 dark:text-slate-100 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors truncate">
+                                    {assignment.title}
+                                  </h4>
+                                  <div className="flex items-center gap-2 mt-1 text-[11px] sm:text-xs font-medium text-slate-500 dark:text-zinc-400 flex-wrap">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3 h-3 text-slate-400" />
+                                      Due {format(new Date(assignment.dueDate), "MMM d, h:mm a")}
+                                    </span>
+                                    {assignment.totalMarks && (
+                                      <>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-zinc-700" />
+                                        <span>{assignment.totalMarks} pts</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                <span className={cn("text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border", statusStyle)}>
+                                  {statusText}
+                                </span>
+                                {isGraded && assignment.grade && (
+                                  <span className="text-[11px] sm:text-xs font-black text-slate-700 dark:text-zinc-300">
+                                    Score: {assignment.grade}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  ) : isLoadingGrades ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}
                     </div>
@@ -816,6 +1157,8 @@ export default function StudentGradesPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {standaloneGrades.map((grade: Record<string, any>, index: number) => {
                         const percent = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : null;
+                        const { title, subtitle } = getAssessmentDisplayTitle(grade);
+
                         return (
                           <div 
                             key={grade.id} 
@@ -823,17 +1166,22 @@ export default function StudentGradesPage() {
                             className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
                           >
                             <div>
-                              <div className="flex items-start justify-between gap-2 mb-3">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0">
-                                    {grade.assessmentType === 'QUIZ' ? <Zap size={18} /> : <FileText size={18} />}
+                              <div className="flex items-start justify-between gap-2.5 mb-3">
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  <span className="text-[10px] font-black uppercase tracking-wider bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 size-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 shrink-0 shadow-xs">
+                                    #{(gradesPage - 1) * itemsPerPage + index + 1}
+                                  </span>
+                                  <div className="w-9 h-9 rounded-xl bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0">
+                                    {grade.assessmentType === 'QUIZ' ? <Zap size={16} /> : <FileText size={16} />}
                                   </div>
-                                  <div className="min-w-0">
-                                    <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate">
-                                      {grade.subject}
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate" title={title}>
+                                      {title}
                                     </h4>
-                                    <p className="text-[11px] font-medium text-slate-400 mt-0.5">
-                                      {format(new Date(grade.createdAt), "MMM d, yyyy")}
+                                    <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">
+                                      <span className="text-slate-600 dark:text-zinc-300 font-semibold">{subtitle}</span>
+                                      <span className="mx-1.5">•</span>
+                                      <span>{format(new Date(grade.createdAt), "MMM d, yyyy")}</span>
                                     </p>
                                   </div>
                                 </div>
@@ -856,7 +1204,9 @@ export default function StudentGradesPage() {
                             </div>
 
                             <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800/80 text-xs">
-                              <span className="text-[11px] font-bold text-slate-400">#{(gradesPage - 1) * itemsPerPage + index + 1}</span>
+                              <span className="text-[11px] font-medium text-slate-400 truncate max-w-[150px]">
+                                {grade.remarks || grade.remark || 'Evaluated'}
+                              </span>
                               <span className="inline-flex items-center gap-1 font-bold text-pink-600 dark:text-pink-400 group-hover:translate-x-0.5 transition-transform">
                                 View Details
                                 <ChevronRight size={14} />
@@ -868,35 +1218,53 @@ export default function StudentGradesPage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {standaloneGrades.map((grade: Record<string, any>, index: number) => (
-                        <div key={grade.id} onClick={() => router.push(`/dashboard/student/grades/view/assessment/${grade.id}`)} className="p-3.5 sm:p-4 flex items-center justify-between bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-sm group gap-3">
-                          <div className="flex items-center gap-3 sm:gap-5 min-w-0">
-                            <div className="w-5 text-right shrink-0 text-xs sm:text-sm font-bold text-slate-400 group-hover:text-pink-500 transition-colors">
-                              {(gradesPage - 1) * itemsPerPage + index + 1}.
+                      {standaloneGrades.map((grade: Record<string, any>, index: number) => {
+                        const { title, subtitle } = getAssessmentDisplayTitle(grade);
+
+                        return (
+                          <div key={grade.id} onClick={() => router.push(`/dashboard/student/grades/view/assessment/${grade.id}`)} className="p-3.5 sm:p-4 flex items-center justify-between bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-sm group gap-3">
+                            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+                              <div className="w-5 text-right shrink-0 text-xs sm:text-sm font-bold text-slate-400 group-hover:text-pink-500 transition-colors">
+                                {(gradesPage - 1) * itemsPerPage + index + 1}.
+                              </div>
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700 shadow-sm text-pink-500 flex items-center justify-center shrink-0">
+                                {grade.assessmentType === 'QUIZ' ? <Zap size={18} /> : <FileText size={18} />}
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate" title={title}>
+                                  {title}
+                                </h4>
+                                <p className="text-[11px] sm:text-xs font-medium text-slate-400 mt-0.5 truncate">
+                                  <span className="text-slate-600 dark:text-zinc-300 font-semibold">{subtitle}</span>
+                                  <span className="mx-1.5">•</span>
+                                  <span>{format(new Date(grade.createdAt), "MMM d, yyyy")}</span>
+                                </p>
+                              </div>
                             </div>
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700 shadow-sm text-pink-500 flex items-center justify-center shrink-0">
-                              {grade.assessmentType === 'QUIZ' ? <Zap size={18} /> : <FileText size={18} />}
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate">{grade.subject}</h4>
-                              <p className="text-[11px] sm:text-xs font-medium text-slate-400 mt-0.5">{format(new Date(grade.createdAt), "MMM d, yyyy")}</p>
+                            <div className="text-right shrink-0">
+                              <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg">{grade.score} <span className="text-xs sm:text-sm text-slate-400 font-medium">/ {grade.maxMarks}</span></div>
+                              <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold uppercase bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 shadow-sm">
+                                {grade.subjectPaperId ? 'SUBJECT PAPER' : (grade.assessmentType || 'TEST')}
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg">{grade.score} <span className="text-xs sm:text-sm text-slate-400 font-medium">/ {grade.maxMarks}</span></div>
-                            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold uppercase bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 shadow-sm">
-                              {grade.subjectPaperId ? 'SUBJECT PAPER' : (grade.assessmentType || 'TEST')}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-                {gradePagination && gradePagination.total > 0 && (
-                  <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 mt-auto bg-white dark:bg-zinc-950/80">
-                    <Pagination currentPage={gradesPage} totalPages={gradePagination.totalPages} totalItems={gradePagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} theme="pink" />
-                  </div>
+                {caTab === 'ASSIGNMENT' ? (
+                  assignmentPagination && assignmentPagination.total > 0 && (
+                    <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 mt-auto bg-white dark:bg-zinc-950/80">
+                      <Pagination currentPage={gradesPage} totalPages={assignmentPagination.totalPages} totalItems={assignmentPagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} theme="pink" />
+                    </div>
+                  )
+                ) : (
+                  gradePagination && gradePagination.total > 0 && (
+                    <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 mt-auto bg-white dark:bg-zinc-950/80">
+                      <Pagination currentPage={gradesPage} totalPages={gradePagination.totalPages} totalItems={gradePagination.total} itemsPerPage={itemsPerPage} onPageChange={setGradesPage} theme="pink" />
+                    </div>
+                  )
                 )}
               </div>
             )}
@@ -981,16 +1349,21 @@ export default function StudentGradesPage() {
                               className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
                             >
                               <div>
-                                <div className="flex items-start justify-between gap-2 mb-3">
-                                  <div className="min-w-0">
-                                    <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate">
-                                      {result.resultName || result.subject?.name || 'Unknown'}
-                                    </h4>
-                                    <p className="text-[11px] font-medium text-slate-400 truncate">
-                                      {result.class?.name || 'Class'} • {result.term} TERM
-                                    </p>
+                                <div className="flex items-start justify-between gap-2.5 mb-3">
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wider bg-white dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700 size-7 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 shrink-0 shadow-xs">
+                                      #{(finalPage - 1) * itemsPerPage + index + 1}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-base group-hover:text-pink-600 transition-colors truncate">
+                                        {result.resultName || result.subject?.name || 'Unknown'}
+                                      </h4>
+                                      <p className="text-[11px] font-medium text-slate-400 truncate">
+                                        {result.class?.name || 'Class'} • {result.term} TERM
+                                      </p>
+                                    </div>
                                   </div>
-                                  <span className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm shrink-0", color)}>
+                                  <span className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm shrink-0", color)}>
                                     {grade}
                                   </span>
                                 </div>
@@ -1155,13 +1528,24 @@ export default function StudentGradesPage() {
                 </div>
 
                 <div className="flex gap-4 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
-                  <PDFDownloadLink document={<ComprehensiveTranscriptReport transcript={transcriptData} />} fileName="transcript.pdf" className="flex-1">
-                    {({ loading }) => (
-                      <button disabled={loading} className="w-full md:w-auto px-8 py-3 rounded-lg bg-pink-600 hover:bg-pink-700 text-white font-semibold transition-colors flex justify-center items-center gap-2">
-                        <Download size={18} /> {loading ? 'Preparing...' : 'Download PDF'}
-                      </button>
+                  <button
+                    onClick={handleExportTranscript}
+                    disabled={isExportingTranscript}
+                    type="button"
+                    className="w-full md:w-auto px-8 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-bold transition-all flex justify-center items-center gap-2 shadow-md shadow-pink-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isExportingTranscript ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Preparing Official PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download size={18} />
+                        <span>Export Official Transcript (PDF)</span>
+                      </>
                     )}
-                  </PDFDownloadLink>
+                  </button>
                 </div>
               </div>
             )}

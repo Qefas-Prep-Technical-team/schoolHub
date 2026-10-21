@@ -869,60 +869,107 @@ export const getExamResultService = async ({
   }
 
   // Check if AI Insight should be available based on subscription
+  // Student has access if their school is on an active plan that has the AI Insights feature in the features column of subscription_plans table
   let hasAiInsightAccess = false;
-  const userSub = await prisma.userSubscription.findUnique({
-    where: { userId: studentId },
-    include: { subscriptionPlan: true }
-  });
 
-  if (userSub?.status === 'ACTIVE' && userSub.subscriptionPlan?.features?.includes('ai_insight')) {
-    hasAiInsightAccess = true;
-  } else {
-    const studentEnforcedSetting = await prisma.platformSettings.findUnique({
-      where: { key: 'sub_enforced_students' }
+  const checkPlanHasAiInsight = (features?: string[] | null): boolean => {
+    if (!features || !Array.isArray(features)) return false;
+    return features.some((feat: unknown) => {
+      if (typeof feat !== "string") return false;
+      const normalized = feat.trim().toLowerCase();
+      return (
+        normalized === "ai insights" ||
+        normalized === "ai insight" ||
+        normalized === "ai_insight" ||
+        normalized === "ai_insights" ||
+        normalized === "ai_tools" ||
+        normalized.includes("ai insight")
+      );
     });
-    const isStudentEnforced = studentEnforcedSetting?.value !== 'false'; // Defaults to true
-    
-    if (!isStudentEnforced) {
-      if (attempt.exam.schoolId) {
-        const schoolSub = await prisma.schoolSubscription.findUnique({
-          where: { schoolId: attempt.exam.schoolId },
-          include: { subscriptionPlan: true }
-        });
-        if (schoolSub?.status === 'ACTIVE' && schoolSub.subscriptionPlan?.features?.includes('ai_insight')) {
-           hasAiInsightAccess = true;
+  };
+
+  const schoolId = attempt.exam.schoolId || attempt.student?.schoolId;
+
+  if (schoolId) {
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      include: {
+        subscriptionPlan: true,
+        schoolSubscriptions: {
+          include: {
+            subscriptionPlan: true,
+          },
+        },
+      },
+    });
+
+    if (school) {
+      let activeSchoolPlan = null;
+
+      // 1. Check active schoolSubscriptions record
+      const schoolSub = school.schoolSubscriptions;
+      if (schoolSub && schoolSub.status === "ACTIVE") {
+        const isExpired = schoolSub.expiresAt ? new Date(schoolSub.expiresAt) < new Date() : false;
+        if (!isExpired) {
+          activeSchoolPlan = schoolSub.subscriptionPlan;
         }
       }
+
+      // 2. Check school direct subscriptionPlan if active or trial active
+      if (!activeSchoolPlan && (school.subscriptionStatus === "ACTIVE" || school.isTrialActive)) {
+        activeSchoolPlan = school.subscriptionPlan;
+      }
+
+      // 3. Fallback: if school has an assigned subscription plan
+      if (!activeSchoolPlan && school.subscriptionPlan) {
+        activeSchoolPlan = school.subscriptionPlan;
+      }
+
+      if (activeSchoolPlan && checkPlanHasAiInsight(activeSchoolPlan.features)) {
+        hasAiInsightAccess = true;
+      }
+    }
+  }
+
+  // Also allow access if student has an active individual user subscription with AI Insights
+  if (!hasAiInsightAccess) {
+    const userSub = await prisma.userSubscription.findUnique({
+      where: { userId: studentId },
+      include: { subscriptionPlan: true },
+    });
+
+    if (userSub?.status === "ACTIVE" && checkPlanHasAiInsight(userSub.subscriptionPlan?.features)) {
+      hasAiInsightAccess = true;
     }
   }
 
   // Attempt to generate AI insight if OpenAI key is present, otherwise fallback to heuristic
   // Only generate if they have access to avoid wasting tokens
   if (hasAiInsightAccess) {
-      if (attempt.performanceInsight) {
-          performanceInsight = attempt.performanceInsight;
-      } else if (process.env.OPENAI_API_KEY) {
-         try {
-            performanceInsight = await generateStudentPerformanceInsight({
-                studentName: attempt.student.name,
-                totalScore: attempt.totalScore,
-                totalMarks: attempt.totalMarks,
-                grade,
-                proficiency,
-                subjects: subjectBreakdown
-            });
-            
-            // Cache the insight
-            await prisma.examAttempt.update({
-                where: { id: attempt.id },
-                data: { performanceInsight }
-            });
-         } catch (err) {
-            console.error("Failed to generate AI insight, using heuristic.");
-         }
+    if (attempt.performanceInsight && !attempt.performanceInsight.startsWith("Premium AI insights")) {
+      performanceInsight = attempt.performanceInsight;
+    } else if (process.env.OPENAI_API_KEY) {
+      try {
+        performanceInsight = await generateStudentPerformanceInsight({
+          studentName: attempt.student.name,
+          totalScore: attempt.totalScore,
+          totalMarks: attempt.totalMarks,
+          grade,
+          proficiency,
+          subjects: subjectBreakdown,
+        });
+
+        // Cache the insight
+        await prisma.examAttempt.update({
+          where: { id: attempt.id },
+          data: { performanceInsight },
+        });
+      } catch (err) {
+        console.error("Failed to generate AI insight, using heuristic.");
       }
+    }
   } else {
-      performanceInsight = "Premium AI insights are available to help you understand your performance and how to improve. Upgrade to a premium plan to unlock.";
+    performanceInsight = "Premium AI pedagogical insights are available exclusively for schools subscribed to an AI-enabled plan. Ask your school administrator to upgrade to unlock comprehensive performance analysis and recommendations.";
   }
 
   const finalResponse = {

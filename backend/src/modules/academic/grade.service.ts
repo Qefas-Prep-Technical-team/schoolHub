@@ -39,6 +39,7 @@ export const getStudentGradesService = async (studentId: string, page: number = 
             session: true,
           }
         },
+        subjectPaper: true,
         examAttempt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -48,8 +49,32 @@ export const getStudentGradesService = async (studentId: string, page: number = 
     prisma.grade.count({ where })
   ]);
 
+  // Enrich assignment titles if remarks is empty
+  const enrichedGrades = await Promise.all(
+    data.map(async (grade) => {
+      if (
+        (grade.assessmentType?.toUpperCase() === "ASSIGNMENT" || grade.id.startsWith("grade-assignment-")) &&
+        (!grade.remarks || !grade.remarks.trim())
+      ) {
+        const submissionId = grade.id.replace("grade-assignment-", "");
+        try {
+          const sub = await prisma.assignmentSubmission.findUnique({
+            where: { id: submissionId },
+            include: { assignment: { select: { title: true } } },
+          });
+          if (sub?.assignment?.title) {
+            return { ...grade, remarks: sub.assignment.title };
+          }
+        } catch {
+          // ignore error
+        }
+      }
+      return grade;
+    })
+  );
+
   return {
-    grades: data,
+    grades: enrichedGrades,
     pagination: {
       total,
       page,
@@ -60,10 +85,11 @@ export const getStudentGradesService = async (studentId: string, page: number = 
 };
 
 export const getGradeByIdService = async (id: string) => {
-  return prisma.grade.findUnique({
+  const grade = await prisma.grade.findUnique({
     where: { id },
     include: {
       exam: true,
+      subjectPaper: true,
       examAttempt: {
         include: {
           subjectExamAttempts: {
@@ -79,6 +105,28 @@ export const getGradeByIdService = async (id: string) => {
       },
     },
   });
+
+  if (!grade) return null;
+
+  if (
+    (grade.assessmentType?.toUpperCase() === "ASSIGNMENT" || grade.id.startsWith("grade-assignment-")) &&
+    (!grade.remarks || !grade.remarks.trim())
+  ) {
+    const submissionId = grade.id.replace("grade-assignment-", "");
+    try {
+      const sub = await prisma.assignmentSubmission.findUnique({
+        where: { id: submissionId },
+        include: { assignment: { select: { title: true } } },
+      });
+      if (sub?.assignment?.title) {
+        return { ...grade, remarks: sub.assignment.title };
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return grade;
 };
 
 export const getAllGradesService = async ({

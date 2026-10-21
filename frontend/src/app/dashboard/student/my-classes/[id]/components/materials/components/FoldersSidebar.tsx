@@ -1,10 +1,9 @@
-// app/student/classes/[id]/materials/components/FoldersSidebar.tsx
-import { Folder } from 'lucide-react'
+import { Folder } from 'lucide-react';
 
 interface FoldersSidebarProps {
-  folders: string[]
-  selectedFolder: string
-  onFolderSelect: (folder: string) => void
+  folders: string[];
+  selectedFolder: string;
+  onFolderSelect: (folder: string) => void;
 }
 
 export default function FoldersSidebar({ 
@@ -14,29 +13,29 @@ export default function FoldersSidebar({
 }: FoldersSidebarProps) {
   return (
     <aside className="w-full lg:w-56 shrink-0">
-      <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 px-2">
+      <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-1">
         Folders
       </h2>
       
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
         {folders.map((folder) => (
           <button
             key={folder}
             onClick={() => onFolderSelect(folder)}
             className={`
-              flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
-              transition-colors text-left
+              flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold
+              transition-all text-left whitespace-nowrap shrink-0 border
               ${selectedFolder === folder
-                ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-300'
-                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                ? 'bg-pink-50 dark:bg-pink-950/30 text-pink-600 dark:text-pink-400 border-pink-200/80 dark:border-pink-800/50 shadow-2xs'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50'
               }
             `}
           >
-            <Folder className="h-5 w-5" />
+            <Folder className="h-4 w-4 shrink-0" />
             <span className="truncate">{folder}</span>
           </button>
         ))}
       </div>
     </aside>
-  )
+  );
 }
