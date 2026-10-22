@@ -44,6 +44,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
 
 export default function SchoolProfilePage() {
   const router = useRouter();
@@ -467,50 +468,62 @@ export default function SchoolProfilePage() {
           )}
 
           {/* Grading System Display */}
-          {school?.gradingSystem && school.gradingSystem.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+          {(() => {
+            const hasCustom = Boolean(school?.gradingSystem && school.gradingSystem.length > 0);
+            const activeSystem = hasCustom ? school.gradingSystem : DEFAULT_GRADING_SYSTEM;
+
+            return (
+              <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-slate-800 dark:text-white">Grading System Configuration</h2>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={300}>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
-                          <Info size={16} />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
-                        Defines the standardized assessment thresholds applied to student scores institution-wide. It ensures consistent evaluation matrices.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Badge variant="secondary" className="rounded-xl px-2 py-0.5 text-[10px] font-semibold">
-                    {school.gradingSystem.length} Grades
-                </Badge>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-slate-800 dark:text-white">Grading System Configuration</h2>
+                    <TooltipProvider>
+                      <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                            <Info size={16} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                          Defines the standardized assessment thresholds applied to student scores institution-wide. It ensures consistent evaluation matrices.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="rounded-xl px-2 py-0.5 text-[10px] font-semibold">
+                      {activeSystem.length} Grades
+                    </Badge>
+                    {!hasCustom && (
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                        Default
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-slate-500 mb-6">Standardized academic grade boundaries applied across assessments.</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {school.gradingSystem.map((sys: any, idx: number) => (
+                  {activeSystem.map((sys: any, idx: number) => (
                     <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30"
+                      key={idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30"
                     >
-                    <span className="text-2xl font-bold text-slate-800 dark:text-white mb-1">{sys.grade}</span>
-                    <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                        <span>{sys.min}%</span>
+                      <span className="text-2xl font-bold text-slate-800 dark:text-white mb-1">{sys.grade}</span>
+                      <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                        <span>{Math.min(Number(sys.min ?? 0), Number(sys.max ?? 0))}%</span>
                         <span className="text-slate-300 dark:text-slate-600">-</span>
-                        <span>{sys.max}%</span>
-                    </div>
+                        <span>{Math.max(Number(sys.min ?? 0), Number(sys.max ?? 0))}%</span>
+                      </div>
                     </motion.div>
-                ))}
+                  ))}
                 </div>
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Right/Sidebar Column */}

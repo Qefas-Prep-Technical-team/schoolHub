@@ -38,7 +38,8 @@ import {
     LucideIcon,
     FileText,
     Link2,
-    CreditCard
+    CreditCard,
+    FileSpreadsheet
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -66,6 +67,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
     { icon: BarChart3, label: "Grades", href: "/dashboard/student/grades", featureKey: "results", section: "core" },
+    { icon: FileSpreadsheet, label: "Offline Grades", href: "/dashboard/student/offline-grades", featureKey: "offlineGrades", section: "core" },
     { icon: School, label: "Final Results", href: "/dashboard/student/result/termly", featureKey: "results", section: "core" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/student/exams&quizzes", featureKey: "exams", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/student/attendance", featureKey: "attendance", section: "core" },
@@ -129,7 +131,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
             // Deactivated: hide subscription button from the sidebar
             if (item.featureKey === 'billing') return false;
             // Core academic tools are always enabled for students
-            if (item.featureKey === 'assignments' || item.featureKey === 'dashboard') return true;
+            if (item.featureKey === 'assignments' || item.featureKey === 'dashboard' || item.featureKey === 'offlineGrades') return true;
             // Map 'results' to 'grades' for consistency with schema/seed
             const key = item.featureKey === 'results' ? 'grades' : item.featureKey;
             return !!(currentFeatures as any)[key];

@@ -27,15 +27,19 @@ const validateSchoolAccess = (req: Request, schoolId: string): boolean => {
   const user = req.user;
   if (!user) return false;
 
-  // SUPER_ADMIN and ADMIN can access any school
-  if (user.userType === 'SUPER_ADMIN' || user.role === 'SUPER_ADMIN' ||
-      user.userType === 'ADMIN' || user.role === 'ADMIN') return true;
+  // Only platform SUPER_ADMIN can access any school
+  if (user.userType === 'SUPER_ADMIN' || user.role === 'SUPER_ADMIN') return true;
 
   // Direct match with authorized schoolId from session
   if (user.schoolId === schoolId) return true;
 
   // Match with tenantId (in case the frontend uses tenantId as schoolId)
   if (user.tenantId === schoolId) return true;
+
+  // Check user.schools array if user belongs to multiple schools
+  if (Array.isArray(user.schools) && user.schools.some((s: { schoolId?: string; id?: string }) => s.schoolId === schoolId || s.id === schoolId)) {
+    return true;
+  }
 
   return false;
 };

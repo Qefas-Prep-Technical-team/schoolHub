@@ -203,7 +203,8 @@ export const getTeacherClassGrades = async (req: Request, res: Response) => {
 export const getTeacherSubjects = async (req: Request, res: Response) => {
     try {
         const teacherId = (req as any).user.id;
-        const { schoolId } = req.query;
+        const userSchoolId = (req as any).user?.schoolId;
+        const schoolId = (req.query.schoolId as string) || userSchoolId;
 
         const data = await getTeacherSubjectsService(teacherId, schoolId as string | undefined);
 

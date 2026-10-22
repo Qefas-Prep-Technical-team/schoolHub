@@ -17,6 +17,7 @@ import { useStudents } from "@/lib/api/hooks/useStudent";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose, DialogTrigger } from "@/components/ui/dialog";
+import { getGradeEvaluation } from "@/utils/gradingSystem";
 
 export default function NewFinalResultDataEntryPage() {
   const searchParams = useSearchParams();
@@ -355,13 +356,8 @@ export default function NewFinalResultDataEntryPage() {
   const [exportTargetFormat, setExportTargetFormat] = useState<'excel' | 'pdf'>('excel');
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
 
-  const calculateGrade = (total: number, settings?: any) => {
-    if (total >= 70) return 'A';
-    if (total >= 60) return 'B';
-    if (total >= 50) return 'C';
-    if (total >= 45) return 'D';
-    if (total >= 40) return 'E';
-    return 'F';
+  const calculateGrade = (total: number, gradingSystem?: any) => {
+    return getGradeEvaluation(total, gradingSystem || schoolProfile?.gradingSystem).grade;
   };
 
   const handleExport = async () => {
@@ -427,7 +423,7 @@ export default function NewFinalResultDataEntryPage() {
       
       const academicRows = filteredStudents.map((s, idx) => {
         const total = (parseFloat(s.assignment) || 0) + (parseFloat(s.quiz) || 0) + (parseFloat(s.ca) || 0) + (parseFloat(s.exam) || 0);
-        const grade = calculateGrade(total, schoolProfile?.settings);
+        const grade = calculateGrade(total, schoolProfile?.gradingSystem);
         const position = positionMap.get(s.id) || "N/A";
         const row = [
           (idx + 1).toString(),

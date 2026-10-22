@@ -49,6 +49,23 @@ export const getChildAssignments = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
     const childId = req.params.childId as string;
+
+    // Verify the parent is linked to this child
+    const childLink = await prisma.parentChildLink.findFirst({
+      where: {
+        parentId: req.user.id,
+        studentId: childId,
+        status: { in: ["active", "ACCEPTED", "Active"] },
+      },
+    });
+
+    if (!childLink) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: Child not found or not connected to your parent account",
+      });
+    }
+
     const { status, page = "1", limit = "10" } = req.query;
 
     const data = await getStudentAssignmentsService({

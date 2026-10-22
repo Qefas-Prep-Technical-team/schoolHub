@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Grade, GradeFilters, PaginationInfo } from "./types";
+import { getGradeEvaluation } from "@/utils/gradingSystem";
 
 // Mock data
 const mockGrades: Grade[] = [
@@ -227,10 +228,6 @@ export class GradeService {
   }
 
   private static getGradeLetter(score: number): string {
-    if (score >= 90) return "A";
-    if (score >= 80) return "B";
-    if (score >= 70) return "C";
-    if (score >= 60) return "D";
-    return "F";
+    return getGradeEvaluation(score).grade;
   }
 }

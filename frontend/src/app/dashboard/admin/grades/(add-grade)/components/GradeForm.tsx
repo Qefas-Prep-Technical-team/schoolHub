@@ -6,7 +6,9 @@ import { GradeFormData } from './types';
 import GradeFormHeader from './GradeFormHeader';
 import GradeFormActions from './GradeFormActions';
 import GradeFormFields from './GradeFormFields';
-
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 interface GradeFormProps {
     initialData?: Partial<GradeFormData>;
@@ -31,6 +33,10 @@ export default function GradeForm({
     onClose,
     onSubmit
 }: GradeFormProps) {
+    const { user } = useAuthStore();
+    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+    const { data: schoolProfile } = useSchoolProfile(schoolId);
+
     const [formData, setFormData] = useState<GradeFormData>({
         ...defaultFormData,
         ...initialData
@@ -46,22 +52,10 @@ export default function GradeForm({
     };
 
     const calculateGrade = (score: number | null, maxMarks: number): string => {
-        if (score === null) return '-';
-
-        const percentage = (score / maxMarks) * 100;
-
-        if (percentage >= 90) return 'A+';
-        if (percentage >= 85) return 'A';
-        if (percentage >= 80) return 'A-';
-        if (percentage >= 75) return 'B+';
-        if (percentage >= 70) return 'B';
-        if (percentage >= 65) return 'B-';
-        if (percentage >= 60) return 'C+';
-        if (percentage >= 55) return 'C';
-        if (percentage >= 50) return 'C-';
-        if (percentage >= 45) return 'D+';
-        if (percentage >= 40) return 'D';
-        return 'F';
+        if (score === null || isNaN(score)) return '-';
+        const safeMax = maxMarks > 0 ? maxMarks : 100;
+        const percentage = (score / safeMax) * 100;
+        return getGradeEvaluation(percentage, schoolProfile?.gradingSystem).grade;
     };
 
     const currentGrade = calculateGrade(formData.score, formData.maxMarks);

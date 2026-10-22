@@ -351,6 +351,11 @@ export const getSingleClassService = async (classId: string) => {
               teacherSubjects: {
                 include: { teacher: true }
               },
+              departments: {
+                include: {
+                  department: true
+                }
+              },
               _count: {
                 select: {
                   subjectExamPapers: true,
@@ -360,8 +365,28 @@ export const getSingleClassService = async (classId: string) => {
           }
         }
       },
-      departments: { include: { department: true } },
-      enrollments: { include: { student: true } },
+      departments: { 
+        include: { 
+          department: {
+            include: {
+              subjects: {
+                include: {
+                  subject: true
+                }
+              }
+            }
+          }
+        } 
+      },
+      enrollments: { 
+        include: { 
+          student: {
+            include: {
+              department: true
+            }
+          } 
+        } 
+      },
       exams: {
         select: {
           id: true,

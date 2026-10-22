@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 const styles = StyleSheet.create({
   page: {
@@ -316,8 +317,9 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
             const marks = attempt.totalMarks || attempt.maxMarks || paper.totalMarks || 100;
             const score = attempt.score || 0;
             const percentage = Math.round((score / marks) * 100);
-            const isPass = percentage >= (paper.passMark || 40);
-            const grade = percentage >= 75 ? 'A1' : percentage >= 70 ? 'B2' : percentage >= 65 ? 'B3' : percentage >= 60 ? 'C4' : percentage >= 55 ? 'C5' : percentage >= 50 ? 'C6' : percentage >= 45 ? 'D7' : percentage >= 40 ? 'E8' : 'F9';
+            const evalResult = getGradeEvaluation(percentage, school?.gradingSystem);
+            const grade = evalResult.grade;
+            const isPass = percentage >= (paper.passMark || 40) && !['FAIL', 'FAIL9', 'F9'].includes(evalResult.grade);
 
             return (
               <View

@@ -14,6 +14,7 @@ export const ADMIN_FEATURE_FLAGS = {
 
   // === ACADEMICS ===
   grades: true,
+  offlineGrades: true,
   exams: true,
   assignments: true,
   attendance: true,
@@ -67,6 +68,7 @@ export const ROLE_NAV_PERMISSIONS: Partial<Record<AdminFeatureFlagKey, AdminRole
 
   // Academics-related: restrict from accountant
   grades: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
+  offlineGrades: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   exams: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   assignments: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   subjects: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],

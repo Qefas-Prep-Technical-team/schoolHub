@@ -167,3 +167,18 @@ export const authenticateToken = async (
     });
   }
 };
+
+/**
+ * Middleware to restrict route access to specific UserRole(s)
+ */
+export const requireRoles = (...allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !allowedRoles.includes(req.user.userType)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: You do not have permission to access this resource",
+      });
+    }
+    next();
+  };
+};

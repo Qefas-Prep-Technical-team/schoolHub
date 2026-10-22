@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
+import prisma from "../../config/database";
 import { updateBehaviourProfileSchema } from "./behaviourProfile.schema";
 import {
   getStudentBehaviourProfileService,
@@ -12,6 +13,42 @@ export const getStudentBehaviourProfile = async (req: Request, res: Response) =>
   try {
     const studentId = req.params.id as string;
     const { userType: currentUserType, id: currentUserId } = req.user!;
+
+    if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own behavior profile",
+      });
+    }
+
+    if (currentUserType === UserRole.PARENT) {
+      const isLinked = await prisma.parentChildLink.findFirst({
+        where: {
+          parentId: currentUserId,
+          studentId,
+          status: { in: ["active", "ACCEPTED", "Active"] },
+        },
+      });
+      if (!isLinked) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You are not connected to this student",
+        });
+      }
+    }
+
+    if (currentUserType === UserRole.ADMIN && req.user!.schoolId) {
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { schoolId: true },
+      });
+      if (student && student.schoolId !== req.user!.schoolId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You can only view behavior profiles of students in your school",
+        });
+      }
+    }
 
     if (currentUserType === UserRole.TEACHER) {
       const hasAccess = await canTeacherAccessStudent(currentUserId, studentId);
@@ -44,6 +81,19 @@ export const upsertStudentBehaviourProfile = async (req: Request, res: Response)
         success: false,
         message: "Only administrators and teachers are authorized to update behavior profiles",
       });
+    }
+
+    if (currentUserType === UserRole.ADMIN && req.user!.schoolId) {
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { schoolId: true },
+      });
+      if (student && student.schoolId !== req.user!.schoolId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You can only update behavior profiles of students in your school",
+        });
+      }
     }
 
     if (currentUserType === UserRole.TEACHER) {

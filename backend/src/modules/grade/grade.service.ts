@@ -34,22 +34,40 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
     }
   }
 
-  // Restrict to teacher's assigned classes if teacherClassesOnly is requested
+  // Restrict to teacher's assigned classes & subjects if teacherClassesOnly is requested
   if (filters.teacherClassesOnly === 'true' && filters.currentTeacherId) {
-    const classTeachers = await prisma.classTeacher.findMany({
-      where: { teacherId: filters.currentTeacherId },
-      select: { classId: true }
+    const teacherId = filters.currentTeacherId;
+
+    // Fetch subjects assigned to teacher (via teacherId, teacherSubjects, or timetablePeriods)
+    const teacherSubjectRecords = await prisma.subject.findMany({
+      where: {
+        ...(where.schoolId ? { schoolId: where.schoolId } : {}),
+        isArchived: false,
+        OR: [
+          { teacherId },
+          { teacherSubjects: { some: { teacherId } } },
+          { timetablePeriods: { some: { teacherId } } }
+        ]
+      },
+      select: { id: true, name: true }
     });
-    const assignedClassIds = classTeachers.map(ct => ct.classId);
+
+    const assignedSubjectNames = teacherSubjectRecords.map(s => s.name);
+    const assignedSubjectIds = teacherSubjectRecords.map(s => s.id);
+
+    // Filter to grades matching the teacher's assigned subjects or created by the teacher
+    if (assignedSubjectNames.length > 0) {
+      where.OR = [
+        { teacherId },
+        { subject: { in: assignedSubjectNames, mode: 'insensitive' } },
+        { subjectPaper: { subjectId: { in: assignedSubjectIds } } }
+      ];
+    } else {
+      where.teacherId = teacherId;
+    }
 
     if (filters.classId && filters.classId !== 'all') {
-      if (assignedClassIds.includes(filters.classId)) {
-        where.classId = filters.classId;
-      } else {
-        where.classId = 'none'; // Teacher has no access to this class
-      }
-    } else {
-      where.classId = { in: assignedClassIds };
+      where.classId = filters.classId;
     }
   } else {
     if (filters.classId && filters.classId !== 'all') where.classId = filters.classId;
@@ -61,8 +79,15 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
   if (filters.examId && filters.examId !== 'all') where.examId = filters.examId;
   if (filters.subjectPaperId && filters.subjectPaperId !== 'all') where.subjectPaperId = filters.subjectPaperId;
 
+  if (filters.offlineOnly === 'true' || filters.offlineOnly === true) {
+    where.examAttemptId = null;
+    where.subjectExamAttemptId = null;
+    where.examId = null;
+    where.subjectPaperId = null;
+  }
+
   const page = parseInt(filters.page) || 1;
-  const limit = parseInt(filters.limit) || 10;
+  const limit = parseInt(filters.limit) || 1000;
   const skip = (page - 1) * limit;
 
   const [grades, total] = await Promise.all([
@@ -333,7 +358,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
   const VALID_FIELDS = new Set([
     'studentId', 'schoolId', 'teacherId', 'classId', 'sessionId', 'term',
     'subject', 'category', 'assessmentType', 'status', 'score', 'maxMarks',
-    'weight', 'remarks', 'examId', 'subjectPaperId', 'examAttemptId', 'subjectExamAttemptId'
+    'weight', 'remarks', 'releaseDate', 'examId', 'subjectPaperId', 'examAttemptId', 'subjectExamAttemptId'
   ]);
 
   // Resolve studentName -> studentId if studentId is missing
@@ -370,6 +395,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
         weight: Number(g.weight || 1.0),
         status: (g.status as any) || 'DRAFT',
         category: (g.category as any) || 'EXAM',
+        releaseDate: g.releaseDate ? new Date(g.releaseDate) : (g.releaseDate === null ? null : undefined),
       };
     })
   );
@@ -382,21 +408,35 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
 
   // Robust alternative to 'upsert' that handles nullable fields better
   try {
-    // 1. Extract common filters
-    const examId = validGrades[0]?.examId || null;
-    const subjectPaperId = validGrades[0]?.subjectPaperId || null;
+    const sample = validGrades[0];
+    const examId = sample?.examId;
+    const subjectPaperId = sample?.subjectPaperId;
+    const isOnlineExam = !!(examId || subjectPaperId);
 
     // 2. Fetch existing grades for these students/exam/paper combo
     const existingGrades = await prisma.grade.findMany({
       where: {
         schoolId,
-        examId: examId || undefined,
-        subjectPaperId: subjectPaperId || undefined,
-        studentId: { in: validGrades.map(g => g.studentId) }
+        ...(isOnlineExam ? {
+          examId: examId || undefined,
+          subjectPaperId: subjectPaperId || undefined,
+          studentId: { in: validGrades.map(g => g.studentId) }
+        } : {
+          studentId: { in: validGrades.map(g => g.studentId) },
+          examAttemptId: null,
+          subjectExamAttemptId: null,
+          ...(validGrades[0]?.classId ? { classId: validGrades[0].classId } : {}),
+          ...(validGrades[0]?.subject ? { subject: validGrades[0].subject } : {}),
+        })
       }
     });
 
-    const existingMap = new Map(existingGrades.map(g => [g.studentId, g]));
+    const getGradeKey = (g: any) => {
+      if (isOnlineExam) return g.studentId;
+      return `${g.studentId}_${g.classId || ''}_${(g.subject || '').trim().toLowerCase()}_${g.category || ''}_${(g.assessmentType || '').trim().toLowerCase()}_${g.term || ''}`;
+    };
+
+    const existingMap = new Map(existingGrades.map(g => [getGradeKey(g), g]));
 
     // 3. Separate into updates and creates
     const operations: any[] = [];
@@ -406,14 +446,19 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     const { v4: uuidv4 } = require('uuid');
 
     validGrades.forEach((g) => {
-      const existingGrade = existingMap.get(g.studentId);
+      const existingGrade = existingMap.get(getGradeKey(g));
       if (existingGrade) {
         operations.push(prisma.grade.update({
           where: { id: existingGrade.id },
           data: {
             score: g.score,
             maxMarks: g.maxMarks,
+            category: g.category || existingGrade.category,
+            assessmentType: g.assessmentType || existingGrade.assessmentType,
             status: g.status,
+            releaseDate: g.releaseDate !== undefined ? g.releaseDate : existingGrade.releaseDate,
+            remarks: g.remarks !== undefined ? g.remarks : existingGrade.remarks,
+            weight: g.weight !== undefined ? g.weight : existingGrade.weight,
             updatedAt: new Date(),
           }
         }));
@@ -454,6 +499,76 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     });
 
     const results = await prisma.$transaction(operations);
+
+    // 4. Securely dispatch notifications to graded students for published assessments
+    try {
+      const publishedGrades = validGrades.filter(g => g.status === 'PUBLISHED');
+      if (publishedGrades.length > 0) {
+        const now = new Date();
+        const notifications: any[] = [];
+
+        publishedGrades.forEach(g => {
+          const isScheduled = g.releaseDate && new Date(g.releaseDate) > now;
+          const assessmentLabel = g.assessmentType || g.category || 'Assessment';
+
+          if (isScheduled) {
+            // SECURE: Do NOT disclose the score in the notification body or meta prior to the release date
+            const releaseDateObj = new Date(g.releaseDate);
+            const releaseStr = releaseDateObj.toLocaleString('en-US', {
+              dateStyle: 'medium',
+              timeStyle: 'short'
+            });
+
+            notifications.push({
+              recipientType: 'STUDENT' as const,
+              recipientId: g.studentId,
+              senderType: (userRole as any) || 'ADMIN',
+              senderId: userId || undefined,
+              type: 'GENERAL' as const,
+              title: `Assessment Recorded: ${g.subject}`,
+              message: `Your ${assessmentLabel} in ${g.subject} has been recorded by your instructor and is scheduled to be released on ${releaseStr}.`,
+              link: '/dashboard/student/offline-grades',
+              meta: {
+                priority: 'HIGH',
+                category: 'OFFLINE_GRADE',
+                subject: g.subject,
+                isReleased: false,
+                releaseDate: g.releaseDate
+              }
+            });
+          } else {
+            // IMMEDIATE RELEASE: Include score and direct link to offline grades
+            notifications.push({
+              recipientType: 'STUDENT' as const,
+              recipientId: g.studentId,
+              senderType: (userRole as any) || 'ADMIN',
+              senderId: userId || undefined,
+              type: 'GENERAL' as const,
+              title: `Offline Grade Published: ${g.subject}`,
+              message: `Your grade for ${assessmentLabel} in ${g.subject} has been published. Score: ${g.score}/${g.maxMarks}.`,
+              link: '/dashboard/student/offline-grades',
+              meta: {
+                priority: 'HIGH',
+                category: 'OFFLINE_GRADE',
+                subject: g.subject,
+                score: g.score,
+                maxMarks: g.maxMarks,
+                isReleased: true
+              }
+            });
+          }
+        });
+
+        if (notifications.length > 0) {
+          await prisma.notification.createMany({
+            data: notifications
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Non-blocking: Failed to create grade notifications:', notifError);
+    }
+
     return { count: results.length / 2 }; // Divided by 2 since each grade has 1 log
   } catch (error: any) {
     console.error("CRITICAL: [bulkCreateGradesService] Error during manual sync transaction:", error);

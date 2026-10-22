@@ -4,22 +4,12 @@ import React, { useState, useMemo } from 'react';
 import { useStudentTermResults } from '@/lib/api/hooks/useRecords';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useClasses } from '@/lib/api/hooks/useClasses';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import { Skeleton } from "@/components/ui/skeleton";
 import Pagination from './Pagination';
 import { cn } from '@/lib/utils';
 import { Trophy, FileText, Zap, LayoutGrid, List } from 'lucide-react';
-
-function getWAECGradeAndRemark(score: number): { grade: string, remark: string } {
-  if (score >= 75) return { grade: 'A1', remark: 'EXCELLENT' };
-  if (score >= 70) return { grade: 'B2', remark: 'VERY GOOD' };
-  if (score >= 65) return { grade: 'B3', remark: 'GOOD' };
-  if (score >= 60) return { grade: 'C4', remark: 'CREDIT' };
-  if (score >= 55) return { grade: 'C5', remark: 'CREDIT' };
-  if (score >= 50) return { grade: 'C6', remark: 'CREDIT' };
-  if (score >= 45) return { grade: 'D7', remark: 'PASS' };
-  if (score >= 40) return { grade: 'E8', remark: 'PASS' };
-  return { grade: 'F9', remark: 'FAIL' };
-}
 
 export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: string, primaryColor: string }) {
   const [selectedSession, setSelectedSession] = useState<string>('ALL');
@@ -38,6 +28,7 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
   }, []);
 
   const { data: finalResults, isLoading } = useStudentTermResults();
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: sessionsRes } = useSessions(schoolId);
   const { data: classesRes } = useClasses(schoolId);
 
@@ -177,14 +168,10 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
                     totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
                     percent = result.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
                     
-                    const waec = getWAECGradeAndRemark(Number(percent));
-                    grade = waec.grade;
-                    remark = waec.remark;
-                    
-                    if (Number(percent) >= 75) { color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
-                    else if (Number(percent) >= 65) { color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
-                    else if (Number(percent) >= 50) { color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; }
-                    else { color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                    const evalResult = getGradeEvaluation(Number(percent), schoolProfile?.gradingSystem);
+                    grade = evalResult.grade;
+                    remark = evalResult.remark;
+                    color = `${evalResult.bg} ${evalResult.color}`;
                   }
 
                   return (
@@ -243,14 +230,10 @@ export default function FinalResultsTab({ schoolId, primaryColor }: { schoolId: 
                   totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
                   percent = result.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
                   
-                  const waec = getWAECGradeAndRemark(Number(percent));
-                  grade = waec.grade;
-                  remark = waec.remark;
-                  
-                  if (Number(percent) >= 75) { color = "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 dark:text-emerald-400"; }
-                  else if (Number(percent) >= 65) { color = "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800/50 dark:text-blue-400"; }
-                  else if (Number(percent) >= 50) { color = "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-800/50 dark:text-amber-400"; }
-                  else { color = "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800/50 dark:text-rose-400"; }
+                  const evalResult = getGradeEvaluation(Number(percent), schoolProfile?.gradingSystem);
+                  grade = evalResult.grade;
+                  remark = evalResult.remark;
+                  color = `${evalResult.bg} ${evalResult.color}`;
                 }
 
                 return (

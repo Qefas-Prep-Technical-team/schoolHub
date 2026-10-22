@@ -34,6 +34,7 @@ import {
     UserCircle,
     LifeBuoy,
     FileCheck2,
+    FileSpreadsheet,
     FileText,
     BookMarked,
     Brain,
@@ -88,6 +89,7 @@ export const menuGroups: { label: string; items: MenuItem[] }[] = [
             { icon: BookOpen, label: "Subjects", href: "/dashboard/teacher/subjects", featureKey: "subjects" },
             { icon: ClipboardList, label: "Assignments", href: "/dashboard/teacher/assignments", featureKey: "assignments" },
             { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
+            { icon: FileSpreadsheet, label: "Offline Grades", href: "/dashboard/teacher/offline-grades", featureKey: "offlineGrades" },
             { icon: FileCheck2, label: "Final Result", href: "/dashboard/teacher/records", featureKey: "records" },
             { icon: FileCheck2, label: "Exams & Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },
             { icon: CalendarClock, label: "Timetable", href: "/dashboard/teacher/timetable", featureKey: "timetable" },
@@ -140,7 +142,7 @@ export function AppSidebar() {
     // Get the current features configuration
     const currentFeatures = useMemo(() => {
         if (isFeaturesLoading) return null;
-        return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}) };
+        return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true };
     }, [dynamicFeatures, isFeaturesLoading]);
 
     // Active menu groups without disabled / soon items
@@ -149,7 +151,10 @@ export function AppSidebar() {
         return menuGroups
             .map((group) => ({
                 ...group,
-                items: group.items.filter((item) => !!(currentFeatures as any)[item.featureKey]),
+                items: group.items.filter((item) => {
+                    if (item.featureKey === 'offlineGrades') return true;
+                    return !!(currentFeatures as any)[item.featureKey];
+                }),
             }))
             .filter((group) => group.items.length > 0);
     }, [currentFeatures]);

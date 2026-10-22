@@ -33,7 +33,9 @@ import { useMyPublishedResults } from '@/lib/api/hooks/useRecords';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useStudentAssignments, Assignment } from '@/lib/api/hooks/useAssignments';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import { Button } from '@/components/ui/button';
 import { format, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -78,16 +80,9 @@ function generateAIPrincipalRemark(studentName: string, overallAverage: number):
 }
 
 
-function getWAECGradeAndRemark(score: number): { grade: string, remark: string } {
-  if (score >= 75) return { grade: 'A1', remark: 'EXCELLENT' };
-  if (score >= 70) return { grade: 'B2', remark: 'VERY GOOD' };
-  if (score >= 65) return { grade: 'B3', remark: 'GOOD' };
-  if (score >= 60) return { grade: 'C4', remark: 'CREDIT' };
-  if (score >= 55) return { grade: 'C5', remark: 'CREDIT' };
-  if (score >= 50) return { grade: 'C6', remark: 'CREDIT' };
-  if (score >= 45) return { grade: 'D7', remark: 'PASS' };
-  if (score >= 40) return { grade: 'E8', remark: 'PASS' };
-  return { grade: 'F9', remark: 'FAIL' };
+function getWAECGradeAndRemark(score: number, customGradingSystem?: any[]): { grade: string, remark: string } {
+  const result = getGradeEvaluation(score, customGradingSystem);
+  return { grade: result.grade, remark: result.remark };
 }
 
 function getAssessmentDisplayTitle(grade: Record<string, any>): { title: string; subtitle: string; isAssignment: boolean } {
@@ -206,6 +201,7 @@ export default function StudentGradesPage() {
   // Data fetching
   const { data: profile } = useStudentProfile();
   const schoolId = profile?.schoolId || user?.schools?.[0]?.schoolId || '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: sessionsRes, isLoading: isLoadingSessions } = useSessions(schoolId);
   const sessions = sessionsRes?.data || (Array.isArray(sessionsRes) ? sessionsRes : []);
 
@@ -464,7 +460,7 @@ export default function StudentGradesPage() {
         total = 0;
       }
 
-      const gradeInfo = getWAECGradeAndRemark(total);
+      const gradeInfo = getWAECGradeAndRemark(total, schoolProfile?.gradingSystem);
 
       return {
         subjectName: sub.subjectName,
@@ -1332,7 +1328,7 @@ export default function StudentGradesPage() {
                             totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
                             percent = result.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
                             
-                            const waec = getWAECGradeAndRemark(Number(percent));
+                            const waec = getWAECGradeAndRemark(Number(percent), schoolProfile?.gradingSystem);
                             grade = waec.grade;
                             remark = waec.remark;
                             
@@ -1423,7 +1419,7 @@ export default function StudentGradesPage() {
                             totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
                             percent = result.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
                             
-                            const waec = getWAECGradeAndRemark(Number(percent));
+                            const waec = getWAECGradeAndRemark(Number(percent), schoolProfile?.gradingSystem);
                             grade = waec.grade;
                             remark = waec.remark;
                             
@@ -1495,7 +1491,7 @@ export default function StudentGradesPage() {
                     <div><p className="text-xs text-slate-500">Student Name</p><p className="font-semibold text-slate-800 dark:text-white">{transcriptData.student.name}</p></div>
                     <div><p className="text-xs text-slate-500">Class</p><p className="font-semibold text-slate-800 dark:text-white">{transcriptData.className}</p></div>
                     <div><p className="text-xs text-slate-500">Total Score</p><p className="font-semibold text-pink-600">{transcriptData.totalScore} / {transcriptData.totalMax}</p></div>
-                    <div><p className="text-xs text-slate-500">Overall Grade</p><p className="font-semibold text-pink-600">{getWAECGradeAndRemark(transcriptData.overallAverage).grade}</p></div>
+                    <div><p className="text-xs text-slate-500">Overall Grade</p><p className="font-semibold text-pink-600">{getWAECGradeAndRemark(transcriptData.overallAverage, schoolProfile?.gradingSystem).grade}</p></div>
                   </div>
                   
                   <table className="w-full text-left text-sm border-collapse">

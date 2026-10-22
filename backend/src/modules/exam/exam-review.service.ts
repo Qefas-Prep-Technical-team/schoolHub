@@ -2,23 +2,22 @@ import prisma from "../../config/database";
 import { createNotification } from "../notification/notification.service";
 
 export const getManualReviewQueueService = async ({
+  schoolId,
   examId,
 }: {
+  schoolId?: string;
   examId?: string;
 }) => {
   return prisma.subjectExamAnswer.findMany({
     where: {
       requiresManualReview: true,
       manuallyReviewed: false,
-      ...(examId
-        ? {
-            subjectExamAttempt: {
-              examAttempt: {
-                examId,
-              },
-            },
-          }
-        : {}),
+      subjectExamAttempt: {
+        examAttempt: {
+          ...(examId ? { examId } : {}),
+          ...(schoolId ? { exam: { schoolId } } : {}),
+        },
+      },
     },
     include: {
       question: true,
@@ -49,11 +48,13 @@ export const markSubjectiveAnswerService = async ({
   scoreAwarded,
   reviewNote,
   reviewerId,
+  schoolId,
 }: {
   answerId: string;
   scoreAwarded: number;
   reviewNote?: string;
   reviewerId: string;
+  schoolId?: string;
 }) => {
   const answer = await prisma.subjectExamAnswer.findUnique({
     where: { id: answerId },
@@ -61,7 +62,11 @@ export const markSubjectiveAnswerService = async ({
       question: true,
       subjectExamAttempt: {
         include: {
-          examAttempt: true,
+          examAttempt: {
+            include: {
+              exam: true,
+            },
+          },
         },
       },
     },
@@ -69,6 +74,10 @@ export const markSubjectiveAnswerService = async ({
 
   if (!answer) {
     throw new Error("Answer not found");
+  }
+
+  if (schoolId && answer.subjectExamAttempt?.examAttempt?.exam?.schoolId !== schoolId) {
+    throw new Error("You do not have permission to mark answers from another school");
   }
 
   const maxMarks = Number(answer.question.marks || 0);

@@ -8,9 +8,17 @@ export class FinanceController {
   /**
    * School Admin: Setup bank details
    */
+  /**
+   * School Admin: Setup bank details
+   */
   static async setupBank(req: Request, res: Response) {
     try {
       const schoolId = getSingleString(req.params.schoolId);
+      const user = req.user;
+      if (user?.userType !== 'SUPER_ADMIN' && user?.schoolId !== schoolId) {
+        return res.status(403).json({ success: false, message: "Access denied: You can only manage bank details for your own school" });
+      }
+
       console.log(`[FinanceController] Setting up bank for school: ${schoolId}`, req.body);
       const account = await FinanceService.setupBank(schoolId, req.body);
       res.status(200).json({
@@ -31,6 +39,16 @@ export class FinanceController {
       const { schoolId, studentId, amount, term, session, paymentType } = req.body;
       const parentId = (req as any).user.id;
       const email = (req as any).user.email;
+
+      // Verify parent is linked to this student
+      if (studentId) {
+        const link = await prisma.parentChildLink.findFirst({
+          where: { parentId, studentId }
+        });
+        if (!link) {
+          return res.status(403).json({ success: false, message: "Access denied: You can only initiate payments for your linked children" });
+        }
+      }
 
       const initializationData = await FinanceService.initializePayment({
         schoolId,
@@ -69,6 +87,11 @@ export class FinanceController {
   static async getSchoolAnalytics(req: Request, res: Response) {
     try {
       const schoolId = getSingleString(req.params.schoolId);
+      const user = req.user;
+      if (user?.userType !== 'SUPER_ADMIN' && user?.schoolId !== schoolId) {
+        return res.status(403).json({ success: false, message: "Access denied: You can only view analytics for your own school" });
+      }
+
       console.log(`[FinanceController] Fetching analytics for school: ${schoolId}`);
       const analytics = await FinanceService.getSchoolAnalytics(schoolId);
       res.status(200).json({ success: true, data: analytics });
@@ -127,6 +150,17 @@ export class FinanceController {
   static async removeSubaccount(req: Request, res: Response) {
     try {
       const accountId = getSingleString(req.params.accountId);
+      const user = req.user;
+      if (user?.userType !== 'SUPER_ADMIN') {
+        const account = await prisma.settlementAccount.findUnique({
+          where: { id: accountId },
+          select: { schoolId: true }
+        });
+        if (!account || account.schoolId !== user?.schoolId) {
+          return res.status(403).json({ success: false, message: "Access denied to this settlement account" });
+        }
+      }
+
       const result = await FinanceService.removeSubaccount(accountId);
       res.status(200).json(result);
     } catch (error: any) {
@@ -140,6 +174,11 @@ export class FinanceController {
   static async syncSubaccountStatus(req: Request, res: Response) {
     try {
       const schoolId = getSingleString(req.params.schoolId);
+      const user = req.user;
+      if (user?.userType !== 'SUPER_ADMIN' && user?.schoolId !== schoolId) {
+        return res.status(403).json({ success: false, message: "Access denied: You can only sync accounts for your own school" });
+      }
+
       const { accountId } = req.body;
       const result = await FinanceService.syncSubaccountStatus(schoolId, accountId);
       res.status(200).json(result);

@@ -5,7 +5,9 @@ import { handleError } from "../../utils/error-handler";
 
 export const getStudentGrades = async (req: Request, res: Response) => {
   try {
-    const studentId = req.user?.userType === UserRole.STUDENT ? req.user.id : (req.query.studentId as string);
+    const userRoleStr = String(req.user?.userType || (req.user as any)?.role || '').toUpperCase();
+    const isStudent = userRoleStr === "STUDENT";
+    const studentId = isStudent ? req.user?.id : (req.query.studentId as string);
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 

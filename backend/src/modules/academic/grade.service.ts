@@ -17,7 +17,8 @@ export const getStudentGradesService = async (studentId: string, page: number = 
         }
       },
       {
-        examId: null
+        examId: null,
+        status: "PUBLISHED"
       }
     ]
   };
@@ -68,6 +69,15 @@ export const getStudentGradesService = async (studentId: string, page: number = 
         } catch {
           // ignore error
         }
+      }
+      // If offline grade has a future release date, mask the score until that release timestamp
+      if (grade.examId === null && grade.releaseDate && new Date(grade.releaseDate) > now) {
+        return {
+          ...grade,
+          score: null,
+          remarks: "Assessment recorded. Scores are scheduled to unlock on the release date.",
+          status: "SCHEDULED"
+        };
       }
       return grade;
     })

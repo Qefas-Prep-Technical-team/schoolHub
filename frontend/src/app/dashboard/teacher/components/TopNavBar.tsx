@@ -113,9 +113,13 @@ export default function TopNavBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const currentFeatures = { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}) };
+  const currentFeatures = { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true };
   const allTeacherItems = menuGroups.flatMap(group => group.items.map(item => ({ ...item, section: group.label })));
   const searchResults = allTeacherItems.filter(item => {
+    if (item.featureKey === 'offlineGrades') {
+      return item.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             item.section.toLowerCase().includes(searchQuery.toLowerCase());
+    }
     const isEnabled = !!(currentFeatures as any)[item.featureKey];
     if (!isEnabled) return false;
     return item.label.toLowerCase().includes(searchQuery.toLowerCase()) || 

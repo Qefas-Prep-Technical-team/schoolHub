@@ -271,6 +271,29 @@ export const getSingleClass = async (req: Request, res: Response) => {
       }
     }
 
+    if (req.user.userType === UserRole.PARENT) {
+      const childInClass = await prisma.classEnrollment.findFirst({
+        where: {
+          classId: foundClass.id,
+          student: {
+            parentLinks: {
+              some: {
+                parentId: req.user.id,
+                status: { in: ["active", "ACCEPTED", "Active"] },
+              },
+            },
+          },
+        },
+      });
+
+      if (!childInClass) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You do not have a linked child enrolled in this class",
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: "Class fetched successfully",

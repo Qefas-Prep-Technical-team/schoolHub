@@ -1,21 +1,21 @@
 import express from "express";
 import { FinanceController } from "./finance.controller";
 import { paystackWebhookHandler } from "./paystack.webhook";
-import { authenticateToken } from "../../middleware/authMiddleware";
+import { authenticateToken, requireRoles } from "../../middleware/authMiddleware";
 
 const router = express.Router();
 
 /**
  * School Admin: Setup settlement bank details
  */
-router.post("/setup/:schoolId", authenticateToken, FinanceController.setupBank);
-router.delete("/account/:accountId", authenticateToken, FinanceController.removeSubaccount);
-router.patch("/sync/:schoolId", authenticateToken, FinanceController.syncSubaccountStatus);
+router.post("/setup/:schoolId", authenticateToken, requireRoles("ADMIN", "SUPER_ADMIN"), FinanceController.setupBank);
+router.delete("/account/:accountId", authenticateToken, requireRoles("ADMIN", "SUPER_ADMIN"), FinanceController.removeSubaccount);
+router.patch("/sync/:schoolId", authenticateToken, requireRoles("ADMIN", "SUPER_ADMIN"), FinanceController.syncSubaccountStatus);
 
 /**
  * Parent: Initialize fee payment for a child
  */
-router.post("/pay", authenticateToken, FinanceController.initializePayment);
+router.post("/pay", authenticateToken, requireRoles("PARENT"), FinanceController.initializePayment);
 
 /**
  * General: Verify a transaction status
@@ -30,17 +30,17 @@ router.get("/banks", FinanceController.getBanks);
 /**
  * School Admin: Get financial analytics and recent transactions
  */
-router.get("/analytics/:schoolId", authenticateToken, FinanceController.getSchoolAnalytics);
+router.get("/analytics/:schoolId", authenticateToken, requireRoles("ADMIN", "SUPER_ADMIN"), FinanceController.getSchoolAnalytics);
 
 /**
  * Parent: Get personal payment history
  */
-router.get("/history", authenticateToken, FinanceController.getParentHistory);
+router.get("/history", authenticateToken, requireRoles("PARENT"), FinanceController.getParentHistory);
 
 /**
  * Super Admin: Get platform-wide transactions
  */
-router.get("/global-transactions", authenticateToken, FinanceController.getGlobalTransactions);
+router.get("/global-transactions", authenticateToken, requireRoles("SUPER_ADMIN"), FinanceController.getGlobalTransactions);
 
 /**
  * Paystack Webhook Handler (Public but verified by Paystack signature)

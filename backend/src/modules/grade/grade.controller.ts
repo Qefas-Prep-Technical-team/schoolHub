@@ -4,17 +4,28 @@ import { handleError } from "../../utils/error-handler";
 
 export const getGradeHub = async (req: Request, res: Response) => {
   try {
-    const { schoolId, page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const userRole = (req as any).user?.role || (req as any).user?.userType;
     const userId = (req as any).user?.id;
+    const userSchoolId = (req as any).user?.schoolId;
+
+    let targetSchoolId = userSchoolId || (req.query.schoolId as string);
 
     const queryFilters = { ...req.query };
+    if (userRole !== 'SUPER_ADMIN') {
+      // Strictly enforce connected school boundary for all tenants
+      if (userSchoolId && req.query.schoolId && userSchoolId !== req.query.schoolId) {
+        return res.status(403).json({ success: false, message: "You are not authorized to access grades for a different school." });
+      }
+      targetSchoolId = userSchoolId || (req.query.schoolId as string);
+    }
+
     if (userRole === 'TEACHER') {
       queryFilters.teacherClassesOnly = 'true';
       queryFilters.currentTeacherId = userId;
     }
 
-    const { grades, total } = await gradeService.getGradeHubService(schoolId as string, queryFilters);
+    const { grades, total } = await gradeService.getGradeHubService(targetSchoolId, queryFilters);
     
     const totalPages = Math.ceil(total / Number(limit));
 
@@ -91,9 +102,18 @@ export const processOCR = async (req: Request, res: Response) => {
 
 export const bulkCreateGrades = async (req: Request, res: Response) => {
   try {
-    const { schoolId, grades } = req.body;
+    let { schoolId, grades } = req.body;
     const userId = (req as any).user.id;
     const userRole = (req as any).user.role || (req as any).user.userType;
+    const userSchoolId = (req as any).user?.schoolId;
+
+    if (userRole !== 'SUPER_ADMIN') {
+      if (userSchoolId && schoolId && userSchoolId !== schoolId) {
+        return res.status(403).json({ success: false, message: "You are not authorized to record grades for another school." });
+      }
+      schoolId = userSchoolId || schoolId;
+    }
+
     const result = await gradeService.bulkCreateGradesService(schoolId, grades, userId, userRole);
     res.json({ success: true, data: result });
   } catch (error: any) {

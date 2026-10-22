@@ -14,16 +14,30 @@ import { useRouter } from 'next/navigation';
 import { useCreateClassSubjectResult } from '@/lib/api/hooks/useRecords';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
-interface OptionItem {
+import { ShieldAlert, BookOpen, Building2 } from 'lucide-react';
+
+export interface OptionItem {
   id: string;
   name: string;
+}
+
+export interface AssignedSubjectItem {
+  id: string;
+  name: string;
+  code?: string;
+  departments?: Array<{
+    departmentId?: string;
+    department?: { id: string; name: string; code?: string };
+    id?: string;
+    name?: string;
+  }>;
 }
 
 interface CreateResultDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   classes: OptionItem[];
-  subjects: OptionItem[];
+  subjects: AssignedSubjectItem[];
   departments: OptionItem[];
   sessions: OptionItem[];
   isLoadingClasses?: boolean;
@@ -61,6 +75,59 @@ export function CreateResultDialog({
     caMax: 20,
     examMax: 60,
   });
+
+  // Filter subjects based on selected department (if any)
+  const availableSubjects = React.useMemo(() => {
+    if (!formData.departmentId) return subjects;
+    return subjects.filter((s) => {
+      if (!s.departments || s.departments.length === 0) return true;
+      return s.departments.some((d: any) => {
+        const dId = d.departmentId || d.department?.id || d.id;
+        return dId === formData.departmentId;
+      });
+    });
+  }, [subjects, formData.departmentId]);
+
+  const handleSubjectChange = (subjectId: string) => {
+    const selectedSubj = subjects.find((s) => s.id === subjectId);
+    let newDeptId = formData.departmentId;
+    if (selectedSubj && selectedSubj.departments && selectedSubj.departments.length > 0) {
+      const matchesCurrent = selectedSubj.departments.some((d: any) => {
+        const dId = d.departmentId || d.department?.id || d.id;
+        return dId === formData.departmentId;
+      });
+      if (!matchesCurrent) {
+        const firstDept = selectedSubj.departments[0];
+        newDeptId = firstDept.departmentId || firstDept.department?.id || firstDept.id || '';
+      }
+    }
+    setFormData((prev) => ({
+      ...prev,
+      subjectId,
+      departmentId: newDeptId,
+    }));
+  };
+
+  const handleDepartmentChange = (departmentId: string) => {
+    let newSubjectId = formData.subjectId;
+    if (departmentId && newSubjectId) {
+      const currentSubj = subjects.find((s) => s.id === newSubjectId);
+      if (currentSubj && currentSubj.departments && currentSubj.departments.length > 0) {
+        const belongs = currentSubj.departments.some((d: any) => {
+          const dId = d.departmentId || d.department?.id || d.id;
+          return dId === departmentId;
+        });
+        if (!belongs) {
+          newSubjectId = '';
+        }
+      }
+    }
+    setFormData((prev) => ({
+      ...prev,
+      departmentId,
+      subjectId: newSubjectId,
+    }));
+  };
 
   const handleSubmit = () => {
     if (!formData.name.trim() || !formData.classId || !formData.subjectId || !formData.sessionId) {
@@ -110,6 +177,19 @@ export function CreateResultDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Warning banner if teacher has no assigned subjects */}
+          {!isLoadingSubjects && subjects.length === 0 && (
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-bold">No Assigned Subjects</p>
+                <p className="mt-0.5 text-amber-700 dark:text-amber-300">
+                  You are not currently assigned to any subjects. Teachers are only permitted to configure and edit final results for their assigned subjects. Please contact your school administrator.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Result Sheet Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
@@ -124,7 +204,7 @@ export function CreateResultDialog({
             />
           </div>
 
-          {/* Class, Subject, Department */}
+          {/* Class, Department, Subject */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
@@ -149,21 +229,24 @@ export function CreateResultDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Subject <span className="text-emerald-500">*</span>
-              </label>
-              {isLoadingSubjects ? (
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Department
+                </label>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Assigned</span>
+              </div>
+              {isLoadingDepartments ? (
                 <div className="w-full h-11 bg-slate-100 dark:bg-zinc-900 animate-pulse rounded-xl" />
               ) : (
                 <select
-                  value={formData.subjectId}
-                  onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                  value={formData.departmentId}
+                  onChange={(e) => handleDepartmentChange(e.target.value)}
                   className="w-full h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer font-medium"
                 >
-                  <option value="">Select Subject</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
+                  <option value="">All Assigned Departments</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
                     </option>
                   ))}
                 </select>
@@ -171,21 +254,27 @@ export function CreateResultDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Department <span className="text-[10px] text-slate-400 font-normal">(Opt)</span>
-              </label>
-              {isLoadingDepartments ? (
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Subject <span className="text-emerald-500">*</span>
+                </label>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">My Subjects</span>
+              </div>
+              {isLoadingSubjects ? (
                 <div className="w-full h-11 bg-slate-100 dark:bg-zinc-900 animate-pulse rounded-xl" />
               ) : (
                 <select
-                  value={formData.departmentId}
-                  onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                  className="w-full h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer font-medium"
+                  value={formData.subjectId}
+                  onChange={(e) => handleSubjectChange(e.target.value)}
+                  disabled={availableSubjects.length === 0}
+                  className="w-full h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <option value="">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
+                  <option value="">
+                    {availableSubjects.length === 0 ? 'No assigned subject' : 'Select Assigned Subject'}
+                  </option>
+                  {availableSubjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.code ? `(${s.code})` : ''}
                     </option>
                   ))}
                 </select>
@@ -317,8 +406,8 @@ export function CreateResultDialog({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={isCreating}
-            className="w-full sm:w-auto h-11 px-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-70 active:scale-95"
+            disabled={isCreating || (!isLoadingSubjects && subjects.length === 0)}
+            className="w-full sm:w-auto h-11 px-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
           >
             {isCreating ? 'Creating Configuration...' : 'Create Result Sheet'}
           </button>

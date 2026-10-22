@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 const styles = StyleSheet.create({
   page: { padding: 40, backgroundColor: '#FFFFFF', fontFamily: 'Helvetica' },
@@ -60,18 +61,6 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', bottom: 25, left: 40, right: 40, borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingTop: 15, flexDirection: 'row', justifyContent: 'space-between' },
   footerText: { fontSize: 9, color: '#94A3B8' },
 });
-
-function getWAECGradeAndRemark(score: number): { grade: string, remark: string } {
-  if (score >= 75) return { grade: 'A1', remark: 'EXCELLENT' };
-  if (score >= 70) return { grade: 'B2', remark: 'VERY GOOD' };
-  if (score >= 65) return { grade: 'B3', remark: 'GOOD' };
-  if (score >= 60) return { grade: 'C4', remark: 'CREDIT' };
-  if (score >= 55) return { grade: 'C5', remark: 'CREDIT' };
-  if (score >= 50) return { grade: 'C6', remark: 'CREDIT' };
-  if (score >= 45) return { grade: 'D7', remark: 'PASS' };
-  if (score >= 40) return { grade: 'E8', remark: 'PASS' };
-  return { grade: 'F9', remark: 'FAIL' };
-}
 
 interface FinalResultPDFProps {
   student: any;
@@ -140,7 +129,7 @@ export const FinalResultPDF = ({ student, school, results }: FinalResultPDFProps
             const percent = sub.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
             termSum += Number(percent);
             
-            const { grade, remark } = getWAECGradeAndRemark(Number(percent));
+            const { grade, remark } = getGradeEvaluation(Number(percent), school?.gradingSystem);
             return {
               subject: sub.resultName || sub.subject?.name || "-",
               ca: sub.caScore || 0,
@@ -209,11 +198,11 @@ export const FinalResultPDF = ({ student, school, results }: FinalResultPDFProps
               </View>
               <View style={styles.cumulativeStat}>
                 <Text style={styles.cumulativeLabel}>Overall Grade</Text>
-                <Text style={styles.cumulativeValue}>{getWAECGradeAndRemark(Math.round(totalCumulativeScore / totalCumulativeSubjects)).grade}</Text>
+                <Text style={styles.cumulativeValue}>{getGradeEvaluation(Math.round(totalCumulativeScore / totalCumulativeSubjects), school?.gradingSystem).grade}</Text>
               </View>
               <View style={styles.cumulativeStat}>
                 <Text style={styles.cumulativeLabel}>Final Remark</Text>
-                <Text style={[styles.cumulativeValue, { color: '#059669' }]}>{getWAECGradeAndRemark(Math.round(totalCumulativeScore / totalCumulativeSubjects)).remark}</Text>
+                <Text style={[styles.cumulativeValue, { color: '#059669' }]}>{getGradeEvaluation(Math.round(totalCumulativeScore / totalCumulativeSubjects), school?.gradingSystem).remark}</Text>
               </View>
             </View>
           </View>

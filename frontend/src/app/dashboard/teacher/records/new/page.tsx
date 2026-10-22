@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Save, Search, Download, Loader2, Settings, Pencil, Check, UploadCloud, PenLine, Users, CheckCircle2, Clock, TrendingUp, MoreVertical } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Save, Search, Download, Loader2, Settings, Pencil, Check, UploadCloud, PenLine, Users, CheckCircle2, Clock, TrendingUp, MoreVertical, ShieldAlert, Building2, Lock } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ResultRecordUploadModal, { UploadCategory } from "./components/ResultRecordUploadModal";
 import { EditConfigModal } from "./components/EditConfigModal";
@@ -13,6 +13,9 @@ import { useClassSubjectResult, useStudentSubjectResults, useBulkSaveStudentSubj
 import { useSubjectPapers } from "@/lib/api/hooks/useExams";
 import { useAdminAssignments } from "@/lib/api/hooks/useAssignments";
 import { useStudents } from "@/lib/api/hooks/useStudent";
+import { useTeacherSubjects } from "@/lib/api/hooks/useTeacher";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { getGradeEvaluation } from "@/utils/gradingSystem";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
@@ -27,6 +30,22 @@ export default function NewFinalResultDataEntryPage() {
 
   // Data Hooks
   const { data: config, isLoading: isLoadingConfig } = useClassSubjectResult(id || undefined);
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId || "");
+  const { data: teacherSubjectsData } = useTeacherSubjects(effectiveSchoolId);
+  const teacherAssignedSubjects = useMemo(() => Array.isArray(teacherSubjectsData) ? teacherSubjectsData : [], [teacherSubjectsData]);
+  const assignedSubjectIdSet = useMemo(() => new Set(teacherAssignedSubjects.map((s: any) => s.id)), [teacherAssignedSubjects]);
+  const assignedSubjectNameSet = useMemo(() => new Set(teacherAssignedSubjects.map((s: any) => (s.name || '').trim().toLowerCase())), [teacherAssignedSubjects]);
+
+  // Determine if this subject is assigned to this teacher (or created by them)
+  const isAssignedToTeacher = useMemo(() => {
+    if (!config) return true;
+    if (user?.userType === "ADMIN") return true;
+    if (config.createdById === user?.id) return true;
+    if (config.subjectId && assignedSubjectIdSet.has(config.subjectId)) return true;
+    const name = (config.subject?.name || config.name || '').trim().toLowerCase();
+    if (name && assignedSubjectNameSet.has(name)) return true;
+    return false;
+  }, [config, user, assignedSubjectIdSet, assignedSubjectNameSet]);
   
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
@@ -141,6 +160,10 @@ export default function NewFinalResultDataEntryPage() {
   }, [rawStudents, existingMarks, config]);
 
   const handleScoreChange = (id: string, field: string, value: string) => {
+    if (!isAssignedToTeacher) {
+      toast.error("You are only authorized to edit final results for subjects assigned to you.");
+      return;
+    }
     if (field === "principalRemark" && !canEditPrincipalRemark) { toast.error("Only Principal and School Owner can edit the principal remark"); return; }
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, [field]: value, scoreSources: { ...(s.scoreSources || {}), [field]: "MANUAL" } } : s))
@@ -148,6 +171,10 @@ export default function NewFinalResultDataEntryPage() {
   };
 
   const handleUploadComplete = (mappedData: any[], category: UploadCategory) => {
+    if (!isAssignedToTeacher) {
+      toast.error("You cannot upload grades for a subject that is not assigned to you.");
+      return;
+    }
     setStudents(prev => {
       let newStudents = [...prev];
       
@@ -214,6 +241,10 @@ export default function NewFinalResultDataEntryPage() {
 
   const handleSave = () => {
     if (!config) return;
+    if (!isAssignedToTeacher) {
+      toast.error("You are only authorized to edit and save final results for subjects assigned to you.");
+      return;
+    }
 
     const parseScore = (val: string | number | undefined) => {
       if (val === "" || val === null || val === undefined) return null;
@@ -226,7 +257,7 @@ export default function NewFinalResultDataEntryPage() {
       subjectId: config.subjectId,
       sessionId: config.sessionId,
       term: config.term,
-            scores: students.map(s => ({
+      scores: students.map(s => ({
         studentId: s.id,
         assignmentScore: parseScore(s.assignment),
         quizScore: parseScore(s.quiz),
@@ -289,7 +320,13 @@ export default function NewFinalResultDataEntryPage() {
   const paginatedStudents = filteredStudents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const toggleEdit = (id: string) => {
-    if (config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)) return toast.info(config?.status === "PUBLISHED" ? "Cannot edit published results" : "You can only edit final results that you created.");
+    if (config?.status === "PUBLISHED" || !isAssignedToTeacher) {
+      return toast.info(
+        config?.status === "PUBLISHED"
+          ? "Cannot edit published results"
+          : "You can only edit final results for subjects assigned to you."
+      );
+    }
     setEditingIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -360,12 +397,25 @@ export default function NewFinalResultDataEntryPage() {
             <h1 className="text-[28px] font-bold text-[#1a1b2e] dark:text-white tracking-tight">
               {config ? config.name : "Loading..."}
             </h1>
-            <div className="text-sm text-slate-500 mt-1 font-medium flex items-center gap-2">
+            <div className="text-sm text-slate-500 mt-1 font-medium flex items-center gap-2 flex-wrap">
               {config ? (
                 <>
                   <span>{config.class?.name || "Class"}</span>
                   <span>•</span>
+                  <span>{config.subject?.name || config.name || "Subject"}</span>
+                  {(config.department?.name || config.subject?.departments?.[0]?.department?.name) && (
+                    <>
+                      <span>•</span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                        <Building2 className="w-3 h-3 text-indigo-500" />
+                        {config.department?.name || config.subject?.departments?.[0]?.department?.name}
+                      </span>
+                    </>
+                  )}
+                  <span>•</span>
                   <span>{config.session?.name || "Session"}</span>
+                  <span>•</span>
+                  <span>{config.term} Term</span>
                 </>
               ) : (
                 <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 animate-pulse rounded"></div>
@@ -387,8 +437,8 @@ export default function NewFinalResultDataEntryPage() {
           </button>
           <button 
             onClick={handleSave}
-            disabled={isSaving || isLoading || config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={isSaving || isLoading || config?.status === "PUBLISHED" || !isAssignedToTeacher}
+            className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isSaving ? "Saving..." : "Save Results"}
@@ -396,8 +446,8 @@ export default function NewFinalResultDataEntryPage() {
           {config?.status !== "PUBLISHED" ? (
             <button 
               onClick={() => setIsPublishModalOpen(true)}
-              disabled={isPublishing || isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70"
+              disabled={isPublishing || isLoading || !isAssignedToTeacher}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Publish
@@ -405,8 +455,8 @@ export default function NewFinalResultDataEntryPage() {
           ) : (
             <button 
               onClick={() => setIsUnpublishModalOpen(true)}
-              disabled={isUnpublishing || isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70"
+              disabled={isUnpublishing || isLoading || !isAssignedToTeacher}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isUnpublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
               Unpublish
@@ -414,6 +464,17 @@ export default function NewFinalResultDataEntryPage() {
           )}
         </div>
       </div>
+
+      {/* Read-Only Notice when not assigned */}
+      {!isAssignedToTeacher && !isLoadingConfig && config && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3 text-amber-800 dark:text-amber-200 shadow-sm">
+          <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <div className="text-xs sm:text-sm">
+            <span className="font-bold">Read-Only Result Sheet: </span>
+            You are viewing scores for <strong className="font-semibold">{config?.subject?.name || config?.name || 'this subject'}</strong>, which is not assigned to your teacher account. As a teacher, you are only allowed to edit and save final results for subjects assigned to you.
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="w-full space-y-6 mt-6 animate-pulse">
@@ -548,7 +609,7 @@ export default function NewFinalResultDataEntryPage() {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setIsUploadModalOpen(true)}
-                  disabled={config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)}
+                  disabled={config?.status === "PUBLISHED" || !isAssignedToTeacher}
                   className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <UploadCloud className="w-4 h-4" />
@@ -561,7 +622,7 @@ export default function NewFinalResultDataEntryPage() {
                     if (studentIds.length === 0) return;
                     setIsSyncModalOpen(true);
                   }}
-                  disabled={config?.status === "PUBLISHED" || (user?.userType === "TEACHER" && config?.createdById && config?.createdById !== user?.id)}
+                  disabled={config?.status === "PUBLISHED" || !isAssignedToTeacher}
                   className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -585,13 +646,15 @@ export default function NewFinalResultDataEntryPage() {
                     {config?.caMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">CA<br/><span className="text-[9px] font-medium opacity-70">(Max {config.caMax})</span></th>}
                     {config?.examMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Exam<br/><span className="text-[9px] font-medium opacity-70">(Max {config.examMax})</span></th>}
                     <th className="px-6 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
+                    <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Grade</th>
+                    <th className="px-4 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Remark</th>
                     <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-6 py-8 text-center text-slate-500">No students found.</td>
+                      <td colSpan={11} className="px-6 py-8 text-center text-slate-500">No students found.</td>
                     </tr>
                   ) : paginatedStudents.map((student, idx) => {
                     const isEditing = editingIds.has(student.id);
@@ -601,6 +664,7 @@ export default function NewFinalResultDataEntryPage() {
                     const examNum = parseFloat(student.exam) || 0;
                     const total = assignNum + quizNum + caNum + examNum;
                     const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
+                    const evaluation = getGradeEvaluation(total, schoolProfile?.gradingSystem);
                     
                     return (
                       <tr key={student.id} className={`group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isEditing ? "bg-slate-50 dark:bg-slate-800/30" : ""}`}>
@@ -627,7 +691,7 @@ export default function NewFinalResultDataEntryPage() {
                         <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
                         {config?.assignmentMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
+                          {isEditing && isAssignedToTeacher ? (
                             <input 
                               type="number" 
                               value={student.assignment}
@@ -644,7 +708,7 @@ export default function NewFinalResultDataEntryPage() {
                         )}
                         {config?.quizMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
+                          {isEditing && isAssignedToTeacher ? (
                             <input 
                               type="number" 
                               value={student.quiz}
@@ -661,7 +725,7 @@ export default function NewFinalResultDataEntryPage() {
                         )}
                         {config?.caMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
+                          {isEditing && isAssignedToTeacher ? (
                             <input 
                               type="number" 
                               value={student.ca}
@@ -678,7 +742,7 @@ export default function NewFinalResultDataEntryPage() {
                         )}
                         {config?.examMax != null && (
                         <td className="px-4 py-3 text-center">
-                          {isEditing ? (
+                          {isEditing && isAssignedToTeacher ? (
                             <input 
                               type="number" 
                               value={student.exam}
@@ -701,12 +765,36 @@ export default function NewFinalResultDataEntryPage() {
                           )}
                         </td>
                         <td className="px-4 py-4 text-center">
-                          <button
-                            onClick={() => toggleEdit(student.id)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-                          >
-                            {isEditing ? <Check className="w-4 h-4 text-emerald-500" /> : <Pencil className="w-4 h-4" />}
-                          </button>
+                          {student.assignment || student.quiz || student.ca || student.exam ? (
+                            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold ${evaluation.bg} ${evaluation.color}`}>
+                              {evaluation.grade}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {student.assignment || student.quiz || student.ca || student.exam ? (
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                              {evaluation.remark}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {isAssignedToTeacher ? (
+                            <button
+                              onClick={() => toggleEdit(student.id)}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              {isEditing ? <Check className="w-4 h-4 text-emerald-500" /> : <Pencil className="w-4 h-4" />}
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-300 dark:text-zinc-600" title="Read only">
+                              <Lock className="w-3.5 h-3.5" />
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -817,9 +905,10 @@ export default function NewFinalResultDataEntryPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <select 
+                            disabled={!isAssignedToTeacher}
                             value={student.politeness}
                             onChange={(e) => handleScoreChange(student.id, "politeness", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -831,9 +920,10 @@ export default function NewFinalResultDataEntryPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <select 
+                            disabled={!isAssignedToTeacher}
                             value={student.punctuality}
                             onChange={(e) => handleScoreChange(student.id, "punctuality", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -845,9 +935,10 @@ export default function NewFinalResultDataEntryPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <select 
+                            disabled={!isAssignedToTeacher}
                             value={student.handwriting}
                             onChange={(e) => handleScoreChange(student.id, "handwriting", e.target.value)}
-                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                            className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <option value="0">-</option>
                             <option value="1">1</option>
@@ -859,20 +950,22 @@ export default function NewFinalResultDataEntryPage() {
                         </td>
                         <td className="px-4 py-3">
                           <input 
+                            disabled={!isAssignedToTeacher}
                             type="text" 
                             value={student.teacherRemark}
                             onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
-                            placeholder="Add remark..."
-                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
+                            placeholder={isAssignedToTeacher ? "Add remark..." : "No remark"}
+                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </td>
                         <td className="px-4 py-3">
                           <input 
+                            disabled={!isAssignedToTeacher || !canEditPrincipalRemark}
                             type="text" 
                             value={student.principalRemark}
                             onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
-                            placeholder="Add remark..."
-                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200"
+                            placeholder={canEditPrincipalRemark ? (isAssignedToTeacher ? "Add remark..." : "No remark") : "Principal only"}
+                            className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded px-3 py-1.5 outline-none transition-all placeholder:text-slate-300 text-sm text-slate-800 dark:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </td>
                       </tr>

@@ -20,6 +20,7 @@ export const startExamAttemptService = async ({
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
+      departments: true,
       subjectExamPapers: {
         include: {
           subjectPaper: {
@@ -32,6 +33,41 @@ export const startExamAttemptService = async ({
 
   if (!exam) {
     throw new Error("Exam not found");
+  }
+
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: {
+      id: true,
+      schoolId: true,
+      departmentId: true,
+      classes: { select: { classId: true } },
+    },
+  });
+
+  if (!student) {
+    throw new Error("Student not found");
+  }
+
+  // Cross-school isolation check: if the exam belongs to a specific school, the student must belong to the same school
+  if (exam.schoolId && student.schoolId !== exam.schoolId) {
+    throw new Error("You do not have permission to access or take an exam from another institution");
+  }
+
+  // Class cohort check: if the exam is targeted to a specific class, student must belong to that class
+  if (exam.classId && student.classes && student.classes.length > 0) {
+    const isEnrolledInClass = student.classes.some((c: { classId: string }) => c.classId === exam.classId);
+    if (!isEnrolledInClass) {
+      throw new Error("This exam is not designated for your class cohort");
+    }
+  }
+
+  // Department check: if the exam is targeted to specific departments, verify student's department
+  if (exam.departments && exam.departments.length > 0 && student.departmentId) {
+    const isDeptAllowed = exam.departments.some((d: { departmentId: string }) => d.departmentId === student.departmentId);
+    if (!isDeptAllowed) {
+      throw new Error("This exam is not available for your academic department");
+    }
   }
 
   if (exam.status !== AssessmentStatus.PUBLISHED) {

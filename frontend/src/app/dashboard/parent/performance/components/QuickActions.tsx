@@ -5,7 +5,8 @@ import {
   FileText,
   Target,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  FileSpreadsheet
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,6 +42,15 @@ export default function QuickActions() {
     },
     {
       id: 3,
+      title: 'Offline Results',
+      description: 'Physical classroom test marks & CAs',
+      icon: <FileSpreadsheet className="h-4.5 w-4.5" />,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+      href: '/dashboard/parent/offline-grades'
+    },
+    {
+      id: 4,
       title: 'Exam Records & Tests',
       description: 'Full attempt history & paper reviews',
       icon: <FileText className="h-4.5 w-4.5" />,

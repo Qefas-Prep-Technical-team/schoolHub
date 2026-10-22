@@ -536,6 +536,7 @@ model Grade {
   category             GradeCategory       @default(EXAM)
   sessionId            String?
   status               GradeStatus         @default(DRAFT)
+  releaseDate          DateTime?
   subjectPaperId       String?
   term                 Term?
   weight               Float               @default(1.0)

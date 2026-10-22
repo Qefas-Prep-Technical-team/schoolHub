@@ -42,6 +42,27 @@ export const submitAttendance = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: msg, message: msg });
     }
     const user = req.user as any;
+    if (!user || (user.userType !== "ADMIN" && user.userType !== "TEACHER" && user.userType !== "SUPER_ADMIN")) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only teachers and administrators can submit classroom attendance",
+      });
+    }
+
+    // Verify class belongs to user's school
+    if (user.userType !== "SUPER_ADMIN" && user.schoolId) {
+      const cls = await prisma.class.findUnique({
+        where: { id },
+        select: { schoolId: true },
+      });
+      if (!cls || cls.schoolId !== user.schoolId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You cannot submit attendance for another school's class",
+        });
+      }
+    }
+
     let actualName = "Unknown";
     
     if (user?.id) {
@@ -51,9 +72,6 @@ export const submitAttendance = async (req: Request, res: Response) => {
       } else if (user.userType === "TEACHER") {
         const teacher = await prisma.teacher.findUnique({ where: { id: user.id } });
         if (teacher) actualName = teacher.name;
-      } else if (user.userType === "STUDENT") {
-        const student = await prisma.student.findUnique({ where: { id: user.id } });
-        if (student) actualName = student.name;
       }
     }
 

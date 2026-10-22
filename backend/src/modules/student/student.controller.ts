@@ -218,6 +218,13 @@ export const getStudentById = async (req: Request, res: Response) => {
       });
     }
 
+    if (currentUserType === UserRole.ADMIN && req.user!.schoolId && profile.schoolId !== req.user!.schoolId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: You can only view profiles of students in your school",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: profile,
@@ -266,12 +273,28 @@ export const getStudentAttendance = async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query;
     const { userType: currentUserType, id: currentUserId } = req.user!;
 
-    // Admins and teachers can view. Students/Parents can view if it's them.
+    // Admins and teachers can view. Students can view if it's them. Parents can view if linked.
     if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
       return res.status(403).json({
         success: false,
         message: "You can only view your own attendance",
       });
+    }
+
+    if (currentUserType === UserRole.PARENT) {
+      const isLinked = await prisma.parentChildLink.findFirst({
+        where: {
+          parentId: currentUserId,
+          studentId: studentId as string,
+          status: { in: ["active", "ACCEPTED", "Active"] },
+        },
+      });
+      if (!isLinked) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You are not connected to this student",
+        });
+      }
     }
 
     if (currentUserType === UserRole.TEACHER) {
@@ -444,9 +467,24 @@ export const getStudentHistory = async (req: Request, res: Response) => {
     const { id: studentId } = req.params;
     const { userType: currentUserType, id: currentUserId } = req.user!;
 
-    // Security check: if not admin, maybe check if it's the student themselves or a parent
     if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    if (currentUserType === UserRole.PARENT) {
+      const isLinked = await prisma.parentChildLink.findFirst({
+        where: {
+          parentId: currentUserId,
+          studentId: studentId as string,
+          status: { in: ["active", "ACCEPTED", "Active"] },
+        },
+      });
+      if (!isLinked) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You are not connected to this student",
+        });
+      }
     }
 
     if (currentUserType === UserRole.TEACHER) {

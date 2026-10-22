@@ -54223,4 +54223,10 @@ Timed out fetching a new connection from the connection pool. More info: http://
     at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
     at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2824:21)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2824:21)Error: schoolId is required for admin class listing
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:274:13)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:197:41)
+    at Layer.handleRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\router\lib\route.js:157:13)
+    at authenticateToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\middleware\authMiddleware.ts:158:5)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)

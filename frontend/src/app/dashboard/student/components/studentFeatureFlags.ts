@@ -8,6 +8,7 @@ export const STUDENT_FEATURE_FLAGS = {
   attendance: true,
   exams: true,
   documents: false,
+  offlineGrades: true,
 
   // === COMMUNICATION ===
   messages: false,

@@ -10,6 +10,7 @@ import {
   Image,
   Font,
 } from '@react-pdf/renderer';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 const styles = StyleSheet.create({
   page: {
@@ -223,14 +224,8 @@ const styles = StyleSheet.create({
   },
 });
 
-const getGrade = (score: number) => {
-  if (score >= 90) return 'A+';
-  if (score >= 80) return 'A';
-  if (score >= 70) return 'B';
-  if (score >= 60) return 'C';
-  if (score >= 50) return 'D';
-  if (score >= 40) return 'E';
-  return 'F';
+const getGrade = (score: number, gradingSystem?: any) => {
+  return getGradeEvaluation(score, gradingSystem).grade;
 };
 
 interface InstitutionComprehensiveReportProps {
@@ -333,7 +328,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Mean Aggregate</Text>
-            <Text style={styles.summaryValue}>{avgScore}% ({getGrade(parseFloat(avgScore))})</Text>
+            <Text style={styles.summaryValue}>{avgScore}% ({getGrade(parseFloat(avgScore), school?.gradingSystem)})</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Gross Pass Rate</Text>
@@ -378,7 +373,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
                         <Text style={[styles.rowText, styles.colDate]}>{new Date(exam.startDate || exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
                         <Text style={[styles.rowText, styles.colStudents]}>{eAttempts.length}</Text>
                         <Text style={[styles.rowText, styles.colAvg]}>{eAvg}%</Text>
-                        <Text style={[styles.rowText, styles.colGrade, { fontWeight: 'bold', color: '#10B981' }]}>{getGrade(eAvgScore)}</Text>
+                        <Text style={[styles.rowText, styles.colGrade, { fontWeight: 'bold', color: '#10B981' }]}>{getGrade(eAvgScore, school?.gradingSystem)}</Text>
                         <Text style={[styles.rowText, styles.colPass]}>{ePass}%</Text>
                       </View>
                     );
@@ -396,7 +391,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
                   <Text style={styles.performerRank}>{i + 1}.</Text>
                   <Text style={styles.performerName}>{student.name}</Text>
                   <Text style={styles.performerClass}>{student.class || 'Unknown Class'}</Text>
-                  <Text style={styles.performerScore}>{student.score.toFixed(1)}% ({getGrade(student.score)})</Text>
+                  <Text style={styles.performerScore}>{student.score.toFixed(1)}% ({getGrade(student.score, school?.gradingSystem)})</Text>
                 </View>
               ))}
             </View>

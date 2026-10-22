@@ -2,6 +2,32 @@ import { Request, Response } from "express";
 import { handleError } from "../../utils/error-handler";
 import * as assignmentService from "./assignment.service";
 
+/**
+ * Validates and resolves the schoolId for assignment operations.
+ * Prevents client header spoofing across school boundaries.
+ */
+const getValidatedSchoolId = (req: Request): string | null => {
+  const user = req.user;
+  if (!user) return null;
+
+  if (user.userType === "SUPER_ADMIN") {
+    const header = req.headers["x-school-id"];
+    const id = Array.isArray(header) ? header[0] : (header as string);
+    return id || user.schoolId || null;
+  }
+
+  const userSchoolId = user.schoolId || (user as any).school?.id;
+  const clientHeader = req.headers["x-school-id"];
+  const suppliedId = Array.isArray(clientHeader) ? clientHeader[0] : (clientHeader as string);
+
+  // If client supplied a header, it must match user's assigned school
+  if (suppliedId && suppliedId !== "undefined" && userSchoolId && suppliedId !== userSchoolId) {
+    return null;
+  }
+
+  return userSchoolId || suppliedId || null;
+};
+
 export const getStudentAssignments = async (req: Request, res: Response) => {
   try {
     const studentId = req.user?.id;
@@ -44,11 +70,11 @@ export const getAssignmentById = async (req: Request, res: Response) => {
 
 export const getTeacherAssignmentById = async (req: Request, res: Response) => {
   try {
-    const schoolId = req.headers["x-school-id"] as string;
+    const schoolId = getValidatedSchoolId(req);
     const { id } = req.params;
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, error: "Missing school ID" });
+      return res.status(403).json({ success: false, error: "Access denied or missing school ID" });
     }
 
     const safeId = Array.isArray(id) ? id[0] : id as string;
@@ -82,10 +108,10 @@ export const submitAssignment = async (req: Request, res: Response) => {
 export const getTeacherAssignments = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const schoolId = req.headers["x-school-id"] as string;
+    const schoolId = getValidatedSchoolId(req);
 
-    if (!userId || !schoolId || schoolId === "undefined") {
-      return res.status(400).json({ success: false, error: "Missing or invalid school ID" });
+    if (!userId || !schoolId) {
+      return res.status(403).json({ success: false, error: "Access denied or missing school ID" });
     }
 
     const { status, page = "1", limit = "10" } = req.query;
@@ -107,10 +133,10 @@ export const getTeacherAssignments = async (req: Request, res: Response) => {
 export const createAssignment = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const schoolId = req.headers["x-school-id"] as string;
+    const schoolId = getValidatedSchoolId(req);
 
-    if (!userId || !schoolId || schoolId === "undefined") {
-      return res.status(400).json({ success: false, error: "Missing or invalid school ID" });
+    if (!userId || !schoolId) {
+      return res.status(403).json({ success: false, error: "Access denied or missing school ID" });
     }
 
     const {
@@ -200,13 +226,12 @@ export const reorderQuestions = async (req: Request, res: Response) => {
 
 export const updateAssignmentStatus = async (req: Request, res: Response) => {
   try {
-    const headerSchoolId = req.headers["x-school-id"];
-    const schoolId = Array.isArray(headerSchoolId) ? headerSchoolId[0] : headerSchoolId as string;
+    const schoolId = getValidatedSchoolId(req);
     const { assignmentId } = req.params;
     const { status } = req.body;
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, error: "Missing school ID" });
+      return res.status(403).json({ success: false, error: "Access denied or missing school ID" });
     }
 
     if (status !== "DRAFT" && status !== "PUBLISHED") {
@@ -228,11 +253,10 @@ export const updateAssignmentSettings = async (req: Request, res: Response) => {
   try {
     const { assignmentId } = req.params;
     const safeAssignmentId = Array.isArray(assignmentId) ? assignmentId[0] : assignmentId as string;
-    const schoolIdHeader = req.headers["x-school-id"];
-    const schoolId = Array.isArray(schoolIdHeader) ? schoolIdHeader[0] : schoolIdHeader as string;
+    const schoolId = getValidatedSchoolId(req);
     
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "Missing school ID" });
+      return res.status(403).json({ success: false, message: "Access denied or missing school ID" });
     }
 
     const data = await assignmentService.updateAssignmentSettingsService(safeAssignmentId, schoolId, req.body);
@@ -246,11 +270,10 @@ export const deleteAssignment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const safeId = Array.isArray(id) ? id[0] : id as string;
-    const headerSchoolId = req.headers['x-school-id'];
-    const schoolId = Array.isArray(headerSchoolId) ? headerSchoolId[0] : headerSchoolId as string;
+    const schoolId = getValidatedSchoolId(req);
     
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: 'Missing school ID' });
+      return res.status(403).json({ success: false, message: "Access denied or missing school ID" });
     }
 
     const userId = req.user?.id;
@@ -269,11 +292,10 @@ export const gradeSubmission = async (req: Request, res: Response) => {
     const safeAssignmentId = Array.isArray(id) ? id[0] : id as string;
     const safeSubId = Array.isArray(subId) ? subId[0] : subId as string;
     
-    const schoolIdHeader = req.headers['x-school-id'];
-    const schoolId = Array.isArray(schoolIdHeader) ? schoolIdHeader[0] : schoolIdHeader as string;
+    const schoolId = getValidatedSchoolId(req);
     
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: 'Missing school ID' });
+      return res.status(403).json({ success: false, message: "Access denied or missing school ID" });
     }
 
     const { grades } = req.body;

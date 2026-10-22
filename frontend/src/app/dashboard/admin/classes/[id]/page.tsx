@@ -15,6 +15,7 @@ import ClassQRCodeModal from './components/ClassQRCodeModal';
 import TeachersTab from './components/TeachersTab';
 import Breadcrumbs from './components/students/components/Breadcrumbs';
 import AnalyticsTab from './components/analytics/AnalyticsTab';
+import OfflineGradesDashboard from '../../offline-grades/components/OfflineGradesDashboard';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
@@ -271,6 +272,11 @@ export default function ClassDetailsPage() {
       id: 'exams', 
       label: 'Exams' , 
       content: <ClassExamsPage exams={(classData as any)?.exams || []} classData={classData} /> 
+    },
+    { 
+      id: 'offline-grades', 
+      label: 'Offline Grades', 
+      content: <OfflineGradesDashboard defaultClassId={id} /> 
     },
     { 
       id: 'attendance', 

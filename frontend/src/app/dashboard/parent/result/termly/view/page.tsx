@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useChildResults, useChildDetails } from "@/lib/api/hooks/useParentChildren";
+import { useParentStore } from "@/lib/api/hooks/useParentStore";
+import { getGradeEvaluation } from "@/utils/gradingSystem";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -85,17 +87,9 @@ function getScoreColor(total: number | null): string {
   return "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50";
 }
 
-function getGradeLetter(total: number | null): string {
+function getGradeLetter(total: number | null, customGradingSystem?: unknown[]): string {
   if (total == null) return "—";
-  if (total >= 75) return "A1";
-  if (total >= 70) return "B2";
-  if (total >= 65) return "B3";
-  if (total >= 60) return "C4";
-  if (total >= 55) return "C5";
-  if (total >= 50) return "C6";
-  if (total >= 45) return "D7";
-  if (total >= 40) return "E8";
-  return "F9";
+  return getGradeEvaluation(total, customGradingSystem).grade;
 }
 
 function NACell() {
@@ -113,9 +107,17 @@ function ResultViewInner() {
   const term      = searchParams.get("term") ?? "";
   const childId   = searchParams.get("childId") ?? "";
 
-  const { data: rawResults = [], isLoading } = useChildResults(childId || null);
-  const { data: childDetails } = useChildDetails(childId || null);
+  const { selectedChildId } = useParentStore();
+  const effectiveChildId = childId || selectedChildId || "";
+
+  const { data: rawResults = [], isLoading } = useChildResults(effectiveChildId || null);
+  const { data: childDetails } = useChildDetails(effectiveChildId || null);
   const results = (Array.isArray(rawResults) ? rawResults : []) as TermResultGroup[];
+
+  const schoolGradingSystem = useMemo(() => {
+    const raw = childDetails?.school?.gradingSystem;
+    return Array.isArray(raw) ? (raw as unknown[]) : undefined;
+  }, [childDetails?.school?.gradingSystem]);
 
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -196,7 +198,7 @@ function ResultViewInner() {
     const tableData = (group?.subjectResults || []).map((subject, index) => {
       const released = Boolean(subject.scoresRevealed);
       const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-      const grade = released && total != null ? getGradeLetter(total) : "—";
+      const grade = released && total != null ? getGradeLetter(total, schoolGradingSystem) : "—";
       const assignment = released ? (subject.assignmentScore != null ? String(subject.assignmentScore) : "—") : "N/A";
       const ca = released ? ((subject.caScore ?? subject.quizScore) != null ? String(subject.caScore ?? subject.quizScore) : "—") : "N/A";
       const exam = released ? (subject.examScore != null ? String(subject.examScore) : "—") : "N/A";
@@ -313,7 +315,17 @@ function ResultViewInner() {
                 <span className="opacity-60 text-xs">•</span>
                 <span className="text-xs font-medium opacity-90">{group.session?.name || "Academic Session"}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black mt-1 leading-tight tracking-tight">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="font-bold text-white text-base sm:text-lg">
+                  {childDetails?.name || "Student"}
+                </span>
+                {childDetails?.studentCode && (
+                  <span className="text-[10px] sm:text-[11px] bg-white/20 px-2 py-0.5 rounded-md font-semibold tracking-wide">
+                    ID: {childDetails.studentCode}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-lg sm:text-2xl font-black mt-0.5 leading-tight tracking-tight">
                 {group.class?.name || "Class Cohort"}
               </h1>
               <p className="text-xs sm:text-sm opacity-80 mt-0.5">
@@ -478,7 +490,7 @@ function ResultViewInner() {
             {filteredSubjects.map((subject) => {
               const released = Boolean(subject.scoresRevealed);
               const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-              const grade = getGradeLetter(total);
+              const grade = getGradeLetter(total, schoolGradingSystem);
 
               return (
                 <div 
@@ -570,7 +582,7 @@ function ResultViewInner() {
                   {filteredSubjects.map((subject) => {
                     const released = Boolean(subject.scoresRevealed);
                     const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-                    const grade = getGradeLetter(total);
+                    const grade = getGradeLetter(total, schoolGradingSystem);
 
                     return (
                       <tr

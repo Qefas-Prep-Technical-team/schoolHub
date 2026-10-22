@@ -46,7 +46,8 @@ import {
     LogOut,
     Copy,
     LucideIcon,
-    CreditCard
+    CreditCard,
+    FileSpreadsheet
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -72,6 +73,7 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: School, label: "Class", href: "/dashboard/parent/class", featureKey: "classes" as ParentFeatureFlagKey, section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/dashboard/parent/exams&results", featureKey: "results", section: "core" },
+    { icon: FileSpreadsheet, label: "Offline Results", href: "/dashboard/parent/offline-grades", featureKey: "offlineGrades", section: "core" },
     { icon: School, label: "Final Results", href: "/dashboard/parent/result/termly", featureKey: "results", section: "core" },
     { icon: BarChart3, label: "Performance", href: "/dashboard/parent/performance", featureKey: "performance", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/parent/attendance", featureKey: "attendance", section: "core" },
@@ -129,6 +131,7 @@ export function ParentSidebar() {
         const currentFeatures = { ...PARENT_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
 
         const filtered = parentMenuItems.filter(item => {
+            if (item.featureKey === 'offlineGrades') return true;
             // Map 'results' to 'grades' for consistency with schema/seed
             const key = item.featureKey === 'results' ? 'grades' : item.featureKey;
             return !!(currentFeatures as any)[key];

@@ -37,7 +37,330 @@
 
 ## Next Action
 
-- Swap Paystack test keys to live keys in deployment environments.
+### Thursday, October 22, 2026 (Comprehensive Backend Multi-Tenancy & Authorization Security Audit)
+
+- **Backend Multi-Tenancy & Authorization Security Audit ([backend_security_audit_report.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend_security_audit_report.md))**:
+    - [x] **Audit Scope & Threat Modeling**:
+        - Conducted comprehensive audit of backend controllers, services, and middlewares covering cross-school tenant leaks, teacher/student access boundaries, parent-child IDORs, and financial isolation.
+    - [x] **Key Vulnerabilities Catalogued**:
+        - **SEC-01 (Critical)**: Universal School Admin bypass in `validateSchoolAccess` (`modules/school/school.controller.ts`) allowing any school admin to query/modify any other school.
+        - **SEC-02 (Critical)**: Global subjective student exam answers and papers leaked in `getManualReviewQueueService` (`modules/exam/exam-review.service.ts`) when `examId` is omitted.
+        - **SEC-03 (Critical)**: Missing school ownership verification on financial analytics (`/api/finance/analytics/:schoolId`) and settlement account setup (`/api/finance/setup/:schoolId`).
+        - **SEC-04 (Critical)**: Zero authentication/authorization gating on student terminal evaluations (`/api/students/:id/termly-evaluation`).
+        - **SEC-05 (High)**: Exam question & paper leakage across schools and classes in `startExamAttemptService` (`modules/exam/exam-attempt.service.ts`).
+        - **SEC-06 (High)**: Parent IDOR in `getChildAssignments` (`modules/parent/parent.controller.ts`) missing `parentChildLink` validation.
+        - **SEC-07 (High)**: Parent IDOR in student attendance & history endpoints (`modules/student/student.controller.ts`).
+        - **SEC-08 (High)**: Behavioral profile & alert notes accessible to non-linked students and parents (`modules/student/behaviourProfile.controller.ts`).
+        - **SEC-09 (High)**: Cross-school grade leakage in `/api/grades/hub` for non-teacher accounts.
+        - **SEC-10 (Medium)**: Student accounts permitted to submit classroom attendance registers (`modules/class/attendance.controller.ts`).
+        - **SEC-11 (Medium)**: Class roster and enrolled student metadata exposed across schools in `getSingleClassService`.
+        - **SEC-12 (Medium)**: Untrusted client `x-school-id` header in assignment endpoints.
+    - [x] **Deliverable Generated**:
+        - Generated complete report with exact line numbers, attack mechanics, and code fixes in [backend_security_audit_report.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend_security_audit_report.md).
+    - [x] **Remediations Implemented & Zero-Error Compilation**:
+        - Applied fixes across all 12 vulnerabilities:
+            1. Restructured `validateSchoolAccess` in [school.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/school/school.controller.ts) so local `ADMIN` cannot access other schools.
+            2. Added tenant `schoolId` filter to `getManualReviewQueueService` and `markSubjectiveAnswerService` in [exam-review.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-review.service.ts) and [exam-review.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-review.controller.ts).
+            3. Added `requireRoles` middleware in [authMiddleware.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts) and locked down [finance.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.route.ts) and [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts) with strict `schoolId` ownership and parent-child payment verification.
+            4. Secured [termlyEvaluation.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/termlyEvaluation.controller.ts) requiring teacher/admin roles and matching school tenant for mutation, and student/linked parent/same school for reads.
+            5. Enforced `student.schoolId === exam.schoolId`, cohort class enrollment, and department matching in `startExamAttemptService` in [exam-attempt.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-attempt.service.ts).
+            6. Added `parentChildLink` validation to `getChildAssignments` in [parent.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/parent/parent.controller.ts).
+            7. Added `parentChildLink` validation to `getStudentAttendance`, `getStudentHistory`, and school check on `getStudentById` in [student.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.controller.ts).
+            8. Enforced student self-check, parent-child link, and admin school isolation on behavioral profiles in [behaviourProfile.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/behaviourProfile.controller.ts).
+            9. Enforced connected school tenant check on `getGradeHub` and `bulkCreateGrades` in [grade.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.controller.ts) for all non-superadmin users.
+            10. Disallowed student attendance submissions and added class school isolation in [attendance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/attendance.controller.ts).
+            11. Enforced parent linked child class enrollment in `getClassDetails` in [class.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.controller.ts).
+            12. Replaced unvalidated client `x-school-id` headers with `getValidatedSchoolId` helper in [assignment.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/assignment/assignment.controller.ts).
+        - Executed `npx tsc --noEmit` on backend: **Exit Code 0, 0 errors**.
+
+### Thursday, October 22, 2026 (Teacher Offline Grades Sidebar Fix & Parent Final Results 7-Day Recency Restriction)
+
+- **Teacher Sidebar Offline Grades Activation & Database Sync ([app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/app-sidebar.tsx), [TeacherMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TeacherMobileDrawer.tsx), [TopNavBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TopNavBar.tsx))**:
+    - [x] **PlatformFeature Database Record**:
+        - Registered and enabled `offlineGrades` in the Prisma `PlatformFeature` table with `teacherEnabled: true`, `studentEnabled: true`, `parentEnabled: true`, and `adminEnabled: true` so the `/platform/config/features/teacher` API endpoint consistently delivers `{ offlineGrades: true }`.
+    - [x] **Teacher Sidebar & Mobile Drawer Guaranteed Access**:
+        - Updated `AppSidebar.tsx` and `TeacherMobileDrawer.tsx` to explicitly safeguard `offlineGrades: true` in `currentFeatures` and in the navigation item filter `if (item.featureKey === 'offlineGrades') return true;`.
+        - Updated `TopNavBar.tsx` quick search filter to ensure the Offline Grades route (`/dashboard/teacher/offline-grades`) is always indexed and accessible.
+- **Parent Final Results 7-Day Recency & Released Scores Enforcement ([FinalResultsBanner.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/FinalResultsBanner.tsx))**:
+    - [x] **7-Day Window Restriction**:
+        - Restricted the visibility window from 14 days down to 7 days (`SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000`).
+    - [x] **Revealed Scores Precondition**:
+        - Enforced that the banner strictly requires `revealedCount > 0` and at least one revealed subject or published result group to have been released/created within the last 7 days (`diff >= 0 && diff <= SEVEN_DAYS_MS`).
+    - [x] **Production Build & Typecheck Verification**:
+        - Frontend: `npm run build` completed with **exit code 0** (all static and dynamic routes compiled, Turbopack succeeded).
+        - Backend: `npx tsc --noEmit` completed with **exit code 0** (0 type errors).
+
+### Thursday, October 22, 2026 (Parent Offline Results Workspace & Sidebar Integration)
+
+- **Parent Offline Results Workspace & Sidebar Navigation ([offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/offline-grades/page.tsx), [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/app-sidebar.tsx), [parentFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/parentFeatureFlags.ts), [QuickActions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/QuickActions.tsx))**:
+    - [x] **Parent Sidebar & Mobile Navigation**:
+        - Added `offlineGrades: true` under core features in `parentFeatureFlags.ts`.
+        - Added **Offline Results** navigation link to the parent sidebar in `app-sidebar.tsx` under the **Children's Progress** section using the `FileSpreadsheet` icon linking to `/dashboard/parent/offline-grades`.
+        - Supported in both desktop expandable sidebar, mobile drawer (`ParentMobileDrawer.tsx`), and Command+K global search (`TopNavBar.tsx`).
+    - [x] **Dedicated Parent Offline Results Workspace (`/dashboard/parent/offline-grades`)**:
+        - Focuses on the connected child selected in the top nav dropdown (`useParentStore().selectedChildId`), with multi-child switcher pills if the parent has multiple linked students.
+        - Physical classroom marksheet filtering:
+            - Extracts only verified physical offline grade records (`isOfflineGradeRecord`) assigned to the selected child.
+            - Filterable by Session, Term (1st, 2nd, 3rd), Assessment Category (Continuous Assessment, Quiz/Test, Mid-Term Exam, Homework/Project, Terminal Exam), Subject, and Search query.
+        - KPI Stats Strip:
+            - Displays total evaluations on file, continuous assessment average percentage, institutional WAEC grade, top assessment score, and verified released ratio.
+        - Grid & Table Layouts:
+            - Toggleable Grid and Table view modes with category badges, score percentages, date stamps, and teacher feedback remarks.
+        - PDF Export Engine:
+            - One-click official PDF export of the child's offline assessment sheet using `generatePDF`.
+    - [x] **Performance Quick Portals Integration ([QuickActions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/performance/components/QuickActions.tsx))**:
+        - Added **Offline Results** portal shortcut button with `FileSpreadsheet` icon on the Parent Performance overview page.
+    - [x] **TypeScript Strict Zero-Error Verification**: Verified with `npx tsc --noEmit` on `frontend` (0 errors).
+
+### Thursday, October 22, 2026 (Parent Dashboard Final Results & Connected Child Dropdown Sync)
+
+- **Parent Dashboard Final Results Integration ([FinalResultsBanner.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/FinalResultsBanner.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/page.tsx), [view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/view/page.tsx), [termly/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/page.tsx))**:
+    - [x] **Top Nav Connected Child Dropdown Synchronization**:
+        - Integrated with `useParentStore` (`selectedChildId`) and `useParentChildren`, ensuring all published final results queries dynamically focus on whichever child is selected from the top nav dropdown or profile hero switcher.
+        - Graceful fallback: If no child is explicitly selected, defaults to the parent's primary linked child.
+    - [x] **Celebratory Final Results Announcement Banner ([FinalResultsBanner.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/dashboard/FinalResultsBanner.tsx))**:
+        - Replicated the high-impact student final results experience on the parent dashboard home (`/dashboard/parent`) with ambient glowing gradients, celebratory status pills, and verified score badges.
+        - Automatically computes the latest released term summary for the selected child:
+            - Term & Session badge (e.g. `3rd Term • 2023/2024 Session`)
+            - Released subjects ratio (e.g. `11/11 Subjects Released`)
+            - Real-time average percentage and institutional WAEC evaluation (e.g. `86.4% • A+ EXCELLENT`)
+            - Recency detector (highlights `New Final Results Available` if published/updated in the last 14 days)
+        - Direct 1-click CTA buttons:
+            - **"View Final Result"**: Navigates directly to the comprehensive score sheet view (`/dashboard/parent/result/termly/view?sessionId=...&term=...&childId=...`).
+            - **"All Term Results"**: Direct link to the parent's terminal report card archives (`/dashboard/parent/result/termly`).
+    - [x] **Parent Dashboard Home Quick Access ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/page.tsx))**:
+        - Embedded `FinalResultsBanner` directly between `StudentHero` and `Academic Insights`.
+        - Added an **"Final Results"** shortcut button with `Award` icon in the Academic Insights section header next to "View All Metrics".
+    - [x] **Child Details & School Grading System Integration in Report Sheet View ([view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/result/termly/view/page.tsx))**:
+        - Enhanced query to automatically use `childId || selectedChildId`, preventing empty-state bugs when navigating without query parameters.
+        - Integrated child identity in the header banner displaying the student's name, student access code badge, and class cohort.
+        - Upgraded letter grade calculations (`getGradeLetter`) across grid and table views to use the school's configured institutional grading matrix (`schoolGradingSystem`).
+    - [x] **TypeScript Strict Zero-Error Verification**: Verified with `npx tsc --noEmit` on `frontend` (0 errors).
+
+### Thursday, October 22, 2026 (Teacher Dashboard Final Results & Assignment Permission Guard)
+
+- **Teacher Dashboard Final Results Integration ([records.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.service.ts), [records.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.controller.ts), [useTeacher.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useTeacher.ts), [DashboardPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/DashboardPage.tsx), [CreateResultDialog.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/components/CreateResultDialog.tsx), [SubjectResultCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/components/SubjectResultCard.tsx), [records/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/page.tsx), [records/new/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/new/page.tsx))**:
+    - [x] **Backend Subject Assignment Permissions & Department Query Enrichment**:
+        - Updated `getClassSubjectResults` in `records.service.ts` to include full department metadata (`department: { select: { id: true, name: true, code: true } }`) and subject department relationships (`subject.departments.department`).
+        - Enforced strict authorization in `records.controller.ts`:
+            - `createClassSubjectResult`: Added check ensuring a teacher can only create final results for subjects assigned to them (via `teacherId`, `teacherSubjects`, or `timetablePeriods`). Returns HTTP 403 Forbidden otherwise.
+            - `checkEditPermission`: Teachers can only edit/update final result score sheets for subjects assigned to them.
+    - [x] **Teacher Dashboard Home Quick Access**:
+        - In `DashboardPage.tsx`, added a "Final Result" quick tool button linking directly to `/dashboard/teacher/records` with `FileCheck2` icon and modernized 3-column grid layout.
+    - [x] **Teacher Records Directory & Department Badging (`/dashboard/teacher/records`)**:
+        - Integrated `useTeacherSubjects` hook to identify all subjects and departments assigned to the logged-in teacher.
+        - Added scope toggle: **"My Assigned Subjects"** vs **"All School Records"** allowing teachers to focus on their assigned classes/subjects while still having visibility into school-wide records.
+        - Added department filter dropdown dynamically populated from teacher's assigned departments.
+        - Added department badges and **Assigned** vs **Read Only** indicators on both card grid (`SubjectResultCard.tsx`) and table views.
+        - Action buttons dynamically show **"Edit Sheet"** (enabled/emerald) for assigned subjects or **"Preview"** (read-only) for non-assigned subjects.
+    - [x] **Create Result Dialog Scoping & Two-Way Sync (`CreateResultDialog.tsx`)**:
+        - Constrained subject dropdown to only display subjects assigned to the logged-in teacher.
+        - Implemented two-way department sync: selecting a subject auto-selects its linked department; selecting a department automatically filters the available assigned subjects.
+        - Added clear alert notice and disabled submission if the teacher has no assigned subjects in the system.
+    - [x] **Score Entry & Institutional Grading Integration (`/dashboard/teacher/records/new`)**:
+        - Integrated `getGradeEvaluation` and `computeGradePill` using the school's configured `schoolProfile.gradingSystem` (falling back to standardized 9-grade boundaries).
+        - Added Department badge in the header metadata next to Class, Subject, Session, and Term.
+        - Read-Only Banner: When viewing a final result for a subject not assigned to the teacher, an amber banner informs them that the record is in Read-Only mode.
+        - Disabled Actions: Save Results, Publish, Unpublish, Upload Grades, and Sync Papers buttons are disabled for non-assigned subjects.
+        - Input Guarding: Score inputs, behavioral evaluation dropdowns (politeness, punctuality, handwriting), and teacher remarks are disabled for non-assigned subjects, with backend-level enforcement preventing manual submission.
+    - [x] **Teacher Dashboard Offline Grades Sidebar & Dedicated Workspace ([app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/app-sidebar.tsx), [featureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/config/featureFlags.ts), [DashboardPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/DashboardPage.tsx), [teacher/offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/offline-grades/page.tsx))**:
+        - Added `offlineGrades: true` to `FEATURE_FLAGS_TEACHERS` in `frontend/src/lib/config/featureFlags.ts`.
+        - Added **Offline Grades** navigation link to the teacher sidebar in `app-sidebar.tsx` under the **Academic** section using `FileSpreadsheet` icon linking to `/dashboard/teacher/offline-grades`.
+        - Created dedicated teacher offline grades workspace page at `/dashboard/teacher/offline-grades/page.tsx` rendering `OfflineGradesDashboard` with breadcrumb navigation.
+        - Updated `OfflineGradesDashboard.tsx` to safely resolve `schoolId` for both teachers and administrators via `(user as any)?.schoolId || (user as any)?.school?.id || user?.schools?.[0]?.schoolId || user?.tenantId`.
+        - Added **Offline Grades** QuickTool shortcut button on the Teacher Dashboard home page (`DashboardPage.tsx`).
+        - **Teacher Assigned Subject & School Scoping in Offline Grades ([RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), [grade.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.controller.ts), [grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts))**:
+            - **Strict Connected School Isolation**: In `grade.controller.ts` (`getGradeHub` and `bulkCreateGrades`) and `teacher-dashboard.controller.ts`, teachers are strictly bound to their authenticated connected school (`(req.user).schoolId`). Attempts to access or post grades across different schools return HTTP 403 Forbidden.
+            - **Modal Subject Scoping**: Restricted the Subject Curriculum dropdown when authenticated as a teacher (`userType === 'TEACHER'`) in `RecordScoreEntryModal.tsx` to **strictly only the subjects assigned to the logged-in teacher** (matching by subject ID or normalized subject name).
+            - **Directory List Scoping (Backend & Frontend)**: Updated `getGradeHubService` (`grade.service.ts`) and `OfflineGradesDashboard.tsx` to filter offline grades and assessment batches for teachers strictly to their assigned subjects (or assessments created by them) and their assigned classes (`useTeacherClasses`), ensuring teachers do not see unrelated subjects in their grade list.
+            - **Dropdown Safety**: In `OfflineGradesHeader.tsx`, resets subject on class change and renders a prominent notice (`"No assigned subjects for this class"`) instead of text inputs when a selected class has no matching assigned subjects.
+            - **Save Validation**: Added validation guard on score saving to ensure teachers cannot submit offline grades for subjects not assigned to them.
+        - [x] **Teacher Green Theme Visual Identity Across Offline Grades ([OfflineRecordsList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx), [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [OfflineGradesStats.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesStats.tsx), [RosterSpreadsheetView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RosterSpreadsheetView.tsx), [MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx), [OfflineGradesCSVModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesCSVModal.tsx), [OfflineGradesOCRModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesOCRModal.tsx), [teacher/offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/offline-grades/page.tsx))**:
+            - Added `isTeacher?: boolean` prop propagation from `OfflineGradesDashboard` down to all modal and list subcomponents.
+            - **Hero & Action Theming**: When viewed by a teacher, dynamically converted all primary admin indigo buttons, hero background glows, and icon tiles to the authentic teacher emerald green palette (`bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20`, `bg-emerald-500/10` blur glow).
+            - **Navigation Tabs & View Switches**: Transformed the "All Records" tab badge, active state, and grid/table view switchers to emerald when `isTeacher` is true.
+            - **Assessment Cards & Marksheet Roster**: Updated card hover borders, scheduled release chips, progress bars, student avatars, department badges, and filled score inputs to use emerald accents instead of indigo.
+            - **Modals & Importers**: Re-themed CSV Import and AI Vision OCR modal headers, dropzone hover highlights, and apply buttons to teacher emerald.
+            - **Page Shell**: Enhanced `TeacherOfflineGradesPage` with teacher ambient backdrop `bg-[#f0fdf4]/40 dark:bg-slate-950`.
+
+### Thursday, October 22, 2026 (Institutional Grading System Integration with 9-Grade Default Fallback & Inverted Boundary Fix)
+
+- **Institutional Grading System Integration ([gradingSystem.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/gradingSystem.ts), [school-profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/page.tsx), [school-profile/edit/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/edit/page.tsx), [student/offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/offline-grades/page.tsx), [student/grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx), [RosterSpreadsheetView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RosterSpreadsheetView.tsx), [MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx), [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx))**:
+    - [x] **Centralized Grading Evaluation Engine (`frontend/src/utils/gradingSystem.ts`)**:
+        - Created `getGradeEvaluation`, `getEffectiveGradingSystem`, and `computeGradePill` supporting custom admin-stored boundaries (`schoolProfile.gradingSystem`) with the standardized 9-grade fallback:
+            - `A+` (90% - 100%): EXCELLENT
+            - `A` (70% - 89%): VERY GOOD
+            - `B+` (65% - 69%): GOOD
+            - `B` (60% - 64%): CREDIT
+            - `C+` (55% - 59%): CREDIT
+            - `C` (50% - 54%): PASS
+            - `D` (40% - 49%): FAIR
+            - `F` (30% - 39%): WEAK
+            - `F9` (0% - 30%): FAIL
+        - **Inverted Range Boundary Normalization Fix**: Resolved bug where descending entries in the DB (e.g. `{ min: 100, max: 90, grade: 'A+' }`) caused scores like 95% to evaluate against `95 >= 100` (`false`) and mistakenly fall into tier `A`. `getEffectiveGradingSystem` now strictly computes `min = Math.min(val1, val2)` and `max = Math.max(val1, val2)` and sorts descending by `min`.
+    - [x] **Admin Offline Grades Pop-Up Connected**:
+        - Prop-plumbed `gradingSystem={schoolProfile?.gradingSystem}` from [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx) into [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [RosterSpreadsheetView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RosterSpreadsheetView.tsx), and [MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx). Real-time grade badges and remarks now immediately update based on the school's configured percentage boundaries.
+    - [x] **Student Offline Grades Page Connected**:
+        - Replaced hardcoded WAEC functions in `student/offline-grades/page.tsx` with `getGradeEvaluation` driven by `schoolProfile?.gradingSystem`.
+        - PDF export, Grade Tier stat card, Grid cards, and Table list view dynamically display the institution's configured grade letter and remarks.
+    - [x] **Student Term Grades & Transcripts Connected**:
+        - Updated `student/grades/page.tsx` to evaluate attempts and coursework using `schoolProfile?.gradingSystem`.
+    - [x] **Comprehensive Admin Dashboard Grading Unification**:
+        - Audited and updated all remaining grading locations across the admin dashboard to dynamically utilize the school's configured `gradingSystem` (falling back to the institutional 9-grade matrix):
+            1. [records/new/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/new/page.tsx): Updated `calculateGrade` to evaluate with `schoolProfile?.gradingSystem` for score calculations and PDF/Excel exports.
+            2. [records/student/[studentId]/view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/student/[studentId]/view/page.tsx): Connected student published transcript view to `schoolProfile?.gradingSystem` with styled `computeGradePill` badges.
+            3. [GradeForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/(add-grade)/components/GradeForm.tsx): Replaced the 12-tier hardcoded ladder with live evaluation using `getGradeEvaluation(percentage, schoolProfile?.gradingSystem).grade`.
+            4. [InstitutionComprehensiveReport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/InstitutionComprehensiveReport.tsx): Replaced hardcoded boundaries in PDF reports with `school?.gradingSystem`.
+            5. [gradeService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/gradeService.ts): Replaced static 5-tier fallback with `getGradeEvaluation(score).grade`.
+            6. [FinalResultsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/FinalResultsTab.tsx): Replaced hardcoded WAEC logic (`A1-F9`) in list and grid views with dynamic `getGradeEvaluation(percent, schoolProfile?.gradingSystem)`.
+            7. [StudentFinalResultsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/StudentFinalResultsTab.tsx): Connected transcript modal, PDF generator, and CSV exports to `school?.gradingSystem`.
+            8. [FinalResultPDF.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/FinalResultPDF.tsx): Updated official PDF generator to compute subject grades and remarks using `school?.gradingSystem`.
+            9. [ExamGradeReport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/ExamGradeReport.tsx): Replaced WAEC grade calculations with `getGradeEvaluation(percentage, school?.gradingSystem).grade`.
+            10. [SubjectPaperReport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/papers/[id]/components/SubjectPaperReport.tsx): Updated paper performance PDF report to evaluate candidate grades against `school?.gradingSystem`.
+            11. [GradesTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/GradesTable.tsx): Modernized badge styling to dynamic `getGradeColorAndBg(grade.grade)`.
+    - [x] **Admin School Profile Page & Edit Sync**:
+        - On `school-profile/page.tsx`, if no custom boundaries are configured, the page displays the standardized 9-grade matrix by default with a "Default" badge.
+        - On `school-profile/edit/page.tsx`, sanitized min/max bounds on save and added a quick action button `"Load Standardized 9 Grades"` to easily populate or reset to the 9 standard tiers.
+
+### Thursday, October 22, 2026 (Offline Grades Target Department & Student Subject Association Filter)
+
+- **Offline Grades Target Department & Student Subject Association Filter ([class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts), [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [RosterSpreadsheetView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RosterSpreadsheetView.tsx), [MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx), [types.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/types.ts))**:
+    - [x] **Backend Query Enrichment (`getSingleClassService`)**:
+        - Enhanced `getSingleClassService` in `backend/src/modules/class/class.service.ts` to include:
+            1. `subjects.subject.departments.department`: Exposes all `DepartmentSubject` associations for each subject in the class.
+            2. `departments.department.subjects.subject`: Exposes all subjects under each department attached to the class cohort.
+            3. `enrollments.student.department`: Selects full student department metadata (`id`, `name`, `code`).
+    - [x] **Admin Score Entry Modal Target Department Dropdown**:
+        - Expanded the modal header form grid into a clean 5-column responsive layout (`lg:grid-cols-5`) introducing **Target Department** (`Building2` icon) between Class Cohort and Subject Curriculum.
+        - Provides options for `"All Departments / Direct"` (`value: 'ALL'`) and all class-specific or school-wide departments (e.g. Science, Arts, Commercial).
+        - Automatically scopes and prioritizes available subjects in the Subject dropdown to only those belonging to the selected department or general/core class subjects.
+    - [x] **Intelligent Student Association Filtering (Direct & Department)**:
+        - Implemented two-way association checking:
+            1. **Direct Class Subjects**: When a subject has no department restrictions (e.g. Mathematics, English Language), all students enrolled in the class are associated directly.
+            2. **Department Subjects**: When a subject is linked to one or more departments (e.g. Physics in Science, Literature in Arts), students belonging to other departments (or lacking the department) are automatically filtered out.
+            3. **Explicit Department Selection**: Selecting a specific department in the dropdown filters the score recording roster to students of that department.
+            4. **Existing Grade Protection**: If a student already has a saved score/draft for the assessment, they are preserved in the roster so existing records are never lost.
+    - [x] **Department Visual Badging & Responsive Feedback**:
+        - Added department pill indicators under student names in the desktop spreadsheet (`RosterSpreadsheetView.tsx`) and mobile card view (`MobileRosterCardView.tsx`).
+        - Replaced generic "No Students Enrolled" notice with contextual feedback explaining whether students were filtered out due to department mismatch or subject association.
+
+- **Offline Grades Notifications & Subject Dropdown UX ([grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts), [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx))**:
+    - [x] **Secure Notification Dispatch for Offline Grades**:
+        - Updated `bulkCreateGradesService` in `backend/src/modules/grade/grade.service.ts` to dispatch transactional in-app notifications (`prisma.notification.createMany`) to graded students when offline results are published (`status === 'PUBLISHED'`).
+        - **Without Release Date (Immediate Release)**: Sends notification title `"Offline Grade Published: ${subject}"` with full score summary `"Your grade for ${assessmentLabel} in ${subject} has been published. Score: ${score}/${maxMarks}."` and direct link to `/dashboard/student/offline-grades`.
+        - **With Release Date (Scheduled / Future Release)**: Sends notification title `"Assessment Recorded: ${subject}"` notifying students that the assessment has been recorded and scheduled for release on `${releaseDate}`.
+        - **Security & Privacy Gating**: For scheduled releases, the student's score and remarks are **strictly omitted** from notification titles, bodies, and metadata to prevent premature score leakage before the release timestamp.
+        - Wrapped in non-blocking error handling to ensure grade batch commits are never aborted if notification delivery encounters edge-case network issues.
+    - [x] **Admin Modal Subject Dropdown Loading State**:
+        - Added `isLoadingSubjects` prop to `OfflineGradesHeader.tsx` and wired it from `isLoadingClassDetails` in `RecordScoreEntryModal.tsx`.
+        - Replaced premature fallback to text input: while class subjects are fetching (`isLoadingSubjects || isLoadingRoster`), the subject dropdown renders an animated spinning `Loader2` icon with clear `"Loading class subjects..."` text and a `"Fetching"` badge.
+
+### Thursday, October 22, 2026 (Student Portal Offline Grades Navigation & Dedicated Results View)
+
+- **Student Portal Offline Grades Navigation & Dedicated Results View ([app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/app-sidebar.tsx), [studentFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/studentFeatureFlags.ts), [StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx), [student/offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/offline-grades/page.tsx))**:
+    - [x] **Student Navigation Sidebar**:
+        - Added `offlineGrades: true` to `STUDENT_FEATURE_FLAGS` in `studentFeatureFlags.ts`.
+        - Added **Offline Grades** navigation link to the student sidebar in `app-sidebar.tsx` under the **Learning** (core) section using the `FileSpreadsheet` icon linking to `/dashboard/student/offline-grades`.
+        - Updated menu filtering in both desktop `StudentSidebar` and `StudentMobileDrawer` so Offline Grades remains accessible and prioritized for students.
+    - [x] **Dedicated Student Offline Grades Page (`/dashboard/student/offline-grades`)**:
+        - Built comprehensive student offline marks directory displaying published continuous assessment (CA), quizzes/tests, homework/assignments, mid-terms, and terminal examination marks.
+        - **Session & Term Selectors**: Auto-selects current academic session and active term, with support for filtering across terms (1st, 2nd, 3rd) and all sessions.
+        - **KPI Performance Cards**: Computes and highlights total assessments recorded, cumulative weighted continuous assessment average, highest score achieved (with subject attribution), and passed assessments rate (&ge; 50%).
+        - **Category Pills**: Quick filtering by Continuous Assessment (CA), Quizzes & Class Tests, Mid-Term Exams, Homework & Projects, and Terminal Exams.
+        - **Search & Subject Filter**: Dynamic subject selector and live text search across subjects, assessment titles, and instructor feedback.
+        - **View Toggle (Grid vs Table)**:
+            - **Card Grid View**: Displays subject, assessment title, category pill, score progress bar with score obtained vs max marks, WAEC grade pill (A1-F9), and teacher feedback quotes.
+            - **Tabular View**: Formatted responsive table adhering strictly to the `list_grid_design` skill guidelines with distinct colored pills and date stamps.
+            - **Full-Width Responsive Layout**: Removed `max-w-7xl` container constraints, making the entire dashboard view fill 100% of the available horizontal space (`w-full`) with an expanded 4-column responsive grid (`xl:grid-cols-4`) on larger screens.
+            - **Student Grade Isolation & Strict Ownership**: In `grade.controller.ts`, authenticated student accounts are strictly bound to `req.user.id`, ignoring any client-supplied query parameters to prevent viewing another student's marks. In `page.tsx`, records are filtered strictly to the logged-in student's `studentProfile.id` / `user.id`.
+            - **Dummy Data Removal**: Removed all preview dummy states and demo toggle controls; the page now displays exclusively live assessment records published for the logged-in student.
+        - **Transcript PDF Export**: Integrated one-click transcript generation (`Export Transcript`) via `@/utils/pdfGenerator`.
+        - **Security & Privacy Gating**: Backend securely masks `score: null` on upcoming scheduled offline assessments (`releaseDate > now`), rendering them with amber `Coming Soon` locked state until the scheduled timestamp arrives, upon which scores unlock automatically. Immediate releases (`releaseDate: null` or past) render with full scores, WAEC grade badges, and teacher feedback.
+
+### Thursday, October 22, 2026 (Offline Grades Pop-up Dropdowns, Auto-Select Session/Term, Student Access & Scheduled Release Dates)
+
+- **Offline Grades Recording Modal, Student Access & Scheduled Release System ([RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), [OfflineRecordsList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx), [grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts), [academic/grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/grade.service.ts))**:
+    - [x] **Scheduled Release Date Architecture**:
+        - **Database Schema**: Added `"releaseDate" TIMESTAMPTZ` column to PostgreSQL `grades` table on Supabase.
+        - **Prisma Integration**: Updated `model Grade` in `backend/prisma/schema.prisma` with `releaseDate DateTime?` and generated updated Prisma Client.
+        - **Backend Query Gating**: Hardened `getStudentGradesService` (`backend/src/modules/academic/grade.service.ts`) to strictly enforce `{ status: "PUBLISHED", OR: [{ releaseDate: null }, { releaseDate: { lte: now } }] }`, preventing students from accessing draft or future-scheduled offline marks until the scheduled release date/time.
+        - **Batch Persistence**: Updated `bulkCreateGradesService` (`backend/src/modules/grade/grade.service.ts`) to validate, persist, and update `releaseDate` on grade records and audit logs.
+        - **UI Input Picker**: Integrated an optional `datetime-local` **Release Date** picker with calendar indicator in `OfflineGradesHeader.tsx`. Leaving it blank releases immediately upon clicking *Publish Grades*, while selecting a future date locks scores until that timestamp arrives.
+        - **Status Indicators**: Added scheduled release badges (`Clock` icon + target release date) across cards and table rows in `OfflineRecordsList.tsx`.
+    - [x] **Auto-Select Active Session & Term**:
+        - Automatic detection and selection of the current academic session (`isCurrent === true`, `isActive === true`, or `status === 'ACTIVE'`).
+        - Normalization and auto-selection of the active term (`FIRST`, `SECOND`, or `THIRD`).
+        - Dynamic session switching: changing academic session updates `sessionId`, `sessionName`, and synchronizes the session's active term automatically.
+    - [x] **Zero Auto-Selection of Class Cohort**:
+        - Strictly defaults `classId: ''` and `className: ''` when opening the modal fresh so no class is arbitrarily pre-selected.
+        - Displays clean placeholder `"Select Class Cohort"` and disables downstream subject selection until a class cohort is chosen.
+        - Added dedicated empty state panel (`"Select a Class Cohort to Begin"`) in the modal roster workspace showing session/term metadata and guiding the user to choose a class.
+    - [x] **Dropdown & Select Component Polish**:
+        - Configured `z-[70]` and scrollable `max-h-60` containers on all `<SelectContent>` and `<DropdownMenuContent>` portals so dropdowns render smoothly above the modal dialog without clipping or layering issues.
+        - Subject curriculum dropdown dynamically populates from the chosen class cohort and defaults to the class's first subject.
+    - [x] **Comprehensive Security & Data Validation**:
+        - Multi-layer security validation before batch grade mutation:
+            - Validates `schoolId` presence and authenticity.
+            - Verifies that the selected class cohort strictly belongs to the admin's institution.
+            - Sanitizes and bounds `subject` and `assessmentType` strings (max 100 characters).
+            - Validates academic term against strict whitelist (`FIRST`, `SECOND`, `THIRD`).
+            - Enforces non-negative scores (`score >= 0`) and validates that no score exceeds `maxMarks`.
+            - Bounds `maxMarks` (`1 <= maxMarks <= 1000`) and weight multiplier (`0.1 <= weight <= 10`).
+            - Truncates and validates student remarks to 500 characters max.
+        - Backend Bugfix: Safely declared `examId` and `subjectPaperId` in `bulkCreateGradesService` (`backend/src/modules/grade/grade.service.ts`), preventing potential runtime reference errors during bulk grade transactions.
+    - [x] **Student Code Column & Badge Space Expansion**:
+        - Expanded the Student Code column in the desktop spreadsheet ([RosterSpreadsheetView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RosterSpreadsheetView.tsx)) from cramped `w-36` (144px) to `w-60 min-w-[220px]`.
+        - Enlarged the student code badge badge padding to `px-3.5 py-1.5`, font size `text-xs font-bold`, with minimum badge width `min-w-[140px]` to ensure long student registration/matriculation codes never wrap or clip.
+        - Enhanced mobile card student code badge ([MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx)) with `px-2.5 py-1 text-xs font-bold tracking-wider`.
+
+### Thursday, October 22, 2026 (Offline Grades Dedicated Standalone Page & Sidebar Feature)
+
+- **Offline Grades Standalone Feature & Class Details Integration ([offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/page.tsx), [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/app-sidebar.tsx), [adminFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/adminFeatureFlags.ts), [classes/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/page.tsx))**:
+    - [x] **Sidebar Navigation & Permissions**:
+        - Added `offlineGrades: true` to `ADMIN_FEATURE_FLAGS` and role permissions (`["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"]`) in `adminFeatureFlags.ts`.
+        - Added `Offline Grades` navigation item (`FileSpreadsheet` icon) under **Academics** in `app-sidebar.tsx` linking directly to `/dashboard/admin/offline-grades`.
+    - [x] **Created Dedicated Standalone Page (`/dashboard/admin/offline-grades`)**:
+        - Created page route at `frontend/src/app/dashboard/admin/offline-grades/page.tsx` with breadcrumbs and full workspace container.
+    - [x] **Offline Assessment Records Directory Architecture (`OfflineRecordsList.tsx`, `RecordScoreEntryModal.tsx`)**:
+        - Updated page flow so the primary view displays the directory/catalog of offline assessment records we have (CA marksheets, quizzes, midterm tests, exam batches), NOT a raw list of students.
+        - Provides KPI summary cards (Total Records, Student Marks Recorded, Published, Drafts), multi-dimensional filters (Class, Subject, Category, Status), and Grid/List view switcher.
+        - Each record card presents title, subject, class, category pill, graded count progress, class average, pass rate, and actions.
+        - Encapsulated student roster grading into `RecordScoreEntryModal.tsx` which opens on "+ Record New Offline Grade" or "View / Edit Scores", keeping the main page focused cleanly on assessment records.
+    - [x] **Assessment Categorization & Grouping Fixes ([OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), [grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts))**:
+        - **Intelligent Category Normalizer**: Created `normalizeOfflineCategory` at module scope mapping raw strings (`CA`, `QUIZ`, `MIDTERM`, `ASSIGNMENT`, `EXAM`) and title keywords (`Continuous`, `Pop Test`, `Homework`, `Mid-Term`) so records are categorized accurately even when database enum defaults were used.
+        - **Module Scope Placement**: Fixed Turbopack build error by placing `normalizeOfflineCategory` outside the component function at top-level module scope.
+        - **Category-Aware Compound Key**: Fixed batch grouping key to include `normalizedCategory + assessmentTitle + subject + classId + term`, preventing different assessment categories from colliding.
+        - **Accurate Cohort Averages**: Fixed moving average calculation to compute accurate weighted averages (`sumScores / gradedStudents`).
+        - **Backend Query Limit Fix**: Increased default query limit from 10 to 1000 in `getGradeHubService` and `OfflineGradesDashboard.tsx` so all student marks load.
+        - **Strict Offline Isolation Filter**: Added `isOfflineGradeRecord` and `offlineOnly: 'true'` filter to completely exclude CBT exams, online quiz attempts, and digital assignment submissions (`examId`, `examAttemptId`, `subjectExamAttemptId`, `subjectPaperId`, `grade-assignment-*`, `grade-sa-*`).
+    - [x] **Assessment Category Tabs Bar (`OfflineRecordsList.tsx`)**:
+        - Added dedicated category tabs for **Terminal Exams**, **Continuous Assessment (CA)**, **Physical Assignments**, and **Quizzes / Tests** (plus **All Records**).
+        - Each tab displays live record badge counts, active color styling, and immediately filters marksheets.
+        - Synchronized contextual action buttons (`Record New Exam Marksheet`, `Record New CA Marksheet`, `Record New Assignment`, `Record New Quiz / Test`) to auto-populate the modal's default category when opened from that tab.
+    - [x] **Modal & Scoring Workspace Width Expansion**:
+        - Expanded the offline grades score recording modal ([RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx)) from cramped `max-w-4xl` (896px) to a spacious `w-[96vw] max-w-7xl 2xl:max-w-[1500px]` workspace.
+        - Enlarged the companion CSV batch import dialog ([OfflineGradesCSVModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesCSVModal.tsx)) and AI Vision OCR scanner dialog ([OfflineGradesOCRModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesOCRModal.tsx)) to `w-[90vw] sm:w-full max-w-2xl` for comfortable viewing and entry.
+    - [x] **Turbopack / SWC Parser Refactor**:
+        - Replaced nested ternary condition in `OfflineGradesDashboard.tsx` with a clean `renderContent()` dispatcher function, resolving the `Error: Not a pattern` build error.
+    - [x] **Offline Grades Dashboard Architecture (`OfflineGradesDashboard.tsx`)**:
+        - Integrated context configuration: Target Class Cohort, Subject Curriculum, Assessment Category (`CA`, `QUIZ`, `MIDTERM`, `ASSIGNMENT`, `EXAM`), Assessment Name/Label, Max Marks, Weight Multiplier, Academic Session, and Term.
+        - Supported URL query parameter `?classId=...` and `defaultClassId` prop for instant deep-linking from class pages.
+        - Synchronized student roster fetching from class enrollments and pre-filled existing grade records from `gradeService.getAdminGrades`.
+        - Connected batch score persistence mutation (`POST /grades/bulk`) supporting both **Draft** and **Published** states.
+    - [x] **Desktop Spreadsheet View (`RosterSpreadsheetView.tsx`)**:
+        - Implemented rapid keyboard navigation (<kbd>Enter</kbd> / <kbd>↓</kbd> / <kbd>↑</kbd>) to punch scores sequentially across student rows.
+        - Real-time calculation of percentage, letter grade pill (`A+`, `A`, `B`, `C`, `D`, `F`), and validation against Max Marks.
+        - Integrated batch quick-fill controls ("All Max", "All Absent / 0", "Reset").
+    - [x] **Mobile-First Touch Cards View (`MobileRosterCardView.tsx`)**:
+        - Built touch-friendly cards for mobile displays (<768px) with large numeric inputs (`inputMode="decimal"`), letter grade chips, and collapsible teacher remarks.
+        - Implemented floating sticky bottom action bar with live grading tally (`X of Y Graded`), progress percentage, and thumb-friendly Save Draft / Publish buttons.
+    - [x] **Batch Tools & Audit History**:
+        - **CSV Import Modal (`OfflineGradesCSVModal.tsx`)**: One-tap download of class-specific pre-filled roster template and client-side CSV parser to bulk apply scores.
+        - **AI Vision OCR Scan Modal (`OfflineGradesOCRModal.tsx`)**: Camera and image upload scanner integrating with `/grades/ocr` to transcribe handwritten/printed physical grade sheets into student scores.
+        - **Standard PDF & CSV Exports**: Formatted PDF export using the centralized `generatePDF` utility adhering to school profile, metadata, and tabular styles.
+        - **History Table (`OfflineGradesHistoryTable.tsx`)**: Audit table displaying previously recorded offline grade batches with editing, publishing, and delete confirmation dialogs.
+    - [x] **Class Details Page Integration (`classes/[id]/page.tsx`)**:
+        - Embedded the `offline-grades` tab directly into the Class Details page with `defaultClassId={id}` so admins can also manage offline grades directly within the class workspace.
 
 ### Wednesday, October 21, 2026 (Class Details Page & Exams Tab Dark Mode, Header & Tab Focus Polish)
 

@@ -2,25 +2,14 @@
 
 import React, { useState } from 'react';
 import { useMyPublishedResults } from '@/lib/api/hooks/useRecords';
-import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from '@/lib/utils';
 import { GraduationCap, BookOpen, ChevronRight, CheckCircle2, Clock, Eye, Download, FileText, FileSpreadsheet, FileBox } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FinalResultPDF } from './FinalResultPDF';
-
-function getWAECGradeAndRemark(score: number): { grade: string, remark: string } {
-  if (score >= 75) return { grade: 'A1', remark: 'EXCELLENT' };
-  if (score >= 70) return { grade: 'B2', remark: 'VERY GOOD' };
-  if (score >= 65) return { grade: 'B3', remark: 'GOOD' };
-  if (score >= 60) return { grade: 'C4', remark: 'CREDIT' };
-  if (score >= 55) return { grade: 'C5', remark: 'CREDIT' };
-  if (score >= 50) return { grade: 'C6', remark: 'CREDIT' };
-  if (score >= 45) return { grade: 'D7', remark: 'PASS' };
-  if (score >= 40) return { grade: 'E8', remark: 'PASS' };
-  return { grade: 'F9', remark: 'FAIL' };
-}
 
 function getTermLabel(term: string): string {
   const map: Record<string, string> = { FIRST: "1st Term", SECOND: "2nd Term", THIRD: "3rd Term" };
@@ -75,7 +64,8 @@ export default function StudentFinalResultsTab({ studentId, primaryColor }: { st
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: schoolRes } = useSchoolSettings(schoolId);
-  const school = schoolRes?.data;
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const school = schoolProfile || schoolRes?.data;
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   
   // Export Modal State
@@ -122,7 +112,9 @@ export default function StudentFinalResultsTab({ studentId, primaryColor }: { st
       revealed.forEach((sub: any) => {
         const totalScore = (sub.assignmentScore || 0) + (sub.quizScore || 0) + (sub.caScore || 0) + (sub.examScore || 0);
         const percent = sub.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
-        const { grade, remark } = getWAECGradeAndRemark(Number(percent));
+        const evalResult = getGradeEvaluation(Number(percent), school?.gradingSystem);
+        const grade = evalResult.grade;
+        const remark = evalResult.remark;
         
         rows.push({
           "School Name": school?.name || "-",
@@ -349,12 +341,9 @@ export default function StudentFinalResultsTab({ studentId, primaryColor }: { st
                       if (sub.scoresRevealed) {
                         totalScore = (sub.assignmentScore || 0) + (sub.quizScore || 0) + (sub.caScore || 0) + (sub.examScore || 0);
                         percent = sub.classSubjectResult?.examMax ? Math.round((Number(totalScore) / 100) * 100) : totalScore;
-                        const waec = getWAECGradeAndRemark(Number(percent));
-                        grade = waec.grade;
-                        if (Number(percent) >= 75) { color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
-                        else if (Number(percent) >= 65) { color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
-                        else if (Number(percent) >= 50) { color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; }
-                        else { color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                        const evalResult = getGradeEvaluation(Number(percent), school?.gradingSystem);
+                        grade = evalResult.grade;
+                        color = `${evalResult.bg} ${evalResult.color}`;
                       }
 
                       return (

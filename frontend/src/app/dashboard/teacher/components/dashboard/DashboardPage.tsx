@@ -30,7 +30,9 @@ import {
   Calendar, 
   Settings, 
   Share2,
-  LayoutGrid
+  LayoutGrid,
+  FileCheck2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -285,13 +287,27 @@ export default function DashboardPage() {
                         size={14} 
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                       <QuickTool 
                         icon={Plus} 
                         label="Grade" 
                         sub="New Entry" 
                         color="bg-emerald-500" 
                         onClick={() => router.push('/dashboard/teacher/exams&quizzes')}
+                      />
+                      <QuickTool 
+                        icon={FileSpreadsheet} 
+                        label="Offline" 
+                        sub="Grades" 
+                        color="bg-teal-600" 
+                        onClick={() => router.push('/dashboard/teacher/offline-grades')}
+                      />
+                      <QuickTool 
+                        icon={FileCheck2} 
+                        label="Final Result" 
+                        sub="Scores" 
+                        color="bg-indigo-600" 
+                        onClick={() => router.push('/dashboard/teacher/records')}
                       />
                       <QuickTool 
                         icon={Share2} 

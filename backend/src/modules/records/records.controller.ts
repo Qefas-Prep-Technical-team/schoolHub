@@ -38,10 +38,25 @@ const checkEditPermission = async (req: Request, classSubjectResultId?: string, 
     }
   }
 
-  // Teachers are currently allowed if they belong to the same school (we can refine this later if needed)
+  // Teachers are only allowed to edit / record for subjects assigned to them
   if (req.user?.userType === UserRole.TEACHER) {
     if (result && result.schoolId === (req.user as any)?.schoolId) {
-      return true;
+      const teacherId = req.user.id;
+      const isAssigned = await prisma.subject.findFirst({
+        where: {
+          id: result.subjectId,
+          schoolId: result.schoolId,
+          isArchived: false,
+          OR: [
+            { teacherId },
+            { teacherSubjects: { some: { teacherId } } },
+            { timetablePeriods: { some: { teacherId } } }
+          ]
+        }
+      });
+      if (isAssigned) {
+        return true;
+      }
     }
   }
 
@@ -151,6 +166,28 @@ export const createClassSubjectResult = async (req: Request, res: Response, next
     const userId = (req.user as any)?.id || (req.user as any)?.userId;
     const userType = req.user?.userType;
     const userName = (req.user as any)?.name;
+
+    if (userType === UserRole.TEACHER) {
+      const isAssigned = await prisma.subject.findFirst({
+        where: {
+          id: body.subjectId,
+          schoolId,
+          isArchived: false,
+          OR: [
+            { teacherId: userId },
+            { teacherSubjects: { some: { teacherId: userId } } },
+            { timetablePeriods: { some: { teacherId: userId } } }
+          ]
+        }
+      });
+      if (!isAssigned) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only create final results for subjects assigned to you."
+        });
+      }
+    }
+
     const result = await recordsService.createClassSubjectResult(schoolId, { ...body, createdById: userId } as any, userType, userName);
 
     res.status(201).json({

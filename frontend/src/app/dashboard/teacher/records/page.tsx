@@ -16,6 +16,9 @@ import {
   ShieldCheck,
   Clock,
   GraduationCap,
+  Building2,
+  Lock,
+  ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -26,6 +29,7 @@ import {
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useSchoolSubjects, useSchoolDepartments } from '@/lib/api/hooks/useSchool';
+import { useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 import { TeacherPagination } from '@/app/dashboard/teacher/components/TeacherPagination';
 
@@ -52,6 +56,8 @@ export default function RecordsPage() {
   const [selectedSession, setSelectedSession] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [assignmentScope, setAssignmentScope] = useState<'all' | 'assigned'>('assigned');
 
   // Pagination States
   const [subjectPage, setSubjectPage] = useState(1);
@@ -70,6 +76,7 @@ export default function RecordsPage() {
   const { data: sessionsData, isLoading: isLoadingSessions } = useSessions(effectiveSchoolId);
   const { data: subjectsData, isLoading: isLoadingSubjectsList } = useSchoolSubjects(effectiveSchoolId);
   const { data: departmentsData, isLoading: isLoadingDepartments } = useSchoolDepartments(effectiveSchoolId);
+  const { data: teacherSubjectsData, isLoading: isLoadingTeacherSubjects } = useTeacherSubjects(effectiveSchoolId);
 
   const classes = useMemo(() => {
     if (Array.isArray(classesData)) return classesData;
@@ -90,6 +97,43 @@ export default function RecordsPage() {
     if (Array.isArray(departmentsData)) return departmentsData;
     return (departmentsData as { data?: { id: string; name: string }[] })?.data || [];
   }, [departmentsData]);
+
+  const teacherAssignedSubjects = useMemo(() => {
+    return Array.isArray(teacherSubjectsData) ? teacherSubjectsData : [];
+  }, [teacherSubjectsData]);
+
+  const assignedSubjectIdSet = useMemo(() => {
+    return new Set(teacherAssignedSubjects.map((s: any) => s.id));
+  }, [teacherAssignedSubjects]);
+
+  const assignedSubjectNameSet = useMemo(() => {
+    return new Set(teacherAssignedSubjects.map((s: any) => (s.name || '').trim().toLowerCase()));
+  }, [teacherAssignedSubjects]);
+
+  // Extract unique departments associated with the teacher's assigned subjects
+  const teacherAssignedDepartments = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>();
+    teacherAssignedSubjects.forEach((subj: any) => {
+      (subj.departments || []).forEach((dRel: any) => {
+        const dept = dRel.department || dRel;
+        if (dept?.id && !map.has(dept.id)) {
+          map.set(dept.id, { id: dept.id, name: dept.name });
+        }
+      });
+    });
+    return Array.from(map.values());
+  }, [teacherAssignedSubjects]);
+
+  const isRecordAssignedToTeacher = React.useCallback(
+    (res: SubjectResultItem) => {
+      if (res.createdById && res.createdById === user?.id) return true;
+      if (res.subjectId && assignedSubjectIdSet.has(res.subjectId)) return true;
+      const name = (res.subject?.name || res.name || '').trim().toLowerCase();
+      if (name && assignedSubjectNameSet.has(name)) return true;
+      return false;
+    },
+    [user?.id, assignedSubjectIdSet, assignedSubjectNameSet]
+  );
 
   // Results Query Hooks
   const { data: rawSubjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
@@ -141,22 +185,59 @@ export default function RecordsPage() {
   // Filtered Subject Results
   const filteredSubjectResults = useMemo(() => {
     return subjectResults.filter((item) => {
+      // Assignment Scope Filter: Show only teacher's assigned subjects when 'assigned' is active
+      if (assignmentScope === 'assigned' && !isRecordAssignedToTeacher(item)) {
+        return false;
+      }
+
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         const subjectName = (item.subject?.name || item.name || '').toLowerCase();
         const className = (item.class?.name || '').toLowerCase();
         const sessionName = (item.session?.name || '').toLowerCase();
-        if (!subjectName.includes(query) && !className.includes(query) && !sessionName.includes(query)) {
+        const departmentName = (
+          item.department?.name ||
+          item.subject?.departments?.[0]?.department?.name ||
+          ''
+        ).toLowerCase();
+        if (
+          !subjectName.includes(query) &&
+          !className.includes(query) &&
+          !sessionName.includes(query) &&
+          !departmentName.includes(query)
+        ) {
           return false;
         }
       }
+
       if (selectedClass && item.classId !== selectedClass) return false;
       if (selectedSession && item.sessionId !== selectedSession) return false;
       if (selectedTerm && item.term !== selectedTerm) return false;
       if (selectedStatus && item.status !== selectedStatus) return false;
+
+      // Department Filter
+      if (selectedDepartment) {
+        const itemDeptId =
+          item.departmentId ||
+          item.department?.id ||
+          item.subject?.departments?.[0]?.departmentId ||
+          item.subject?.departments?.[0]?.department?.id;
+        if (itemDeptId !== selectedDepartment) return false;
+      }
+
       return true;
     });
-  }, [subjectResults, searchQuery, selectedClass, selectedSession, selectedTerm, selectedStatus]);
+  }, [
+    subjectResults,
+    assignmentScope,
+    isRecordAssignedToTeacher,
+    searchQuery,
+    selectedClass,
+    selectedSession,
+    selectedTerm,
+    selectedStatus,
+    selectedDepartment,
+  ]);
 
   // Filtered Student Results
   const filteredStudentResults = useMemo(() => {
@@ -180,7 +261,13 @@ export default function RecordsPage() {
 
   // Active Filter Detection
   const hasActiveFilters = Boolean(
-    searchQuery || selectedClass || selectedSession || selectedTerm || selectedStatus
+    searchQuery ||
+    selectedClass ||
+    selectedSession ||
+    selectedTerm ||
+    selectedStatus ||
+    selectedDepartment ||
+    assignmentScope !== 'assigned'
   );
 
   const resetFilters = () => {
@@ -189,6 +276,8 @@ export default function RecordsPage() {
     setSelectedSession('');
     setSelectedTerm('');
     setSelectedStatus('');
+    setSelectedDepartment('');
+    setAssignmentScope('assigned');
   };
 
   // Paginated Slices
@@ -260,41 +349,71 @@ export default function RecordsPage() {
 
       {/* Directory & Content Card */}
       <div className="bg-white dark:bg-emerald-950/20 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-emerald-800/40 p-4 sm:p-6 shadow-sm space-y-5">
-        {/* Top Controls: Tabs & View Toggle */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-100 dark:border-emerald-800/30">
+        {/* Top Controls: Tabs, Scope Switcher & View Toggle */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-100 dark:border-emerald-800/30 flex-wrap">
           {/* Tab Switcher */}
-          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setActiveTab('subject')}
-              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                activeTab === 'subject'
-                  ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-emerald-500" />
-              <span>Subject Final Results</span>
-              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                {subjectResults.length}
-              </span>
-            </button>
+          <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+            <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab('subject')}
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  activeTab === 'subject'
+                    ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <BookOpen className="w-4 h-4 text-emerald-500" />
+                <span>Subject Final Results</span>
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  {subjectResults.length}
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('student')}
-              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                activeTab === 'student'
-                  ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Users className="w-4 h-4 text-blue-500" />
-              <span>Students Final Results</span>
-              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
-                {studentResults.length}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('student')}
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  activeTab === 'student'
+                    ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <Users className="w-4 h-4 text-blue-500" />
+                <span>Students Final Results</span>
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                  {studentResults.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Scope Filter for Subject Results: Assigned vs All */}
+            {activeTab === 'subject' && (
+              <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setAssignmentScope('assigned')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    assignmentScope === 'assigned'
+                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  My Assigned Subjects
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssignmentScope('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    assignmentScope === 'all'
+                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  All School Records
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Directory Title & View Switcher */}
@@ -346,7 +465,7 @@ export default function RecordsPage() {
               type="text"
               placeholder={
                 activeTab === 'subject'
-                  ? 'Search by subject name, class, or session...'
+                  ? 'Search by subject name, class, department, or session...'
                   : 'Search by student name, class, or session...'
               }
               value={searchQuery}
@@ -356,7 +475,7 @@ export default function RecordsPage() {
           </div>
 
           {/* Dynamic Dropdowns Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
             {/* Class Filter */}
             <select
               value={selectedClass}
@@ -367,6 +486,20 @@ export default function RecordsPage() {
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Department Filter */}
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer"
+            >
+              <option value="">All Departments</option>
+              {(teacherAssignedDepartments.length > 0 ? teacherAssignedDepartments : departments).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
                 </option>
               ))}
             </select>
@@ -401,7 +534,7 @@ export default function RecordsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer"
+              className="h-11 bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all cursor-pointer col-span-2 sm:col-span-1"
             >
               <option value="">All Statuses</option>
               <option value="PUBLISHED">Published</option>
@@ -438,6 +571,8 @@ export default function RecordsPage() {
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                   {hasActiveFilters
                     ? 'No records match your active search filters. Try clearing or refining your criteria.'
+                    : assignmentScope === 'assigned'
+                    ? 'No final results found for your assigned subjects. Click "Add Final Result" to create one or switch to "All School Records".'
                     : 'Start by creating your first subject final result sheet to compile scores.'}
                 </p>
                 {hasActiveFilters ? (
@@ -462,7 +597,12 @@ export default function RecordsPage() {
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
                 {paginatedSubjectResults.map((item) => (
-                  <SubjectResultCard key={item.id} item={item} currentUserId={user?.id} />
+                  <SubjectResultCard
+                    key={item.id}
+                    item={item}
+                    currentUserId={user?.id}
+                    isAssigned={isRecordAssignedToTeacher(item)}
+                  />
                 ))}
               </div>
             ) : (
@@ -475,6 +615,7 @@ export default function RecordsPage() {
                         <th className="px-5 py-3.5 w-12">#</th>
                         <th className="px-4 py-3.5">Session & Term</th>
                         <th className="px-4 py-3.5">Class</th>
+                        <th className="px-4 py-3.5">Department</th>
                         <th className="px-4 py-3.5">Subject</th>
                         <th className="px-4 py-3.5">Date Saved</th>
                         <th className="px-4 py-3.5">Status</th>
@@ -485,7 +626,13 @@ export default function RecordsPage() {
                       {paginatedSubjectResults.map((res, index) => {
                         const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
                         const isOwner = res.createdById === user?.id;
+                        const isAssigned = isRecordAssignedToTeacher(res);
+                        const canEdit = isAssigned || isOwner;
                         const isPublished = res.status === 'PUBLISHED';
+                        const deptName =
+                          res.department?.name ||
+                          res.subject?.departments?.[0]?.department?.name;
+
                         return (
                           <tr
                             key={res.id}
@@ -504,8 +651,31 @@ export default function RecordsPage() {
                                 {res.class?.name || 'Assigned Class'}
                               </span>
                             </td>
-                            <td className="px-4 py-4 font-bold text-slate-900 dark:text-slate-100">
-                              {res.subject?.name || res.name || 'Subject'}
+                            <td className="px-4 py-4">
+                              {deptName ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                                  <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                                  {deptName}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">None</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 dark:text-slate-100">
+                                  {res.subject?.name || res.name || 'Subject'}
+                                </span>
+                                {canEdit ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                    Assigned
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-slate-400">
+                                    <Lock className="w-2.5 h-2.5" /> Read Only
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-4 py-4 text-xs text-slate-500">
                               {new Date(res.createdAt).toLocaleDateString()}
@@ -531,14 +701,18 @@ export default function RecordsPage() {
                                 type="button"
                                 onClick={() =>
                                   router.push(
-                                    isOwner
+                                    canEdit
                                       ? `/dashboard/teacher/records/new?id=${res.id}`
                                       : `/dashboard/teacher/records/preview?id=${res.id}`
                                   )
                                 }
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                                  canEdit
+                                    ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-500 text-white hover:bg-emerald-600'
+                                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                                }`}
                               >
-                                <span>{isOwner ? 'Edit Sheet' : 'Preview'}</span>
+                                <span>{canEdit ? 'Edit Sheet' : 'Preview'}</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
                               </button>
                             </td>
@@ -708,12 +882,12 @@ export default function RecordsPage() {
         isOpen={isPopupOpen}
         onOpenChange={setIsPopupOpen}
         classes={classes}
-        subjects={subjects}
-        departments={departments}
+        subjects={teacherAssignedSubjects}
+        departments={teacherAssignedDepartments.length > 0 ? teacherAssignedDepartments : departments}
         sessions={sessions}
         isLoadingClasses={isLoadingClasses}
-        isLoadingSubjects={isLoadingSubjectsList}
-        isLoadingDepartments={isLoadingDepartments}
+        isLoadingSubjects={isLoadingTeacherSubjects}
+        isLoadingDepartments={isLoadingTeacherSubjects || isLoadingDepartments}
         isLoadingSessions={isLoadingSessions}
       />
     </div>

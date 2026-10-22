@@ -51,7 +51,8 @@ import {
     MailPlus,
     LogOut,
     Shield,
-    Folder
+    Folder,
+    FileSpreadsheet
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -92,6 +93,7 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
+    { icon: FileSpreadsheet, label: "Offline Grades", href: "/dashboard/admin/offline-grades", featureKey: "offlineGrades", section: "academics" },
     { icon: BookOpenCheck, label: "Exam Setup", href: "/dashboard/admin/exams", featureKey: "exams", section: "academics" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/admin/assignments", featureKey: "assignments", section: "academics" },
     { icon: BookOpenCheck, label: "Subjects", href: "/dashboard/admin/subjects", featureKey: "subjects", section: "academics" },

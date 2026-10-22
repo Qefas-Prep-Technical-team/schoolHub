@@ -22,8 +22,10 @@ import {
   Info,
   ChevronLeft,
   Percent,
-  Trash2
+  Trash2,
+  Sparkles
 } from 'lucide-react';
+import { DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
 
 export default function EditSchoolProfilePage() {
   const router = useRouter();
@@ -85,9 +87,26 @@ export default function EditSchoolProfilePage() {
 
   const handleSave = async () => {
     try {
+      const sanitizedGrading = Array.isArray(schoolData.gradingSystem)
+        ? schoolData.gradingSystem
+            .filter((t: any) => t && (t.grade || t.min !== undefined || t.max !== undefined))
+            .map((t: any) => {
+              const val1 = Number(t.min ?? 0);
+              const val2 = Number(t.max ?? 0);
+              return {
+                grade: String(t.grade || '').trim().toUpperCase(),
+                min: Math.min(val1, val2),
+                max: Math.max(val1, val2),
+              };
+            })
+        : schoolData.gradingSystem;
+
       await updateMutation.mutateAsync({
         schoolId,
-        data: schoolData
+        data: {
+          ...schoolData,
+          gradingSystem: sanitizedGrading,
+        }
       });
       toast.success('Institutional profile updated successfully');
       setHasChanges(false);
@@ -373,15 +392,30 @@ export default function EditSchoolProfilePage() {
                 <SectionHeader title="Grading System Configuration" desc="Set up custom score ranges and their corresponding letter grades." icon={Percent} />
                 
                 <div className="space-y-6">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Grade Boundaries</label>
-                        <p className="text-xs text-slate-500 font-medium">Define the minimum and maximum score for each grade (e.g. A = 70 to 100).</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Grade Boundaries</label>
+                            <p className="text-xs text-slate-500 font-medium">Define the minimum and maximum score for each grade (e.g. A = 70 to 89).</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const formatted = DEFAULT_GRADING_SYSTEM.map(g => ({ grade: g.grade, min: g.min, max: g.max }));
+                                handleChange('gradingSystem', formatted);
+                                toast.info('Loaded standardized 9-grade boundaries (A+ to F9).');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer self-start sm:self-auto"
+                        >
+                            <Sparkles size={13} />
+                            Load Standardized 9 Grades
+                        </button>
                     </div>
 
                     <div className="space-y-3">
                         {(!schoolData.gradingSystem || schoolData.gradingSystem.length === 0) && (
-                            <div className="text-sm text-slate-500 italic px-2 py-4 bg-slate-50 dark:bg-slate-800 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700">
-                                No grading boundaries defined yet.
+                            <div className="text-sm text-slate-500 italic px-2 py-6 bg-slate-50 dark:bg-slate-800 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700 space-y-2">
+                                <p>No custom grading boundaries defined yet.</p>
+                                <p className="text-xs text-slate-400 font-medium">The system is currently using the standardized 9-grade academic matrix (A+ to F9) by default.</p>
                             </div>
                         )}
                         {(schoolData.gradingSystem || []).map((gradeRow: any, idx: number) => (

@@ -1,6 +1,7 @@
 import { ChevronsUpDown } from 'lucide-react';
 import Badge from './ui/Badge';
 import Link from 'next/link';
+import { getGradeColorAndBg } from '@/utils/gradingSystem';
 
 interface Grade {
     id: string;
@@ -25,21 +26,8 @@ export default function GradesTable({ grades, onEdit }: GradesTableProps) {
         if (status === 'fail') {
             return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300';
         }
-
-        switch (grade) {
-            case 'A':
-                return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300';
-            case 'B':
-                return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300';
-            case 'C':
-                return 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300';
-            case 'D':
-                return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300';
-            case 'F':
-                return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300';
-            default:
-                return 'bg-gray-100 dark:bg-gray-900/50 text-gray-800 dark:text-gray-300';
-        }
+        const styling = getGradeColorAndBg(grade);
+        return `${styling.bg} ${styling.color}`;
     };
 
     const getRowClass = (status: 'pass' | 'fail') => {

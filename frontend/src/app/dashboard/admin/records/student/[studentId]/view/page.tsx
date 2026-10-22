@@ -1,6 +1,9 @@
 "use client";
 
 import { useMyPublishedResults } from "@/lib/api/hooks/useRecords";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { computeGradePill } from "@/utils/gradingSystem";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, use } from "react";
@@ -34,24 +37,6 @@ function getTermGradient(term: string): string {
   return map[term] || "from-slate-600 to-slate-700";
 }
 
-function getScoreColor(total: number | null): string {
-  if (total == null) return "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500";
-  if (total >= 70) return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
-  if (total >= 50) return "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
-  if (total >= 40) return "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300";
-  return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
-}
-
-function getGradeLetter(total: number | null): string {
-  if (total == null) return "—";
-  if (total >= 70) return "A";
-  if (total >= 60) return "B";
-  if (total >= 50) return "C";
-  if (total >= 45) return "D";
-  if (total >= 40) return "E";
-  return "F";
-}
-
 function NACell() {
   return (
     <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-600 text-xs italic">
@@ -61,6 +46,10 @@ function NACell() {
 }
 
 function ResultViewInner({ studentId }: { studentId: string }) {
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("sessionId") ?? "";
@@ -285,7 +274,13 @@ function ResultViewInner({ studentId }: { studentId: string }) {
                     {/* Total */}
                     <td className="px-6 py-4 text-center">
                       {released ? (
-                        <span className={`inline-flex items-center justify-center min-w-[3.5rem] px-3 py-1.5 rounded-lg text-sm font-bold ${getScoreColor(total)}`}>
+                        <span className={`inline-flex items-center justify-center min-w-[3.5rem] px-3 py-1.5 rounded-lg text-sm font-bold ${
+                          total == null ? "bg-slate-100 text-slate-400 dark:bg-slate-800" :
+                          total >= 70 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
+                          total >= 50 ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" :
+                          total >= 40 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" :
+                          "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                        }`}>
                           {total != null ? total : "—"}
                         </span>
                       ) : (
@@ -295,11 +290,14 @@ function ResultViewInner({ studentId }: { studentId: string }) {
 
                     {/* Grade */}
                     <td className="px-6 py-4 text-center">
-                      {released ? (
-                        <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full text-sm font-black ${getScoreColor(total)}`}>
-                          {getGradeLetter(total)}
-                        </span>
-                      ) : (
+                      {released && total != null ? (() => {
+                        const gradeInfo = computeGradePill(total, schoolProfile?.gradingSystem);
+                        return (
+                          <span className={`inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2.5 rounded-full text-xs font-black border shadow-xs ${gradeInfo.bg}`}>
+                            {gradeInfo.label}
+                          </span>
+                        );
+                      })() : (
                         <span className="text-slate-300 dark:text-slate-700 font-bold">—</span>
                       )}
                     </td>

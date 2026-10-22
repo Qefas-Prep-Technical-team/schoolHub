@@ -128,6 +128,8 @@ export const useTeacherClasses = (schoolId?: string) => {
     queryKey: [...teacherKeys.all, "classes", { schoolId }],
     queryFn: () => teacherService.getClasses({ schoolId }),
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };
 
@@ -136,5 +138,7 @@ export const useTeacherSubjects = (schoolId?: string) => {
     queryKey: [...teacherKeys.all, "subjects", { schoolId }],
     queryFn: () => teacherService.getSubjects({ schoolId }),
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };

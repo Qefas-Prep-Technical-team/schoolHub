@@ -1,11 +1,12 @@
 import StudentHero from './components/dashboard/StudentHero'
+import FinalResultsBanner from './components/dashboard/FinalResultsBanner'
 import InsightsGrid from './components/dashboard/InsightsGrid'
 import Announcements from './components/dashboard/Announcements'
 import FinancialSummaryCard from './components/dashboard/FinancialSummaryCard'
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import RecentPerformanceChart from './components/dashboard/RecentPerformanceChart';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Award } from 'lucide-react';
 import { HeaderTooltip } from './components/dashboard/HeaderTooltip';
 
 export default function Home() {
@@ -13,6 +14,9 @@ export default function Home() {
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
       {/* Top Section: Student Profile Hero */}
       <StudentHero />
+
+      {/* Prominent Final Results Banner for Connected & Selected Child */}
+      <FinalResultsBanner />
       
       {/* Middle Section: Analytics & Insights */}
       <div className="space-y-4 sm:space-y-6">
@@ -28,13 +32,22 @@ export default function Home() {
               Real-time performance monitoring
             </p>
           </div>
-          <Link 
-            href="/dashboard/parent/performance" 
-            className="w-fit px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 hover:border-orange-500/40 hover:text-orange-600 dark:hover:text-orange-400 transition-all shadow-sm flex items-center gap-1.5 active:scale-[0.99]"
-          >
-            <span>View All Metrics</span>
-            <ChevronRight size={13} />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link 
+              href="/dashboard/parent/result/termly"
+              className="w-fit px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-all shadow-xs flex items-center gap-1.5 active:scale-[0.99]"
+            >
+              <Award size={13} />
+              <span>Final Results</span>
+            </Link>
+            <Link 
+              href="/dashboard/parent/performance" 
+              className="w-fit px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 hover:border-orange-500/40 hover:text-orange-600 dark:hover:text-orange-400 transition-all shadow-sm flex items-center gap-1.5 active:scale-[0.99]"
+            >
+              <span>View All Metrics</span>
+              <ChevronRight size={13} />
+            </Link>
+          </div>
         </div>
         <InsightsGrid />
         <RecentPerformanceChart />

@@ -21,7 +21,7 @@ export function TeacherMobileDrawer() {
   const { data: dynamicFeatures } = useGlobalFeatures('teacher');
 
   const currentFeatures = React.useMemo(() => {
-    return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}) } as Record<FeatureTeacherFlagKey, boolean>;
+    return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true } as Record<FeatureTeacherFlagKey, boolean>;
   }, [dynamicFeatures]);
 
   // Filter groups: strictly hide disabled / "soon" links and exclude empty groups completely
@@ -29,6 +29,7 @@ export function TeacherMobileDrawer() {
     return menuGroups
       .map((group) => {
         const enabledItems = group.items.filter((item) => {
+          if (item.featureKey === 'offlineGrades') return true;
           return !!currentFeatures[item.featureKey];
         });
         return {

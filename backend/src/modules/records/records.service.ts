@@ -12,9 +12,17 @@ export const getClassSubjectResults = async (
   return await prisma.classSubjectResult.findMany({
     where: whereClause,
     include: {
-      session: { select: { name: true } },
-      class: { select: { name: true } },
-      subject: { select: { name: true } },
+      session: { select: { id: true, name: true } },
+      class: { select: { id: true, name: true } },
+      subject: { 
+        select: { 
+          id: true, 
+          name: true, 
+          code: true,
+          departments: { include: { department: true } }
+        } 
+      },
+      department: { select: { id: true, name: true, code: true } },
     },
     orderBy: {
       createdAt: "desc",
