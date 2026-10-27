@@ -10,6 +10,7 @@ import type {
   SubaccountCreateResult,
   BankListEntry,
   SubaccountSyncResult,
+  AccountResolveResult,
 } from './gateway.interface';
 
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || '';
@@ -39,7 +40,9 @@ export class FlutterwaveAdapter implements PaymentGateway {
   async initialize(params: InitializeParams): Promise<InitializeResult> {
     const txRef = generateTxRef();
 
-    const payload = {
+    const subaccountCode = (params.metadata?.['subaccountCode'] || params.metadata?.['subaccountId']) as string | undefined;
+
+    const payload: Record<string, unknown> = {
       tx_ref: txRef,
       amount: params.amount,          // Naira — FLW does NOT use kobo
       currency: 'NGN',
@@ -55,11 +58,19 @@ export class FlutterwaveAdapter implements PaymentGateway {
         is_upgrade: params.metadata?.['is_upgrade'] ?? false,
         is_trial: params.metadata?.['is_trial'] ?? false,
         user_role: params.metadata?.['user_role'],
+        ...params.metadata,
       },
       customizations: {
         title: APP_NAME,
         logo: APP_LOGO,
       },
+      ...(subaccountCode ? {
+        subaccounts: [
+          {
+            id: subaccountCode,
+          }
+        ]
+      } : {}),
     };
 
     try {
@@ -307,6 +318,45 @@ export class FlutterwaveAdapter implements PaymentGateway {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       throw new Error(err.response?.data?.message || err.message || 'Failed to sync subaccount from Flutterwave');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Resolve Account (Flutterwave account name lookup)
+  // ─────────────────────────────────────────────────────────────
+  async resolveAccount(accountNumber: string, bankCode: string): Promise<AccountResolveResult> {
+    try {
+      const response = await flwApi.post<{
+        status: string;
+        message: string;
+        data: {
+          account_number: string;
+          account_name: string;
+        };
+      }>('/accounts/resolve', {
+        account_number: accountNumber,
+        account_bank: bankCode,
+      });
+
+      if (response.data.status !== 'success' || !response.data.data?.account_name) {
+        throw new Error(response.data.message || 'Could not resolve account details');
+      }
+
+      return {
+        accountNumber: response.data.data.account_number,
+        accountName: response.data.data.account_name,
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const rawMessage = err.response?.data?.message || err.message || 'Failed to resolve bank account';
+      if (rawMessage.toLowerCase().includes('invalid account')) {
+        const isTestMode = FLW_SECRET_KEY.includes('_TEST-');
+        const hint = isTestMode
+          ? 'Invalid account number or bank code. In Flutterwave test mode, use test account 0690000031 with Access Bank (044).'
+          : 'Invalid account number or bank code for the selected bank.';
+        throw new Error(hint);
+      }
+      throw new Error(rawMessage);
     }
   }
 }

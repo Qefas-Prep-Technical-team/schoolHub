@@ -37,6 +37,53 @@ export const TabSkeleton = ({ tabId }: { tabId: string }) => {
     );
   }
 
+  if (tabId === "offline-grades") {
+    return (
+      <div className="space-y-6 animate-pulse">
+        {/* Banner Skeleton */}
+        <div className="bg-white dark:bg-emerald-950/60 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-emerald-800/50 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="size-14 sm:size-16 rounded-2xl bg-slate-200 dark:bg-emerald-900/40 shrink-0" />
+            <div className="space-y-2">
+              <div className="h-7 bg-slate-200 dark:bg-emerald-900/40 rounded-lg w-64" />
+              <div className="h-4 bg-slate-200 dark:bg-emerald-900/40 rounded-md w-80 max-w-full" />
+            </div>
+          </div>
+          <div className="h-11 w-44 bg-slate-200 dark:bg-emerald-900/40 rounded-xl" />
+        </div>
+
+        {/* Toolbar Skeleton */}
+        <div className="bg-white dark:bg-emerald-950/60 rounded-2xl p-4 border border-slate-200/80 dark:border-emerald-800/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="h-10 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-full sm:w-80" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="h-10 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-36" />
+            <div className="h-10 bg-slate-200 dark:bg-emerald-900/40 rounded-xl w-32" />
+          </div>
+        </div>
+
+        {/* Cards Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-56 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-200/80 dark:border-emerald-800/50 p-5 flex flex-col justify-between space-y-4 shadow-xs">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="h-4 bg-slate-200 dark:bg-emerald-900/40 rounded w-16" />
+                  <div className="h-4 bg-slate-200 dark:bg-emerald-900/40 rounded w-20" />
+                </div>
+                <div className="h-5 bg-slate-200 dark:bg-emerald-900/40 rounded-lg w-3/4" />
+                <div className="h-3.5 bg-slate-200 dark:bg-emerald-900/40 rounded w-1/2" />
+              </div>
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-emerald-800/40">
+                <div className="h-3 bg-slate-200 dark:bg-emerald-900/40 rounded w-full" />
+                <div className="h-8 bg-slate-100 dark:bg-emerald-900/30 rounded-xl w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Generic List/Table Skeleton for other tabs
   return (
     <div className="bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200/80 dark:border-emerald-800/50 p-6 space-y-4 shadow-sm animate-pulse min-h-[calc(100vh-16rem)]">

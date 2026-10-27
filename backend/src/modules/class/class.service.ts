@@ -316,6 +316,44 @@ export const getClassesService = async ({
   }
 
   if (currentUserType === UserRole.STUDENT) {
+    if (schoolId) {
+      const student = await prisma.student.findUnique({
+        where: { id: currentUserId },
+        select: { schoolId: true },
+      });
+
+      if (!student?.schoolId || student.schoolId !== schoolId) {
+        throw new Error("You are not linked to this school");
+      }
+
+      return prisma.class.findMany({
+        where: {
+          schoolId,
+          status: ClassStatus.ACTIVE,
+        },
+        include: {
+          school: true,
+          teachers: { include: { teacher: { select: { id: true, name: true, email: true, bannerImage: true, gender: true } } } },
+          subjects: { include: { subject: true } },
+          departments: { include: { department: true } },
+          enrollments: {
+            include: {
+              student: {
+                select: {
+                  id: true,
+                  name: true,
+                  studentCode: true,
+                  gender: true,
+                },
+              },
+            },
+          },
+          timetablePeriods: { select: { day: true, startTime: true, endTime: true, subject: { select: { name: true } } } },
+        },
+        orderBy: { name: "asc" },
+      });
+    }
+
     return prisma.classEnrollment.findMany({
       where: { studentId: currentUserId },
       include: {
@@ -401,6 +439,15 @@ export const getSingleClassService = async (classId: string) => {
           endDate: true,
           createdAt: true,
           updatedAt: true,
+          teacherId: true,
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profileImage: true,
+            }
+          },
           subject: {
             select: {
               name: true,
@@ -452,6 +499,9 @@ export const getSingleClassService = async (classId: string) => {
       status: true,
       subjectId: true,
       teacherId: true,
+      attachmentUrl: true,
+      videoUrl: true,
+      referenceUrl: true,
       createdAt: true,
       updatedAt: true,
       _count: {
@@ -461,13 +511,50 @@ export const getSingleClassService = async (classId: string) => {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Resolve creators (Teachers or Admins) for assignments and exams
+  const assignmentTeacherIds = [...new Set(classAssignments.map(a => a.teacherId).filter(Boolean))] as string[];
+  const examTeacherIds = [...new Set(foundClass.exams.map(e => e.teacherId).filter(Boolean))] as string[];
+  const allCreatorIds = [...new Set([...assignmentTeacherIds, ...examTeacherIds])];
+
+  const [creatorTeachers, creatorAdmins] = await Promise.all([
+    prisma.teacher.findMany({
+      where: { id: { in: allCreatorIds } },
+      select: { id: true, name: true, email: true, profileImage: true }
+    }),
+    prisma.admin.findMany({
+      where: { id: { in: allCreatorIds } },
+      select: { id: true, name: true, email: true, profileImage: true }
+    }),
+  ]);
+  const creatorMap = Object.fromEntries([...creatorTeachers, ...creatorAdmins].map(c => [c.id, c]));
+
   const enrichedAssignments = classAssignments.map(a => {
     const subject = foundClass.subjects.find(s => s.subjectId === a.subjectId)?.subject;
-    return { ...a, subject: subject ? { name: subject.name } : null };
+    const creator = a.teacherId ? creatorMap[a.teacherId] || null : null;
+    return {
+      ...a,
+      subject: subject ? { name: subject.name } : null,
+      teacher: creator,
+      instructor: creator,
+      creator,
+      teacherName: creator?.name || null,
+    };
+  });
+
+  // Also ensure exams have their creator resolved even if created by school admin
+  const enrichedExams = foundClass.exams.map(e => {
+    const creator = e.teacher || (e.teacherId ? creatorMap[e.teacherId] || null : null);
+    return {
+      ...e,
+      teacher: creator,
+      creator,
+      teacherName: creator?.name || null,
+    };
   });
 
   const enrichedClass = {
     ...foundClass,
+    exams: enrichedExams,
     assignments: enrichedAssignments,
   };
 
@@ -1258,5 +1345,378 @@ export const sendClassAnnouncementService = async (
   return { 
     success: true, 
     message: `Announcement sent to ${notificationsToCreate.length} recipients.` 
+  };
+};
+
+export const getClassHistoryService = async (classId: string, currentUser: any) => {
+  const foundClass = await prisma.class.findUnique({
+    where: { id: classId },
+    include: {
+      school: {
+        select: { id: true, name: true, logo: true },
+      },
+      teachers: {
+        include: {
+          teacher: {
+            select: { id: true, name: true, email: true, profileImage: true, gender: true },
+          },
+        },
+      },
+      subjects: {
+        include: {
+          subject: {
+            select: { id: true, name: true, code: true },
+          },
+        },
+      },
+      departments: {
+        include: {
+          department: {
+            select: { id: true, name: true, code: true },
+          },
+        },
+      },
+      enrollments: {
+        include: {
+          student: {
+            select: { id: true, name: true, studentCode: true, gender: true, profileImage: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!foundClass) {
+    throw new Error("Class not found");
+  }
+
+  // Permission verification
+  if (currentUser.userType === UserRole.ADMIN) {
+    if (foundClass.schoolId) {
+      const schoolAdmin = await prisma.schoolAdmin.findFirst({
+        where: {
+          adminId: currentUser.id,
+          schoolId: foundClass.schoolId,
+          active: true,
+        },
+      });
+      if (!schoolAdmin) {
+        throw new Error("You are not allowed to view history for this class");
+      }
+    }
+  }
+
+  const schoolId = foundClass.schoolId;
+
+  // 1. Fetch all classes in this school to translate class IDs into readable names
+  const schoolClasses = schoolId
+    ? await prisma.class.findMany({
+        where: { schoolId },
+        select: { id: true, name: true, section: true },
+      })
+    : [];
+  const classNameMap = new Map(
+    schoolClasses.map((c) => [c.id, `${c.name}${c.section ? ` (${c.section})` : ""}`])
+  );
+
+  // 2. Fetch student history records in this school
+  let studentHistories: any[] = [];
+  if (schoolId) {
+    studentHistories = await prisma.studentHistory.findMany({
+      where: { schoolId },
+      include: {
+        student: {
+          select: { id: true, name: true, studentCode: true, profileImage: true, gender: true },
+        },
+      },
+      orderBy: { date: "desc" },
+    });
+  }
+
+  // 3. Fetch published final results
+  const publishedResults = await prisma.classSubjectResult.findMany({
+    where: { classId },
+    include: {
+      subject: { select: { id: true, name: true, code: true } },
+      session: { select: { id: true, name: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  // 4. Fetch behavioural alerts
+  const alerts = await prisma.behaviourAlert.findMany({
+    where: { classId },
+    include: {
+      student: { select: { id: true, name: true, studentCode: true, profileImage: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // 5. Build timeline events
+  interface HistoryTimelineItem {
+    id: string;
+    date: string;
+    type:
+      | "CLASS_CREATED"
+      | "PROMOTION_IN"
+      | "PROMOTION_OUT"
+      | "ENROLLMENT"
+      | "GRADUATION"
+      | "WITHDRAWAL"
+      | "TEACHER_ASSIGNED"
+      | "SUBJECT_ATTACHED"
+      | "RESULT_PUBLISHED"
+      | "BEHAVIOUR_ALERT";
+    category: "lifecycle" | "students" | "academics" | "staff";
+    title: string;
+    description: string;
+    session?: string | null;
+    term?: string | null;
+    actor?: { name: string; role?: string };
+    meta?: Record<string, any>;
+  }
+
+  const events: HistoryTimelineItem[] = [];
+
+  // A. Class creation event
+  events.push({
+    id: `class-created-${foundClass.id}`,
+    date: foundClass.createdAt.toISOString(),
+    type: "CLASS_CREATED",
+    category: "lifecycle",
+    title: "Class Established & Configured",
+    description: `Class ${foundClass.name}${foundClass.section ? ` (${foundClass.section})` : ""} was created with code ${foundClass.classCode}. Level: ${foundClass.level || "Standard"}.`,
+    session: foundClass.session,
+    term: foundClass.term,
+    actor: {
+      name: foundClass.createdByType === "ADMIN" ? "School Administration" : "Class Instructor",
+      role: foundClass.createdByType || "ADMIN",
+    },
+    meta: {
+      classCode: foundClass.classCode,
+      level: foundClass.level,
+      section: foundClass.section,
+      session: foundClass.session,
+      term: foundClass.term,
+    },
+  });
+
+  // B. Student Enrollments
+  foundClass.enrollments.forEach((enrollment) => {
+    events.push({
+      id: `enrollment-${enrollment.id}`,
+      date: enrollment.enrolledAt.toISOString(),
+      type: "ENROLLMENT",
+      category: "students",
+      title: "Student Enrolled in Class",
+      description: `${enrollment.student.name} (${enrollment.student.studentCode}) was enrolled into the roster.`,
+      session: foundClass.session,
+      term: foundClass.term,
+      meta: {
+        student: enrollment.student,
+        session: foundClass.session,
+        term: foundClass.term,
+      },
+    });
+  });
+
+  // C. Student History Records (Promotions & Exits)
+  let countPromotedOut = 0;
+  let countPromotedIn = 0;
+  let countGraduated = 0;
+
+  studentHistories.forEach((sh) => {
+    const meta = sh.meta as any;
+    const isFromThisClass = meta?.fromClassId === classId;
+    const isToThisClass = meta?.toClassId === classId;
+
+    if (sh.eventType === "PROMOTED") {
+      if (isFromThisClass) {
+        countPromotedOut++;
+        const destination = classNameMap.get(meta?.toClassId) || "Senior Class";
+        events.push({
+          id: `promoted-out-${sh.id}`,
+          date: (sh.date || sh.createdAt).toISOString(),
+          type: "PROMOTION_OUT",
+          category: "students",
+          title: "Student Promoted to Higher Level",
+          description: `${sh.student.name} was promoted out of ${foundClass.name} to ${destination}.`,
+          session: meta?.session || foundClass.session,
+          term: meta?.term || foundClass.term,
+          actor: { name: sh.performedBy || "Administrator", role: "ADMIN" },
+          meta: {
+            student: sh.student,
+            toClassId: meta?.toClassId,
+            toClassName: destination,
+            session: meta?.session || foundClass.session,
+            term: meta?.term || foundClass.term,
+            achievements: meta?.achievements,
+          },
+        });
+      } else if (isToThisClass) {
+        countPromotedIn++;
+        const origin = classNameMap.get(meta?.fromClassId) || "Previous Class";
+        events.push({
+          id: `promoted-in-${sh.id}`,
+          date: (sh.date || sh.createdAt).toISOString(),
+          type: "PROMOTION_IN",
+          category: "students",
+          title: "Student Promoted Into Cohort",
+          description: `${sh.student.name} was promoted into ${foundClass.name} from ${origin}.`,
+          session: meta?.session || foundClass.session,
+          term: meta?.term || foundClass.term,
+          actor: { name: sh.performedBy || "Administrator", role: "ADMIN" },
+          meta: {
+            student: sh.student,
+            fromClassId: meta?.fromClassId,
+            fromClassName: origin,
+            session: meta?.session || foundClass.session,
+            term: meta?.term || foundClass.term,
+            achievements: meta?.achievements,
+          },
+        });
+      }
+    } else if (sh.eventType === "GRADUATED" || sh.eventType === "EXITED_SCHOOL") {
+      const wasInClass =
+        meta?.classId === classId ||
+        foundClass.enrollments.some((e) => e.student.id === sh.studentId);
+      if (wasInClass) {
+        countGraduated++;
+        events.push({
+          id: `exit-${sh.id}`,
+          date: (sh.date || sh.createdAt).toISOString(),
+          type: sh.eventType === "GRADUATED" ? "GRADUATION" : "WITHDRAWAL",
+          category: "students",
+          title: sh.title || (sh.eventType === "GRADUATED" ? "Student Graduated" : "Student Exited School"),
+          description: sh.description || `${sh.student.name} completed curriculum or departed.`,
+          session: meta?.session || foundClass.session,
+          term: meta?.term || foundClass.term,
+          actor: { name: sh.performedBy || "Administrator", role: "ADMIN" },
+          meta: {
+            student: sh.student,
+            exitReason: meta?.exitReason,
+            notes: meta?.exitNotes,
+            session: meta?.session || foundClass.session,
+            term: meta?.term || foundClass.term,
+          },
+        });
+      }
+    }
+  });
+
+  // D. Teacher Assignments
+  foundClass.teachers.forEach((ct) => {
+    events.push({
+      id: `teacher-${ct.id}`,
+      date: (ct.createdAt || foundClass.createdAt).toISOString(),
+      type: "TEACHER_ASSIGNED",
+      category: "staff",
+      title: ct.isLead ? "Lead Form Teacher Appointed" : "Subject/Class Instructor Assigned",
+      description: `${ct.teacher.name} was appointed as ${ct.isLead ? "Lead Form Teacher" : "Class Instructor"}.`,
+      session: foundClass.session,
+      term: foundClass.term,
+      meta: {
+        teacher: ct.teacher,
+        isLead: ct.isLead,
+        session: foundClass.session,
+        term: foundClass.term,
+      },
+    });
+  });
+
+  // E. Curriculum Subjects Attached
+  foundClass.subjects.forEach((cs) => {
+    events.push({
+      id: `subject-${cs.id}`,
+      date: (cs.createdAt || foundClass.createdAt).toISOString(),
+      type: "SUBJECT_ATTACHED",
+      category: "academics",
+      title: "Subject Added to Syllabus",
+      description: `${cs.subject.name} (${cs.subject.code}) was assigned to this class curriculum.`,
+      session: foundClass.session,
+      term: foundClass.term,
+      meta: {
+        subject: cs.subject,
+        session: foundClass.session,
+        term: foundClass.term,
+      },
+    });
+  });
+
+  // F. Results Published
+  publishedResults.forEach((res) => {
+    const approval = (res.paperLinks as any)?.approval;
+    events.push({
+      id: `result-${res.id}`,
+      date: res.updatedAt.toISOString(),
+      type: "RESULT_PUBLISHED",
+      category: "academics",
+      title: `Final Results Certified: ${res.subject.name}`,
+      description: `Official results published for ${res.subject.name} (${res.term} Term${res.session?.name ? ` • ${res.session.name}` : ""}).`,
+      session: res.session?.name || foundClass.session,
+      term: res.term || foundClass.term,
+      actor: approval?.approvedByName
+        ? { name: approval.approvedByName, role: "ADMIN" }
+        : undefined,
+      meta: {
+        subject: res.subject,
+        term: res.term || foundClass.term,
+        session: res.session?.name || foundClass.session,
+        approval,
+      },
+    });
+  });
+
+  // G. Behaviour Alerts
+  alerts.forEach((alert) => {
+    events.push({
+      id: `alert-${alert.id}`,
+      date: alert.createdAt.toISOString(),
+      type: "BEHAVIOUR_ALERT",
+      category: "students",
+      title: `Conduct Record: ${alert.title}`,
+      description: alert.description || `Conduct note logged for student ${alert.student?.name}.`,
+      session: foundClass.session,
+      term: foundClass.term,
+      meta: {
+        student: alert.student,
+        severity: alert.type,
+        session: foundClass.session,
+        term: foundClass.term,
+      },
+    });
+  });
+
+  // Sort descending by date
+  events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Lead teacher
+  const leadTeacher = foundClass.teachers.find((t) => t.isLead)?.teacher || null;
+
+  return {
+    classInfo: {
+      id: foundClass.id,
+      name: foundClass.name,
+      section: foundClass.section,
+      classCode: foundClass.classCode,
+      level: foundClass.level,
+      status: foundClass.status,
+      session: foundClass.session,
+      term: foundClass.term,
+      createdAt: foundClass.createdAt,
+      school: foundClass.school,
+      leadTeacher,
+    },
+    metrics: {
+      currentEnrollments: foundClass.enrollments.length,
+      promotedOut: countPromotedOut,
+      promotedIn: countPromotedIn,
+      graduated: countGraduated,
+      totalEvents: events.length,
+      publishedResultsCount: publishedResults.length,
+      subjectsCount: foundClass.subjects.length,
+      teachersCount: foundClass.teachers.length,
+    },
+    timeline: events,
   };
 };

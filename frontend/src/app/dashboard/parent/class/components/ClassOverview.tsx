@@ -14,6 +14,7 @@ import {
   RotateCw, 
   ArrowRight, 
   ChevronRight, 
+  ChevronLeft,
   Copy, 
   Check, 
   Sparkles, 
@@ -26,7 +27,7 @@ import {
 import { toast } from 'react-toastify';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
-import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { useParentChildren, useChildDetails } from '@/lib/api/hooks/useParentChildren';
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
 import { useExams } from '@/lib/api/hooks/useExams';
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
@@ -36,6 +37,7 @@ import { cn } from '@/lib/utils';
 import Overview from '@/app/dashboard/admin/classes/[id]/components/Overview';
 import ParentClassSubjects, { SubjectItem } from './ParentClassSubjects';
 import ParentClassTimetable from './ParentClassTimetable';
+import SwitchClassModal, { AvailableClass } from './SwitchClassModal';
 
 interface RawAlert {
   id: string;
@@ -363,6 +365,7 @@ export default function ClassDetails() {
   const { selectedChildId, setSelectedChildId } = useParentStore();
   const { data: children = [], isLoading: isChildrenLoading } = useParentChildren();
   const { data: dashboardData, isLoading: isDashboardLoading, refetch: refetchDashboard } = useParentDashboard(selectedChildId);
+  const { data: childDetails, isLoading: isChildDetailsLoading } = useChildDetails(selectedChildId);
 
   // Auto-select first child if none is currently selected in store
   useEffect(() => {
@@ -371,7 +374,82 @@ export default function ClassDetails() {
     }
   }, [children, selectedChildId, setSelectedChildId]);
 
-  const classId = dashboardData?.child?.currentClass?.id;
+  // Memoize all available classes for this child from both dashboard and details
+  const availableClasses = React.useMemo<AvailableClass[]>(() => {
+    const map = new Map<string, AvailableClass>();
+
+    // 1. Current class from dashboard
+    if (dashboardData?.child?.currentClass?.id) {
+      const cc = dashboardData.child.currentClass as any;
+      map.set(cc.id, {
+        id: cc.id,
+        name: cc.name,
+        section: cc.section,
+        level: cc.level,
+        session: cc.session,
+        term: cc.term,
+        classCode: cc.classCode,
+        teachers: cc.teachers,
+      });
+    }
+
+    // 2. All classes array from dashboard
+    const dashClasses = (dashboardData?.child as any)?.classes;
+    if (Array.isArray(dashClasses)) {
+      dashClasses.forEach((c: any) => {
+        if (c?.id) {
+          map.set(c.id, {
+            id: c.id,
+            name: c.name,
+            section: c.section,
+            level: c.level,
+            session: c.session,
+            term: c.term,
+            classCode: c.classCode,
+            teachers: c.teachers,
+          });
+        }
+      });
+    }
+
+    // 3. Classes from childDetails
+    if (Array.isArray(childDetails?.classes)) {
+      childDetails.classes.forEach((cItem: any) => {
+        const cls = cItem?.class;
+        if (cls?.id) {
+          map.set(cls.id, {
+            id: cls.id,
+            name: cls.name,
+            section: cls.section,
+            level: cls.level,
+            session: cls.session,
+            term: cls.term,
+            classCode: cls.classCode,
+            teachers: cls.teachers,
+          });
+        }
+      });
+    }
+
+    return Array.from(map.values());
+  }, [dashboardData, childDetails]);
+
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [isSwitchClassModalOpen, setIsSwitchClassModalOpen] = useState(false);
+
+  // Sync selectedClassId when available classes change or child switches
+  useEffect(() => {
+    if (availableClasses.length > 0) {
+      if (!selectedClassId || !availableClasses.some((c) => c.id === selectedClassId)) {
+        setSelectedClassId(availableClasses[0].id);
+      }
+    } else {
+      setSelectedClassId(null);
+    }
+  }, [availableClasses, selectedClassId, selectedChildId]);
+
+  const classId = selectedClassId || dashboardData?.child?.currentClass?.id || availableClasses[0]?.id || "";
+
   const { 
     data: classData, 
     isLoading: isClassLoading, 
@@ -427,21 +505,81 @@ export default function ClassDetails() {
     type: e.category || 'Exam',
   }));
 
-  // Resolve lead teacher details
-  interface ClassTeacherItem {
+  // Resolve all assigned teachers for class teacher card slider
+  interface TeacherProfile {
+    id?: string;
+    name: string;
+    email?: string;
+    phone?: string;
     isLead?: boolean;
-    teacher?: { name?: string; email?: string; phone?: string };
   }
-  const teachersList = (classData?.teachers || []) as ClassTeacherItem[];
-  const leadTeacherRel = teachersList.find((t) => t.isLead) || teachersList[0];
-  const leadTeacherName = leadTeacherRel?.teacher?.name || classData?.teacher?.name || "Homeroom Teacher";
+
+  const assignedTeachers = React.useMemo<TeacherProfile[]>(() => {
+    const list: TeacherProfile[] = [];
+    const seenNames = new Set<string>();
+
+    if (Array.isArray(classData?.teachers)) {
+      classData.teachers.forEach((item: any) => {
+        const t = item?.teacher;
+        const name = t?.name || t?.fullName;
+        if (name && !seenNames.has(name.toLowerCase().trim())) {
+          seenNames.add(name.toLowerCase().trim());
+          list.push({
+            id: t?.id || item?.id,
+            name,
+            email: t?.email,
+            phone: t?.phone,
+            isLead: Boolean(item?.isLead),
+          });
+        }
+      });
+    }
+
+    if (classData?.teacher?.name) {
+      const name = classData.teacher.name;
+      if (!seenNames.has(name.toLowerCase().trim())) {
+        seenNames.add(name.toLowerCase().trim());
+        list.push({
+          id: classData.teacher.id,
+          name,
+          email: classData.teacher.email,
+          phone: classData.teacher.phone,
+          isLead: true,
+        });
+      }
+    }
+
+    // Sort so lead teacher comes first
+    return list.sort((a, b) => (b.isLead ? 1 : 0) - (a.isLead ? 1 : 0));
+  }, [classData]);
+
+  const [currentTeacherIndex, setCurrentTeacherIndex] = useState(0);
+  const [isTeacherSliderHovered, setIsTeacherSliderHovered] = useState(false);
+
+  // Reset slider index when class changes
+  useEffect(() => {
+    setCurrentTeacherIndex(0);
+  }, [classId]);
+
+  // Auto-slide every 3.5s if more than 1 teacher and not hovered
+  useEffect(() => {
+    if (assignedTeachers.length <= 1 || isTeacherSliderHovered) return;
+    const interval = setInterval(() => {
+      setCurrentTeacherIndex((prev) => (prev + 1) % assignedTeachers.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [assignedTeachers.length, isTeacherSliderHovered]);
+
+  const leadTeacherRel = assignedTeachers.find((t) => t.isLead) || assignedTeachers[0];
+  const leadTeacherName = leadTeacherRel?.name || "Homeroom Teacher";
+  const currentTeacher = assignedTeachers[currentTeacherIndex] || assignedTeachers[0];
 
   // Statistics
   const enrolledCount = classData?.enrollments?.length ?? classData?.students?.length ?? 0;
   const subjectsList = (classData?.subjects || []) as SubjectItem[];
   const subjectsCount = subjectsList.length;
 
-  const isLoadingOverall = isChildrenLoading || isDashboardLoading || (!!classId && isClassLoading);
+  const isLoadingOverall = isChildrenLoading || (isDashboardLoading && isChildDetailsLoading) || (!!classId && isClassLoading);
 
   // 1. Loading State
   if (isLoadingOverall) {
@@ -530,15 +668,31 @@ export default function ClassDetails() {
               )}
             </div>
 
-            {/* Viewing for child badge */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 shadow-xs">
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Child:</span>
-              <span className="text-xs font-bold text-slate-900 dark:text-white">{childName}</span>
-              {studentCode && (
-                <span className="text-[10px] font-mono text-orange-600 dark:text-orange-400 font-semibold bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded">
-                  {studentCode}
-                </span>
-              )}
+            {/* Viewing for child badge & Switch Class button */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsSwitchClassModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-black shadow-sm shadow-orange-500/20 transition-all active:scale-95 group cursor-pointer"
+              >
+                <Layers size={14} className="text-orange-200 group-hover:rotate-12 transition-transform" />
+                <span>Switch Class</span>
+                {availableClasses.length > 1 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                    {availableClasses.length}
+                  </span>
+                )}
+              </button>
+
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 shadow-xs">
+                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Child:</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white">{childName}</span>
+                {studentCode && (
+                  <span className="text-[10px] font-mono text-orange-600 dark:text-orange-400 font-semibold bg-orange-50 dark:bg-orange-500/10 px-1.5 py-0.5 rounded">
+                    {studentCode}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -591,6 +745,11 @@ export default function ClassDetails() {
               <UserCheck size={13} className="text-orange-500" />
               <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Lead:</span>
               <span className="text-slate-900 dark:text-white truncate max-w-[150px]">{leadTeacherName}</span>
+              {assignedTeachers.length > 1 && (
+                <span className="text-slate-400 text-[10px] font-medium">
+                  (+{assignedTeachers.length - 1})
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -638,23 +797,100 @@ export default function ClassDetails() {
           </div>
         </div>
 
-        {/* Card 3: Lead Instructor */}
-        <div className="p-4 sm:p-5 rounded-[20px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-orange-500/30 transition-all duration-300">
+        {/* Card 3: Class Teacher Card / Interactive Slider */}
+        <div 
+          className="p-4 sm:p-5 rounded-[20px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:border-purple-500/40 transition-all duration-300 relative group/card"
+          onMouseEnter={() => setIsTeacherSliderHovered(true)}
+          onMouseLeave={() => setIsTeacherSliderHovered(false)}
+        >
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Class Teacher
-            </span>
-            <div className="size-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <UserCheck size={16} />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Class Teacher{assignedTeachers.length > 1 ? "s" : ""}
+              </span>
+              {assignedTeachers.length > 1 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-black">
+                  {currentTeacherIndex + 1}/{assignedTeachers.length}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1">
+              {assignedTeachers.length > 1 && (
+                <div className="flex items-center gap-0.5 opacity-80 group-hover/card:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentTeacherIndex((prev) => (prev - 1 + assignedTeachers.length) % assignedTeachers.length);
+                    }}
+                    className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-500 hover:text-purple-600 dark:hover:text-purple-300 flex items-center justify-center transition-colors cursor-pointer"
+                    aria-label="Previous teacher"
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentTeacherIndex((prev) => (prev + 1) % assignedTeachers.length);
+                    }}
+                    className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-500 hover:text-purple-600 dark:hover:text-purple-300 flex items-center justify-center transition-colors cursor-pointer"
+                    aria-label="Next teacher"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              )}
+              <div className="size-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                <UserCheck size={16} />
+              </div>
             </div>
           </div>
+
           <div>
-            <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
-              {leadTeacherName}
+            <div className="relative overflow-hidden min-h-[38px]">
+              <div 
+                key={currentTeacherIndex}
+                className="animate-in fade-in slide-in-from-right-3 duration-300 transition-all"
+              >
+                <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                  {currentTeacher?.name || leadTeacherName}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 flex items-center gap-1.5 truncate">
+                  <span className={cn(
+                    "size-1.5 rounded-full shrink-0",
+                    currentTeacher?.isLead ? "bg-emerald-500" : "bg-purple-500"
+                  )} />
+                  <span>
+                    {currentTeacher?.isLead ? "Designated homeroom lead" : "Assigned class teacher"}
+                  </span>
+                </p>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Designated homeroom lead
-            </p>
+
+            {/* Slider Dots Indicator */}
+            {assignedTeachers.length > 1 && (
+              <div className="flex items-center gap-1.5 pt-2">
+                {assignedTeachers.map((t, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentTeacherIndex(idx);
+                    }}
+                    className={cn(
+                      "h-1 rounded-full transition-all duration-300 cursor-pointer",
+                      idx === currentTeacherIndex
+                        ? "w-5 bg-purple-600 dark:bg-purple-400"
+                        : "w-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-400"
+                    )}
+                    aria-label={`View teacher ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -765,6 +1001,20 @@ export default function ClassDetails() {
           />
         )}
       </div>
+
+      {/* Switch Class Modal Popup */}
+      <SwitchClassModal
+        isOpen={isSwitchClassModalOpen}
+        onClose={() => setIsSwitchClassModalOpen(false)}
+        classes={availableClasses}
+        currentClassId={classId}
+        onSelectClass={(newClassId) => {
+          setSelectedClassId(newClassId);
+          const found = availableClasses.find((c) => c.id === newClassId);
+          toast.success(`Switched view to ${found?.name || "selected class"}`);
+        }}
+        childName={childName}
+      />
     </div>
   );
 }

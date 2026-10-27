@@ -98,6 +98,11 @@ export interface SubaccountSyncResult {
   active: boolean;
 }
 
+export interface AccountResolveResult {
+  accountNumber: string;
+  accountName: string;
+}
+
 export interface PaymentGateway {
   /**
    * Create a checkout session and return a redirect URL.
@@ -125,6 +130,11 @@ export interface PaymentGateway {
    * Used when a new school sets up their bank details.
    */
   createSubaccount(params: SubaccountCreateParams): Promise<SubaccountCreateResult>;
+
+  /**
+   * Resolve an account number against a bank code.
+   */
+  resolveAccount?(accountNumber: string, bankCode: string): Promise<AccountResolveResult>;
 
   /**
    * Return the list of supported banks for the country.

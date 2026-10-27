@@ -10,6 +10,7 @@ import {
   getSchoolTeachers,
   getSchoolStudents,
   getSchoolMembers,
+  getAdminProfile,
   updateAdminProfile,
   verifyStudent,
   createStudent,
@@ -89,6 +90,7 @@ router.post("/team/:adminId/transfer-ownership", requireAdmin, requireSchoolOwne
 router.delete("/team/:adminId", requireAdmin, requireSchoolOwner, removeAdmin);                // Remove admin
 
 // ─── General admin routes (any approved admin) ───────────────────────────────
+router.get("/profile", requireAdmin, getAdminProfile);
 router.patch("/profile", requireAdmin, updateAdminProfile);
 router.get("/members", requireAdmin, getSchoolMembers);
 

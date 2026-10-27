@@ -20,7 +20,8 @@ import {
   editClassSubjects,
   removeSubjectFromClass,
   promoteStudents,
-  sendClassAnnouncement
+  sendClassAnnouncement,
+  getClassHistory
 } from "./class.controller";
 import {
   getClassBehaviourAlerts,
@@ -86,6 +87,7 @@ router.get("/:id/behaviour-alerts", authenticateToken, getClassBehaviourAlerts);
 router.post("/:id/behaviour-alerts", authenticateToken, createBehaviourAlert);
 router.patch("/:id/behaviour-alerts/:alertId", authenticateToken, updateBehaviourAlert);
 router.delete("/:id/behaviour-alerts/:alertId", authenticateToken, deleteBehaviourAlert);
+router.get("/:id/history", authenticateToken, getClassHistory);
 router.get("/:id", authenticateToken, getSingleClass);
 
 export default router;

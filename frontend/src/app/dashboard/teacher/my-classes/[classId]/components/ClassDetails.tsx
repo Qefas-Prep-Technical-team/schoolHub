@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, UserCog, AlertTriangle, QrCode, X } from 'lucide-react';
+import { Calendar, UserCog, AlertTriangle, QrCode, X, BookOpen } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { useQuery } from '@tanstack/react-query';
+import { teacherService } from '@/lib/api/services/teacherService';
 
 // Use same specific API hooks as Admin to match exactly
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
@@ -22,6 +24,7 @@ import ExamsPage from './exams&quizzes/page';
 import GradesPage from './grades/page';
 import TimetablePage from './timetable/page';
 import AttendancePage from './attendance/page';
+import OfflineGradesDashboard from '@/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard';
 
 import { TabSkeleton } from './TabSkeleton';
 export default function ClassDetails() {
@@ -31,6 +34,12 @@ export default function ClassDetails() {
   
   const { data: classData, isLoading: loading, error } = useSingleClass(classId);
   const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(classId);
+  const { data: teacherClassDetail } = useQuery({
+    queryKey: ['class-detail', classId],
+    queryFn: () => teacherService.getClassDetail(classId),
+    staleTime: 1000 * 60 * 10,
+    enabled: !!classId,
+  });
   const [activeTab, setActiveTab] = useState("overview");
 
   // Helper to detect if a string is a raw UUID
@@ -54,8 +63,6 @@ export default function ClassDetails() {
     reportedBy: alert.reporter?.name || "System",
   }));
 
-
-
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/' },
     { label: 'My Classes', href: '/dashboard/teacher/my-classes' },
@@ -66,7 +73,7 @@ export default function ClassDetails() {
     { 
       id: "overview", 
       label: "Overview", 
-      content: <Overview behaviourAlerts={behaviourAlerts} classData={classData} />
+      content: <Overview behaviourAlerts={behaviourAlerts} classData={classData} teacherClassDetail={teacherClassDetail} />
     },
     { 
       id: 'students', 
@@ -87,6 +94,15 @@ export default function ClassDetails() {
       id: 'grades',
       label: 'Grades',
       content: <GradesPage />
+    },
+    {
+      id: 'offline-grades',
+      label: 'Offline Grades',
+      content: (
+        <div className="w-full max-w-full overflow-hidden">
+          <OfflineGradesDashboard defaultClassId={classId} hideClassFilter={true} />
+        </div>
+      )
     },
     { 
       id: 'timetable', 
@@ -123,93 +139,94 @@ export default function ClassDetails() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-neutral-950">
-      <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-        <div className="w-full">
-          <div className="mb-3 sm:mb-4">
-            <Breadcrumbs items={breadcrumbItems} />
-          </div>
-          
-          {/* Page Heading & Button Group (Mirroring Admin Layout exactly) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-            <div className="flex flex-col gap-1 sm:gap-1.5">
-              {loading ? (
-                <div className="h-9 sm:h-10 w-48 sm:w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
-              ) : (
-                <h1 className="text-gray-900 dark:text-white text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight">
-                  {classData?.name} {classData?.section ? `- ${classData.section}` : ""}
+    <div className="w-full max-w-full space-y-6">
+      <div className="mb-2">
+        <Breadcrumbs items={breadcrumbItems} />
+      </div>
+
+      {/* Full-Width Institutional Page Header Card */}
+      <div className="bg-white dark:bg-emerald-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200/80 dark:border-emerald-800/60 shadow-sm flex flex-col md:flex-row gap-5 md:gap-8 justify-between items-start md:items-center relative overflow-hidden">
+        {/* Ambient Emerald Glow Accent */}
+        <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col gap-2 z-10 w-full md:w-auto">
+          {loading ? (
+            <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
+          ) : (
+            <div className="flex items-center gap-3.5 sm:gap-4">
+              <div className="size-14 sm:size-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl sm:text-2xl border border-emerald-200 dark:border-emerald-800/60 shrink-0 shadow-2xs">
+                {classData?.name?.charAt(0) || "C"}
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-black tracking-tight truncate">
+                  {classData?.name} {classData?.section ? <span className="text-emerald-600 dark:text-emerald-400">({classData.section})</span> : ""}
                 </h1>
-              )}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-medium">
-                {loading ? (
-                  <>
-                    <span className="flex items-center gap-1.5 animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-slate-200 dark:bg-emerald-900/40" />
-                       Code: <span className="inline-block h-3.5 w-12 bg-slate-200 dark:bg-emerald-900/40 rounded" />
-                    </span>
-                    <span>|</span>
-                    <span className="animate-pulse">
-                      Students: <span className="inline-block h-3.5 w-8 bg-slate-200 dark:bg-emerald-900/40 rounded" />
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                       Code: <span className="text-gray-900 dark:text-white font-bold">{classData?.classCode}</span>
-                    </span>
-                    {classData?.level && (
-                      <>
-                        <span>|</span>
-                        <span>
-                          Level: <span className="text-gray-900 dark:text-white font-bold">{classData.level}</span>
-                        </span>
-                      </>
-                    )}
-                    {(classData?.session || "Current Session") && (
-                      <>
-                        <span>|</span>
-                        <span>
-                          Session: <span className="text-gray-900 dark:text-white font-bold">{displaySession}</span>
-                        </span>
-                      </>
-                    )}
-                    {classData?.term && (
-                      <>
-                        <span>|</span>
-                        <span>
-                          Term: <span className="text-gray-900 dark:text-white font-bold">{classData.term}</span>
-                        </span>
-                      </>
-                    )}
-                    <span>|</span>
-                    <span>Students: <span className="text-gray-900 dark:text-white font-bold">{classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0}</span></span>
-                  </>
-                )}
+                <div className="text-slate-500 dark:text-slate-400 mt-1.5 font-medium flex items-center gap-2 sm:gap-3 text-xs sm:text-sm flex-wrap">
+                  <span className="flex items-center gap-1.5 shrink-0 font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    Active Cohort
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                  <span className="font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-bold shrink-0">
+                    Code: {classData?.classCode}
+                  </span>
+                  {classData?.level && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Level: <strong className="text-slate-900 dark:text-white">{classData.level}</strong>
+                      </span>
+                    </>
+                  )}
+                  {displaySession && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Session: <strong className="text-slate-900 dark:text-white">{displaySession}</strong>
+                      </span>
+                    </>
+                  )}
+                  {classData?.term && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Term: <strong className="text-slate-900 dark:text-white">{classData.term}</strong>
+                      </span>
+                    </>
+                  )}
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
+                    {classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0} Scholars Enrolled
+                  </span>
+                  {teacherClassDetail?.classInfo?.subject && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
+                        <BookOpen className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                        Focus Subject: <strong className="text-emerald-800 dark:text-emerald-200">{teacherClassDetail.classInfo.subject}</strong>
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-            
-            <div className="flex flex-wrap gap-3">
-              {/* Optional: Add teacher specific action buttons here if needed, but removing Admin specific ones like Manage Class */}
-            </div>
-          </div>
-
-          {/* Beautiful Tab Navigation */}
-          <TabNavigation 
-            activeTab={activeTab as any} 
-            onTabChange={(tabId) => setActiveTab(tabId)}
-          >
-            {/* Tab Content */}
-            <div className="mt-6">
-              {loading ? (
-                <TabSkeleton tabId={activeTab} />
-              ) : (
-                tabs.find(t => t.id === activeTab)?.content
-              )}
-            </div>
-          </TabNavigation>
+          )}
         </div>
-      </main>
+      </div>
+
+      {/* Full Width Tab Navigation and Content */}
+      <TabNavigation 
+        activeTab={activeTab as any} 
+        onTabChange={(tabId) => setActiveTab(tabId)}
+      >
+        <div className="mt-4 sm:mt-6 w-full max-w-full">
+          {loading ? (
+            <TabSkeleton tabId={activeTab} />
+          ) : (
+            tabs.find(t => t.id === activeTab)?.content
+          )}
+        </div>
+      </TabNavigation>
     </div>
   );
 }

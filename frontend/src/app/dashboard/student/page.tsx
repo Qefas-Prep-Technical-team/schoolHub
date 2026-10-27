@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen,
   Sparkles,
@@ -9,6 +9,7 @@ import {
   BookMarked,
   Award,
   ArrowRight,
+  GraduationCap,
 } from 'lucide-react';
 import {
   Radar,
@@ -27,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { StudentConnectionModal } from './components/StudentConnectionModal';
+import { StudentClassSelectionModal } from './components/StudentClassSelectionModal';
 import AcademicHistory, { HistoryAttempt } from './components/dashboard/AcademicHistory';
 import PerformanceTrend, { PerformanceAttempt, PerformanceGrade } from './components/dashboard/PerformanceTrend';
 import LatestAssignmentsCard from './components/dashboard/LatestAssignmentsCard';
@@ -85,10 +87,28 @@ export default function StudentHomeDashboard() {
   const { data: studentProfile, isLoading: isLoadingProfile } = useStudentProfile();
   const { data: publishedResultsData } = useMyPublishedResults();
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
+  const [isClassSelectionModalOpen, setIsClassSelectionModalOpen] = useState(false);
+  const [hasPromptedClassSelection, setHasPromptedClassSelection] = useState(false);
 
   const attempts: RawExamAttempt[] = (attemptsData?.attempts as RawExamAttempt[]) || [];
   const standaloneGrades: RawGradeRecord[] = (standaloneGradesData?.grades as RawGradeRecord[]) || [];
   const studentCode = profileResponse?.data?.linkingCode || "";
+
+  const connectedSchool = studentProfile?.school || (studentProfile?.schoolId ? { id: studentProfile.schoolId, name: 'Connected School' } : null);
+  const isEnrolledInClass = Boolean(studentProfile?.classes && studentProfile.classes.length > 0);
+
+  // Automatically prompt the student to select an available class when connected to a school without an enrolled class
+  useEffect(() => {
+    if (studentProfile && connectedSchool && !isEnrolledInClass && !hasPromptedClassSelection) {
+      const dismissed = typeof window !== 'undefined'
+        ? sessionStorage.getItem(`dismissed_class_prompt_${connectedSchool.id || 'school'}`)
+        : null;
+      if (!dismissed) {
+        setIsClassSelectionModalOpen(true);
+      }
+      setHasPromptedClassSelection(true);
+    }
+  }, [studentProfile, connectedSchool, isEnrolledInClass, hasPromptedClassSelection]);
 
   // Only display if a new final result was published in the last 7 days
   const hasRecentFinalResults = useMemo(() => {
@@ -295,6 +315,36 @@ export default function StudentHomeDashboard() {
                  View Final Result
                </Button>
             </Link>
+          </div>
+        )}
+
+        {/* Connected School without Class Banner */}
+        {connectedSchool && !isEnrolledInClass && (
+          <div className="bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/5 border border-pink-200 dark:border-pink-800/50 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-pink-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-pink-600/20">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-pink-700 dark:text-pink-400 uppercase tracking-wider">
+                  <Sparkles size={13} />
+                  Connected School: {connectedSchool.name}
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  Join Your School Class Cohort
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
+                  You are linked to {connectedSchool.name}, but have not yet joined a classroom. Select an available class to see enrolled classmates, active subjects, and course timetables.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setIsClassSelectionModalOpen(true)}
+              className="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl h-11 px-6 shadow-md shadow-pink-600/20 text-xs sm:text-sm shrink-0 gap-2"
+            >
+              <span>Choose Class</span>
+              <ArrowRight size={16} />
+            </Button>
           </div>
         )}
 
@@ -554,6 +604,19 @@ export default function StudentHomeDashboard() {
         isOpen={isConnectionModalOpen}
         onClose={() => setIsConnectionModalOpen(false)}
         studentCode={studentCode}
+      />
+
+      <StudentClassSelectionModal
+        isOpen={isClassSelectionModalOpen}
+        onClose={() => {
+          setIsClassSelectionModalOpen(false);
+          if (connectedSchool?.id && typeof window !== 'undefined') {
+            sessionStorage.setItem(`dismissed_class_prompt_${connectedSchool.id}`, 'true');
+          }
+        }}
+        schoolId={connectedSchool?.id}
+        schoolName={connectedSchool?.name || 'Your School'}
+        studentName={studentProfile?.name || username || 'Scholar'}
       />
 
       <PrefectCelebration

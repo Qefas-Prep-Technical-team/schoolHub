@@ -106,8 +106,14 @@ export const useStudentScoreBreakdown = (id?: string, studentId?: string) => {
 export const usePublishClassSubjectResult = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => recordService.publishClassSubjectResult(id),
-    onSuccess: (data, id) => {
+    mutationFn: (args: string | { id: string; signature?: string; role?: string }) => {
+      const id = typeof args === "string" ? args : args.id;
+      const signature = typeof args === "string" ? undefined : args.signature;
+      const role = typeof args === "string" ? undefined : args.role;
+      return recordService.publishClassSubjectResult(id, (signature || role) ? { signature, role } : undefined);
+    },
+    onSuccess: (data, args) => {
+      const id = typeof args === "string" ? args : args.id;
       queryClient.invalidateQueries({ queryKey: ["classSubjectResult", id] });
       queryClient.invalidateQueries({ queryKey: ["studentSubjectResults"] });
     },
@@ -117,8 +123,13 @@ export const usePublishClassSubjectResult = () => {
 export const useUnpublishClassSubjectResult = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => recordService.unpublishClassSubjectResult(id),
-    onSuccess: (data, id) => {
+    mutationFn: (args: string | { id: string; reason?: string }) => {
+      const id = typeof args === "string" ? args : args.id;
+      const reason = typeof args === "string" ? undefined : args.reason;
+      return recordService.unpublishClassSubjectResult(id, reason ? { reason } : undefined);
+    },
+    onSuccess: (data, args) => {
+      const id = typeof args === "string" ? args : args.id;
       queryClient.invalidateQueries({ queryKey: ["classSubjectResult", id] });
       queryClient.invalidateQueries({ queryKey: ["studentSubjectResults"] });
     },

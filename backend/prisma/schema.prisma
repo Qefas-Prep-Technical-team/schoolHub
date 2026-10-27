@@ -87,6 +87,7 @@ model School {
   schoolSubscriptions       SchoolSubscription?
   sessions                  Session[]
   settlementAccounts        SettlementAccount[]
+  bankAccountAudits         BankAccountAudit[]
   studentEnrollments        StudentEnrollment[]
   studentHistories          StudentHistory[]
   subjectExamPapers         SubjectExamPaper[]
@@ -113,6 +114,7 @@ model SchoolSetting {
   enableMaintenanceMode        Boolean  @default(false)
   enablePushNotifications      Boolean  @default(true)
   lockSettings                 Boolean  @default(false)
+  transcriptFee                Float?   @default(5000)
   school                       School   @relation(fields: [schoolId], references: [id])
 }
 
@@ -1282,10 +1284,37 @@ model SettlementAccount {
   updatedAt                DateTime             @updatedAt
   bankCode                 String?
   isVerified               Boolean              @default(false)
+  addedBy                  String?
+  addedByName              String?
+  addedByRole              String?
   school                   School               @relation(fields: [schoolId], references: [id])
   transactionHistories     TransactionHistory[]
+  audits                   BankAccountAudit[]
 
   @@map("settlement_accounts")
+}
+
+model BankAccountAudit {
+  id                  String             @id @default(uuid())
+  schoolId            String
+  settlementAccountId String?
+  action              String             @default("ACCOUNT_ADDED") // "ACCOUNT_ADDED" | "SET_DEFAULT" | "DELETED" | "SYNCED"
+  bankName            String?
+  bankCode            String?
+  accountNumber       String?
+  accountName         String?
+  userId              String?
+  userName            String?
+  userEmail           String?
+  userRole            String?
+  gateway             String?            @default("FLUTTERWAVE")
+  details             Json?
+  createdAt           DateTime           @default(now())
+  school              School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  settlementAccount   SettlementAccount? @relation(fields: [settlementAccountId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId])
+  @@map("bank_account_audits")
 }
 
 model Coupon {

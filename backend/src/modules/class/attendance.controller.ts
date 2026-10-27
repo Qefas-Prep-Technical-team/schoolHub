@@ -9,6 +9,8 @@ import { z } from "zod";
 import prisma from "../../config/database";
 
 const submitAttendanceSchema = z.object({
+  subjectId: z.string().optional(),
+  subjectName: z.string().optional(),
   records: z
     .array(
       z.object({
@@ -16,6 +18,7 @@ const submitAttendanceSchema = z.object({
         status: z.enum(["present", "absent", "late", "excused"]),
         note: z.string().optional().default(""),
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+        subjects: z.record(z.string(), z.any()).optional(),
       })
     )
     .min(1, "No attendance records provided"),
@@ -83,7 +86,10 @@ export const submitAttendance = async (req: Request, res: Response) => {
         recordedByRole: user?.userType,
       };
     });
-    const data = await submitAttendanceService(id, recordsWithUser);
+    const data = await submitAttendanceService(id, recordsWithUser, {
+      subjectId: parsed.data.subjectId,
+      subjectName: parsed.data.subjectName,
+    });
     return res.status(200).json({ success: true, message: "Attendance submitted", data });
   } catch (error: any) {
     return handleError(res, error, "class.submitAttendance");

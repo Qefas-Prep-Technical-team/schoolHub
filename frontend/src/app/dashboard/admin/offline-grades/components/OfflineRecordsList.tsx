@@ -48,6 +48,8 @@ interface OfflineRecordsListProps {
   classes: any[];
   isLoading: boolean;
   isTeacher?: boolean;
+  hideClassFilter?: boolean;
+  activeClassId?: string;
   onAddNewRecord: (defaultCategory?: OfflineAssessmentCategory) => void;
   onEditRecord: (record: GradeBatchSummary) => void;
   onDeleteRecord: (recordId: string) => void;
@@ -132,6 +134,8 @@ export default function OfflineRecordsList({
   classes,
   isLoading,
   isTeacher = false,
+  hideClassFilter = false,
+  activeClassId,
   onAddNewRecord,
   onEditRecord,
   onDeleteRecord,
@@ -140,7 +144,7 @@ export default function OfflineRecordsList({
 }: OfflineRecordsListProps) {
   const [activeTab, setActiveTab] = useState<OfflineCategoryTab>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('all');
+  const [selectedClassId, setSelectedClassId] = useState<string>(activeClassId || 'all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -421,20 +425,22 @@ export default function OfflineRecordsList({
 
           {/* Filters Row */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            {/* Class Filter */}
-            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-              <SelectTrigger className="h-10 w-full sm:w-44 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700">
-                <SelectValue placeholder="All Classes" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl dark:bg-slate-800 dark:border-slate-700">
-                <SelectItem value="all" className="text-xs font-semibold">All Classes</SelectItem>
-                {classes.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-xs font-semibold">
-                    {c.name} {c.section ? `(${c.section})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Class Filter (Hidden when viewing from within a single Class Details page) */}
+            {!hideClassFilter && (
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger className="h-10 w-full sm:w-44 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700">
+                  <SelectValue placeholder="All Classes" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl dark:bg-slate-800 dark:border-slate-700">
+                  <SelectItem value="all" className="text-xs font-semibold">All Classes</SelectItem>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id} className="text-xs font-semibold">
+                      {c.name} {c.section ? `(${c.section})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {/* Category Filter (Contextual to activeTab) */}
             {activeTab === 'all' ? (

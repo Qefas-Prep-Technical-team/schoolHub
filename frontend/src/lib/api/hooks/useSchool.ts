@@ -137,7 +137,7 @@ export const useUpdateSchoolProfile = () => {
     }) => schoolService.updateProfile(schoolId, data),
     onSuccess: (_, { schoolId }) => {
       queryClient.invalidateQueries({
-        queryKey: [...schoolQueryKeys.all, "profile", schoolId],
+        queryKey: [...schoolQueryKeys.all, "profile"],
       });
       queryClient.invalidateQueries({
         queryKey: schoolQueryKeys.stats(schoolId),

@@ -22,6 +22,8 @@ import { StudentActiveLinksGrid, ActiveLinkEntity } from './components/StudentAc
 import { StudentPendingRequestsGrid, PendingRequestEntity } from './components/StudentPendingRequestsGrid';
 import { StudentConnectModal } from './components/StudentConnectModal';
 import StudentQRCodeModal from './components/StudentQRCodeModal';
+import { StudentClassSelectionModal } from '../components/StudentClassSelectionModal';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 
 interface RawPeerUser {
   id?: string;
@@ -94,6 +96,7 @@ export default function StudentLinkingPage() {
   // Modals
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
+  const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -121,6 +124,7 @@ export default function StudentLinkingPage() {
   });
   
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
+  const { data: studentProfile } = useStudentProfile();
 
   // Badge Counts
   const { data: networkPendingRaw } = useLinkRequests({ status: 'PENDING', category: 'network', limit: 1 });
@@ -290,6 +294,7 @@ export default function StudentLinkingPage() {
       <StudentLinkingHeader 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
         onConnectClick={() => setIsConnectModalOpen(true)}
+        onTestClassModalClick={() => setIsClassModalOpen(true)}
       />
 
       <StudentLinkingPassport 
@@ -370,6 +375,14 @@ export default function StudentLinkingPage() {
         onClose={() => setIsQRCodeModalOpen(false)} 
         studentCode={profile?.linkingCode || ''}
         studentName={profile?.name || user?.name}
+      />
+
+      <StudentClassSelectionModal
+        isOpen={isClassModalOpen}
+        onClose={() => setIsClassModalOpen(false)}
+        schoolId={studentProfile?.schoolId || studentProfile?.school?.id}
+        schoolName={studentProfile?.school?.name || 'Your School'}
+        studentName={studentProfile?.name || user?.name || 'Scholar'}
       />
     </div>
   );

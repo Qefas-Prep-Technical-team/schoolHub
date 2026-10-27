@@ -1,7 +1,8 @@
 'use client';
 
-import { Search, LayoutGrid, List, X } from 'lucide-react';
+import { Search, LayoutGrid, List, X, Plus, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
 interface ClassHeaderProps {
@@ -10,6 +11,7 @@ interface ClassHeaderProps {
   totalClasses?: number;
   viewMode?: 'grid' | 'table';
   setViewMode?: (mode: 'grid' | 'table') => void;
+  onOpenJoinModal?: () => void;
 }
 
 export function ClassHeader({ 
@@ -17,10 +19,11 @@ export function ClassHeader({
   setSearchQuery, 
   totalClasses = 0,
   viewMode = 'grid',
-  setViewMode
+  setViewMode,
+  onOpenJoinModal
 }: ClassHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-2">
       <div className="flex items-center gap-2">
         <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">
           Enrolled Classes
@@ -31,7 +34,7 @@ export function ClassHeader({
         <HeaderTooltip content="Directory of class streams and subject curricula you are officially enrolled in. Tap any class to explore assessments, schedules, materials, and learning discussions." />
       </div>
 
-      <div className="flex items-center gap-3 w-full sm:w-auto">
+      <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
         {/* Search input */}
         <div className="relative flex-1 sm:w-72">
           <Search className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -81,6 +84,18 @@ export function ClassHeader({
               <List size={16} />
             </button>
           </div>
+        )}
+
+        {/* Join Class Button */}
+        {onOpenJoinModal && (
+          <Button
+            type="button"
+            onClick={onOpenJoinModal}
+            className="h-10 sm:h-11 px-4 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-pink-600/20 flex items-center gap-2 shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus size={16} className="stroke-[2.5]" />
+            <span>Join Class</span>
+          </Button>
         )}
       </div>
     </div>

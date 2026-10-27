@@ -246,8 +246,26 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
           school: { select: { id: true, name: true, schoolCode: true, subscriptionStatus: true, isTrialActive: true, motto: true, address: true } },
           classes: {
             orderBy: { enrolledAt: "desc" },
-            take: 1,
-            include: { class: { select: { id: true, name: true, section: true } } },
+            include: {
+              class: {
+                select: {
+                  id: true,
+                  name: true,
+                  section: true,
+                  level: true,
+                  session: true,
+                  term: true,
+                  classCode: true,
+                  teachers: {
+                    include: {
+                      teacher: {
+                        select: { id: true, name: true, email: true, phone: true }
+                      }
+                    }
+                  }
+                }
+              }
+            },
           },
           grades: {
             where: { status: GradeStatus.PUBLISHED },
@@ -295,8 +313,26 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
             school: { select: { id: true, name: true, schoolCode: true, subscriptionStatus: true, isTrialActive: true, motto: true, address: true } },
             classes: {
               orderBy: { enrolledAt: "desc" },
-              take: 1,
-              include: { class: { select: { id: true, name: true, section: true } } },
+              include: {
+                class: {
+                  select: {
+                    id: true,
+                    name: true,
+                    section: true,
+                    level: true,
+                    session: true,
+                    term: true,
+                    classCode: true,
+                    teachers: {
+                      include: {
+                        teacher: {
+                          select: { id: true, name: true, email: true, phone: true }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
             },
             grades: {
               where: { status: GradeStatus.PUBLISHED },
@@ -492,6 +528,7 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
           profileImage: student.profileImage,
           school: student.school,
           currentClass: student.classes[0]?.class || null,
+          classes: student.classes.map((c: any) => c.class).filter(Boolean),
           recentGrades: student.grades.slice(0, 5).map((g: any) => ({
             ...g,
             subject: g.subject || g.subjectPaper?.subject?.name || "Unknown Subject",

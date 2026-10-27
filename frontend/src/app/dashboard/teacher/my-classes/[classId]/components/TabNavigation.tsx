@@ -1,11 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Users, FileText, ClipboardList, PenTool, CalendarDays, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, ClipboardList, PenTool, CalendarDays, CheckSquare, FileSpreadsheet } from 'lucide-react';
 
 interface TabNavigationProps {
-  activeTab: 'overview' | 'students' | 'assignments' | 'grades'| 'exams&quizzes' | 'timetable' | 'attendance';
-  onTabChange: (tab: 'overview' | 'students' | 'assignments' | 'grades'|'exams&quizzes' | 'timetable' | 'attendance') => void;
+  activeTab: 'overview' | 'students' | 'assignments' | 'grades' | 'offline-grades' | 'exams&quizzes' | 'timetable' | 'attendance';
+  onTabChange: (tab: 'overview' | 'students' | 'assignments' | 'grades' | 'offline-grades' | 'exams&quizzes' | 'timetable' | 'attendance') => void;
   children?: React.ReactNode;
 }
 
@@ -17,6 +17,7 @@ const tabs = [
   { id: 'assignments', label: 'Assignments', icon: ClipboardList },
   { id: 'exams&quizzes', label: 'Exams & Quizzes', icon: PenTool },
   { id: 'grades', label: 'Grades', icon: FileText },
+  { id: 'offline-grades', label: 'Offline Grades', icon: FileSpreadsheet },
 ] as const;
 
 export default function TabNavigation({
@@ -62,7 +63,7 @@ export default function TabNavigation({
       </div>
 
       {children && (
-        <div className="mt-2 sm:mt-4">
+        <div className="w-full max-w-full">
           {children}
         </div>
       )}

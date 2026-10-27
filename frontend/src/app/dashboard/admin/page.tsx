@@ -22,6 +22,7 @@ import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import DashboardCharts from './components/dashboard/DashboardCharts';
 import AdminAnnouncementModal, { ClassItem } from './components/dashboard/AdminAnnouncementModal';
 import AdminWeeklyReportModal from './components/dashboard/AdminWeeklyReportModal';
+import AdminFinanceCard from './components/dashboard/AdminFinanceCard';
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
@@ -302,6 +303,7 @@ export default function AdminDashboard() {
              
              {/* Right Column (Sidebar Features) */}
              <div className="lg:col-span-4 space-y-6">
+                <AdminFinanceCard schoolId={schoolId} primaryColor={primaryColor} />
                 <UsageLimitsCard primaryColor={primaryColor} />
                 <QuickActions primaryColor={primaryColor} />
                 <AlertsPanel primaryColor={primaryColor} />

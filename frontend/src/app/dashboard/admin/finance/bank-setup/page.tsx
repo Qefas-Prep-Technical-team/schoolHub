@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Landmark, Loader2, AlertCircle, Trash2, Building2, CreditCard, ChevronRight, RefreshCw } from "lucide-react"
+import { Landmark, Loader2, AlertCircle, Trash2, Building2, CreditCard, ChevronRight, RefreshCw, CheckCircle2, ShieldCheck, Check } from "lucide-react"
 import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
 import { BankStatusBanner } from "../../components/BankStatusBanner"
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 
 /**
  * Bank Setup Page for School Admins
- * Configures Settlement Account for direct fee disbursements.
+ * Configures Settlement Account for direct fee disbursements with Flutterwave Subaccount creation.
  */
 export default function BankSetupPage() {
     const { user } = useAuthStore()
@@ -34,6 +34,12 @@ export default function BankSetupPage() {
     const [fetchingBanks, setFetchingBanks] = useState(true)
     const [paymentStatus, setPaymentStatus] = useState<any>(null)
     const [hasAutoSynced, setHasAutoSynced] = useState(false);
+
+    // Account Resolution states
+    const [resolvingAccount, setResolvingAccount] = useState(false);
+    const [resolvedAccountName, setResolvedAccountName] = useState<string | null>(null);
+    const [resolutionError, setResolutionError] = useState<string | null>(null);
+    const [nameConfirmed, setNameConfirmed] = useState(false);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -74,9 +80,64 @@ export default function BankSetupPage() {
         }
     }, [accounts, hasAutoSynced]);
 
+    /**
+     * Account Resolution Effect
+     * Automatically verifies account number and resolves the account name via Flutterwave / Gateway.
+     */
+    useEffect(() => {
+        const resolveAccount = async () => {
+            if (accountNumber.trim().length === 10 && selectedBank) {
+                try {
+                    setResolvingAccount(true);
+                    setResolutionError(null);
+                    setResolvedAccountName(null);
+                    setNameConfirmed(false);
+
+                    const resolved = await financeService.resolveAccount(accountNumber.trim(), selectedBank);
+                    if (resolved && resolved.accountName) {
+                        setResolvedAccountName(resolved.accountName);
+                        if (!businessName.trim()) {
+                            setBusinessName(resolved.accountName);
+                        }
+                    } else {
+                        setResolutionError("Could not resolve account name. Please verify bank and 10-digit account number.");
+                    }
+                } catch (err: any) {
+                    console.error("Account resolution failed:", err);
+                    setResolutionError(err?.response?.data?.message || err?.message || "Failed to resolve account. Please verify bank and account number.");
+                    setResolvedAccountName(null);
+                } finally {
+                    setResolvingAccount(false);
+                }
+            } else {
+                setResolvedAccountName(null);
+                setResolutionError(null);
+                setNameConfirmed(false);
+            }
+        };
+
+        const timer = setTimeout(resolveAccount, 400);
+        return () => clearTimeout(timer);
+    }, [accountNumber, selectedBank]);
+
     const handleSave = async () => {
         if (!selectedBank || !accountNumber || !businessName) {
             toast.error("Please fill in all settlement fields")
+            return
+        }
+
+        if (accountNumber.trim().length !== 10) {
+            toast.error("NUBAN Account number must be exactly 10 digits")
+            return
+        }
+
+        if (resolutionError) {
+            toast.error("Account verification failed. Please correct the bank or account number.")
+            return
+        }
+
+        if (resolvedAccountName && !nameConfirmed) {
+            toast.error("Please confirm that the resolved account name matches your school before proceeding.")
             return
         }
 
@@ -85,17 +146,17 @@ export default function BankSetupPage() {
             return
         }
 
-        toast.info("Initializing settlement verification...")
+        toast.info("Creating Flutterwave subaccount & configuring settlement...")
 
         try {
             setLoading(true)
             await financeService.setupBank(schoolId, {
                 business_name: businessName,
                 settlement_bank: selectedBank,
-                account_number: accountNumber,
+                account_number: accountNumber.trim(),
                 percentage_charge: percentageCharge
             })
-            toast.success("Settlement account configured successfully")
+            toast.success("Settlement subaccount created & configured successfully")
             
             // Refresh data
             const analytics = await financeService.getSchoolAnalytics(schoolId)
@@ -106,8 +167,10 @@ export default function BankSetupPage() {
             setBusinessName("")
             setAccountNumber("")
             setSelectedBank("")
+            setResolvedAccountName(null)
+            setNameConfirmed(false)
         } catch (error: any) {
-            toast.error(error.message || "Failed to save bank configuration")
+            toast.error(error?.response?.data?.message || error.message || "Failed to save bank configuration")
         } finally {
             setLoading(false)
         }
@@ -225,16 +288,74 @@ export default function BankSetupPage() {
                     </div>
 
                     <div className="space-y-2.5">
-                        <Label htmlFor="accountNumber" className="font-bold text-slate-700 dark:text-slate-300">NUBAN Account Number</Label>
-                        <Input 
-                            id="accountNumber" 
-                            placeholder="10-digit primary account number" 
-                            maxLength={10}
-                            value={accountNumber}
-                            onChange={(e) => setAccountNumber(e.target.value)}
-                            className="h-14 px-5 rounded-2xl border-slate-200 font-mono tracking-widest text-lg"
-                        />
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="accountNumber" className="font-bold text-slate-700 dark:text-slate-300">NUBAN Account Number</Label>
+                            {resolvingAccount && (
+                                <span className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold animate-pulse">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Resolving with Flutterwave...
+                                </span>
+                            )}
+                        </div>
+                        <div className="relative">
+                            <Input 
+                                id="accountNumber" 
+                                placeholder="10-digit primary account number" 
+                                maxLength={10}
+                                value={accountNumber}
+                                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                                className={cn(
+                                    "h-14 px-5 rounded-2xl font-mono tracking-widest text-lg transition-all",
+                                    resolvedAccountName ? "border-emerald-500 focus:ring-emerald-500 bg-emerald-50/20" : "",
+                                    resolutionError ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20" : "border-slate-200"
+                                )}
+                            />
+                            {resolvedAccountName && (
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full text-xs font-bold">
+                                    <ShieldCheck className="h-4 w-4" /> Verified
+                                </div>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Resolved Account Name Card & Confirmation */}
+                    {resolvedAccountName && (
+                        <div className="bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl p-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-start gap-3.5">
+                                <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
+                                    <Building2 className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Resolved Institution Account Name</span>
+                                    <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{resolvedAccountName}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                        Matches Flutterwave banking network registry. A dedicated subaccount will be created for split payments.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-200/60 dark:border-emerald-800/30 cursor-pointer hover:bg-emerald-50/40 transition-colors select-none">
+                                <input 
+                                    type="checkbox" 
+                                    checked={nameConfirmed} 
+                                    onChange={(e) => setNameConfirmed(e.target.checked)}
+                                    className="h-4 w-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                                />
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                    I confirm that this resolved account name belongs to our school institution.
+                                </span>
+                            </label>
+                        </div>
+                    )}
+
+                    {/* Resolution Error Banner */}
+                    {resolutionError && (
+                        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-2xl p-4 flex items-center gap-3 text-rose-800 dark:text-rose-300 text-sm animate-in fade-in">
+                            <AlertCircle className="h-5 w-5 text-rose-600 flex-shrink-0" />
+                            <div className="flex-1 text-xs font-semibold">
+                                {resolutionError}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-[1.5rem] border border-amber-100 dark:border-amber-900/20 flex gap-5">
                         <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
@@ -259,7 +380,7 @@ export default function BankSetupPage() {
                     <Button 
                         className="bg-blue-600 hover:bg-blue-700 rounded-xl px-10 h-14 font-black shadow-xl shadow-blue-500/25 transition-all hover:scale-105 active:scale-95 order-1 sm:order-2 w-full sm:w-auto"
                         onClick={handleSave}
-                        disabled={loading || fetchingBanks}
+                        disabled={loading || fetchingBanks || resolvingAccount || (!!resolvedAccountName && !nameConfirmed) || !accountNumber || !selectedBank}
                     >
                         {loading ? (
                             <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verifying with Gateway...</>

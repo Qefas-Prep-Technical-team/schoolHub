@@ -3,19 +3,20 @@ import { format } from 'date-fns';
 import { BookOpen, UserMinus, UserCheck, ShieldAlert, Award, Calendar, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface HistoryEvent {
+export interface HistoryEvent {
     id: string;
     date: string;
     type: string; // ENROLLMENT, WITHDRAWAL, GRADUATION, TRANSFER, EXPULSION, SYSTEM
     title: string;
     description: string;
-    metadata: any;
-    school?: { id: string; name: string; logoUrl?: string };
+    metadata?: any;
+    meta?: any;
+    school?: { id: string; name: string; logoUrl?: string; logo?: string };
     onClick?: () => void;
 }
 
-interface StudentHistoryTimelineProps {
-    history: HistoryEvent[];
+export interface StudentHistoryTimelineProps {
+    history: HistoryEvent[] | { timeline?: HistoryEvent[] } | any;
     primaryColor: string;
 }
 
@@ -36,7 +37,9 @@ const getEventIcon = (type: string) => {
 };
 
 export function StudentHistoryTimeline({ history, primaryColor }: StudentHistoryTimelineProps) {
-    if (!history || history.length === 0) {
+    const events: HistoryEvent[] = Array.isArray(history) ? history : (history?.timeline || []);
+
+    if (!events || events.length === 0) {
         return (
             <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="size-20 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-white/5">
@@ -57,7 +60,7 @@ export function StudentHistoryTimeline({ history, primaryColor }: StudentHistory
             {/* Vertical Line */}
             <div className="absolute left-[1.15rem] md:left-[1.65rem] top-8 bottom-8 w-px bg-gradient-to-b from-slate-200 via-slate-200 to-transparent dark:from-white/10 dark:via-white/10 dark:to-transparent" />
 
-            {history.map((event, index) => {
+            {events.map((event, index) => {
                 const { icon: Icon, color, bg } = getEventIcon(event.type);
                 const isFirst = index === 0;
 

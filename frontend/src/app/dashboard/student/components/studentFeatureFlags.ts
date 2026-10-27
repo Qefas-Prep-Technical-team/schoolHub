@@ -5,6 +5,7 @@ export const STUDENT_FEATURE_FLAGS = {
   classes: true,
   assignments: true,
   results: true,
+  transcript: true,
   attendance: true,
   exams: true,
   documents: false,

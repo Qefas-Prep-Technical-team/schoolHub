@@ -511,6 +511,12 @@ export const updateSchoolSettingsService = async (
         !!data.allowTeacherDigitalSignature;
     if (data.lockSettings !== undefined)
       updatePayload.lockSettings = !!data.lockSettings;
+    if (data.transcriptFee !== undefined) {
+      const feeNum = parseFloat(String(data.transcriptFee));
+      if (!isNaN(feeNum) && feeNum >= 0) {
+        updatePayload.transcriptFee = feeNum;
+      }
+    }
 
     console.log(
       `[SchoolService] updateSchoolSettings: Payload:`,

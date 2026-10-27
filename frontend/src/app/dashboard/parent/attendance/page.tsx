@@ -1,17 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import StudentProfile from './components/StudentProfile';
 import AttendanceAlert from './components/AttendanceAlert';
 import AttendanceChart from './components/AttendanceChart';
 import MonthlyTrend from './components/MonthlyTrend';
-import RecentActivity from './components/RecentActivity';
+import RecentActivity, { type Activity } from './components/RecentActivity';
 import QuickContact from './components/QuickContact';
 import DetailsModal from './components/DetailsModal';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { useChildDetails, useParentChildren } from '@/lib/api/hooks/useParentChildren';
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
+import { useStudentAttendance } from '@/lib/api/hooks/useStudent';
+import StudentAttendanceDetailModal from '@/app/dashboard/admin/classes/[id]/components/attendance/components/StudentAttendanceDetailModal';
+import type { AttendanceRecord as ModalAttendanceRecord, ClassSubjectItem } from '@/app/dashboard/admin/classes/[id]/components/attendance/components/types';
+import { buildAttendanceModalData, getCleanAttendance, type RawStudentAttendance } from '@/lib/attendance/attendanceRecord';
 import { format, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,12 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-interface AttendanceRecord {
-  id?: string;
-  date: string;
-  status: string;
-  remarks?: string;
-}
+type AttendanceRecord = RawStudentAttendance & { status: string };
 
 // ==========================================
 // Full Shimmering Modern Loading Skeleton
@@ -204,6 +203,8 @@ function NoAttendanceState({ childName, onRefresh }: NoAttendanceStateProps) {
 export default function ParentAttendancePage() {
   const [trendPeriod, setTrendPeriod] = useState('This Semester');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [inspectRecord, setInspectRecord] = useState<ModalAttendanceRecord | null>(null);
+  const [inspectSubjects, setInspectSubjects] = useState<ClassSubjectItem[]>([]);
 
   const { selectedChildId, setSelectedChildId } = useParentStore();
   const { data: children = [], isLoading: isChildrenLoading, refetch: refetchChildren } = useParentChildren();
@@ -233,16 +234,34 @@ export default function ParentAttendancePage() {
     refetch: refetchChild 
   } = useChildDetails(activeChildId);
 
+  // Rich attendance rows (parsed notes, recorded subjects, class subjects, department)
+  const {
+    data: richAttendance,
+    isLoading: loadingAttendance,
+    refetch: refetchAttendance,
+  } = useStudentAttendance(activeChildId || '');
+
+  // Newest first; fall back to the lighter child-details list if the rich endpoint is empty
+  const attendances = useMemo<AttendanceRecord[]>(() => {
+    const rich = Array.isArray(richAttendance) ? (richAttendance as AttendanceRecord[]) : [];
+    const legacy = ((child as unknown as { attendances?: AttendanceRecord[] } | undefined)?.attendances) || [];
+    const source = rich.length > 0 ? rich : legacy;
+    return [...source]
+      .filter((a) => !!a.date && !isNaN(new Date(a.date).getTime()))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [richAttendance, child]);
+
   const handleManualRefresh = () => {
     refetchChildren();
     if (activeChildId) {
       refetchDashboard();
       refetchChild();
+      refetchAttendance();
     }
     toast.info("Refreshed attendance records.");
   };
 
-  const isLoadingOverall = isChildrenLoading || (!!activeChildId && (loadingDash || loadingChild));
+  const isLoadingOverall = isChildrenLoading || (!!activeChildId && (loadingDash || loadingChild || loadingAttendance));
 
   // 1. Loading Skeleton
   if (isLoadingOverall) {
@@ -264,8 +283,24 @@ export default function ParentAttendancePage() {
     schoolName: selectedChild?.school?.name || child?.school?.name || dashboard?.child?.school?.name,
   };
 
-  // Safe attendances array from child details
-  const attendances: AttendanceRecord[] = ((child as any)?.attendances || []) as AttendanceRecord[];
+  const openInspection = (record: AttendanceRecord) => {
+    const childDept = (child as unknown as { departmentId?: string | null; department?: { id: string; name: string; code?: string } | null } | undefined);
+    const { record: modalRecord, classSubjects } = buildAttendanceModalData(record, {
+      studentId: activeChildId || undefined,
+      studentName: studentData.name,
+      studentCode: studentData.studentId,
+      className: studentData.grade,
+      departmentId: childDept?.departmentId ?? null,
+      department: childDept?.department ?? null,
+    });
+    setInspectSubjects(classSubjects);
+    setInspectRecord(modalRecord);
+  };
+
+  const openInspectionById = (id: string) => {
+    const rec = attendances.find((a) => (a.id || a.date) === id);
+    if (rec) openInspection(rec);
+  };
 
   const presentDays = attendances.filter((a) => (a.status || '').toLowerCase() === 'present').length;
   const lateDays = attendances.filter((a) => (a.status || '').toLowerCase() === 'late').length;
@@ -280,7 +315,7 @@ export default function ParentAttendancePage() {
   const attendanceRate = calculatedRate;
 
   // Recent 5 activities
-  const activities = attendances.slice(0, 5).map((a) => {
+  const activities: Activity[] = attendances.slice(0, 5).map((a) => {
     let dateStr = '';
     const d = new Date(a.date);
     if (!isNaN(d.getTime())) {
@@ -291,13 +326,16 @@ export default function ParentAttendancePage() {
       dateStr = 'Recent';
     }
 
-    const st = (a.status || 'present').toLowerCase() as 'present' | 'late' | 'absent';
+    const st = (a.status || 'present').toLowerCase() as Activity['status'];
+    const { comment, chips } = getCleanAttendance(a);
     return {
       id: a.id || a.date,
       date: dateStr,
       status: st,
       description: st.charAt(0).toUpperCase() + st.slice(1),
       time: 'Recorded',
+      comment,
+      subjects: chips,
     };
   });
 
@@ -410,6 +448,7 @@ export default function ParentAttendancePage() {
             <RecentActivity
               activities={activities}
               viewAllHref="/dashboard/parent/attendance/monthly"
+              onActivityClick={openInspectionById}
             />
 
             <QuickContact
@@ -429,6 +468,20 @@ export default function ParentAttendancePage() {
         isOpen={isDetailsModalOpen} 
         onClose={() => setIsDetailsModalOpen(false)} 
         attendances={attendances} 
+        onRecordClick={(rec) => {
+          setIsDetailsModalOpen(false);
+          openInspection(rec as AttendanceRecord);
+        }}
+      />
+
+      {/* Per-day inspection: overall arrival + subject breakdown (read-only for parents) */}
+      <StudentAttendanceDetailModal
+        isOpen={!!inspectRecord}
+        onClose={() => setInspectRecord(null)}
+        record={inspectRecord}
+        classSubjects={inspectSubjects}
+        classNameLabel={inspectRecord?.className || studentData.grade}
+        readOnly
       />
     </main>
   );

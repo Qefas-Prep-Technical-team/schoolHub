@@ -50,14 +50,18 @@ export const getStudentTermResults = async (
   });
 };
 
-export const getMyPublishedResults = async (studentId: string, schoolId: string) => {
+export const getMyPublishedResults = async (studentId: string, schoolId: string, isAdmin = false) => {
   const now = new Date();
 
-  // 1. Fetch all published student subject results
+  // 1. Fetch student subject results: strictly only PUBLISHED results
   const subjectResults = await prisma.studentSubjectTermResult.findMany({
-    where: { studentId, schoolId, status: "PUBLISHED" },
+    where: {
+      studentId,
+      schoolId,
+      status: "PUBLISHED",
+    },
     include: {
-      subject: { select: { id: true, name: true } },
+      subject: { select: { id: true, name: true, code: true } },
       class:   { select: { id: true, name: true } },
       session: { select: { id: true, name: true } },
     },
@@ -77,8 +81,29 @@ export const getMyPublishedResults = async (studentId: string, schoolId: string)
     configKeys.map((key) => {
       const [classId, subjectId, sessionId, term] = key.split("|");
       return prisma.classSubjectResult.findFirst({
-        where: { schoolId, classId, subjectId, sessionId, term: term as any, status: "PUBLISHED" },
-        select: { classId: true, subjectId: true, sessionId: true, term: true, revealDate: true, releaseDate: true, name: true },
+        where: {
+          schoolId,
+          classId,
+          subjectId,
+          sessionId,
+          term: term as any,
+          status: "PUBLISHED",
+        },
+        select: {
+          classId: true,
+          subjectId: true,
+          sessionId: true,
+          term: true,
+          status: true,
+          revealDate: true,
+          releaseDate: true,
+          name: true,
+          paperLinks: true,
+          assignmentMax: true,
+          quizMax: true,
+          caMax: true,
+          examMax: true,
+        },
       });
     })
   );
@@ -86,34 +111,55 @@ export const getMyPublishedResults = async (studentId: string, schoolId: string)
   const configMap = new Map<string, (typeof rawConfigs)[number]>();
   configKeys.forEach((key, i) => configMap.set(key, rawConfigs[i]));
 
-  // 3. Apply per-subject visibility rules:
-  //    • revealDate not set OR not passed     → HIDDEN (skip entirely)
-  //    • revealDate passed, releaseDate not   → VISIBLE subject, grades = N/A  (scoresRevealed: false)
-  //    • releaseDate passed                   → FULLY VISIBLE (scoresRevealed: true)
-  //    releaseDate overrides revealDate if both are set and releaseDate has passed.
-
-  type EnrichedResult = (typeof subjectResults)[number] & { scoresRevealed: boolean, resultName?: string };
+  // 3. Apply visibility rules:
+  //    • Only return approved and published final results
+  //    • If admin preview: reveal all approved published scores unconditionally
+  //    • For students & parents: check revealDate / releaseDate gates
+  type EnrichedResult = (typeof subjectResults)[number] & {
+    scoresRevealed: boolean;
+    resultName?: string;
+    paperLinks?: any;
+    approval?: any;
+  };
   const visible: EnrichedResult[] = [];
 
   for (const r of subjectResults) {
     const cfgKey = `${r.classId}|${r.subjectId}|${r.sessionId}|${r.term}`;
     const cfg = configMap.get(cfgKey);
-    if (!cfg) continue; // No published config = skip
+    if (!cfg || cfg.status !== "PUBLISHED") continue;
+
+    const paperLinks = (cfg.paperLinks as any) || {};
+    const approval = paperLinks?.approval;
+
+    // CRITICAL: Strictly only approved final results (approval cannot be pending or unpublish-requested)
+    if (approval && approval.status && approval.status !== "APPROVED") {
+      continue;
+    }
+
+    if (isAdmin) {
+      visible.push({
+        ...r,
+        scoresRevealed: true,
+        resultName: cfg?.name || "Official Term Evaluation",
+        paperLinks,
+        approval,
+      });
+      continue;
+    }
 
     const revealDate  = cfg.revealDate  ? new Date(cfg.revealDate)  : null;
     const releaseDate = cfg.releaseDate ? new Date(cfg.releaseDate) : null;
 
-    const releasePassed = !!releaseDate && releaseDate <= now;
-    const revealPassed  = !!revealDate  && revealDate  <= now;
+    const releasePassed = !releaseDate || releaseDate <= now;
+    const revealPassed  = !revealDate  || revealDate  <= now;
 
     if (releasePassed) {
       // Full access — releaseDate overrides everything
-      visible.push({ ...r, scoresRevealed: true, resultName: cfg.name });
+      visible.push({ ...r, scoresRevealed: true, resultName: cfg.name, paperLinks, approval });
     } else if (revealPassed) {
       // Subject visible but grades hidden until releaseDate
-      visible.push({ ...r, scoresRevealed: false, resultName: cfg.name });
+      visible.push({ ...r, scoresRevealed: false, resultName: cfg.name, paperLinks, approval });
     }
-    // else: neither passed or revealDate not set → skip (don't expose to student)
   }
 
   if (visible.length === 0) return [];
@@ -130,6 +176,8 @@ export const getMyPublishedResults = async (studentId: string, schoolId: string)
       subjectCount: number;
       revealedCount: number;
       subjectResults: EnrichedResult[];
+      paperLinks?: any;
+      approval?: any;
     }
   >();
 
@@ -145,10 +193,16 @@ export const getMyPublishedResults = async (studentId: string, schoolId: string)
         subjectCount:  0,
         revealedCount: 0,
         subjectResults: [],
+        paperLinks: r.paperLinks,
+        approval: r.approval,
       });
     }
     const grp = grouped.get(groupKey)!;
     grp.subjectResults.push(r);
+    if (!grp.approval && r.approval) {
+      grp.approval = r.approval;
+      grp.paperLinks = r.paperLinks;
+    }
   }
 
   // Compute counts
@@ -284,6 +338,8 @@ export const updateClassSubjectResult = async (
     classId?: string | null;
     departmentId?: string | null;
     subjectId?: string | null;
+    sessionId?: string | null;
+    term?: Term | null;
   }
 ) => {
   const existing = await prisma.classSubjectResult.findFirst({
@@ -306,6 +362,8 @@ export const updateClassSubjectResult = async (
       ...(data.classId !== undefined && data.classId !== null && { classId: data.classId }),
       ...(data.departmentId !== undefined && { departmentId: data.departmentId }),
       ...(data.subjectId !== undefined && data.subjectId !== null && { subjectId: data.subjectId }),
+      ...(data.sessionId !== undefined && data.sessionId !== null && { sessionId: data.sessionId }),
+      ...(data.term !== undefined && data.term !== null && { term: data.term }),
     },
   });
 };
@@ -429,17 +487,25 @@ export const calculatePaperSync = async (schoolId: string, id: string, studentId
       where: { id: { in: paperIds }, schoolId },
       select: { id: true, totalMarks: true }
     });
-    const totalPossibleMarks = papers.reduce((sum, p) => sum + (p.totalMarks || 0), 0);
-    
-    if (totalPossibleMarks === 0) return;
+    let totalPossibleMarks = papers.reduce((sum, p) => sum + (p.totalMarks || 0), 0);
 
     const grades = await prisma.grade.findMany({
       where: {
         studentId: { in: studentIds },
-        subjectPaperId: { in: paperIds },
+        OR: [
+          { subjectPaperId: { in: paperIds } },
+          { id: { in: paperIds } }
+        ],
         subjectExamAttemptId: null // Only get manual grades not linked to an attempt
       }
     });
+
+    if (totalPossibleMarks === 0 && grades.length > 0) {
+      const maxFound = grades.reduce((m, g) => Math.max(m, g.maxMarks || 0), 0);
+      totalPossibleMarks = maxFound > 0 ? maxFound : maxScore;
+    }
+
+    if (totalPossibleMarks === 0) return;
 
     const onlineAttempts = await prisma.subjectExamAttempt.findMany({
       where: {
@@ -474,7 +540,20 @@ export const calculatePaperSync = async (schoolId: string, id: string, studentId
       where: { id: { in: assignmentIds }, schoolId },
       select: { id: true, totalMarks: true }
     });
-    const totalPossibleMarks = assignments.reduce((sum, a) => sum + (a.totalMarks || 0), 0);
+    let totalPossibleMarks = assignments.reduce((sum, a) => sum + (a.totalMarks || 0), 0);
+
+    const offlineGrades = await prisma.grade.findMany({
+      where: {
+        studentId: { in: studentIds },
+        id: { in: assignmentIds },
+        subjectExamAttemptId: null
+      }
+    });
+
+    if (totalPossibleMarks === 0 && offlineGrades.length > 0) {
+      const maxFound = offlineGrades.reduce((m, g) => Math.max(m, g.maxMarks || 0), 0);
+      totalPossibleMarks = maxFound > 0 ? maxFound : maxScore;
+    }
 
     if (totalPossibleMarks === 0) return;
 
@@ -487,7 +566,12 @@ export const calculatePaperSync = async (schoolId: string, id: string, studentId
 
     for (const res of syncResults) {
       const studentSubs = submissions.filter(s => s.studentId === res.studentId);
-      const studentTotalScore = studentSubs.reduce((sum, s) => sum + (s.score || 0), 0);
+      const submissionScore = studentSubs.reduce((sum, s) => sum + (s.score || 0), 0);
+
+      const studentOffline = offlineGrades.filter(g => g.studentId === res.studentId);
+      const offlineScore = studentOffline.reduce((sum, g) => sum + (g.score || 0), 0);
+
+      const studentTotalScore = submissionScore + offlineScore;
       
       const scaledScore = (studentTotalScore / totalPossibleMarks) * maxScore;
       res.assignment = parseFloat(scaledScore.toFixed(2));
@@ -604,7 +688,11 @@ export const getStudentScoreBreakdown = async (schoolId: string, id: string, stu
 
 export const publishClassSubjectResult = async (
   schoolId: string,
-  id: string
+  id: string,
+  adminUserId?: string,
+  adminUserName?: string,
+  customSignature?: string,
+  customRole?: string
 ) => {
   const result = await prisma.classSubjectResult.findFirst({
     where: { id, schoolId },
@@ -617,10 +705,67 @@ export const publishClassSubjectResult = async (
 
   if (!result) throw new Error("Result configuration not found");
 
-  // Update status to PUBLISHED
+  let adminName = adminUserName || "School Administrator";
+  let adminRole = customRole || "School Administrator";
+
+  if (adminUserId) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminUserId },
+      select: { id: true, name: true, email: true },
+    });
+    if (admin) {
+      adminName = admin.name || adminName;
+    }
+    if (!customRole) {
+      const schoolAdmin = await prisma.schoolAdmin.findFirst({
+        where: { adminId: adminUserId, schoolId, active: true },
+        select: { role: true },
+      });
+      if (schoolAdmin?.role) {
+        adminRole = schoolAdmin.role.replace(/_/g, " ");
+      }
+    }
+  }
+
+  const existingPaperLinks = (result.paperLinks as any) || {};
+  const signatureText = customSignature || `Digitally certified and approved by ${adminName} (${adminRole})`;
+
+  const approvalRecord = {
+    status: "APPROVED",
+    approvedById: adminUserId || "admin",
+    approvedByName: adminName,
+    role: adminRole,
+    approvedAt: new Date().toISOString(),
+    signature: signatureText,
+    requestedById: existingPaperLinks?.approval?.requestedById || undefined,
+    requestedByName: existingPaperLinks?.approval?.requestedByName || undefined,
+    requestedRole: existingPaperLinks?.approval?.role || "Subject Teacher",
+    requestedSignature: existingPaperLinks?.approval?.signature || undefined,
+  };
+
+  const existingHistory: any[] = Array.isArray(existingPaperLinks.approvalHistory)
+    ? existingPaperLinks.approvalHistory
+    : existingPaperLinks.approval ? [existingPaperLinks.approval] : [];
+
+  const updatedHistory = [
+    approvalRecord,
+    ...existingHistory.filter((item: any) => item.approvedAt !== approvalRecord.approvedAt)
+  ];
+
+  const updatedPaperLinks = {
+    ...existingPaperLinks,
+    approval: approvalRecord,
+    approvalHistory: updatedHistory,
+  };
+
+  // Update status to PUBLISHED and record approval signature
   await prisma.classSubjectResult.update({
     where: { id },
-    data: { status: "PUBLISHED" }
+    data: {
+      status: "PUBLISHED",
+      publishedAt: new Date(),
+      paperLinks: updatedPaperLinks,
+    }
   });
 
   // Update all student results
@@ -696,7 +841,10 @@ export const publishClassSubjectResult = async (
 
 export const unpublishClassSubjectResult = async (
   schoolId: string,
-  id: string
+  id: string,
+  adminUserId?: string,
+  adminUserName?: string,
+  reason?: string
 ) => {
   const result = await prisma.classSubjectResult.findFirst({
     where: { id, schoolId }
@@ -704,10 +852,65 @@ export const unpublishClassSubjectResult = async (
 
   if (!result) throw new Error("Result configuration not found");
 
-  // Update status to DRAFT
+  let adminName = adminUserName || "School Administrator";
+  let adminRole = "School Administrator";
+
+  if (adminUserId) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminUserId },
+      select: { id: true, name: true, email: true },
+    });
+    if (admin) {
+      adminName = admin.name || adminName;
+    }
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId: adminUserId, schoolId, active: true },
+      select: { role: true },
+    });
+    if (schoolAdmin?.role) {
+      adminRole = schoolAdmin.role.replace(/_/g, " ");
+    }
+  }
+
+  const existingPaperLinks = (result.paperLinks as any) || {};
+  const unpublishTimestamp = new Date().toISOString();
+
+  const unpublishRecord = {
+    action: "UNPUBLISHED",
+    status: "UNAPPROVED",
+    unapprovedById: adminUserId || "admin",
+    unapprovedByName: adminName,
+    role: adminRole,
+    unapprovedAt: unpublishTimestamp,
+    reason: reason || "Unpublished and reverted to draft by administrator",
+  };
+
+  const existingHistory: any[] = Array.isArray(existingPaperLinks.approvalHistory)
+    ? existingPaperLinks.approvalHistory
+    : existingPaperLinks.approval ? [existingPaperLinks.approval] : [];
+
+  const updatedPaperLinks = {
+    ...existingPaperLinks,
+    approval: {
+      ...(existingPaperLinks.approval || {}),
+      status: "UNAPPROVED",
+      unapprovedAt: unpublishTimestamp,
+      unapprovedByName: adminName,
+      unapprovedRole: adminRole,
+    },
+    approvalHistory: [
+      unpublishRecord,
+      ...existingHistory,
+    ],
+  };
+
+  // Update status to DRAFT and record unapproval history
   await prisma.classSubjectResult.update({
     where: { id },
-    data: { status: "DRAFT" }
+    data: { 
+      status: "DRAFT",
+      paperLinks: updatedPaperLinks,
+    }
   });
 
   // Update all student results
@@ -725,7 +928,12 @@ export const unpublishClassSubjectResult = async (
   return { success: true };
 };
 
-export const requestPublishApproval = async (schoolId: string, resultId: string, teacherId: string) => {
+export const requestPublishApproval = async (
+  schoolId: string, 
+  resultId: string, 
+  teacherId: string,
+  teacherSignature?: string
+) => {
   const result = await prisma.classSubjectResult.findFirst({
     where: { id: resultId, schoolId },
     include: { subject: true, class: true }
@@ -734,6 +942,47 @@ export const requestPublishApproval = async (schoolId: string, resultId: string,
   
   const teacher = await prisma.teacher.findFirst({ where: { id: teacherId } });
   const teacherName = teacher ? teacher.name : "A teacher";
+
+  const existingPaperLinks = (result.paperLinks as any) || {};
+  const requestedTimestamp = new Date().toISOString();
+  const signatureText = teacherSignature || `${teacherName} (Subject Teacher)`;
+
+  const submissionAudit = {
+    action: "SUBMITTED_FOR_APPROVAL",
+    status: "PENDING_APPROVAL",
+    requestedById: teacherId,
+    requestedByName: teacherName,
+    role: "Subject Teacher",
+    requestedAt: requestedTimestamp,
+    signature: signatureText,
+    notes: `Submitted marks with official signature: "${signatureText}"`,
+  };
+
+  const existingHistory: any[] = Array.isArray(existingPaperLinks.approvalHistory)
+    ? existingPaperLinks.approvalHistory
+    : existingPaperLinks.approval ? [existingPaperLinks.approval] : [];
+
+  const updatedPaperLinks = {
+    ...existingPaperLinks,
+    approval: {
+      status: "PENDING_APPROVAL",
+      requestedById: teacherId,
+      requestedByName: teacherName,
+      requestedAt: requestedTimestamp,
+      signature: signatureText,
+    },
+    approvalHistory: [
+      submissionAudit,
+      ...existingHistory,
+    ],
+  };
+
+  await prisma.classSubjectResult.update({
+    where: { id: resultId },
+    data: {
+      paperLinks: updatedPaperLinks,
+    }
+  });
 
   const adminsToNotify = await prisma.schoolAdmin.findMany({
     where: {
@@ -764,6 +1013,36 @@ export const requestUnpublishApproval = async (schoolId: string, resultId: strin
   const teacher = await prisma.teacher.findFirst({ where: { id: teacherId } });
   const teacherName = teacher ? teacher.name : "A teacher";
 
+  const existingPaperLinks = (result.paperLinks as any) || {};
+  const requestedTimestamp = new Date().toISOString();
+
+  const unpublishRequestAudit = {
+    action: "UNPUBLISH_REQUESTED",
+    status: "UNPUBLISH_REQUESTED",
+    requestedById: teacherId,
+    requestedByName: teacherName,
+    role: "Subject Teacher",
+    requestedAt: requestedTimestamp,
+    notes: `Requested administration approval to unpublish score sheet`,
+  };
+
+  const existingHistory: any[] = Array.isArray(existingPaperLinks.approvalHistory)
+    ? existingPaperLinks.approvalHistory
+    : existingPaperLinks.approval ? [existingPaperLinks.approval] : [];
+
+  await prisma.classSubjectResult.update({
+    where: { id: resultId },
+    data: {
+      paperLinks: {
+        ...existingPaperLinks,
+        approvalHistory: [
+          unpublishRequestAudit,
+          ...existingHistory,
+        ]
+      }
+    }
+  });
+
   const adminsToNotify = await prisma.schoolAdmin.findMany({
     where: {
       schoolId,
@@ -781,4 +1060,20 @@ export const requestUnpublishApproval = async (schoolId: string, resultId: strin
       message: `${teacherName} has requested approval to unpublish the final result for ${result.class?.name} - ${result.subject?.name}.`
     });
   }
+};
+
+export const notifyTeacherUnpublishBlocked = async (
+  schoolId: string,
+  teacherId: string,
+  result: any,
+  approverName: string,
+  approverRole: string
+) => {
+  await createNotification({
+    recipientType: "TEACHER",
+    recipientId: teacherId,
+    type: "ACADEMIC",
+    title: "Cannot Unpublish Certified Result",
+    message: `The final result for ${result.class?.name || ''} - ${result.subject?.name || ''} has been officially approved and published by ${approverName} (${approverRole}). Certified results cannot be unpublished by teachers. Please contact school administration if corrections are required.`,
+  });
 };

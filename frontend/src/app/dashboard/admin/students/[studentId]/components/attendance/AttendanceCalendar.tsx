@@ -1,40 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useStudentAttendance, useUpdateStudentAttendance } from "@/lib/api/hooks/useStudent";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { useSingleClass } from "@/lib/api/hooks/useClasses";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, AlertCircle, XCircle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { StudentAttendanceDetailModal } from "@/app/dashboard/admin/classes/[id]/components/attendance/components/StudentAttendanceDetailModal";
+import { AttendanceRecord, ClassSubjectItem, AttendanceStatus } from "@/app/dashboard/admin/classes/[id]/components/attendance/components/types";
 
 interface AttendanceCalendarProps {
   studentId: string;
   themeColor?: string;
+  student?: any;
+  classId?: string;
 }
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }: AttendanceCalendarProps) {
+export default function AttendanceCalendar({ 
+  studentId, 
+  themeColor = "#2563eb",
+  student,
+  classId,
+}: AttendanceCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Edit Dialog State
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [editStatus, setEditStatus] = useState<string>("Present");
-  const [editNote, setEditNote] = useState<string>("");
+  // Detail Modal State
+  const [inspectRecord, setInspectRecord] = useState<AttendanceRecord | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -42,6 +36,104 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
   // Fetch attendance records
   const { data: attendanceRecords, isLoading, isError } = useStudentAttendance(studentId);
   const { mutate: updateAttendance, isPending: isUpdating } = useUpdateStudentAttendance(studentId);
+
+  // Determine active class ID for subject definitions
+  const activeClassId = useMemo(() => {
+    if (classId) return classId;
+    if (student?.classes?.[0]?.class?.id) return student.classes[0].class.id;
+    if (Array.isArray(attendanceRecords)) {
+      const rec = attendanceRecords.find((r: any) => r.class?.id);
+      if (rec?.class?.id) return rec.class.id;
+    }
+    return "";
+  }, [classId, student, attendanceRecords]);
+
+  // Fetch class info with all attached subjects
+  const { data: classData } = useSingleClass(activeClassId);
+
+  // Extract class subjects with departments
+  const classSubjects = useMemo<ClassSubjectItem[]>(() => {
+    if (classData?.subjects?.length) {
+      return classData.subjects
+        .map((cs: any) => {
+          const s = cs.subject || cs;
+          if (!s || !s.id) return null;
+          const depts = s.departments || [];
+          const departmentIds: string[] = depts
+            .map((d: any) => d.departmentId || d.department?.id)
+            .filter(Boolean);
+          const departmentNames: string[] = depts
+            .map((d: any) => d.department?.name)
+            .filter(Boolean);
+          return {
+            id: s.id,
+            name: s.name,
+            code: s.code,
+            departmentIds,
+            departmentNames,
+          };
+        })
+        .filter((s: ClassSubjectItem | null): s is ClassSubjectItem => s !== null);
+    }
+
+    if (student?.classes?.[0]?.class?.subjects?.length) {
+      return student.classes[0].class.subjects
+        .map((cs: any) => {
+          const s = cs.subject || cs;
+          if (!s || !s.id) return null;
+          const depts = s.departments || [];
+          const departmentIds: string[] = depts
+            .map((d: any) => d.departmentId || d.department?.id)
+            .filter(Boolean);
+          const departmentNames: string[] = depts
+            .map((d: any) => d.department?.name)
+            .filter(Boolean);
+          return {
+            id: s.id,
+            name: s.name,
+            code: s.code,
+            departmentIds,
+            departmentNames,
+          };
+        })
+        .filter((s: ClassSubjectItem | null): s is ClassSubjectItem => s !== null);
+    }
+
+    if (Array.isArray(attendanceRecords)) {
+      const recWithClass = attendanceRecords.find((r: any) => r.class?.subjects?.length);
+      if (recWithClass?.class?.subjects?.length) {
+        return recWithClass.class.subjects
+          .map((cs: any) => {
+            const s = cs.subject || cs;
+            if (!s || !s.id) return null;
+            const depts = s.departments || [];
+            const departmentIds: string[] = depts
+              .map((d: any) => d.departmentId || d.department?.id)
+              .filter(Boolean);
+            const departmentNames: string[] = depts
+              .map((d: any) => d.department?.name)
+              .filter(Boolean);
+            return {
+              id: s.id,
+              name: s.name,
+              code: s.code,
+              departmentIds,
+              departmentNames,
+            };
+          })
+          .filter((s: ClassSubjectItem | null): s is ClassSubjectItem => s !== null);
+      }
+    }
+
+    return [];
+  }, [classData, student, attendanceRecords]);
+
+  const classNameLabel = useMemo(() => {
+    return classData?.name || 
+      student?.classes?.[0]?.class?.name || 
+      attendanceRecords?.find((r: any) => r.class?.name)?.class?.name || 
+      "Class";
+  }, [classData, student, attendanceRecords]);
 
   // Calendar logic
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -64,40 +156,80 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
     const targetDate = `${y}-${m}-${d}`;
     
     return attendanceRecords.find((record: any) => {
-      // Prisma returns dates like "2026-06-05T00:00:00.000Z"
-      // splitting at 'T' safely gives the correct database date string
-      const recordDate = record.date.split('T')[0];
+      const recordDate = record.date ? record.date.split('T')[0] : "";
       return recordDate === targetDate;
     });
   };
 
   const handleDayClick = (day: number) => {
     const record = getAttendanceForDate(day);
-    setSelectedDay(day);
+    const y = year;
+    const m = String(month + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    const targetDate = `${y}-${m}-${d}`;
+
     if (record) {
-      setEditStatus(record.status);
-      setEditNote(record.note || "");
+      const rawStatus = (record.status ? record.status.toLowerCase() : 'present') as any;
+      const normalizedStatus: AttendanceStatus = ['present', 'absent', 'late', 'excused'].includes(rawStatus) ? rawStatus : 'present';
+
+      setInspectRecord({
+        id: record.id || `rec-${targetDate}`,
+        studentId: record.studentId || studentId,
+        studentName: record.student?.name || student?.name || "Student",
+        studentCode: record.student?.studentCode || student?.studentCode || "-",
+        classId: record.classId || activeClassId,
+        className: record.class?.name || classNameLabel,
+        departmentId: record.student?.departmentId || student?.departmentId || student?.department?.id || null,
+        department: record.student?.department || student?.department || null,
+        status: normalizedStatus,
+        comment: record.comment || (typeof record.note === 'string' && !record.note.startsWith('{') ? record.note : ""),
+        date: record.date ? (typeof record.date === 'string' ? record.date.split('T')[0] : targetDate) : targetDate,
+        subjects: record.subjects || {},
+        submittedBy: record.submittedBy || record.recordedByName || 'Staff',
+        submittedAt: record.submittedAt || record.createdAt || new Date().toISOString(),
+        recordedByName: record.recordedByName,
+        recordedByRole: record.recordedByRole,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      });
     } else {
-      setEditStatus("Present");
-      setEditNote("");
+      // Create draft record for this date to inspect / log attendance
+      setInspectRecord({
+        id: `draft-${targetDate}`,
+        studentId: studentId,
+        studentName: student?.name || "Student",
+        studentCode: student?.studentCode || "-",
+        classId: activeClassId,
+        className: classNameLabel,
+        departmentId: student?.departmentId || student?.department?.id || null,
+        department: student?.department || null,
+        status: 'present',
+        comment: '',
+        date: targetDate,
+        subjects: {},
+        submittedBy: 'Admin',
+        submittedAt: new Date().toISOString(),
+        recordedByName: 'Admin',
+        recordedByRole: 'ADMIN',
+      });
     }
   };
 
-  const handleSaveAttendance = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedDay === null) return;
-    
-    // Safely format YYYY-MM-DD using local time
-    const y = year;
-    const m = String(month + 1).padStart(2, '0');
-    const d = String(selectedDay).padStart(2, '0');
-    const dateStr = `${y}-${m}-${d}`;
-    
+  const handleSaveModal = (updatedRecord: AttendanceRecord) => {
+    const dateStr = typeof updatedRecord.date === 'string' 
+      ? updatedRecord.date.split('T')[0] 
+      : new Date(updatedRecord.date).toLocaleDateString('en-CA');
+
     updateAttendance(
-      { date: dateStr, status: editStatus, note: editNote },
+      { 
+        date: dateStr, 
+        status: updatedRecord.status, 
+        note: updatedRecord.comment || '',
+        subjects: updatedRecord.subjects,
+      },
       {
         onSuccess: () => {
-          setSelectedDay(null);
+          setInspectRecord(null);
         }
       }
     );
@@ -108,6 +240,7 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
     if (s === 'present') return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30';
     if (s === 'late') return 'bg-amber-500/10 text-amber-500 border-amber-500/30';
     if (s === 'absent') return 'bg-rose-500/10 text-rose-500 border-rose-500/30';
+    if (s === 'excused') return 'bg-sky-500/10 text-sky-500 border-sky-500/30';
     return 'bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/10';
   };
 
@@ -169,11 +302,13 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
             </div>
             <div>
               <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2 md:gap-4">
-                <button onClick={handlePrevMonth} className="hover:text-primary transition-colors p-1"><ChevronLeft size={20} className="md:size-6" /></button>
+                <button type="button" onClick={handlePrevMonth} className="hover:text-primary transition-colors p-1"><ChevronLeft size={20} className="md:size-6" /></button>
                 {MONTHS[month]} {year}
-                <button onClick={handleNextMonth} className="hover:text-primary transition-colors p-1"><ChevronRight size={20} className="md:size-6" /></button>
+                <button type="button" onClick={handleNextMonth} className="hover:text-primary transition-colors p-1"><ChevronRight size={20} className="md:size-6" /></button>
               </h2>
-              <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Monthly Attendance</p>
+              <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                Monthly Attendance &bull; Click any day to inspect overall & subject breakdown
+              </p>
             </div>
           </div>
         </div>
@@ -210,28 +345,30 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
         
         <div className="grid grid-cols-7 gap-2 md:gap-4">
           {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-16 md:h-24 rounded-xl md:rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
+            <div key={`empty-${i}`} className="h-20 md:h-28 rounded-xl md:rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
           ))}
           
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const record = getAttendanceForDate(day);
             const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+            const subjectItems = record?.subjects ? Object.values(record.subjects) : [];
+            const presentSubsCount = subjectItems.filter((s: any) => s.status === 'present').length;
             
             return (
               <div 
                 key={day} 
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "h-16 md:h-24 rounded-xl md:rounded-2xl border p-2 md:p-3 flex flex-col justify-between transition-all cursor-pointer hover:shadow-md hover:scale-[1.02]",
+                  "h-20 md:h-28 rounded-xl md:rounded-2xl border p-2 md:p-3 flex flex-col justify-between transition-all cursor-pointer hover:shadow-lg hover:scale-[1.03] group",
                   record ? getStatusColor(record.status) : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-slate-300",
                   isToday && !record && "border-primary/50 shadow-sm"
                 )}
                 style={isToday && !record ? { borderColor: themeColor } : {}}
               >
-                <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-1 md:gap-0">
+                <div className="flex justify-between items-start gap-1">
                   <span className={cn(
-                    "text-[11px] md:text-sm font-black", 
+                    "text-xs md:text-sm font-black", 
                     record ? "opacity-90" : "text-slate-400",
                     isToday && !record && "text-slate-900 dark:text-white"
                   )}>
@@ -240,9 +377,23 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
                   {record && getStatusDot(record.status)}
                 </div>
                 
-                {record && (
-                  <div className="hidden md:block text-[9px] font-black uppercase tracking-widest mt-auto">
-                    {record.status}
+                {record ? (
+                  <div className="flex flex-col gap-0.5 mt-auto">
+                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-wider truncate">
+                      {record.status}
+                    </div>
+                    {subjectItems.length > 0 && (
+                      <div className="flex items-center gap-1 text-[8.5px] font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">
+                        <BookOpen size={10} className="shrink-0" />
+                        <span className="truncate">
+                          {presentSubsCount} / {subjectItems.length} Present
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-[8px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                    Click to Log
                   </div>
                 )}
               </div>
@@ -251,66 +402,16 @@ export default function AttendanceCalendar({ studentId, themeColor = "#2563eb" }
         </div>
       </div>
 
-      {/* Edit Dialog */}
-      <Dialog open={selectedDay !== null} onOpenChange={(open) => !open && setSelectedDay(null)}>
-        <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
-          <DialogHeader className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
-                <CalendarIcon size={28} />
-              </div>
-              <div className="text-left">
-                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                  Update Attendance
-                </DialogTitle>
-                <DialogDescription className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                  {selectedDay && new Date(year, month, selectedDay).toLocaleDateString()}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveAttendance} className="mt-8 space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</label>
-              <Select value={editStatus} onValueChange={setEditStatus}>
-                <SelectTrigger 
-                  className="w-full px-5 py-6 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-bold focus:ring-1 focus:ring-primary focus:outline-none transition-colors"
-                  style={{ '--tw-ring-color': themeColor } as any}
-                >
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
-                  <SelectItem value="Present" className="font-bold rounded-xl cursor-pointer py-3 focus:bg-emerald-50 dark:focus:bg-emerald-500/10 focus:text-emerald-600 dark:focus:text-emerald-500 transition-colors">Present</SelectItem>
-                  <SelectItem value="Late" className="font-bold rounded-xl cursor-pointer py-3 focus:bg-amber-50 dark:focus:bg-amber-500/10 focus:text-amber-600 dark:focus:text-amber-500 transition-colors">Late</SelectItem>
-                  <SelectItem value="Absent" className="font-bold rounded-xl cursor-pointer py-3 focus:bg-rose-50 dark:focus:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-500 transition-colors">Absent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Note (Optional)</label>
-              <textarea
-                value={editNote}
-                onChange={(e) => setEditNote(e.target.value)}
-                rows={3}
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:border-primary transition-colors resize-none"
-                style={{ '--primary': themeColor } as any}
-                placeholder="e.g. Arrived 30 mins late due to traffic"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isUpdating}
-              className="w-full h-14 rounded-2xl text-white font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:hover:scale-100"
-              style={{ backgroundColor: themeColor }}
-            >
-              {isUpdating ? "Saving..." : "Save Record"}
-            </button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Interactive Detail Pop-up Modal (Overall & Subject Attendance Breakdown) */}
+      <StudentAttendanceDetailModal
+        isOpen={!!inspectRecord}
+        onClose={() => setInspectRecord(null)}
+        record={inspectRecord}
+        classSubjects={classSubjects}
+        classNameLabel={classNameLabel}
+        onSave={handleSaveModal}
+        isSaving={isUpdating}
+      />
     </div>
   );
 }

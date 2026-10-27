@@ -1009,7 +1009,8 @@ export default function StudentProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {(() => {
                                     const schoolMap = new Map();
-                                    historyData?.forEach(event => {
+                                    const timelineEvents = Array.isArray(historyData) ? historyData : (historyData?.timeline || []);
+                                    timelineEvents.forEach((event: any) => {
                                         if (event.school?.id && !schoolMap.has(event.school.id)) {
                                             schoolMap.set(event.school.id, { id: event.school.id, name: event.school.name, logo: event.school.logoUrl || event.school.logo });
                                         }
@@ -1664,7 +1665,12 @@ export default function StudentProfilePage() {
             {/* ── Attendance Tab ─────────────────────────────────────────────── */}
             {activeTab === 'attendance' && (
                 <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 pb-20">
-                     <AttendanceCalendar studentId={studentId} themeColor={primaryColor} />
+                     <AttendanceCalendar 
+                        studentId={studentId} 
+                        themeColor={primaryColor} 
+                        student={student}
+                        classId={classId}
+                    />
                 </main>
             )}
 

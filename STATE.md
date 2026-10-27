@@ -35,7 +35,938 @@
 
 - None (code). Manual key swap and webhook registration required before go-live.
 
-## Next Action
+### Tuesday, October 27, 2026 (Workspace Build Verification & Clean Compilation)
+
+- [x] **Full Repository Build & Typecheck Clean**:
+    - **Backend**: Executed `npx tsc; npx tsc-alias` to compile `dist/` — completed with exit code `0` and 0 errors.
+    - **Frontend**: Executed `next build` (Next.js 16.3.7 Turbopack) — compiled all 150+ static and dynamic routes cleanly with exit code `0` and 0 errors.
+    - **Mobile**: Executed `npx tsc --noEmit` — verified strict TypeScript checks with exit code `0` and 0 errors.
+- [x] **Database & Runtime Compatibility**:
+    - PostgreSQL schema synced via Prisma with `BankAccountAudit` ledger and `SettlementAccount` tracking fields (`addedBy`, `addedByName`, `addedByRole`).
+    - Prisma client regenerated and verified compatible with live background dev servers.
+
+### Tuesday, October 27, 2026 (Bank Account Modal Redesign, School Name Auto-Population, and DB Audit History Ledger)
+
+- [x] **Bank Account Modal Redesign & Live Virtual ATM Card ([finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx))**:
+    - Completely redesigned the "Connect School Bank Account" popup modal at `/dashboard/admin/finance`:
+        - Implemented a live interactive metallic virtual ATM card with EMV gold chip, contactless waves, live selected commercial bank badge, formatted monospace NUBAN number display, cardholder name, and glowing green `VERIFIED NUBAN` holographic badge.
+        - Added 1-tap quick selection pills for top Nigerian commercial banks (Access Bank, GTBank, Zenith, First Bank, UBA, Kuda, OPay, PalmPay), plus the full searchable directory.
+        - Added a dedicated Sandbox Test Mode helper alert with a 1-click `Auto-Fill Test Account` button (Access Bank + `0690000031`) to eliminate test friction.
+- [x] **Auto-Add School Name in Display Name**:
+    - Connected `useSchoolProfile(schoolId)` to resolve the actual school identity (`schoolProfile.name` / `schoolProfile.schoolName` / `user.schools[0].name`).
+    - Automatically pre-populates the "School / Beneficiary Display Name" field whenever the modal opens.
+    - Added 1-click quick-toggle buttons allowing the admin to switch between `Use School Name` and `Use Verified Name` effortlessly.
+- [x] **Database Audit History Ledger for All Bank Account Operations ([schema.prisma](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/prisma/schema.prisma), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [finance.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.route.ts))**:
+    - Added `BankAccountAudit` model and audit fields (`addedBy`, `addedByName`, `addedByRole`) to `SettlementAccount` in PostgreSQL via Prisma, syncing schema and regenerating `@prisma/client`.
+    - Updated `FinanceService.setupBank` and `removeSubaccount` to record immutable audit rows: who added/removed it (`userId`, `userName`, `userEmail`, `userRole`), when (`createdAt`), and what was added (`bankName`, `bankCode`, `accountNumber`, `accountName`, `gateway`, `details`).
+    - Added `GET /api/v1/finance/bank-history/:schoolId` endpoint and wired it into `getSchoolAnalytics`.
+    - Added the **Bank Account Processing & Audit History** table directly inside the "Bank Accounts" tab at `/dashboard/admin/finance`, showing timestamp, action badge, bank & account number with 1-click copy, verified beneficiary, processed by administrator (initials, name, email, role), and gateway badge.
+- [x] **Zero TypeScript Errors**: Verified clean compilation across both frontend and backend (`npx tsc --noEmit` exited with code 0 on both).
+
+### Tuesday, October 27, 2026 (Flutterwave Bank Account Resolution & Validation Error Handling)
+
+- [x] **Flutterwave Bank Account Resolution Fix & Clean Validation ([flutterwave.adapter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/flutterwave.adapter.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts))**:
+    - Identified cause of `Error: invalid account` when adding or verifying bank accounts: Flutterwave in Test Mode (`FLWSECK_TEST-...`) only resolves mock sandbox accounts (`0690000031` with Access Bank `044` -> "Forrest Green") and returns `400 invalid account` for any live/real account number.
+    - Updated `FlutterwaveAdapter.resolveAccount` to detect `invalid account` responses and supply clear, actionable guidance distinguishing test mode requirements from live production NIBSS resolution.
+    - Updated `FinanceController.resolveAccount` to return a clean HTTP `400` with the validation error message instead of routing through `handleError()`, preventing routine lookup validation failures from dumping fatal crash stack traces to the terminal and `error-log.txt`.
+    - Zero TypeScript errors confirmed via `npx tsc --noEmit`.
+
+### Tuesday, October 27, 2026 (Admin Finance Dark Mode Buttons & Normal English Overhaul)
+
+- [x] **Dark Mode Button Contrast & Styling Fixes ([finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx))**:
+    - Fixed the 3 reported action buttons that looked broken in dark mode:
+        1. **Record Fee Payment**: replaced `bg-primary hover:bg-primary/95 text-white` (which turned white-on-white in dark mode due to `--primary: oklch(0.922 0 0)`) with high-contrast, vibrant `bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white` and subtle shadow glows.
+        2. **Set Up Bank Account** (formerly *Setup Bank Details*): replaced washed-out `bg-primary` with `bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white`.
+        3. **Add Bank Account** (formerly *Provision Bank Node*): styled with `bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white`.
+    - Also fixed the modal submission button in "Record Fee Payment" dialog to use the matching dark-mode-safe blue button styling.
+- [x] **Normal English Terms Across Finance Dashboard ([finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx), [AtmAccountCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/AtmAccountCard.tsx))**:
+    - Replaced all artificial blockchain/crypto/robotic terms with clear, professional school finance terminology:
+        - "Provision Bank Node" -> **"Add Bank Account"**
+        - "Setup Bank Details" -> **"Set Up Bank Account"**
+        - "Institutional Bank Conduits" / "Settlement Vault" -> **"School Bank Accounts"** / **"Bank Accounts"**
+        - "No Settlement Conduit Connected" -> **"No Bank Account Connected"**
+        - "Decrypting Financial Records" -> **"Loading Financial Records"**
+        - "Synchronizing gateway conduits & audit ledgers..." -> **"Connecting to payment gateways and updating records..."**
+        - "Real-time institutional liquidity, fee collections & automated disbursements" -> **"Real-time tracking of student fee payments, collections, and bank payouts"**
+        - "Export Ledger" -> **"Export Transactions"**
+        - "Active Payer Entities" -> **"Active Fee Payers"**
+        - "Mean receipt quantum" -> **"Average payment per transaction"**
+        - "Institutional Ledger" -> **"Transactions"**
+        - "Liquidity Inflow Trend" -> **"Income Trend"**
+        - "Fee Allocations" -> **"Fee Categories"**
+        - "Search by student name or reference hash..." -> **"Search student name or reference code..."**
+        - "Filtering ledger entries..." -> **"Filtering transactions..."**
+        - "Student Entity" (modal) -> **"Student"**
+        - "Fee Classification" -> **"Fee Type"**
+        - "Confirm & Post Entry" -> **"Save Payment Record"**
+        - "Primary Node" on bank cards -> **"Default Account"**
+
+### Tuesday, October 27, 2026 (Student Transcript Real Signature, Graduated Paywall Preview & Single-Use Download, Dynamic Admin Clearance Fee)
+
+- [x] **Student Transcript Digital Signature Fix ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Diagnosed why real digital signatures were failing to display on the student transcript page (`http://localhost:3000/dashboard/student/transcript`). The student was querying `useSchoolAdmins(schoolId)` (`/api/v1/admin/team`), which is strictly restricted to admins (`requireAdmin` middleware) and returns 403 Forbidden to students, leaving candidate user IDs empty.
+    - Switched signatory resolution to read administrators directly from `schoolProfile.admins` (accessible via public/student school profile endpoint), and added system admin identifier (`admin-system`).
+    - Wired `useActiveSignature("admin-system")` and `signaturesMap` so authentic handwritten/vector signatures are bound to `principalSlot` and `registrarSlot`.
+- [x] **Graduation Status Paywall & Preview Gating ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Active students can access the transcript freely while the school maintains an active subscription/trial.
+    - If the student has graduated (`isGraduated` via `status === "GRADUATED" | "ALUMNI" | graduationStatus === "GRADUATED"`), full cumulative course breakdown, grading details, and Page 2 behavioral domain evaluations are strictly gated until clearance is paid (`hasPaidTranscript`).
+    - Unpaid graduated students see an archival clearance paywall card with explicit rationale, lock icons, and 1-click clearance unlock actions.
+- [x] **Enforce Single-Use Download Rule**:
+    - Graduated students are restricted to downloading/printing the official certified transcript **once** per paid clearance (`totalTranscriptDownloads < paidTranscriptCount`).
+    - Both `handleDownloadPDF` and `handlePrint` verify `hasDownloadRemaining`. Attempting a second download informs the scholar that their 1-time official copy was used and prompts a new clearance payment.
+    - Downloads record telemetry with `fileType: "TRANSCRIPT_DOWNLOAD"` in `FileMetric`.
+- [x] **Dynamic Transcript Fee Configuration by Admin ([finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx), [schema.prisma](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/prisma/schema.prisma), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts))**:
+    - Added `transcriptFee Float? @default(5000)` column to `SchoolSetting` model in PostgreSQL and generated Prisma client.
+    - Updated `updateSchoolSettingsService` to accept and persist `transcriptFee`.
+    - Updated `initiateTranscriptPayment` in `finance.service.ts` to dynamically resolve the school's configured `transcriptFee` (falling back to ₦5,000 if unset).
+    - Updated Admin Finance page (`/dashboard/admin/finance`) Transcripts tab with dynamic rate display and an interactive `Configure Transcript Clearance Fee Dialog` allowing school leadership to modify their transcript clearance fee at any time.
+    - Replaced all hardcoded `₦5,000` instances across student payment modals, sidebars, and clearance banners with dynamic `₦${transcriptFee.toLocaleString()}`.
+- [x] **Student Transcript Blue Color Theme Overhaul ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Replaced all remaining pink/rose accent classes (`pink-600`, `pink-700`, `pink-50`, `pink-100`, `pink-950`) with institutional blue palette (`blue-600`, `blue-700`, `blue-50`, `blue-100`, `blue-950`) across the entire page, including breadcrumbs, official seal, letterhead, empty state, term chips, behavioral evaluation score badges, quote markers, and sidebar telemetry cards.
+- [x] **Zero TypeScript Errors**: Clean compile verified with `npx tsc --noEmit` on both frontend and backend.
+
+### Monday, October 26, 2026 (Admin Transcript Blue Theme & High-Fidelity Loading Skeleton)
+
+- [x] **Admin Transcript Blue Color Theme Overhaul ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/page.tsx), [StudentTranscriptSelector.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/StudentTranscriptSelector.tsx), [TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx))**:
+    - Replaced all pink/rose accents (`#db2777`, `pink-600`, `pink-700`, `pink-50`, `pink-100`, `pink-950`) across both URLs:
+        - `http://localhost:3000/dashboard/admin/transcript` (Student selector interface)
+        - `http://localhost:3000/dashboard/admin/transcript?studentId=...` (Official transcript preview interface)
+    - Updated fallback primary color from `#db2777` to `#2563eb` (`blue-600`).
+    - Styled breadcrumbs, graduation cap icon badge, search focus rings, filter chip pills, preview buttons, letterhead school crest, student code highlights, session filter dropdowns, and CGPA summary cards in the institutional blue palette.
+    - Updated Page 2 conduct appraisal banner, rubric scales, endorsement signature pads, official electronic seal stamp, and right-hand Access & Payment Audit sidebar with matching blue styling.
+- [x] **1:1 High-Fidelity Loading Skeleton Redesign ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx))**:
+    - Replaced the previous generic loading skeleton with an exact structural replica mirroring the live 2-column transcript page UI:
+        - Top action toolbar (Select Another Scholar, Quick Switcher, Admin Certification View badge, 3 page switcher pills, Access & Payment Audit toggle button, Print, and Export Official PDF buttons).
+        - Evaluation Scope filter bar with calendar icon badge, session select dropdown, term pills, and glowing blue Cumulative Scope indicator.
+        - Left column official transcript document sheet (School crest emblem frame with `<School size={40} className="text-blue-600" />`, certified electronic record badge, institutional letterhead, scholar passport portrait frame with silhouette, 6-column credentials strip, 4-card honors summary with gradient CGPA banner, 10-column terminal course breakdown table with term header badge, and registrar/principal signature endorsements with blue dashed seal).
+        - Right column Access, Download & Payment Audit sidebar with blue download telemetry card, frequency breakdown, clearance status, and connected guardian accounts.
+    - Eliminates layout shifts and provides a polished, seamless loading experience.
+- [x] **Zero TypeScript Errors**: Clean compile verified with `npx tsc --noEmit`.
+
+### Monday, October 26, 2026 (Digital Signature DB Persistence Fix & Admin Profile Space Fitting)
+
+- [x] **Digital Signature Database Persistence Fix**:
+    - **Diagnosed Root Cause**:
+        - In `frontend/src/app/api/signatures/route.ts`, uploads were storing files to Supabase Storage, but the database insert (`supabase.from("signatures").insert(...)`) was failing silently because the `signatures` table did not exist in the Supabase PostgreSQL database (`khogvaepivbqzlqndedv`).
+        - Because Supabase JS SDK returns `{ error }` instead of throwing, the missing table error was swallowed by a silent `console.warn`, causing the client (`signatureService.ts`) to fall back to browser `localStorage` only (`schoolhub_signature_${userId}`).
+        - Furthermore, the REST API roles (`anon`, `authenticated`) lacked schema usage permissions on newly created tables.
+    - **Database Migration & Permissions**:
+        - Created `public.signatures` table with `id (UUID)`, `user_id (TEXT)`, `storage_path (TEXT)`, `method (TEXT)`, `vector_data (JSONB)`, `sha256 (TEXT)`, `is_active (BOOLEAN)`, `ip_address (TEXT)`, `user_agent (TEXT)`, and timestamp columns.
+        - Created performance indexes `idx_signatures_user_id` and `idx_signatures_is_active`.
+        - Configured Row Level Security (RLS) policies and granted `USAGE ON SCHEMA public` and `ALL ON TABLE public.signatures` to `anon`, `authenticated`, and `service_role`.
+    - **API Route & Service Hardening**:
+        - Updated `frontend/src/app/api/signatures/route.ts` to explicitly check and throw on Supabase insert errors rather than silently proceeding.
+        - Added `DELETE` method handler in `frontend/src/app/api/signatures/route.ts` that deactivates active signatures in the database (`is_active = false`).
+        - Added `signatureService.removeSignature(userId)` in `frontend/src/lib/api/services/signatureService.ts` to remotely deactivate the record in the database and clear all local storage keys simultaneously.
+        - Verified database persistence end-to-end: verified signature insertion, signed URL generation, and retrieval via `GET /api/signatures?userId=admin-system`.
+- [x] **Blue Theme & Dark Mode Signature Preview Fix ([admin/profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/profile/page.tsx), [SignatureModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/SignatureModal.tsx))**:
+    - **Main Blue Color Theme**:
+        - Replaced all pink/rose accents throughout the entire admin profile page with the institutional Blue palette (`blue-600`, `blue-700`, `blue-50`, `blue-100`, `blue-950`).
+        - Updated hero banner gradient to `bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800`.
+        - Updated avatar fallback, breadcrumbs, edit profile buttons, admin code highlight, and school tenure badges to blue.
+        - Updated modal triggers, tabs, icons, and capture buttons across `SignatureModal`, `DrawSignature`, `UploadSignature`, `TypeSignature`, and `SignaturePreview`.
+    - **Dark Mode Signature Visibility Fix**:
+        - Diagnosed why signatures were invisible in dark mode: transparent PNG signatures with dark/black ink strokes were rendering over a dark background (`dark:bg-zinc-950/40` inside dark container `dark:from-zinc-900`), resulting in black ink on black background.
+        - Styled the *Institutional Endorsement Certificate* as an authentic official document sheet (`bg-white dark:bg-slate-50 text-slate-900 border-slate-200/90 dark:border-slate-300`).
+        - Embedded a dedicated high-contrast pure white document pad (`bg-white dark:bg-white border-slate-300 shadow-inner`) for the transparent PNG signature display.
+        - Ensures that regardless of whether the user is in light mode or dark mode, the handwritten, uploaded, or typed signature is 100% visible, sharp, and authentic.
+    - **Zero TypeScript Errors**: Clean compile verified with `npx tsc --noEmit`.
+
+### Monday, October 26, 2026 (Student Transcript Design Overhaul & Parity with Admin Transcript)
+
+- [x] **Student Transcript Page Design Overhaul ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - **Visual & Structural Parity with Admin Transcript**:
+        - Integrated official institutional letterhead with school logo, motto in italic serif, and the student's passport portrait picture in a 24x28 rounded frame opposite the school crest.
+        - Integrated the 6-column student profile & document reference strip (Scholar Full Name, Student Code, Department/Cohort, Enrollment Status, Document Ref `TRX-...`, Issued Date).
+        - Integrated the 4 cumulative performance summary cards with honors degree grade classification (e.g., `4.85 (A) / 5.00 • First Class Honors / Excellent`).
+        - Integrated the multi-page toggle view switcher:
+            - `Page 1: Academic` (Full academic transcript, terminal breakdowns, CGPA summary, signatures & seal).
+            - `Page 2: Conduct & Remarks` (Affective Domain 5-point scale, Psychomotor Domain 5-point scale, 5-point Rubric scale key, CGPA banner, Class Teacher's Remark quote box, Principal's Certified Endorsement quote box, Standard Institutional Grading Key table).
+            - `All Pages` (Multi-page stacked view).
+    - **2-Column Responsive Layout & Audit Sidebar**:
+        - Converted page into the responsive 2-column layout (Document on left, Audit & Verification Sidebar on right) with a collapsible toggle button (`SlidersHorizontal` icon, `[Hide Audit]` / `[Show Audit]`).
+        - **Credential Verification Card**: Displays live certified electronic record beacon, transcript reference hash with 1-click copy, digitally authenticated attribution, and verified signatory endorsements.
+        - **Archival Clearance & Entitlement Card**: Displays real-time clearance status, automated subaccount settlement routing, and 1-click trigger to `SessionPaymentModal` (Flutterwave split or direct bank transfer).
+        - **Download Telemetry Card**: Wired to `useStudentDownloadAudit` and `useRecordStudentDownload` showing live count of downloads, scholar vs guardian downloads, and last accessed timestamp.
+        - **Embossed Hard-Copy Conduit**: Official guidance and contact information for foreign embassy / international university sealed physical copies.
+    - **Course Breakdown Table Alignment**:
+        - Standardized columns to `Code`, `Subject / Course Name`, `Assignment`, `Quiz`, `CA`, `Exam`, `Total (%)`, `Grade`, `GP`, `Remark` matching the admin transcript.
+    - **0 TypeScript Errors**: Verified with `npx tsc --noEmit`.
+
+### Monday, October 26, 2026 (Automatic Flutterwave Subaccounts, Student Transcript Paywall & Session Filter, and Transcripts Finance Hub)
+
+- [x] **Automatic Flutterwave Subaccount Creation & Account Resolution ([flutterwave.adapter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/flutterwave.adapter.ts), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts))**:
+    - Implemented `resolveAccount(accountNumber, bankCode)` on `FlutterwavePaymentAdapter` (`POST /v3/accounts/resolve`) and `PaystackPaymentAdapter` (`GET /bank/resolve`).
+    - Updated `initialize(params)` in `FlutterwavePaymentAdapter` to dynamically attach `subaccounts: [{ id: subaccountCode }]` when `metadata.subaccountCode` is passed, enabling automated split payments to school subaccounts.
+    - Updated `financeService.setupBank` to resolve and create Flutterwave subaccount, saving subaccount ID and details to `SettlementAccount` and `School`.
+    - Added `POST /api/v1/finance/resolve-account` and `POST /api/v1/finance/transcript-payment/:schoolId` endpoints.
+- [x] **Bank Setup Real-Time Resolution & Confirmation UI ([bank-setup/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/bank-setup/page.tsx))**:
+    - Automatically calls server resolution route when 10 digits and bank are selected.
+    - Displays resolved institution account name with verification badge.
+    - Mandates admin checkbox confirmation that the resolved account name matches their registered institution before enabling subaccount creation.
+- [x] **Student Dashboard Transcript Page Session Filtering & Paywall Gate ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Added **Session Scope Selector Filter** allowing students to filter visible terms, course scores, cumulative CGPA/average, and PDF exports by specific academic session or full cumulative record.
+    - Added **Access Clearance Gate & Paywall**: Checks if student has graduated (`studentProfile.status === "GRADUATED"` or alumni) OR if the school operates on a free/unpaid plan (`subscriptionStatus !== "ACTIVE"`).
+    - If clearance is required, displays an access clearance gate with frosted blur on score sheets until unlocked.
+    - Added **Session Payment Modal (`SessionPaymentModal`)**:
+        - Prompts student: *"Which academic session would you like to pay for?"* with a dropdown selector of sessions.
+        - **Option A (Instant Online Checkout via Flutterwave)**: Initiates automated split payment directly into the school's connected subaccount and redirects to checkout.
+        - **Option B (Direct School Bank Transfer)**: Displays the school's verified institutional bank account (Bank Name, Account Number with copy, Account Name, and Unique Reference) for offline bank payment with instant acknowledgement.
+- [x] **School Finance Hub Transcripts Management Tab ([finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx))**:
+    - Added dedicated **Transcripts Tab** with 4 KPI cards: Total Transcript Revenue (₦), Cleared Requests count, Default Standard Clearance Fee (₦5,000 / Session), and Automated Settlement Route info.
+    - Integrated explanation banner detailing automated Flutterwave split payment routing.
+    - Built **Transcript Payments Ledger Table** showing date, student details, target session, amount paid, settlement route, clearance status, and receipt viewer.
+- [x] **Full Typecheck Passed**: Verified 0 TypeScript errors with `npx tsc --noEmit` across both backend and frontend.
+
+### Monday, October 26, 2026 (Admin Finance Feature Page & Institutional Finance Hub)
+
+- [x] **Admin Finance Feature Page & Hub ([/dashboard/admin/finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx))**:
+    - **Executive Header**: Verified Gateway status beacon, Quick navigation back to admin overview, and action buttons (`Record Fee Payment`, `Export Ledger`, `Settlement Vault`).
+    - **4-Card Financial Metric Strip**: Real-time display for Total Revenue Collected (₦), Pending Collections awaiting clearing (₦), Active Payer Entities (Guardians), and Average Transaction Quantum.
+    - **Overview & Liquidity Tab**:
+        - Interactive Recharts `AreaChart` displaying monthly liquidity inflow trend for the last 6 months.
+        - Fee Category Distribution progress bars (Tuition, Examination, Uniforms, Transportation, PTA Levy, Other).
+        - Integrated `PaymentStatusCard` with subaccount sync action.
+        - Settlement Vault ATM account cards showing connected disbursement conduits.
+        - Top 5 recent transactions stream with quick "View Receipt" action.
+    - **Institutional Ledger & Transactions Tab**:
+        - Searchable and filterable audit table with live search (student name / reference hash), status filter (`ALL`, `SUCCESS`, `PENDING`, `FAILED`), and category filter.
+        - Detailed transaction attributes: Execution timestamp, student/payer entity with student ID, classification badge, payment channel (`Card`, `Transfer`, `Cash`, `POS`), quantum (₦), and reference hash.
+        - Full pagination support (Next / Previous) and CSV ledger export.
+    - **Settlement Vault Tab**:
+        - Multi-account conduit grid with direct provision link to `/dashboard/admin/finance/bank-setup` and real-time status synchronization.
+    - **Record Manual Fee Payment Modal**:
+        - Responsive dialog for bursars/admins to record offline cash, bank transfer, or POS fee payments.
+        - Real-time student directory search and select, amount (₦), category selection, payment channel, term, session, and narration notes.
+    - **Transaction Receipt Modal**:
+        - Digital printable institutional receipt modal with school branding, reference ID, payer details, breakdown, confirmation stamp, and `Print Receipt` action.
+- [x] **Main Admin Dashboard Overview Integration ([AdminFinanceCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/dashboard/AdminFinanceCard.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/page.tsx))**:
+    - Created `AdminFinanceCard` displaying total collections, liquidity status, and quick link to `/dashboard/admin/finance`.
+    - Mounted in the admin dashboard sidebar feature column above `UsageLimitsCard`.
+    - Added "Finance Hub" with `Landmark` icon to `QuickActions.tsx`.
+- [x] **Navigation & Role Permissions ([adminFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/adminFeatureFlags.ts), [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/app-sidebar.tsx))**:
+    - Granted finance nav access to `ADMIN`, `SUPER_ADMIN`, and `SCHOOL_OWNER`.
+    - Updated sidebar role filtering to ensure general school admins can access the Finance Hub without restriction.
+- [x] **Backend Finance Module Enhancements ([finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [finance.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.route.ts))**:
+    - Added dynamic calculation of `totalRevenue`, `pendingRevenue`, `activePayerCount`, `averageTransaction`, `monthlyTrends` (6 months), and `categoryBreakdown` in `getSchoolAnalytics`.
+    - Added `recordManualPayment` service, controller, and route `POST /api/v1/finance/manual-payment/:schoolId`.
+    - Added `getSchoolTransactions` service, controller, and route `GET /api/v1/finance/transactions/:schoolId` with pagination and search/filtering.
+
+### Monday, October 26, 2026 (Admin Student Profile: Student Promotion & School History Tab)
+
+- [x] **Student Promotion Feature**:
+    - **Backend Promotion Pipeline ([student.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.service.ts), [student.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.controller.ts), [student.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.route.ts))**:
+        - Created `promoteStudentDirectService` handling transition of `ClassEnrollment`, advancing student grade level, recording academic snapshots, and stamping a formal `PROMOTED` event into `StudentHistory`.
+        - Exposed endpoint `POST /api/v1/students/:id/promote` with controller `promoteStudentDirect`.
+    - **Frontend Promotion Modal ([PromoteStudentModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/%5BstudentId%5D/components/PromoteStudentModal.tsx))**:
+        - Built responsive modal with student snapshot bar (avatar, student code, current class).
+        - Queries available classes via `classService.getClasses(schoolId)` and filters out current class.
+        - Provides interactive transition preview visual (`Current Class -> Destination Class`), session/year input, and optional promotion commendation remarks.
+        - Automatic cache invalidation (`student-details`, `student-history`, `student-schools`, `school-students`, `school-classes`).
+    - **Header & Quick Actions Integration ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/%5BstudentId%5D/page.tsx))**:
+        - Added primary "Promote" action button in hero banner beside "Transcript".
+        - Added "Promote Student" to the Quick Actions sidebar menu.
+
+- [x] **School History Feature (Converted Session Tab to School History)**:
+    - **Backend School Performance & History Synthesis ([student.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.service.ts))**:
+        - Created `getStudentSchoolsService` querying current school, original/transfer institutions, class enrollments, and academic grades.
+        - Calculates institutional aggregate averages, WAEC letter grades (`A1`–`F9`), total assessment counts, and subject-level performance breakdowns per school.
+        - Created `addPreviousSchoolRecordService` and endpoint `POST /api/v1/students/:id/previous-school` allowing admins to register external prior schools.
+    - **Frontend School History Tab ([StudentSchoolHistoryTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/%5BstudentId%5D/components/schools/StudentSchoolHistoryTab.tsx))**:
+        - Converted legacy placeholder "Session" tab to "School History" (with backward compatibility for `?tab=session` and `activeTab === 'session'`).
+        - 4-Card Metric Strip: Total Schools Attended, Current Institution, Overall Student Average with letter grade chip, Total Graded Assessments.
+        - **Current School Card**: Emerald active beacon badge, institution details, contact, enrollment tenure, classes attended, institutional grade average with color-coded score, and top graded subject chips.
+        - **Previous Schools Cards**: Prior institution cards with tenure period, class level, overall grade average, and exit reason/transfer notes.
+        - **Add Previous School Modal**: Integrated dialog to record prior schools, location, tenure dates, overall grade percentage, and transfer reasons.
+
+### Monday, October 26, 2026 (Admin Student Profile: Proper History, Class, Session, Term & Subject Gradebook)
+
+- [x] **Backend Student History Synthesis ([student.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.service.ts))**:
+    - **Multi-Source Data Synthesis**: Enriched `getStudentHistoryService` to query `prisma.student`, `prisma.studentHistory`, `prisma.grade`, `prisma.studentSubjectTermResult`, and `prisma.studentTermResult`.
+    - **Cohort Aggregation**: Groups academic performance by `(classId, session, term)`, computing each subject's aggregate term score, maximum score, percentage, WAEC-standard letter grade (`A1`–`F9`), and nested individual assessment records (`EXAM`, `QUIZ`, `CA`, `ASSIGNMENT`).
+    - **Unified Chronological Timeline**: Merges published result events, class enrollment events, and school admission milestones into a chronological timeline with complete metadata (`className`, `session`, `termDisplay`, `subjects`).
+    - **Summary Statistics**: Computes cumulative metrics (`totalClasses`, `totalSessions`, `totalSubjects`, `overallAverage`).
+- [x] **Frontend API & Data Contract ([studentService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/studentService.ts))**:
+    - Declared type contracts: `AssessmentGradeItem`, `SubjectHistoryRecord`, `AcademicHistoryCohort`, `StudentHistoryTimelineItem`, `StudentHistorySummary`, and `StudentHistoryResponse`.
+    - Maintained backward compatibility for legacy timeline arrays while typing structured responses.
+- [x] **Student History View & Academic Gradebook ([StudentHistoryView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/%5BstudentId%5D/components/history/StudentHistoryView.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/%5BstudentId%5D/page.tsx))**:
+    - **4-Card Metric Strip**: Enrolled Cohorts, Academic Sessions, Subjects Evaluated, Overall Academic Average.
+    - **Sub-Tab Switcher**: Toggle between **Academic Gradebook / Ledger** and **Chronological Timeline**.
+    - **Cohort & Timeline Filtering (Session & Term Dropdowns)**: Always-visible Session Selector (combining school sessions and historical student records with Calendar icon) and Term Selector (with Layers icon), active filter badge chips with individual dismissal, and real-time subject/event search across both Academic Gradebook and Chronological Timeline views.
+    - **Subject Grade Cards**: Displays subject code, term score, max marks, percentage badge with dynamic progress bar, letter grade chip (`A1`–`F9`), and expandable assessment breakdown displaying individual test papers and exams.
+    - **Interconnected Spine Timeline**: Features mathematically aligned spine column with glowing gradient track, micro-chain links, and horizontal branch stems connecting into milestone event cards.
+- [x] **Modal Inspection ([HistoryDetailsModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/HistoryDetailsModal.tsx))**:
+    - Enriched details modal to render structured subject score tables, session/term indicators, and letter grades when clicking "Inspect Details" on timeline cards.
+
+### Monday, October 26, 2026 (Admin Class History: Timeline Chain Redesign & Layout)
+
+- [x] **Timeline Chain & Interconnected Spine Redesign ([ClassHistoryTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/history/ClassHistoryTab.tsx))**:
+    - **Replaced Brittle Absolute Offsets**: Removed the single absolute background line and negative pixel coordinates (`-left-[1.875rem]`, etc.) which caused misalignments between the vertical stem and icon centers.
+    - **Interconnected Spine Column**: Replaced with a structured flex column architecture (`w-10 sm:w-12 shrink-0 flex flex-col items-center`) where the vertical track and node centers are mathematically and perfectly aligned across all screen resolutions.
+    - **Interlocking Chain-Link Elements**: Added vertical gradient stems (`w-1 rounded-full bg-gradient-to-b from-indigo-500 ...`), miniature interlocking chain-link beads centered between nodes, and outer micro-ringlet pins on each node.
+    - **Horizontal Branch Arms**: Added horizontal connector stems (`w-3 sm:w-[1.125rem] h-[2px]`) with terminal anchor beads that visually link the spine node directly into the event card.
+    - **Top Beacon & Bottom Milestone Terminal**: Added a pulsating live activity beacon at the top of the stream and an anchored cohort genesis terminal pin at the bottom.
+    - **Hover Dynamics**: Coordinated hover transitions where the card border, horizontal branch, chain link, and node icon elevate and illuminate simultaneously.
+
+### Monday, October 26, 2026 (Admin Class History: Term & Session Filters & Premium Redesign)
+
+- [x] **Backend Class History Service ([class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts))**:
+    - Enriched `HistoryTimelineItem` and `classInfo` in `getClassHistoryService` to include `session` and `term` across all event types (`CLASS_CREATED`, `ENROLLMENT`, `PROMOTION_IN`, `PROMOTION_OUT`, `GRADUATION`, `WITHDRAWAL`, `TEACHER_ASSIGNED`, `SUBJECT_ATTACHED`, `RESULT_PUBLISHED`, `BEHAVIOUR_ALERT`).
+    - Propagates specific event session/term or falls back to class cohort's current active session & term.
+- [x] **Frontend API Models ([classService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/classService.ts))**:
+    - Updated `ClassHistoryTimelineEvent` interface and `ClassHistoryResponse.classInfo` to type `session?: string | null` and `term?: string | null`.
+- [x] **Class History Tab Redesign & Filtering ([ClassHistoryTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/history/ClassHistoryTab.tsx))**:
+    - **Session Filter**: Dedicated dropdown pulling all active school sessions from `useSessions` merged with any historical sessions appearing in event records.
+    - **Term Filter**: Dedicated dropdown with `All Terms`, `First Term`, `Second Term`, and `Third Term` with fuzzy normalization.
+    - **Command Bar & Toolbar**: Integrated search box, session selector, term selector, category pills, sort order toggle (`Newest First` / `Oldest First`), and an active filters strip with individual chip dismissal and a global "Reset Filters" action.
+    - **Event Cards**: Added session & term badge (`[Session • Term]` with `Layers` icon) to every timeline card, category badges, student code chips, origin/destination class pills, and hover lift effects.
+    - **Summary Metrics & Header**: Refined 5-card metric bar (Active Roster, Promoted Out, Promoted In, Graduated/Exit, Certified Records) with custom icon pills and subtle background glow.
+    - **PDF Export**: Updated `handleExportPDF` to print session and term filter settings and column in the tabular export.
+
+### Monday, October 26, 2026 (Teacher Class View: Scoped Exclusively to Assigned Subjects)
+
+- [x] **Backend Services Scoped to Teacher's Assigned Subject(s) ([teacher-dashboard.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-dashboard.service.ts))**:
+    - `getTeacherClassesService`: discovers each class's subjects taught by the teacher (`taughtInClass`) and displays the teacher's subject instead of an arbitrary first subject.
+    - `getTeacherClassDetailService`: included `exam.subjectId` and `subjectPaper.subjectId` on grades query; strictly filters `c.grades` to `relevantGrades` matching the teacher's subject name, subjectPaper ID, exam ID, or teacher ID before calculating `averageGrade`, `topStudents`, and `recentSubmissions`.
+    - `getTeacherClassAssignmentsService`: verifies teacher subjects and filters `prisma.assignment.findMany` with `subjectId: { in: taughtSubjectIds }` or `teacherId: teacherId`, ensuring assignments for other subjects are never returned.
+    - `getTeacherClassGradesService`: includes `subjectId` relations on exam and subjectPaper; filters student grades strictly by teacher's subject name, paper ID, exam ID, or teacher ID so only grades and assessments for the teacher's assigned subjects are computed and returned.
+- [x] **Frontend Teacher Class Hub Focused on Assigned Subject ([ClassDetails.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/ClassDetails.tsx), [Overview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/Overview.tsx), [exams&quizzes/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/exams&quizzes/page.tsx), [grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/grades/page.tsx))**:
+    - `ClassDetails.tsx`: fetches `teacherClassDetail` and renders a prominent `Focus Subject: {subject}` badge in the header card.
+    - `Overview.tsx`: displays the teacher's subject average score and upcoming exams strictly for their subject.
+    - `exams&quizzes/page.tsx`: strictly filters exams, subject papers, and multi-paper exam sub-papers to only display items belonging to the teacher's authorized subject(s) in this class.
+    - `grades/page.tsx`: scopes individual grade items and list/grid views to the teacher's assigned subject.
+
+### Monday, October 26, 2026 (Parent Attendance: Per-Day Subject Breakdown Pop-up)
+
+- [x] New shared helper `frontend/src/lib/attendance/attendanceRecord.ts`: `parseAttendanceNote` (unwraps nested JSON notes), `getCleanAttendance` (comment + subject chips), `buildAttendanceModalData` (raw row → `StudentAttendanceDetailModal` props).
+- [x] `parent/attendance/page.tsx`: now loads rich rows via `useStudentAttendance(childId)` (parent access already enforced by the controller's link check), sorted newest-first, falling back to child-details attendances. Clicking a Recent Activity entry or a row in the Attendance Breakdown dialog opens `StudentAttendanceDetailModal` in `readOnly` mode (overall arrival + subject breakdown).
+- [x] `RecentActivity.tsx` / `DetailsModal.tsx`: clickable entries, clean teacher remark, subject status chips; no raw JSON. Removed `any` from `DetailsModal` props.
+- [x] `useStudentAttendance`: added `staleTime: 2min`, `retry: 1` (AGENTS.md §2.1/2.5).
+- [ ] Known gap: `parent/attendance/monthly/page.tsx` still uses hard-coded mock stats and an Oct 2023 start month — needs wiring to real data.
+- [x] `npx tsc --noEmit` (frontend) exit 0.
+
+### Monday, October 26, 2026 (Student Class Detail Page: Full-Width Layout)
+
+- [x] `student/my-classes/[id]/page.tsx`: replaced narrow `max-w-7xl` + duplicate horizontal padding with `max-w-[1600px]` (matching other student pages); the student layout already provides padding.
+- [x] `discussions/components/DiscussionLayout.tsx`: removed nested `max-w-7xl`, extra padding and `min-h-screen` so the Discussions tab fills the panel.
+- [x] `materials/components/LoadingState.tsx`: skeleton now fills the tab width.
+
+### Monday, October 26, 2026 (Student Attendance Preview & JSON Note Unwrapper Fix)
+
+- **Student Attendance Preview & JSON Note Unwrapper Fix ([AttendanceList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/attendance/components/AttendanceList.tsx), [student/attendance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/attendance/page.tsx), [student/my-classes/[id]/components/attendance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/attendance/page.tsx), [StudentAttendanceDetailModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/StudentAttendanceDetailModal.tsx), [student.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.service.ts))**:
+    - [x] **Eliminated Raw Serialized JSON Strings in Notes / Remarks**:
+        - Created `parseAttendanceNoteAndSubjects`: recursively/iteratively unpacks nested JSON notes so raw strings like `{"comment":"{\"comment\":\"\",\"subjects\":{}}","subjects":{...}}` are parsed into clean human-readable comments and structured subject attendance maps.
+        - Updated backend `getStudentAttendanceService` in `student.service.ts` to unwrap nested JSON note strings at the source, returning clean `comment` and `subjects`.
+        - Replaced raw JSON display on `/dashboard/student/attendance` and `/dashboard/student/my-classes/[id]` (Attendance tab) with clean comments, formatted subject badges (e.g. `UTME Government (Present)`), or `"Regular attendance logged"`.
+    - [x] **Student Attendance Inspection Modal (Read-Only Preview Mode)**:
+        - Enhanced `StudentAttendanceDetailModal` with `readOnly?: boolean` support: disables editing, hides mark-all buttons and subject toggle controls, displays read-only remark cards and verified status indicators, and restricts footer actions to "Close".
+        - Integrated `StudentAttendanceDetailModal` into `AttendanceList.tsx` (`/dashboard/student/attendance`): clicking any card in grid view or row in table view opens the detailed inspection modal showing arrival status, telemetry (who recorded it and when), and the breakdown of each subject attended.
+        - Integrated `StudentAttendanceDetailModal` into `/dashboard/student/my-classes/[id]` (Attendance tab): clicking any attendance day on the calendar opens the preview modal displaying overall presence and individual subject attendance for that day.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend`.
+
+### Monday, October 26, 2026 (Teacher Student Profile Attendance Tab: Overall & Subject Breakdown Pop-up Parity)
+
+- **Teacher Student Attendance Inspection Pop-up ([AttendanceCalendar.tsx (Teacher)](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/students/[studentId]/components/attendance/AttendanceCalendar.tsx), [teacher/students/[studentId]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/students/[studentId]/page.tsx))**:
+    - [x] **Full Parity on Teacher Student Profile (`/dashboard/teacher/students/[studentId]`)**:
+        - Upgraded the teacher student attendance calendar component with `StudentAttendanceDetailModal`.
+        - Clicking any day on the monthly calendar opens the detailed inspection modal displaying:
+            1. **Overall School Arrival**: Full presence badge (`Present in School`, `Late`, `Absent`, `Excused`), student digital ID, enrolled class, department badge, comment notes, and recorder audit information.
+            2. **Subject Attendance Breakdown**: Interactive subject-by-subject cards reflecting student's department subjects with individual status badges (`Present`, `Absent`, `Late`, `Excused`, `Not Logged`), recorded timestamps, and staff telemetry.
+            3. **Save Action**: Persists updates to arrival status and subject attendances with instant cache refresh.
+        - Connected `student={student}` and `classId={classId}` props in `teacher/students/[studentId]/page.tsx`.
+        - Added subject attendance badges to the calendar cells (`X / Y Present`) on the teacher's student calendar grid.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend`.
+
+### Monday, October 26, 2026 (Student Profile Attendance Tab: Overall & Subject Attendance Inspection Pop-up)
+
+- **Student Attendance Inspection Pop-up ([AttendanceCalendar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/[studentId]/components/attendance/AttendanceCalendar.tsx), [student/[studentId]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/[studentId]/page.tsx), [student.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.service.ts), [student.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.controller.ts), [useStudent.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useStudent.ts))**:
+    - [x] **Backend Hydration of Class Subjects & Structured Subject Attendance**:
+        - Upgraded `getStudentAttendanceService` to include class subjects with departmental metadata and student department info.
+        - Parsed raw JSON notes into structured `comment` and `subjects` record maps (`Record<string, SubjectAttendanceItem>`) for every attendance log.
+        - Upgraded `updateStudentAttendanceService` and its controller to accept structured `subjects`, saving individual subject attendance statuses alongside arrival status and audit telemetry.
+    - [x] **Student Attendance Calendar Pop-up Overhaul**:
+        - Replaced basic status dropdown dialog with the full interactive `StudentAttendanceDetailModal`.
+        - Clicking any day on the attendance calendar opens the pop-up showing:
+            1. **Overall Attendance**: Prominent arrival badge (`Present in School`, `Late`, `Absent`, `Excused`), student digital ID, class, department badge, arrival status selector, comment notes, and telemetry on who logged/updated it with timestamps.
+            2. **Subject Attendance Breakdown**: Complete breakdown of each applicable subject attached to the student's class and department, with individual status buttons (`Present`, `Absent`, `Late`, `Excused`, `Not Logged`), recorded timestamps, and recorder information.
+            3. **Save Action**: Persists both overall attendance and subject-by-subject attendance records with immediate cache invalidation.
+        - Added subject attendance badges to the calendar grid day cells (`X / Y Present`) so administrators can see both overall status and subject presence at a glance.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend`.
+
+### Monday, October 26, 2026 (Teacher Attendance Strict Subject Isolation & Verification)
+
+- **Teacher Class Attendance Strict Subject Isolation ([TeacherAttendancePage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/attendance/page.tsx))**:
+    - [x] **Strict Assigned Subject Isolation**:
+        - Diagnosed issue on teacher class attendance tab (`/dashboard/teacher/my-classes/[classId]`), where unassigned subjects taught by other teachers in the class were displaying in the Scope Bar, Attendance Table, Mode Modal, List Modal, Swipe Modal, and Detail Inspection Modal.
+        - Integrated `teacherService.getClassDetail(classId)` to read `classInfo.teacherSubjectIds` (the specific subjects this teacher teaches in this class) alongside `useTeacherSubjects(schoolId)` and `useTeacherProfile()`.
+        - Created `effectiveClassSubjects` filter: strictly isolates displayed subjects to only those assigned to the logged-in teacher (`teacherClassSubjects`).
+        - Removed all unassigned class subjects from the Scope Bar completely.
+        - Automatically locked active scope to the teacher's assigned subject (e.g. UTME Mathematics) on initial mount and when switching dates.
+        - Wired `effectiveClassSubjects` to `AttendanceTable`, `AttendanceModeModal`, `AttendanceModal`, `AttendanceSwipeModal`, and `StudentAttendanceDetailModal` so no other teachers' subjects are exposed or selectable.
+        - Updated PDF export generator in the attendance tab to dynamically append the teacher's active subject name to the report title.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend`.
+
+### Monday, October 26, 2026 (Departmental Subject Filtering & Teacher Subject Focus in Class Attendance)
+
+- **Student Departmental Subject Filtering & Teacher Assigned Subject Focus ([AttendanceTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceTable.tsx), [StudentAttendanceDetailModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/StudentAttendanceDetailModal.tsx), [TeacherAttendancePage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/attendance/page.tsx), [types.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/types.ts), [attendance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/attendance.service.ts))**:
+    - [x] **Departmental Subject Filtering in Attendance**:
+        - Diagnosed issue where "Subjects Available" displayed `10/10` indiscriminately for all students even when enrolled in specialized departments (e.g., Engineering & Tech taking 4 subjects vs Law & Arts taking 5 subjects).
+        - Created `getStudentApplicableSubjects(departmentId, classSubjects)` helper to filter subjects against the student's enrolled department (general/compulsory subjects with no departments apply universally).
+        - Updated `backend/src/modules/class/attendance.service.ts` to include `student: { include: { department: true } }` so student department details hydrate reliably with attendance logs.
+        - Updated `AttendanceTable.tsx` on both desktop and mobile card views: displays `${presentSubsCount} / ${totalApplicableSubs} Present` (e.g. `4 / 4 Present` or `0 / 4 Present` for Engineering students) alongside a department badge.
+        - Upgraded `StudentAttendanceDetailModal.tsx` to display student's department badge, filter the breakdown list to their enrolled department subjects by default, and provide a 1-click toggle to view all class subjects if needed.
+    - [x] **Teacher Class Attendance Portal & Assigned Subject Focus**:
+        - Brought full dual attendance tracking into the Teacher My Classes portal (`/dashboard/teacher/my-classes/[classId]` - Attendance tab).
+        - Integrated `useTeacherSubjects(schoolId)` and `useTeacherProfile()` to identify which subjects in the class the logged-in teacher teaches.
+        - Auto-focused default scope: when the teacher opens the attendance tab, `selectedScope` automatically defaults to the first subject assigned to them.
+        - Integrated the Dual Tracking Scope Bar featuring their assigned subjects at the front with a distinctive glowing `"Your Subject"` badge and radiant emerald styling.
+        - Connected `AttendanceModeModal`, `AttendanceModal`, and `AttendanceSwipeModal` to default to the teacher's active subject, recording their teacher role and name telemetry.
+        - Synchronized summary cards and printable/PDF reports to adapt to the active subject scope.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend`.
+
+### Monday, October 26, 2026 (Dual Class & Subject Attendance Tracking & Inspection Popup Modal)
+
+- **Class Attendance Dual Tracking & Subject Inspection Modal ([AttendanceTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/AttendanceTab.tsx), [StudentAttendanceDetailModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/StudentAttendanceDetailModal.tsx), [AttendanceTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceTable.tsx), [AttendanceModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceModal.tsx), [attendance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/attendance.service.ts), [attendance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/attendance.controller.ts))**:
+    - [x] **Subject Attendance Tracking Attached to Class**:
+        - Supported taking attendance for both general school arrival (homeroom daily presence) and specific subjects attached to the class (e.g. UTME Mathematics, UTME English Language, etc.).
+        - Added active scope selector pills and dropdown to switch between "School Arrival (Daily)" and each subject attached to the class.
+        - Updated `submitAttendanceService` to support saving attendance records per subject, serializing structured subject attendance metadata (`subjectId`, `subjectName`, `status`, `recordedAt`, `recordedByName`, `recordedByRole`) alongside daily arrival status.
+        - Auto-aligned school arrival presence: if a student is marked present in any subject period, general school arrival automatically reflects their physical presence.
+    - [x] **Interactive Attendance Inspection Pop-up Modal (`StudentAttendanceDetailModal`)**:
+        - Built an interactive inspection pop-up modal triggered when clicking any row or the dedicated "Inspect" button (`Eye` icon) in the Attendance table.
+        - Displays whether the student was marked for being in school with a prominent color-coded arrival badge (Present / Late / Absent / Excused) and explanation.
+        - Displays every subject attached to the class with its attendance availability status (Present, Absent, Late, or Not Logged) and specific recorded timestamp.
+        - Displays exact timestamp telemetry of when the attendance was logged (`createdAt`), last updated (`updatedAt`), and who recorded it (`recordedByName`, `recordedByRole`).
+        - Allows administrators and teachers to toggle individual subject statuses or general school arrival directly within the inspection modal with instant persistence.
+    - [x] **Attendance Sheet Modal Scope Alignment (`AttendanceModal` & `AttendanceSwipeModal`)**:
+        - Integrated a subject scope selector inside the "Take Attendance" modal, allowing teachers and administrators to take attendance for general school arrival or any specific attached subject.
+    - [x] **Upfront Subject Selector in Initial "Take Attendance" Mode Pop-up (`AttendanceModeModal`)**:
+        - Integrated the subject selector directly into the initial modal that opens upon clicking "Take Attendance" / "Start Attendance".
+        - Prompts the user upfront to select between "School Arrival (Daily)" and any subject attached to the class (e.g. UTME Mathematics, UTME English Language, etc.) with a styled dropdown and subject code display, before choosing the entry mode (Standard List Sheet vs Swipe Cards).
+    - [x] **High-Contrast Dark Mode Button Aesthetics**:
+        - Overhauled the **Active Scope: School Arrival (Daily)** button: replaced dim `bg-primary` with radiant emerald (`dark:bg-emerald-500`, `dark:text-slate-950`, `dark:font-black`, `dark:border-emerald-300/40`, and ambient glow `dark:shadow-[0_0_15px_rgba(16,185,129,0.35)]`).
+        - Overhauled the **Save Attendance** button on the Standard List pop-up sheet: replaced dull dark blue on dark slate with vibrant high-contrast emerald (`dark:bg-emerald-500`, `dark:text-slate-950`, `dark:font-black`, `dark:shadow-[0_0_20px_rgba(16,185,129,0.35)]`, and check icon).
+        - Upgraded entry mode card hover/focus rings (`Standard List Sheet` and `Swipe Cards Interface`) with dedicated indigo/emerald borders and focus outlines in dark mode.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend`.
+
+### Monday, October 26, 2026 (Transcript Endorsement Signature Guarantees, In-Context Modal & Student Transcript Parity)
+
+- **Official Academic Transcript Signature Reliability & Interactive Signing ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts), [layout.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/layout.tsx))**:
+    - [x] **Guaranteed Non-Blank Head of Institution Signature**:
+        - Diagnosed root cause: `approvalInfo.signature` stored text strings (e.g. `"Mr Festus (School Owner)"`) which were rejected by image-only URL checks, and dead Supabase storage URLs caused signature fetches to fail silently, leaving empty voids above dotted lines.
+        - Overhauled `principalSlot` resolution: accepts valid image URLs, transparent PNG blobs, and text signatures (sanitizing trailing role annotations).
+        - Guaranteed `principalSlot.hasSignature: true` with automatic fallback to the resolved Head of Institution's name (`Mr Festus`), ensuring the signature line is never blank.
+    - [x] **Authentic Calligraphic Script Signature Fallback**:
+        - Imported Google Fonts (`Caveat`, `Dancing Script`, `Great Vibes`) globally in `frontend/src/app/layout.tsx`.
+        - When an image signature is not yet uploaded or fails to load, renders an authentic cursive fountain pen script (`font-['Caveat',cursive]`) above the signature line.
+        - Synchronized calligraphic text fallback in PDF generation via `pdfGenerator.ts` (`renderSignatures` renders Times Italic script signature above the line).
+    - [x] **In-Context Signature Drawing & Upload (`SignatureModal`)**:
+        - Integrated `<SignatureModal>` directly onto the Admin Transcript preview (`TranscriptPreview.tsx`).
+        - Added interactive action buttons (`PenTool` "Upload / Draw Signature" and "Change Signature") directly on the signature slots, allowing administrators to draw or upload their signature in-context without leaving the transcript.
+        - Supported quick attachment for both Head of Institution and Registrar slots.
+    - [x] **Student Transcript Page Endorsement & PDF Export Parity**:
+        - Connected `student/transcript/page.tsx` to `useSchoolAdmins` and `useSignaturesByUserIds`.
+        - Added dynamic resolution of Head of Institution and Registrar with identical image and calligraphic script fallback logic.
+        - Updated `handleDownloadPDF` to pass `signatures: { left: registrarSlot, right: principalSlot }` into `generatePDF`.
+        - Replaced static empty dashed lines in student transcript footer with live signature rendering.
+    - [x] **Resolved PDF Export Signature Overlap on Page 2 ([pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts))**:
+        - Diagnosed bug: Page 2 evaluation tables (10 Affective items + 6 Psychomotor items + Remarks table) with default padding took ~270mm of vertical space. When `p2SigY > pageHeight - 35`, the code previously clamped `p2SigY = pageHeight - 38` (259mm), which forced the signature line and images upwards directly on top of the Executive Remarks table.
+        - Introduced `evalTableStyles` with compact typography and padding (`fontSize: 7.5`, `cellPadding: 1.2` for evaluation rows, and `cellPadding: 2` for remarks) reducing Page 2 table vertical height by over 70mm.
+        - Remarks table now finishes comfortably around ~170mm, providing a generous 75mm+ gap before the signature block (`sigY = pageHeight - 32` = 265mm).
+        - Added strict overflow guard: if content ever extends past `sigY - 18`, a new page is cleanly spawned rather than clamping backwards into the content.
+    - [x] **Spacious & Balanced Behavioral Evaluation Page 2 PDF Layout ([pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts))**:
+        - Relaxed table typography and cell padding on Page 2 (`fontSize: 8.5`, `cellPadding: 2.0` on rows; `cellPadding: 2.2` on headers; `cellPadding: 2.5` on remarks) to eliminate the overly squeezed appearance while maintaining strict zero-overlap clearance.
+        - Optimized column widths to `[95mm, 28mm, 63mm]`, ensuring full behavioral trait and domain titles render on a single line with generous breathing room.
+        - Dynamically scaled long report titles in `renderHeader` (11.5pt when > 35 chars) so headers like "STUDENT CONDUCT APPRAISAL & BEHAVIORAL EVALUATION" breathe comfortably across page borders.
+    - [x] **Synchronized Institutional Motto Across School Profile & Transcripts ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [useSchool.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useSchool.ts))**:
+        - Resolved motto mismatch between `/dashboard/admin/school-profile` and `/dashboard/admin/transcript?studentId=...`.
+        - Prioritized the student's actual enrolled school UUID (`studentProfile.schoolId` / `studentProfile.school.id`) for resolving `effectiveSchoolId`, ensuring profile data loads even if auth-store hydration lags on direct URL landing.
+        - Bound `schoolMotto` directly to `schoolProfile?.motto || studentProfile?.school?.motto` with identical fallback to `"Empowering minds for a better tomorrow."` (matching `school-profile/page.tsx`), eliminating divergent hardcoded strings.
+        - Updated `useUpdateSchoolProfile` to invalidate all `["school", "profile"]` query keys globally so any edits to the school profile propagate instantly across transcript previews and PDF exports.
+
+### Sunday, October 25, 2026 (Strictly Approved/Published Final Results & School Profile 9-Grade Configuration)
+
+- **Strict Final Results Publication Filter & Dynamic Grading System Integration ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [gradingSystem.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/gradingSystem.ts), [records.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.service.ts))**:
+    - [x] **Enforced Strict Approved & Published Final Results Only**:
+        - Updated `getMyPublishedResults` in `records.service.ts` to strictly query and return only records with `status: "PUBLISHED"`.
+        - Verified that both `studentSubjectTermResult` and `classSubjectResult` must be published.
+        - Enforced that if an approval record exists on `paperLinks.approval`, it must be in `"APPROVED"` status (disallowing `PENDING_APPROVAL`, `UNPUBLISH_REQUESTED`, or draft records).
+    - [x] **Dynamic School Profile Grading System Integration**:
+        - Connected `TranscriptPreview.tsx` and `student/transcript/page.tsx` directly to the institutional grading system set by the administrator in the School Profile (`/dashboard/admin/school-profile`).
+        - Implemented fallback to the standardized 9-grade default matrix when no custom tiers are defined:
+          - `A+` (90% - 100%) : `EXCELLENT`
+          - `A`  (70% - 89%)  : `VERY GOOD`
+          - `B+` (65% - 69%)  : `GOOD`
+          - `B`  (60% - 64%)  : `CREDIT`
+          - `C+` (55% - 59%)  : `CREDIT`
+          - `C`  (50% - 54%)  : `PASS`
+          - `D`  (40% - 49%)  : `FAIR`
+          - `F`  (30% - 39%)  : `WEAK`
+          - `F9` (0%  - 30%)  : `FAIL`
+    - [x] **Universal Grade Point (GP) Calculation & Turbopack Compatibility**:
+        - Inlined grade point evaluation into `TranscriptPreview.tsx` and `student/transcript/page.tsx` using `getGradeEvaluation` to ensure resilience against Turbopack HMR cache staleness.
+        - Synchronized GPA and Cumulative CGPA computation across both web transcript previews and PDF exports.
+    - [x] **Clean Transcript Layout (Removed Grading Scale Rubric Card)**:
+        - Removed the redundant Institutional Grading System Configuration card from the transcript pages per user preference, maintaining a clean academic document flow.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` across both `backend` and `frontend` (both exited 0).
+
+### Sunday, October 25, 2026 (Transcript & Records/New Parity: Assignment, Quiz, CA, Exam Breakdown & Evaluation Parity)
+
+- **Academic Transcript Score Alignment with Records Entry ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [records.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.service.ts), [records.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.controller.ts))**:
+    - [x] **Unpublished & Draft Results Available in Admin Transcript**:
+        - Relaxed `status: "PUBLISHED"` requirement in `getMyPublishedResults` in `records.service.ts` when requests are accessed by administrative / staff roles or targeting a student transcript (`isAdmin` mode).
+        - Allows scores and draft configurations recorded in `/dashboard/admin/records/new?id=...` to appear immediately on `/dashboard/admin/transcript?studentId=...` without getting filtered out before official publication.
+    - [x] **Full 4-Component Score Breakdown Table**:
+        - Updated course breakdown tables across both Admin preview (`TranscriptPreview.tsx`) and Student transcript (`student/transcript/page.tsx`) to display all assessment components:
+          - `Code`, `Subject / Course Name`, `Assignment`, `Quiz`, `CA`, `Exam`, `Total (%)`, `Grade`, `GP`, `Remark`.
+        - Matched the exact columns and calculations configured in `/dashboard/admin/records/new`.
+    - [x] **Effective Total Calculation & Cumulative Statistics Alignment**:
+        - Implemented fallback calculation `effectiveTotal = totalScore ?? (assignmentScore + quizScore + caScore + examScore)` across GPA, term average, and cumulative average computations, ensuring scores composed from individual components correctly aggregate even if a precomputed total was omitted.
+    - [x] **PDF Export Parity**:
+        - Updated `handleDownloadPDF` in both admin and student views to export tabular columns (`["CODE", "COURSE / SUBJECT", "ASST", "QUIZ", "CA", "EXAM", "TOTAL", "GRADE", "GP", "REMARK"]`).
+    - [x] **Behavioral Evaluations & Conduct Remarks Fallback**:
+        - Added fallback resolution for Affective traits (10 items), Psychomotor skills (6 items), Teacher Remark, and Principal Remark from `scoreSources.behavior` saved during records entry on `records/new`.
+        - Page 2 of the transcript preview and exported PDF now accurately reflect ratings and remarks saved via `/dashboard/admin/records/new`.
+    - [x] **Verification**: Verified TypeScript compilation for both `backend` and `frontend` (`npx tsc --noEmit` exited 0 on both).
+
+### Sunday, October 25, 2026 (Transcript Endorsement Signature Display & Academic Standing Excellent Marker)
+
+- **Official Academic Transcript Signature & Academic Standing Refinements ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [signatureService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/signatureService.ts), [student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - [x] **Endorsement Signature Preview Display Fix**:
+        - Fixed the root cause preventing the signature from showing in the preview: when a candidate Head of Institution (`principals[0]`) was chosen from `schoolAdmins` without an individual signature tied to their database UUID, the system previously discarded the active administrator signature.
+        - Implemented `getAnyAvailableSignature()` in `TranscriptPreview.tsx` to search across `currentAuthSignature`, `systemAdminSignature`, `signaturesMap`, `localStorage` fallback keys (`schoolhub_signature_active`, `schoolhub_signature_admin-system`, etc.), and `approvalInfo?.signature`.
+        - Bound this active signature to the Head of Institution slot (following the hierarchy: Principal -> Vice Principal -> School Owner).
+        - Maintained the Registrar slot rule: displays registrar's signature if available, otherwise remains clean and blank.
+        - Updated `signatureService.ts` to convert PNG Blobs to base64 Data URLs upfront and cache across `schoolhub_signature_${userId}`, `schoolhub_signature_active`, and `schoolhub_signature_admin-system`, ensuring signatures never expire or fail to render in offline/dev environments.
+        - Upgraded endorsement preview slots in `renderEndorsementSignatures()` to support both transparent PNG images and styled calligraphic signatures with graceful error handling.
+    - [x] **Replaced "First Class" Honors with "Excellent" Marker**:
+        - Removed university honors terminology (`First Class / Distinction`, `Second Class Upper`, `Second Class Lower`, `Third Class / Pass`).
+        - Replaced with standard school assessment markers:
+          - `>= 4.5 CGPA` or `>= 75% Average`: **`Excellent`**
+          - `>= 3.5 CGPA` or `>= 65% Average`: **`Very Good`**
+          - `>= 2.5 CGPA` or `>= 50% Average`: **`Good`**
+          - `>= 1.5 CGPA` or `>= 40% Average`: **`Pass`**
+          - `< 1.5 CGPA` or `< 40% Average`: **`Needs Improvement`**
+        - Updated both admin transcript preview and student transcript page to ensure consistent academic standing reporting.
+    - [x] **Verification**: Frontend TypeScript build verified with `npx tsc --noEmit` (0 errors).
+
+### Sunday, October 25, 2026 (Transcript CGPA Display Matching Progress Report Design & Layout Enhancements)
+
+- **Official Academic Transcript CGPA Integration ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts))**:
+    - [x] **CGPA Callout Matching Progress Report Spec (`CGPA: {score} ({grade})`)**:
+        - Implemented the exact styling seen in the progress report image (`CGPA: 3.75 (A-)`).
+        - Integrated `getCgpaGrade` helper mapping cumulative performance to the corresponding grade letter (e.g. `A-`, `A`, `B+`).
+        - **Page 2 (Behavioral & Remarks)**: Placed the bold `CGPA: {cgpa} ({grade})` callout directly above the `Remarks:` section, precisely matching the progress report layout.
+        - **Page 1 (Academic)**: Added a dedicated summary bar at the end of the course breakdown tables displaying the bold `CGPA: {cgpa} ({grade})` alongside academic standing and cumulative average.
+        - **PDF Export Generator (`pdfGenerator.ts`)**: Rendered the bold `CGPA: {cgpa} ({grade})` line right above the executive institutional remarks box on Page 2 and enriched the metadata table.
+    - [x] **Student Portrait Moved to Letterhead Top Right**:
+        - Relocated the student's portrait photograph (`studentProfile.profileImage`) to the top right of the official letterhead directly opposite the school crest/logo, adhering to formal institutional transcript standards.
+    - [x] **Arranged Reference Metadata into Scholar Biographical Strip**:
+        - Transferred the **Academic Transcript Ref No.** (`TRX-{STUDENT-CODE}-{YEAR}`) and **Issued Date** into the biographical strip below the letterhead.
+        - Structured the strip into a clean, responsive 6-item grid displaying:
+          1. **Scholar Full Name**
+          2. **Student ID / Code**
+          3. **Department / Cohort**
+          4. **Enrollment Status** (`Active Enrolled`)
+          5. **Document Ref No.** (`Academic Transcript Ref No.` on Page 1 / `Behavioral Record Ref No.` on Page 2)
+          6. **Issued Date**
+    - [x] **Matching Loading Skeleton**:
+        - Updated `TranscriptPreviewSkeleton` to mirror the new letterhead layout (crest on left, portrait placeholder on right) and the 6-column biographical metadata strip.
+    - [x] **Head of Institution Signatory Resolution (Principal -> Vice Principal -> School Owner)**:
+        - Implemented the user's priority rule: Slot 1 / Right Slot resolves to either the **Principal**, **Vice Principal**, or **School Owner** based on who has a signature first (Principal -> Vice Principal -> School Owner).
+        - Hierarchy Fallback: Defaults by institutional hierarchy (Principal first, then Vice Principal, then School Owner) if none has a signature set up.
+        - **Leave Blank When Unavailable**: Left completely blank (`null`) above the dashed line if no signature is set up.
+    - [x] **Registrar Signatory Resolution (Slot 2 / Left Slot)**:
+        - Specifically assigned to the **Registrar** (`Registrar / Academic Director`); leaves signature area blank if unavailable.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit` on the frontend codebase (exited 0).
+
+### Sunday, October 25, 2026 (Teacher Records Conduct & Behavioral Evaluation with Admin Restriction)
+
+- **Teacher Records Data Entry 16-Domain Appraisal & Administrative Isolation ([teacher/records/new/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/new/page.tsx))**:
+    - [x] **Full 16-Domain Conduct & Remarks Integration**:
+        - Brought all 10 Affective traits and 6 Psychomotor skills into the Teacher Data Entry portal (`/dashboard/teacher/records/new`).
+        - Integrated sub-tabs: **Key Overview**, **Affective Domain (10 Traits)**, **Psychomotor Domain (6 Skills)**, and **Remarks Focus**.
+        - Added interactive 1–5 rubric selectors and real-time color badge indicators for teacher ratings.
+        - Synchronized with `classEvaluations` (`useClassTermlyEvaluations`) and dual-persisted via `handleSave` to both `StudentSubjectResult.scoreSources.behavior` and the Prisma `TermlyEvaluation` table (`bulkSaveTermlyEvaluations`), guaranteeing real-time synchronization with Page 2 of Academic Transcripts.
+    - [x] **Strict Administrative Isolation & Protection**:
+        - **Principal's Executive Conduct Remark Locked**: Teachers cannot edit or fill the Principal Remark column in the table or the appraisal modal.
+        - The Principal Remark displays as a certified, styled read-only box with a lock icon: `"Administrative Area: Reserved for Principal / Administrator certification. Teachers cannot modify this field."`
+        - In the table header, an amber lock indicator flags the Principal Remark as Admin-Only.
+        - In `handleScoreChange`, attempting to edit `principalRemark` without `canEditPrincipalRemark` (`userType === 'ADMIN' && ('SCHOOL_OWNER' || 'PRINCIPAL')`) is strictly blocked with an error toast.
+        - In "Auto-fill Remarks", only the `teacherRemark` is populated with presets; `principalRemark` is left untouched unless the user is an admin.
+    - [x] **Full Student Behavioral Appraisal Modal for Teachers**:
+        - Built deep-dive modal per student accessed via the "Appraisal" action button.
+        - Section 1 (Affective): 10 traits with interactive 1–5 clickable buttons (disabled if subject not assigned to teacher).
+        - Section 2 (Psychomotor): 6 practical skills with interactive 1–5 clickable buttons.
+        - Section 3 (Teacher Remark): Editable textarea with 1-click preset suggestion chips.
+        - Section 4 (Principal Remark): Fully locked administrative card with lock badge explaining administrative restriction.
+    - [x] **0 TypeScript Compilation Errors**: Verified with `npx tsc --noEmit`.
+
+### Sunday, October 25, 2026 (Final Results Conduct & Behavioral Domain Evaluation Synchronization)
+
+- **Comprehensive Behavioral Evaluation & Transcript Sync ([records/new/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/new/page.tsx), [termlyEvaluation.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/termlyEvaluation.service.ts), [termlyEvaluation.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/termlyEvaluation.controller.ts), [student.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.route.ts), [studentService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/studentService.ts), [useStudent.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useStudent.ts))**:
+    - [x] **Backend Bulk Evaluation Architecture**:
+        - Engineered `GET /api/v1/students/termly-evaluations/class/:classId?sessionId=...&term=...` resolving all candidate evaluations for the entire cohort in a single optimized query.
+        - Engineered `POST /api/v1/students/termly-evaluations/bulk` accepting batch upserts with Prisma transaction rollback protection, tenant scoping, and full 16-domain schema validation.
+    - [x] **Unified Conduct Persistence**:
+        - Upgraded `handleSave` in `/dashboard/admin/records/new` to simultaneously persist all 10 Affective traits, 6 Psychomotor skills, and Teacher/Principal remarks to both `StudentSubjectResult.scoreSources.behavior` and the authoritative `TermlyEvaluation` table in Prisma.
+        - Guarantees immediate real-time reflection on **Page 2 of Certified Academic Transcripts** (`/dashboard/admin/transcript?studentId=...`), broadsheets, and parent report cards.
+    - [x] **Sub-Tab Navigation in Behavioral Evaluations**:
+        - **Key Overview**: Quick select view for Attentiveness, Politeness, Punctuality, Handwriting, Teacher Remark, and Principal Remark.
+        - **Affective Domain (10 Traits)**: Dedicated table evaluating Attentiveness, Honesty, Neatness, Politeness, Punctuality, Self Control, Obedience, Reliability, Responsibility, and Peer Relationship with 1–5 rubric selectors.
+        - **Psychomotor Domain (6 Skills)**: Dedicated table assessing Handwriting, Tool Handling, Drawing & Crafts, Public Speaking, Speech Fluency, and Sports & Athletics with 1–5 rubric selectors.
+        - **Remarks Focus**: Dedicated view with expanded inputs for Class Teacher's Terminal Remark and Principal's Executive Conduct Remark, alongside 1-click quick suggestion preset chips.
+    - [x] **Class-Wide Quick Actions & Rubric Guide**:
+        - "Set All to 5 (Distinction)" 1-click batch action setting all students to top distinction marks across all 16 domains.
+        - "Auto-fill Empty Remarks" populating unconfigured student remarks with certified commendable comments.
+        - Standard 5-Point Institutional Rubric Legend (5 = Distinction, 4 = Commendable, 3 = Acceptable, 2 = Minimal, 1 = Needs Attention).
+    - [x] **Full Student Behavioral Appraisal Modal**:
+        - Built interactive modal for each student row accessible via "Appraisal" action button.
+        - Allows deep-dive per-student adjustment of all 10 Affective traits and 6 Psychomotor skills with responsive 1–5 clickable buttons and real-time color badges, plus custom textareas with preset suggestion chips.
+    - [x] **Synchronized Excel & PDF Export**:
+        - Expanded `behaviorHeaders` and `behaviorRows` across Excel (`xlsx`) and PDF exports to include all 16 traits and skills alongside remarks.
+
+### Sunday, October 25, 2026 (Universal Top Navigation Command Search Optimization & Admin Multi-School Profile)
+
+- **Universal Top Navigation Command Search Architecture ([GlobalCommandSearch.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/dashboard/GlobalCommandSearch.tsx), [Admin TopNavBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/TopNavBar.tsx), [Teacher TopNavBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TopNavBar.tsx), [Student TopNavBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/TopNavBar.tsx), [Parent TopNavBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/TopNavBar.tsx))**:
+    - [x] **Universal Role-Tailored Search Data Engine**:
+        - Engineered an expansive, multi-tiered search index tailored for all 4 user roles (`admin`, `teacher`, `student`, `parent`).
+        - Indexed **Quick Actions** (1-click direct creation/action triggers such as "Enroll Student", "Submit Final Results", "View Cumulative Transcript", "Check Fee Receipts", "Ask AI Study Assistant", "Show QR ID Card").
+        - Indexed **Full Navigation & Submodules** (transcripts, offline spreadsheet grades, broadsheets, fee structuring, continuous assessment, timetable, library, documents, linking hub).
+        - Indexed **Deep Synonyms & Real-World Terminology**: matches colloquial terms (e.g., "money", "tuition", "bills" → Billing/Finance; "scores", "marks", "gpa" → Grades, Results, Transcripts; "staff", "faculty" → Teachers; "pupils", "roster" → Students, Classes; "periods", "routine" → Timetable).
+        - Enforced tenant feature flag filtering: dynamically filters out modules disabled in the tenant's subscription/feature configuration.
+    - [x] **Desktop Command Palette Experience**:
+        - Global keyboard shortcut integration (`⌘K` or `Ctrl+K`) to focus and reveal search from anywhere.
+        - Instant arrow key navigation (`ArrowDown`, `ArrowUp`) with active item highlight, `Enter` to navigate/trigger, and `Escape` to close.
+        - Category filter chips ("All", "Quick Actions", "Core Navigation", "Academics & Records", "Administration", "Tools & Settings") for instant drill-down.
+        - Quick suggestions view: when input is focused with an empty query, shows popular shortcuts and quick actions instead of a blank screen.
+        - Role-accented visual identity (Blue for Admin, Emerald for Teacher, Pink for Student, Orange for Parent).
+    - [x] **Mobile Responsiveness**:
+        - Added mobile search trigger button (`<Search size={18} />`) to top nav bars across all 4 roles.
+        - Connected to an interactive, touch-optimized full-screen/modal command palette with auto-focus, large touch targets, and category tabs.
+    - [x] **Geometric Centering Across All User Top Navigation Bars**:
+        - Fixed asymmetrical flex container balance across Admin, Teacher, Student, and Parent `TopNavBar.tsx`.
+        - Configured Left container with `flex-1 justify-start min-w-0` and Right container with `flex-1 justify-end min-w-0`, counter-balancing both wings so the middle search bar is mathematically placed at the exact 50% midpoint of the viewport.
+        - Applied `mx-auto` and responsive constraints (`max-w-md lg:max-w-lg xl:max-w-2xl`) to `GlobalCommandSearch.tsx` desktop search container.
+- **Academic Transcript Dynamic Institutional Endorsements & Fallback Signatures ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts), [useSignature.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useSignature.ts), [signatureService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/signatureService.ts), [route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/api/signatures/route.ts))**:
+    - [x] **Principal Slot Endorsement**: Queries active signatures across school administrators. If the Principal does not have an active digital signature, seamlessly falls back to the School Owner's active digital signature with updated title (`School Owner / Head of Institution`). If neither has an active signature, leaves the default institutional line.
+    - [x] **Registrar Slot Endorsement**: If the Registrar does not have an active digital signature, seamlessly falls back to the Vice Principal's active digital signature with title (`Vice Principal / Academic Director`). If neither has an active signature, preserves the default empty line.
+    - [x] **Batch Signature API Querying**: Added `userIds` support to `/api/signatures` route and `useSignaturesByUserIds` hook with TanStack 10m caching to batch-resolve institutional candidate signatures with signed URLs and local fallback.
+    - [x] **Official PDF Export Synchronization**: Updated `pdfGenerator.ts` to accept dynamic signature URLs, names, and titles, automatically embedding official digital signatures into generated PDF transcripts and print layouts.
+    - [x] **Dark Mode Visibility & Dimension Enlargement**: Enlarged transcript signature container (`h-24 sm:h-28`) and image scale (`h-20 sm:h-24 max-w-[220px] sm:max-w-[260px]`). Applied `dark:invert dark:brightness-125 dark:contrast-125 dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]` so black ink strokes render with crisp high contrast and subtle ambient glow on dark backgrounds, while preserving authentic black ink on physical print (`print:filter-none print:invert-0`).
+    - [x] **Signature Baseline & Guideline Disambiguation**: Removed the dashed manual signature border line when an active digital signature is attached on [TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx) and [SignaturePreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/SignaturePreview.tsx), ensuring the signature sits cleanly without a harsh line cutting underneath it.
+    - [x] **Student Portrait & Identification Banner**: Displayed student photograph (`studentProfile.profileImage`) in an institutional portrait card on both Page 1 and Page 2, with graceful fallback to a scholar icon avatar when no photo is uploaded.
+    - [x] **School Logo & Institutional Branding**: Replaced placeholder icon with dynamic school logo (`schoolProfile.logo || schoolProfile.schoolLogo || '/schoolhub.png'`) with automatic fallback handling.
+    - [x] **School Motto & Physical Location**: Rendered official institutional motto in stylized typography (`"{schoolProfile.motto}"`) and physical campus address (`MapPin` location metadata) across both on-screen and printed letterheads.
+    - [x] **Page 2: Behavioral Domain Evaluation & Remarks**:
+        - Created official Page 2: **"Student Conduct Appraisal & Behavioral Domain Evaluation"**.
+        - Implemented **Affective Domain Table** evaluating 10 core character traits (attentiveness, honesty, neatness, politeness, punctuality, self-control, obedience, reliability, responsibility, relationship with peers/staff) on a 1–5 institutional scale.
+        - Implemented **Psychomotor Domain Table** assessing 6 practical skills (handwriting, handling tools, drawing/painting, public speaking, speech fluency, sports/games).
+        - Added standardized 5-point proficiency rubric key (5 = Excellent, 4 = High/Good, 3 = Acceptable, 2 = Minimal, 1 = Needs Attention).
+        - Added executive quotes for **Class Teacher's Cumulative Terminal Remark** and **Principal's Executive Conduct Remark**.
+        - Integrated official endorsement signatures and institutional seal on Page 2 as well.
+        - Added interactive **Term Selector Dropdown** allowing administrators to view evaluations for any recorded session/term.
+        - Built **"Record / Edit Remarks" Modal** powered by `useUpsertTermlyEvaluation` for direct editing and saving of ratings and remarks.
+        - Provided **Page Switcher Tabs** (`Page 1: Academic` | `Page 2: Conduct & Remarks` | `All Pages`).
+        - Enforced physical multi-page printing with CSS `print:break-before-page`.
+        - Synchronized [pdfGenerator.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/pdfGenerator.ts) so multi-page PDF generation embeds student portrait, school motto, location, and the Page 2 behavioral evaluation tables.
+    - [x] **Student & Parent Download Telemetry & Payment Audit Sidebar ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [student.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.controller.ts), [student.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.route.ts), [studentService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/studentService.ts), [useStudent.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useStudent.ts))**:
+        - Engineered backend audit endpoint `GET /api/v1/students/:id/download-audit` aggregating student & parent download counts via `FileMetric` alongside all linked payment transactions (`totalPaid`, `outstandingBalance`, payment clearance status).
+        - Added `POST /api/v1/students/:id/download-audit` recording real-time download telemetry (`FileMetric` and `SecurityAuditLog`).
+        - Integrated collapsible **Access & Payment Audit Sidebar** (`isSidebarOpen` toggle button in top bar) displaying:
+            - **Download Frequency Metrics**: student download count, connected parents download count, and all-time total downloads with live status indicators.
+            - **Payment Clearance & Ledger**: total amount paid in ₦, outstanding balance, clearance badge (Paid in Full vs Outstanding), and itemized transaction list with receipt reference, date, payment method, and payer name.
+            - **Parent Guardian Contact Directory**: linked parent profile cards with quick direct WhatsApp (`https://wa.me/`) and phone call actions.
+            - **Telemetry Trigger**: automatically logs download events on "Export Official PDF" and "Print Copy", plus an admin manual test log button.
+    - [x] **Interactive Academic Session & Term Filters ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx))**:
+        - Built an interactive **Academic Filter Bar** positioned below the top navigation controls (hidden on physical print via `print:hidden`).
+        - **Session Selector Dropdown**: dynamically discovers all certified academic sessions in the student's records (e.g. `2024/2025`, `2025/2026`) with individual term counters, plus "All Sessions".
+        - **Term Selector Pills**: quick toggle between "All Terms", "1st Term", "2nd Term", and "3rd Term".
+        - **Dynamic Statistics & Grouping**: `transcriptStats` and `groupedBySession` dynamically recalculate over the active filtered scope (CGPA, cumulative average, verified score count, academic standing) with a "Filtered Scope" badge.
+        - **Synchronized Multi-Page PDF Export**: `handleDownloadPDF` exports the filtered records and attaches `Session Scope` and `Term Scope` metadata directly to the generated PDF.
+        - **Synchronized Page 2 Evaluation Context**: Page 2 behavioral evaluation appraisal adapts to candidate evaluations matching the filtered session/term.
+        - **Filter-Aware Empty State**: displays an informative banner and a one-click "Reset Filters" action when filter criteria yield no records.
+
+- **Admin Profile & Multi-School Governance Affiliations ([profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/profile/page.tsx), [admin.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/admin/admin.controller.ts), [admin.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/admin/admin.route.ts), [adminService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/adminService.ts), [useAdmin.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useAdmin.ts))**:
+    - [x] Added "Admin Profile" entry to the top nav user dropdown above Notifications.
+    - [x] Built full `/dashboard/admin/profile` view showcasing administrative identity, permissions, active institution details, and **School Affiliations & Tenures** tracking current and historical admin positions across other schools.
+
+- **Admin Digital Signature Capture Architecture ([SignatureModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/SignatureModal.tsx), [DrawSignature.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/tabs/DrawSignature.tsx), [UploadSignature.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/tabs/UploadSignature.tsx), [TypeSignature.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/tabs/TypeSignature.tsx), [SignaturePreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/SignaturePreview.tsx), [process.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/signature/process.ts), [signatures route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/api/signatures/route.ts), [signatureService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/signatureService.ts), [useSignature.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useSignature.ts), [Admin Profile page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/profile/page.tsx), [20261025000000_signatures.sql](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/supabase/migrations/20261025000000_signatures.sql))**:
+    - [x] **Draw Mode (`DrawSignature.tsx`)**:
+        - Powered by `signature_pad` with `window.devicePixelRatio` scaling for razor-sharp rendering on retina/mobile screens.
+        - Responsive resize listener with `toData()` and `fromData()` preservation across window resizing or orientation changes.
+        - `touch-action: none` preventing mobile viewport scrolling during drawing.
+        - Pen color switcher (Black `#111111`, Navy `#0f172a`, Royal Blue `#1d4ed8`), Undo stroke, and Clear actions.
+        - Real signature baseline line and "X" origin marker.
+        - Binds stroke data to JSON vector format for high-resolution PDF outputs.
+    - [x] **Upload Mode (`UploadSignature.tsx`)**:
+        - Mobile photo capture / file picker (`accept="image/*" capture="environment"`).
+        - Integrated `react-easy-crop` to tightly isolate signature from table edges, background paper margins, and shadows.
+        - Client-side background removal engine (`process.ts`) with 25px blur illumination mapping (with scratch canvas fallback for older Safari/iOS), soft edge alpha thresholding, and solid ink recoloring.
+        - Interactive "Clean-up Strength" slider with debounced real-time preview.
+    - [x] **Type Mode (`TypeSignature.tsx`)**:
+        - Calligraphy script rendering with dynamic Google Font loading (Caveat, Dancing Script, Pacifico, Great Vibes).
+        - Offscreen canvas rendering with slight natural tilt, exported through the shared trim pipeline.
+    - [x] **Shared Processing & Normalization Engine (`process.ts`)**:
+        - `trimTransparentPng`: scans ink alpha bounding box, applies 12-14px padding, and scales to max 800px.
+        - `computeSha256`: cryptographic integrity checksum.
+    - [x] **Storage & Server Route (`route.ts`)**:
+        - Server-side validation: MIME type check (`image/png`), 2MB limit, and PNG magic header bytes inspection (`0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a`).
+        - SHA-256 hash generation, IP address and User-Agent capture for audit ledger.
+        - Private Supabase Storage bucket `signatures` with 1-hour signed URL serving and fallback to `school-assets`.
+        - SQL migration script provided for `signatures` table, partial unique active index, and storage policies.
+    - [x] **Admin Profile Integration (`/dashboard/admin/profile`)**:
+        - Added **"Digital Signature & Endorsement Seal"** tab in Admin Profile.
+        - Added digital signature action button in Hero Card with real-time certified indicator.
+        - Official Institutional Endorsement Card displaying the transparent PNG on paper, cryptographic SHA-256 fingerprint with copy button, creation date, and capture method.
+        - "Update Signature" and "Remove Signature" controls.
+
+### Saturday, October 24, 2026 (Final Results Admin Approval & Digital Signature Workflow, Student & Parent Visibility Gate)
+
+- **Admin Final Results Approval & Digital Signature Architecture ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/new/page.tsx), [teacher page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/new/page.tsx), [records.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.service.ts), [records.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.controller.ts), [recordService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/recordService.ts), [useRecords.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useRecords.ts))**:
+    - [x] **Strict Student & Parent Visibility Gate (`getMyPublishedResults`)**:
+        - Selected `paperLinks: true` in `ClassSubjectResult` query within `records.service.ts`.
+        - Enforced strict requirement that for non-admin viewers (students and parents viewing via `/records/my-results` or `/parents/children/:childId/results`), `paperLinks.approval.status === "APPROVED"` must be true; otherwise unapproved or pending draft results are completely excluded from student and parent views.
+    - [x] **Admin Approval & Digital Signature Storage (`records.service.ts`, `records.controller.ts`)**:
+        - Updated backend `publishClassSubjectResult` to accept custom digital signature text and admin user details and role.
+        - Persisted structured administrative approval block into `ClassSubjectResult.paperLinks.approval`: status (`APPROVED`), `approvedById`, `approvedByName`, `role` (e.g. `School Owner` or `Principal`), `approvedAt` (ISO timestamp), and `signature`.
+        - Added persistent audit trail tracking in `ClassSubjectResult.paperLinks.approvalHistory`: appends every approval event over time with identity, assigned role, signature, and timestamp.
+        - Enforced role check: teachers attempting to publish are routed to `requestPublishApproval` with `PENDING_APPROVAL` status, and an informative response stating: *"For students and parents to see this result, it needs to be approved by an administrator."*
+    - [x] **Frontend Admin Workflow (`/dashboard/admin/records/new?id=...`)**:
+        - Streamlined approve actions: removed redundant duplicate "Approve & Publish Now" buttons inside the Configuration Details tab; centralized the primary **Approve & Publish** action solely in the authoritative top header action bar.
+        - Built approval confirmation modal displaying approving official identity, exact administrative role / title badge (`School Owner`, `Principal`, `Registrar`, etc.), and digital signature input. Removed manual role buttons in favor of the admin's genuine assigned role.
+        - Digital signature auto-formats with the admin's official title: `${user.name} (${adminRoleTitle})`.
+        - When published, displays an "Approved & Published" status badge with unpublish option.
+        - Overhauled **Configuration Details Tab**:
+            - When approved: Renders comprehensive **Official Administrative Approval & Digital Signature Card** showing approving official, formatted administrative role (e.g. `School Owner` or `Principal`), digital certificate stamp box with the stored signature, and exact timestamp.
+            - When unapproved: Displays an informative amber alert explaining that the result is hidden from students/parents until approved, with clear direction to use the top action bar to approve.
+            - **Approval & Publishing History Audit Ledger**: Renders chronological history of all officials who approved and published this final result, displaying their avatars, names, role tags, timestamps, and digital signature stamps.
+    - [x] **Teacher Guidance & Notice (`/dashboard/teacher/records/new?id=...`)**:
+        - Updated teacher publish dialog to prominently warn: *"Notice: For students and parents to see this result, it needs to be approved and published by a school administrator."*
+        - Action button clearly labeled "Submit for Approval".
+
+### Saturday, October 24, 2026 (Admin Academic Transcripts Hub & Scholar Transcript Preview Architecture)
+
+- **Admin Academic Transcripts Feature ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/page.tsx), [StudentTranscriptSelector.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/StudentTranscriptSelector.tsx), [TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx), [records.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.service.ts), [records.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.controller.ts), [useStudent.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useStudent.ts), [adminFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/adminFeatureFlags.ts), [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/app-sidebar.tsx))**:
+    - [x] **Backend Certified Transcript Administration Support**:
+        - Enriched `getMyPublishedResults` in `records.service.ts` to include course codes (`code: true`) on subjects.
+        - Added `isAdmin` verification flag in `records.controller.ts` allowing administrators and registrars to preview full student transcripts with all scores and grade points unconditionally, bypassing student-facing release/reveal timer restrictions.
+    - [x] **Frontend Navigation & Feature Flag Architecture**:
+        - Added `transcript: true` under `academics` in `adminFeatureFlags.ts` with role permissions for `SCHOOL_OWNER`, `PRINCIPAL`, `REGISTRAR`, and `SUPPORT`.
+        - Added **Transcripts** navigation link to `adminMenuItems` in `app-sidebar.tsx` with `GraduationCap` icon linking to `/dashboard/admin/transcript`.
+        - Mobile drawer (`AdminMobileDrawer.tsx`) automatically inherits the feature and menu item.
+    - [x] **First Page: Student Selector Workspace (`StudentTranscriptSelector.tsx`)**:
+        - Built dedicated landing interface to search and select any student from the school roster.
+        - High-level metric indicators: Total Scholars, Active Classes, Academic Standard (5.00 CGPA scale), and Certification Mode (Registrar Seal).
+        - Filter & search toolbar: live search by name, student code (e.g. `STU-...`), or email; dynamic class arm dropdown; department dropdown; gender filter; and reset action.
+        - View mode switcher: List View (interactive table with student avatars, code badge, class arm, department, gender, and "Preview Transcript" action) and Grid View (rich scholar cards with direct preview trigger).
+        - Full pagination controls for large cohorts.
+    - [x] **Authoritative Transcript Preview & Certification Workspace (`TranscriptPreview.tsx`)**:
+        - Deep URL synchronization supporting both direct navigation (`/dashboard/admin/transcript?studentId=...`) and internal switching with browser history.
+        - Quick Scholar Switcher dropdown in the preview header bar allowing administrators to jump between scholars without navigating back.
+        - Official institutional letterhead with school logo, certified record badge, school motto, address, and auto-generated transcript reference code (`TRX-[CODE]-[YEAR]`).
+        - Scholar biographical profile strip with name, student code, department, enrolled class cohort, and active status.
+        - Cumulative performance metrics: CGPA on 5.00 scale, Cumulative Average percentage, Total registered subjects, and Completed Sessions/Terms.
+        - Academic standing classification (First Class / Distinction, Second Class Upper, etc.).
+        - Session-by-session & term-by-term breakdown tables: Course Code, Course Name, CA Score, Exam Score, Total %, Grade Letter (A1–F9 colored pill badges adhering to list/grid skill), Grade Points, and Remarks.
+        - Official certification endorsements footer: Registrar/Academic Director signature line, official electronic seal ("Certified Verified Copy"), Principal/Head of Institution endorsement block, and legal validity notice.
+        - Official 1-click PDF download via `generatePDF` and browser print formatting (`window.print()`).
+    - [x] **Student Details Integration**:
+        - Added dedicated "Transcript" action button in the student profile hero actions bar (`dashboard/admin/students/[studentId]`), linking directly to their transcript preview.
+
+### Saturday, October 24, 2026 (Class History & Institutional Lifecycle Ledger Architecture)
+
+- **Class History Ledger Architecture ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/page.tsx), [ClassHistoryTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/history/ClassHistoryTab.tsx), [class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts), [class.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.controller.ts), [class.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.route.ts), [useClasses.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useClasses.ts))**:
+    - [x] **Backend Class History Ledger Service (`GET /api/classes/:id/history`)**:
+        - Aggregates the full institutional history of a class: establishment & configuration, student enrollments, promotions into and out of the cohort (with origin and destination class resolution), student graduations & withdrawals, staff & lead form teacher appointments, curriculum subject attachments, certified final score sheet publications, and conduct logs.
+        - Provides computed cohort summary metrics (`currentEnrollments`, `promotedOut`, `promotedIn`, `graduated`, `publishedResultsCount`, `subjectsCount`, `teachersCount`).
+    - [x] **Frontend Class History Tab (`ClassHistoryTab.tsx`)**:
+        - Added **Class History** tab to class details view at `/dashboard/admin/classes/[id]`, supporting direct linking via `?tab=history`.
+        - Added 5 high-level metric indicator cards (Active Roster, Promoted Out, Promoted In, Graduated/Exit, Certified Records).
+        - Added full filter control bar with live search, category pills (`All Events`, `Promotions`, `Students`, `Staff`, `Academics`, `Conduct`), and chronological sort order toggle.
+        - Built visual chronological timeline with distinct event icons, badges, and timestamps.
+        - Built interactive **Event Details Modal** displaying student profiles, promotion trajectories, academic snapshot achievements at time of movement, and administrator verification signatures.
+        - Added PDF export function (`handleExportPDF`) generating a formatted audit report via global PDF generator.
+        - Added dedicated loading skeleton in `TabSkeleton` for smooth tab transitions.
+
+### Friday, October 23, 2026 (Score Sheet Configuration, Admin Approval & Signatures, and Teacher Records Overhaul)
+
+- **Score Sheet Settings & Max Mark Configuration ([EditConfigModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/new/components/EditConfigModal.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/records/new/page.tsx), [records.schema.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.schema.ts), [records.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/records/records.service.ts))**:
+    - [x] **Config Modal Controls**: Added configurable maximum marks for Assignment (Max 10), Quiz/Test (Max 10), CA (Max 20), and Exam (Max 60), with a live total indicator badge verifying the standard 100-mark distribution.
+    - [x] **Session, Term & Release Dates**: Added session selection dropdown (`useSessions`), term selector (`FIRST`, `SECOND`, `THIRD`), and reveal/release date pickers with quick clear controls.
+    - [x] **Backend Validation & Persistence**: Updated backend Zod schema and records service to accept and update `sessionId` and `term` on class subject results.
+    - [x] **Configuration Details Tab**:
+        - Grouped assessment types into four cards (`Exam`, `Quiz/Test`, `CA`, `Assignment`).
+        - Integrated physical offline grade marksheets (`gradeService.getGradeHub` with `offlineOnly: 'true'`) alongside online CBT papers and online assignments.
+        - Added interactive Session and Term filter controls; when "All" or none selected, all assessments are displayed.
+        - Displayed assessment badges (`Offline Marksheet`, `CBT Paper`, `Online Task`), student graded counts, and total marks.
+    - [x] **Student Avatars**: Removed dummy external Dicebear avatars across academic and behavioral tables in both Admin and Teacher new records & preview views, replacing them with authentic profile photos or bold initials letter avatars (`StudentAvatar`).
+    - [x] **Teacher Submission & Admin Digital Signature Approval Workflow**:
+        - When a teacher publishes a record, the backend tags it as `PENDING_APPROVAL` with the teacher requester's identity.
+        - Admin records view highlights pending approval requests with a call-to-action banner to review and certify.
+        - When certified and published by an administrator, records admin credentials, timestamp, and digital signature (`approval: { status: 'APPROVED', approvedById, approvedByName, approvedAt, signature }`).
+        - Integrated official approval verification stamp on the page and in the exported PDF (Section 4).
+
+- **Teacher Records Focus & Student Final Results ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/page.tsx), [useTeacher.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useTeacher.ts))**:
+    - [x] **Assigned Subject Focus**: Removed the "All School Records" toggle; strictly locked teacher subject records to their assigned subjects alone.
+    - [x] **Student Final Results Tab**:
+        - Replaced empty student term results with `useTeacherStudents`, fetching all students enrolled in the teacher's assigned classes.
+        - Aligned layout to mirror `admin/records` with List View (`#`, `STUDENT NAME`, `STUDENT CODE`, `GENDER`, `CLASS`, `ACTIONS`) and Grid View cards.
+        - Provided direct "View Record" action buttons navigating to `/dashboard/teacher/records/student/[studentId]`.
+        - Fully typed with zero `any` and verified TypeScript compilation (`tsc --noEmit`).
+
+### Friday, October 23, 2026 (Apex Route vs Subdomain 404 Isolation Architecture)
+
+- **Apex Domain 404 vs Subdomain 404 Segregation ([subdomain.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/utils/subdomain.ts), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/[tenant]/page.tsx), [[...slug]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/[tenant]/[...slug]/page.tsx), [not-found.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/not-found.tsx), [[tenant]/not-found.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/[tenant]/not-found.tsx))**:
+    - [x] **Identified Root Cause**: In Next.js App Router, `src/app/[tenant]/page.tsx` is a top-level dynamic folder matching all single-segment paths (e.g. `/home`). When visiting `localhost:3000/home`, `[tenant]` captured the path, failed to find a school named "home", and unconditionally displayed `SchoolNotFoundView`.
+    - [x] **Created Subdomain Detection Utility ([subdomain.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/utils/subdomain.ts))**: Built `detectSubdomain(hostname)` and `isSubdomainHost(hostname)` to accurately identify whether the incoming request is on a dedicated school subdomain (e.g. `home.qefas.com`, `myschool.localhost:3000`) or the main apex domain (`localhost:3000`, `qefas.com`, `www.qefas.com`).
+    - [x] **Isolated Apex Route 404s**: Updated `[tenant]/page.tsx` and `[tenant]/[...slug]/page.tsx` so that requests on the apex domain with unmapped routes (`/home`, etc.) or failed school fetches immediately trigger `notFound()` instead of `SchoolNotFoundView`.
+    - [x] **Subdomain-Exclusive School 404**: Preserved `SchoolNotFoundView` exclusively for actual school subdomains (e.g. `home.qefas.com`, `xyz.qefas.com`) where the institution cannot be located on the Qefas Hub network.
+    - [x] **Unified Tenant NotFound**: Updated `[tenant]/not-found.tsx` to delegate to root `NotFound`, which seamlessly differentiates between school subdomains and apex 404s.
+
+### Friday, October 23, 2026 (Web Device Name & Location Detection Permission Architecture)
+
+- **Accurate Web Device Model & Location Architecture ([deviceDetector.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/utils/deviceDetector.ts), [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts), [DeviceSessions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/DeviceSessions.tsx), [auth.device.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.device.ts), [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts))**:
+    - [x] **Clarified & solved root cause**: Web browsers do not have device name permission dialogs (browsers freeze `User-Agent` strings). Device model is detected via high-entropy Client Hints (`navigator.userAgentData`) on Android/Chromium and screen dimension/pixel-ratio matrix on iOS with zero prompt.
+    - [x] **Location Permission Setup**: Location strictly requires browser permission (`navigator.geolocation`). Built `requestDeviceLocationPermission()` to prompt the browser, fetch GPS coordinates, and reverse-geocode to City/Country (cached in `localStorage`).
+    - [x] **Zero-Permission Fallback**: Built `getTimezoneLocation()` which maps system IANA timezones (e.g. `Africa/Lagos` → `Lagos, Nigeria`) without prompting, ensuring location never shows as "Unknown Location".
+    - [x] **Global Request Interceptors**: Updated [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) to automatically attach `x-device-type`, `x-device-model`, `x-os-version`, `x-device-location`, and `x-client-timezone` to all outgoing API requests.
+    - [x] **Interactive Permission Trigger**: Added an "Update Location" action button in [DeviceSessions.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/DeviceSessions.tsx) allowing users to trigger GPS location permissions on demand with toast feedback.
+    - [x] **Backend Session Resolution**: Enhanced `getUserSessions` and `extractDeviceInfo` in backend to accept and prioritize high-accuracy client device location and timezone headers.
+    - [x] **Enriched Security Emails & Notifications ([auth.device.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.device.ts))**: Updated `processNewDeviceLogin` so new sign-in security emails and in-app alerts display the verified human-readable city/country (e.g. `Lagos, Nigeria (197.210.x.x)`) instead of raw IP or "Unknown Location".
+
+### Friday, October 23, 2026 (Auth Session Invalidation Fix & Role-Adaptive Authenticating Screen)
+
+- **Authentication Session Invalidation Fix ([authMiddleware.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts), [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts))**:
+    - [x] **Resolved Premature Logout Bug**:
+        - Root cause identified: `authMiddleware` performed a strict string equality lookup `prisma.refreshToken.findFirst({ where: { userId, isValid: true, deviceModel: req.header("x-device-model") } })`. When OAuth or social login created a session with `deviceModel: "Unknown Device"` or a generic User-Agent label, subsequent frontend API calls bearing the client-detected `x-device-model` failed this filter, logging `[authMiddleware] User ID "..." session not found or no longer valid` and returning 401.
+        - Fixed in `authMiddleware.ts` to first attempt an exact device match, and if not matched, fallback to verify any active valid session for that user (`userId: decoded.userId, isValid: true`).
+        - Added opportunistic device model enrichment: if the session was previously recorded as "Unknown Device", it dynamically updates the session with the client-reported `x-device-model` without invalidating the token.
+    - [x] **Protected Auth Exchange on Callback Page**:
+        - Updated [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) response interceptor so `/login/callback` is explicitly exempted from immediate cookie clearance and store wipeout upon receiving transient 401s during the OAuth handshake.
+
+- **Role-Adaptive Authenticating Screen ([login/callback/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/callback/page.tsx))**:
+    - [x] Dynamically aligns the authentication screen visuals to match the authenticating user role's signature design system:
+        - **Teacher**: Emerald / Green palette (`emerald-600` shield, `bg-emerald-50` badge, emerald glowing ambient orbs, emerald progress bar, `BookOpen` icon).
+        - **Student**: Blue / Cyan palette (`blue-600` shield, `bg-blue-50` badge, cyan glowing ambient orbs, blue progress bar, `GraduationCap` icon).
+        - **Parent**: Orange / Amber palette (`orange-500` shield, `bg-orange-50` badge, amber glowing ambient orbs, orange progress bar, `Users` icon).
+        - **Admin**: Indigo / Purple palette (`indigo-600` shield, `bg-indigo-50` badge, violet glowing ambient orbs, indigo progress bar, `Building` icon).
+    - [x] Dynamically extracts the role from `searchParams.get("role")`, URL destination (`dest`), and synchronizes in real-time with `/auth/me` user data.
+    - [x] Role-specific status copy and tailored subtitles (e.g. "Preparing your classrooms, lesson schedules, and grade records..." for teachers).
+
+### Friday, October 23, 2026 (Student Promotion & Graduation Architecture, Offline Grades Skeletons & Teacher Class Offline Tab)
+
+- **Student Promotion & Graduation Architecture ([PromoteStudentsModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/PromoteStudentsModal.tsx), [StudentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/students/components/StudentCard.tsx), [StudentDetailsModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/students/components/StudentDetailsModal.tsx), [StudentsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/students/StudentsTab.tsx), [student.lifecycle.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.lifecycle.service.ts), [student.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.controller.ts), [student.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.route.ts))**:
+    - [x] **Dual Promotion & Graduation Modal**:
+        - Upgraded `PromoteStudentsModal` to feature segmented mode tabs: **Promote to Class** and **Mark as Graduated**.
+        - In **Promote** mode: facilitates single or multi-student selection, destination class picker, and transfers students via `POST /api/classes/:id/promote` with permanent `PROMOTED` history entries and academic level synchronization.
+        - In **Graduation** mode: provides date picker, graduation reason/honors input, and commendation notes. Submits via `POST /api/students/batch-exit` with `exitType: "GRADUATED"`.
+        - Recorded in `StudentHistory` with event type `GRADUATED`, updates `studentEnrollment.status = "GRADUATED"`, notifies students/parents, and cleanly removes students from active class rosters (`classEnrollment.deleteMany`).
+    - [x] **Student Card & Details Modal Actions**:
+        - Added quick-action "Promote" and "Graduate" action buttons directly on each `StudentCard`.
+        - Added corresponding "Promote to Class" and "Mark as Graduated" buttons in `StudentDetailsModal`.
+        - Connected top-level action buttons in `StudentsTab` toolbar ("Promote Students" and "Mark as Graduated").
+
+- **Admin Class Details Offline Grades Enhancements ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/page.tsx), [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), [OfflineRecordsList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx))**:
+    - [x] Added dedicated loading skeleton in `TabSkeleton` for `tabId === "offline-grades"` (hero banner, filters bar, and 6 assessment card skeletons with shimmer animation).
+    - [x] Added `hideClassFilter?: boolean` support to `OfflineGradesDashboard` and `OfflineRecordsList`.
+    - [x] Inside Admin Class Details (`dashboard/admin/classes/[id]`), the class dropdown is cleanly hidden, automatically locking all queries and views to that specific cohort.
+
+- **Teacher Class Details Offline Grades Tab ([ClassDetails.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/ClassDetails.tsx), [TabNavigation.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/TabNavigation.tsx), [TabSkeleton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/TabSkeleton.tsx))**:
+    - [x] Added `offline-grades` tab to `TabNavigation` with the `FileSpreadsheet` icon.
+    - [x] Rendered `OfflineGradesDashboard` with `defaultClassId={classId}` and `hideClassFilter={true}`.
+    - [x] Scoped assessment records and score entries strictly to the teacher's assigned subjects and this specific class cohort.
+    - [x] Fitted layout to the available page container with `w-full max-w-full overflow-hidden`.
+    - [x] Added matching teacher theme loading skeleton in `TabSkeleton` for smooth tab transitions.
+
+### Friday, October 23, 2026 (Social Login Callback Screen Redesign & Dedicated School 404 Architecture)
+
+- **Social Login Callback Screen Redesign ([login/callback/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/callback/page.tsx))**:
+    - [x] Replaced the generic blue spinner box with a modern glassmorphism security card.
+    - [x] Ambient radiant background mesh with concentric pulsing shield emblem.
+    - [x] Role-adaptive badges and presets for all user personas (`teacher`, `student`, `parent`, `admin`).
+    - [x] Animated multi-stage authentication sequence with live progress tracker (SSO Verification → Workspace Access Sync → Dashboard Redirect).
+    - [x] 256-bit SSL encrypted session reassurance indicator with graceful fallback bypass link.
+
+- **Dedicated School & Subdomain 404 Architecture ([SchoolNotFoundView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/common/SchoolNotFoundView.tsx), [not-found.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/not-found.tsx), [[tenant]/not-found.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/[tenant]/not-found.tsx), [[tenant]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/[tenant]/page.tsx), [[tenant]/[...slug]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/[tenant]/[...slug]/page.tsx))**:
+    - [x] Built [SchoolNotFoundView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/common/SchoolNotFoundView.tsx) to provide an authoritative institutional 404 screen.
+    - [x] Differentiates between **School/Subdomain Not Found** (unresolved subdomain, wrong spelling, deactivated institution) and **Standard Platform 404** (missing system page).
+    - [x] Displays the attempted subdomain highlighted in monospace tag, with diagnostic checklist (verify spelling, access via central portal, register new school).
+    - [x] Dynamic apex routing logic supporting both local development (`localhost:3000`) and production multi-tenant subdomains.
+    - [x] Updated root `not-found.tsx` to automatically detect incoming school subdomains and routes on client mount.
+    - [x] Added `[tenant]/not-found.tsx` to intercept any unmapped routes within the school tenant route hierarchy.
+
+### Friday, October 23, 2026 (Parent Class Teacher Slider & Multi-Class Switcher Modal)
+
+- **Parent Classroom Hub Enhancements ([ClassOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/class/components/ClassOverview.tsx), [SwitchClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/class/components/SwitchClassModal.tsx), [parent.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/parent/parent.service.ts))**:
+    - [x] **Class Teacher Card Slider**:
+        - Updated the Class Teacher KPI card on `/dashboard/parent/class` to detect all teachers assigned to the active cohort (`classData.teachers` and `classData.teacher`).
+        - When multiple teachers are assigned, the card automatically transforms into an interactive smooth slider:
+            - Auto-slides every 3.5 seconds with slide-in animation (`animate-in fade-in slide-in-from-right-3`).
+            - Pauses on mouse hover so parents can inspect names, roles, and emails without premature transitions.
+            - Includes manual navigation controls: previous/next chevron buttons (`<` and `>`), teacher counter badge (`1/3`), and interactive navigation indicator dots.
+            - Displays individual designations: "Designated homeroom lead" (with emerald status dot) vs. "Assigned class teacher" (with purple status dot).
+            - Updated the lead instructor pill in the banner metadata row to display `(+N)` indicating additional assigned co-teachers.
+    - [x] **Multi-Class Switcher ("Switch Class" Button & Modal Popup)**:
+        - Added a prominent "Switch Class" button in the Hero Classroom Banner with cohort counter badge.
+        - Built [SwitchClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/class/components/SwitchClassModal.tsx):
+            - Lists all enrolled classes for the selected child (aggregated and deduplicated from `dashboardData.child.classes`, `dashboardData.child.currentClass`, and `childDetails.classes`).
+            - Each class card highlights class name, section/arm, academic level, session, term, class code, and lead teacher name.
+            - Highlights the currently active class with a distinct "Active View" badge and orange ring outline.
+            - 1-click class switching: clicking any cohort switches the entire parent class overview instantly and notifies via toast.
+    - [x] **Backend Multi-Class Enrollment Support ([parent.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/parent/parent.service.ts))**:
+        - Removed `take: 1` limitation on student class queries in `getParentDashboardService`.
+        - Enriched student class select to return all classes with sections, levels, terms, sessions, class codes, and assigned teacher relations.
+
+### Friday, October 23, 2026 (Direct Links Full User Type Audit, Classroom Dummy Data & My-Classes Join Button)
+
+- **Comprehensive Direct Links Audit & Dual-State Support for All User Types ([ParentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/parent/components/ParentCard.tsx), [StudentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/student/components/StudentCard.tsx), [TeacherCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/teacher/components/TeacherCard.tsx), [regSchema.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/services/regSchema.ts), [linkService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/linkService.ts))**:
+    - [x] **Audit of All Direct Links Across the Codebase**:
+        - Audited all direct entry URLs: `/signup/parent?studentCode=...`, `/signup/student?schoolCode=...&classCode=...&teacherCode=...`, `/signup/teacher?schoolCode=...&studentCode=...`, `/join/school/[code]`, and `/join/class/[id]`.
+    - [x] **Unified Dual-State Architecture (Logged In vs. Non-Logged In)**:
+        - **Parent Links (`/signup/parent?studentCode=...`)**: Logged-in parents get a 1-click "Link Student" card that sends the request via `useRequestLink()` directly. Non-parents get a clear role mismatch warning and account switcher.
+        - **Student Links (`/signup/student?...`)**: Logged-in students now get an instant 1-click "Connect & Send Request" card that automatically dispatches link requests for all detected codes (`schoolCode`, `classCode`, `teacherCode`, `parentCode`) without hitting "Email already registered". Non-students get a role mismatch notice with dashboard or account switch actions.
+        - **Teacher Links (`/signup/teacher?...`)**: Logged-in teachers now get an instant 1-click "Connect & Send Request" card for school and student invitations (`schoolCode`, `studentCode`) without registration conflicts. Non-teachers get a role mismatch notice.
+        - **Non-Logged-In Users**: All three registration forms now detect incoming query parameters and display a prominent verified invitation pill above the form fields, automatically wiring them into the registration payload.
+    - [x] **Bug Fix in Yup Registration Validation Schemas**:
+        - Fixed rigid regex `/^stu-\d{6}$/` and `/^tch-\d{6}$/` in `regSchema.ts` which previously failed on standard generated codes that include name slugs (e.g. `stu-ola-401219` or `tch-ade-391823`). Updated to `/^[a-z]{3}-[a-zA-Z0-9_-]+$/i` so all authentic system-generated codes pass smoothly.
+    - [x] **Backend LinkType Synchronization**:
+        - Added missing `"TEACHER_STUDENT"` to frontend `linkService.ts`'s `LinkType` union to fully match backend capabilities.
+    - [x] **Classroom Selection Live API Connection & Security Hardening ([StudentClassSelectionModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentClassSelectionModal.tsx), [class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts))**:
+        - Removed all dummy test data and demo toggles from `StudentClassSelectionModal.tsx`. The modal is now strictly bound to live data from the backend via `useClasses(schoolId)`.
+        - Verified the Class Join Request API (`POST /classes/join/request` via `requestToJoinClassService`):
+          - Strict student authentication: only authenticated students can submit join requests.
+          - Strict multi-tenancy & cross-school isolation: verifies student is officially linked to the target school (`schoolId`) before permitting join requests.
+          - Duplicate prevention: rejects requests if student is already enrolled or already has a pending link request for that class.
+          - Notification dispatch: automatically notifies all assigned class teachers and active school admins.
+        - Hardened `getClassesService` (`GET /classes?schoolId=...`): explicitly blocks and throws an error if an authenticated student queries classes of a school they are not linked to (`student.schoolId !== schoolId`).
+        - [x] **Classroom Selection Popup — Already Joined Classes Indicator ([StudentClassSelectionModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentClassSelectionModal.tsx))**:
+            - Added detection of already-enrolled classes across student profile (`studentProfile.classes`), student's own active enrollments (`useClasses()`), and class rosters (`cls.enrollments`).
+            - Styled already-joined classes with distinct emerald borders and backgrounds (`bg-emerald-50/20`, `border-emerald-300`).
+            - Added an emerald `"✓ Already Joined"` pill badge in the class card header.
+            - Replaced the "Request to Join" button with an active `"✓ Enrolled (Active Member)"` badge preventing redundant join requests.
+            - Highlighted the student in the class roster avatar preview as `"YOU"` with a distinct emerald ring and priority placement at the front of the roster.
+            - Added informative roster text: `"✓ You are enrolled in this class with X other students"`.
+            - Added an `"Already Joined (X)"` filter chip in the modal header bar alongside "All" and "Available to Join", allowing students to instantly filter their enrolled classes.
+        - [x] **Study Materials Tab — Teacher/Creator Name Accuracy & Assessment Integration ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/materials/page.tsx), [MaterialsLayout.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/materials/components/MaterialsLayout.tsx), [assignment.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/assignment/assignment.service.ts), [class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts))**:
+            - Fixed root cause where materials previously fell back to the class's primary teacher because `getStudentAssignmentsService` and `getSingleClassService` did not query or populate assignment creators/teachers.
+            - Updated `assignment.service.ts` to query and populate `teacher`, `instructor`, `creator`, and `teacherName` from both `Teacher` and `Admin` records for all assignments.
+            - Updated `class.service.ts` (`getSingleClassService`) to include resource URLs (`attachmentUrl`, `videoUrl`, `referenceUrl`), resolve creators for `classAssignments`, and select `teacher` on `exams`.
+            - Updated `materials/page.tsx` on frontend to merge class assignments with student assignments, accurately resolve the creator via assignment creator, class teacher roster match, or subject teacher match.
+            - Added class assessments (`Exams`, `Quizzes`, `CAs`) into the materials catalog under their respective folder categories with their real author/teacher names and interactive "Take / View Assessment" launch links.
+            - Updated `MaterialsLayout.tsx` modal preview to support assessment resource links alongside PDFs, videos, and reference links.
+        - [x] **Student Academic Transcript Feature ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [app-sidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/app-sidebar.tsx), [studentFeatureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/studentFeatureFlags.ts), [StudentMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx))**:
+            - Added `"Transcript"` navigation item with `GraduationCap` icon to the student sidebar under the Core Learning section and mobile drawer.
+            - Added `transcript: true` feature flag to `studentFeatureFlags.ts`.
+            - Implemented strict school connection access gating: students without an active school link receive an informative, locked gatekeeper UI with direct actions to connect to a school via the Linking Hub.
+            - Implemented comprehensive official transcript layout for connected students:
+              - Official institutional letterhead with school logo, motto, address, and reference code (`TRX-STU-YEAR`).
+              - Student profile strip (Name, Student ID, Department, and Active Enrolled status).
+              - Cumulative performance stat cards (CGPA on 5.00 scale, Cumulative Average percentage, Total Subjects, and Completed Sessions/Terms).
+              - Session-by-session & term-by-term breakdown tables listing Course Code, Subject Name, CA Score, Exam Score, Total Mark, Grade Letter (A1–F9 badges), Grade Points, and Remarks.
+              - Official institutional certification footer with dual signature blocks (Registrar and Principal/Head of School) and electronic seal.
+              - 1-click Official PDF Download via `generatePDF` and browser print formatting.
+        - Zero compilation errors across both `frontend` and `backend` (`npx tsc --noEmit` exited with code 0).
 
 ### Thursday, October 22, 2026 (Comprehensive Backend Multi-Tenancy & Authorization Security Audit)
 

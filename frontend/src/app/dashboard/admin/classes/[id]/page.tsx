@@ -15,8 +15,9 @@ import ClassQRCodeModal from './components/ClassQRCodeModal';
 import TeachersTab from './components/TeachersTab';
 import Breadcrumbs from './components/students/components/Breadcrumbs';
 import AnalyticsTab from './components/analytics/AnalyticsTab';
+import ClassHistoryTab from './components/history/ClassHistoryTab';
 import OfflineGradesDashboard from '../../offline-grades/components/OfflineGradesDashboard';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
 import { useSessions } from '@/lib/api/hooks/useSessions';
@@ -164,12 +165,84 @@ const TabSkeleton = ({ tabId }: { tabId: string }) => {
     );
   }
 
+  if (tabId === "offline-grades") {
+    // Offline Grades Dashboard Skeleton
+    return (
+      <div className="space-y-6 animate-pulse">
+        {/* Banner Skeleton */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="size-14 sm:size-16 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+            <div className="space-y-2">
+              <div className="h-7 bg-slate-200 dark:bg-slate-800 rounded-lg w-64" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-96 max-w-full" />
+            </div>
+          </div>
+          <div className="h-11 w-44 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+        </div>
+
+        {/* Toolbar Skeleton */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-full sm:w-80" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-36" />
+            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-32" />
+          </div>
+        </div>
+
+        {/* Cards Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 flex flex-col justify-between space-y-4 shadow-xs">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-16" />
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20" />
+                </div>
+                <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-lg w-3/4" />
+                <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+              </div>
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+                <div className="h-8 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (tabId === "history") {
+    // Class History Skeleton
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-24 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 space-y-2">
+              <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-16" />
+              <div className="h-7 bg-slate-200 dark:bg-slate-800 rounded w-12" />
+            </div>
+          ))}
+        </div>
+        <div className="h-14 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800" />
+        <div className="space-y-4 pl-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return null;
 };
 
 export default function ClassDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const id = params.id as string;
   
   const { data: classData, isLoading: loading, error } = useSingleClass(id);
@@ -179,7 +252,13 @@ export default function ClassDetailsPage() {
   const { data: sessionsData } = useSessions(activeSchoolId);
   const sessions = Array.isArray(sessionsData?.data) ? sessionsData.data : (Array.isArray(sessionsData) ? sessionsData : []);
 
-  const [activeTab, setActiveTab] = React.useState("tab1");
+  const [activeTab, setActiveTab] = React.useState(tabParam || "tab1");
+
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isTeachersModalOpen, setIsTeachersModalOpen] = useState(false);
@@ -276,7 +355,7 @@ export default function ClassDetailsPage() {
     { 
       id: 'offline-grades', 
       label: 'Offline Grades', 
-      content: <OfflineGradesDashboard defaultClassId={id} /> 
+      content: <OfflineGradesDashboard defaultClassId={id} hideClassFilter={true} /> 
     },
     { 
       id: 'attendance', 
@@ -292,6 +371,11 @@ export default function ClassDetailsPage() {
       id: 'analytics',
       label: 'Analytics',
       content: <AnalyticsTab classId={id} classNameLabel={classData?.name} />
+    },
+    {
+      id: 'history',
+      label: 'Class History',
+      content: <ClassHistoryTab classId={id} classData={classData} />
     },
   ]
 

@@ -4,11 +4,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useStudentExamAttempts, useStudentStats } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useUserStore } from '@/store/useUserStore';
 import { ClassHeader } from './components/ClassHeader';
 import { ClassStats } from './components/ClassStats';
 import { ClassList } from './components/ClassList';
 import { AcademicSummary } from './components/AcademicSummary';
 import { ClassItem } from './components/ClassTable';
+import { StudentClassSelectionModal } from '../components/StudentClassSelectionModal';
 
 interface SubjectEntry {
   subject?: {
@@ -48,11 +51,18 @@ interface StudentRankStats {
 export default function StudentClassesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   
   const { data: enrollmentsData, isLoading } = useClasses();
   const { data: attemptsData } = useStudentExamAttempts();
   const { data: standaloneGradesData } = useGrades();
   const { data: statsData } = useStudentStats();
+  const { data: studentProfile } = useStudentProfile();
+  const { username } = useUserStore();
+
+  const schoolId = studentProfile?.schoolId;
+  const schoolName = studentProfile?.school?.name || "your school";
+  const studentName = studentProfile?.name || username || "Scholar";
 
   // Detect small screens and prefer grid view
   useEffect(() => {
@@ -137,6 +147,7 @@ export default function StudentClassesPage() {
           totalSubjects={totalSubjects} 
           totalMarks={totalMarks} 
           classPosition={classPosition} 
+          onOpenJoinModal={() => setIsJoinModalOpen(true)}
         />
         
         {/* Real-time Class Stats Grid */}
@@ -154,6 +165,7 @@ export default function StudentClassesPage() {
           totalClasses={classesList.length}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          onOpenJoinModal={() => setIsJoinModalOpen(true)}
         />
         
         {/* Grid / Table Class View */}
@@ -162,6 +174,16 @@ export default function StudentClassesPage() {
           filteredClasses={filteredClasses} 
           viewMode={viewMode}
           onClearSearch={() => setSearchQuery('')}
+          onOpenJoinModal={() => setIsJoinModalOpen(true)}
+        />
+
+        {/* Student Classroom Selection Modal with Test Data */}
+        <StudentClassSelectionModal
+          isOpen={isJoinModalOpen}
+          onClose={() => setIsJoinModalOpen(false)}
+          schoolId={schoolId}
+          schoolName={schoolName}
+          studentName={studentName}
         />
 
       </div>

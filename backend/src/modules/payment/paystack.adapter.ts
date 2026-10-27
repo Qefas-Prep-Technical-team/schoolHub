@@ -10,6 +10,7 @@ import type {
   SubaccountCreateResult,
   BankListEntry,
   SubaccountSyncResult,
+  AccountResolveResult,
 } from './gateway.interface';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
@@ -283,6 +284,34 @@ export class PaystackAdapter implements PaymentGateway {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       throw new Error(err.response?.data?.message || err.message || 'Failed to sync subaccount from Paystack');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Resolve Account (Paystack account lookup)
+  // ─────────────────────────────────────────────────────────────
+  async resolveAccount(accountNumber: string, bankCode: string): Promise<AccountResolveResult> {
+    try {
+      const response = await psApi.get<{
+        status: boolean;
+        message: string;
+        data: {
+          account_number: string;
+          account_name: string;
+        };
+      }>(`/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`);
+
+      if (!response.data.status || !response.data.data?.account_name) {
+        throw new Error(response.data.message || 'Could not resolve account details');
+      }
+
+      return {
+        accountNumber: response.data.data.account_number,
+        accountName: response.data.data.account_name,
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(err.response?.data?.message || err.message || 'Failed to resolve bank account');
     }
   }
 }

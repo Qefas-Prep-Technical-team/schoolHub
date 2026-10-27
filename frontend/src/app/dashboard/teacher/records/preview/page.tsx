@@ -17,6 +17,30 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 
+function StudentAvatar({ name, profileImage }: { name: string; profileImage?: string | null }) {
+  const [hasError, setHasError] = useState(false);
+  const initial = name?.trim()?.charAt(0)?.toUpperCase() || "S";
+
+  if (profileImage && !hasError) {
+    return (
+      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+        <img
+          src={profileImage}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={() => setHasError(true)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 font-extrabold text-xs flex items-center justify-center flex-shrink-0 border border-emerald-500/20 shadow-xs uppercase select-none">
+      {initial}
+    </div>
+  );
+}
+
 export default function NewFinalResultDataEntryPage() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -524,22 +548,7 @@ export default function NewFinalResultDataEntryPage() {
                       <tr key={student.id} className="group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30">
                         <td className="px-6 py-4 text-center text-slate-400 font-normal text-sm">{String(globalIdx + 1).padStart(2, '0')}</td>
                         <td className="px-4 py-4 flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-700">
-                            {student.profileImage ? (
-                              <img 
-                                src={student.profileImage} 
-                                alt={student.name} 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.onerror = null;
-                                  target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}&backgroundColor=e2e8f0`;
-                                }}
-                              />
-                            ) : (
-                              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}&backgroundColor=e2e8f0`} alt={student.name} className="w-full h-full object-cover" />
-                            )}
-                          </div>
+                          <StudentAvatar name={student.name} profileImage={student.profileImage} />
                           <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{student.name}</span>
                         </td>
                         <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
@@ -667,10 +676,8 @@ export default function NewFinalResultDataEntryPage() {
                       <tr key={student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group">
                         <td className="px-6 py-5 text-center text-slate-400 font-normal">{String(idx + 1).padStart(2, '0')}</td>
                         <td className="px-4 py-5 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}&backgroundColor=e2e8f0`} alt={student.name} className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-slate-800 dark:text-slate-100">{student.name}</span>
+                          <StudentAvatar name={student.name} profileImage={student.profileImage} />
+                          <span className="text-slate-800 dark:text-slate-100 font-medium">{student.name}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <select 

@@ -26,7 +26,14 @@ export const StudentConnectionModal: React.FC<StudentConnectionModalProps> = ({
   onClose,
   studentCode,
 }) => {
-  const baseUrl = "https://www.qefashub.com";
+  const [baseUrl, setBaseUrl] = React.useState("https://www.qefashub.com");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
+
   const parentLink = `${baseUrl}/signup/parent?studentCode=${studentCode}`;
   const teacherLink = `${baseUrl}/signup/teacher?studentCode=${studentCode}`;
 

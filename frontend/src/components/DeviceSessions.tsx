@@ -1,17 +1,18 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import apiClient from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Smartphone, Monitor, Globe, LogOut, Loader2, Server, Info } from 'lucide-react';
+import { Smartphone, Monitor, Globe, LogOut, Loader2, Server, Info, Navigation } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getClientDeviceInfo, requestDeviceLocationPermission } from '@/lib/utils/deviceDetector';
 
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
@@ -28,16 +29,12 @@ interface DeviceSession {
 }
 
 const fetchSessions = async (): Promise<DeviceSession[]> => {
-    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/auth/sessions`, {
-        withCredentials: true
-    });
+    const res = await apiClient.get('/auth/sessions');
     return res.data.data;
 };
 
 const revokeSession = async (id: string) => {
-    const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/auth/sessions/${id}`, {
-        withCredentials: true
-    });
+    const res = await apiClient.delete(`/auth/sessions/${id}`);
     return res.data;
 };
 
@@ -97,7 +94,36 @@ export default function DeviceSessions() {
     });
 
     const [currentPage, setCurrentPage] = useState(1);
+    const [isLocating, setIsLocating] = useState(false);
     const itemsPerPage = 5;
+
+    useEffect(() => {
+        getClientDeviceInfo().then(() => {
+            // Check if user previously granted geolocation permission
+            if (typeof navigator !== "undefined" && navigator.permissions) {
+                navigator.permissions.query({ name: "geolocation" as PermissionName }).then((status) => {
+                    if (status.state === "granted") {
+                        requestDeviceLocationPermission().then(() => {
+                            queryClient.invalidateQueries({ queryKey: ["deviceSessions"] });
+                        });
+                    }
+                }).catch(() => {});
+            }
+        });
+    }, [queryClient]);
+
+    const handleEnableLocation = async () => {
+        setIsLocating(true);
+        try {
+            const locationResult = await requestDeviceLocationPermission();
+            toast.success(`Location updated: ${locationResult}`);
+            await queryClient.invalidateQueries({ queryKey: ["deviceSessions"] });
+        } catch {
+            toast.error("Failed to detect device location");
+        } finally {
+            setIsLocating(false);
+        }
+    };
 
     const revokeMutation = useMutation({
         mutationFn: revokeSession,
@@ -161,12 +187,29 @@ export default function DeviceSessions() {
 
     return (
         <Card className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-950 overflow-hidden">
-            <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <Server className={theme.icon} size={18} /> Logged-in Devices
-                    <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Manage devices where you are currently signed in.</TooltipContent></Tooltip></TooltipProvider>
-                </CardTitle>
-                <CardDescription>Manage devices where you are currently signed in.</CardDescription>
+            <CardHeader className="px-6 py-5 border-b border-slate-50 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <Server className={theme.icon} size={18} /> Logged-in Devices
+                        <TooltipProvider><Tooltip delayDuration={300}><TooltipTrigger asChild><button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none"><Info size={14} /></button></TooltipTrigger><TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">Manage devices where you are currently signed in.</TooltipContent></Tooltip></TooltipProvider>
+                    </CardTitle>
+                    <CardDescription>Manage devices where you are currently signed in.</CardDescription>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEnableLocation}
+                    disabled={isLocating}
+                    className="h-8 text-xs font-semibold gap-1.5 rounded-lg border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 w-fit shrink-0"
+                    title="Request GPS permission for accurate device location"
+                >
+                    {isLocating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />
+                    ) : (
+                        <Navigation className="h-3.5 w-3.5 text-blue-500" />
+                    )}
+                    <span>Update Location</span>
+                </Button>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
                 {isLoading ? (

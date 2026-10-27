@@ -8,9 +8,10 @@ interface AcademicSummaryProps {
   totalSubjects: number;
   totalMarks: number;
   classPosition: string | null;
+  onOpenJoinModal?: () => void;
 }
 
-export function AcademicSummary({ totalSubjects, totalMarks, classPosition }: AcademicSummaryProps) {
+export function AcademicSummary({ totalSubjects, totalMarks, classPosition, onOpenJoinModal }: AcademicSummaryProps) {
   return (
     <section className="
       relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-12
@@ -59,13 +60,30 @@ export function AcademicSummary({ totalSubjects, totalMarks, classPosition }: Ac
           . Stay proactive with upcoming lectures, assignments, and term examinations.
         </p>
 
-        <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center lg:justify-start gap-3 w-full sm:w-auto">
+          {onOpenJoinModal && (
+            <button
+              type="button"
+              onClick={onOpenJoinModal}
+              className="
+                w-full sm:w-auto inline-flex items-center justify-center gap-2
+                rounded-xl px-6 h-11 font-bold text-xs uppercase tracking-wider
+                transition-all duration-300 ease-out cursor-pointer
+                text-white bg-pink-600 hover:bg-pink-700 shadow-lg shadow-pink-600/30
+                hover:scale-[1.02] active:scale-[0.98]
+              "
+            >
+              <Sparkles size={14} className="shrink-0" />
+              Join Class
+            </button>
+          )}
           <Link href="/dashboard/student/timetable" className="w-full sm:w-auto">
             <button className="
               w-full sm:w-auto inline-flex items-center justify-center gap-2
-              rounded-xl px-6 h-11 font-bold text-xs uppercase tracking-wider
+              rounded-xl px-5 h-11 font-bold text-xs uppercase tracking-wider
               transition-all duration-300 ease-out cursor-pointer
-              text-white bg-pink-600 hover:bg-pink-700 shadow-lg shadow-pink-600/30
+              text-slate-200 bg-white/10 border border-white/20 hover:bg-white/15
+              backdrop-blur-sm
             ">
               <CalendarDays size={14} className="shrink-0" />
               Class Timetable
@@ -74,7 +92,7 @@ export function AcademicSummary({ totalSubjects, totalMarks, classPosition }: Ac
           <Link href="/dashboard/student/exams&quizzes" className="w-full sm:w-auto">
             <button className="
               w-full sm:w-auto inline-flex items-center justify-center gap-2
-              rounded-xl px-6 h-11 font-bold text-xs uppercase tracking-wider
+              rounded-xl px-5 h-11 font-bold text-xs uppercase tracking-wider
               transition-all duration-300 ease-out cursor-pointer
               text-slate-200 bg-white/10 border border-white/20 hover:bg-white/15
               backdrop-blur-sm

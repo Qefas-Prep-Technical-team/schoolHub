@@ -13,6 +13,9 @@ import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
 import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { linkService } from "@/lib/api/services/linkService";
+import { toast } from "react-toastify";
 
 /* ─── Design tokens — Parent = Orange ─── */
 const ORANGE      = '#ea580c'; // orange-600
@@ -52,9 +55,30 @@ export default function ParentCard() {
   const [showTermsModal,      setShowTermsModal]      = useState(false);
   const [showOptional,        setShowOptional]        = useState(false);
   const [activeFeature,       setActiveFeature]       = useState(0);
+  const [isLinkingStudent,    setIsLinkingStudent]    = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAuthenticated, user, isInitialized, clearAuth } = useAuthStore();
+
+  const handleDirectLink = async () => {
+    const studentCodeParam = searchParams.get('studentCode');
+    if (!studentCodeParam) return;
+    try {
+      setIsLinkingStudent(true);
+      await linkService.createLinkRequest({
+        targetCode: studentCodeParam.trim(),
+        linkType: 'PARENT_STUDENT',
+        note: 'Linking child to parent account via invite link',
+      });
+      toast.success("Connection request sent to student! Once approved, they will appear in your children list.");
+      router.push('/dashboard/parent');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to send link request. Please verify the student code.");
+    } finally {
+      setIsLinkingStudent(false);
+    }
+  };
 
   const { mutate: registerParent, isPending } = useParentRegistration();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -172,7 +196,126 @@ export default function ParentCard() {
             </p>
           </div>
 
-          {/* ── Form ── */}
+          {/* ── Authenticated User State or Form ── */}
+          {isInitialized && isAuthenticated && user ? (
+            user.userType === 'PARENT' ? (
+              <div className="flex-1 flex flex-col justify-center py-4 space-y-6">
+                <div className="p-6 rounded-2xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/30 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-orange-500/20 shrink-0">
+                      <span className="material-symbols-outlined text-[24px]">family_restroom</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                        Signed In as Parent
+                      </span>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        {user.name || 'Parent Account'}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
+                    </div>
+                  </div>
+
+                  {searchParams.get('studentCode') ? (
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-900/30 space-y-2">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Student Access Code:</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-base text-orange-600 dark:text-orange-400 tracking-wider uppercase">
+                          {searchParams.get('studentCode')}
+                        </span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
+                          Ready to Link
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+                        Click below to send a parent-child connection request directly from your active account.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      You are already signed into your Parent account. You can monitor and link students directly from your dashboard.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {searchParams.get('studentCode') && (
+                    <button
+                      type="button"
+                      disabled={isLinkingStudent}
+                      onClick={handleDirectLink}
+                      className="w-full h-12 rounded-xl text-white font-bold text-sm shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                      style={{ background: `linear-gradient(135deg, ${ORANGE_DARK} 0%, ${ORANGE} 100%)` }}
+                    >
+                      {isLinkingStudent ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Sending Link Request...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[18px]">link</span>
+                          <span>Link Student to My Account</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard/parent')}
+                    className="w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                  >
+                    Go to Parent Dashboard
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearAuth();
+                      window.location.reload();
+                    }}
+                    className="w-full text-center text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium pt-2 cursor-pointer"
+                  >
+                    Sign out to register a new account
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col justify-center py-4 space-y-6">
+                <div className="p-6 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 space-y-3">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
+                    <span className="material-symbols-outlined text-[20px]">info</span>
+                    <span>Currently Signed In</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    You are currently signed in as a <strong className="text-amber-700 dark:text-amber-400 uppercase">{user.userType}</strong> ({user.name || user.email}).
+                    This registration link is intended for Parent accounts.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/dashboard/${user.userType.toLowerCase().replace('_', '-')}`)}
+                    className="w-full h-12 rounded-xl text-white font-bold text-sm bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 transition-all cursor-pointer"
+                  >
+                    Go to Your Dashboard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearAuth();
+                      window.location.reload();
+                    }}
+                    className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-800 font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Sign Out &amp; Register as Parent
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4">
 
             {/* Row 1: Full Name + Email */}
@@ -328,6 +471,7 @@ export default function ParentCard() {
               <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
             </div>
           </form>
+          )}
         </div>
 
         {/* ════════════════════════════════════

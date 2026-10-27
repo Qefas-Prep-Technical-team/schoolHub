@@ -55,6 +55,8 @@ export const updateClassSubjectResultSchema = z.object({
     classId: z.string().uuid().optional().nullable(),
     departmentId: z.string().uuid().optional().nullable(),
     subjectId: z.string().uuid().optional().nullable(),
+    sessionId: z.string().uuid().optional().nullable(),
+    term: z.nativeEnum(Term).optional().nullable(),
   }),
 });
 

@@ -707,6 +707,13 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
     });
     const assignmentCounts = new Map(activeAssignments.map(a => [a.classId, a._count._all]));
 
+    // Fetch subjects taught by this teacher to properly focus each class on their assigned subject
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+        where: { teacherId },
+        select: { subjectId: true, subject: { select: { id: true, name: true } } }
+    });
+    const teacherSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+
     // 3. Map to final format with aggregated stats
     return classTeachers.map(ct => {
         const c = ct.class;
@@ -724,11 +731,19 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
             averageGrade = Math.round(totalPercentage / grades.length);
         }
 
+        const taughtInClass = c.subjects
+            .map(cs => cs.subject)
+            .filter(sub => teacherSubjectIds.has(sub.id));
+        const primarySubject = taughtInClass[0] || c.subjects[0]?.subject;
+        const subjectDisplayName = taughtInClass.length > 0 
+            ? taughtInClass.map(s => s.name).join(', ') 
+            : (c.subjects[0]?.subject?.name || "Multiple Subjects");
+
         return {
             id: c.id,
             name: c.name,
-            subject: c.subjects[0]?.subject.name || "Multiple Subjects",
-            subjectId: c.subjects[0]?.subject.id || null,
+            subject: subjectDisplayName,
+            subjectId: primarySubject?.id || null,
             level: c.name.split(' ')[0] || "N/A", // Heuristic for level if not explicit
             section: c.section || "N/A",
             studentCount: c._count.enrollments,
@@ -759,7 +774,13 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
                 include: {
                     subjects: { include: { subject: true } },
                     _count: { select: { enrollments: true, exams: true } },
-                    grades: { include: { student: true, exam: { select: { title: true } } } },
+                    grades: { 
+                        include: { 
+                            student: true, 
+                            exam: { select: { title: true, subjectId: true } },
+                            subjectPaper: { select: { title: true, subjectId: true } }
+                        } 
+                    },
                     attendances: true,
                     exams: { include: { subject: true } },
                 }
@@ -800,9 +821,10 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
     // Determine the specific subjects this teacher teaches in this class
     const teacherSubjects = await prisma.teacherSubject.findMany({
         where: { teacherId },
-        select: { subjectId: true }
+        include: { subject: true }
     });
     const teacherSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+    const teacherSubjectNames = new Set(teacherSubjects.map(ts => ts.subject.name.toLowerCase()));
     
     // Filter class subjects to only those the teacher teaches
     const classSubjects = c.subjects.map(cs => cs.subject);
@@ -813,12 +835,21 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
     
     // Filter exams
     const relevantExams = hasSpecificSubjects 
-        ? c.exams.filter(e => e.subjectId && teacherSubjectIds.has(e.subjectId))
+        ? c.exams.filter(e => (e.subjectId && teacherSubjectIds.has(e.subjectId)) || e.teacherId === teacherId)
         : c.exams;
 
-    // For grades, we need to filter if grades have a subjectId, but Grade schema might not have it directly on the Class. 
-    // Wait, let's just use relevantExams if possible, otherwise use all grades (as filtering grades might require complex joins if Grade is tied to SubjectPaper or Exam Attempt).
-    const grades = c.grades;
+    // Filter grades strictly to teacher's assigned subjects
+    const relevantGrades = hasSpecificSubjects
+        ? c.grades.filter(g => {
+            const matchesName = g.subject && teacherSubjectNames.has(g.subject.toLowerCase());
+            const matchesPaper = g.subjectPaper?.subjectId && teacherSubjectIds.has(g.subjectPaper.subjectId);
+            const matchesExam = g.exam?.subjectId && teacherSubjectIds.has(g.exam.subjectId);
+            const matchesTeacher = g.teacherId === teacherId;
+            return matchesName || matchesPaper || matchesExam || matchesTeacher;
+        })
+        : c.grades;
+
+    const grades = relevantGrades;
 
     // 2. Aggregate Stats
     const totalAttendance = c.attendances.length;
@@ -966,10 +997,23 @@ export const getTeacherClassAssignmentsService = async (teacherId: string, class
         throw new Error("You are not assigned to this class");
     }
 
-    // 2. Fetch assignments for this class
+    // 2. Get subjects the teacher teaches
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+        where: { teacherId },
+        select: { subjectId: true }
+    });
+    const taughtSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+
+    // 3. Fetch assignments for this class scoped to the teacher's subject(s) or created by the teacher
     const assignments = await prisma.assignment.findMany({
         where: { 
-            classId
+            classId,
+            ...(taughtSubjectIds.size > 0 ? {
+                OR: [
+                    { subjectId: { in: Array.from(taughtSubjectIds) } },
+                    { teacherId: teacherId }
+                ]
+            } : {})
         },
         include: {
             submissions: {
@@ -979,17 +1023,10 @@ export const getTeacherClassAssignmentsService = async (teacherId: string, class
         orderBy: { createdAt: 'desc' }
     });
 
-    // 3. Get total students in class for submission ratio
+    // 4. Get total students in class for submission ratio
     const totalStudents = await prisma.classEnrollment.count({
         where: { classId }
     });
-
-    // 4. Get subjects the teacher teaches (they are already verified as assigned to this class)
-    const teacherSubjects = await prisma.teacherSubject.findMany({
-        where: { teacherId },
-        select: { subjectId: true }
-    });
-    const taughtSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
 
     // 5. Fetch subjects and teachers for the assignments
     const subjectIds = [...new Set(assignments.map(a => a.subjectId))];
@@ -1040,7 +1077,15 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
         throw new Error("You are not assigned to this class");
     }
 
-    // 2. Fetch all students in the class
+    // 2. Get subjects the teacher teaches
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+        where: { teacherId },
+        include: { subject: true }
+    });
+    const taughtSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+    const taughtSubjectNames = new Set(teacherSubjects.map(ts => ts.subject.name.toLowerCase()));
+
+    // 3. Fetch all students in the class
     const enrollments = await prisma.classEnrollment.findMany({
         where: { classId },
         include: {
@@ -1049,8 +1094,8 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
                     grades: {
                         where: { classId },
                         include: {
-                            exam: { select: { title: true } },
-                            subjectPaper: { select: { title: true, createdAt: true, updatedAt: true } },
+                            exam: { select: { title: true, subjectId: true } },
+                            subjectPaper: { select: { title: true, subjectId: true, createdAt: true, updatedAt: true } },
                             subjectExamAttempt: { select: { submittedAt: true } }
                         }
                     }
@@ -1059,10 +1104,17 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
         }
     });
 
-    // 3. Map to StudentGrade format
+    // 4. Map to StudentGrade format, filtered to the teacher's assigned subjects
     const studentGrades = enrollments.map(e => {
         const student = e.student;
-        const grades = student.grades;
+        const grades = student.grades.filter(g => {
+            if (taughtSubjectIds.size === 0) return true;
+            const matchesName = g.subject && taughtSubjectNames.has(g.subject.toLowerCase());
+            const matchesPaper = g.subjectPaper?.subjectId && taughtSubjectIds.has(g.subjectPaper.subjectId);
+            const matchesExam = g.exam?.subjectId && taughtSubjectIds.has(g.exam.subjectId);
+            const matchesTeacher = g.teacherId === teacherId;
+            return matchesName || matchesPaper || matchesExam || matchesTeacher;
+        });
 
         const caGrades = grades.filter(g => g.category !== 'EXAM');
         const examGrades = grades.filter(g => g.category === 'EXAM');

@@ -13,6 +13,9 @@ import { TeacherFormData, teacherSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
 import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { linkService } from "@/lib/api/services/linkService";
+import { toast } from "react-toastify";
 
 /* ─── Design tokens — Teacher = Emerald ─── */
 const EMERALD      = '#047857'; // emerald-700
@@ -55,6 +58,53 @@ export default function TeacherCard() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAuthenticated, user, isInitialized, clearAuth } = useAuthStore();
+  const [isLinking, setIsLinking] = useState(false);
+
+  const handleDirectTeacherLink = async () => {
+    const schoolCode = searchParams.get('schoolCode');
+    const studentCode = searchParams.get('studentCode');
+
+    if (!schoolCode && !studentCode) {
+      router.push('/dashboard/teacher');
+      return;
+    }
+
+    try {
+      setIsLinking(true);
+      const promises: Promise<any>[] = [];
+
+      if (schoolCode) {
+        promises.push(
+          linkService.createLinkRequest({
+            targetCode: schoolCode.trim(),
+            linkType: 'SCHOOL_TEACHER',
+            note: 'Teacher requested connection via direct school link',
+          })
+        );
+      }
+
+      if (studentCode) {
+        promises.push(
+          linkService.createLinkRequest({
+            targetCode: studentCode.trim(),
+            linkType: 'TEACHER_STUDENT',
+            note: 'Teacher requested connection with student via invite link',
+          })
+        );
+      }
+
+      await Promise.all(promises);
+      toast.success("Connection request submitted successfully! Redirecting to your dashboard...");
+      setTimeout(() => {
+        router.push('/dashboard/teacher');
+      }, 1000);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to submit connection request. Please verify the code.");
+    } finally {
+      setIsLinking(false);
+    }
+  };
 
   const { mutate: registerTeacher, isPending } = useTeacherRegistration();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -187,8 +237,161 @@ export default function TeacherCard() {
             </p>
           </div>
 
-          {/* ── Form ── */}
-          <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4">
+          {/* ── Authenticated User State or Form ── */}
+          {isInitialized && isAuthenticated && user ? (
+            user.userType === 'TEACHER' ? (
+              <div className="flex-1 flex flex-col justify-center py-4 space-y-6">
+                <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-emerald-600/20 shrink-0">
+                      <span className="material-symbols-outlined text-[24px]">person_play</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                        Signed In as Teacher
+                      </span>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        {user.name || 'Teacher Account'}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
+                    </div>
+                  </div>
+
+                  {searchParams.get('schoolCode') || searchParams.get('studentCode') || searchParams.get('classCode') ? (
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/30 space-y-3">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Detected Invitations:</span>
+                      
+                      {searchParams.get('schoolCode') && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-300 font-medium">School Code:</span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{searchParams.get('schoolCode')}</span>
+                        </div>
+                      )}
+                      {searchParams.get('studentCode') && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-300 font-medium">Student Code:</span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{searchParams.get('studentCode')}</span>
+                        </div>
+                      )}
+                      {searchParams.get('classCode') && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-300 font-medium">Class Code:</span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{searchParams.get('classCode')}</span>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+                        Click below to send a connection request directly from your active teacher account.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      You are already signed into your Teacher account. You can manage classes and students directly from your dashboard.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {searchParams.get('schoolCode') || searchParams.get('studentCode') || searchParams.get('classCode') ? (
+                    <button
+                      type="button"
+                      disabled={isLinking}
+                      onClick={handleDirectTeacherLink}
+                      className="w-full h-12 rounded-xl text-white font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+                      style={{ background: EMERALD }}
+                    >
+                      {isLinking ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Sending Connection Request...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[18px]">link</span>
+                          <span>Connect &amp; Send Request</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => router.push('/dashboard/teacher')}
+                      className="w-full h-12 rounded-xl text-white font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 active:scale-[0.99]"
+                      style={{ background: EMERALD }}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                      <span>Go to Teacher Dashboard</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => clearAuth()}
+                    className="w-full h-11 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700"
+                  >
+                    Sign in with a different account
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Role Mismatch State */
+              <div className="flex-1 flex flex-col justify-center py-4 space-y-6">
+                <div className="p-6 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-amber-500/20 shrink-0">
+                      <span className="material-symbols-outlined text-[22px]">warning</span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Different Role Signed In
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        You are currently logged in as a <span className="font-bold text-amber-700 dark:text-amber-400 capitalize">{user.userType?.toLowerCase()}</span> ({user.email}).
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    To register or link as a Teacher, please sign out first or switch to a Teacher account.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/dashboard/${user.userType?.toLowerCase() || ''}`)}
+                    className="w-full h-12 rounded-xl text-white font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 active:scale-[0.99]"
+                    style={{ background: EMERALD }}
+                  >
+                    <span>Go to {user.userType} Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => clearAuth()}
+                    className="w-full h-11 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700"
+                  >
+                    Sign out to Register as Teacher
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
+            /* ── Form ── */
+            <>
+              {(searchParams.get('schoolCode') || searchParams.get('studentCode') || searchParams.get('classCode')) && (
+                <div className="p-3 mb-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+                  <span>
+                    Invite detected:{' '}
+                    <strong>
+                      {searchParams.get('schoolCode') ? `School (${searchParams.get('schoolCode')}) ` : ''}
+                      {searchParams.get('studentCode') ? `Student (${searchParams.get('studentCode')}) ` : ''}
+                      {searchParams.get('classCode') ? `Class (${searchParams.get('classCode')})` : ''}
+                    </strong>
+                  </span>
+                </div>
+              )}
+              <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4">
 
             {/* Row 1: Full Name + Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -392,6 +595,8 @@ export default function TeacherCard() {
               <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
             </div>
           </form>
+          </>
+        )}
         </div>
 
         {/* ════════════════════════════════════

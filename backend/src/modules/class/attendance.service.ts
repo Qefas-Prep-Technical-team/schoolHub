@@ -2,33 +2,149 @@ import prisma, { withRetry } from "../../config/database";
 import { createNotificationsBulk, BulkNotificationInput } from "../notification/notification.service";
 
 export const getClassAttendanceService = async (classId: string, date?: string) => {
-  return withRetry(() => prisma.attendance.findMany({
+  const attendances = await withRetry(() => prisma.attendance.findMany({
     where: {
       classId,
       ...(date ? { date: new Date(date) } : {}),
     },
     include: {
-      student: true,
+      student: {
+        include: {
+          department: true,
+        },
+      },
     },
     orderBy: { date: "desc" },
   }), "getClassAttendanceService");
+
+  return attendances.map((rec) => {
+    let comment = rec.note || "";
+    let subjects: Record<string, any> = {};
+    if (rec.note && rec.note.trim().startsWith("{")) {
+      try {
+        const parsed = JSON.parse(rec.note);
+        comment = parsed.comment ?? "";
+        subjects = parsed.subjects ?? {};
+      } catch {
+        comment = rec.note;
+      }
+    }
+
+    return {
+      ...rec,
+      comment,
+      subjects,
+    };
+  });
 };
 
-export const submitAttendanceService = async (classId: string, records: any[]) => {
+export const submitAttendanceService = async (
+  classId: string, 
+  records: any[],
+  options?: { subjectId?: string; subjectName?: string }
+) => {
+  if (!records || records.length === 0) return [];
+
+  // Group records by normalized date to query existing records efficiently
+  const sampleDateStr = records[0].date;
+  const normalizedDate = new Date(new Date(sampleDateStr).toISOString().split('T')[0] + 'T00:00:00.000Z');
+  const studentIds = records.map((r) => r.studentId as string);
+
+  const existingList = await prisma.attendance.findMany({
+    where: {
+      classId,
+      date: normalizedDate,
+      studentId: { in: studentIds },
+    },
+  });
+
+  const existingMap = new Map(existingList.map((item) => [item.studentId, item]));
+
   const result = await withRetry(() => prisma.$transaction(
     records.map((r) => {
-      const normalizedDate = new Date(new Date(r.date).toISOString().split('T')[0] + 'T00:00:00.000Z');
+      const recDate = new Date(new Date(r.date).toISOString().split('T')[0] + 'T00:00:00.000Z');
+      const existing = existingMap.get(r.studentId);
+
+      let existingComment = "";
+      let existingSubjects: Record<string, any> = {};
+
+      if (existing?.note) {
+        if (existing.note.trim().startsWith("{")) {
+          try {
+            const parsed = JSON.parse(existing.note);
+            existingComment = parsed.comment ?? "";
+            existingSubjects = parsed.subjects ?? {};
+          } catch {
+            existingComment = existing.note;
+          }
+        } else {
+          existingComment = existing.note;
+        }
+      }
+
+      let finalStatus = r.status;
+      let finalNote = r.note || "";
+
+      if (options?.subjectId) {
+        // Taking attendance for a specific subject
+        existingSubjects[options.subjectId] = {
+          subjectId: options.subjectId,
+          subjectName: options.subjectName || "",
+          status: r.status,
+          recordedAt: new Date().toISOString(),
+          recordedByName: r.recordedByName,
+          recordedByRole: r.recordedByRole,
+        };
+
+        if (r.note) {
+          existingComment = r.note;
+        }
+
+        // If the student is present for a subject period, ensure overall school attendance reflects presence
+        if (r.status === "present") {
+          finalStatus = "present";
+        } else if (existing?.status) {
+          finalStatus = existing.status;
+        } else {
+          finalStatus = r.status;
+        }
+
+        finalNote = JSON.stringify({
+          comment: existingComment,
+          subjects: existingSubjects,
+        });
+      } else if (r.subjects && typeof r.subjects === "object") {
+        // Direct subjects map passed per student
+        Object.assign(existingSubjects, r.subjects);
+        const commentToSave = r.note !== undefined ? r.note : existingComment;
+        finalNote = JSON.stringify({
+          comment: commentToSave,
+          subjects: existingSubjects,
+        });
+      } else {
+        // Taking general daily attendance
+        const commentToSave = r.note !== undefined ? r.note : existingComment;
+        if (Object.keys(existingSubjects).length > 0) {
+          finalNote = JSON.stringify({
+            comment: commentToSave,
+            subjects: existingSubjects,
+          });
+        } else {
+          finalNote = commentToSave;
+        }
+      }
+
       return prisma.attendance.upsert({
         where: {
           classId_studentId_date: {
             classId,
             studentId: r.studentId,
-            date: normalizedDate,
+            date: recDate,
           },
         },
         update: { 
-          status: r.status, 
-          note: r.note,
+          status: finalStatus, 
+          note: finalNote,
           recordedById: r.recordedById,
           recordedByName: r.recordedByName,
           recordedByRole: r.recordedByRole
@@ -36,9 +152,9 @@ export const submitAttendanceService = async (classId: string, records: any[]) =
         create: {
           classId,
           studentId: r.studentId,
-          date: normalizedDate,
-          status: r.status,
-          note: r.note,
+          date: recDate,
+          status: finalStatus,
+          note: finalNote,
           recordedById: r.recordedById,
           recordedByName: r.recordedByName,
           recordedByRole: r.recordedByRole
@@ -48,8 +164,6 @@ export const submitAttendanceService = async (classId: string, records: any[]) =
   ), "submitAttendanceService_transaction");
 
   // Fire-and-forget parent notifications so the HTTP response is not blocked.
-  // Previously this awaited 2+ queries and a notification per student sequentially,
-  // which exceeded the 60s client timeout for full classes.
   void notifyParentsOfAttendance(records).catch((e) =>
     console.error("[submitAttendanceService] Parent notification error:", e)
   );

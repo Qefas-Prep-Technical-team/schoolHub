@@ -130,21 +130,47 @@ export const authenticateToken = async (
       }
     }
 
-    // Check if the session/device is still authorized
+    // Check if the session/device is still authorized and not revoked
     const deviceModel = req.header("x-device-model");
-    const activeSession = await prisma.refreshToken.findFirst({
-      where: {
-        userId: decoded.userId,
-        isValid: true,
-        ...(deviceModel ? { deviceModel: deviceModel as string } : {})
+    let activeSession = null;
+
+    if (deviceModel) {
+      activeSession = await prisma.refreshToken.findFirst({
+        where: {
+          userId: decoded.userId,
+          isValid: true,
+          deviceModel: deviceModel as string,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    // Fallback: Check for any valid active session for this user
+    if (!activeSession) {
+      activeSession = await prisma.refreshToken.findFirst({
+        where: {
+          userId: decoded.userId,
+          isValid: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // Opportunistically enrich deviceModel if it was previously Unknown Device
+      if (activeSession && deviceModel && (!activeSession.deviceModel || activeSession.deviceModel === "Unknown Device")) {
+        prisma.refreshToken
+          .update({
+            where: { id: activeSession.id },
+            data: { deviceModel: String(deviceModel).slice(0, 100) },
+          })
+          .catch(() => {});
       }
-    });
+    }
 
     if (!activeSession) {
       console.warn(`[authMiddleware] User ID "${decoded.userId}" session not found or no longer valid.`);
       return res.status(401).json({
         success: false,
-        message: "Device no longer authorized",
+        message: "Session no longer valid. Please log in again.",
       });
     }
 

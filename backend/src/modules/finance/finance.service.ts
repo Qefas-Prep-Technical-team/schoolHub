@@ -13,12 +13,22 @@ export class FinanceService {
    * Create a Settlement Subaccount via the active gateway.
    * Stores Paystack-specific fields for backward compat and FLW fields for new schools.
    */
-  static async setupBank(schoolId: string, data: {
-    business_name: string;
-    settlement_bank: string;       // bank code
-    account_number: string;
-    percentage_charge: number;
-  }) {
+  static async setupBank(
+    schoolId: string,
+    data: {
+      business_name: string;
+      settlement_bank: string;       // bank code
+      bank_name?: string;            // human readable bank name
+      account_number: string;
+      percentage_charge: number;
+    },
+    userContext?: {
+      userId?: string;
+      userName?: string;
+      userEmail?: string;
+      userRole?: string;
+    }
+  ) {
     try {
       const gateway = getPaymentGateway();
 
@@ -31,8 +41,8 @@ export class FinanceService {
       });
 
       const isFlw = gateway.name === 'FLUTTERWAVE';
+      const resolvedBankName = data.bank_name || data.settlement_bank;
 
-      // @ts-ignore - prisma client might not be fully generated yet
       const account = await prisma.settlementAccount.create({
         data: {
           schoolId,
@@ -44,19 +54,58 @@ export class FinanceService {
           flwSubaccountCode: isFlw ? sub.code : undefined,
           flwAccountStatus: isFlw ? sub.status : undefined,
           // Shared
-          bankName: data.settlement_bank,
+          bankName: resolvedBankName,
+          bankCode: data.settlement_bank,
           accountNumber: data.account_number,
           accountName: data.business_name,
           percentageCharge: data.percentage_charge,
           isDefault: true,
+          addedBy: userContext?.userId,
+          addedByName: userContext?.userName,
+          addedByRole: userContext?.userRole,
         }
       });
 
       // Set as default and clear all other accounts
-      // @ts-ignore
       await prisma.settlementAccount.updateMany({
         where: { schoolId, id: { not: account.id } },
         data: { isDefault: false }
+      });
+
+      // Record Audit Process in DB: who added it, when, what was added
+      await prisma.bankAccountAudit.create({
+        data: {
+          schoolId,
+          settlementAccountId: account.id,
+          action: "ACCOUNT_ADDED",
+          bankName: resolvedBankName,
+          bankCode: data.settlement_bank,
+          accountNumber: data.account_number,
+          accountName: data.business_name,
+          userId: userContext?.userId,
+          userName: userContext?.userName,
+          userEmail: userContext?.userEmail,
+          userRole: userContext?.userRole,
+          gateway: gateway.name,
+          details: {
+            subaccountCode: sub.code,
+            percentageCharge: data.percentage_charge,
+            status: sub.status,
+          }
+        }
+      });
+
+      // Update School record
+      await prisma.school.update({
+        where: { id: schoolId },
+        data: {
+          accountName: data.business_name,
+          accountNumber: data.account_number,
+          bankName: data.settlement_bank,
+          paystackSubaccountCode: isFlw ? undefined : sub.code,
+          paystackSubaccountStatus: isFlw ? 'active' : sub.status,
+          percentageCharge: data.percentage_charge,
+        }
       });
 
       return account;
@@ -69,6 +118,106 @@ export class FinanceService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Resolve an account number against a bank code using the active gateway.
+   */
+  static async resolveAccount(accountNumber: string, bankCode: string) {
+    const gateway = getPaymentGateway();
+    if (typeof gateway.resolveAccount === 'function') {
+      return await gateway.resolveAccount(accountNumber, bankCode);
+    }
+    throw new Error("Account resolution not supported by current gateway");
+  }
+
+  /**
+   * Initiate transcript or graduated student session portal access payment.
+   */
+  static async initiateTranscriptPayment(params: {
+    schoolId: string;
+    studentId: string;
+    sessionId?: string;
+    amount?: number;
+    email: string;
+    name?: string;
+    parentId?: string;
+  }) {
+    const gateway = getPaymentGateway();
+    const school = await prisma.school.findUnique({
+      where: { id: params.schoolId },
+      include: {
+        settlementAccounts: { where: { isDefault: true } },
+        settings: true,
+      }
+    });
+
+    if (!school) {
+      throw new Error("School not found");
+    }
+
+    const configuredFee = (school.settings as any)?.transcriptFee;
+    const feeAmount = params.amount && params.amount > 0 ? params.amount : (configuredFee && configuredFee > 0 ? configuredFee : 5000);
+
+    const isFlw = gateway.name === 'FLUTTERWAVE';
+    let activeAccount = (school.settlementAccounts?.[0] as any) || null;
+    if (!activeAccount) {
+      activeAccount = isFlw
+        ? await prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, flwAccountStatus: 'active' } })
+        : await prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, paystackSubaccountStatus: 'active' } });
+    }
+
+    const subaccountCode: string = (isFlw
+      ? activeAccount?.flwSubaccountId || activeAccount?.flwSubaccountCode
+      : activeAccount?.paystackSubaccountCode) ?? '';
+
+    const student = await prisma.student.findUnique({
+      where: { id: params.studentId },
+      include: { parentLinks: true }
+    });
+
+    const parentId = params.parentId || student?.parentLinks?.[0]?.parentId || "";
+
+    const result = await gateway.initialize({
+      userId: parentId || student?.id || "student-guest",
+      email: params.email || student?.email || "student@example.com",
+      amount: feeAmount,
+      plan: 'TRANSCRIPT',
+      metadata: {
+        schoolId: params.schoolId,
+        studentId: params.studentId,
+        sessionId: params.sessionId || "All Sessions",
+        paymentType: 'TRANSCRIPT',
+        subaccountCode,
+        name: params.name || student?.name || "Student",
+      }
+    });
+
+    await prisma.payment.create({
+      data: {
+        paymentReference: result.txRef,
+        schoolId: params.schoolId,
+        studentId: params.studentId,
+        parentId: parentId || (await prisma.parent.findFirst())?.id || "",
+        amount: feeAmount,
+        term: "All Terms",
+        session: params.sessionId || "All Sessions",
+        paymentType: "TRANSCRIPT",
+        status: "PENDING",
+        settlementAccountId: activeAccount?.id || null,
+      }
+    });
+
+    return {
+      checkoutUrl: result.checkoutUrl,
+      paymentReference: result.txRef,
+      amount: feeAmount,
+      settlementAccount: activeAccount ? {
+        bankName: activeAccount.bankName,
+        accountNumber: activeAccount.accountNumber,
+        accountName: activeAccount.accountName,
+      } : null,
+    };
   }
 
   /**
@@ -321,11 +470,73 @@ export class FinanceService {
         })
       ]);
 
-      // Calculate total revenue
-      const totalRevenue = await prisma.transactionHistory.aggregate({
-        where: { schoolId, status: "SUCCESS" },
-        _sum: { amount: true }
+      // Calculate total revenue, pending revenue, and counts
+      const [totalRevenue, pendingRevenue, successfulCount, distinctStudents, categoryGroups, recentSuccessTx] = await Promise.all([
+        prisma.transactionHistory.aggregate({
+          where: { schoolId, status: "SUCCESS" },
+          _sum: { amount: true }
+        }),
+        prisma.payment.aggregate({
+          where: { schoolId, status: "PENDING" },
+          _sum: { amount: true }
+        }),
+        prisma.transactionHistory.count({
+          where: { schoolId, status: "SUCCESS" }
+        }),
+        prisma.payment.findMany({
+          where: { schoolId, status: "SUCCESS" },
+          distinct: ['studentId'],
+          select: { studentId: true }
+        }),
+        prisma.payment.groupBy({
+          by: ['paymentType'],
+          where: { schoolId, status: "SUCCESS" },
+          _sum: { amount: true },
+          _count: { id: true }
+        }),
+        prisma.transactionHistory.findMany({
+          where: {
+            schoolId,
+            status: "SUCCESS"
+          },
+          orderBy: { createdAt: "desc" },
+          take: 200,
+          select: { amount: true, createdAt: true }
+        })
+      ]);
+
+      const totalRev = totalRevenue._sum.amount || 0;
+      const pendingRev = pendingRevenue._sum.amount || 0;
+      const activePayers = distinctStudents.length;
+      const averageTx = successfulCount > 0 ? Math.round(totalRev / successfulCount) : 0;
+
+      // Group monthly trend for last 6 months
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthlyMap = new Map<string, { month: string; revenue: number; count: number }>();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+        monthlyMap.set(key, { month: key, revenue: 0, count: 0 });
+      }
+      recentSuccessTx.forEach((tx) => {
+        const txDate = new Date(tx.createdAt);
+        const key = `${monthNames[txDate.getMonth()]} ${txDate.getFullYear()}`;
+        if (monthlyMap.has(key)) {
+          const item = monthlyMap.get(key)!;
+          item.revenue += tx.amount;
+          item.count += 1;
+        }
       });
+      const monthlyTrends = Array.from(monthlyMap.values());
+
+      // Category breakdown
+      const categoryBreakdown = categoryGroups.map((cat) => ({
+        category: cat.paymentType || "School Tuition Fee",
+        amount: cat._sum.amount || 0,
+        count: cat._count.id,
+        percentage: totalRev > 0 ? Math.round(((cat._sum.amount || 0) / totalRev) * 100) : 0
+      }));
 
       // Map accounts — surface the best available status (FLW or Paystack)
       const accounts = settlementAccounts.map((acc: Record<string, unknown>) => ({
@@ -333,7 +544,6 @@ export class FinanceService {
         bankName: acc.bankName,
         accountName: acc.accountName,
         accountNumber: acc.accountNumber,
-        // Show the most up-to-date status regardless of gateway
         status: (acc.flwAccountStatus as string) || (acc.paystackSubaccountStatus as string) || 'pending',
         isDefault: acc.isDefault,
         totalSettled: (acc.transactionHistories as Array<{ amount: number }>).reduce((sum, t) => sum + t.amount, 0),
@@ -346,21 +556,40 @@ export class FinanceService {
                             accounts.some(a => a.status === "active") ? "active" :
                             accounts.some(a => a.status === "pending") ? "pending" : "unverified";
 
+      const transcriptRevenue = categoryGroups
+        .filter(c => c.paymentType === 'TRANSCRIPT' || c.paymentType === 'PORTAL_ACCESS')
+        .reduce((sum, c) => sum + (c._sum.amount || 0), 0);
+      const transcriptCount = categoryGroups
+        .filter(c => c.paymentType === 'TRANSCRIPT' || c.paymentType === 'PORTAL_ACCESS')
+        .reduce((sum, c) => sum + c._count.id, 0);
+
       return {
-        totalRevenue: totalRevenue._sum.amount || 0,
-        pendingRevenue: 0,
-        activePayerCount: 0,
-        averageTransaction: 0,
+        totalRevenue: totalRev,
+        pendingRevenue: pendingRev,
+        activePayerCount: activePayers,
+        averageTransaction: averageTx,
+        transcriptRevenue,
+        transcriptCount,
+        monthlyTrends,
+        categoryBreakdown,
         recentTransactions: transactions.map(t => ({
           id: t.id,
           amount: t.amount,
           createdAt: t.createdAt,
+          paidAt: t.paidAt,
           paymentReference: t.transactionReference,
+          channel: t.channel || 'GATEWAY',
+          status: t.status,
           student: t.payment?.student,
           paymentType: t.payment?.paymentType
         })),
         paymentStatus: this.getSchoolPaymentStatus({ paystackSubaccountStatus: overallStatusValue }),
         accounts,
+        bankAudits: await prisma.bankAccountAudit.findMany({
+          where: { schoolId },
+          orderBy: { createdAt: "desc" },
+          take: 30,
+        }),
         isVerified: overallStatusValue === "active"
       };
     } catch (error: unknown) {
@@ -368,6 +597,185 @@ export class FinanceService {
       console.error("[FinanceService] Analytics Error:", err.message);
       throw error;
     }
+  }
+
+  /**
+   * Get complete bank account audit history
+   */
+  static async getBankAccountAudits(schoolId: string) {
+    return await prisma.bankAccountAudit.findMany({
+      where: { schoolId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        settlementAccount: {
+          select: {
+            id: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            isDefault: true,
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Record an offline / manual fee payment (Cash, Bank Transfer, POS, Cheque)
+   */
+  static async recordManualPayment(schoolId: string, data: {
+    studentId: string;
+    parentId?: string;
+    amount: number;
+    paymentType?: string;
+    paymentMethod?: string;
+    term?: string;
+    session?: string;
+    reference?: string;
+    notes?: string;
+  }) {
+    const student = await prisma.student.findUnique({
+      where: { id: data.studentId },
+      include: { parentLinks: true }
+    });
+
+    if (!student) {
+      throw new Error("Student not found");
+    }
+
+    let parentId = data.parentId || student.parentLinks?.[0]?.parentId;
+    if (!parentId) {
+      const fallbackParent = await prisma.parent.findFirst();
+      if (fallbackParent) {
+        parentId = fallbackParent.id;
+      } else {
+        const cashier = await prisma.parent.create({
+          data: {
+            fullName: "Direct Guardian / Bursar Payer",
+            email: `bursar-${schoolId.slice(0, 8)}@qefas.local`,
+            phone: "0000000000",
+            parentCode: `PAR-BURSAR-${Date.now().toString().slice(-4)}`,
+            role: "PARENT"
+          }
+        });
+        parentId = cashier.id;
+      }
+    }
+
+    const ref = data.reference || `MAN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const payment = await prisma.payment.create({
+      data: {
+        schoolId,
+        studentId: data.studentId,
+        parentId,
+        amount: data.amount,
+        term: data.term || "FIRST",
+        session: data.session || "2025/2026",
+        paymentType: data.paymentType || "School Tuition Fee",
+        status: "SUCCESS",
+        paymentMethod: data.paymentMethod || "CASH",
+        paidAt: new Date(),
+        paymentReference: ref
+      }
+    });
+
+    const transaction = await prisma.transactionHistory.create({
+      data: {
+        schoolId,
+        paymentId: payment.id,
+        transactionReference: ref,
+        amount: data.amount,
+        channel: data.paymentMethod || "CASH",
+        currency: "NGN",
+        status: "SUCCESS",
+        paidAt: new Date(),
+        gatewayResponse: {
+          manual: true,
+          notes: data.notes || "Manual recording by Bursar / Admin",
+          recordedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    return { payment, transaction };
+  }
+
+  /**
+   * Get detailed paginated transactions for school
+   */
+  static async getSchoolTransactions(schoolId: string, options: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+    paymentType?: string;
+  }) {
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const whereClause: any = { schoolId };
+    if (options.status && options.status !== 'ALL') {
+      whereClause.status = options.status;
+    }
+    if (options.search) {
+      whereClause.OR = [
+        { transactionReference: { contains: options.search, mode: 'insensitive' } },
+        { payment: { student: { name: { contains: options.search, mode: 'insensitive' } } } },
+        { payment: { parent: { fullName: { contains: options.search, mode: 'insensitive' } } } }
+      ];
+    }
+    if (options.paymentType && options.paymentType !== 'ALL') {
+      whereClause.payment = {
+        ...(whereClause.payment || {}),
+        paymentType: options.paymentType
+      };
+    }
+
+    const [total, transactions] = await Promise.all([
+      prisma.transactionHistory.count({ where: whereClause }),
+      prisma.transactionHistory.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          payment: {
+            include: {
+              student: { select: { id: true, name: true, studentCode: true } },
+              parent: { select: { id: true, fullName: true, email: true, phone: true } }
+            }
+          }
+        }
+      })
+    ]);
+
+    return {
+      transactions: transactions.map(t => ({
+        id: t.id,
+        amount: t.amount,
+        currency: t.currency,
+        status: t.status,
+        channel: t.channel || 'GATEWAY',
+        createdAt: t.createdAt,
+        paidAt: t.paidAt,
+        reference: t.transactionReference,
+        paymentType: t.payment?.paymentType || 'School Fee',
+        term: t.payment?.term,
+        session: t.payment?.session,
+        student: t.payment?.student,
+        parent: t.payment?.parent,
+        gatewayResponse: t.gatewayResponse
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   /**
@@ -441,30 +849,55 @@ export class FinanceService {
   /**
    * Remove settlement bank details from a school.
    */
-  static async removeSubaccount(accountId: string) {
+  static async removeSubaccount(accountId: string, userContext?: { userId?: string; userName?: string; userEmail?: string; userRole?: string }) {
     try {
-      // @ts-ignore
       const account = await prisma.settlementAccount.findUnique({
         where: { id: accountId },
-        // @ts-ignore
-        select: { id: true, paystackSubaccountCode: true, flwSubaccountCode: true }
+        select: {
+          id: true,
+          schoolId: true,
+          bankName: true,
+          bankCode: true,
+          accountNumber: true,
+          accountName: true,
+          paystackSubaccountCode: true,
+          flwSubaccountCode: true,
+        }
       });
 
       if (!account) throw new Error("Account information not found");
+
+      // Record Audit in DB before deletion
+      await prisma.bankAccountAudit.create({
+        data: {
+          schoolId: account.schoolId,
+          settlementAccountId: account.id,
+          action: "ACCOUNT_DELETED",
+          bankName: account.bankName,
+          bankCode: account.bankCode,
+          accountNumber: account.accountNumber,
+          accountName: account.accountName,
+          userId: userContext?.userId,
+          userName: userContext?.userName,
+          userEmail: userContext?.userEmail,
+          userRole: userContext?.userRole,
+          details: {
+            subaccountCode: account.flwSubaccountCode || account.paystackSubaccountCode,
+          }
+        }
+      });
 
       // Best-effort deactivation on the active gateway (non-fatal if it fails)
       try {
         const gateway = getPaymentGateway();
         const codeOrId = account.flwSubaccountCode || account.paystackSubaccountCode;
         if (codeOrId) {
-          // Sync to confirm it's still there, then let it naturally expire
           await gateway.syncSubaccount(codeOrId).catch(() => {});
         }
       } catch {
         // Non-fatal — proceed with DB deletion regardless
       }
 
-      // @ts-ignore
       await prisma.settlementAccount.delete({ where: { id: accountId } });
 
       return { success: true, message: "Settlement account removed" };

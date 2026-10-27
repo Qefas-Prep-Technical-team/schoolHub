@@ -49,6 +49,12 @@ export default function RootLayout({
         {/* <!-- Primary Meta Tags --> */}
         {/* <link rel="icon" href="/favicon.ico" /> */}
         <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&family=Great+Vibes&display=swap"
+          crossOrigin="anonymous"
+          suppressHydrationWarning
+        />
+        <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
           suppressHydrationWarning

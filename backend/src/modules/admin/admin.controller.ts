@@ -1048,6 +1048,70 @@ export const getSchoolMembers = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get current admin full profile with all school affiliations
+ */
+export const getAdminProfile = async (req: Request, res: Response) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      include: {
+        schoolAdmins: {
+          include: {
+            school: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin profile not found" });
+    }
+
+    const schools = admin.schoolAdmins.map((sa: any) => ({
+      id: sa.id,
+      schoolId: sa.schoolId,
+      schoolName: sa.school?.name || "School",
+      schoolCode: sa.school?.schoolCode || "N/A",
+      logo: sa.school?.logo || null,
+      address: sa.school?.address || null,
+      phone: sa.school?.phone || null,
+      type: sa.school?.type || null,
+      role: sa.role,
+      active: sa.active,
+      joinedAt: sa.createdAt,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        adminCode: admin.adminCode,
+        role: admin.role,
+        gender: admin.gender,
+        profileImage: admin.profileImage,
+        bannerImage: admin.bannerImage,
+        verified: admin.verified,
+        isActive: admin.isActive,
+        status: admin.status,
+        isTwoFactorEnabled: admin.isTwoFactorEnabled,
+        createdAt: admin.createdAt,
+        schools,
+      },
+    });
+  } catch (error: any) {
+    return handleError(res, error, "admin.getAdminProfile");
+  }
+};
+
+/**
  * Update current admin profile
  */
 export const updateAdminProfile = async (req: Request, res: Response) => {

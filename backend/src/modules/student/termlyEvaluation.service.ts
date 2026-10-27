@@ -50,3 +50,70 @@ export const getTermlyEvaluation = async (
     },
   });
 };
+
+export const getClassTermlyEvaluations = async (
+  classId: string,
+  sessionId: string,
+  term: Term
+) => {
+  return await prisma.termlyEvaluation.findMany({
+    where: {
+      classId,
+      sessionId,
+      term,
+    },
+  });
+};
+
+export const bulkUpsertClassTermlyEvaluations = async (
+  classId: string,
+  sessionId: string,
+  term: Term,
+  evaluations: Array<{
+    studentId: string;
+    attentiveness?: number | null;
+    honesty?: number | null;
+    neatness?: number | null;
+    politeness?: number | null;
+    punctuality?: number | null;
+    selfControl?: number | null;
+    obedience?: number | null;
+    reliability?: number | null;
+    responsibility?: number | null;
+    relationship?: number | null;
+    handlingTools?: number | null;
+    drawingPainting?: number | null;
+    handwriting?: number | null;
+    publicSpeaking?: number | null;
+    speechFluency?: number | null;
+    sportsGames?: number | null;
+    teacherRemark?: string | null;
+    principalRemark?: string | null;
+  }>
+) => {
+  const upsertPromises = evaluations.map((item) => {
+    const { studentId, ...data } = item;
+    return prisma.termlyEvaluation.upsert({
+      where: {
+        studentId_classId_sessionId_term: {
+          studentId,
+          classId,
+          sessionId,
+          term,
+        },
+      },
+      update: {
+        ...data,
+      },
+      create: {
+        studentId,
+        classId,
+        sessionId,
+        term,
+        ...data,
+      },
+    });
+  });
+
+  return await prisma.$transaction(upsertPromises);
+};

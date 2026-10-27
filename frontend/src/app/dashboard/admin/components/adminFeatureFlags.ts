@@ -15,6 +15,7 @@ export const ADMIN_FEATURE_FLAGS = {
   // === ACADEMICS ===
   grades: true,
   offlineGrades: true,
+  transcript: true,
   exams: true,
   assignments: true,
   attendance: true,
@@ -51,24 +52,25 @@ export type AdminFeatureFlagKey = keyof typeof ADMIN_FEATURE_FLAGS;
  * If a key is omitted, ALL roles can see it (no restriction).
  * SCHOOL_OWNER always sees everything.
  */
-export type AdminRole = "SCHOOL_OWNER" | "PRINCIPAL" | "REGISTRAR" | "ACCOUNTANT" | "SUPPORT";
+export type AdminRole = "SCHOOL_OWNER" | "PRINCIPAL" | "REGISTRAR" | "ACCOUNTANT" | "SUPPORT" | "ADMIN" | "SUPER_ADMIN";
 
 export const ROLE_NAV_PERMISSIONS: Partial<Record<AdminFeatureFlagKey, AdminRole[]>> = {
   // Only owner & principal manage the team
-  team: ["SCHOOL_OWNER", "PRINCIPAL"],
+  team: ["SCHOOL_OWNER", "PRINCIPAL", "ADMIN", "SUPER_ADMIN"],
 
   // School profile: owner and principal only
-  schoolProfile: ["SCHOOL_OWNER", "PRINCIPAL"],
+  schoolProfile: ["SCHOOL_OWNER", "PRINCIPAL", "ADMIN", "SUPER_ADMIN"],
 
-  // Finance-related: owner and accountant
-  finance: ["SCHOOL_OWNER", "ACCOUNTANT"],
-  payments: ["SCHOOL_OWNER", "ACCOUNTANT"],
-  transactionHistory: ["SCHOOL_OWNER", "ACCOUNTANT"],
-  billing: ["SCHOOL_OWNER", "ACCOUNTANT"],
+  // Finance-related: owner, accountant, admin, super_admin
+  finance: ["SCHOOL_OWNER", "ACCOUNTANT", "ADMIN", "SUPER_ADMIN"],
+  payments: ["SCHOOL_OWNER", "ACCOUNTANT", "ADMIN", "SUPER_ADMIN"],
+  transactionHistory: ["SCHOOL_OWNER", "ACCOUNTANT", "ADMIN", "SUPER_ADMIN"],
+  billing: ["SCHOOL_OWNER", "ACCOUNTANT", "ADMIN", "SUPER_ADMIN"],
 
   // Academics-related: restrict from accountant
   grades: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   offlineGrades: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
+  transcript: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   exams: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   assignments: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],
   subjects: ["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR", "SUPPORT"],

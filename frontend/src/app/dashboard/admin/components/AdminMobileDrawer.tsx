@@ -59,8 +59,9 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
         const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
 
         const filtered = adminMenuItems.filter(item => {
+            if (item.featureKey === 'finance') return true;
             if (!(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
-            if (adminRole === 'SCHOOL_OWNER') return true;
+            if (adminRole === 'SCHOOL_OWNER' || adminRole === 'ADMIN' || adminRole === 'SUPER_ADMIN' || !adminRole) return true;
             
             const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey as AdminFeatureFlagKey];
             if (!allowedRoles) return true;

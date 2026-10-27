@@ -1,7 +1,7 @@
 // app/student/classes/[id]/materials/components/LoadingState.tsx
 export default function LoadingState() {
   return (
-    <div className="max-w-7xl mx-auto animate-pulse">
+    <div className="w-full animate-pulse">
       {/* Breadcrumbs Skeleton */}
       <div className="flex items-center gap-2 mb-4">
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>

@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Globe, QrCode, Link2 } from 'lucide-react';
+import { Globe, QrCode, Link2, GraduationCap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
 interface StudentLinkingHeaderProps {
   onShowQRCodeClick: () => void;
   onConnectClick: () => void;
+  onTestClassModalClick?: () => void;
 }
 
-export function StudentLinkingHeader({ onShowQRCodeClick, onConnectClick }: StudentLinkingHeaderProps) {
+export function StudentLinkingHeader({ onShowQRCodeClick, onConnectClick, onTestClassModalClick }: StudentLinkingHeaderProps) {
   return (
     <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div className="flex items-center gap-3">
@@ -32,7 +33,17 @@ export function StudentLinkingHeader({ onShowQRCodeClick, onConnectClick }: Stud
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 w-full sm:w-auto self-stretch sm:self-auto">
+      <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto self-stretch sm:self-auto">
+        {onTestClassModalClick && (
+          <Button
+            onClick={onTestClassModalClick}
+            variant="outline"
+            className="flex-1 sm:flex-none h-10 sm:h-11 px-3.5 sm:px-4 rounded-xl bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors font-bold text-xs sm:text-sm cursor-pointer shadow-sm"
+          >
+            <GraduationCap className="mr-2 h-4 w-4 text-pink-600 dark:text-pink-400" />
+            Join Class Pop-up
+          </Button>
+        )}
         <Button
           onClick={onShowQRCodeClick}
           variant="outline"

@@ -48,8 +48,8 @@ export function AtmAccountCard({ account, onRefresh, onDelete }: AtmAccountCardP
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
                         {account.isDefault && (
-                            <Badge className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-lg text-[9px] font-black uppercase py-0.5 tracking-widest">
-                                Primary Node
+                            <Badge className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase py-0.5 tracking-widest">
+                                Default Account
                             </Badge>
                         )}
                     </div>

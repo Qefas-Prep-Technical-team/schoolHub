@@ -142,3 +142,32 @@ export const useTeacherSubjects = (schoolId?: string) => {
     retry: 1,
   });
 };
+
+export interface TeacherStudentItem {
+  id: string;
+  name: string;
+  studentCode?: string;
+  email?: string;
+  gender?: string;
+  status?: string;
+  grade?: string;
+  avatarUrl?: string | null;
+  performance?: string;
+  attendance?: number;
+  lastExam?: string;
+}
+
+export const useTeacherStudents = (options: {
+  schoolId?: string;
+  classId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+} = {}) => {
+  return useQuery<{ students: TeacherStudentItem[]; total: number }>({
+    queryKey: [...teacherKeys.all, "students", options],
+    queryFn: () => teacherService.getStudents(options),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+};

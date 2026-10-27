@@ -3988,6 +3988,9 @@ export const getUserSessions = async (req: Request, res: Response) => {
       : null;
 
     const geoip = require('geoip-lite');
+    const clientLocationHeader = (req.headers["x-device-location"] as string) || "";
+    const clientTimezoneHeader = (req.headers["x-client-timezone"] as string) || "";
+
     const data = sessions.map((session) => {
       let location = "Unknown Location";
       if (session.ipAddress && session.ipAddress !== "Unknown IP") {
@@ -4007,10 +4010,27 @@ export const getUserSessions = async (req: Request, res: Response) => {
               console.error("GeoIP lookup failed", e);
           }
       }
+
+      const isCurrentDevice = currentSession?.id === session.id;
+
+      // Prioritize high-accuracy client-provided location headers for current device
+      if (isCurrentDevice) {
+        if (clientLocationHeader && clientLocationHeader !== "Unknown Location") {
+          location = clientLocationHeader;
+        } else if (location === "Unknown Location" && clientTimezoneHeader) {
+          location = clientTimezoneHeader;
+        }
+      } else if (location === "Unknown Location" && clientLocationHeader && clientLocationHeader !== "Unknown Location") {
+        // If GeoIP was null (e.g. localhost or cellular NAT) and IP matches current session IP
+        if (currentSession && session.ipAddress === currentSession.ipAddress) {
+          location = clientLocationHeader;
+        }
+      }
+
       return {
         ...session,
         location,
-        isCurrentDevice: currentSession?.id === session.id,
+        isCurrentDevice,
       };
     });
 
@@ -4076,8 +4096,8 @@ export const getMe = async (req: Request, res: Response) => {
         where: { id: userId },
         include: {
           schoolAdmins: {
-            where: { active: true },
             include: { school: true },
+            orderBy: { createdAt: "desc" },
           },
         },
       });
@@ -4086,11 +4106,14 @@ export const getMe = async (req: Request, res: Response) => {
           schoolId: sa.school?.id,
           schoolName: sa.school?.name,
           schoolCode: sa.school?.schoolCode,
+          logo: sa.school?.logo || null,
           adminRole: sa.role,
+          active: sa.active,
+          joinedAt: sa.createdAt,
           approved:
             sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
         }));
-        const primarySchool = user.schoolAdmins[0]?.school || null;
+        const primarySchool = user.schoolAdmins.find((sa: any) => sa.active)?.school || user.schoolAdmins[0]?.school || null;
 
         responseData = {
           id: user.id,

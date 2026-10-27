@@ -8,7 +8,7 @@ import { AttendanceRecord, AttendanceStatus } from './types';
 interface AttendanceSwipeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (records: AttendanceRecord[]) => void;
+  onSave: (records: AttendanceRecord[], options?: { subjectId?: string; subjectName?: string }) => void;
   students: Array<{
     id: string;
     name: string;
@@ -16,6 +16,8 @@ interface AttendanceSwipeModalProps {
   }>;
   date: string;
   initialRecords?: AttendanceRecord[];
+  classSubjects?: import('./types').ClassSubjectItem[];
+  defaultSubjectId?: string;
   isSaving?: boolean;
 }
 
@@ -26,6 +28,8 @@ const AttendanceSwipeModal: React.FC<AttendanceSwipeModalProps> = ({
   students,
   date,
   initialRecords = [],
+  classSubjects = [],
+  defaultSubjectId = 'daily',
   isSaving = false
 }) => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
@@ -80,7 +84,15 @@ const AttendanceSwipeModal: React.FC<AttendanceSwipeModalProps> = ({
   };
 
   const handleSubmit = () => {
-    onSave(attendanceRecords);
+    if (defaultSubjectId && defaultSubjectId !== 'daily') {
+      const activeSub = classSubjects.find(s => s.id === defaultSubjectId);
+      onSave(attendanceRecords, {
+        subjectId: defaultSubjectId,
+        subjectName: activeSub?.name || 'Subject',
+      });
+    } else {
+      onSave(attendanceRecords);
+    }
   };
 
   if (!isOpen) return null;

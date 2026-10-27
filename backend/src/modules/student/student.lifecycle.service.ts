@@ -154,6 +154,11 @@ export class StudentLifecycleService {
         schoolId: null, // Clear the active school linkage
       },
     });
+
+    // 5. Clean up active class enrollments so student leaves active class rosters
+    await tx.classEnrollment.deleteMany({
+      where: { studentId },
+    });
   }
 
   /**

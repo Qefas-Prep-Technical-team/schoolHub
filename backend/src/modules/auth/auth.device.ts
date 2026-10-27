@@ -10,6 +10,7 @@ export interface DeviceInfo {
   deviceModel: string;
   osVersion: string;
   ipAddress: string;
+  location?: string;
 }
 
 /**
@@ -25,6 +26,9 @@ export const extractDeviceInfo = (req: Request): DeviceInfo => {
   const isMobileHeader = req.headers["x-device-type"] === "mobile";
   const explicitModel = req.headers["x-device-model"] as string;
   const explicitOs = req.headers["x-os-version"] as string;
+  const explicitLocation =
+    (req.headers["x-device-location"] as string) ||
+    (req.headers["x-client-timezone"] as string);
 
   const browserName = result.browser.name || "";
   const osName = result.os.name || "Unknown OS";
@@ -65,6 +69,7 @@ export const extractDeviceInfo = (req: Request): DeviceInfo => {
     deviceModel: finalDeviceModel,
     osVersion: finalOsVersion,
     ipAddress,
+    location: explicitLocation,
   };
 };
 
@@ -155,6 +160,15 @@ export const processNewDeviceLogin = async ({
       existingDeviceCount === 0;
 
     if (isNewDevice) {
+      // Resolve clean human-readable location (e.g. "Lagos, Nigeria (197.210.x.x)")
+      const humanLocation = deviceInfo.location && deviceInfo.location !== "Unknown Location"
+        ? deviceInfo.location
+        : null;
+
+      const emailLocation = humanLocation
+        ? `${humanLocation}${deviceInfo.ipAddress && deviceInfo.ipAddress !== "Unknown IP" ? ` (${deviceInfo.ipAddress})` : ""}`
+        : (deviceInfo.ipAddress !== "Unknown IP" ? deviceInfo.ipAddress : "Unknown Location");
+
       // 1. Dispatch real-time in-app notification
       try {
         await createNotification({
@@ -162,12 +176,13 @@ export const processNewDeviceLogin = async ({
           recipientId: userId,
           type: "GENERAL",
           title: "New Device Login Detected",
-          message: `We detected a new login to your account from ${deviceInfo.deviceModel} on ${deviceInfo.osVersion}. If this wasn't you, please secure your account immediately by changing your password.`,
+          message: `We detected a new login to your account from ${deviceInfo.deviceModel} on ${deviceInfo.osVersion}${humanLocation ? ` near ${humanLocation}` : ""}. If this wasn't you, please secure your account immediately by changing your password.`,
           meta: {
             priority: "HIGH",
             deviceModel: deviceInfo.deviceModel,
             osVersion: deviceInfo.osVersion,
             ipAddress: deviceInfo.ipAddress,
+            location: emailLocation,
             loginAt: new Date().toISOString(),
           },
         });
@@ -177,8 +192,8 @@ export const processNewDeviceLogin = async ({
 
       // 2. Dispatch security email
       sendNewDeviceLoginEmail(userEmail, {
-        ...deviceInfo,
-        location: deviceInfo.ipAddress,
+        deviceModel: deviceInfo.deviceModel,
+        location: emailLocation,
         time: new Date().toUTCString(),
       }).catch((emailErr) => {
         console.error("Failed to dispatch new device login email:", emailErr);

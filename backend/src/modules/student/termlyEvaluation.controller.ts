@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
-import { upsertTermlyEvaluationSchema } from "./termlyEvaluation.schema";
-import { upsertTermlyEvaluation, getTermlyEvaluation } from "./termlyEvaluation.service";
+import {
+  upsertTermlyEvaluationSchema,
+  bulkUpsertTermlyEvaluationSchema,
+} from "./termlyEvaluation.schema";
+import {
+  upsertTermlyEvaluation,
+  getTermlyEvaluation,
+  getClassTermlyEvaluations,
+  bulkUpsertClassTermlyEvaluations,
+} from "./termlyEvaluation.service";
 import { Term, UserRole } from "@prisma/client";
 import prisma from "../../config/database";
 
@@ -107,5 +115,104 @@ export const fetchEvaluation = async (req: Request, res: Response) => {
     res.status(200).json({ success: true, data: evaluation });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch termly evaluation" });
+  }
+};
+
+export const fetchClassEvaluations = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
+    const isSuperAdmin = (user.userType as string) === "SUPER_ADMIN";
+    const classId = req.params.classId as string;
+    const sessionId = req.query.sessionId as string;
+    const term = req.query.term as Term;
+
+    if (!classId || !sessionId || !term) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required query parameters: classId, sessionId, term",
+      });
+    }
+
+    const targetClass = await prisma.class.findUnique({
+      where: { id: classId },
+      select: { id: true, schoolId: true },
+    });
+
+    if (!targetClass) {
+      return res.status(404).json({ success: false, error: "Class not found" });
+    }
+
+    if (!isSuperAdmin && user.schoolId && targetClass.schoolId !== user.schoolId) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied: You cannot view evaluations of classes from another school",
+      });
+    }
+
+    const evaluations = await getClassTermlyEvaluations(classId, sessionId, term);
+    res.status(200).json({ success: true, data: evaluations });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to fetch class termly evaluations",
+    });
+  }
+};
+
+export const bulkSaveEvaluations = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
+    const isSuperAdmin = (user.userType as string) === "SUPER_ADMIN";
+    if (![UserRole.ADMIN, UserRole.TEACHER].includes(user.userType as any) && !isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: "Forbidden: Only teachers and administrators can record termly evaluations",
+      });
+    }
+
+    const parsed = bulkUpsertTermlyEvaluationSchema.parse(req.body);
+    const { classId, sessionId, term, evaluations } = parsed;
+
+    const targetClass = await prisma.class.findUnique({
+      where: { id: classId },
+      select: { id: true, schoolId: true },
+    });
+
+    if (!targetClass) {
+      return res.status(404).json({ success: false, error: "Class not found" });
+    }
+
+    if (!isSuperAdmin && user.schoolId && targetClass.schoolId !== user.schoolId) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied: You cannot evaluate students from another school",
+      });
+    }
+
+    const results = await bulkUpsertClassTermlyEvaluations(
+      classId,
+      sessionId,
+      term,
+      evaluations
+    );
+
+    res.status(200).json({ success: true, data: results });
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      res.status(400).json({ success: false, error: "Validation Error", details: error.errors });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to bulk update termly evaluations",
+      });
+    }
   }
 };

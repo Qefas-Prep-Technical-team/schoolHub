@@ -82,11 +82,31 @@ export default function GradesPage() {
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: classDetailData } = useQuery({
+    queryKey: ['class-detail', classId],
+    queryFn: () => teacherService.getClassDetail(classId),
+    staleTime: 1000 * 60 * 10,
+    enabled: !!classId,
+  })
+
   // Set of subject names this teacher is authorized to manage
   const authorizedSubjects = useMemo(() => {
-    if (!subjectsData) return new Set<string>()
-    return new Set<string>((subjectsData as any[]).map((s: any) => (s.subject?.name || s.name || '').toLowerCase()))
-  }, [subjectsData])
+    const set = new Set<string>();
+    if (subjectsData) {
+      (subjectsData as any[]).forEach((s: any) => {
+        const name = (s.subject?.name || s.name || '').toLowerCase();
+        if (name) set.add(name);
+      });
+    }
+    const focusSub = (classDetailData as any)?.classInfo?.subject;
+    if (focusSub) {
+      focusSub.split(',').forEach((s: string) => {
+        const trimmed = s.trim().toLowerCase();
+        if (trimmed) set.add(trimmed);
+      });
+    }
+    return set;
+  }, [subjectsData, classDetailData])
 
   const grades: StudentGrade[] = useMemo(() => (data || []).map((g: any) => {
     let normalizedTotal = g.grades.total || 0;
@@ -107,12 +127,19 @@ export default function GradesPage() {
       }
     }
 
+    const filteredIndividualGrades = (g.individualGrades || []).filter((ig: any) => {
+      if (authorizedSubjects.size === 0) return true;
+      if (ig.teacherId && currentTeacherId && ig.teacherId === currentTeacherId) return true;
+      const subName = (ig.subject || '').toLowerCase();
+      return !subName || subName === 'general' || authorizedSubjects.has(subName);
+    });
+
     return {
       id: g.id,
       studentId: g.studentId,
       studentName: g.studentName,
       avatar: g.avatar,
-      individualGrades: g.individualGrades,
+      individualGrades: filteredIndividualGrades,
       grades: {
         ...g.grades,
         total: normalizedTotal,
@@ -120,7 +147,7 @@ export default function GradesPage() {
       status: g.status,
       lastUpdated: g.lastUpdated ? new Date(g.lastUpdated) : undefined
     };
-  }), [data])
+  }), [data, authorizedSubjects, currentTeacherId])
 
   const [filteredGrades, setFilteredGrades] = useState<StudentGrade[]>([])
   const [currentPage, setCurrentPage] = useState(1)

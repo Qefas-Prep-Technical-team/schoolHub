@@ -280,3 +280,11 @@ export const useRemoveAdmin = (schoolId: string) => {
   });
 };
 
+export const useAdminProfile = () => {
+  return useQuery({
+    queryKey: ['admin', 'profile'],
+    queryFn: () => adminService.getProfile(),
+    staleTime: 1000 * 60 * 5,
+  });
+};
+

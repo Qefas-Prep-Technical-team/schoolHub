@@ -37,13 +37,10 @@ export const parentSchema = yup.object({
     .optional()
     .test(
       "studentCode-format",
-      "Student code must be in format: stu-123456",
+      "Invalid student code format (e.g. stu-ola-401219 or stu-123456)",
       (value) => {
-        // If no value provided, it's valid (optional field)
         if (!value || value.trim() === "") return true;
-
-        // If value provided, validate the format
-        return /^stu-\d{6}$/.test(value);
+        return /^stu-[a-zA-Z0-9_-]+$/i.test(value.trim()) && value.trim().length >= 6;
       },
     ),
 
@@ -114,10 +111,10 @@ export const teacherSchema = yup.object({
     .optional()
     .test(
       "studentCode-format",
-      "Student code must be in format: stu-123456",
+      "Invalid student code format (e.g. stu-ola-401219 or stu-123456)",
       (value) => {
         if (!value || value.trim() === "") return true;
-        return /^stu-\d{6}$/.test(value);
+        return /^stu-[a-zA-Z0-9_-]+$/i.test(value.trim()) && value.trim().length >= 6;
       },
     ),
   classCode: yup
@@ -186,10 +183,10 @@ export const studentSchema = yup.object({
     .optional()
     .test(
       "teacherCode-format",
-      "Teacher code must be in format: tch-123456",
+      "Invalid teacher code format (e.g. tch-ade-123456 or tch-123456)",
       (value) => {
         if (!value || value.trim() === "") return true;
-        return /^tch-\d{6}$/.test(value);
+        return /^tch-[a-zA-Z0-9_-]+$/i.test(value.trim()) && value.trim().length >= 6;
       },
     ),
 

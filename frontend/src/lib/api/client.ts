@@ -2,6 +2,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { getClientDeviceInfo } from "@/lib/utils/deviceDetector";
 
 let isRefreshing = false;
 let failedQueue: any[] = [];
@@ -36,15 +37,31 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and device tracking headers
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const storeToken = useAuthStore.getState().accessToken;
     const cookieToken = Cookies.get("token");
     const token = storeToken || cookieToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (typeof window !== "undefined") {
+      try {
+        const deviceInfo = await getClientDeviceInfo();
+        if (deviceInfo) {
+          config.headers["x-device-type"] = deviceInfo.deviceType;
+          config.headers["x-device-model"] = deviceInfo.deviceModel;
+          config.headers["x-os-version"] = deviceInfo.osVersion;
+          config.headers["x-device-location"] = deviceInfo.location;
+          config.headers["x-client-timezone"] = deviceInfo.timeZone;
+        }
+      } catch {
+        // Fallback silently if device detection is unavailable
+      }
+    }
+
     return config;
   },
   (error) => {
@@ -63,7 +80,8 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       const isLoginRequest = originalRequest.url?.includes("/auth/login");
-      const isAuthPage = typeof window !== "undefined" && 
+      const isCallbackPage = typeof window !== "undefined" && window.location.pathname.includes("/login/callback");
+      const isAuthPage = typeof window !== "undefined" && !isCallbackPage && 
         ["/login", "/signup", "/verification", "/onboarding", "/reset-password", "/forgot-password"].some(
           path => window.location.pathname === path || window.location.pathname.startsWith(`${path}/`)
         );

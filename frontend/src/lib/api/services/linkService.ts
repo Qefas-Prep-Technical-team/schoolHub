@@ -2,6 +2,7 @@ import { apiClient } from "../client";
 
 export type LinkType =
   | "PARENT_STUDENT"
+  | "TEACHER_STUDENT"
   | "TEACHER_CLASS"
   | "STUDENT_CLASS"
   | "SCHOOL_ADMIN"

@@ -25,6 +25,9 @@ import {
   Sun,
   Moon
 } from "lucide-react";
+import SchoolNotFoundView from "@/components/common/SchoolNotFoundView";
+import { notFound } from "next/navigation";
+import { isSubdomainHost } from "@/lib/utils/subdomain";
 
 interface PageProps {
   params: Promise<{ tenant: string; slug: string[] }>;
@@ -38,11 +41,13 @@ export default function TenantCustomPage({ params }: PageProps) {
 
   const systemPaths = [
     "dashboard", "login", "signup", "verification", "onboarding", 
-    "checkout", "unauthorized", "pricing", "features", "join", "auth"
+    "checkout", "unauthorized", "pricing", "features", "join", "auth",
+    "home", "index", "api", "console", "admin", "about", "contact",
+    "terms", "privacy", "payment"
   ];
   
-  if (systemPaths.includes(tenant)) {
-    import("next/navigation").then((mod) => mod.notFound());
+  if (!isSubdomainHost() && systemPaths.includes(tenant.toLowerCase())) {
+    notFound();
     return null;
   }
 
@@ -143,24 +148,11 @@ export default function TenantCustomPage({ params }: PageProps) {
   }
 
   if (error || !schoolData) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mb-6 border border-red-500/20">
-          <X className="w-10 h-10" />
-        </div>
-        <h1 className="text-3xl font-bold text-white mb-3">School Not Found</h1>
-        <p className="text-slate-400 max-w-md mb-8">
-          The school with subdomain <span className="text-red-400 font-semibold">{tenant}</span> could not be found. Please check the spelling or contact support.
-        </p>
-        <Link
-          href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"}
-          style={{ backgroundColor: "#3b82f6" }}
-          className="px-6 py-3 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:brightness-110 hover:-translate-y-0.5"
-        >
-          Go to Qefas Hub Home
-        </Link>
-      </div>
-    );
+    if (isSubdomainHost()) {
+      return <SchoolNotFoundView subdomain={tenant} type="school_not_found" />;
+    }
+    notFound();
+    return null;
   }
 
   const { landingPage, schoolName, schoolLogo, schoolMotto } = schoolData;
@@ -170,19 +162,12 @@ export default function TenantCustomPage({ params }: PageProps) {
 
   if (!activePage || !activePage.blocks || activePage.blocks.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <h1 className="text-3xl font-bold text-white mb-3">Page Not Found</h1>
-        <p className="text-slate-400 max-w-md mb-8">
-          The page <span className="text-red-400 font-semibold">{targetSlug}</span> does not exist on this school's site.
-        </p>
-        <Link
-          href={`/${tenant}`}
-          style={{ backgroundColor: schoolData?.landingPage?.primaryColor || "#3b82f6" }}
-          className="px-6 py-3 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:brightness-110 hover:-translate-y-0.5"
-        >
-          Go Back Home
-        </Link>
-      </div>
+      <SchoolNotFoundView 
+        subdomain={tenant} 
+        customPath={targetSlug} 
+        type="page_not_found_on_school" 
+        schoolName={schoolName} 
+      />
     );
   }
 

@@ -38,9 +38,14 @@ const checkEditPermission = async (req: Request, classSubjectResultId?: string, 
     }
   }
 
-  // Teachers are only allowed to edit / record for subjects assigned to them
+  // Teachers are only allowed to edit / record for subjects assigned to them, AND only if not officially approved & published by admin
   if (req.user?.userType === UserRole.TEACHER) {
     if (result && result.schoolId === (req.user as any)?.schoolId) {
+      const paperLinks = (result.paperLinks as any) || {};
+      if (result.status === "PUBLISHED" && paperLinks?.approval?.status === "APPROVED") {
+        // Officially certified by administration — strictly locked against teacher modifications
+        return false;
+      }
       const teacherId = req.user.id;
       const isAssigned = await prisma.subject.findFirst({
         where: {
@@ -93,6 +98,10 @@ export const getClassSubjectResults = async (req: Request, res: Response, next: 
 export const getMyPublishedResults = async (req: Request, res: Response, next: NextFunction) => {
   try {
     let studentId = req.user?.id;
+    const isAdmin =
+      req.user?.userType === "ADMIN" ||
+      req.user?.userType === "TEACHER" ||
+      Boolean(req.query.studentId);
     
     if (req.query.studentId && (req.user?.userType === "ADMIN" || req.user?.userType === "TEACHER")) {
       studentId = req.query.studentId as string;
@@ -118,11 +127,11 @@ export const getMyPublishedResults = async (req: Request, res: Response, next: N
       if (!student?.schoolId) {
         return res.status(400).json({ success: false, message: "School not found for your account" });
       }
-      const results = await recordsService.getMyPublishedResults(studentId, student.schoolId);
+      const results = await recordsService.getMyPublishedResults(studentId, student.schoolId, isAdmin);
       return res.status(200).json({ success: true, data: results });
     }
 
-    const results = await recordsService.getMyPublishedResults(studentId, schoolId);
+    const results = await recordsService.getMyPublishedResults(studentId, schoolId, isAdmin);
 
     res.status(200).json({
       success: true,
@@ -387,12 +396,18 @@ export const publishClassSubjectResult = async (req: Request, res: Response, nex
     }
 
     if (req.user?.userType === "TEACHER") {
-      await recordsService.requestPublishApproval(schoolId, id, req.user!.id);
-      return res.status(200).json({ success: true, message: "A request has been sent to admins for approval to publish this result." });
+      const { signature } = req.body || {};
+      await recordsService.requestPublishApproval(schoolId, id, req.user!.id, signature);
+      return res.status(200).json({ 
+        success: true, 
+        message: "A request has been sent to school administrators for approval with your official digital signature. For students and parents to see this result, it needs to be approved by an administrator." 
+      });
     }
 
-    const result = await recordsService.publishClassSubjectResult(schoolId, id);
-    res.status(200).json({ success: true, message: "Result published successfully", data: result });
+    const userName = (req.user as any)?.name;
+    const { signature, role } = req.body || {};
+    const result = await recordsService.publishClassSubjectResult(schoolId, id, req.user?.id, userName, signature, role);
+    res.status(200).json({ success: true, message: "Result approved and published successfully", data: result });
   } catch (error) {
     handleError(res, error, "records.controller.ts -> publishClassSubjectResult");
   }
@@ -414,13 +429,43 @@ export const unpublishClassSubjectResult = async (req: Request, res: Response, n
       return res.status(403).json({ success: false, message: "Forbidden: You do not have permission to edit this result" });
     }
 
-    if (req.user?.userType === "TEACHER") {
-      await recordsService.requestUnpublishApproval(schoolId, id, req.user!.id);
-      return res.status(200).json({ success: true, message: "A request has been sent to admins for approval to unpublish this result." });
+    const result = await prisma.classSubjectResult.findFirst({
+      where: { id, schoolId },
+      include: { subject: true, class: true },
+    });
+    if (!result) {
+      return res.status(404).json({ success: false, message: "Result configuration not found" });
     }
 
-    const result = await recordsService.unpublishClassSubjectResult(schoolId, id);
-    res.status(200).json({ success: true, message: "Result unpublished successfully", data: result });
+    const paperLinks = (result.paperLinks as any) || {};
+    const isApprovedByAdmin = result.status === "PUBLISHED" && paperLinks?.approval?.status === "APPROVED";
+
+    if (req.user?.userType === "TEACHER") {
+      // SECURITY RULE: When an admin has approved and published, teachers CANNOT unpublish!
+      if (isApprovedByAdmin) {
+        const approverName = paperLinks.approval.approvedByName || "School Administration";
+        const approverRole = paperLinks.approval.role || "Administrator";
+
+        // Notify teacher of the security restriction
+        await recordsService.notifyTeacherUnpublishBlocked(schoolId, req.user.id, result, approverName, approverRole);
+
+        return res.status(403).json({
+          success: false,
+          message: `Action Forbidden: This result has been officially approved and published by ${approverName} (${approverRole}). Teachers cannot unpublish certified results. Please contact school administration.`
+        });
+      }
+
+      await recordsService.requestUnpublishApproval(schoolId, id, req.user.id);
+      return res.status(200).json({ 
+        success: true, 
+        message: "A request has been sent to school administrators for approval to unpublish this result." 
+      });
+    }
+
+    const userName = (req.user as any)?.name;
+    const { reason } = req.body || {};
+    const unpublishRes = await recordsService.unpublishClassSubjectResult(schoolId, id, req.user?.id, userName, reason);
+    res.status(200).json({ success: true, message: "Result unpublished successfully", data: unpublishRes });
   } catch (error) {
     handleError(res, error, "records.controller.ts -> unpublishClassSubjectResult");
   }

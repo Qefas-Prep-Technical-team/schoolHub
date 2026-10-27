@@ -283,7 +283,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 pb-32 space-y-4 sm:space-y-6 font-sans">
+    <div className="w-full max-w-[1600px] mx-auto pb-16 md:pb-6 space-y-4 sm:space-y-6 font-sans animate-in fade-in duration-500">
       <ClassHeader classItem={classItem!} />
       <Breadcrumbs classTitle={classItem!.title} />
 

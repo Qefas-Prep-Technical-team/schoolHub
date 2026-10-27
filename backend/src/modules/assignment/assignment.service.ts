@@ -89,11 +89,25 @@ export const getStudentAssignmentsService = async (options: {
   });
 
   const subjectIds = [...new Set(assignments.map(a => a.subjectId))];
-  const subjects = await prisma.subject.findMany({
-    where: { id: { in: subjectIds } },
-    select: { id: true, name: true }
-  });
+  const teacherIds = [...new Set(assignments.map(a => a.teacherId).filter(Boolean))] as string[];
+
+  const [subjects, teachers, admins] = await Promise.all([
+    prisma.subject.findMany({
+      where: { id: { in: subjectIds } },
+      select: { id: true, name: true }
+    }),
+    prisma.teacher.findMany({
+      where: { id: { in: teacherIds } },
+      select: { id: true, name: true, email: true, profileImage: true }
+    }),
+    prisma.admin.findMany({
+      where: { id: { in: teacherIds } },
+      select: { id: true, name: true, email: true, profileImage: true }
+    }),
+  ]);
+
   const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s.name]));
+  const teacherMap = Object.fromEntries([...teachers, ...admins].map(t => [t.id, t]));
 
   // Transform and calculate status
   let transformed = assignments.map((a) => {
@@ -167,6 +181,8 @@ export const getStudentAssignmentsService = async (options: {
       }
     }
 
+    const teacherObj = a.teacherId ? teacherMap[a.teacherId] || null : null;
+
     return {
       id: a.id,
       classId: a.classId,
@@ -176,6 +192,10 @@ export const getStudentAssignmentsService = async (options: {
       departmentId: a.departmentId,
       department: a.department?.name,
       instructorId: a.teacherId,
+      instructor: teacherObj,
+      teacher: teacherObj,
+      creator: teacherObj,
+      teacherName: teacherObj?.name || null,
       dueDate: a.dueDate,
       status: computedStatus,
       progress: computedProgress,
@@ -273,12 +293,15 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
     }
   }
 
-  const [classData, subjectData, departmentData, teacherData] = await Promise.all([
+  const [classData, subjectData, departmentData, teacherData, adminData] = await Promise.all([
     prisma.class.findUnique({ where: { id: assignment.classId }, select: { id: true, name: true } }),
     prisma.subject.findUnique({ where: { id: assignment.subjectId }, select: { id: true, name: true } }),
     assignment.departmentId ? prisma.department.findUnique({ where: { id: assignment.departmentId }, select: { id: true, name: true } }) : Promise.resolve(null),
-    prisma.teacher.findUnique({ where: { id: assignment.teacherId }, select: { name: true, profileImage: true } })
+    prisma.teacher.findUnique({ where: { id: assignment.teacherId }, select: { name: true, profileImage: true } }),
+    prisma.admin.findUnique({ where: { id: assignment.teacherId }, select: { name: true, profileImage: true } })
   ]);
+
+  const creatorData = teacherData || adminData;
 
   return {
     ...assignment,
@@ -286,11 +309,12 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
     class: classData,
     subject: subjectData,
     department: departmentData,
-    teacher: teacherData ? {
-      firstName: teacherData.name.split(' ')[0] || '',
-      lastName: teacherData.name.split(' ').slice(1).join(' ') || '',
+    teacher: creatorData ? {
+      name: creatorData.name,
+      firstName: creatorData.name.split(' ')[0] || '',
+      lastName: creatorData.name.split(' ').slice(1).join(' ') || '',
       user: {
-        avatarUrl: teacherData.profileImage
+        avatarUrl: creatorData.profileImage
       }
     } : null
   };

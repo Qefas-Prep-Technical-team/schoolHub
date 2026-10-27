@@ -70,9 +70,13 @@ export function isOfflineGradeRecord(g: any): boolean {
 
 interface OfflineGradesDashboardProps {
   defaultClassId?: string;
+  hideClassFilter?: boolean;
 }
 
-export default function OfflineGradesDashboard({ defaultClassId }: OfflineGradesDashboardProps) {
+export default function OfflineGradesDashboard({
+  defaultClassId,
+  hideClassFilter,
+}: OfflineGradesDashboardProps) {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const urlClassId = searchParams.get('classId');
@@ -305,6 +309,8 @@ export default function OfflineGradesDashboard({ defaultClassId }: OfflineGrades
         classes={classes}
         isLoading={isLoadingRecords || isLoadingClasses}
         isTeacher={isTeacher}
+        hideClassFilter={hideClassFilter ?? !!defaultClassId}
+        activeClassId={activeClassId}
         onAddNewRecord={handleAddNewRecord}
         onEditRecord={handleEditRecord}
         onDeleteRecord={handleDeleteRecord}

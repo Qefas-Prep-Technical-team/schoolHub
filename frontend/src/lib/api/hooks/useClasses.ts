@@ -35,6 +35,16 @@ export const useSingleClass = (id: string) => {
   });
 };
 
+export const useClassHistory = (classId: string) => {
+  return useQuery({
+    queryKey: [...classQueryKeys.detail(classId), "history"],
+    queryFn: () => classService.getClassHistory(classId),
+    enabled: !!classId,
+    staleTime: 1000 * 60 * 3, // 3 minutes
+    retry: 1,
+  });
+};
+
 export const usePreviewClassById = (id: string) => {
   return useQuery({
     queryKey: [...classQueryKeys.all, "preview", id],
@@ -92,7 +102,15 @@ export const useClassStats = (classId: string) => {
 export const useSubmitAttendance = (classId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (records: Record<string, unknown>[]) => classService.submitAttendance(classId, records),
+    mutationFn: (variables: Record<string, unknown>[] | { records: Record<string, unknown>[]; subjectId?: string; subjectName?: string }) => {
+      if (Array.isArray(variables)) {
+        return classService.submitAttendance(classId, variables);
+      }
+      return classService.submitAttendance(classId, variables.records, {
+        subjectId: variables.subjectId,
+        subjectName: variables.subjectName,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "attendance", classId] });
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "attendance-summary", classId] });

@@ -24,20 +24,41 @@ import { toast } from 'react-toastify';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import {
   useClassSubjectResults,
-  useStudentTermResults,
 } from '@/lib/api/hooks/useRecords';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useSchoolSubjects, useSchoolDepartments } from '@/lib/api/hooks/useSchool';
-import { useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
+import {
+  useTeacherSubjects,
+  useTeacherClasses,
+  useTeacherStudents,
+  TeacherStudentItem,
+} from '@/lib/api/hooks/useTeacher';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 import { TeacherPagination } from '@/app/dashboard/teacher/components/TeacherPagination';
 
 import { RecordsStatsCards } from './components/RecordsStatsCards';
 import { SubjectResultCard, SubjectResultItem } from './components/SubjectResultCard';
-import { StudentResultCard, StudentResultItem } from './components/StudentResultCard';
 import { RecordsSkeleton } from './components/RecordsSkeleton';
 import { CreateResultDialog } from './components/CreateResultDialog';
+
+function StudentAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
+  const initial = name?.trim()?.charAt(0)?.toUpperCase() || 'S';
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name}
+        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-zinc-700"
+      />
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs shrink-0 select-none">
+      {initial}
+    </div>
+  );
+}
 
 const PAGE_SIZE = 9;
 
@@ -57,7 +78,6 @@ export default function RecordsPage() {
   const [selectedTerm, setSelectedTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [assignmentScope, setAssignmentScope] = useState<'all' | 'assigned'>('assigned');
 
   // Pagination States
   const [subjectPage, setSubjectPage] = useState(1);
@@ -73,10 +93,17 @@ export default function RecordsPage() {
 
   // Dropdown Data Hooks
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(effectiveSchoolId);
+  const { data: teacherClassesData } = useTeacherClasses(effectiveSchoolId);
   const { data: sessionsData, isLoading: isLoadingSessions } = useSessions(effectiveSchoolId);
   const { data: subjectsData, isLoading: isLoadingSubjectsList } = useSchoolSubjects(effectiveSchoolId);
   const { data: departmentsData, isLoading: isLoadingDepartments } = useSchoolDepartments(effectiveSchoolId);
   const { data: teacherSubjectsData, isLoading: isLoadingTeacherSubjects } = useTeacherSubjects(effectiveSchoolId);
+
+  const teacherClasses = useMemo(() => {
+    if (Array.isArray(teacherClassesData) && teacherClassesData.length > 0) return teacherClassesData;
+    if (Array.isArray(classesData)) return classesData;
+    return (classesData as { data?: { id: string; name: string }[] })?.data || [];
+  }, [teacherClassesData, classesData]);
 
   const classes = useMemo(() => {
     if (Array.isArray(classesData)) return classesData;
@@ -137,15 +164,18 @@ export default function RecordsPage() {
 
   // Results Query Hooks
   const { data: rawSubjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
-  const { data: rawStudentResults, isLoading: isLoadingStudents } = useStudentTermResults();
+  const { data: teacherStudentsData, isLoading: isLoadingStudents } = useTeacherStudents({
+    schoolId: effectiveSchoolId,
+    limit: 1000,
+  });
 
   const subjectResults: SubjectResultItem[] = useMemo(() => {
     return Array.isArray(rawSubjectResults) ? rawSubjectResults : [];
   }, [rawSubjectResults]);
 
-  const studentResults: StudentResultItem[] = useMemo(() => {
-    return Array.isArray(rawStudentResults) ? rawStudentResults : [];
-  }, [rawStudentResults]);
+  const teacherStudents: TeacherStudentItem[] = useMemo(() => {
+    return teacherStudentsData?.students || [];
+  }, [teacherStudentsData]);
 
   // Mobile layout initialization: default to 'grid' on mobile devices
   useEffect(() => {
@@ -161,32 +191,10 @@ export default function RecordsPage() {
     setStudentPage(1);
   }, [activeTab, searchQuery, selectedClass, selectedSession, selectedTerm, selectedStatus]);
 
-  // Dynamic Summary Stats Computations
-  const currentDatasetCount = activeTab === 'student' ? studentResults.length : subjectResults.length;
-
-  const completedRecords = useMemo(() => {
-    if (activeTab === 'student') {
-      return studentResults.filter((r) => r.status === 'PUBLISHED').length;
-    }
-    return subjectResults.filter((r) => r.status === 'PUBLISHED').length;
-  }, [activeTab, studentResults, subjectResults]);
-
-  const pendingRecords = currentDatasetCount - completedRecords;
-  const completionRate = currentDatasetCount > 0 ? Math.round((completedRecords / currentDatasetCount) * 100) : 0;
-
-  const averageScore = useMemo(() => {
-    const validScores = studentResults
-      .filter((r) => r.averageScore != null && typeof r.averageScore === 'number')
-      .map((r) => r.averageScore as number);
-    if (validScores.length === 0) return '0.0';
-    return (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1);
-  }, [studentResults]);
-
-  // Filtered Subject Results
+  // Filtered Subject Results: strictly teacher's assigned subjects
   const filteredSubjectResults = useMemo(() => {
     return subjectResults.filter((item) => {
-      // Assignment Scope Filter: Show only teacher's assigned subjects when 'assigned' is active
-      if (assignmentScope === 'assigned' && !isRecordAssignedToTeacher(item)) {
+      if (!isRecordAssignedToTeacher(item)) {
         return false;
       }
 
@@ -229,7 +237,6 @@ export default function RecordsPage() {
     });
   }, [
     subjectResults,
-    assignmentScope,
     isRecordAssignedToTeacher,
     searchQuery,
     selectedClass,
@@ -239,25 +246,70 @@ export default function RecordsPage() {
     selectedDepartment,
   ]);
 
-  // Filtered Student Results
-  const filteredStudentResults = useMemo(() => {
-    return studentResults.filter((item) => {
+  // Filtered Student Results: students in teacher's assigned classes
+  const filteredTeacherStudents = useMemo(() => {
+    return teacherStudents.filter((student) => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const studentName = (item.student?.name || '').toLowerCase();
-        const className = (item.class?.name || '').toLowerCase();
-        const sessionName = (item.session?.name || '').toLowerCase();
-        if (!studentName.includes(query) && !className.includes(query) && !sessionName.includes(query)) {
+        const name = (student.name || '').toLowerCase();
+        const code = (student.studentCode || '').toLowerCase();
+        const grade = (student.grade || '').toLowerCase();
+        if (!name.includes(query) && !code.includes(query) && !grade.includes(query)) {
           return false;
         }
       }
-      if (selectedClass && item.classId !== selectedClass) return false;
-      if (selectedSession && item.sessionId !== selectedSession) return false;
-      if (selectedTerm && item.term !== selectedTerm) return false;
-      if (selectedStatus && item.status !== selectedStatus) return false;
+
+      if (selectedClass) {
+        const targetClass = teacherClasses.find((c: any) => c.id === selectedClass) || classes.find((c: any) => c.id === selectedClass);
+        if (targetClass && student.grade && student.grade.toLowerCase() !== (targetClass.name || '').toLowerCase()) {
+          return false;
+        }
+      }
+
+      if (selectedStatus) {
+        if (student.status && student.status.toUpperCase() !== selectedStatus.toUpperCase()) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [studentResults, searchQuery, selectedClass, selectedSession, selectedTerm, selectedStatus]);
+  }, [teacherStudents, searchQuery, selectedClass, teacherClasses, classes, selectedStatus]);
+
+  // Dynamic Summary Stats Computations
+  const currentDatasetCount = activeTab === 'student' ? filteredTeacherStudents.length : filteredSubjectResults.length;
+
+  const completedRecords = useMemo(() => {
+    if (activeTab === 'student') {
+      return filteredTeacherStudents.filter((r) => r.status?.toLowerCase() === 'active' || (r.lastExam && r.lastExam !== 'N/A')).length;
+    }
+    return filteredSubjectResults.filter((r) => r.status === 'PUBLISHED').length;
+  }, [activeTab, filteredTeacherStudents, filteredSubjectResults]);
+
+  const pendingRecords = currentDatasetCount - completedRecords;
+  const completionRate = currentDatasetCount > 0 ? Math.round((completedRecords / currentDatasetCount) * 100) : 0;
+
+  const averageScore = useMemo(() => {
+    if (activeTab === 'student') {
+      const validPercentages = filteredTeacherStudents
+        .map((s) => {
+          if (!s.lastExam || s.lastExam === 'N/A') return null;
+          const parts = s.lastExam.split('/');
+          if (parts.length === 2) {
+            const score = parseFloat(parts[0]);
+            const max = parseFloat(parts[1]);
+            if (!isNaN(score) && !isNaN(max) && max > 0) {
+              return (score / max) * 100;
+            }
+          }
+          return null;
+        })
+        .filter((n): n is number => n !== null);
+      if (validPercentages.length === 0) return '0.0';
+      return (validPercentages.reduce((a, b) => a + b, 0) / validPercentages.length).toFixed(1);
+    }
+    return '0.0';
+  }, [activeTab, filteredTeacherStudents]);
 
   // Active Filter Detection
   const hasActiveFilters = Boolean(
@@ -266,8 +318,7 @@ export default function RecordsPage() {
     selectedSession ||
     selectedTerm ||
     selectedStatus ||
-    selectedDepartment ||
-    assignmentScope !== 'assigned'
+    selectedDepartment
   );
 
   const resetFilters = () => {
@@ -277,7 +328,6 @@ export default function RecordsPage() {
     setSelectedTerm('');
     setSelectedStatus('');
     setSelectedDepartment('');
-    setAssignmentScope('assigned');
   };
 
   // Paginated Slices
@@ -286,13 +336,13 @@ export default function RecordsPage() {
     return filteredSubjectResults.slice(start, start + PAGE_SIZE);
   }, [filteredSubjectResults, subjectPage]);
 
-  const paginatedStudentResults = useMemo(() => {
+  const paginatedTeacherStudents = useMemo(() => {
     const start = (studentPage - 1) * PAGE_SIZE;
-    return filteredStudentResults.slice(start, start + PAGE_SIZE);
-  }, [filteredStudentResults, studentPage]);
+    return filteredTeacherStudents.slice(start, start + PAGE_SIZE);
+  }, [filteredTeacherStudents, studentPage]);
 
   const subjectTotalPages = Math.ceil(filteredSubjectResults.length / PAGE_SIZE) || 1;
-  const studentTotalPages = Math.ceil(filteredStudentResults.length / PAGE_SIZE) || 1;
+  const studentTotalPages = Math.ceil(filteredTeacherStudents.length / PAGE_SIZE) || 1;
 
   if (!mounted) return null;
 
@@ -382,38 +432,10 @@ export default function RecordsPage() {
                 <Users className="w-4 h-4 text-blue-500" />
                 <span>Students Final Results</span>
                 <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
-                  {studentResults.length}
+                  {filteredTeacherStudents.length}
                 </span>
               </button>
             </div>
-
-            {/* Scope Filter for Subject Results: Assigned vs All */}
-            {activeTab === 'subject' && (
-              <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setAssignmentScope('assigned')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    assignmentScope === 'assigned'
-                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  My Assigned Subjects
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAssignmentScope('all')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    assignmentScope === 'all'
-                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  All School Records
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Directory Title & View Switcher */}
@@ -571,9 +593,7 @@ export default function RecordsPage() {
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                   {hasActiveFilters
                     ? 'No records match your active search filters. Try clearing or refining your criteria.'
-                    : assignmentScope === 'assigned'
-                    ? 'No final results found for your assigned subjects. Click "Add Final Result" to create one or switch to "All School Records".'
-                    : 'Start by creating your first subject final result sheet to compile scores.'}
+                    : 'No final results found for your assigned subjects. Click "Add Final Result" to create one.'}
                 </p>
                 {hasActiveFilters ? (
                   <button
@@ -744,7 +764,7 @@ export default function RecordsPage() {
           <div>
             {isLoadingStudents ? (
               <RecordsSkeleton viewMode={viewMode} />
-            ) : filteredStudentResults.length === 0 ? (
+            ) : filteredTeacherStudents.length === 0 ? (
               <div className="py-12 sm:py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-black/30 p-6 space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto border border-blue-200/60 dark:border-blue-700/40">
                   <Users className="w-6 h-6" />
@@ -754,8 +774,8 @@ export default function RecordsPage() {
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                   {hasActiveFilters
-                    ? 'No student term records match your active search filters.'
-                    : 'Publish subject score sheets to compile final student results.'}
+                    ? 'No students in your assigned classes match your active search filters.'
+                    : 'No students found enrolled in your assigned classes.'}
                 </p>
                 {hasActiveFilters && (
                   <button
@@ -769,13 +789,56 @@ export default function RecordsPage() {
               </div>
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
-                {paginatedStudentResults.map((item) => (
-                  <StudentResultCard
-                    key={item.id}
-                    item={item}
-                    onViewReport={(s) => toast.info(`Opening report card for ${s.student?.name || 'scholar'}...`)}
-                  />
-                ))}
+                {paginatedTeacherStudents.map((res, index) => {
+                  const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
+                  return (
+                    <div
+                      key={res.id}
+                      onClick={() => router.push(`/dashboard/teacher/records/student/${res.id}`)}
+                      className="cursor-pointer bg-white dark:bg-zinc-900/90 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 space-y-3.5 hover:border-emerald-500/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 select-none shrink-0">
+                              #{globalIdx}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+                              {res.studentCode || 'No Student ID'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2.5 pt-1">
+                          <StudentAvatar name={res.name} avatarUrl={res.avatarUrl} />
+                          <h3
+                            className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 transition-colors"
+                            title={res.name}
+                          >
+                            {res.name}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-zinc-800/60 border border-slate-100 dark:border-zinc-800/60 p-2.5 rounded-xl text-center">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Gender</p>
+                          <p className="font-black text-emerald-600 capitalize">{res.gender || '-'}</p>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-zinc-800/60 border border-slate-100 dark:border-zinc-800/60 p-2.5 rounded-xl text-center">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{res.grade || '-'}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end items-center">
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                          View Record
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               /* Table View */
@@ -785,72 +848,47 @@ export default function RecordsPage() {
                     <thead>
                       <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
                         <th className="px-5 py-3.5 w-12">#</th>
-                        <th className="px-4 py-3.5">Scholar Name</th>
-                        <th className="px-4 py-3.5">Class</th>
-                        <th className="px-4 py-3.5">Session & Term</th>
-                        <th className="px-4 py-3.5">Average</th>
-                        <th className="px-4 py-3.5">Position</th>
-                        <th className="px-4 py-3.5">Status</th>
-                        <th className="px-5 py-3.5 text-right">Actions</th>
+                        <th className="px-4 py-3.5">STUDENT NAME</th>
+                        <th className="px-4 py-3.5">STUDENT CODE</th>
+                        <th className="px-4 py-3.5">GENDER</th>
+                        <th className="px-4 py-3.5">CLASS</th>
+                        <th className="px-5 py-3.5 text-right">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
-                      {paginatedStudentResults.map((res, index) => {
+                      {paginatedTeacherStudents.map((res, index) => {
                         const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
-                        const isPublished = res.status === 'PUBLISHED';
                         return (
                           <tr
                             key={res.id}
-                            className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
+                            onClick={() => router.push(`/dashboard/teacher/records/student/${res.id}`)}
+                            className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
                           >
                             <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
                             <td className="px-4 py-4 font-bold text-slate-900 dark:text-slate-100">
-                              {res.student?.name || 'Student Name'}
+                              <div className="flex items-center gap-2.5">
+                                <StudentAvatar name={res.name} avatarUrl={res.avatarUrl} />
+                                <span>{res.name}</span>
+                              </div>
                             </td>
+                            <td className="px-4 py-4">{res.studentCode || '-'}</td>
+                            <td className="px-4 py-4 capitalize">{res.gender || '-'}</td>
                             <td className="px-4 py-4">
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
                                 <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
-                                {res.class?.name || 'Class'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4">
-                              <span className="block font-bold text-slate-900 dark:text-slate-100">
-                                {res.session?.name || 'Session'}
-                              </span>
-                              <span className="text-xs text-slate-400">{res.term} Term</span>
-                            </td>
-                            <td className="px-4 py-4 font-black text-emerald-600 dark:text-emerald-400">
-                              {res.averageScore != null ? `${res.averageScore}%` : '-'}
-                            </td>
-                            <td className="px-4 py-4 text-xs font-bold text-slate-500">
-                              {res.position ? `${res.position}` : '-'}
-                            </td>
-                            <td className="px-4 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                                  isPublished
-                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40'
-                                    : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40'
-                                }`}
-                              >
-                                {isPublished ? (
-                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                ) : (
-                                  <Clock className="w-3 h-3 text-amber-500" />
-                                )}
-                                {res.status}
+                                {res.grade || '-'}
                               </span>
                             </td>
                             <td className="px-5 py-4 text-right">
                               <button
                                 type="button"
-                                onClick={() =>
-                                  toast.info(`Opening report card for ${res.student?.name || 'scholar'}...`)
-                                }
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/dashboard/teacher/records/student/${res.id}`);
+                                }}
+                                className="px-3 py-1.5 border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
                               >
-                                <span>View Report</span>
-                                <ArrowRight className="w-3.5 h-3.5" />
+                                View Record
                               </button>
                             </td>
                           </tr>
@@ -863,11 +901,11 @@ export default function RecordsPage() {
             )}
 
             {/* Pagination */}
-            {filteredStudentResults.length > 0 && (
+            {filteredTeacherStudents.length > 0 && (
               <TeacherPagination
                 currentPage={studentPage}
                 totalPages={studentTotalPages}
-                totalItems={filteredStudentResults.length}
+                totalItems={filteredTeacherStudents.length}
                 itemsPerPage={PAGE_SIZE}
                 onPageChange={setStudentPage}
                 itemName="student results"

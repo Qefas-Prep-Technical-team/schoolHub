@@ -9,26 +9,34 @@ interface OverviewProps {
   behaviourAlerts: any[];
   upcomingExams?: any[];
   classData: any;
+  teacherClassDetail?: any;
 }
 
 import { useClassAttendanceSummary, useClassStats } from "@/lib/api/hooks/useClasses";
 import { useParams } from "next/navigation";
 
-const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomingExams }) => {
+const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomingExams, teacherClassDetail }) => {
   const params = useParams();
   const classId = (params.classId as string) || (params.id as string) || classData?.id;
   const { data: attendanceSummary, isLoading: isAttendanceSummaryLoading } = useClassAttendanceSummary(classId);
   const { data: stats, isLoading: isStatsLoading } = useClassStats(classId);
 
-  // Derived data
+  // Derived data: prioritize teacher's subject-focused upcoming activities
   const realUpcomingExams = upcomingExams !== undefined
     ? upcomingExams
+    : (teacherClassDetail?.upcomingActivities && teacherClassDetail.upcomingActivities.length > 0)
+    ? teacherClassDetail.upcomingActivities.slice(0, 3).map((act: any) => ({
+        id: act.id,
+        subject: act.description || teacherClassDetail?.classInfo?.subject || 'Exam',
+        date: act.date,
+        type: act.type || 'Exam'
+      }))
     : (classData?.exams || []).slice(0, 3).map((e: any) => ({
-    id: e.id,
-    subject: e.title.split(' ')[0], // Best effort for icon match
-    date: new Date(e.createdAt).toLocaleDateString(),
-    type: e.category || 'Exam'
-  }));
+        id: e.id,
+        subject: e.title.split(' ')[0], // Best effort for icon match
+        date: new Date(e.createdAt).toLocaleDateString(),
+        type: e.category || 'Exam'
+      }));
 
   return (
     <div className="mt-4 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
@@ -52,14 +60,18 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6 lg:gap-8">
           <StatsCard 
-            title="Class Average Score" 
-            value={stats ? `${stats.overallAvgScore}%` : "0%"} 
-            isLoading={isStatsLoading}
+            title="Subject Average Score" 
+            value={teacherClassDetail?.stats?.averageGrade !== undefined
+              ? `${teacherClassDetail.stats.averageGrade}%`
+              : stats ? `${stats.overallAvgScore}%` : "0%"} 
+            isLoading={isStatsLoading && !teacherClassDetail}
           />
           <StatsCard 
             title="Attendance Summary" 
-            value={attendanceSummary ? `${Math.round(attendanceSummary.rate)}%` : "0%"} 
-            isLoading={isAttendanceSummaryLoading}
+            value={teacherClassDetail?.attendance?.overallPercentage !== undefined
+              ? `${Math.round(teacherClassDetail.attendance.overallPercentage)}%`
+              : attendanceSummary ? `${Math.round(attendanceSummary.rate)}%` : "0%"} 
+            isLoading={isAttendanceSummaryLoading && !teacherClassDetail}
           />
         </div>
 

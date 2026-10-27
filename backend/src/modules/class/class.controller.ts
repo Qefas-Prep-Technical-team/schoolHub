@@ -23,7 +23,8 @@ import {
   replaceClassSubjectsService,
   removeSubjectFromClassService,
   promoteStudentsService,
-  sendClassAnnouncementService
+  sendClassAnnouncementService,
+  getClassHistoryService
 } from "./class.service";
 import { handleError } from "../../utils/error-handler";
 
@@ -882,5 +883,24 @@ export const sendClassAnnouncement = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error) {
     return handleError(res, error, "class.sendClassAnnouncement");
+  }
+};
+
+export const getClassHistory = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { id } = req.params;
+    const historyData = await getClassHistoryService(id as string, req.user);
+
+    return res.status(200).json({
+      success: true,
+      message: "Class history retrieved successfully",
+      data: historyData,
+    });
+  } catch (error) {
+    return handleError(res, error, "class.getClassHistory");
   }
 };

@@ -94,6 +94,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
     { icon: FileSpreadsheet, label: "Offline Grades", href: "/dashboard/admin/offline-grades", featureKey: "offlineGrades", section: "academics" },
+    { icon: GraduationCap, label: "Transcripts", href: "/dashboard/admin/transcript", featureKey: "transcript", section: "academics" },
     { icon: BookOpenCheck, label: "Exam Setup", href: "/dashboard/admin/exams", featureKey: "exams", section: "academics" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/admin/assignments", featureKey: "assignments", section: "academics" },
     { icon: BookOpenCheck, label: "Subjects", href: "/dashboard/admin/subjects", featureKey: "subjects", section: "academics" },
@@ -188,17 +189,20 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
         const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
 
         const filtered = adminMenuItems.filter(item => {
+            // Finance is a core institutional portal feature for administrators
+            if (item.featureKey === 'finance') return true;
+
             // Check platform feature flag first
             if (!(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
 
-            // SCHOOL_OWNER always sees everything
-            if (adminRole === 'SCHOOL_OWNER') return true;
+            // SCHOOL_OWNER, ADMIN, SUPER_ADMIN see all navigation items
+            if (adminRole === 'SCHOOL_OWNER' || adminRole === 'ADMIN' || adminRole === 'SUPER_ADMIN' || !adminRole) return true;
 
             // Check role-based nav permission — if no restriction defined, allow all roles
             const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey];
             if (!allowedRoles) return true;
 
-            return !!adminRole && allowedRoles.includes(adminRole);
+            return allowedRoles.includes(adminRole);
         });
 
         return {

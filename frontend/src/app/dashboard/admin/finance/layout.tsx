@@ -3,8 +3,8 @@ import AdminRoleGuard from "@/components/auth/AdminRoleGuard"
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {
     return (
         <AdminRoleGuard
-            allowedRoles={["SCHOOL_OWNER", "ACCOUNTANT"]}
-            message="Finance is restricted to the School Owner and Accountant roles."
+            allowedRoles={["SCHOOL_OWNER", "ACCOUNTANT", "ADMIN", "SUPER_ADMIN"]}
+            message="Finance and fee management is restricted to authorized school administrative roles."
         >
             {children}
         </AdminRoleGuard>

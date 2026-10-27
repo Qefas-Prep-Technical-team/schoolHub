@@ -283,3 +283,48 @@ export function computeGradePill(
     color: result.color,
   };
 }
+
+/**
+ * Evaluates Grade Point (0.0 to 5.0 scale) based on the score percentage
+ * and the school's configured grading system or standard default matrix.
+ */
+export function getGradePoint(
+  percentage: number | null | undefined,
+  customGradingSystem?: any[] | null
+): number {
+  if (percentage == null || isNaN(percentage)) return 0;
+  const tiers = getEffectiveGradingSystem(customGradingSystem);
+  const evaluation = getGradeEvaluation(percentage, customGradingSystem);
+  const grade = evaluation.grade.toUpperCase().trim();
+
+  // Standard grade letter mappings (aligned with default 9 grades and standard scales)
+  if (grade === 'A+' || grade === 'A1') return 5.0;
+  if (grade === 'A' || grade === 'B2') return 4.5;
+  if (grade === 'B+' || grade === 'B3') return 4.0;
+  if (grade === 'B' || grade === 'C4') return 3.5;
+  if (grade === 'C+' || grade === 'C5') return 3.0;
+  if (grade === 'C' || grade === 'C6') return 2.5;
+  if (grade === 'D' || grade === 'D7') return 1.5;
+  if (grade === 'E' || grade === 'E8') return 1.0;
+  if (grade === 'F') return 0.5;
+  if (grade === 'F9') return 0.0;
+
+  // If custom grade names were configured, interpolate GP from 5.0 to 0.0 across tier rank
+  const tierIndex = tiers.findIndex((t) => t.grade.toUpperCase().trim() === grade);
+  if (tierIndex !== -1 && tiers.length > 1) {
+    const fraction = 1 - tierIndex / (tiers.length - 1);
+    return Math.round(fraction * 5.0 * 10) / 10;
+  }
+
+  // Fallback to raw percentage threshold mapping
+  if (percentage >= 90) return 5.0;
+  if (percentage >= 70) return 4.5;
+  if (percentage >= 65) return 4.0;
+  if (percentage >= 60) return 3.5;
+  if (percentage >= 55) return 3.0;
+  if (percentage >= 50) return 2.5;
+  if (percentage >= 40) return 1.5;
+  if (percentage >= 30) return 0.5;
+  return 0.0;
+}
+

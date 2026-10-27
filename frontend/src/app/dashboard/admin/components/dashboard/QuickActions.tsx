@@ -1,6 +1,6 @@
 'use client';
 
-import { UserPlus, FileText, Megaphone, MoreHorizontal, Users, Calendar, Download, Settings, ChevronRight } from 'lucide-react';
+import { UserPlus, FileText, Megaphone, MoreHorizontal, Users, Calendar, Download, Settings, ChevronRight, Landmark } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -29,6 +29,17 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
   const { data: globalFeatures } = useGlobalFeatures('admin');
 
   const [actions] = useState<Action[]>([
+    {
+      id: 'finance-hub',
+      title: 'Finance Hub',
+      icon: Landmark,
+      description: 'Fees & Vaults',
+      color: 'border-emerald-500/20',
+      iconColor: 'text-emerald-500',
+      bgColor: 'bg-emerald-50',
+      href: '/dashboard/admin/finance',
+      featureKey: 'finance',
+    },
     {
       id: 'add-student',
       title: 'Add Student',

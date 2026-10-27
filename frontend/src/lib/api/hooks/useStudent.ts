@@ -114,13 +114,15 @@ export const useStudentAttendance = (studentId: string, filters?: { startDate?: 
     queryKey: [...studentKeys.all, studentId, "attendance", filters],
     queryFn: () => studentService.getAttendance(studentId, filters),
     enabled: !!studentId,
+    staleTime: 1000 * 60 * 2,
+    retry: 1,
   });
 };
 
 export const useUpdateStudentAttendance = (studentId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { date: string; status: string; note?: string }) =>
+    mutationFn: (data: { date: string; status: string; note?: string; subjects?: Record<string, any> }) =>
       studentService.updateAttendance(studentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...studentKeys.all, studentId, "attendance"] });
@@ -192,6 +194,9 @@ export const useUpsertTermlyEvaluation = (studentId: string) => {
       queryClient.invalidateQueries({ 
         queryKey: [...studentKeys.all, studentId, "termly-evaluation", variables.classId, variables.sessionId, variables.term] 
       });
+      queryClient.invalidateQueries({
+        queryKey: ["class-termly-evaluations", variables.classId, variables.sessionId, variables.term],
+      });
       toast.success("Evaluation saved successfully");
     },
     onError: (error: AxiosError<{ message?: string }>) => {
@@ -199,3 +204,72 @@ export const useUpsertTermlyEvaluation = (studentId: string) => {
     },
   });
 };
+
+export const useClassTermlyEvaluations = (classId?: string, sessionId?: string, term?: string) => {
+  return useQuery({
+    queryKey: ["class-termly-evaluations", classId, sessionId, term],
+    queryFn: () => studentService.getClassTermlyEvaluations(classId!, sessionId!, term!),
+    enabled: !!classId && !!sessionId && !!term,
+    staleTime: 1000 * 60 * 3, // 3 minutes
+  });
+};
+
+export const useBulkUpsertTermlyEvaluations = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      classId: string;
+      sessionId: string;
+      term: string;
+      evaluations: any[];
+    }) => studentService.bulkUpsertTermlyEvaluations(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["class-termly-evaluations", variables.classId, variables.sessionId, variables.term],
+      });
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key.includes("termly-evaluation");
+        },
+      });
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to save class termly evaluations");
+    },
+  });
+};
+
+export const useStudentById = (studentId?: string) => {
+  return useQuery({
+    queryKey: [...studentKeys.all, studentId, "details"],
+    queryFn: () => studentService.getStudentById(studentId!),
+    enabled: !!studentId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+  });
+};
+
+export const useStudentDownloadAudit = (studentId?: string) => {
+  return useQuery({
+    queryKey: [...studentKeys.all, studentId, "download-audit"],
+    queryFn: () => studentService.getDownloadAudit(studentId!),
+    enabled: !!studentId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    retry: 1,
+  });
+};
+
+export const useRecordStudentDownload = (studentId?: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data?: { fileName?: string; fileType?: string }) =>
+      studentService.recordDownload(studentId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...studentKeys.all, studentId, "download-audit"],
+      });
+    },
+  });
+};
+

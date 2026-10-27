@@ -18,7 +18,13 @@ import {
     ShieldCheck,
     MapPin,
     Loader2,
-    Image as ImageIcon
+    Image as ImageIcon,
+    PenTool,
+    Trash2,
+    Key,
+    Copy,
+    Check,
+    Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -43,6 +49,12 @@ import { cn } from '@/lib/utils';
 import ImageUpload from '@/components/reusable/ImageUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useActiveSignature } from '@/lib/api/hooks/useSignature';
+import { signatureService } from '@/lib/api/services/signatureService';
+import SignatureModal from '@/components/signature/SignatureModal';
+import { toast } from 'react-toastify';
 
 interface TeacherProfile {
     id?: string;
@@ -68,8 +80,31 @@ interface TeacherProfile {
 
 export default function TeacherProfilePage() {
     const router = useRouter();
+    const queryClient = useQueryClient();
+    const { user } = useAuthStore();
     const { data: rawProfile, isLoading } = useTeacherProfile();
     const profile = rawProfile as TeacherProfile | undefined;
+    const teacherUserId = user?.id || profile?.id || "";
+    const { data: activeSignature, refetch: refetchSignature } = useActiveSignature(teacherUserId);
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const [copiedHash, setCopiedHash] = useState(false);
+
+    const handleCopyHash = (hash: string) => {
+        navigator.clipboard.writeText(hash);
+        setCopiedHash(true);
+        toast.success("Signature SHA-256 fingerprint copied!");
+        setTimeout(() => setCopiedHash(false), 2000);
+    };
+
+    const handleRemoveSignature = () => {
+        if (confirm("Are you sure you want to remove your active educator digital signature?")) {
+            signatureService.clearLocalSignature(teacherUserId);
+            queryClient.setQueryData(["activeSignature", teacherUserId], null);
+            queryClient.invalidateQueries({ queryKey: ["activeSignature", teacherUserId] });
+            toast.info("Signature removed from active educator profile.");
+        }
+    };
+
     const updateProfile = useUpdateTeacherProfile();
     const requestEmailUpdate = useRequestTeacherEmailUpdate();
     const verifyEmailUpdate = useVerifyTeacherEmailUpdate();
@@ -301,6 +336,18 @@ export default function TeacherProfilePage() {
                         </Button>
                         <Button 
                             variant="outline" 
+                            onClick={() => setIsSignatureModalOpen(true)}
+                            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 font-semibold text-xs sm:text-sm transition-all flex items-center gap-1.5"
+                            title="Manage your official educator digital signature"
+                        >
+                            <PenTool size={15} className="text-emerald-600 dark:text-emerald-400" />
+                            <span>Digital Signature</span>
+                            {activeSignature && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            )}
+                        </Button>
+                        <Button 
+                            variant="outline" 
                             title="Indicates your Two-Factor Authentication security standing"
                             className={cn(
                                 "h-10 px-3.5 rounded-xl font-semibold text-xs sm:text-sm transition-all",
@@ -416,6 +463,191 @@ export default function TeacherProfilePage() {
                                 <InfoItem label="Qualification" value={profile.highestQualification || 'Not specified'} />
                                 <InfoItem label="Experience" value={profile.yearsOfExperience ? `${profile.yearsOfExperience} Years` : 'Not specified'} />
                                 <InfoItem label="Teacher ID" value={profile.teacherCode || 'N/A'} />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Official Educator Digital Signature Card */}
+                    <Card className="rounded-2xl border-slate-200/80 dark:border-zinc-800 shadow-sm bg-white dark:bg-black overflow-hidden relative group">
+                        <CardHeader className="px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-black flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <PenTool className="text-emerald-500 h-5 w-5" /> 
+                                    Educator Digital Signature
+                                </CardTitle>
+                                <HeaderTooltip 
+                                    content="Your official cryptographic educator signature. Once registered, this digital signature is affixed to student report cards, academic transcripts, and official grade submissions certified by you."
+                                />
+                            </div>
+
+                            {activeSignature && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleRemoveSignature}
+                                        className="h-9 px-3 rounded-xl border-rose-200 dark:border-rose-900/50 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+                                    >
+                                        <Trash2 size={13} />
+                                        <span>Remove</span>
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        onClick={() => setIsSignatureModalOpen(true)}
+                                        className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                                    >
+                                        <PenTool size={13} />
+                                        <span>Update Signature</span>
+                                    </Button>
+                                </div>
+                            )}
+                        </CardHeader>
+
+                        <CardContent className="p-5 sm:p-6 space-y-4">
+                            {activeSignature ? (
+                                <div className="space-y-4">
+                                    {/* Simulated Institutional Certificate Card */}
+                                    <div className="relative rounded-2xl border border-slate-200 dark:border-zinc-700/80 bg-white dark:bg-slate-50 text-slate-900 p-6 shadow-sm overflow-hidden">
+                                        <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4 select-none">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 rounded-md bg-emerald-600/10 text-emerald-700 flex items-center justify-center font-black text-[10px]">
+                                                    Q
+                                                </div>
+                                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
+                                                    Educator Endorsement Certificate
+                                                </span>
+                                            </div>
+
+                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs flex items-center gap-1">
+                                                <ShieldCheck size={12} />
+                                                <span>Certified Active</span>
+                                            </span>
+                                        </div>
+
+                                        {/* High-Resolution Transparent PNG Preview */}
+                                        <div className="py-4 flex flex-col items-center justify-center min-h-[120px]">
+                                            <img
+                                                src={activeSignature.signedUrl}
+                                                alt="Official Educator Signature"
+                                                className="max-h-28 sm:max-h-32 w-auto object-contain drop-shadow-2xs transition-transform hover:scale-105 duration-300"
+                                            />
+                                        </div>
+
+                                        {/* Signatory Endorsement Stamp */}
+                                        <div className="pt-3 flex items-end justify-between flex-wrap gap-2">
+                                            <div>
+                                                <p className="text-sm font-black text-slate-900 tracking-tight leading-tight">
+                                                    {profile?.name || user?.name || "Senior Educator"}
+                                                </p>
+                                                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                                                    {profile?.teacherCode ? `ID: ${profile.teacherCode} • ` : ""}Senior Educator / Subject Teacher
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-right">
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                                    {activeSignature.method === "drawn"
+                                                        ? "Drawn on Canvas"
+                                                        : activeSignature.method === "uploaded"
+                                                        ? "Cleaned Photo Upload"
+                                                        : "Calligraphy Script"}
+                                                </span>
+                                                <span className="text-[10px] font-medium text-slate-400">
+                                                    Added {new Date(activeSignature.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* SHA-256 Cryptographic Hash & Verification Details */}
+                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-800 space-y-2">
+                                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-300">
+                                            <span className="flex items-center gap-1.5">
+                                                <Key size={13} className="text-emerald-600" />
+                                                <span>Cryptographic Integrity Fingerprint (SHA-256)</span>
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopyHash(activeSignature.sha256)}
+                                                className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+                                            >
+                                                {copiedHash ? (
+                                                    <>
+                                                        <Check size={12} className="text-emerald-600" />
+                                                        <span className="text-emerald-600">Copied</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy size={12} />
+                                                        <span>Copy Hash</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                        <p className="font-mono text-[11px] text-slate-600 dark:text-zinc-400 break-all bg-white dark:bg-zinc-900 p-2 rounded-lg border border-slate-200 dark:border-zinc-700/80 select-all">
+                                            {activeSignature.sha256}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* Empty Signature State */
+                                <div className="p-8 sm:p-10 rounded-2xl border-2 border-dashed border-slate-200 dark:border-zinc-800 text-center space-y-3 bg-slate-50/50 dark:bg-zinc-900/30">
+                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 dark:border-emerald-900/40 flex items-center justify-center mx-auto shadow-2xs">
+                                        <PenTool size={26} />
+                                    </div>
+                                    <div className="space-y-1 max-w-md mx-auto">
+                                        <h4 className="text-base font-black text-slate-900 dark:text-white">
+                                            No Digital Signature Registered
+                                        </h4>
+                                        <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                                            Set up your official educator signature to enable 1-click grade submissions, student conduct appraisals, and certified institutional documents.
+                                        </p>
+                                    </div>
+                                    <div className="pt-2">
+                                        <Button
+                                            type="button"
+                                            onClick={() => setIsSignatureModalOpen(true)}
+                                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 mx-auto"
+                                        >
+                                            <PenTool size={14} />
+                                            <span>Capture Official Signature</span>
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Compliance & Security Guarantee Cards */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                                    <span className="font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5 text-[11px]">
+                                        <Sparkles size={13} className="text-emerald-600" />
+                                        Transparent Clean-Up
+                                    </span>
+                                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                                        Automatically isolates signature strokes from paper grain with clean alpha transparency.
+                                    </p>
+                                </div>
+
+                                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                                    <span className="font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5 text-[11px]">
+                                        <ShieldCheck size={13} className="text-emerald-600" />
+                                        Cryptographic Trail
+                                    </span>
+                                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                                        Every signed submission generates an immutable SHA-256 fingerprint in the audit log.
+                                    </p>
+                                </div>
+
+                                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 space-y-1">
+                                    <span className="font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5 text-[11px]">
+                                        <GraduationCap size={13} className="text-emerald-600" />
+                                        Institutional Standard
+                                    </span>
+                                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+                                        Seamlessly embedded into official term report cards and certified transcripts.
+                                    </p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -715,6 +947,20 @@ export default function TeacherProfilePage() {
                     </Card>
                 </div>
             )}
+            
+            {/* ── Educator Digital Signature Modal ── */}
+            <SignatureModal
+                isOpen={isSignatureModalOpen}
+                onClose={() => setIsSignatureModalOpen(false)}
+                userId={teacherUserId}
+                userName={profile?.name || user?.name || "Teacher"}
+                userRole="Senior Educator"
+                onSaveSuccess={() => {
+                    refetchSignature();
+                    queryClient.invalidateQueries({ queryKey: ["activeSignature", teacherUserId] });
+                    toast.success("Educator digital signature certified and registered!");
+                }}
+            />
         </div>
     );
 }

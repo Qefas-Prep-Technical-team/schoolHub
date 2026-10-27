@@ -92,15 +92,53 @@ export default function ExamsPage() {
       authorizedSubjects: Array.from(authorizedSubjects)
     });
     
+    const hasAuthorizedFilter = authorizedSubjectIds.size > 0 || authorizedSubjects.size > 0;
+
+    const filteredRawExams = (data?.exams || []).filter((e: any) => {
+      if (!hasAuthorizedFilter) return true;
+      if (e.teacherId && currentTeacherId && e.teacherId === currentTeacherId) return true;
+      if (e.subjectId && authorizedSubjectIds.has(e.subjectId)) return true;
+      if (e.subject?.id && authorizedSubjectIds.has(e.subject.id)) return true;
+      const examSubName = (e.subject?.name || e.subject || '').toLowerCase();
+      if (examSubName && authorizedSubjects.has(examSubName)) return true;
+      if (Array.isArray(e.subjectExamPapers)) {
+        return e.subjectExamPapers.some((sep: any) => {
+          const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
+          const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
+          const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
+          return (subId && authorizedSubjectIds.has(subId)) || (subName && authorizedSubjects.has(subName)) || isMyPaper;
+        });
+      }
+      return false;
+    });
+
+    const filteredRawPapers = (data?.papers || []).filter((p: any) => {
+      if (!hasAuthorizedFilter) return true;
+      if (p.teacherId && currentTeacherId && p.teacherId === currentTeacherId) return true;
+      const subId = p.subject?.id || p.subjectId;
+      if (subId && authorizedSubjectIds.has(subId)) return true;
+      const subName = (p.subject?.name || p.subject || '').toLowerCase();
+      if (subName && authorizedSubjects.has(subName)) return true;
+      return false;
+    });
+
     return [
-    ...(data?.exams || []).map((e: any) => {
+    ...filteredRawExams.map((e: any) => {
       const myPaper = e.subjectExamPapers?.find((sep: any) => {
-        const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId;
+        const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
         const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
         const hasId = authorizedSubjectIds.has(subId);
         const hasName = authorizedSubjects.has(subName);
-        console.log(`LOG: Exam ${e.title} - paper subjectId: ${subId}, hasId: ${hasId}, hasName: ${hasName}`);
-        return hasId || hasName;
+        const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
+        return hasId || hasName || isMyPaper;
+      });
+
+      const relevantSubjectPapers = (e.subjectExamPapers || []).filter((sep: any) => {
+        if (!hasAuthorizedFilter) return true;
+        const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
+        const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
+        const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
+        return (subId && authorizedSubjectIds.has(subId)) || (subName && authorizedSubjects.has(subName)) || isMyPaper;
       });
 
       return {
@@ -110,11 +148,11 @@ export default function ExamsPage() {
             ((e.title || '').toLowerCase().includes('ca ') || (e.title || '').toLowerCase().includes(' ca') || (e.title || '').toLowerCase() === 'ca' ? 'ca' : 
             (e.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'exam'),
       subjects: [
-        ...(e.subjectExamPapers?.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
+        ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
         e.subject?.name || e.subject
       ].filter(Boolean),
       subjectIds: [
-        ...(e.subjectExamPapers?.map((sep: any) => sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId) || []),
+        ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id) || []),
         e.subject?.id || e.subjectId
       ].filter(Boolean),
       teacherId: e.teacherId,
@@ -125,9 +163,9 @@ export default function ExamsPage() {
       createdAt: new Date(e.createdAt),
       updatedAt: new Date(e.updatedAt),
       classId: classId,
-      subjectPaperIds: e.subjectExamPapers?.map((sep: any) => sep.subjectPaperId).filter(Boolean),
+      subjectPaperIds: relevantSubjectPapers.map((sep: any) => sep.subjectPaperId).filter(Boolean),
       mySubjectPaperId: myPaper?.subjectPaperId || undefined,
-      subjectPapers: e.subjectExamPapers?.map((sep: any) => {
+      subjectPapers: relevantSubjectPapers.map((sep: any) => {
         const title = sep.title || sep.subjectPaper?.title || sep.paper?.title || sep.subjectPaper?.subject?.name || sep.subject?.name || 'Untitled Subject Paper';
         const subjectId = sep.subject?.id || sep.subjectId || sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId;
         const subjectName = sep.subject?.name || sep.subjectPaper?.subject?.name;
@@ -140,10 +178,10 @@ export default function ExamsPage() {
           questionsCount: sep.questions?.length || sep.totalQuestions || sep._count?.questions || sep.subjectPaper?.questions?.length || sep.paper?.questions?.length || 0,
           totalMarks: sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0
         };
-      }) || []
+      })
     };
     }),
-    ...(data?.papers || []).map((p: any) => ({
+    ...filteredRawPapers.map((p: any) => ({
       id: p.id,
       title: p.title || 'Untitled Subject Paper',
       type: p.category?.toLowerCase() || 
@@ -163,7 +201,7 @@ export default function ExamsPage() {
       mySubjectPaperId: p.id
     }))
   ];
-  }, [data, classId, authorizedSubjects, authorizedSubjectIds]);
+  }, [data, classId, authorizedSubjects, authorizedSubjectIds, currentTeacherId]);
 
   const [filteredExams, setFilteredExams] = useState<Exam[]>([])
 

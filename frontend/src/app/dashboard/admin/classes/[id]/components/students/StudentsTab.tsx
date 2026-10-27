@@ -37,6 +37,8 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isPromoteOpen, setIsPromoteOpen] = useState(false);
+  const [promoteModalMode, setPromoteModalMode] = useState<'promote' | 'graduate'>('promote');
+  const [preselectedStudentId, setPreselectedStudentId] = useState<string | undefined>(undefined);
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -171,6 +173,18 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
     setIsDetailsOpen(true);
   };
 
+  const handleOpenPromote = (studentId?: string) => {
+    setPromoteModalMode('promote');
+    setPreselectedStudentId(studentId);
+    setIsPromoteOpen(true);
+  };
+
+  const handleOpenGraduate = (studentId?: string) => {
+    setPromoteModalMode('graduate');
+    setPreselectedStudentId(studentId);
+    setIsPromoteOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -178,12 +192,22 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
           filters={filters}
           onFiltersChange={setFilters}
         />
-        <button
-          onClick={() => setIsPromoteOpen(true)}
-          className="px-5 py-2.5 bg-primary dark:bg-indigo-600 text-white text-sm font-semibold rounded-full hover:bg-primary/90 dark:hover:bg-indigo-500 transition-colors shadow-sm dark:shadow-indigo-900/20"
-        >
-          Promote Students
-        </button>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => handleOpenPromote()}
+            className="flex-1 sm:flex-initial px-4 py-2.5 bg-primary dark:bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-primary/90 dark:hover:bg-indigo-500 transition-colors shadow-sm dark:shadow-indigo-900/20 cursor-pointer"
+          >
+            Promote Students
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenGraduate()}
+            className="flex-1 sm:flex-initial px-4 py-2.5 bg-emerald-600 dark:bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-500 transition-colors shadow-sm dark:shadow-emerald-900/20 cursor-pointer"
+          >
+            Mark as Graduated
+          </button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -192,6 +216,8 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
             key={student.id}
             student={student}
             onClick={handleStudentClick}
+            onPromote={(s) => handleOpenPromote(s.id)}
+            onGraduate={(s) => handleOpenGraduate(s.id)}
           />
         ))}
       </div>
@@ -228,12 +254,19 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         student={selectedStudent}
+        onPromote={(s) => handleOpenPromote(s.id)}
+        onGraduate={(s) => handleOpenGraduate(s.id)}
       />
 
       <PromoteStudentsModal
         isOpen={isPromoteOpen}
-        onClose={() => setIsPromoteOpen(false)}
+        onClose={() => {
+          setIsPromoteOpen(false);
+          setPreselectedStudentId(undefined);
+        }}
         classData={classData}
+        initialStudentId={preselectedStudentId}
+        initialMode={promoteModalMode}
       />
 
       <SendAnnouncementModal

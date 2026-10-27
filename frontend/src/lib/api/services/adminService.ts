@@ -2,6 +2,14 @@ import { apiClient } from "../client";
 
 export const adminService = {
   /**
+   * Get current admin full profile with school affiliations
+   */
+  getProfile: async () => {
+    const response = await apiClient.get<{ success: boolean; data: any }>("/admin/profile");
+    return response.data.data;
+  },
+
+  /**
    * Update current admin profile
    */
   updateProfile: async (data: { name?: string; gender?: string; profileImage?: string; bannerImage?: string }) => {

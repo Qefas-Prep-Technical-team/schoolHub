@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { studentService } from '@/lib/api/services/studentService'
@@ -26,8 +27,11 @@ import { TranscriptModal } from './components/TranscriptModal'
 import { HistoryDetailsModal } from '../components/HistoryDetailsModal'
 import { ExitStudentModal } from '../components/ExitStudentModal'
 import { StudentHistoryTimeline } from '../components/StudentHistoryTimeline'
+import StudentHistoryView from './components/history/StudentHistoryView'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import StudentFinalResultsTab from '../components/StudentFinalResultsTab'
+import { PromoteStudentModal } from './components/PromoteStudentModal'
+import StudentSchoolHistoryTab from './components/schools/StudentSchoolHistoryTab'
 import { toast } from 'react-toastify'
 import {
     useStudentBehaviourProfile,
@@ -541,7 +545,7 @@ const TABS = [
     { id: 'evaluation', label: 'Evaluation' },
     { id: 'final', label: 'Final Result' },
     { id: 'history', label: 'History' },
-    { id: 'session', label: 'Session' },
+    { id: 'schools', label: 'School History' },
     { id: 'analytics', label: 'Analytics' },
 ]
 
@@ -578,17 +582,20 @@ export default function StudentProfilePage() {
     const primaryColor = settings?.themeColor || '#2563eb'
 
     const tabParam = searchParams.get('tab')
-    const [activeTab, setActiveTab] = useState(tabParam || 'overview')
+    const [activeTab, setActiveTab] = useState(
+        tabParam === 'session' ? 'schools' : (tabParam || 'overview')
+    )
     const [academicSubTab, setAcademicSubTab] = useState<'exams' | 'papers'>('exams')
     const [overallChartFilter, setOverallChartFilter] = useState<'TERM' | 'SESSION'>('TERM')
     const [overallChartSubjectFilter, setOverallChartSubjectFilter] = useState<string>('ALL')
 
     useEffect(() => {
         if (tabParam) {
-            setActiveTab(tabParam)
+            setActiveTab(tabParam === 'session' ? 'schools' : tabParam)
         }
     }, [tabParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
+    const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false)
     const [isExitModalOpen, setIsExitModalOpen] = useState(false)
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
     const [selectedHistoryEvent, setSelectedHistoryEvent] = useState<any>(null)
@@ -1307,7 +1314,19 @@ export default function StudentProfilePage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
+                                    <div className="flex flex-row flex-wrap gap-2.5 w-full md:w-auto mt-2 md:mt-0">
+                                        <button
+                                            onClick={() => setIsPromoteModalOpen(true)}
+                                            className="flex-1 md:flex-none px-4 md:px-5 py-3 md:py-2.5 rounded-xl bg-white/20 text-white text-sm font-bold shadow-sm hover:bg-white/30 backdrop-blur-md transition-colors flex items-center justify-center gap-2 active:scale-95"
+                                        >
+                                            <TrendingUp size={16} /> <span>Promote</span>
+                                        </button>
+                                        <Link
+                                            href={`/dashboard/admin/transcript?studentId=${studentId}`}
+                                            className="flex-1 md:flex-none px-4 md:px-5 py-3 md:py-2.5 rounded-xl bg-white/20 text-white text-sm font-bold shadow-sm hover:bg-white/30 backdrop-blur-md transition-colors flex items-center justify-center gap-2 active:scale-95"
+                                        >
+                                            <GraduationCap size={16} /> <span>Transcript</span>
+                                        </Link>
                                         <button
                                             className="flex-1 md:flex-none px-4 md:px-6 py-3 md:py-2.5 rounded-xl bg-white text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 active:scale-95"
                                             style={{ color: primaryColor }}
@@ -1397,6 +1416,7 @@ export default function StudentProfilePage() {
                             <SectionCard title="Quick Actions">
                                 <div className="space-y-3">
                                     {[
+                                        { label: 'Promote Student', icon: TrendingUp, onClick: () => setIsPromoteModalOpen(true) },
                                         { label: 'Issue Transcript', icon: Award, onClick: () => setIsTranscriptModalOpen(true) },
                                         {
                                             label: 'Log Behaviour',
@@ -1461,51 +1481,13 @@ export default function StudentProfilePage() {
 
                 {/* ── History Tab ─────────────────────────────────────────────── */}
                 {activeTab === 'history' && (
-                    <main className="w-[98%] mx-auto px-4 md:px-12 mt-10 pb-20">
-                        <SectionCard title="Student Timeline">
-                            {isHistoryLoading ? (
-                                <div className="py-20 flex flex-col items-center justify-center space-y-4">
-                                    <div className="size-10 rounded-full border-2 border-slate-200 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading History...</p>
-                                </div>
-                            ) : (
-                                <div className="pl-6 md:pl-12">
-                                    <StudentHistoryTimeline
-                                        history={[
-                                            // Dynamically inject the Current Class as the topmost event
-                                            ...(student?.classes?.length ? [{
-                                                id: 'current-active-class',
-                                                date: new Date().toISOString(),
-                                                type: 'PROMOTION', // Acts as their active / current status
-                                                title: `Currently in ${student.classes?.[0]?.class?.name || 'Class'}`,
-                                                description: `Student is currently active in this class.`,
-                                                metadata: { status: 'Active', session: '2025/2026', currentClass: student.classes?.[0]?.class?.name },
-                                                onClick: () => {
-                                                    setSelectedHistoryEvent({
-                                                        type: 'PROMOTION',
-                                                        date: new Date().toISOString(),
-                                                        title: `Currently in ${student.classes?.[0]?.class?.name || 'Class'}`,
-                                                        description: `Student is currently active in this class.`,
-                                                        metadata: { status: 'Active', session: '2025/2026', newClass: student.classes?.[0]?.class?.name }
-                                                    });
-                                                    setIsHistoryModalOpen(true);
-                                                }
-                                            }] : []),
-                                            // Map the rest of the real history data
-                                            ...(historyData || []).map((event: any) => ({
-                                                ...event,
-                                                onClick: () => {
-                                                    setSelectedHistoryEvent(event);
-                                                    setIsHistoryModalOpen(true);
-                                                }
-                                            }))
-                                        ]}
-                                        primaryColor={primaryColor}
-                                    />
-                                </div>
-                            )}
-                        </SectionCard>
-                    </main>
+                    <StudentHistoryView
+                        studentId={studentId}
+                        student={student as unknown as Record<string, unknown>}
+                        historyData={historyData}
+                        isLoading={isHistoryLoading}
+                        primaryColor={primaryColor}
+                    />
                 )}
 
                 {/* ── Behaviour Tab ────────────────────────────────────────────── */}
@@ -2117,7 +2099,12 @@ export default function StudentProfilePage() {
                 {/* ── Attendance Tab ─────────────────────────────────────────────── */}
                 {activeTab === 'attendance' && (
                     <main className="w-full px-4 sm:px-6 lg:px-12 mt-10 pb-20">
-                        <AttendanceCalendar studentId={studentId} themeColor={primaryColor} />
+                        <AttendanceCalendar 
+                            studentId={studentId} 
+                            themeColor={primaryColor} 
+                            student={student}
+                            classId={classId}
+                        />
                     </main>
                 )}
 
@@ -2348,15 +2335,12 @@ export default function StudentProfilePage() {
                     <StudentFinalResultsTab studentId={studentId} primaryColor={primaryColor} />
                 )}
 
-                {activeTab === 'session' && (
-                    <main className="w-full px-4 sm:px-6 lg:px-12 mt-10 pb-20 space-y-8">
-                        <SectionCard title="Session Management">
-                            <div className="py-20 text-center space-y-4">
-                                <Clock size={40} className="mx-auto text-slate-200" />
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Session details coming soon</p>
-                            </div>
-                        </SectionCard>
-                    </main>
+                {(activeTab === 'schools' || activeTab === 'session') && (
+                    <StudentSchoolHistoryTab
+                        studentId={studentId}
+                        student={student as unknown as Record<string, unknown>}
+                        primaryColor={primaryColor}
+                    />
                 )}
 
                 {activeTab === 'analytics' && (
@@ -2924,6 +2908,23 @@ export default function StudentProfilePage() {
                     onClose={() => setIsExitModalOpen(false)}
                     studentId={studentId}
                     studentName={name}
+                />
+                {/* ── Promote Student Modal ─────────────────────────────────────────── */}
+                <PromoteStudentModal
+                    isOpen={isPromoteModalOpen}
+                    onClose={() => setIsPromoteModalOpen(false)}
+                    studentId={studentId}
+                    studentName={name}
+                    studentAvatar={avatar}
+                    studentCode={studentCode}
+                    currentClass={studentClass ? {
+                        id: studentClass.id,
+                        name: studentClass.name,
+                        section: studentClass.section,
+                        level: (studentClass as { level?: string }).level,
+                    } : null}
+                    schoolId={schoolId}
+                    primaryColor={primaryColor}
                 />
                 {/* History Details Modal */}
                 <HistoryDetailsModal

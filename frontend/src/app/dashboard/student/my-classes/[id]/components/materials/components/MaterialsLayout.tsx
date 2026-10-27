@@ -194,6 +194,31 @@ export default function MaterialsLayout({ materials, className, description }: M
                     </div>
                   )
                 )}
+
+                {activePreview.link && !activePreview.attachmentUrl && !activePreview.videoUrl && (
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-pink-150 dark:border-pink-900/40 bg-pink-50/50 dark:bg-pink-950/20">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center p-3 rounded-xl bg-pink-100 dark:bg-pink-900/50 text-pink-600 dark:text-pink-400">
+                        <FileText className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">
+                          {activePreview.title}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          {activePreview.folder} paper & questions
+                        </p>
+                      </div>
+                    </div>
+                    <a
+                      href={activePreview.link}
+                      className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer shrink-0"
+                    >
+                      <span>Take / View Assessment</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -222,6 +247,16 @@ export default function MaterialsLayout({ materials, className, description }: M
 
             {/* Footer actions */}
             <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-end gap-3">
+              {activePreview.link && (
+                <a
+                  href={activePreview.link}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-pink-600 hover:bg-pink-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open Assessment
+                </a>
+              )}
+
               {activePreview.referenceUrl && (
                 <a
                   href={activePreview.referenceUrl}

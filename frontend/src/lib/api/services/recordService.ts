@@ -64,13 +64,13 @@ export const recordService = {
     return response.data.data;
   },
 
-  publishClassSubjectResult: async (id: string) => {
-    const response = await apiClient.post<{ success: boolean; message: string; data: any }>(`/records/class-subjects/${id}/publish`);
+  publishClassSubjectResult: async (id: string, data?: { signature?: string; role?: string }) => {
+    const response = await apiClient.post<{ success: boolean; message: string; data: any }>(`/records/class-subjects/${id}/publish`, data);
     return response.data;
   },
 
-  unpublishClassSubjectResult: async (id: string) => {
-    const response = await apiClient.post<{ success: boolean; message: string; data: any }>(`/records/class-subjects/${id}/unpublish`);
+  unpublishClassSubjectResult: async (id: string, data?: { reason?: string }) => {
+    const response = await apiClient.post<{ success: boolean; message: string; data: any }>(`/records/class-subjects/${id}/unpublish`, data);
     return response.data;
   },
 };

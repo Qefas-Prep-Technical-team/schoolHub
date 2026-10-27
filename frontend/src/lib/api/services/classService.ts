@@ -40,8 +40,16 @@ export const classService = {
     return response.data.data;
   },
 
-  submitAttendance: async (classId: string, records: Record<string, unknown>[]) => {
-    const response = await apiClient.post(`/classes/${classId}/attendance`, { records });
+  submitAttendance: async (
+    classId: string, 
+    records: Record<string, unknown>[],
+    options?: { subjectId?: string; subjectName?: string }
+  ) => {
+    const response = await apiClient.post(`/classes/${classId}/attendance`, { 
+      records,
+      subjectId: options?.subjectId,
+      subjectName: options?.subjectName,
+    });
     return response.data.data;
   },
 
@@ -132,4 +140,120 @@ export const classService = {
     const response = await apiClient.post(`/classes/${classId}/announcement`, data);
     return response.data;
   },
+
+  getClassHistory: async (classId: string): Promise<ClassHistoryResponse> => {
+    const response = await apiClient.get<{ success: boolean; data: ClassHistoryResponse }>(`/classes/${classId}/history`);
+    return response.data.data;
+  },
 };
+
+export interface ClassHistoryTimelineEvent {
+  id: string;
+  date: string;
+  type:
+    | "CLASS_CREATED"
+    | "PROMOTION_IN"
+    | "PROMOTION_OUT"
+    | "ENROLLMENT"
+    | "GRADUATION"
+    | "WITHDRAWAL"
+    | "TEACHER_ASSIGNED"
+    | "SUBJECT_ATTACHED"
+    | "RESULT_PUBLISHED"
+    | "BEHAVIOUR_ALERT";
+  category: "lifecycle" | "students" | "academics" | "staff";
+  title: string;
+  description: string;
+  session?: string | null;
+  term?: string | null;
+  actor?: {
+    name: string;
+    role?: string;
+  };
+  meta?: {
+    student?: {
+      id: string;
+      name: string;
+      studentCode?: string;
+      gender?: string;
+      profileImage?: string | null;
+    };
+    teacher?: {
+      id: string;
+      name: string;
+      email?: string;
+      profileImage?: string | null;
+    };
+    subject?: {
+      id: string;
+      name: string;
+      code?: string;
+    };
+    toClassId?: string;
+    toClassName?: string;
+    fromClassId?: string;
+    fromClassName?: string;
+    session?: string;
+    term?: string;
+    exitReason?: string;
+    notes?: string;
+    severity?: string;
+    approval?: {
+      approvedByName?: string;
+      approvedAt?: string;
+      signature?: string;
+    };
+    achievements?: {
+      termResults?: Array<{
+        term: string;
+        sessionName: string;
+        averageScore?: number;
+        totalScore?: number;
+        position?: number;
+      }>;
+      subjectResults?: Array<{
+        term: string;
+        sessionName: string;
+        subjectName: string;
+        totalScore?: number;
+      }>;
+    };
+  };
+}
+
+export interface ClassHistoryResponse {
+  classInfo: {
+    id: string;
+    name: string;
+    section?: string | null;
+    classCode: string;
+    level?: string | null;
+    status: string;
+    session?: string | null;
+    term?: string | null;
+    createdAt: string;
+    school?: {
+      id: string;
+      name: string;
+      logo?: string | null;
+    } | null;
+    leadTeacher?: {
+      id: string;
+      name: string;
+      email?: string;
+      profileImage?: string | null;
+    } | null;
+  };
+  metrics: {
+    currentEnrollments: number;
+    promotedOut: number;
+    promotedIn: number;
+    graduated: number;
+    totalEvents: number;
+    publishedResultsCount: number;
+    subjectsCount: number;
+    teachersCount: number;
+  };
+  timeline: ClassHistoryTimelineEvent[];
+}
+

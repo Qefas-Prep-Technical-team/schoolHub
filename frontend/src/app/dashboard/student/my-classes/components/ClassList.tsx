@@ -11,13 +11,15 @@ interface ClassListProps {
   filteredClasses: ClassItem[];
   viewMode?: 'grid' | 'table';
   onClearSearch?: () => void;
+  onOpenJoinModal?: () => void;
 }
 
 export function ClassList({ 
   isLoading, 
   filteredClasses, 
   viewMode = 'grid',
-  onClearSearch
+  onClearSearch,
+  onOpenJoinModal
 }: ClassListProps) {
   if (isLoading) {
     if (viewMode === 'table') {
@@ -55,14 +57,24 @@ export function ClassList({
         <p className="text-slate-500 dark:text-zinc-400 font-medium max-w-sm mx-auto mt-1.5 text-xs sm:text-sm">
           We could not find any enrolled classes or curriculum subjects matching the entered search query.
         </p>
-        {onClearSearch && (
-          <button
-            onClick={onClearSearch}
-            className="mt-5 px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm"
-          >
-            Clear Search
-          </button>
-        )}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+          {onClearSearch && (
+            <button
+              onClick={onClearSearch}
+              className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold text-xs uppercase tracking-wider transition-colors shadow-sm"
+            >
+              Clear Search
+            </button>
+          )}
+          {onOpenJoinModal && (
+            <button
+              onClick={onOpenJoinModal}
+              className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm"
+            >
+              Join a Class
+            </button>
+          )}
+        </div>
       </div>
     );
   }
