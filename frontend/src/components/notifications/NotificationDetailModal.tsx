@@ -119,13 +119,20 @@ export default function NotificationDetailModal({
     const person = isRequester ? (lr.targetStudent || lr.targetTeacher || lr.targetParent) : (lr.requesterStudent || lr.requesterTeacher || lr.requesterParent);
     const school = isRequester ? lr.targetSchool : lr.requesterSchool;
 
+    const classObj = (lr as Record<string, unknown>).class as { name?: string; classCode?: string } | undefined;
+    const metaObj = (notification?.meta || {}) as Record<string, unknown>;
+    const className = classObj?.name || (typeof metaObj.className === 'string' ? metaObj.className : undefined);
+    const classCode = classObj?.classCode || (typeof metaObj.classCode === 'string' ? metaObj.classCode : undefined);
+
     if (person) {
       return {
         name: person.name || 'User',
         email: person.email,
         image: person.profileImage,
         code: person.studentCode || person.teacherCode || person.parentCode || '---',
-        type: isRequester ? lr.targetType : lr.requesterType
+        type: isRequester ? lr.targetType : lr.requesterType,
+        className,
+        classCode,
       };
     }
     if (school) {
@@ -134,7 +141,9 @@ export default function NotificationDetailModal({
         email: school.schoolEmail,
         image: school.logo,
         code: school.schoolCode,
-        type: 'SCHOOL'
+        type: 'SCHOOL',
+        className,
+        classCode,
       };
     }
     return null;
@@ -282,6 +291,15 @@ export default function NotificationDetailModal({
                         </UIBadge>
                         <span className={cn("text-[10px] font-black tracking-widest", theme.accentText)}>{details.code}</span>
                       </div>
+                      {details.className && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-zinc-800/80 px-2 py-1 rounded-lg">
+                          <span className="text-slate-400 dark:text-zinc-500 font-semibold">Target Class:</span>
+                          <span className="font-black text-zinc-900 dark:text-white truncate">{details.className}</span>
+                          {details.classCode && (
+                            <span className="font-mono text-[9px] text-slate-400 dark:text-zinc-500">({details.classCode})</span>
+                          )}
+                        </div>
+                      )}
                    </div>
                 </div>
               ) : null}

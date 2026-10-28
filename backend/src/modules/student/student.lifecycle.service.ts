@@ -90,7 +90,7 @@ export class StudentLifecycleService {
   ) {
     const { exitType, exitDate, exitReason, exitNotes } = exitData;
 
-    // 1. Close any existing ACTIVE enrollments for this student
+    // 1. Close any existing ACTIVE enrollments for this student, or record departure enrollment
     const activeEnrollments = await tx.studentEnrollment.findMany({
       where: {
         studentId,
@@ -100,19 +100,29 @@ export class StudentLifecycleService {
     });
 
     if (activeEnrollments.length === 0) {
-      throw new Error("Student does not have an active enrollment in this school.");
-    }
-
-    for (const enrollment of activeEnrollments) {
-      await tx.studentEnrollment.update({
-        where: { id: enrollment.id },
+      // Student is enrolled directly via schoolId or class without prior StudentEnrollment row
+      await tx.studentEnrollment.create({
         data: {
+          studentId,
+          schoolId,
           status: exitType,
           exitDate,
           exitReason,
           exitNotes,
         },
       });
+    } else {
+      for (const enrollment of activeEnrollments) {
+        await tx.studentEnrollment.update({
+          where: { id: enrollment.id },
+          data: {
+            status: exitType,
+            exitDate,
+            exitReason,
+            exitNotes,
+          },
+        });
+      }
     }
 
     // 2. Map EnrollmentStatus to HistoryEventType
@@ -132,30 +142,52 @@ export class StudentLifecycleService {
         break;
     }
 
-    // 3. Create History Entry
+    // 3. Capture active class context before closing enrollments
+    const currentClassEnrollments = await tx.classEnrollment.findMany({
+      where: { studentId },
+      include: { class: true },
+    });
+    const lastClass = currentClassEnrollments[0]?.class;
+
+    // 4. Create History Entry with detailed class metadata
     await tx.studentHistory.create({
       data: {
         studentId,
         schoolId,
         eventType,
-        title: `Student ${exitType.charAt(0) + exitType.slice(1).toLowerCase()}`,
-        description: exitReason || `Student was marked as ${exitType.toLowerCase()}.`,
-        meta: exitNotes ? { notes: exitNotes } : undefined,
+        title: exitType === EnrollmentStatus.GRADUATED ? "Graduated from School" : `Student ${exitType.charAt(0) + exitType.slice(1).toLowerCase()}`,
+        description: exitReason || (exitType === EnrollmentStatus.GRADUATED ? `Student has successfully graduated and completed their studies${lastClass ? ` in ${lastClass.name}` : ''}.` : `Student was marked as ${exitType.toLowerCase()}.`),
+        meta: {
+          notes: exitNotes || undefined,
+          classId: lastClass?.id || undefined,
+          className: lastClass?.name || undefined,
+          classCode: lastClass?.classCode || undefined,
+          exitType,
+        },
         performedBy,
         date: exitDate,
       },
     });
 
-    // 4. Disconnect Student from the School
-    // This maintains the single active enrollment rule (they are no longer actively enrolled anywhere)
+    // 5. Update the Student record
+    const existingStudent = await tx.student.findUnique({
+      where: { id: studentId },
+      select: { schoolId: true, originalSchoolId: true },
+    });
+
     await tx.student.update({
       where: { id: studentId },
       data: {
-        schoolId: null, // Clear the active school linkage
+        status: exitType === EnrollmentStatus.GRADUATED ? "GRADUATED" : exitType,
+        originalSchoolId: existingStudent?.originalSchoolId || existingStudent?.schoolId || schoolId,
+        // For GRADUATED alumni: preserve schoolId so the school retains alumni ownership,
+        // and admin dashboard/transcript access doesn't 403.
+        // For departed students (transferred, expelled, withdrawn): clear active school linkage.
+        schoolId: exitType === EnrollmentStatus.GRADUATED ? (existingStudent?.schoolId || schoolId) : null,
       },
     });
 
-    // 5. Clean up active class enrollments so student leaves active class rosters
+    // 6. Clean up active class enrollments so student leaves active class rosters
     await tx.classEnrollment.deleteMany({
       where: { studentId },
     });
@@ -185,13 +217,19 @@ export class StudentLifecycleService {
         },
       });
 
-      if (!existingEnrollment) {
-        continue; // Student isn't in this class
+      // 2. Remove from old class if enrolled
+      if (existingEnrollment) {
+        await tx.classEnrollment.delete({
+          where: { id: existingEnrollment.id },
+        });
       }
 
-      // 2. Remove from old class
-      await tx.classEnrollment.delete({
-        where: { id: existingEnrollment.id },
+      // Also clean up any other active class enrollments to enforce single active class rule
+      await tx.classEnrollment.deleteMany({
+        where: {
+          studentId,
+          classId: { not: toClassId },
+        },
       });
 
       // 3. Add to new class
@@ -206,16 +244,15 @@ export class StudentLifecycleService {
         update: {},
       });
 
-      // 4. Update student level
-      if (toClass.level) {
-        await tx.student.update({
-          where: { id: studentId },
-          data: {
-            gradeLevel: toClass.level,
-            level: toClass.level,
-          },
-        });
-      }
+      // 4. Update student level, schoolId, and reactivate status to ACTIVE
+      await tx.student.update({
+        where: { id: studentId },
+        data: {
+          status: "ACTIVE",
+          schoolId: toClass.schoolId || schoolId,
+          ...(toClass.level ? { gradeLevel: toClass.level, level: toClass.level } : {}),
+        },
+      });
 
       // 5. Gather academic snapshot (Term & Subject Results for this class)
       const termResults = await tx.studentTermResult.findMany({
@@ -228,7 +265,7 @@ export class StudentLifecycleService {
         include: { subject: true, session: true }
       });
 
-      // 6. Generate history record
+      // 6. Generate history record with comprehensive metadata
       await tx.studentHistory.create({
         data: {
           studentId,
@@ -239,6 +276,10 @@ export class StudentLifecycleService {
           meta: { 
             fromClassId, 
             toClassId, 
+            fromClassName: `${fromClass.name} ${fromClass.section || ''}`.trim(),
+            toClassName: `${toClass.name} ${toClass.section || ''}`.trim(),
+            fromClassCode: fromClass.classCode,
+            toClassCode: toClass.classCode,
             session: toClass.session || undefined,
             achievements: {
               termResults: termResults.map(tr => ({

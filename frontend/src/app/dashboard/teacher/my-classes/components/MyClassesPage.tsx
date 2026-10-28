@@ -215,7 +215,11 @@ export default function MyClassesPage() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                             >
-                                <EmptyState onResetFilters={handleClearFilters} />
+                                <EmptyState 
+                                    onResetFilters={handleClearFilters} 
+                                    hasActiveFilters={Boolean(filters.academicYear || filters.term || filters.level || filters.class || filters.subject)}
+                                    totalClasses={classes.length}
+                                />
                             </motion.div>
                         )}
                     </AnimatePresence>

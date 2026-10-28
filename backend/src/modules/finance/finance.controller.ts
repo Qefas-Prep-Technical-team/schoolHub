@@ -19,13 +19,39 @@ export class FinanceController {
         return res.status(403).json({ success: false, message: "Access denied: You can only manage bank details for your own school" });
       }
 
-      const userName = user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || "School Administrator";
-      const userRole = user?.adminRole || user?.role || user?.userType || "ADMIN";
+      let userName = req.body?.addedByName || user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email;
+      let userEmail = req.body?.addedByEmail || user?.email;
+      let userRole = req.body?.addedByRole || user?.adminRole || user?.role || user?.userType || "ADMIN";
+
+      if ((!userName || userName === "School Administrator" || !userEmail) && user?.id) {
+        const admin = await prisma.admin.findUnique({
+          where: { id: user.id },
+          select: { name: true, email: true, role: true }
+        });
+        if (admin) {
+          userName = admin.name || userName || "School Administrator";
+          userEmail = admin.email || userEmail;
+          userRole = admin.role || userRole;
+        }
+      }
+
+      if (!userName || userName === "School Administrator") {
+        const sa = await prisma.schoolAdmin.findFirst({
+          where: { schoolId },
+          include: { admin: { select: { name: true, email: true, role: true } } }
+        });
+        if (sa?.admin) {
+          userName = sa.admin.name || userName || "School Administrator";
+          userEmail = sa.admin.email || userEmail;
+          userRole = sa.admin.role || userRole;
+        }
+      }
+
       const userContext = {
         userId: user?.id,
-        userName,
-        userEmail: user?.email,
-        userRole
+        userName: userName || "School Administrator",
+        userEmail: userEmail || undefined,
+        userRole: userRole || "ADMIN"
       };
 
       console.log(`[FinanceController] Setting up bank for school: ${schoolId} by ${userName} (${userRole})`, req.body);
@@ -83,8 +109,9 @@ export class FinanceController {
   static async verifyPayment(req: Request, res: Response) {
     try {
       const reference = getSingleString(req.params.reference);
-      const result = await FinanceService.verifyPayment(reference);
-      res.status(200).json(result);
+      const flwTransactionId = (req.query.transaction_id || req.query.flw_transaction_id) as string | undefined;
+      const result = await FinanceService.verifyPayment(reference, flwTransactionId);
+      res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       return handleError(res, error, "finance.verifyPayment");
     }
@@ -171,13 +198,27 @@ export class FinanceController {
       }
 
       const userAny = user as any;
-      const userName = userAny?.name || `${userAny?.firstName || ''} ${userAny?.lastName || ''}`.trim() || userAny?.email || "School Administrator";
-      const userRole = userAny?.adminRole || userAny?.role || userAny?.userType || "ADMIN";
+      let userName = userAny?.name || `${userAny?.firstName || ''} ${userAny?.lastName || ''}`.trim() || userAny?.email;
+      let userEmail = userAny?.email;
+      let userRole = userAny?.adminRole || userAny?.role || userAny?.userType || "ADMIN";
+
+      if ((!userName || userName === "School Administrator" || !userEmail) && userAny?.id) {
+        const admin = await prisma.admin.findUnique({
+          where: { id: userAny.id },
+          select: { name: true, email: true, role: true }
+        });
+        if (admin) {
+          userName = admin.name || userName || "School Administrator";
+          userEmail = admin.email || userEmail;
+          userRole = admin.role || userRole;
+        }
+      }
+
       const userContext = {
         userId: userAny?.id,
-        userName,
-        userEmail: userAny?.email,
-        userRole
+        userName: userName || "School Administrator",
+        userEmail: userEmail || undefined,
+        userRole: userRole || "ADMIN"
       };
 
       const result = await FinanceService.removeSubaccount(accountId, userContext);
@@ -219,8 +260,46 @@ export class FinanceController {
         return res.status(403).json({ success: false, message: "Access denied: You can only sync accounts for your own school" });
       }
 
-      const { accountId } = req.body;
-      const result = await FinanceService.syncSubaccountStatus(schoolId, accountId);
+      const rawAccountId = req.body?.accountId;
+      const accountId = typeof rawAccountId === 'string' && rawAccountId.trim() ? rawAccountId.trim() : undefined;
+
+      const userAny = user as any;
+      let userName = userAny?.name || `${userAny?.firstName || ''} ${userAny?.lastName || ''}`.trim() || userAny?.email;
+      let userEmail = userAny?.email;
+      let userRole = userAny?.adminRole || userAny?.role || userAny?.userType || "ADMIN";
+
+      if ((!userName || userName === "School Administrator" || !userEmail) && userAny?.id) {
+        const admin = await prisma.admin.findUnique({
+          where: { id: userAny.id },
+          select: { name: true, email: true, role: true }
+        });
+        if (admin) {
+          userName = admin.name || userName || "School Administrator";
+          userEmail = admin.email || userEmail;
+          userRole = admin.role || userRole;
+        }
+      }
+
+      if (!userName || userName === "School Administrator") {
+        const sa = await prisma.schoolAdmin.findFirst({
+          where: { schoolId },
+          include: { admin: { select: { name: true, email: true, role: true } } }
+        });
+        if (sa?.admin) {
+          userName = sa.admin.name || userName || "School Administrator";
+          userEmail = sa.admin.email || userEmail;
+          userRole = sa.admin.role || userRole;
+        }
+      }
+
+      const userContext = {
+        userId: userAny?.id,
+        userName: userName || "School Administrator",
+        userEmail: userEmail || undefined,
+        userRole: userRole || "ADMIN"
+      };
+
+      const result = await FinanceService.syncSubaccountStatus(schoolId, accountId, userContext);
       res.status(200).json(result);
     } catch (error: any) {
       return handleError(res, error, "finance.syncSubaccountStatus");
@@ -322,7 +401,7 @@ export class FinanceController {
   static async initiateTranscriptPayment(req: Request, res: Response) {
     try {
       const schoolId = getSingleString(req.params.schoolId);
-      const { studentId, sessionId, amount, email, name } = req.body;
+      const { studentId, sessionId, term, amount, email, name } = req.body;
       const user = req.user;
 
       if (!studentId) {
@@ -333,6 +412,7 @@ export class FinanceController {
         schoolId,
         studentId,
         sessionId,
+        term,
         amount: amount ? Number(amount) : undefined,
         email: email || user?.email || "guest@student.edu",
         name: name || user?.name || "Student Payer",
@@ -345,6 +425,69 @@ export class FinanceController {
       });
     } catch (error: any) {
       return handleError(res, error, "finance.initiateTranscriptPayment");
+    }
+  }
+
+  /**
+   * Verify a 30-day access pass token (Student / Public verification)
+   */
+  static async verifyTranscriptPass(req: Request, res: Response) {
+    try {
+      const token = String(req.query.token || req.body.token || "");
+      if (!token) {
+        return res.status(400).json({ success: false, message: "Pass token is required" });
+      }
+
+      const verified = FinanceService.verifyTranscriptPass(token);
+      if (!verified.valid) {
+        return res.status(400).json({ success: false, message: verified.error || "Invalid or expired access pass" });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: verified,
+      });
+    } catch (error: any) {
+      return handleError(res, error, "finance.verifyTranscriptPass");
+    }
+  }
+
+  /**
+   * Resend or send 30-day transcript access pass to email
+   */
+  static async emailTranscriptPass(req: Request, res: Response) {
+    try {
+      let { studentId, schoolId, email, token, reference } = req.body;
+      if (!studentId || !schoolId) {
+        return res.status(400).json({ success: false, message: "studentId and schoolId are required" });
+      }
+
+      if (!email) {
+        const student = await prisma.student.findUnique({
+          where: { id: studentId },
+          include: { parentLinks: { include: { parent: true } } }
+        });
+        email = student?.email || student?.parentLinks?.[0]?.parent?.email || (req as any).user?.email;
+      }
+
+      if (!email) {
+        return res.status(400).json({ success: false, message: "No registered email address found for this scholar." });
+      }
+
+      await FinanceService.sendTranscriptPassEmail({
+        studentId,
+        schoolId,
+        email,
+        token: token || "",
+        reference,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Your 30-day transcript preview and download link has been sent to your email address.",
+      });
+    } catch (error: any) {
+      return handleError(res, error, "finance.emailTranscriptPass");
     }
   }
 }

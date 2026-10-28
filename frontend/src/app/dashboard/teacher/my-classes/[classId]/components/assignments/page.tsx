@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import { AssignmentTable } from './components/AssignmentTable'
 import { SearchBar } from './components/SearchBar'
+import { AssignmentFilterDialog, AssignmentFilter } from './components/AssignmentFilterDialog'
 import { Pagination } from '../student/components/Pagination'
 import { Assignment } from './components/types'
 import { GradeModal } from './components/GradeModal'
@@ -22,6 +23,8 @@ export default function AssignmentsPage() {
   const router = useRouter()
   const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
+  const [filters, setFilters] = useState<AssignmentFilter>({})
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const queryClient = useQueryClient()
@@ -70,19 +73,44 @@ export default function AssignmentsPage() {
     }))
   }, [data])
 
+  const availableSubjects = useMemo(() => {
+    const subs = new Set<string>();
+    assignments.forEach(a => {
+      if (a.subjectName) subs.add(a.subjectName);
+    });
+    return Array.from(subs);
+  }, [assignments]);
+
   const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>([])
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredAssignments(assignments)
-    } else {
-      const filtered = assignments.filter(assignment =>
+    let filtered = assignments;
+
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(assignment =>
         assignment.title.toLowerCase().includes(searchQuery.toLowerCase())
       )
-      setFilteredAssignments(filtered)
     }
-    setCurrentPage(1) // Reset to first page on search
-  }, [searchQuery, assignments])
+
+    if (filters.status) {
+      filtered = filtered.filter(a => a.status === filters.status);
+    }
+
+    if (filters.subject) {
+      filtered = filtered.filter(a =>
+        a.subjectName?.toLowerCase() === filters.subject!.toLowerCase()
+      );
+    }
+
+    if (filters.submissionStatus === 'has_submissions') {
+      filtered = filtered.filter(a => (a.submissions?.submitted || 0) > 0);
+    } else if (filters.submissionStatus === 'no_submissions') {
+      filtered = filtered.filter(a => !a.submissions?.submitted || a.submissions.submitted === 0);
+    }
+
+    setFilteredAssignments(filtered);
+    setCurrentPage(1);
+  }, [searchQuery, assignments, filters])
 
   const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage)
   const paginatedAssignments = filteredAssignments.slice(
@@ -150,6 +178,16 @@ export default function AssignmentsPage() {
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search assignments..."
+          onFilterClick={() => setIsFilterDialogOpen(true)}
+          activeFiltersCount={Object.values(filters).filter(Boolean).length}
+        />
+
+        <AssignmentFilterDialog
+          open={isFilterDialogOpen}
+          onClose={() => setIsFilterDialogOpen(false)}
+          currentFilters={filters}
+          onApply={(newFilters) => setFilters(newFilters)}
+          availableSubjects={availableSubjects}
         />
 
         <AssignmentTable

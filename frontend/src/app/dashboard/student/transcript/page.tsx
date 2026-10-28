@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useStudentProfile,
   useTermlyEvaluation,
@@ -37,6 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   GraduationCap,
   Download,
@@ -70,9 +72,11 @@ import {
   RefreshCw,
   FileCheck,
   Wallet,
-  Users,
   CheckCheck,
   ExternalLink,
+  Mail,
+  Key,
+  Users, // Used in telemetry audit stats
 } from "lucide-react";
 
 interface SubjectResultItem {
@@ -209,6 +213,8 @@ const PSYCHOMOTOR_SKILLS = [
 ] as const;
 
 export default function StudentTranscriptPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuthStore();
   const { data: studentProfile, isLoading: isProfileLoading } = useStudentProfile();
   const { data: rawPublishedResults, isLoading: isResultsLoading } = useMyPublishedResults();
@@ -263,6 +269,86 @@ export default function StudentTranscriptPage() {
   const recordDownloadMutation = useRecordStudentDownload(studentId);
   const [localTranscriptDownloads, setLocalTranscriptDownloads] = useState<number>(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // ── Auto-Verification on Return from Flutterwave Checkout & Pass Restoration ──
+  useEffect(() => {
+    const txRef = searchParams.get("tx_ref") || searchParams.get("reference");
+    const transactionId = searchParams.get("transaction_id");
+    const flwStatus = searchParams.get("status");
+    const passParam = searchParams.get("pass");
+
+    // 1. Direct 30-Day Access Pass in URL parameter
+    if (passParam) {
+      financeService.verifyTranscriptPass(passParam).then((res) => {
+        if (res && res.valid) {
+          setDirectAccessPass({
+            token: passParam,
+            expiresAt: res.expiresAt || "",
+            sessionId: res.sessionId,
+            term: res.term,
+          });
+          const targetKey = `${res.sessionId || "ALL"}_${res.term || "ALL"}`;
+          setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+          if (studentId) {
+            localStorage.setItem(`transcript_access_pass_${studentId}`, passParam);
+          }
+          toast.success("Official 30-Day Clearance Pass validated! Your certified transcript is unlocked.");
+        } else {
+          toast.error(res?.error || "This 30-day access pass has expired or is invalid.");
+        }
+      }).catch((err) => {
+        console.warn("Pass verification error:", err);
+      });
+    }
+
+    // 2. Flutterwave redirect callback
+    if (!txRef) return;
+
+    if (flwStatus === "cancelled" || flwStatus === "failed") {
+      toast.error("Clearance payment was cancelled or failed. You may retry at any time.");
+      router.replace("/dashboard/student/transcript");
+      return;
+    }
+
+    let isMounted = true;
+    const verifyTransaction = async () => {
+      try {
+        toast.info("Verifying your transcript clearance payment with Flutterwave...", { autoClose: 3500 });
+        const res = await financeService.verifyPayment(txRef, transactionId || undefined);
+        if (!isMounted) return;
+        if (res?.success) {
+          toast.success("Transcript clearance confirmed! 30-day direct access pass generated.");
+          if (res.data?.accessPass) {
+            setDirectAccessPass(res.data.accessPass);
+            const targetKey = `${res.data.accessPass.sessionId || "ALL"}_${res.data.accessPass.term || "ALL"}`;
+            setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+            if (studentId) {
+              localStorage.setItem(`transcript_access_pass_${studentId}`, res.data.accessPass.token);
+            }
+          }
+          refetchAudit();
+          if (res.data?.accessPass?.token) {
+            router.replace(`/dashboard/student/transcript?pass=${encodeURIComponent(res.data.accessPass.token)}`);
+            return;
+          }
+          router.replace("/dashboard/student/transcript");
+        } else {
+          toast.error("Could not verify clearance payment automatically. Please refresh or contact support.");
+          router.replace("/dashboard/student/transcript");
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Auto verification error:", err);
+        refetchAudit();
+        router.replace("/dashboard/student/transcript");
+      }
+    };
+
+    verifyTransaction();
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams, router, refetchAudit, studentId]);
 
   // ── School Leadership & Endorsement Signatures ──────────────────────────
   const { data: schoolAdminsResponse } = useSchoolAdmins(schoolId || "");
@@ -427,17 +513,74 @@ export default function StudentTranscriptPage() {
 
   // ── Access Clearance & Paywall States ─────────────────────────────────────
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [unlockedSessions, setUnlockedSessions] = useState<Set<string>>(new Set());
-  const [paymentTargetSessionId, setPaymentTargetSessionId] = useState<string>("ALL");
+  const [unlockedClearances, setUnlockedClearances] = useState<Set<string>>(new Set());
+  const [paymentTargetSessionId, setPaymentTargetSessionId] = useState<string>("");
+  const [paymentTargetTerm, setPaymentTargetTerm] = useState<string>("");
   const [isPayingOnline, setIsPayingOnline] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [directAccessPass, setDirectAccessPass] = useState<{ token: string; expiresAt: string; accessUrl?: string; sessionId?: string; term?: string } | null>(null);
+  const [isEmailingPass, setIsEmailingPass] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [restoreInput, setRestoreInput] = useState("");
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // ── Check Graduation Status & School Subscription ─────────────────────────
   const isGraduated = useMemo(() => {
-    const sStatus = String((studentProfile as unknown as Record<string, unknown>)?.status || (user as unknown as Record<string, unknown>)?.status || "").toUpperCase();
+    const sStatus = String((studentProfile as unknown as Record<string, unknown>)?.status || (user as unknown as Record<string, unknown>)?.status || searchParams.get("status") || "").toUpperCase();
     const gStatus = String((studentProfile as unknown as Record<string, unknown>)?.graduationStatus || "").toUpperCase();
-    return sStatus === "GRADUATED" || sStatus === "ALUMNI" || gStatus === "GRADUATED";
-  }, [studentProfile, user]);
+    const isAlum = Boolean((studentProfile as any)?.isAlumni || (user as any)?.isAlumni || (studentProfile as any)?.graduated);
+    const hasGradParam = searchParams.get("graduated") === "true" || searchParams.get("alumni") === "true";
+    return sStatus === "GRADUATED" || sStatus === "ALUMNI" || gStatus === "GRADUATED" || isAlum || hasGradParam;
+  }, [studentProfile, user, searchParams]);
+
+  // ── Graduated Institutions / School Badges ────────────────────────────────
+  const graduatedSchools = useMemo(() => {
+    const list: Array<{ id: string; name: string; logo?: string | null; motto?: string | null; graduationYear?: string | number | null }> = [];
+    const seen = new Set<string>();
+
+    const addSchool = (id?: string | null, name?: string | null, logo?: string | null, motto?: string | null) => {
+      if (!name) return;
+      const key = (id || name).toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push({
+          id: id || key,
+          name: name.trim(),
+          logo: logo || null,
+          motto: motto || null,
+          graduationYear: (studentProfile as any)?.graduationYear || (studentProfile as any)?.graduatedYear || new Date().getFullYear(),
+        });
+      }
+    };
+
+    // 1. Primary school Profile / School
+    addSchool(schoolProfile?.id || schoolId, schoolProfile?.name || schoolName, schoolProfile?.logo || schoolLogoUrl, schoolProfile?.motto || schoolMotto);
+
+    // 2. School relation on studentProfile
+    if (school) {
+      addSchool(school.id, school.name, (school as any).logo, (school as any).motto);
+    }
+
+    // 3. Original school if transferred/graduated
+    const origSchool = (studentProfile as any)?.originalSchool;
+    if (origSchool) {
+      addSchool(origSchool.id, origSchool.name, origSchool.logo, origSchool.motto);
+    }
+
+    // 4. Any school memberships from user.schools
+    if (Array.isArray(user?.schools)) {
+      user.schools.forEach((s: any) => {
+        addSchool(s.schoolId || s.id, s.name || s.schoolName, s.logo || s.schoolLogo, s.motto);
+      });
+    }
+
+    // Fallback if none added
+    if (list.length === 0 && schoolName) {
+      addSchool("default-school", schoolName, schoolLogoUrl, schoolMotto);
+    }
+
+    return list;
+  }, [schoolProfile, schoolId, schoolName, schoolLogoUrl, schoolMotto, school, studentProfile, user]);
 
   const isSchoolPaidPlan = useMemo(() => {
     const plan = String(schoolProfile?.plan || (school as any)?.plan || "").toUpperCase();
@@ -453,8 +596,8 @@ export default function StudentTranscriptPage() {
         (p.status === "SUCCESS" || p.status === "PAID") &&
         (p.paymentType === "TRANSCRIPT" || p.term === "All Terms" || String(p.session).includes("Session"))
     );
-    return list.length + (unlockedSessions.has("ALL") ? 1 : 0);
-  }, [auditData, unlockedSessions]);
+    return list.length + (unlockedClearances.size > 0 ? unlockedClearances.size : 0);
+  }, [auditData, unlockedClearances]);
 
   const hasPaidTranscript = paidTranscriptCount > 0;
 
@@ -474,16 +617,114 @@ export default function StudentTranscriptPage() {
     return hasPaidTranscript && totalTranscriptDownloads < paidTranscriptCount;
   }, [isGraduated, hasPaidTranscript, totalTranscriptDownloads, paidTranscriptCount]);
 
-  // Preview Gating: Graduated student can only see the transcript if they have paid
-  const isPreviewUnlocked = useMemo(() => {
-    if (isGraduated) {
-      return hasPaidTranscript;
-    }
-    return isSchoolPaidPlan;
-  }, [isGraduated, hasPaidTranscript, isSchoolPaidPlan]);
+  // Official transcript clearance requirement:
+  // All transcripts require clearance if school configured a transcript fee (> 0) or student is graduated.
+  const requiresPayment = useMemo(() => {
+    if (transcriptFee > 0) return true;
+    if (isGraduated) return true;
+    return !isSchoolPaidPlan;
+  }, [transcriptFee, isGraduated, isSchoolPaidPlan]);
 
-  const requiresPayment = isGraduated;
-  const isCurrentViewUnlocked = isPreviewUnlocked;
+  // Check whether a specific academic session and term is unlocked
+  // Gating rule: Direct dashboard visits are locked. Access to preview & download
+  // certified records is strictly restricted to valid 30-day passes accessed via the secure link.
+  const isTermUnlocked = (sId: string, termVal: string): boolean => {
+    if (!requiresPayment) return true;
+
+    // Direct dashboard visits are strictly locked without a verified 30-day link pass
+    if (!directAccessPass) return false;
+
+    // Check pass expiration
+    if (directAccessPass.expiresAt) {
+      const expiry = new Date(directAccessPass.expiresAt).getTime();
+      if (Date.now() > expiry) return false;
+    }
+
+    const passSession = directAccessPass.sessionId || "ALL";
+    const passTerm = directAccessPass.term || "ALL";
+    const sessionMatches =
+      passSession === "ALL" ||
+      passSession === "All Sessions" ||
+      passSession === sId;
+    const termMatches =
+      passTerm === "ALL" ||
+      passTerm === "All Terms" ||
+      passTerm === termVal ||
+      passTerm === getTermLabel(termVal);
+
+    return sessionMatches && termMatches;
+  };
+
+  // ── Recent Clearance Payments (Completed within the last 30 days) ─────────
+  const recentClearancePayments = useMemo(() => {
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return (auditData?.paymentStats?.payments || []).filter((p) => {
+      const isSuccess = p.status === "SUCCESS" || p.status === "PAID";
+      if (!isSuccess) return false;
+      const isTranscript =
+        p.paymentType === "TRANSCRIPT" ||
+        p.term === "All Terms" ||
+        String(p.session).includes("Session");
+      if (!isTranscript) return false;
+      const paidTime = p.paidAt
+        ? new Date(p.paidAt).getTime()
+        : p.createdAt
+        ? new Date(p.createdAt).getTime()
+        : 0;
+      return now - paidTime <= thirtyDaysMs;
+    });
+  }, [auditData]);
+
+  const [isResendingLink, setIsResendingLink] = useState(false);
+  const handleResendLink = async (reference?: string) => {
+    const targetEmail = studentProfile?.email || user?.email;
+    if (!targetEmail) {
+      toast.error("No registered email address found for your scholar account.");
+      return;
+    }
+    try {
+      setIsResendingLink(true);
+      await financeService.emailTranscriptPass({
+        studentId,
+        schoolId,
+        email: targetEmail,
+        reference: reference || recentClearancePayments[0]?.reference || undefined,
+        token: directAccessPass?.token || undefined,
+      });
+      toast.success(`Transcript preview & download link sent to ${targetEmail}! Check your inbox to preview what you paid for.`);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error?.response?.data?.message || error?.message || "Failed to resend transcript preview link");
+    } finally {
+      setIsResendingLink(false);
+    }
+  };
+
+  const isCurrentViewUnlocked = useMemo(() => {
+    if (!requiresPayment) return true;
+    if (selectedSessionId !== "ALL" && selectedTermFilter !== "ALL") {
+      return isTermUnlocked(selectedSessionId, selectedTermFilter);
+    }
+    if (selectedSessionId !== "ALL") {
+      const sessionTerms = results.filter((r) => r.sessionId === selectedSessionId).map((r) => r.term);
+      if (sessionTerms.length === 0) return true;
+      return sessionTerms.every((t) => isTermUnlocked(selectedSessionId, t));
+    }
+    if (selectedTermFilter !== "ALL") {
+      const termMatches = results.filter((r) => r.term === selectedTermFilter);
+      if (termMatches.length === 0) return true;
+      return termMatches.every((r) => isTermUnlocked(r.sessionId || "current-session", selectedTermFilter));
+    }
+    if (results.length === 0) return true;
+    return results.every((r) => isTermUnlocked(r.sessionId || "current-session", r.term));
+  }, [requiresPayment, selectedSessionId, selectedTermFilter, results, directAccessPass]);
+
+  const hasAnyUnlockedTerm = useMemo(() => {
+    if (!requiresPayment) return true;
+    if (results.length === 0) return true;
+    return results.some((r) => isTermUnlocked(r.sessionId || "current-session", r.term));
+  }, [requiresPayment, results, unlockedClearances, directAccessPass, auditData]);
 
   // ── Group Results by Academic Session ─────────────────────────────────────
   const availableSessions = useMemo(() => {
@@ -612,16 +853,18 @@ export default function StudentTranscriptPage() {
 
   // ── PDF Export Handler (Multi-page with Behavioral Evaluation) ─────────────
   const handleDownloadPDF = async () => {
-    if (isGraduated && !hasPaidTranscript) {
+    if (requiresPayment && !isCurrentViewUnlocked) {
       toast.error(`Official transcript clearance required. Please complete payment of ₦${transcriptFee.toLocaleString()} to unlock.`);
-      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : "ALL");
+      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : (availableSessions[0]?.id || ""));
+      setPaymentTargetTerm(selectedTermFilter !== "ALL" ? selectedTermFilter : "");
       setIsPaymentModalOpen(true);
       return;
     }
 
     if (isGraduated && !hasDownloadRemaining) {
       toast.error(`You have already downloaded your official copy (1/1 used). To generate an additional copy, please complete a new clearance payment of ₦${transcriptFee.toLocaleString()}.`);
-      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : "ALL");
+      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : (availableSessions[0]?.id || ""));
+      setPaymentTargetTerm(selectedTermFilter !== "ALL" ? selectedTermFilter : "");
       setIsPaymentModalOpen(true);
       return;
     }
@@ -754,15 +997,17 @@ export default function StudentTranscriptPage() {
   };
 
   const handlePrint = () => {
-    if (isGraduated && !hasPaidTranscript) {
+    if (requiresPayment && !isCurrentViewUnlocked) {
       toast.error(`Official transcript clearance required. Please complete payment of ₦${transcriptFee.toLocaleString()} to unlock.`);
-      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : "ALL");
+      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : (availableSessions[0]?.id || ""));
+      setPaymentTargetTerm(selectedTermFilter !== "ALL" ? selectedTermFilter : "");
       setIsPaymentModalOpen(true);
       return;
     }
     if (isGraduated && !hasDownloadRemaining) {
       toast.error(`You have already downloaded/printed your official copy (1/1 used). To generate an additional copy, please complete a new clearance payment of ₦${transcriptFee.toLocaleString()}.`);
-      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : "ALL");
+      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : (availableSessions[0]?.id || ""));
+      setPaymentTargetTerm(selectedTermFilter !== "ALL" ? selectedTermFilter : "");
       setIsPaymentModalOpen(true);
       return;
     }
@@ -776,44 +1021,49 @@ export default function StudentTranscriptPage() {
       return;
     }
 
+    if (!paymentTargetSessionId || paymentTargetSessionId.trim() === "") {
+      toast.error("Please select an academic session before proceeding with payment.");
+      return;
+    }
+
+    if (!paymentTargetTerm || paymentTargetTerm.trim() === "") {
+      toast.error("Please select an academic term (1st, 2nd, or 3rd Term) before proceeding with payment.");
+      return;
+    }
+
     try {
       setIsPayingOnline(true);
       const res = await financeService.initiateTranscriptPayment(schoolId, {
         studentId,
-        sessionId: paymentTargetSessionId === "ALL" ? undefined : paymentTargetSessionId,
+        sessionId: paymentTargetSessionId,
+        term: paymentTargetTerm,
         amount: transcriptFee,
         email: user?.email,
         name: studentProfile?.name || user?.name || "Student",
       });
 
-      toast.success("Payment session initialized with Flutterwave");
-
-      setUnlockedSessions((prev) => {
-        const next = new Set(prev);
-        next.add(paymentTargetSessionId);
-        return next;
-      });
-
       if (res?.checkoutUrl) {
-        window.open(res.checkoutUrl, "_blank");
+        if (res.accessPass) {
+          setDirectAccessPass(res.accessPass);
+          const targetKey = `${paymentTargetSessionId}_${paymentTargetTerm}`;
+          setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+          if (studentId) {
+            localStorage.setItem(`transcript_access_pass_${studentId}`, res.accessPass.token);
+          }
+        }
+        toast.info("Connecting to Flutterwave secure checkout...");
+        // Direct browser redirection
+        window.location.href = res.checkoutUrl;
+      } else {
+        toast.error("Unable to generate payment checkout link. Please try again.");
+        setIsPayingOnline(false);
       }
-      setIsPaymentModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Payment initiation error:", err);
-      toast.error(err?.response?.data?.message || err?.message || "Failed to initiate online payment");
-    } finally {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error?.response?.data?.message || error?.message || "Failed to initiate online payment");
       setIsPayingOnline(false);
     }
-  };
-
-  const handleManualTransferConfirmed = () => {
-    setUnlockedSessions((prev) => {
-      const next = new Set(prev);
-      next.add(paymentTargetSessionId);
-      return next;
-    });
-    setIsPaymentModalOpen(false);
-    toast.success("Transfer acknowledged! Official transcript unlocked for review.");
   };
 
   const handleCopy = (text: string, field: string) => {
@@ -822,6 +1072,107 @@ export default function StudentTranscriptPage() {
       setCopiedField(field);
       toast.info(`Copied ${field} to clipboard`);
       setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
+
+  const handleCopyAccessLink = () => {
+    const token = directAccessPass?.token || "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    const link = token ? `${origin}/dashboard/student/transcript?pass=${encodeURIComponent(token)}` : window.location.href;
+    handleCopy(link, "accessLink");
+  };
+
+  const handleEmailAccessLink = async () => {
+    if (!directAccessPass?.token) {
+      toast.error("No active 30-day access pass token available. Please verify your clearance first.");
+      return;
+    }
+    const targetEmail = studentProfile?.email || user?.email;
+    if (!targetEmail) {
+      toast.error("No email address found for your account.");
+      return;
+    }
+    try {
+      setIsEmailingPass(true);
+      await financeService.emailTranscriptPass({
+        studentId,
+        schoolId,
+        email: targetEmail,
+        token: directAccessPass.token,
+        reference: (auditData?.paymentStats?.payments?.[0]?.reference as string) || undefined,
+      });
+      toast.success(`30-day direct access link sent to ${targetEmail}!`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to send direct access link");
+    } finally {
+      setIsEmailingPass(false);
+    }
+  };
+
+  const handleRestoreAccess = async () => {
+    const trimmed = restoreInput.trim();
+    if (!trimmed) {
+      toast.error("Please enter your transaction reference or pass token");
+      return;
+    }
+    try {
+      setIsRestoring(true);
+      toast.info("Validating your clearance record...");
+
+      // If user pasted a URL with ?pass=...
+      let tokenToTest = trimmed;
+      if (trimmed.includes("pass=")) {
+        try {
+          const u = new URL(trimmed);
+          tokenToTest = u.searchParams.get("pass") || trimmed;
+        } catch {}
+      }
+
+      // 1. Try as 30-day access pass token
+      const passRes = await financeService.verifyTranscriptPass(tokenToTest).catch(() => null);
+      if (passRes && passRes.valid) {
+        setDirectAccessPass({
+          token: tokenToTest,
+          expiresAt: passRes.expiresAt || "",
+          sessionId: passRes.sessionId,
+          term: passRes.term,
+        });
+        const targetKey = `${passRes.sessionId || "ALL"}_${passRes.term || "ALL"}`;
+        setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+        if (studentId) {
+          localStorage.setItem(`transcript_access_pass_${studentId}`, tokenToTest);
+        }
+        toast.success("30-Day Clearance Pass validated! Official records unlocked.");
+        setIsRestoreModalOpen(false);
+        setRestoreInput("");
+        return;
+      }
+
+      // 2. Try as transaction reference with gateway verification
+      const txRes = await financeService.verifyPayment(trimmed).catch(() => null);
+      if (txRes && txRes.success) {
+        if (txRes.data?.accessPass) {
+          setDirectAccessPass(txRes.data.accessPass);
+          const targetKey = `${txRes.data.accessPass.sessionId || "ALL"}_${txRes.data.accessPass.term || "ALL"}`;
+          setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+          if (studentId) {
+            localStorage.setItem(`transcript_access_pass_${studentId}`, txRes.data.accessPass.token);
+          }
+        } else {
+          setUnlockedClearances((prev) => new Set(prev).add("ALL"));
+        }
+        refetchAudit();
+        toast.success("Transcript clearance confirmed! Academic records unlocked.");
+        setIsRestoreModalOpen(false);
+        setRestoreInput("");
+        return;
+      }
+
+      toast.error("Could not find or verify any clearance record with that code or token. Please check and retry.");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to restore clearance access");
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -986,10 +1337,17 @@ export default function StudentTranscriptPage() {
           <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
             Enrollment Status
           </p>
-          <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1 truncate">
-            <CheckCircle2 size={13} className="shrink-0" />
-            <span>Active Enrolled</span>
-          </p>
+          {isGraduated ? (
+            <p className="text-amber-600 dark:text-amber-400 font-bold text-sm flex items-center gap-1 truncate">
+              <GraduationCap size={14} className="shrink-0 text-amber-500" />
+              <span>Graduated Alumnus</span>
+            </p>
+          ) : (
+            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1 truncate">
+              <CheckCircle2 size={13} className="shrink-0" />
+              <span>Active Enrolled</span>
+            </p>
+          )}
         </div>
 
         <div className="space-y-1 min-w-0">
@@ -1191,7 +1549,7 @@ export default function StudentTranscriptPage() {
                 <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>Preparing PDF...</span>
               </>
-            ) : isGraduated && !hasPaidTranscript ? (
+            ) : requiresPayment && !isCurrentViewUnlocked ? (
               <>
                 <Lock size={14} />
                 <span>Clearance Required (₦{transcriptFee.toLocaleString()})</span>
@@ -1332,6 +1690,195 @@ export default function StudentTranscriptPage() {
           {/* Student Biographical Profile Strip with Ref No. & Issue Date */}
           {renderStudentProfileBanner("Academic Transcript")}
 
+          {/* ── Graduated Scholar Alumni Badges Roll ── */}
+          {isGraduated && (
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-blue-500/10 border border-amber-300/70 dark:border-amber-700/60 shadow-xs flex flex-wrap items-center justify-between gap-3.5 transition-all print:border-amber-400 print:bg-white">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30 shadow-xs">
+                  <Award size={20} className="text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                      Badge
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <GraduationCap size={12} className="text-amber-600 dark:text-amber-400" />
+                      Graduated Scholar
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-zinc-400 font-medium">
+                    Official graduation credential and institutional alumni badge
+                  </p>
+                </div>
+              </div>
+
+              {/* Roll of schools logo that they graduated from as badges */}
+              <div className="flex items-center flex-wrap gap-2.5 sm:gap-3">
+                {graduatedSchools.map((sch) => (
+                  <div
+                    key={sch.id}
+                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 shadow-xs hover:border-amber-400 dark:hover:border-amber-500 transition-all group"
+                  >
+                    <div className="size-9 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                      {sch.logo ? (
+                        <img
+                          src={sch.logo}
+                          alt={sch.name}
+                          className="size-full object-contain"
+                        />
+                      ) : (
+                        <School size={18} className="text-blue-600 dark:text-blue-400" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                        {sch.name}
+                      </span>
+                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 pt-0.5">
+                        <ShieldCheck size={11} className="text-emerald-500 shrink-0" />
+                        <span>Graduated Alumnus</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Scenario A: Scholar Accessed via 30-Day Link (Pass Active & Verified) ─── */}
+          {directAccessPass && (
+            <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-600/10 via-blue-600/10 to-indigo-600/10 border border-emerald-300 dark:border-emerald-800/80 shadow-xs space-y-3 print:hidden animate-in fade-in duration-300">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-600/30">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-black text-sm sm:text-base text-slate-900 dark:text-white">
+                        Official 30-Day Clearance Pass Active
+                      </h4>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
+                        Unlocked via Secure Link
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400 truncate">
+                      Viewing certified records for: <strong>{directAccessPass.sessionId === "ALL" ? "All Sessions" : (availableSessions.find((s) => s.id === directAccessPass.sessionId)?.name || directAccessPass.sessionId)} • {getTermLabel(directAccessPass.term || "ALL")}</strong> (Class: <strong>{enrolledClass}</strong>)
+                      {directAccessPass.expiresAt && ` • Valid until ${format(new Date(directAccessPass.expiresAt), "MMMM d, yyyy")}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyAccessLink}
+                    className="rounded-xl h-9 text-xs font-bold gap-1.5 flex-1 md:flex-none border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 cursor-pointer"
+                  >
+                    <Copy size={13} />
+                    <span>{copiedField === "accessLink" ? "Copied Link!" : "Copy 30-Day Link"}</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleEmailAccessLink}
+                    disabled={isEmailingPass}
+                    className="rounded-xl h-9 text-xs font-bold gap-1.5 flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                  >
+                    <Mail size={13} />
+                    <span>{isEmailingPass ? "Sending..." : "Email Link to Me"}</span>
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed border-t border-emerald-200/40 dark:border-emerald-900/30 pt-2.5">
+                💡 <strong>Access Notice:</strong> You are currently viewing certified terminal records unlocked via your secure 30-day clearance pass. To access on other devices, bookmark or email this link.
+              </p>
+            </div>
+          )}
+
+          {/* ── Scenario B: Paid Within Last 30 Days but Visiting Direct from Dashboard (Locked) ─── */}
+          {requiresPayment && !directAccessPass && recentClearancePayments.length > 0 && (
+            <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white border-2 border-blue-500/40 shadow-xl space-y-4 print:hidden animate-in fade-in duration-300">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                      <ShieldCheck size={12} />
+                      30-Day Clearance Record Verified
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                      <Lock size={10} />
+                      Dashboard Direct Preview Locked
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                    Official Transcript Clearance Record on File
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                    To preserve institutional certification and prevent unauthorized browser caching, certified academic transcripts cannot be previewed directly from the student dashboard. Official records can only be viewed and exported using your dedicated 30-day link.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => handleResendLink()}
+                  disabled={isResendingLink}
+                  className="h-12 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs gap-2 shrink-0 shadow-xl shadow-blue-600/30 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                >
+                  <Mail size={16} />
+                  <span>{isResendingLink ? "Sending Link..." : "Resend Transcript Download & Preview Link"}</span>
+                </Button>
+              </div>
+
+              {/* Itemized Cleared Terms Strip */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                {recentClearancePayments.map((p, idx) => (
+                  <div
+                    key={p.id || p.reference || idx}
+                    className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2 hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-blue-400 uppercase tracking-wider text-[10px]">
+                        Cleared Scope
+                      </span>
+                      <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                        <CheckCircle2 size={11} /> Paid & Certified
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-white">
+                        {p.session || "Academic Session"} • {p.term ? getTermLabel(p.term) : "All Terms"}
+                      </p>
+                      <p className="text-xs text-slate-300 mt-0.5 font-medium">
+                        Class: <strong className="text-white">{enrolledClass}</strong>
+                      </p>
+                    </div>
+                    <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>Paid: {format(new Date(p.paidAt || p.createdAt), "dd MMM yyyy")}</span>
+                      <span className="font-mono text-[10px]">Ref: {p.reference?.slice(-6) || "PAID"}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Mail size={14} className="text-blue-400 shrink-0" />
+                  <span>
+                    Preview link will be sent to <strong>{studentProfile?.email || user?.email || "your registered email"}</strong>
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsRestoreModalOpen(true)}
+                  className="h-8 px-3 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer"
+                >
+                  Already have access token? Enter manually →
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Cumulative Performance 4 Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent border border-blue-200 dark:border-blue-900/40 space-y-1">
@@ -1341,15 +1888,23 @@ export default function StudentTranscriptPage() {
               </span>
               <div className="flex items-baseline gap-1.5 pt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {transcriptStats.cgpa}
+                  {requiresPayment && !isCurrentViewUnlocked ? "••••" : transcriptStats.cgpa}
                 </span>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                  ({transcriptStats.cgpaGrade})
-                </span>
-                <span className="text-xs font-semibold text-slate-400">/ 5.00</span>
+                {requiresPayment && !isCurrentViewUnlocked ? (
+                  <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                    <Lock size={11} /> Locked
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                      ({transcriptStats.cgpaGrade})
+                    </span>
+                    <span className="text-xs font-semibold text-slate-400">/ 5.00</span>
+                  </>
+                )}
               </div>
               <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 pt-0.5 truncate">
-                {transcriptStats.academicStanding}
+                {requiresPayment && !isCurrentViewUnlocked ? "Official Records Protected" : transcriptStats.academicStanding}
               </p>
             </div>
 
@@ -1360,11 +1915,16 @@ export default function StudentTranscriptPage() {
               </span>
               <div className="flex items-baseline gap-1 pt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {transcriptStats.cumulativeAverage}%
+                  {requiresPayment && !isCurrentViewUnlocked ? "••••" : `${transcriptStats.cumulativeAverage}%`}
                 </span>
+                {requiresPayment && !isCurrentViewUnlocked && (
+                  <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                    <Lock size={11} /> Locked
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
-                Over {transcriptStats.scoredSubjectCount} verified scores
+                {requiresPayment && !isCurrentViewUnlocked ? "Clearance required" : `Over ${transcriptStats.scoredSubjectCount} verified scores`}
               </p>
             </div>
 
@@ -1375,11 +1935,16 @@ export default function StudentTranscriptPage() {
               </span>
               <div className="flex items-baseline gap-1 pt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {transcriptStats.totalSubjectsOverall}
+                  {requiresPayment && !isCurrentViewUnlocked ? "••••" : transcriptStats.totalSubjectsOverall}
                 </span>
+                {requiresPayment && !isCurrentViewUnlocked && (
+                  <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                    <Lock size={11} /> Locked
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
-                Registered in transcript
+                {requiresPayment && !isCurrentViewUnlocked ? "Clearance required" : "Registered in transcript"}
               </p>
             </div>
 
@@ -1390,20 +1955,26 @@ export default function StudentTranscriptPage() {
               </span>
               <div className="flex items-baseline gap-1 pt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                  {transcriptStats.totalTerms}
+                  {requiresPayment && !isCurrentViewUnlocked ? "••••" : transcriptStats.totalTerms}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">
-                  ({transcriptStats.totalSessions} Sessions)
-                </span>
+                {requiresPayment && !isCurrentViewUnlocked ? (
+                  <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                    <Lock size={11} /> Locked
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-400">
+                    ({transcriptStats.totalSessions} Sessions)
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                Certified terminal score sheets
+                {requiresPayment && !isCurrentViewUnlocked ? "Clearance required" : "Certified terminal score sheets"}
               </p>
             </div>
           </div>
 
           {/* Paywall Clearance Banner or Course Breakdown */}
-          {requiresPayment && !isCurrentViewUnlocked ? (
+          {requiresPayment && !hasAnyUnlockedTerm && recentClearancePayments.length === 0 ? (
             <div className="bg-gradient-to-r from-amber-500/10 via-blue-500/10 to-indigo-500/10 border-2 border-dashed border-amber-300 dark:border-amber-800/60 rounded-3xl p-6 sm:p-10 text-center space-y-4 print:hidden animate-in fade-in duration-300 my-6">
               <div className="size-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
                 <Lock size={30} />
@@ -1414,25 +1985,64 @@ export default function StudentTranscriptPage() {
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
                   {isGraduated
-                    ? `As a graduated scholar of ${schoolName}, previewing and downloading certified official transcript records requires an archival clearance fee of ₦${transcriptFee.toLocaleString()}.`
-                    : `Your institution requires portal session clearance of ₦${transcriptFee.toLocaleString()} to preview and verify academic records.`}
+                    ? `As a graduated scholar of ${schoolName}, previewing and downloading certified official transcript records requires an archival clearance fee of ₦${transcriptFee.toLocaleString()} per academic term.`
+                    : `Your institution requires portal session clearance of ₦${transcriptFee.toLocaleString()} per academic term to preview and verify academic records.`}
                 </p>
               </div>
-              <div className="pt-2">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   onClick={() => {
-                    setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : "ALL");
+                    setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : (availableSessions[0]?.id || ""));
+                    setPaymentTargetTerm(selectedTermFilter !== "ALL" ? selectedTermFilter : "FIRST");
                     setIsPaymentModalOpen(true);
                   }}
                   className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-xl shadow-blue-600/25 gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                 >
                   <CreditCard size={16} />
-                  <span>Pay Clearance & Unlock Records (₦{transcriptFee.toLocaleString()})</span>
+                  <span>Select Term & Pay Clearance (₦{transcriptFee.toLocaleString()})</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsRestoreModalOpen(true)}
+                  className="h-12 px-5 rounded-2xl border-slate-300 dark:border-zinc-700 font-bold text-xs gap-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                >
+                  <Key size={14} />
+                  <span>Already Paid? Restore 30-Day Access</span>
                 </Button>
               </div>
             </div>
           ) : (
             <>
+              {/* Partial Clearance Alert Strip */}
+              {requiresPayment && !isCurrentViewUnlocked && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs my-3 print:hidden">
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Lock size={16} />
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-white block">
+                        Partial Terminal Clearance Active
+                      </span>
+                      <span className="text-slate-600 dark:text-zinc-400">
+                        Some academic terms require clearance. Unlocked terms are displayed below; select any locked term to clear it.
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : (availableSessions[0]?.id || ""));
+                      setPaymentTargetTerm(selectedTermFilter !== "ALL" ? selectedTermFilter : "FIRST");
+                      setIsPaymentModalOpen(true);
+                    }}
+                    className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 cursor-pointer"
+                  >
+                    Clear Next Term
+                  </Button>
+                </div>
+              )}
+
               {/* Session-by-Session & Term-by-Term Course Breakdown */}
               <div className="space-y-8 pt-2">
             {filteredResults.length === 0 ? (
@@ -1510,6 +2120,12 @@ export default function StudentTranscriptPage() {
 
                       const termGpa = termScoredCount > 0 ? (termPointsSum / termScoredCount).toFixed(2) : "0.00";
                       const termAvg = termScoredCount > 0 ? Math.round(termMarksSum / termScoredCount) : 0;
+                      const isThisTermUnlocked = isTermUnlocked(sessionId, termGroup.term);
+                      const matchingClearedPayment = recentClearancePayments.find(
+                        (p) =>
+                          (p.session === "All Sessions" || p.session === "ALL" || p.session === sessionId || p.session === sessionName) &&
+                          (p.term === "All Terms" || p.term === "ALL" || p.term === termGroup.term || p.term === getTermLabel(termGroup.term))
+                      );
 
                       return (
                         <div
@@ -1519,8 +2135,11 @@ export default function StudentTranscriptPage() {
                           {/* Term Summary Header Strip */}
                           <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                              <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-black text-xs uppercase tracking-wider">
-                                {termLabel}
+                              <span className="px-3 py-1 rounded-lg bg-blue-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                <span>{termLabel}</span>
+                                {requiresPayment && !isThisTermUnlocked && (
+                                  <Lock size={11} className="text-amber-300" />
+                                )}
                               </span>
                               <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
                                 {termGroup.class?.name || "Class Cohort"}
@@ -1531,121 +2150,199 @@ export default function StudentTranscriptPage() {
                               <div className="flex items-center gap-1 font-semibold text-slate-600 dark:text-zinc-400">
                                 <span>Term GPA:</span>
                                 <span className="font-bold text-slate-900 dark:text-white">
-                                  {termGpa}
+                                  {requiresPayment && !isThisTermUnlocked ? "••••" : termGpa}
                                 </span>
+                                {requiresPayment && !isThisTermUnlocked && (
+                                  <span className="text-[10px] font-bold text-amber-500 ml-0.5">(Locked)</span>
+                                )}
                               </div>
                               <div className="flex items-center gap-1 font-semibold text-slate-600 dark:text-zinc-400">
                                 <span>Average:</span>
                                 <span className="font-bold text-slate-900 dark:text-white">
-                                  {termAvg}%
+                                  {requiresPayment && !isThisTermUnlocked ? "••••" : `${termAvg}%`}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 font-semibold text-slate-500">
                                 <span>Scores:</span>
                                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                  {revealedCount}/{totalSubjects}
+                                  {requiresPayment && !isThisTermUnlocked ? "Clearance Req." : `${revealedCount}/${totalSubjects}`}
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* Term Scores Table */}
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs">
-                              <thead className="bg-slate-100/70 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-300 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-zinc-800">
-                                <tr>
-                                  <th className="py-2.5 px-4 w-20">Code</th>
-                                  <th className="py-2.5 px-4">Course / Subject</th>
-                                  <th className="py-2.5 px-3 text-center">Asst</th>
-                                  <th className="py-2.5 px-3 text-center">Quiz</th>
-                                  <th className="py-2.5 px-3 text-center">CA</th>
-                                  <th className="py-2.5 px-3 text-center">Exam</th>
-                                  <th className="py-2.5 px-3 text-center font-black">Total</th>
-                                  <th className="py-2.5 px-3 text-center">Grade</th>
-                                  <th className="py-2.5 px-3 text-center">GP</th>
-                                  <th className="py-2.5 px-4 text-right">Remark</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
-                                {subjects.length === 0 ? (
+                          {/* Term Scores Table or Locked Clearance Card */}
+                          {requiresPayment && !isThisTermUnlocked ? (
+                            matchingClearedPayment ? (
+                              <div className="p-6 sm:p-8 text-center bg-blue-50/50 dark:bg-zinc-900/40 rounded-b-2xl border-t border-slate-200 dark:border-zinc-800 space-y-3">
+                                <div className="size-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+                                  <ShieldCheck size={22} />
+                                </div>
+                                <div className="space-y-1 max-w-md mx-auto">
+                                  <h4 className="font-black text-sm text-slate-900 dark:text-white">
+                                    {termLabel} Cleared & Ready for Preview
+                                  </h4>
+                                  <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                    You already completed clearance for {termLabel} ({sessionName}) on {format(new Date(matchingClearedPayment.paidAt || matchingClearedPayment.createdAt), "dd MMM yyyy")} (Class: <strong>{enrolledClass}</strong>). Transcripts cannot be accessed directly from the dashboard; click below to resend your secure 30-day preview link to your email.
+                                  </p>
+                                </div>
+                                <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleResendLink(matchingClearedPayment.reference)}
+                                    disabled={isResendingLink}
+                                    className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+                                  >
+                                    <Mail size={14} />
+                                    <span>{isResendingLink ? "Sending Link..." : `Resend Link to Preview ${termLabel}`}</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsRestoreModalOpen(true)}
+                                    className="h-10 px-3.5 rounded-xl border-slate-300 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer gap-1"
+                                  >
+                                    <Key size={13} />
+                                    <span>Enter Pass Token</span>
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-6 sm:p-8 text-center bg-slate-50/70 dark:bg-zinc-900/40 rounded-b-2xl border-t border-slate-200 dark:border-zinc-800 space-y-3">
+                                <div className="size-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+                                  <Lock size={22} />
+                                </div>
+                                <div className="space-y-1 max-w-md mx-auto">
+                                  <h4 className="font-black text-sm text-slate-900 dark:text-white">
+                                    {termLabel} Scores Locked ({sessionName})
+                                  </h4>
+                                  <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                    Terminal academic records for {termLabel} are locked pending individual clearance. Clear this term via Flutterwave to view course scores, assessments, and grade points.
+                                  </p>
+                                </div>
+                                <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setPaymentTargetSessionId(sessionId);
+                                      setPaymentTargetTerm(termGroup.term);
+                                      setIsPaymentModalOpen(true);
+                                    }}
+                                    className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+                                  >
+                                    <CreditCard size={14} />
+                                    <span>Pay ₦{transcriptFee.toLocaleString()} to Unlock {termLabel}</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsRestoreModalOpen(true)}
+                                    className="h-10 px-3.5 rounded-xl border-slate-300 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer gap-1"
+                                  >
+                                    <Key size={13} />
+                                    <span>Restore Pass</span>
+                                  </Button>
+                                </div>
+                              </div>
+                            )
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs">
+                                <thead className="bg-slate-100/70 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-300 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-zinc-800">
                                   <tr>
-                                    <td colSpan={10} className="py-8 text-center text-slate-400 font-medium">
-                                      No courses recorded for this term.
-                                    </td>
+                                    <th className="py-2.5 px-4 w-20">Code</th>
+                                    <th className="py-2.5 px-4">Course / Subject</th>
+                                    <th className="py-2.5 px-3 text-center">Asst</th>
+                                    <th className="py-2.5 px-3 text-center">Quiz</th>
+                                    <th className="py-2.5 px-3 text-center">CA</th>
+                                    <th className="py-2.5 px-3 text-center">Exam</th>
+                                    <th className="py-2.5 px-3 text-center font-black">Total</th>
+                                    <th className="py-2.5 px-3 text-center">Grade</th>
+                                    <th className="py-2.5 px-3 text-center">GP</th>
+                                    <th className="py-2.5 px-4 text-right">Remark</th>
                                   </tr>
-                                ) : (
-                                  subjects.map((sub, sIdx) => {
-                                    const isRevealed = Boolean(sub.scoresRevealed);
-                                    const subCode = sub.subject?.code || "SUB";
-                                    const subName = sub.subject?.name || "Subject";
-                                    const asst = isRevealed && sub.assignmentScore != null ? sub.assignmentScore : "—";
-                                    const quiz = isRevealed && sub.quizScore != null ? sub.quizScore : "—";
-                                    const ca = isRevealed && sub.caScore != null ? sub.caScore : "—";
-                                    const exam = isRevealed && sub.examScore != null ? sub.examScore : "—";
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+                                  {subjects.length === 0 ? (
+                                    <tr>
+                                      <td colSpan={10} className="py-8 text-center text-slate-400 font-medium">
+                                        No courses recorded for this term.
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    subjects.map((sub, sIdx) => {
+                                      const isRevealed = Boolean(sub.scoresRevealed);
+                                      const subCode = sub.subject?.code || "SUB";
+                                      const subName = sub.subject?.name || "Subject";
+                                      const asst = isRevealed && sub.assignmentScore != null ? sub.assignmentScore : "—";
+                                      const quiz = isRevealed && sub.quizScore != null ? sub.quizScore : "—";
+                                      const ca = isRevealed && sub.caScore != null ? sub.caScore : "—";
+                                      const exam = isRevealed && sub.examScore != null ? sub.examScore : "—";
 
-                                    const effectiveTotal = sub.totalScore ?? (
-                                      (sub.assignmentScore != null || sub.quizScore != null || sub.caScore != null || sub.examScore != null)
-                                        ? ((sub.assignmentScore || 0) + (sub.quizScore || 0) + (sub.caScore || 0) + (sub.examScore || 0))
-                                        : null
-                                    );
+                                      const effectiveTotal = sub.totalScore ?? (
+                                        (sub.assignmentScore != null || sub.quizScore != null || sub.caScore != null || sub.examScore != null)
+                                          ? ((sub.assignmentScore || 0) + (sub.quizScore || 0) + (sub.caScore || 0) + (sub.examScore || 0))
+                                          : null
+                                      );
 
-                                    const totalDisplay = isRevealed && effectiveTotal != null ? `${effectiveTotal}%` : "Pending";
-                                    const grade = isRevealed ? getGradeLetter(effectiveTotal ?? null, gradingSystem) : "—";
-                                    const gp = isRevealed ? getGradePoint(effectiveTotal ?? null, gradingSystem).toFixed(1) : "—";
-                                    const remark = isRevealed ? getRemark(effectiveTotal ?? null, gradingSystem) : "Pending";
+                                      const totalDisplay = isRevealed && effectiveTotal != null ? `${effectiveTotal}%` : "Pending";
+                                      const grade = isRevealed ? getGradeLetter(effectiveTotal ?? null, gradingSystem) : "—";
+                                      const gp = isRevealed ? getGradePoint(effectiveTotal ?? null, gradingSystem).toFixed(1) : "—";
+                                      const remark = isRevealed ? getRemark(effectiveTotal ?? null, gradingSystem) : "Pending";
 
-                                    return (
-                                      <tr
-                                        key={sub.id || `${subCode}-${sIdx}`}
-                                        className={cn(
-                                          "transition-colors",
-                                          sIdx % 2 === 1 ? "bg-slate-50/50 dark:bg-zinc-900/30" : "bg-white dark:bg-zinc-950",
-                                          "hover:bg-slate-100/50 dark:hover:bg-zinc-800/30"
-                                        )}
-                                      >
-                                        <td className="py-3 px-4 font-mono font-bold text-slate-500">
-                                          {subCode}
-                                        </td>
-                                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-zinc-100">
-                                          {subName}
-                                        </td>
-                                        <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
-                                          {asst}
-                                        </td>
-                                        <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
-                                          {quiz}
-                                        </td>
-                                        <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
-                                          {ca}
-                                        </td>
-                                        <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
-                                          {exam}
-                                        </td>
-                                        <td className="py-3 px-3 text-center font-black text-slate-900 dark:text-white">
-                                          {totalDisplay}
-                                        </td>
-                                        <td className="py-3 px-3 text-center">
-                                          {isRevealed && grade !== "—" ? (
-                                            <span className={cn("inline-block px-2 py-0.5 rounded-md font-bold text-[11px] border", getGradeBadgeClass(grade))}>
-                                              {grade}
-                                            </span>
-                                          ) : (
-                                            <span className="text-slate-400 font-semibold">—</span>
+                                      return (
+                                        <tr
+                                          key={sub.id || `${subCode}-${sIdx}`}
+                                          className={cn(
+                                            "transition-colors",
+                                            sIdx % 2 === 1 ? "bg-slate-50/50 dark:bg-zinc-900/30" : "bg-white dark:bg-zinc-950",
+                                            "hover:bg-slate-100/50 dark:hover:bg-zinc-800/30"
                                           )}
-                                        </td>
-                                        <td className="py-3 px-3 text-center font-bold text-slate-700 dark:text-zinc-300">
-                                          {gp}
-                                        </td>
-                                        <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-zinc-300">
-                                          {remark}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
+                                        >
+                                          <td className="py-3 px-4 font-mono font-bold text-slate-500">
+                                            {subCode}
+                                          </td>
+                                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-zinc-100">
+                                            {subName}
+                                          </td>
+                                          <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
+                                            {asst}
+                                          </td>
+                                          <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
+                                            {quiz}
+                                          </td>
+                                          <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
+                                            {ca}
+                                          </td>
+                                          <td className="py-3 px-3 text-center text-slate-600 dark:text-zinc-400 font-mono">
+                                            {exam}
+                                          </td>
+                                          <td className="py-3 px-3 text-center font-black text-slate-900 dark:text-white">
+                                            {totalDisplay}
+                                          </td>
+                                          <td className="py-3 px-3 text-center">
+                                            {isRevealed && grade !== "—" ? (
+                                              <span className={cn("inline-block px-2 py-0.5 rounded-md font-bold text-[11px] border", getGradeBadgeClass(grade))}>
+                                                {grade}
+                                              </span>
+                                            ) : (
+                                              <span className="text-slate-400 font-semibold">—</span>
+                                            )}
+                                          </td>
+                                          <td className="py-3 px-3 text-center font-bold text-slate-700 dark:text-zinc-300">
+                                            {gp}
+                                          </td>
+                                          <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-zinc-300">
+                                            {remark}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1735,34 +2432,85 @@ export default function StudentTranscriptPage() {
             )}
           </div>
 
-          {requiresPayment && !isCurrentViewUnlocked ? (
-            <div className="bg-gradient-to-r from-amber-500/10 via-blue-500/10 to-indigo-500/10 border-2 border-dashed border-amber-300 dark:border-amber-800/60 rounded-3xl p-6 sm:p-10 text-center space-y-4 print:hidden animate-in fade-in duration-300 my-6">
-              <div className="size-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
-                <Lock size={30} />
-              </div>
-              <div className="space-y-1.5 max-w-lg mx-auto">
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                  Conduct & Character Evaluation Records Locked
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                  {isGraduated
-                    ? `As a graduated scholar of ${schoolName}, full certified appraisal of affective domain traits, psychomotor skills, and leadership remarks require an archival clearance fee of ₦${transcriptFee.toLocaleString()}.`
-                    : `Your institution requires portal session clearance of ₦${transcriptFee.toLocaleString()} to preview and verify conduct appraisal records.`}
-                </p>
-              </div>
-              <div className="pt-2">
-                <Button
-                  onClick={() => {
-                    setPaymentTargetSessionId(selectedSessionId !== "ALL" ? selectedSessionId : "ALL");
-                    setIsPaymentModalOpen(true);
-                  }}
-                  className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-xl shadow-blue-600/25 gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                >
-                  <CreditCard size={16} />
-                  <span>Pay Clearance & Unlock Records (₦{transcriptFee.toLocaleString()})</span>
-                </Button>
-              </div>
-            </div>
+          {requiresPayment && !isTermUnlocked(evalSessionId, evalTerm) ? (
+            (() => {
+              const matchingClearedPayment = recentClearancePayments.find(
+                (p) =>
+                  (p.session === "All Sessions" || p.session === "ALL" || p.session === evalSessionId || p.session === activeEvalGroup?.session?.name) &&
+                  (p.term === "All Terms" || p.term === "ALL" || p.term === evalTerm || p.term === getTermLabel(evalTerm))
+              );
+
+              return matchingClearedPayment ? (
+                <div className="bg-gradient-to-r from-blue-500/10 via-emerald-500/10 to-transparent border-2 border-dashed border-emerald-300 dark:border-emerald-800/60 rounded-3xl p-6 sm:p-10 text-center space-y-4 print:hidden animate-in fade-in duration-300 my-6">
+                  <div className="size-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+                    <ShieldCheck size={30} />
+                  </div>
+                  <div className="space-y-1.5 max-w-lg mx-auto">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                      Conduct Evaluation Records Cleared ({getTermLabel(evalTerm)})
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+                      You already completed clearance for {getTermLabel(evalTerm)} on {format(new Date(matchingClearedPayment.paidAt || matchingClearedPayment.createdAt), "dd MMM yyyy")} (Class: <strong>{enrolledClass}</strong>). Transcripts cannot be accessed directly from the dashboard; click below to resend your secure 30-day preview link to your email.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Button
+                      onClick={() => handleResendLink(matchingClearedPayment.reference)}
+                      disabled={isResendingLink}
+                      className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-xl shadow-blue-600/25 gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                      <Mail size={16} />
+                      <span>{isResendingLink ? "Sending Link..." : `Resend Link to Preview Conduct Records`}</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsRestoreModalOpen(true)}
+                      className="h-12 px-5 rounded-2xl border-slate-300 dark:border-zinc-700 font-bold text-xs gap-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <Key size={14} />
+                      <span>Enter Pass Token</span>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-amber-500/10 via-blue-500/10 to-indigo-500/10 border-2 border-dashed border-amber-300 dark:border-amber-800/60 rounded-3xl p-6 sm:p-10 text-center space-y-4 print:hidden animate-in fade-in duration-300 my-6">
+                  <div className="size-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+                    <Lock size={30} />
+                  </div>
+                  <div className="space-y-1.5 max-w-lg mx-auto">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                      Conduct & Character Evaluation Records Locked ({getTermLabel(evalTerm)})
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+                      {isGraduated
+                        ? `As a graduated scholar of ${schoolName}, full certified appraisal of affective domain traits, psychomotor skills, and leadership remarks for ${getTermLabel(evalTerm)} require an archival clearance fee of ₦${transcriptFee.toLocaleString()}.`
+                        : `Your institution requires portal session clearance of ₦${transcriptFee.toLocaleString()} for ${getTermLabel(evalTerm)} to preview and verify conduct appraisal records.`}
+                    </p>
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Button
+                      onClick={() => {
+                        setPaymentTargetSessionId(evalSessionId || (availableSessions[0]?.id || ""));
+                        setPaymentTargetTerm(evalTerm || "FIRST");
+                        setIsPaymentModalOpen(true);
+                      }}
+                      className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-xl shadow-blue-600/25 gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                      <CreditCard size={16} />
+                      <span>Pay ₦{transcriptFee.toLocaleString()} to Unlock {getTermLabel(evalTerm)}</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsRestoreModalOpen(true)}
+                      className="h-12 px-5 rounded-2xl border-slate-300 dark:border-zinc-700 font-bold text-xs gap-1.5 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <Key size={14} />
+                      <span>Already Paid? Restore 30-Day Access</span>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()
           ) : (
             <>
               {/* Active Session & Cohort Metadata Pill */}
@@ -2312,169 +3060,380 @@ export default function StudentTranscriptPage() {
 
       {/* ── 8. Session Payment & Clearance Modal ─────────────────────────────── */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-950 border-none shadow-2xl">
-          <div className="p-6 sm:p-8 bg-gradient-to-r from-slate-900 to-slate-800 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-            <DialogTitle className="text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
-              <CreditCard className="size-6 text-blue-500" />
-              Transcript Clearance & Portal Access
-            </DialogTitle>
-            <DialogDescription className="text-slate-300 text-xs mt-1.5 leading-relaxed">
-              {isGraduated
-                ? `Alumni archival certification for ${schoolName}. Complete the clearance payment of ₦${transcriptFee.toLocaleString()} to preview and download your official academic transcript.`
-                : `Official portal verification clearance for ${schoolName}.`}
-            </DialogDescription>
+        <DialogContent className="max-w-3xl lg:max-w-4xl xl:max-w-5xl w-[95vw] p-0 overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-950 border border-slate-200/80 dark:border-zinc-800 shadow-2xl">
+          {/* Header */}
+          <div className="p-6 sm:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/15 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
+            <div className="absolute bottom-0 left-0 w-56 h-56 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none -ml-12 -mb-12" />
+
+            <div className="relative space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-black uppercase tracking-wider">
+                  <ShieldCheck size={12} />
+                  Official Clearance Gateway
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold">
+                  <Lock size={10} /> 256-Bit SSL Secured
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-bold">
+                  Instant Auto-Unlock
+                </span>
+              </div>
+
+              <div>
+                <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
+                  <CreditCard className="size-6 sm:size-7 text-blue-400" />
+                  Official Transcript Clearance
+                </DialogTitle>
+                <DialogDescription className="text-slate-300 text-xs sm:text-sm mt-1.5 leading-relaxed max-w-2xl">
+                  Clearance fee required by {schoolName} for archival records verification, electronic endorsement, and official document release.
+                </DialogDescription>
+              </div>
+            </div>
           </div>
 
-          <div className="p-6 sm:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
-            <div className="space-y-2.5">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
-                <Calendar size={14} className="text-blue-600" />
-                Which session would you like to pay for?
-              </label>
-              <Select value={paymentTargetSessionId} onValueChange={setPaymentTargetSessionId}>
-                <SelectTrigger className="h-13 px-4 rounded-2xl border-slate-200 dark:border-zinc-800 font-bold text-xs bg-slate-50 dark:bg-zinc-900/60">
-                  <SelectValue placeholder="Select target academic session" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl shadow-2xl">
-                  <SelectItem value="ALL" className="py-3 text-xs font-bold">
-                    Full Cumulative Transcript (All Completed Sessions) — ₦{transcriptFee.toLocaleString()}
-                  </SelectItem>
-                  {availableSessions.map((s) => (
-                    <SelectItem key={s.id} value={s.id} className="py-3 text-xs font-semibold">
-                      {s.name} Only — ₦{transcriptFee.toLocaleString()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Column (7 cols): Scholar Snapshot, Scope Selector, Inclusions */}
+              <div className="lg:col-span-7 space-y-5 flex flex-col justify-between">
+                <div className="space-y-5">
+                  {/* Scholar Snapshot Strip */}
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/70 dark:border-zinc-800 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-black text-sm flex items-center justify-center shrink-0 border border-blue-500/20">
+                        {studentProfile?.name ? studentProfile.name.charAt(0).toUpperCase() : "S"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-black text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                          {studentProfile?.name || user?.name || "Enrolled Scholar"}
+                        </p>
+                        <p className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400 truncate">
+                          ID: {studentProfile?.studentCode || "SCH-RECORD"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scope</span>
+                      <span className="text-xs font-black text-slate-700 dark:text-zinc-300">
+                        {paymentTargetSessionId && paymentTargetTerm
+                          ? `${availableSessions.find((s) => s.id === paymentTargetSessionId)?.name || "Session"} • ${getTermLabel(paymentTargetTerm)}`
+                          : paymentTargetSessionId
+                          ? `${availableSessions.find((s) => s.id === paymentTargetSessionId)?.name || "Session"} (Select Term)`
+                          : "Select Session & Term"}
+                      </span>
+                    </div>
+                  </div>
 
-            <div className="bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-900/40 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                  Archival Clearance Fee
-                </span>
-                <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">₦{transcriptFee.toLocaleString()}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Beneficiary</span>
-                <p className="text-xs font-black text-slate-800 dark:text-zinc-200 truncate max-w-[200px]">
-                  {schoolName}
-                </p>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 justify-end mt-0.5">
-                  <ShieldCheck size={11} /> Verified Subaccount
-                </span>
-              </div>
-            </div>
+                  {/* Step 1: Session Selector (Required) */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={14} className="text-blue-600 dark:text-blue-400" />
+                        1. Select Academic Session <span className="text-rose-500">*</span>
+                      </span>
+                      {paymentTargetSessionId ? (
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                          <CheckCircle2 size={12} /> Selected
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Required</span>
+                      )}
+                    </label>
+                    <Select value={paymentTargetSessionId} onValueChange={setPaymentTargetSessionId}>
+                      <SelectTrigger className={cn(
+                        "h-12 px-4 rounded-2xl border font-bold text-xs bg-white dark:bg-zinc-900 shadow-xs transition-all",
+                        !paymentTargetSessionId
+                          ? "border-amber-300 dark:border-amber-800 ring-1 ring-amber-400/20"
+                          : "border-slate-200 dark:border-zinc-800"
+                      )}>
+                        <SelectValue placeholder="Choose Academic Session..." />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl shadow-2xl">
+                        {availableSessions.map((s) => (
+                          <SelectItem key={s.id} value={s.id} className="py-3 text-xs font-semibold">
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Option A: Online via Flutterwave */}
-            <div className="space-y-3">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-                Option A: Instant Online Checkout (Flutterwave)
-              </span>
-              <div className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 space-y-3">
-                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed font-medium">
-                  Instant clearance via Debit Card, Bank Transfer, or USSD. Funds are automatically split and settled into {schoolName}&apos;s subaccount.
-                </p>
-                <Button
-                  onClick={handleInitiateOnlinePayment}
-                  disabled={isPayingOnline}
-                  className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01]"
-                >
-                  {isPayingOnline ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Connecting to Flutterwave...</span>
-                    </>
+                  {/* Step 2: Term Selector (Required) */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <GraduationCap size={14} className="text-blue-600 dark:text-blue-400" />
+                        2. Select Academic Term <span className="text-rose-500">*</span>
+                      </span>
+                      {paymentTargetTerm ? (
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                          <CheckCircle2 size={12} /> Selected
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Required</span>
+                      )}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: "FIRST", label: "1st Term" },
+                        { value: "SECOND", label: "2nd Term" },
+                        { value: "THIRD", label: "3rd Term" },
+                      ].map((termOpt) => {
+                        const isSelected = paymentTargetTerm === termOpt.value;
+                        return (
+                          <button
+                            key={termOpt.value}
+                            type="button"
+                            onClick={() => setPaymentTargetTerm(termOpt.value)}
+                            className={cn(
+                              "h-11 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer",
+                              isSelected
+                                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30"
+                                : "bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800"
+                            )}
+                          >
+                            {isSelected && <Check size={13} className="shrink-0" />}
+                            <span>{termOpt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Target Scope Feedback Alert */}
+                  {paymentTargetSessionId && paymentTargetTerm ? (
+                    <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-3">
+                      <div className="size-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <CheckCircle2 size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Target Clearance Lock</p>
+                        <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                          {availableSessions.find((s) => s.id === paymentTargetSessionId)?.name || "Session"} • {getTermLabel(paymentTargetTerm)}
+                        </p>
+                      </div>
+                    </div>
                   ) : (
-                    <>
-                      <CreditCard size={15} />
-                      <span>Pay ₦{transcriptFee.toLocaleString()} with Flutterwave</span>
-                    </>
+                    <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3">
+                      <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <AlertCircle size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400">Selection Required</p>
+                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                          {!paymentTargetSessionId && !paymentTargetTerm
+                            ? "Please select both an academic session and term to enable checkout."
+                            : !paymentTargetSessionId
+                            ? "Please select an academic session above."
+                            : "Please select an academic term (1st, 2nd, or 3rd Term)."}
+                        </p>
+                      </div>
+                    </div>
                   )}
-                </Button>
+
+                  {/* Inclusions List */}
+                  <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/30 space-y-2.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-300">
+                      What this official clearance covers:
+                    </span>
+                    <ul className="space-y-2 text-xs text-slate-600 dark:text-zinc-400">
+                      <li className="flex items-start gap-2">
+                        <CheckCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <span>Instant unmasking of full course results, CGPA & GPA points</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <span>Certified Registrar seal & Head of Institution digital signatures</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <span>Tamper-evident verification reference (TRX code) for embassies & universities</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <span>High-resolution PDF generation and browser printing rights</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Option B: Direct School Bank Transfer */}
-            <div className="space-y-3">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-                Option B: Direct School Bank Transfer (Offline Conduit)
-              </span>
-              <div className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 space-y-4">
-                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed font-medium">
-                  Transfer ₦{transcriptFee.toLocaleString()} directly to the school&apos;s verified institutional settlement conduit:
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">Bank Name</span>
-                    <p className="font-bold text-slate-900 dark:text-white mt-0.5">
-                      {schoolProfile?.bankName || (school as Record<string, unknown>)?.bankName as string || "Institution Primary Bank"}
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Account Number</span>
-                      <p className="font-mono font-bold text-slate-900 dark:text-white mt-0.5">
-                        {schoolProfile?.accountNumber || (school as Record<string, unknown>)?.accountNumber as string || "0123456789"}
-                      </p>
+              {/* Right Column (5 cols): Fee Summary, Payment Channels, Pay CTA */}
+              <div className="lg:col-span-5 space-y-5 flex flex-col justify-between">
+                <div className="space-y-4">
+                  {/* Fee Summary Card */}
+                  <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 shadow-lg border border-slate-800 space-y-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Total Clearance Fee
+                        </span>
+                        <p className="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
+                          ₦{transcriptFee.toLocaleString()}
+                        </p>
+                        <p className="text-[11px] text-slate-300 mt-0.5">One-time official institutional fee</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 border border-blue-400/20">
+                        <CreditCard size={20} />
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopy(schoolProfile?.accountNumber || (school as Record<string, unknown>)?.accountNumber as string || "0123456789", "account number")}
-                      className="h-8 px-2 text-slate-400 hover:text-slate-900"
-                    >
-                      {copiedField === "account number" ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                    </Button>
-                  </div>
 
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 sm:col-span-2">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">Account Name</span>
-                    <p className="font-bold text-slate-900 dark:text-white mt-0.5">
-                      {schoolProfile?.accountName || (school as Record<string, unknown>)?.accountName as string || schoolName}
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 sm:col-span-2 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Payment Reference</span>
-                      <p className="font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-                        TRX-{studentProfile?.studentCode || "STU"}-{paymentTargetSessionId.slice(0, 4)}
-                      </p>
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Beneficiary</span>
+                        <p className="font-black text-white truncate max-w-[170px] mt-0.5">
+                          {schoolName}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-emerald-400 font-semibold inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          <ShieldCheck size={12} /> Verified Subaccount
+                        </span>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopy(`TRX-${studentProfile?.studentCode || "STU"}-${paymentTargetSessionId.slice(0, 4)}`, "payment reference")}
-                      className="h-8 px-2 text-slate-400 hover:text-slate-900"
-                    >
-                      {copiedField === "payment reference" ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                    </Button>
+                  </div>
+
+                  {/* Payment Method Badges */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Accepted Payment Channels
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <span className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 font-bold border border-slate-200 dark:border-zinc-700/80 text-center truncate">
+                        Debit / Credit Cards
+                      </span>
+                      <span className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 font-bold border border-slate-200 dark:border-zinc-700/80 text-center truncate">
+                        Bank Transfer
+                      </span>
+                      <span className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 font-bold border border-slate-200 dark:border-zinc-700/80 text-center truncate">
+                        USSD
+                      </span>
+                      <span className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 font-bold border border-slate-200 dark:border-zinc-700/80 text-center truncate">
+                        Mobile Money
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={handleManualTransferConfirmed}
-                  className="w-full h-11 rounded-xl text-xs font-bold border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800"
-                >
-                  <Check size={14} className="mr-1.5 text-emerald-600" />
-                  I Have Completed This Transfer
-                </Button>
+                {/* Online Payment CTA */}
+                <div className="space-y-2 pt-2">
+                  <Button
+                    onClick={handleInitiateOnlinePayment}
+                    disabled={isPayingOnline || !paymentTargetSessionId || !paymentTargetTerm}
+                    className={cn(
+                      "w-full h-13 rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2 transition-all",
+                      paymentTargetSessionId && paymentTargetTerm && !isPayingOnline
+                        ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-blue-600/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                        : "bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed opacity-80 shadow-none"
+                    )}
+                  >
+                    {isPayingOnline ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Connecting to Flutterwave...</span>
+                      </>
+                    ) : !paymentTargetSessionId ? (
+                      <>
+                        <Lock size={16} />
+                        <span>1. Select Academic Session to Continue</span>
+                      </>
+                    ) : !paymentTargetTerm ? (
+                      <>
+                        <Lock size={16} />
+                        <span>2. Select Academic Term to Continue</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock size={16} />
+                        <span>Pay ₦{transcriptFee.toLocaleString()} for {getTermLabel(paymentTargetTerm)} via Flutterwave</span>
+                        <ArrowRight size={16} />
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-[11px] text-center text-slate-400 dark:text-zinc-500 leading-tight">
+                    {!paymentTargetSessionId || !paymentTargetTerm
+                      ? "Both academic session and term must be selected before payment can proceed."
+                      : `Once payment is confirmed, official records for ${getTermLabel(paymentTargetTerm)} will unlock automatically.`}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="p-6 bg-slate-50 dark:bg-zinc-900/60 border-t border-slate-100 dark:border-zinc-800">
+          <DialogFooter className="p-4 sm:p-5 bg-slate-50 dark:bg-zinc-900/60 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between sm:justify-between">
+            <span className="text-[10px] text-slate-400 font-medium">
+              Powered by Flutterwave • PCI-DSS Level 1 Certified
+            </span>
             <Button
               variant="ghost"
+              size="sm"
               onClick={() => setIsPaymentModalOpen(false)}
-              className="rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-200 w-full sm:w-auto"
+              className="rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800"
             >
-              Close Window
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── 9. Restore 30-Day Clearance Access Dialog ──────────────────────── */}
+      <Dialog open={isRestoreModalOpen} onOpenChange={setIsRestoreModalOpen}>
+        <DialogContent className="max-w-md rounded-3xl p-6 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl">
+          <DialogHeader className="space-y-2">
+            <div className="size-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Key size={22} />
+            </div>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">
+              Restore Official Transcript Access
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 leading-relaxed">
+              If you previously paid for clearance, had an internet interruption, or received a 30-day link, paste your reference code or link below to restore full access.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
+                Payment Reference or Pass Link / Token
+              </label>
+              <Input
+                placeholder="e.g. TRX-172938... or paste pass link"
+                value={restoreInput}
+                onChange={(e) => setRestoreInput(e.target.value)}
+                className="h-11 rounded-xl text-xs font-semibold border-slate-200 dark:border-zinc-800"
+              />
+              <p className="text-[11px] text-slate-400">
+                Found on your payment receipt email or Flutterwave confirmation SMS.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleRestoreAccess}
+              disabled={isRestoring || !restoreInput.trim()}
+              className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-1.5 cursor-pointer"
+            >
+              {isRestoring ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Validating Clearance...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={14} />
+                  <span>Validate & Unlock Transcript</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 dark:border-zinc-800 pt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsRestoreModalOpen(false)}
+              className="rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800"
+            >
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

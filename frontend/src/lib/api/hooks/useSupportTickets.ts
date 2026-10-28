@@ -2,24 +2,71 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../client";
 import { toast } from "react-toastify";
 
+export interface SupportTicketMessage {
+    id: string;
+    ticketId: string;
+    content: string;
+    senderId: string;
+    senderName: string;
+    senderRole: string;
+    senderImage?: string | null;
+    createdAt: string;
+}
+
+export interface SupportTicketItem {
+    id: string;
+    subject: string;
+    description: string;
+    status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+    priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+    category?: string | null;
+    userType: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    schoolName?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    _count?: { messages: number };
+    messages?: SupportTicketMessage[];
+    assignedAgent?: {
+        name: string;
+        image?: string | null;
+    } | null;
+}
+
 export const useSupportTickets = () => {
-    return useQuery({
+    return useQuery<SupportTicketItem[]>({
         queryKey: ["my-support-tickets"],
         queryFn: async () => {
-            const { data } = await apiClient.get("/support/tickets");
+            const { data } = await apiClient.get<{ success: boolean; data: SupportTicketItem[] }>("/support/tickets");
             return data.data;
-        }
+        },
+        staleTime: 1000 * 60 * 2,
+        retry: 1,
     });
 };
 
 export const useTicketMessages = (ticketId?: string) => {
-    return useQuery({
+    return useQuery<SupportTicketMessage[]>({
         queryKey: ["ticket-messages", ticketId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/support/tickets/${ticketId}/messages`);
-            return data.data;
+            const { data } = await apiClient.get<{
+                success: boolean;
+                data: SupportTicketMessage[] | { messages?: SupportTicketMessage[] };
+            }>(`/support/tickets/${ticketId}/messages`);
+
+            if (data?.data && typeof data.data === "object" && "messages" in data.data && Array.isArray(data.data.messages)) {
+                return data.data.messages;
+            }
+            if (Array.isArray(data?.data)) {
+                return data.data;
+            }
+            return [];
         },
-        enabled: !!ticketId
+        enabled: !!ticketId,
+        staleTime: 1000 * 30,
+        retry: 1,
     });
 };
 

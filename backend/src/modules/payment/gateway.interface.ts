@@ -38,6 +38,11 @@ export interface VerifyResult {
   meta: {
     userId?: string;
     userRole?: string;
+    schoolId?: string;
+    studentId?: string;
+    sessionId?: string;
+    term?: string;
+    paymentType?: string;
     plan?: string;
     billing?: string;
     isUpgrade?: boolean;
@@ -46,6 +51,7 @@ export interface VerifyResult {
     reset_cycle?: boolean;
     isTrial?: boolean;
     months?: number;
+    [key: string]: unknown;
   };
   /** Which gateway processed this transaction */
   gateway: 'PAYSTACK' | 'FLUTTERWAVE';
@@ -78,6 +84,9 @@ export interface SubaccountCreateParams {
   bankCode: string;
   accountNumber: string;
   splitPercentage: number;
+  businessEmail?: string;
+  businessMobile?: string;
+  businessContact?: string;
 }
 
 export interface SubaccountCreateResult {

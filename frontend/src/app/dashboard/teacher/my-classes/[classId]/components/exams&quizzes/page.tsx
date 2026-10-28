@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ExamToolbar } from './components/ExamToolbar'
 import { ExamTable } from './components/ExamTable'
+import { ExamFilterDialog } from './components/ExamFilterDialog'
 import { Exam, ExamFilter, ExamStatus } from './components/types'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
@@ -20,7 +21,8 @@ export default function ExamsPage() {
   const { selectedSchoolId } = useDashboardStore()
   const currentTeacherId = (user as any)?.id as string | undefined
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters] = useState<ExamFilter>({})
+  const [filters, setFilters] = useState<ExamFilter>({})
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -203,6 +205,16 @@ export default function ExamsPage() {
   ];
   }, [data, classId, authorizedSubjects, authorizedSubjectIds, currentTeacherId]);
 
+  const availableSubjects = useMemo(() => {
+    const subs = new Set<string>();
+    exams.forEach(e => {
+      (e.subjects || []).forEach(s => {
+        if (s) subs.add(s);
+      });
+    });
+    return Array.from(subs);
+  }, [exams]);
+
   const [filteredExams, setFilteredExams] = useState<Exam[]>([])
 
   useEffect(() => {
@@ -222,6 +234,12 @@ export default function ExamsPage() {
 
     if (filters.status) {
       filtered = filtered.filter(exam => exam.status === filters.status)
+    }
+
+    if (filters.subject) {
+      filtered = filtered.filter(exam =>
+        (exam.subjects || []).some(s => s.toLowerCase() === filters.subject!.toLowerCase())
+      )
     }
 
     if (filters.dateRange) {
@@ -291,8 +309,7 @@ export default function ExamsPage() {
   }
 
   const handleFilterClick = () => {
-    // console.log('Open filter dialog')
-    // Implement filter dialog
+    setIsFilterDialogOpen(true);
   }
 
   if (isLoading) {
@@ -342,6 +359,14 @@ export default function ExamsPage() {
                 />
             </div>
         )}
+
+        <ExamFilterDialog
+          open={isFilterDialogOpen}
+          onClose={() => setIsFilterDialogOpen(false)}
+          currentFilters={filters}
+          onApply={(newFilters) => setFilters(newFilters)}
+          availableSubjects={availableSubjects}
+        />
       </div>
     </>
   )

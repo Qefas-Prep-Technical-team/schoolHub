@@ -270,8 +270,15 @@ export const registerTeacher = async (req: Request, res: Response) => {
     let studentToConnect = null;
 
     if (schoolCode && !isIndependent) {
+      const trimmed = schoolCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       schoolToConnect = await prisma.school.findFirst({
-        where: { schoolCode },
+        where: {
+          OR: [
+            { schoolCode: { in: variants } },
+            { id: trimmed },
+          ],
+        },
       });
 
       if (!schoolToConnect) {
@@ -285,8 +292,16 @@ export const registerTeacher = async (req: Request, res: Response) => {
     }
 
     if (studentCode) {
+      const trimmed = studentCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       studentToConnect = await prisma.student.findFirst({
-        where: { studentCode: studentCode.trim() },
+        where: {
+          OR: [
+            { studentCode: { in: variants } },
+            { id: trimmed },
+            { email: { in: variants } },
+          ],
+        },
       });
 
       if (!studentToConnect) {
@@ -299,8 +314,15 @@ export const registerTeacher = async (req: Request, res: Response) => {
 
     let classToConnect = null;
     if (classCode) {
+      const trimmed = classCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       classToConnect = await prisma.class.findFirst({
-        where: { classCode },
+        where: {
+          OR: [
+            { classCode: { in: variants } },
+            { id: trimmed },
+          ],
+        },
       });
 
       if (!classToConnect) {
@@ -582,8 +604,15 @@ export const registerStudent = async (
     // Verify provided codes exist before proceeding
     let school = null;
     if (schoolCode) {
+      const trimmed = schoolCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       school = await prisma.school.findFirst({
-        where: { schoolCode },
+        where: {
+          OR: [
+            { schoolCode: { in: variants } },
+            { id: trimmed },
+          ],
+        },
       });
       if (!school) {
         return res.status(404).json({
@@ -595,8 +624,16 @@ export const registerStudent = async (
 
     let teacher = null;
     if (teacherCode) {
+      const trimmed = teacherCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       teacher = await prisma.teacher.findFirst({
-        where: { teacherCode },
+        where: {
+          OR: [
+            { teacherCode: { in: variants } },
+            { id: trimmed },
+            { email: { in: variants } },
+          ],
+        },
       });
       if (!teacher) {
         return res.status(404).json({
@@ -608,8 +645,16 @@ export const registerStudent = async (
 
     let parent = null;
     if (parentCode) {
+      const trimmed = parentCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       parent = await prisma.parent.findFirst({
-        where: { parentCode },
+        where: {
+          OR: [
+            { parentCode: { in: variants } },
+            { id: trimmed },
+            { email: { in: variants } },
+          ],
+        },
       });
       if (!parent) {
         return res.status(404).json({
@@ -621,8 +666,15 @@ export const registerStudent = async (
 
     let classToConnect = null;
     if (classCode) {
+      const trimmed = classCode.trim();
+      const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
       classToConnect = await prisma.class.findFirst({
-        where: { classCode },
+        where: {
+          OR: [
+            { classCode: { in: variants } },
+            { id: trimmed },
+          ],
+        },
       });
       if (!classToConnect) {
         return res.status(404).json({
@@ -934,8 +986,16 @@ export const registerParent = async (
         let studentData = null;
 
         if (studentCode) {
+          const trimmed = studentCode.trim();
+          const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
           const student = await tx.student.findFirst({
-            where: { studentCode: studentCode.trim() },
+            where: {
+              OR: [
+                { studentCode: { in: variants } },
+                { id: trimmed },
+                { email: { in: variants } },
+              ],
+            },
           });
 
           if (!student) {

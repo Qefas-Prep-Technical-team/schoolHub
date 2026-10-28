@@ -856,6 +856,7 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     const classId = getSingleString(req.query.classId as string | string[] | undefined);
     const gender = getSingleString(req.query.gender as string | string[] | undefined);
     const status = getSingleString(req.query.status as string | string[] | undefined);
+    const lifecycleStatus = getSingleString(req.query.lifecycleStatus as string | string[] | undefined);
     const isClaimed = getSingleString(req.query.isClaimed as string | string[] | undefined);
     const departmentId = getSingleString(req.query.departmentId as string | string[] | undefined);
     const subjectId = getSingleString(req.query.subjectId as string | string[] | undefined);
@@ -891,54 +892,115 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       });
     }
 
-    // Build where clause
-    const where: any = {
-      schoolId: schoolId as string,
+    const baseSchoolCondition = {
+      OR: [
+        { schoolId: schoolId as string },
+        { originalSchoolId: schoolId as string },
+      ],
     };
 
+    const andConditions: any[] = [baseSchoolCondition];
+
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { studentCode: { contains: search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { studentCode: { contains: search, mode: "insensitive" } },
+        ],
+      });
     }
 
     if (classId) {
-      where.classes = {
-        some: {
-          classId: classId,
-        }
-      };
+      andConditions.push({
+        classes: {
+          some: {
+            classId: classId,
+          },
+        },
+      });
     }
 
     if (departmentId) {
-      where.departmentId = departmentId;
+      andConditions.push({ departmentId });
     }
 
     if (subjectId) {
-      where.studentSubjectTermResults = {
-        some: { subjectId }
-      };
+      andConditions.push({
+        studentSubjectTermResults: {
+          some: { subjectId },
+        },
+      });
     }
 
     if (gender) {
-      where.gender = gender as any;
+      andConditions.push({ gender: gender as any });
     }
 
     if (status) {
-      where.verified = status === 'verified';
+      andConditions.push({ verified: status === "verified" });
     }
 
-    if (isClaimed !== undefined && isClaimed !== null && isClaimed !== '') {
-      where.isClaimed = isClaimed === 'true';
+    if (isClaimed !== undefined && isClaimed !== null && isClaimed !== "") {
+      andConditions.push({ isClaimed: isClaimed === "true" });
     }
+
+    if (lifecycleStatus) {
+      const upper = lifecycleStatus.toUpperCase();
+      if (upper === "ENROLLED") {
+        andConditions.push({
+          status: { notIn: ["GRADUATED", "EXPELLED", "TRANSFERRED", "WITHDRAWN"] },
+        });
+      } else if (upper === "GRADUATED") {
+        andConditions.push({ status: "GRADUATED" });
+      } else if (upper === "EXPELLED") {
+        andConditions.push({ status: "EXPELLED" });
+      } else if (upper === "TRANSFERRED") {
+        andConditions.push({ status: "TRANSFERRED" });
+      }
+    }
+
+    const where: any = { AND: andConditions };
 
     // Get count and students
-    const [total, verifiedCount, pendingCount, students] = await Promise.all([
+    const [
+      total,
+      allCount,
+      enrolledCount,
+      graduatedCount,
+      expelledCount,
+      transferredCount,
+      verifiedCount,
+      pendingCount,
+      students,
+    ] = await Promise.all([
       prisma.student.count({ where }),
-      prisma.student.count({ where: { ...where, verified: true } }),
-      prisma.student.count({ where: { ...where, verified: false } }),
+      prisma.student.count({ where: { AND: [baseSchoolCondition] } }),
+      prisma.student.count({
+        where: {
+          AND: [
+            baseSchoolCondition,
+            { status: { notIn: ["GRADUATED", "EXPELLED", "TRANSFERRED", "WITHDRAWN"] } },
+          ],
+        },
+      }),
+      prisma.student.count({
+        where: {
+          AND: [baseSchoolCondition, { status: "GRADUATED" }],
+        },
+      }),
+      prisma.student.count({
+        where: {
+          AND: [baseSchoolCondition, { status: "EXPELLED" }],
+        },
+      }),
+      prisma.student.count({
+        where: {
+          AND: [baseSchoolCondition, { status: "TRANSFERRED" }],
+        },
+      }),
+      prisma.student.count({ where: { AND: [...andConditions, { verified: true }] } }),
+      prisma.student.count({ where: { AND: [...andConditions, { verified: false }] } }),
       prisma.student.findMany({
         where,
         skip,
@@ -950,16 +1012,17 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
           studentCode: true,
           authProvider: true,
           verified: true,
+          status: true,
           profileImage: true,
           gender: true,
           classes: {
             include: {
-              class: true
-            }
+              class: true,
+            },
           },
-          department: true
+          department: true,
         },
-        orderBy: { name: 'asc' }
+        orderBy: { name: "asc" },
       }),
     ]);
 
@@ -967,6 +1030,11 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       success: true,
       count: students.length,
       total,
+      allCount,
+      enrolledCount,
+      graduatedCount,
+      expelledCount,
+      transferredCount,
       verifiedCount,
       pendingCount,
       page: Number(page),

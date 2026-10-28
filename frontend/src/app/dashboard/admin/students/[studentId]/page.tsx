@@ -26,6 +26,7 @@ import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
 import { HistoryDetailsModal } from '../components/HistoryDetailsModal'
 import { ExitStudentModal } from '../components/ExitStudentModal'
+import { GraduateStudentModal } from '../components/GraduateStudentModal'
 import { StudentHistoryTimeline } from '../components/StudentHistoryTimeline'
 import StudentHistoryView from './components/history/StudentHistoryView'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
@@ -597,6 +598,7 @@ export default function StudentProfilePage() {
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false)
     const [isExitModalOpen, setIsExitModalOpen] = useState(false)
+    const [isGraduateModalOpen, setIsGraduateModalOpen] = useState(false)
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
     const [selectedHistoryEvent, setSelectedHistoryEvent] = useState<any>(null)
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
@@ -1226,6 +1228,7 @@ export default function StudentProfilePage() {
     const department = student.department?.name || 'General'
     const avatar = student.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
     const isVerified = !!student.verified
+    const isGraduated = student.status === 'GRADUATED' || student.status === 'ALUMNI'
 
     const conductScoreVal = behaviourProfile?.conductScore ?? 100
     let conductStrokeColor = '#10b981'
@@ -1311,10 +1314,31 @@ export default function StudentProfilePage() {
                                                 <ShieldCheck size={14} />
                                                 {isVerified ? 'Verified' : 'Pending'}
                                             </span>
+                                            {isGraduated && (
+                                                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black backdrop-blur-sm bg-amber-400/25 text-amber-100 border border-amber-300/40 shadow-sm">
+                                                    <GraduationCap size={14} className="text-amber-300" />
+                                                    Graduated Scholar (Alumni)
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
                                     <div className="flex flex-row flex-wrap gap-2.5 w-full md:w-auto mt-2 md:mt-0">
+                                        {!isGraduated ? (
+                                            <button
+                                                onClick={() => setIsGraduateModalOpen(true)}
+                                                className="flex-1 md:flex-none px-4 md:px-5 py-3 md:py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <GraduationCap size={16} /> <span>Graduate Student</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => setIsGraduateModalOpen(true)}
+                                                className="flex-1 md:flex-none px-4 md:px-5 py-3 md:py-2.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-300/40 text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2 active:scale-95"
+                                            >
+                                                <Award size={16} /> <span>Graduation Record</span>
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => setIsPromoteModalOpen(true)}
                                             className="flex-1 md:flex-none px-4 md:px-5 py-3 md:py-2.5 rounded-xl bg-white/20 text-white text-sm font-bold shadow-sm hover:bg-white/30 backdrop-blur-md transition-colors flex items-center justify-center gap-2 active:scale-95"
@@ -1416,6 +1440,7 @@ export default function StudentProfilePage() {
                             <SectionCard title="Quick Actions">
                                 <div className="space-y-3">
                                     {[
+                                        { label: isGraduated ? 'Graduation Record' : 'Graduate Student', icon: GraduationCap, onClick: () => setIsGraduateModalOpen(true) },
                                         { label: 'Promote Student', icon: TrendingUp, onClick: () => setIsPromoteModalOpen(true) },
                                         { label: 'Issue Transcript', icon: Award, onClick: () => setIsTranscriptModalOpen(true) },
                                         {
@@ -2908,6 +2933,17 @@ export default function StudentProfilePage() {
                     onClose={() => setIsExitModalOpen(false)}
                     studentId={studentId}
                     studentName={name}
+                />
+                {/* ── Graduate Student Modal ───────────────────────────────────────── */}
+                <GraduateStudentModal
+                    isOpen={isGraduateModalOpen}
+                    onClose={() => setIsGraduateModalOpen(false)}
+                    studentId={studentId}
+                    studentName={name}
+                    studentAvatar={avatar}
+                    studentCode={studentCode}
+                    classNameLabel={classNameLabel}
+                    isAlreadyGraduated={isGraduated}
                 />
                 {/* ── Promote Student Modal ─────────────────────────────────────────── */}
                 <PromoteStudentModal

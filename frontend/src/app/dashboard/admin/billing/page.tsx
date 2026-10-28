@@ -70,14 +70,16 @@ export default function AdminBillingPage() {
 
     const handleSync = async (accountId?: string) => {
         if (!schoolId) return;
+        const resolvedAccountId = typeof accountId === "string" && accountId.trim() ? accountId.trim() : undefined;
         try {
             setFinanceLoading(true);
-            const result = await financeService.syncSubaccountStatus(schoolId, accountId);
+            const result = await financeService.syncSubaccountStatus(schoolId, resolvedAccountId);
             toast.success(result.message);
             const updated = await financeService.getSchoolAnalytics(schoolId);
             queryClient.setQueryData(['school-analytics', schoolId], updated);
         } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : "Sync failed");
+            const err = error as { response?: { data?: { message?: string } }; message?: string };
+            toast.error(err?.response?.data?.message || err?.message || "Sync failed");
         } finally {
             setFinanceLoading(false);
         }

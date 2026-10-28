@@ -65,6 +65,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
   const [departments, setDepartments] = useState<Department[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
+  const [availableLevels, setAvailableLevels] = useState<string[]>([])
   
   const [teacherSearch, setTeacherSearch] = useState("")
   const [subjectSearch, setSubjectSearch] = useState("")
@@ -75,6 +76,8 @@ const ClassModal: React.FC<ClassModalProps> = ({
   const [formData, setFormData] = useState({
     name: "",
     section: "",
+    level: "",
+    term: "",
     sessionId: "",
     selectedTeacherIds: [] as string[],
     selectedSubjectIds: [] as string[],
@@ -94,7 +97,8 @@ const ClassModal: React.FC<ClassModalProps> = ({
           subjectService.getSubjects(activeSchoolId),
           departmentService.getDepartments(activeSchoolId),
           schoolService.getStudents(activeSchoolId, { limit: 1000 }),
-          sessionService.getSessions()
+          sessionService.getSessions(activeSchoolId),
+          schoolService.getProfile(activeSchoolId)
         ])
         
         if (results[0].status === 'fulfilled') {
@@ -126,6 +130,10 @@ const ClassModal: React.FC<ClassModalProps> = ({
         } else {
           console.error("Failed to fetch academic sessions:", results[4].reason)
         }
+
+        if (results[5].status === 'fulfilled' && results[5].value?.levels) {
+          setAvailableLevels(results[5].value.levels || [])
+        }
       }
     } catch (error) {
       console.error("Failed to fetch initial data", error)
@@ -142,16 +150,20 @@ const ClassModal: React.FC<ClassModalProps> = ({
         setFormData({
           name: classItem.name,
           section: classItem.section || "",
-          sessionId: (classItem as any).session || "",
+          level: classItem.level || "",
+          term: classItem.term || "",
+          sessionId: classItem.session || (classItem as { session?: string; sessionId?: string }).sessionId || "",
           selectedTeacherIds: classItem.teachers?.map(t => t.teacherId) || [],
-          selectedSubjectIds: classItem.subjects?.map((s: any) => s.subject?.id || s.id) || [],
-          selectedDepartmentIds: classItem.departments?.map((d: any) => d.department?.code || d.departmentId || d.id) || [],
-          selectedStudentIds: classItem.enrollments?.map((e: any) => e.student?.id || e.id) || [],
+          selectedSubjectIds: classItem.subjects?.map((s: { subject?: { id: string }; id?: string }) => s.subject?.id || s.id || "") || [],
+          selectedDepartmentIds: classItem.departments?.map((d: { department?: { id: string; name?: string } }) => d.department?.id || "") || [],
+          selectedStudentIds: classItem.enrollments?.map((e: { student?: { id: string }; id?: string }) => e.student?.id || e.id || "") || [],
         })
       } else {
         setFormData({
           name: "",
           section: "",
+          level: "",
+          term: "",
           sessionId: "",
           selectedTeacherIds: [],
           selectedSubjectIds: [],
@@ -161,6 +173,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
       }
     }
   }, [isOpen, classItem, fetchInitialData])
+
+  const defaultLevels = [
+    "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5", "Primary 6",
+    "JSS 1", "JSS 2", "JSS 3", "SSS 1", "SSS 2", "SSS 3"
+  ];
+  const displayLevels = Array.from(new Set([
+    ...(availableLevels.length > 0 ? availableLevels : defaultLevels),
+    ...(formData.level ? [formData.level] : [])
+  ]));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,16 +198,22 @@ const ClassModal: React.FC<ClassModalProps> = ({
         return dept?.departmentId || code;
       });
 
+      const selectedSession = sessions.find(s => s.id === formData.sessionId || s.name === formData.sessionId);
+      const sessionToSave = selectedSession ? selectedSession.name : (formData.sessionId || undefined);
+
       if (classItem) {
         // Update class basic info
         await classService.updateClass(classItem.id, {
           name: formData.name,
           section: formData.section,
+          level: formData.level || undefined,
+          term: formData.term || undefined,
+          session: sessionToSave,
+          sessionId: selectedSession?.id || formData.sessionId || undefined,
           teacherIds: formData.selectedTeacherIds,
           departmentIds: mappedDepartmentIds,
           studentIds: formData.selectedStudentIds,
-          session: formData.sessionId || undefined,
-        } as any);
+        });
 
         // Update subjects with replacement strategy (allows removal)
         await classService.replaceSubjects(classItem.id, formData.selectedSubjectIds);
@@ -199,20 +226,24 @@ const ClassModal: React.FC<ClassModalProps> = ({
           section: formData.section,
           scope: "SCHOOL",
           schoolId: activeSchoolId,
+          level: formData.level || undefined,
+          term: formData.term || undefined,
+          session: sessionToSave,
+          sessionId: selectedSession?.id || formData.sessionId || undefined,
           subjectIds: formData.selectedSubjectIds,
           departmentIds: mappedDepartmentIds,
           teacherIds: formData.selectedTeacherIds,
           studentIds: formData.selectedStudentIds,
-          session: formData.sessionId || undefined,
-        } as any);
+        });
         toast.success("Class created successfully!");
       }
 
       onSuccess()
       onClose()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to save class", error)
-      toast.error(error.response?.data?.message || "Failed to save class")
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to save class")
     } finally {
       setLoading(false)
     }
@@ -297,7 +328,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl flex flex-col max-h-[85vh]">
+      <DialogContent className="sm:max-w-[700px] w-full p-0 overflow-hidden border-none shadow-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
           <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
             {classItem ? "Edit Class" : "Create New Class"}
@@ -310,65 +341,110 @@ const ClassModal: React.FC<ClassModalProps> = ({
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
             <div className="p-8 space-y-6 bg-white dark:bg-slate-900 flex-1 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <GraduationCap size={16} className="text-blue-500" /> Class Name
-                </Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all"
-                  placeholder="e.g. Grade 10"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <Layers size={16} className="text-blue-500" /> Section
-                </Label>
-                <Input
-                  value={formData.section}
-                  onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all"
-                  placeholder="e.g. A, B, Science"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <Calendar size={16} className="text-orange-500" /> Class Session
-                </Label>
-                <Select 
-                  value={formData.sessionId} 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, sessionId: val }))}
-                >
-                  <SelectTrigger className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all h-[42px]">
-                    <SelectValue placeholder="Select Session..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border border-slate-100 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
-                    <div className="p-2 border-b">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                        <Input 
-                          placeholder="Search sessions..." 
-                          className="pl-9 h-9 text-xs border-none bg-slate-100 rounded-lg"
-                          value={sessionSearch}
-                          onChange={(e) => setSessionSearch(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    {filteredSessions.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-slate-400">No sessions found</div>
-                    ) : (
-                      filteredSessions.map((session) => (
-                        <SelectItem key={session.id} value={session.id} className="rounded-lg">
-                          {session.name}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <GraduationCap size={16} className="text-blue-500" /> Class Name
+                  </Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all"
+                    placeholder="e.g. Grade 10"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <Layers size={16} className="text-blue-500" /> Section / Room
+                  </Label>
+                  <Input
+                    value={formData.section}
+                    onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all"
+                    placeholder="e.g. A, B, Science"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <GraduationCap size={16} className="text-indigo-500" /> Class Level
+                  </Label>
+                  <Select
+                    value={formData.level || "NONE"}
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, level: val === "NONE" ? "" : val }))}
+                  >
+                    <SelectTrigger className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all h-[42px]">
+                      <SelectValue placeholder="Select Level..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border border-slate-100 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900 max-h-56">
+                      <SelectItem value="NONE" className="rounded-lg text-slate-400">No Level Assigned</SelectItem>
+                      {displayLevels.map((lvl) => (
+                        <SelectItem key={lvl} value={lvl} className="rounded-lg">
+                          {lvl}
                         </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <Calendar size={16} className="text-orange-500" /> Class Session (Academic Year)
+                  </Label>
+                  <Select 
+                    value={formData.sessionId || "NONE"} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, sessionId: val === "NONE" ? "" : val }))}
+                  >
+                    <SelectTrigger className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all h-[42px]">
+                      <SelectValue placeholder="Select Session..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border border-slate-100 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
+                      <div className="p-2 border-b">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                          <Input 
+                            placeholder="Search sessions..." 
+                            className="pl-9 h-9 text-xs border-none bg-slate-100 dark:bg-slate-800 rounded-lg"
+                            value={sessionSearch}
+                            onChange={(e) => setSessionSearch(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <SelectItem value="NONE" className="rounded-lg text-slate-400">Select Session</SelectItem>
+                      {filteredSessions.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-slate-400">No sessions found</div>
+                      ) : (
+                        filteredSessions.map((session) => (
+                          <SelectItem key={session.id} value={session.name} className="rounded-lg">
+                            {session.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <Calendar size={16} className="text-emerald-500" /> Academic Term
+                  </Label>
+                  <Select 
+                    value={formData.term || "NONE"} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, term: val === "NONE" ? "" : val }))}
+                  >
+                    <SelectTrigger className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2.5 px-3 text-sm transition-all h-[42px]">
+                      <SelectValue placeholder="Select Term..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border border-slate-100 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
+                      <SelectItem value="NONE" className="rounded-lg text-slate-400">Select Term</SelectItem>
+                      <SelectItem value="First Term" className="rounded-lg">First Term</SelectItem>
+                      <SelectItem value="Second Term" className="rounded-lg">Second Term</SelectItem>
+                      <SelectItem value="Third Term" className="rounded-lg">Third Term</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
@@ -581,14 +657,14 @@ const ClassModal: React.FC<ClassModalProps> = ({
                 type="button"
                 variant="ghost"
                 onClick={onClose}
-                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-semibold"
+                className="px-4 h-10 rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 font-semibold cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={loading}
-                className="px-6 h-10 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2"
+                className="px-6 h-10 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold rounded-xl shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <>

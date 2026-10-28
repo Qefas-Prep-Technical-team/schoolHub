@@ -164,6 +164,9 @@ export default function ClassesOverviewPage() {
             id: c.id,
             name: c.name,
             section: c.section || 'N/A',
+            level: c.level,
+            term: c.term,
+            session: c.session,
             teacher: {
                 name: c.teachers?.[0]?.teacher?.name || 'No Teacher Assigned',
                 avatarUrl: c.teachers?.[0]?.teacher?.avatarUrl || '',

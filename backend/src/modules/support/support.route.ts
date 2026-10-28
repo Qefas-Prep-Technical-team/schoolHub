@@ -1,8 +1,12 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
 import { getMyTickets, createTicket, getTicketMessages, sendTicketMessage, createGuestTicket, sendGuestTicketMessage } from "./support.controller";
+import { listFaqs } from "../platform/support/faq.controller";
 
 const router = Router();
+
+// Public / Guest / Role FAQs
+router.get("/faqs", listFaqs);
 
 // Guest routes (Unauthenticated)
 router.post("/guest-tickets", createGuestTicket);

@@ -99,9 +99,21 @@ router.get("/plans", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMI
  */
 router.get("/features", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), getPlatformFeatures);
 
+import { listFaqs, getFaqDetails, createFaq, updateFaq, deleteFaq } from "./faq.controller";
+
 /**
  * @route   PATCH /api/platform/support/features/:id
  */
 router.patch("/features/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updatePlatformFeature);
+
+/**
+ * @route   FAQ Management Endpoints
+ */
+router.get("/faqs", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), listFaqs);
+router.get("/faqs/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), getFaqDetails);
+router.post("/faqs", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), createFaq);
+router.patch("/faqs/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateFaq);
+router.put("/faqs/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), updateFaq);
+router.delete("/faqs/:id", authorizePlatformRole(["OWNER", "SUPPORT_AGENT", "TECH_ADMIN"]), deleteFaq);
 
 export default router;

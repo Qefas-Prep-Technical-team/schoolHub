@@ -100,12 +100,17 @@ export function PromoteStudentModal({
     },
     onSuccess: (data) => {
       toast.success(data?.message || `${studentName} was successfully promoted!`);
-      // Invalidate relevant queries
+      // Invalidate relevant queries across both student and class views
       queryClient.invalidateQueries({ queryKey: ["student-details", studentId] });
       queryClient.invalidateQueries({ queryKey: ["student-history", studentId] });
       queryClient.invalidateQueries({ queryKey: ["student-schools", studentId] });
       queryClient.invalidateQueries({ queryKey: ["school-students"] });
       queryClient.invalidateQueries({ queryKey: ["school-classes"] });
+      queryClient.invalidateQueries({ queryKey: ["single-class"] });
+      queryClient.invalidateQueries({ queryKey: ["adminStudents"] });
+      queryClient.invalidateQueries({ queryKey: ["studentHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      queryClient.invalidateQueries({ queryKey: ["studentProfile"] });
       onClose();
       // Reset form
       setSelectedClassId("");

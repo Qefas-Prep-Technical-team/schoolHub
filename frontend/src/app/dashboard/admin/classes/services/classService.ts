@@ -8,6 +8,9 @@ export interface Class {
   scope: 'PERSONAL' | 'SCHOOL';
   status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'ARCHIVED';
   schoolId?: string;
+  level?: string;
+  term?: string;
+  session?: string;
   teacher?: {
     id: string;
     name: string;
@@ -78,6 +81,10 @@ export const classService = {
     section?: string;
     scope: string;
     schoolId?: string;
+    level?: string;
+    term?: string;
+    session?: string;
+    sessionId?: string;
     subjectIds?: string[];
     departmentIds?: string[];
     teacherIds?: string[];
@@ -90,6 +97,10 @@ export const classService = {
   updateClass: async (id: string, data: {
     name?: string;
     section?: string;
+    level?: string;
+    term?: string;
+    session?: string;
+    sessionId?: string;
     teacherIds?: string[];
     departmentIds?: string[];
     studentIds?: string[];

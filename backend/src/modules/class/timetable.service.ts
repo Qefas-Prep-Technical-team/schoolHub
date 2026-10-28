@@ -4,8 +4,20 @@ import { createNotification } from "../notification/notification.service";
 
 export const getClassTimetableService = async (classId: string, termPeriodId?: string) => {
   const whereClause: any = { classId };
-  if (termPeriodId) {
-    whereClause.termPeriodId = termPeriodId;
+  const validTermId = termPeriodId && termPeriodId !== "NONE" && termPeriodId !== "undefined" && termPeriodId !== "null" ? termPeriodId : undefined;
+  
+  if (validTermId) {
+    const countForTerm = await prisma.timetablePeriod.count({
+      where: { classId, termPeriodId: validTermId }
+    });
+    if (countForTerm > 0) {
+      whereClause.termPeriodId = validTermId;
+    } else {
+      whereClause.OR = [
+        { termPeriodId: validTermId },
+        { termPeriodId: null }
+      ];
+    }
   }
 
   return prisma.timetablePeriod.findMany({

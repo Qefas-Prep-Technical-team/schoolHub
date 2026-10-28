@@ -6,6 +6,8 @@ import { SchoolSubscriptionService } from "../subscription/school-subscription.s
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import { FinanceService } from "../finance/finance.service";
 import { getPaymentGateway } from "./gateway.factory";
+import { CouponService } from "./coupon.service";
+import { PlatformAlertRecipientService } from "../platform/notifications/recipient.service";
 
 const getPlanId = async (userType: string, plan: string) => {
   const categoryMap: Record<string, string> = {
@@ -28,8 +30,187 @@ const getPlanId = async (userType: string, plan: string) => {
 
   if (dbPlan) return dbPlan.id;
 
+  // Fallback: check if any active plan matches type
+  const fallbackPlan = await prisma.subscriptionPlan.findFirst({
+    where: {
+        type: { equals: plan, mode: 'insensitive' },
+        isActive: true
+    },
+    select: { id: true }
+  });
+  if (fallbackPlan) return fallbackPlan.id;
+
   // Hard fail — do NOT silently return a fake/hardcoded ID that would corrupt Transaction records.
   throw new Error(`No active subscription plan found for category="${category}", type="${plan}". Ensure the plan exists in the database.`);
+};
+
+/**
+ * Directly process a 0-amount checkout (e.g. 100% coupon discount applied)
+ */
+export const processZeroAmountCheckout = async (params: {
+  reference: string;
+  userId: string;
+  email: string;
+  userRoleRaw: string;
+  plan: string;
+  billingType: "monthly" | "yearly";
+  metadata?: Record<string, unknown>;
+}) => {
+  const { reference, userId, email, userRoleRaw, plan, billingType, metadata } = params;
+  const userRole = (userRoleRaw || "ADMIN").toUpperCase();
+
+  console.log(`[PaymentService] Processing 0-amount (100% discount) checkout for user: ${userId || email}, plan: ${plan}`);
+
+  // Resolve user ID if missing
+  let resolvedUserId = userId;
+  if (!resolvedUserId && email) {
+    const tableMap: Record<string, string> = { ADMIN: "admin", TEACHER: "teacher", STUDENT: "student", PARENT: "parent" };
+    const table = tableMap[userRole] || "admin";
+    try {
+      const userRecord = await (prisma as any)[table].findFirst({ where: { email } });
+      if (userRecord?.id) resolvedUserId = userRecord.id;
+    } catch (e) {
+      console.warn("[PaymentService] Could not resolve userId by email:", e);
+    }
+  }
+
+  // Duration in months
+  const durationMonths = billingType === "yearly" ? 12 : 1;
+  const subscriptionEnd = new Date();
+  subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
+
+  // Resolve planId
+  let planId: string | null = null;
+  let actualPlanName = plan;
+  try {
+    planId = await getPlanId(userRole, plan);
+    const dbPlan = await prisma.subscriptionPlan.findUnique({ where: { id: planId }, select: { name: true } });
+    if (dbPlan?.name) actualPlanName = dbPlan.name;
+  } catch (err) {
+    console.warn(`[PaymentService] Plan ID resolution warning:`, err);
+  }
+
+  // Resolve schoolId for ADMIN
+  let schoolId: string | undefined;
+  if (userRole === "ADMIN" && resolvedUserId) {
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId: resolvedUserId },
+      select: { schoolId: true },
+    });
+    schoolId = schoolAdmin?.schoolId;
+  }
+
+  // Save Transaction record with SUCCESS status
+  await prisma.transaction.create({
+    data: {
+      reference,
+      amount: 0,
+      currency: "NGN",
+      status: "SUCCESS",
+      paymentMethod: "COUPON",
+      paidAt: new Date(),
+      schoolId,
+      userId: resolvedUserId || "guest",
+      userType: userRole as any,
+      plan: actualPlanName,
+      planId: planId || undefined,
+      billingCycle: billingType,
+      expiryDate: subscriptionEnd,
+      gateway: "FREE_COUPON",
+      gatewayRef: reference,
+    },
+  });
+
+  // Record coupon usage if a coupon was used
+  const couponId = metadata?.couponId as string | undefined;
+  const couponDiscount = (metadata?.couponDiscount as number) || 0;
+  if (couponId) {
+    try {
+      await CouponService.recordUsage({
+        couponId,
+        userId: resolvedUserId || "guest",
+        userEmail: email,
+        discountNaira: couponDiscount,
+        paymentReference: reference,
+      });
+      console.log(`[PaymentService] Recorded 100% coupon usage for ${couponId}`);
+    } catch (couponErr) {
+      console.error("[PaymentService] Error recording coupon usage:", couponErr);
+    }
+  }
+
+  // Update subscriptions
+  if (resolvedUserId && planId) {
+    switch (userRole) {
+      case "TEACHER":
+      case "STUDENT":
+      case "PARENT":
+        await UserSubscriptionService.updatePlan({
+          userId: resolvedUserId,
+          userType: userRole as any,
+          planId,
+          type: SubscriptionType.PAID,
+          durationDays: durationMonths * 30,
+          amountPaid: 0,
+          paymentReference: reference,
+          note: "Activated via 100% Coupon Discount",
+          isTrial: false,
+        });
+        break;
+
+      case "ADMIN":
+        await UserSubscriptionService.updatePlan({
+          userId: resolvedUserId,
+          userType: UserRole.ADMIN,
+          planId,
+          type: SubscriptionType.PAID,
+          durationDays: durationMonths * 30,
+          amountPaid: 0,
+          paymentReference: reference,
+          note: "Activated via 100% Coupon Discount",
+          isTrial: false,
+        });
+
+        if (schoolId) {
+          await SchoolSubscriptionService.updatePlan({
+            schoolId,
+            planId,
+            type: SubscriptionType.PAID,
+            durationDays: durationMonths * 30,
+            amountPaid: 0,
+            paymentReference: reference,
+            note: "Activated via 100% Coupon Discount",
+            isTrial: false,
+          });
+
+          await prisma.school.update({
+            where: { id: schoolId },
+            data: {
+              plan: plan.toUpperCase(),
+              planId,
+              subscriptionPlanId: planId,
+              subscriptionStatus: "ACTIVE",
+              subscriptionEnd,
+              billingCycle: billingType,
+              lastPaymentDate: new Date(),
+            },
+          });
+        }
+        break;
+    }
+  }
+
+  // Dispatch payment alert to registered platform recipients
+  PlatformAlertRecipientService.dispatchAlert("PAYMENTS", {
+    subject: `💳 [100% Discount] Plan Activated: ${plan.toUpperCase()}`,
+    title: "100% Discount Subscription Activation",
+    description: `A user has activated a ${plan.toUpperCase()} subscription using a 100% coupon discount.\n\nPlan: ${plan.toUpperCase()}\nBilling: ${billingType}\nReference: ${reference}`,
+    userEmail: email,
+    userType: userRole,
+    priority: "LOW"
+  }).catch(err => console.error("[PaymentService] Failed dispatching payment alert:", err));
+
+  return { reference, status: "SUCCESS", plan, subscriptionEnd };
 };
 
 /**
@@ -43,6 +224,32 @@ export const initializePaymentService = async (params: {
   planCode?: string;
   metadata?: Record<string, unknown>;
 }) => {
+  // --- ZERO AMOUNT / 100% COUPON HANDLER ---
+  if (params.amount === 0) {
+    const freeRef = `FREE_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const userRoleRaw = (params.metadata?.user_role as string) || (params.metadata?.role as string) || "ADMIN";
+    const billingType = (params.metadata?.billing as "monthly" | "yearly") || "monthly";
+
+    await processZeroAmountCheckout({
+      reference: freeRef,
+      userId: params.userId,
+      email: params.email,
+      userRoleRaw,
+      plan: params.plan,
+      billingType,
+      metadata: params.metadata,
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || "https://www.qefashub.com";
+    return {
+      authorization_url: `${frontendUrl}/payment/callback?reference=${freeRef}&status=successful`,
+      checkoutUrl: `${frontendUrl}/payment/callback?reference=${freeRef}&status=successful`,
+      access_code: "FREE_COUPON",
+      reference: freeRef,
+      isFree: true,
+    };
+  }
+
   const gateway = getPaymentGateway();
   const result = await gateway.initialize({
     userId: params.userId,
@@ -58,6 +265,7 @@ export const initializePaymentService = async (params: {
   // Return a shape the controller and frontend already understand
   return {
     authorization_url: result.checkoutUrl,
+    checkoutUrl: result.checkoutUrl,
     access_code: result.accessCode,
     reference: result.txRef,
   };
@@ -86,7 +294,12 @@ export const verifyPaymentService = async (
     });
     if (existingTransaction) {
       console.log(`[PaymentService] Reference ${reference} already processed. Skipping.`);
-      return { alreadyProcessed: true, reference };
+      return { 
+        alreadyProcessed: true, 
+        reference,
+        paymentMethod: existingTransaction.paymentMethod || "COUPON",
+        expiryDate: existingTransaction.expiryDate ? existingTransaction.expiryDate.toISOString() : null
+      };
     }
 
     // Delegate verification to the active gateway adapter
@@ -370,9 +583,9 @@ export const verifyPaymentService = async (
         }
     }
 
-    // 4. Send Receipt Email
+    // 4. Send Receipt Email & Platform Alert
+    let userEmail: string | undefined;
     try {
-        let userEmail: string | undefined;
         if (userRole === "ADMIN") {
             const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
             userEmail = admin?.email;
@@ -395,6 +608,16 @@ export const verifyPaymentService = async (
         console.error("[PaymentService] Failed to send receipt email:", emailError);
         // Don't throw here as the payment was successful
     }
+
+    // Dispatch payment alert to registered platform recipients
+    PlatformAlertRecipientService.dispatchAlert("PAYMENTS", {
+      subject: `💳 Payment Received: ₦${paystackAmount.toLocaleString()} (${plan.toUpperCase()})`,
+      title: "Subscription Payment Received",
+      description: `A payment of ₦${paystackAmount.toLocaleString()} was successfully processed via ${gateway.name} (${channel || 'Card'}).\n\nPlan: ${plan.toUpperCase()}\nReference: ${paystackRef}\nExpiry: ${updateData.subscriptionEnd?.toISOString()}`,
+      userEmail: userEmail,
+      userType: userRole,
+      priority: "MEDIUM"
+    }).catch(err => console.error("[PaymentService] Failed dispatching payment alert:", err));
 
     return { 
         reference: paystackRef, 
@@ -641,6 +864,15 @@ export const getPaymentHistoryService = async (userId: string) => {
  * is embedded in the tx_ref stored at initialization time.
  */
 export const getMetadataFromReference = async (reference: string, flwTransactionId?: string) => {
+    if (reference.startsWith("FREE_")) {
+        const tx = await prisma.transaction.findUnique({
+            where: { reference },
+            select: { userId: true, userType: true }
+        });
+        if (tx?.userId && tx?.userType) {
+            return { userId: tx.userId, userRole: tx.userType };
+        }
+    }
     try {
         const gateway = getPaymentGateway();
         const verified = await gateway.verify(reference, flwTransactionId);
@@ -901,9 +1133,9 @@ export const paystackWebhookService = async (
       return { success: true };
     }
 
-    // ── Branch A-1: School fee payment (delegated to FinanceService) ──────────
-    if (paymentType === 'SCHOOL_FEES') {
-      console.log(`[Webhook] Delegating SCHOOL_FEES charge.success (ref: ${reference}) to FinanceService.`);
+    // ── Branch A-1: School fee & Transcript payment (delegated to FinanceService) ──────────
+    if (paymentType === 'SCHOOL_FEES' || paymentType === 'TRANSCRIPT' || paymentType === 'PORTAL_ACCESS') {
+      console.log(`[Webhook] Delegating ${paymentType} charge.success (ref: ${reference}) to FinanceService.`);
       await FinanceService.verifyPayment(reference);
       return { success: true };
     }

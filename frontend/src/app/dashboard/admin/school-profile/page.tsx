@@ -36,7 +36,9 @@ import {
   Link as LinkIcon,
   Loader2,
   Share2,
-  Percent
+  Percent,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
@@ -56,6 +58,7 @@ export default function SchoolProfilePage() {
   const { data: settings } = useSchoolSettings(schoolId);
   const [leadershipPage, setLeadershipPage] = useState(1);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isAboutExpanded, setIsAboutExpanded] = useState(false);
 
   const primaryColor = settings?.themeColor || '#2563eb';
   const isVerified = school?.admins?.some((sa: any) => sa.admin?.verified) ?? false;
@@ -249,9 +252,27 @@ export default function SchoolProfilePage() {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {school?.description || "A premier educational institution focused on excellence and holistic development. Committed to nurturing future leaders through innovative teaching methodologies and a balanced approach to academic and extracurricular growth."}
-            </p>
+            <div className="relative">
+              <p
+                className={cn(
+                  "text-sm text-slate-600 dark:text-slate-400 leading-relaxed transition-all duration-300",
+                  !isAboutExpanded && "line-clamp-3"
+                )}
+              >
+                {school?.description ||
+                  "A premier educational institution focused on excellence and holistic development. Committed to nurturing future leaders through innovative teaching methodologies and a balanced approach to academic and extracurricular growth."}
+              </p>
+              {((school?.description || "A premier educational institution focused on excellence and holistic development. Committed to nurturing future leaders through innovative teaching methodologies and a balanced approach to academic and extracurricular growth.").length > 150 || (school?.description || "").includes("\n")) && (
+                <button
+                  type="button"
+                  onClick={() => setIsAboutExpanded((prev) => !prev)}
+                  className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors focus:outline-none cursor-pointer"
+                >
+                  <span>{isAboutExpanded ? "Show less" : "Read more"}</span>
+                  {isAboutExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Academic Leadership */}

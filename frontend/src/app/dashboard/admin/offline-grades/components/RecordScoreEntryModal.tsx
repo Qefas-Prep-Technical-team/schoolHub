@@ -37,6 +37,9 @@ import RosterSpreadsheetView from './RosterSpreadsheetView';
 import MobileRosterCardView from './MobileRosterCardView';
 import OfflineGradesCSVModal from './OfflineGradesCSVModal';
 import OfflineGradesOCRModal from './OfflineGradesOCRModal';
+import * as XLSX from 'xlsx';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { computeGradePill } from '@/utils/gradingSystem';
 import {
   OfflineGradesBatchConfig,
   OfflineStudentGradeEntry,
@@ -54,6 +57,9 @@ interface RecordScoreEntryModalProps {
   initialRecord?: GradeBatchSummary | null;
   defaultCategory?: OfflineAssessmentCategory;
   defaultClassId?: string;
+  defaultSubject?: string;
+  defaultMaxMarks?: number;
+  initialScores?: Record<string, { score: number; remarks?: string }>;
   onSavedSuccess: () => void;
 }
 
@@ -67,6 +73,9 @@ export default function RecordScoreEntryModal({
   initialRecord,
   defaultCategory,
   defaultClassId,
+  defaultSubject,
+  defaultMaxMarks,
+  initialScores,
   onSavedSuccess,
 }: RecordScoreEntryModalProps) {
   const queryClient = useQueryClient();
@@ -98,7 +107,7 @@ export default function RecordScoreEntryModal({
   const activeClassName = initialRecord?.className || (initialClassObj ? `${initialClassObj.name} ${initialClassObj.section || ''}`.trim() : '');
 
   const initialCat: OfflineAssessmentCategory = initialRecord?.category || defaultCategory || 'CA';
-  const initialDefaultMax = initialCat === 'CA' ? 20 : (initialCat === 'QUIZ' ? 10 : (initialCat === 'MIDTERM' ? 40 : 100));
+  const initialDefaultMax = initialRecord?.maxMarks || defaultMaxMarks || (initialCat === 'CA' ? 20 : (initialCat === 'QUIZ' ? 10 : (initialCat === 'MIDTERM' ? 40 : 100)));
   const initialDefaultTitle = 
     initialCat === 'EXAM' ? 'Terminal Exam 1' :
     initialCat === 'ASSIGNMENT' ? 'Physical Assignment 1' :
@@ -112,10 +121,10 @@ export default function RecordScoreEntryModal({
     className: activeClassName,
     departmentId: 'ALL',
     departmentName: undefined,
-    subject: initialRecord?.subject || '',
+    subject: initialRecord?.subject || defaultSubject || '',
     category: initialCat,
     assessmentType: initialRecord?.assessmentType || initialDefaultTitle,
-    maxMarks: initialRecord?.maxMarks || initialDefaultMax,
+    maxMarks: initialDefaultMax,
     weight: 1.0,
     term: initialRecord?.term || currentTerm,
     sessionId: initialRecord?.sessionId || currentSession?.id || '',
@@ -167,7 +176,7 @@ export default function RecordScoreEntryModal({
         });
       } else {
         const cat: OfflineAssessmentCategory = defaultCategory || 'CA';
-        const defaultMax = cat === 'CA' ? 20 : (cat === 'QUIZ' ? 10 : (cat === 'MIDTERM' ? 40 : 100));
+        const defaultMax = defaultMaxMarks || (cat === 'CA' ? 20 : (cat === 'QUIZ' ? 10 : (cat === 'MIDTERM' ? 40 : 100)));
         const targetClass = defaultClassId ? classes.find(c => c.id === defaultClassId) : null;
 
         setConfig({
@@ -175,7 +184,7 @@ export default function RecordScoreEntryModal({
           className: targetClass?.name ? `${targetClass.name} ${targetClass.section || ''}`.trim() : '',
           departmentId: 'ALL',
           departmentName: undefined,
-          subject: '',
+          subject: defaultSubject || '',
           category: cat,
           assessmentType: 
             cat === 'EXAM' ? 'Terminal Exam 1' :
@@ -193,7 +202,7 @@ export default function RecordScoreEntryModal({
         });
       }
     }
-  }, [isOpen, initialRecord?.id, defaultCategory, defaultClassId]);
+  }, [isOpen, initialRecord?.id, defaultCategory, defaultClassId, defaultSubject, defaultMaxMarks]);
 
   // Fetch school departments (staleTime 10min per AGENTS.md rule 2.1)
   const { data: schoolDepartmentsData } = useSchoolDepartments(schoolId);
@@ -295,12 +304,15 @@ export default function RecordScoreEntryModal({
   useEffect(() => {
     if (!config.classId || classSubjects.length === 0) return;
     setConfig(prev => {
+      if (defaultSubject && classSubjects.includes(defaultSubject) && (!prev.subject || prev.subject !== defaultSubject)) {
+        return { ...prev, subject: defaultSubject };
+      }
       if (!prev.subject || !classSubjects.includes(prev.subject)) {
         return { ...prev, subject: classSubjects[0] };
       }
       return prev;
     });
-  }, [config.classId, classSubjectsKey]);
+  }, [config.classId, classSubjectsKey, defaultSubject]);
 
   // Determine all department IDs associated with the currently chosen subject
   const subjectDepartmentIds = useMemo((): string[] => {
@@ -415,6 +427,7 @@ export default function RecordScoreEntryModal({
         g.studentId === student.id &&
         (g.assessmentType === config.assessmentType || g.category === config.category)
       );
+      const prefilledScore = initialScores?.[student.id];
 
       return {
         studentId: student.id,
@@ -423,8 +436,8 @@ export default function RecordScoreEntryModal({
         profileImage: student.profileImage || null,
         departmentId: student.departmentId || student.department?.id || null,
         departmentName: student.department?.name || null,
-        score: matchedGrade ? matchedGrade.score : '',
-        remarks: matchedGrade?.remarks || '',
+        score: prefilledScore !== undefined ? prefilledScore.score : (matchedGrade ? matchedGrade.score : ''),
+        remarks: prefilledScore?.remarks !== undefined ? prefilledScore.remarks : (matchedGrade?.remarks || ''),
         existingGradeId: matchedGrade?.id,
         status: (matchedGrade?.status as any) || 'DRAFT',
       };
@@ -437,7 +450,8 @@ export default function RecordScoreEntryModal({
     config.assessmentType, 
     config.category, 
     config.departmentId, 
-    subjectDeptIdsKey
+    subjectDeptIdsKey,
+    initialScores
   ]);
 
   const handleUpdateScore = (studentId: string, val: string | number) => {
@@ -590,6 +604,114 @@ export default function RecordScoreEntryModal({
     },
   });
 
+  // Export Handlers
+  const getStudentGrade = (s: OfflineStudentGradeEntry) => {
+    if (s.grade) return s.grade;
+    const scoreNum = s.score !== '' ? Number(s.score) : null;
+    if (scoreNum !== null && config.maxMarks > 0) {
+      const pct = Math.round((scoreNum / config.maxMarks) * 100);
+      return computeGradePill(pct, gradingSystem).label;
+    }
+    return '';
+  };
+
+  const handleExportExcel = () => {
+    if (!config.classId) {
+      toast.error('Please select a class cohort first.');
+      return;
+    }
+    const headers = ['#', 'Student Name', 'Student Code / Reg No', `Score (Max: ${config.maxMarks})`, 'Grade', 'Status', 'Remarks'];
+    const rows = roster.map((s, idx) => [
+      idx + 1,
+      s.studentName,
+      s.studentCode || '',
+      s.score !== '' ? Number(s.score) : '',
+      getStudentGrade(s),
+      s.status,
+      s.remarks || '',
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    worksheet['!cols'] = [
+      { wch: 6 },
+      { wch: 28 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 30 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Marksheet');
+    const safeClass = (config.className || 'Class').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeSub = (config.subject || 'Subject').replace(/[^a-zA-Z0-9_-]/g, '_');
+    XLSX.writeFile(workbook, `Marksheet_${safeClass}_${safeSub}_${config.category}.xlsx`);
+    toast.success('Excel marksheet exported successfully.');
+  };
+
+  const handleExportCSV = () => {
+    if (!config.classId) {
+      toast.error('Please select a class cohort first.');
+      return;
+    }
+    const headers = ['#', 'Student Name', 'Student Code / Reg No', `Score (Max: ${config.maxMarks})`, 'Grade', 'Status', 'Remarks'];
+    const rows = roster.map((s, idx) => [
+      idx + 1,
+      `"${s.studentName.replace(/"/g, '""')}"`,
+      `"${(s.studentCode || '').replace(/"/g, '""')}"`,
+      s.score !== '' ? s.score : '',
+      `"${getStudentGrade(s)}"`,
+      s.status,
+      `"${(s.remarks || '').replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeClass = (config.className || 'Class').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeSub = (config.subject || 'Subject').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.setAttribute('download', `Marksheet_${safeClass}_${safeSub}_${config.category}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('CSV marksheet exported successfully.');
+  };
+
+  const handleExportPDF = () => {
+    if (!config.classId) {
+      toast.error('Please select a class cohort first.');
+      return;
+    }
+    generatePDF({
+      title: `Offline Marksheet — ${config.assessmentType}`,
+      filename: `Marksheet_${(config.className || 'Class').replace(/[^a-zA-Z0-9_-]/g, '_')}_${config.subject}.pdf`,
+      schoolProfile,
+      orientation: 'portrait',
+      metaData: [
+        { label: 'Class Cohort', value: config.className || 'General' },
+        { label: 'Subject Curriculum', value: config.subject || 'All Subjects' },
+        { label: 'Assessment Category', value: config.category },
+        { label: 'Maximum Marks', value: String(config.maxMarks) },
+        { label: 'Term / Session', value: `${config.term} Term • ${config.sessionName || 'Current'}` },
+        { label: 'Total Enrolled', value: `${totalStudents} students` },
+        { label: 'Graded Count', value: `${gradedCount} (${totalStudents > 0 ? ((gradedCount / totalStudents) * 100).toFixed(0) : 0}%)` },
+        { label: 'Class Average', value: `${averageScore.toFixed(1)} / ${config.maxMarks}` },
+        { label: 'Pass Count', value: `${passCount} passed` },
+        { label: 'Status', value: config.status },
+      ],
+      tableHeaders: [['#', 'Student Name', 'Code', `Score (${config.maxMarks})`, 'Grade', 'Remarks']],
+      tableData: roster.map((s, idx) => [
+        String(idx + 1),
+        s.studentName,
+        s.studentCode || '—',
+        s.score !== '' ? String(s.score) : '—',
+        getStudentGrade(s) || '—',
+        s.remarks || '—',
+      ]),
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[96vw] max-w-7xl 2xl:max-w-[1500px] max-h-[94vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 dark:bg-slate-900 dark:border-slate-800">
@@ -627,8 +749,9 @@ export default function RecordScoreEntryModal({
             onSave={(status) => saveMutation.mutate(status)}
             onOpenCSVModal={() => setIsCSVModalOpen(true)}
             onOpenOCRModal={() => setIsOCRModalOpen(true)}
-            onExportPDF={() => {}}
-            onExportCSV={() => {}}
+            onExportPDF={handleExportPDF}
+            onExportCSV={handleExportCSV}
+            onExportExcel={handleExportExcel}
             onResetScores={handleClearAll}
           />
 

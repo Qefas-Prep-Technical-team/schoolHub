@@ -101,6 +101,11 @@ const PromoteStudentsModal: React.FC<PromoteStudentsModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ["school-classes"] });
       queryClient.invalidateQueries({ queryKey: ["adminStudents"] });
       queryClient.invalidateQueries({ queryKey: ["studentHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["student-details"] });
+      queryClient.invalidateQueries({ queryKey: ["student-history"] });
+      queryClient.invalidateQueries({ queryKey: ["school-students"] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      queryClient.invalidateQueries({ queryKey: ["studentProfile"] });
       onClose();
     },
     onError: (error: any) => {
@@ -139,6 +144,11 @@ const PromoteStudentsModal: React.FC<PromoteStudentsModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ["school-classes"] });
       queryClient.invalidateQueries({ queryKey: ["adminStudents"] });
       queryClient.invalidateQueries({ queryKey: ["studentHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["student-details"] });
+      queryClient.invalidateQueries({ queryKey: ["student-history"] });
+      queryClient.invalidateQueries({ queryKey: ["school-students"] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      queryClient.invalidateQueries({ queryKey: ["studentProfile"] });
       onClose();
     },
     onError: (error: any) => {

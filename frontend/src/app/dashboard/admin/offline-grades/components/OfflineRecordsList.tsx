@@ -55,6 +55,7 @@ interface OfflineRecordsListProps {
   onDeleteRecord: (recordId: string) => void;
   onExportPDF: (record?: GradeBatchSummary) => void;
   onExportCSV: (record?: GradeBatchSummary) => void;
+  onOpenSyncModal?: () => void;
 }
 
 export type OfflineCategoryTab = 'all' | 'exam' | 'ca' | 'assignment' | 'quiz_test';
@@ -141,6 +142,7 @@ export default function OfflineRecordsList({
   onDeleteRecord,
   onExportPDF,
   onExportCSV,
+  onOpenSyncModal,
 }: OfflineRecordsListProps) {
   const [activeTab, setActiveTab] = useState<OfflineCategoryTab>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -295,8 +297,20 @@ export default function OfflineRecordsList({
             </div>
           </div>
 
-          {/* Primary Action Button */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {onOpenSyncModal && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onOpenSyncModal}
+                className={`h-11 px-4 sm:px-5 rounded-xl border ${isTeacher ? 'border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' : 'border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} font-bold text-xs sm:text-sm gap-2 shadow-xs cursor-pointer`}
+              >
+                <FileSpreadsheet size={16} className={isTeacher ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'} />
+                <span>Download Grade Sheet Template</span>
+              </Button>
+            )}
+
             <Button
               type="button"
               onClick={() => {

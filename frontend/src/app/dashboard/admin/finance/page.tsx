@@ -49,7 +49,8 @@ import {
     RefreshCw,
     Trash2,
     Zap,
-    Shield
+    Shield,
+    Mail
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
@@ -103,6 +104,7 @@ export default function AdminFinancePage() {
     const [newSelectedBank, setNewSelectedBank] = useState("")
     const [newAccountNumber, setNewAccountNumber] = useState("")
     const [newBusinessName, setNewBusinessName] = useState("")
+    const [newBusinessEmail, setNewBusinessEmail] = useState("")
     const [resolvingNewAccount, setResolvingNewAccount] = useState(false)
     const [resolvedNewAccountName, setResolvedNewAccountName] = useState<string | null>(null)
     const [newResolutionError, setNewResolutionError] = useState<string | null>(null)
@@ -117,6 +119,7 @@ export default function AdminFinancePage() {
     // School Profile for auto-populating school display name
     const { data: schoolProfile } = useSchoolProfile(schoolId)
     const schoolDisplayName = schoolProfile?.name || (schoolProfile as any)?.schoolName || user?.schools?.[0]?.name || (user as any)?.tenant?.name || ""
+    const schoolEmail = (schoolProfile as any)?.schoolEmail || (schoolProfile as any)?.email || user?.email || ""
 
     // Transcript Clearance Fee state
     const { data: schoolSettings, refetch: refetchSettings } = useSchoolSettings(schoolId)
@@ -252,12 +255,15 @@ export default function AdminFinancePage() {
         }
     }, [activeTab, searchQuery, statusFilter, categoryFilter, loadTransactions, loadBankAudits])
 
-    // Requirement 1: Auto add school name in the display name
+    // Requirement 1: Auto add school name & email in bank modal
     useEffect(() => {
         if (isAddBankModalOpen && !newBusinessName.trim() && schoolDisplayName) {
             setNewBusinessName(schoolDisplayName)
         }
-    }, [isAddBankModalOpen, newBusinessName, schoolDisplayName])
+        if (isAddBankModalOpen && !newBusinessEmail.trim() && schoolEmail) {
+            setNewBusinessEmail(schoolEmail)
+        }
+    }, [isAddBankModalOpen, newBusinessName, schoolDisplayName, newBusinessEmail, schoolEmail])
 
     // Enforce authentication & admin security
     useEffect(() => {
@@ -364,18 +370,24 @@ export default function AdminFinancePage() {
         try {
             setSavingNewBank(true)
             const selectedBankObj = bankList.find(b => b.code === newSelectedBank)
+            const resolvedEmail = newBusinessEmail.trim() || schoolEmail || user?.email || "finance@schoolhub.ng"
             await financeService.setupBank(schoolId, {
                 business_name: newBusinessName.trim() || schoolDisplayName,
+                business_email: resolvedEmail,
                 settlement_bank: newSelectedBank,
                 bank_name: selectedBankObj?.name || newSelectedBank,
                 account_number: newAccountNumber.trim(),
-                percentage_charge: 0
+                percentage_charge: 0,
+                addedByName: user?.name || undefined,
+                addedByEmail: user?.email || undefined,
+                addedByRole: user?.role || "ADMIN",
             })
             toast.success("School bank account connected successfully!")
             setIsAddBankModalOpen(false)
             setNewSelectedBank("")
             setNewAccountNumber("")
             setNewBusinessName(schoolDisplayName || "")
+            setNewBusinessEmail(schoolEmail || "")
             setResolvedNewAccountName(null)
             setNewNameConfirmed(false)
             await Promise.all([loadAnalytics(), loadBankAudits()])
@@ -388,14 +400,15 @@ export default function AdminFinancePage() {
 
     const handleSync = async (accountId?: string) => {
         if (!schoolId) return
+        const resolvedAccountId = typeof accountId === "string" && accountId.trim() ? accountId.trim() : undefined
         try {
             setLoading(true)
-            const result = await financeService.syncSubaccountStatus(schoolId, accountId)
+            const result = await financeService.syncSubaccountStatus(schoolId, resolvedAccountId)
             toast.success(result.message || "Settlement status synchronized")
-            await loadAnalytics()
+            await Promise.all([loadAnalytics(), loadBankAudits()])
         } catch (error: unknown) {
-            const err = error as { message?: string }
-            toast.error(err.message || "Sync failed")
+            const err = error as { response?: { data?: { message?: string } }; message?: string }
+            toast.error(err.response?.data?.message || err.message || "Sync failed")
         } finally {
             setLoading(false)
         }
@@ -684,7 +697,7 @@ export default function AdminFinancePage() {
                         <PaymentStatusCard
                             status={analytics.paymentStatus}
                             schoolId={schoolId}
-                            onRefresh={handleSync}
+                            onRefresh={() => handleSync()}
                         />
                     )}
 
@@ -1324,26 +1337,36 @@ export default function AdminFinancePage() {
                                                         </span>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="size-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-[11px] shrink-0 shadow-sm">
-                                                                {(audit.userName || "Admin").substring(0, 2).toUpperCase()}
-                                                            </div>
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                                                                    {audit.userName || "System Administrator"}
-                                                                </span>
-                                                                <div className="flex items-center gap-1.5 pt-0.5">
-                                                                    <span className="text-[10px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                                                                        {audit.userRole || "ADMIN"}
-                                                                    </span>
-                                                                    {audit.userEmail && (
-                                                                        <span className="text-[10px] text-slate-400 truncate max-w-[140px]">
-                                                                            {audit.userEmail}
+                                                        {(() => {
+                                                            const effectiveUserName = (!audit.userName || audit.userName === "School Administrator" || audit.userName === "System Administrator")
+                                                                ? (user?.name || audit.userName || "Administrator")
+                                                                : audit.userName
+                                                            const effectiveUserEmail = audit.userEmail || (effectiveUserName === user?.name ? user?.email : null)
+                                                            const initials = (effectiveUserName || "Admin").substring(0, 2).toUpperCase()
+
+                                                            return (
+                                                                <div className="flex items-center gap-2.5">
+                                                                    <div className="size-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-[11px] shrink-0 shadow-sm">
+                                                                        {initials}
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                                                                            {effectiveUserName}
                                                                         </span>
-                                                                    )}
+                                                                        <div className="flex items-center gap-1.5 pt-0.5">
+                                                                            <span className="text-[10px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                                                {audit.userRole || user?.role || "ADMIN"}
+                                                                            </span>
+                                                                            {effectiveUserEmail && (
+                                                                                <span className="text-[10px] text-slate-400 truncate max-w-[140px]" title={effectiveUserEmail}>
+                                                                                    {effectiveUserEmail}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
+                                                            )
+                                                        })()}
                                                     </TableCell>
                                                     <TableCell className="pr-5 text-right whitespace-nowrap">
                                                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl">
@@ -1959,7 +1982,7 @@ export default function AdminFinancePage() {
 
             {/* MODAL 4: ADD SCHOOL BANK ACCOUNT */}
             <Dialog open={isAddBankModalOpen} onOpenChange={setIsAddBankModalOpen}>
-                <DialogContent className="max-w-xl p-0 overflow-hidden rounded-[2.5rem] bg-white dark:bg-slate-900 border-none shadow-2xl">
+                <DialogContent className="max-w-4xl w-full p-0 overflow-hidden rounded-[2.5rem] bg-white dark:bg-slate-900 border-none shadow-2xl">
                     {/* Header */}
                     <div className="p-6 sm:p-8 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white relative overflow-hidden">
                         <div className="absolute right-0 top-0 w-64 h-full bg-blue-500/10 blur-2xl pointer-events-none" />
@@ -1981,341 +2004,365 @@ export default function AdminFinancePage() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleSaveNewBank} className="p-6 sm:p-8 space-y-5 max-h-[75vh] overflow-y-auto">
-                        {/* Live Virtual Bank Card Preview */}
-                        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shadow-xl border border-white/10">
-                            <div className="absolute -right-16 -top-16 size-48 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
-                            <div className="absolute -left-16 -bottom-16 size-48 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+                    <form onSubmit={handleSaveNewBank} className="p-6 sm:p-8 max-h-[82vh] overflow-y-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+                            {/* Left Column: Virtual Card Preview, Sandbox Helper, Security Notice */}
+                            <div className="lg:col-span-5 space-y-4">
+                                {/* Live Virtual Bank Card Preview */}
+                                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 p-6 text-white shadow-xl border border-white/10">
+                                    <div className="absolute -right-16 -top-16 size-48 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+                                    <div className="absolute -left-16 -bottom-16 size-48 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
 
-                            <div className="relative z-10 flex items-center justify-between mb-5">
-                                <div className="flex items-center gap-3">
-                                    {/* Gold EMV Chip */}
-                                    <div className="w-10 h-7 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-500 border border-amber-600/40 shadow-inner flex items-center justify-center relative overflow-hidden shrink-0">
-                                        <div className="w-full h-px bg-amber-700/30 absolute top-2" />
-                                        <div className="w-full h-px bg-amber-700/30 absolute bottom-2" />
-                                        <div className="h-full w-px bg-amber-700/30 absolute left-3" />
-                                        <div className="h-full w-px bg-amber-700/30 absolute right-3" />
+                                    <div className="relative z-10 flex items-center justify-between mb-5">
+                                        <div className="flex items-center gap-3">
+                                            {/* Gold EMV Chip */}
+                                            <div className="w-10 h-7 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-500 border border-amber-600/40 shadow-inner flex items-center justify-center relative overflow-hidden shrink-0">
+                                                <div className="w-full h-px bg-amber-700/30 absolute top-2" />
+                                                <div className="w-full h-px bg-amber-700/30 absolute bottom-2" />
+                                                <div className="h-full w-px bg-amber-700/30 absolute left-3" />
+                                                <div className="h-full w-px bg-amber-700/30 absolute right-3" />
+                                            </div>
+                                            <Zap size={15} className="text-amber-300 shrink-0" />
+                                        </div>
+
+                                        <div className="text-right">
+                                            <span className="text-[10px] font-black tracking-widest uppercase text-blue-300 block truncate max-w-[170px]">
+                                                {bankList.find(b => b.code === newSelectedBank)?.name || "SELECT BANK"}
+                                            </span>
+                                            <span className="text-[9px] font-medium text-slate-400">
+                                                Direct NUBAN Conduit
+                                            </span>
+                                        </div>
                                     </div>
-                                    <Zap size={15} className="text-amber-300 shrink-0" />
+
+                                    {/* Card Account Number */}
+                                    <div className="relative z-10 mb-5">
+                                        <span className="text-[9px] font-mono tracking-widest text-slate-400 uppercase block mb-1">
+                                            NUBAN Account Number
+                                        </span>
+                                        <div className="font-mono text-xl font-black tracking-[0.25em] text-white">
+                                            {newAccountNumber ? (
+                                                <>
+                                                    {newAccountNumber.slice(0, 4)}  {newAccountNumber.slice(4, 7)}  {newAccountNumber.slice(7, 10)}
+                                                    {"•".repeat(Math.max(0, 10 - newAccountNumber.length))}
+                                                </>
+                                            ) : (
+                                                "••••  •••  •••"
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Card Bottom Row */}
+                                    <div className="relative z-10 flex items-end justify-between gap-3 pt-2 border-t border-white/10">
+                                        <div className="min-w-0 flex-1">
+                                            <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase block">
+                                                Beneficiary Account
+                                            </span>
+                                            <p className="text-xs font-black uppercase tracking-wider text-slate-100 truncate">
+                                                {newBusinessName.trim() || schoolDisplayName.toUpperCase() || "SCHOOL INSTITUTION"}
+                                            </p>
+                                        </div>
+
+                                        <div className="shrink-0">
+                                            {resolvedNewAccountName ? (
+                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm animate-in fade-in">
+                                                    <CheckCircle2 size={11} className="text-emerald-400" /> VERIFIED
+                                                </div>
+                                            ) : resolvingNewAccount ? (
+                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black bg-blue-500/20 text-blue-300 border border-blue-400/40 animate-pulse">
+                                                    <Loader2 size={11} className="animate-spin text-blue-400" /> VERIFYING
+                                                </div>
+                                            ) : (
+                                                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-white/5 text-slate-400 border border-white/10">
+                                                    NUBAN ROUTING
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="text-right">
-                                    <span className="text-[10px] font-black tracking-widest uppercase text-blue-300 block truncate max-w-[180px]">
-                                        {bankList.find(b => b.code === newSelectedBank)?.name || "SELECT COMMERCIAL BANK"}
-                                    </span>
-                                    <span className="text-[9px] font-medium text-slate-400">
-                                        Direct NUBAN Conduit
-                                    </span>
+                                {/* Sandbox Test Mode Helper */}
+                                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base">🧪</span>
+                                        <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                                            Sandbox Test Account Auto-Fill
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                                        Flutterwave test mode only resolves Access Bank (044) account <code className="font-mono font-bold bg-amber-500/20 px-1 rounded">0690000031</code>.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            const access = bankList.find(b => b.code === "044") || bankList.find(b => b.name.toLowerCase().includes("access"))
+                                            if (access) setNewSelectedBank(access.code)
+                                            setNewAccountNumber("0690000031")
+                                            if (!newBusinessName.trim() && schoolDisplayName) {
+                                                setNewBusinessName(schoolDisplayName)
+                                            }
+                                            if (!newBusinessEmail.trim() && schoolEmail) {
+                                                setNewBusinessEmail(schoolEmail)
+                                            }
+                                        }}
+                                        className="w-full h-8 px-3 text-[11px] font-black rounded-xl border-amber-400/50 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950/40 cursor-pointer"
+                                    >
+                                        ⚡ Auto-Fill Test Account (Access Bank)
+                                    </Button>
+                                </div>
+
+                                {/* Security Notice */}
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 flex items-start gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                    <Lock className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                                    <span>256-bit SSL encrypted. Direct bank transfers & online fee payouts are protected with banking-grade security.</span>
                                 </div>
                             </div>
 
-                            {/* Card Account Number */}
-                            <div className="relative z-10 mb-5">
-                                <span className="text-[9px] font-mono tracking-widest text-slate-400 uppercase block mb-1">
-                                    NUBAN Account Number
-                                </span>
-                                <div className="font-mono text-xl sm:text-2xl font-black tracking-[0.25em] text-white">
-                                    {newAccountNumber ? (
-                                        <>
-                                            {newAccountNumber.slice(0, 4)}  {newAccountNumber.slice(4, 7)}  {newAccountNumber.slice(7, 10)}
-                                            {"•".repeat(Math.max(0, 10 - newAccountNumber.length))}
-                                        </>
-                                    ) : (
-                                        "••••  •••  •••"
-                                    )}
-                                </div>
-                            </div>
+                            {/* Right Column: Form Inputs & Actions */}
+                            <div className="lg:col-span-7 space-y-4">
+                                {/* Popular Banks Quick-Select Chips */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                            Popular Commercial Banks
+                                        </span>
+                                        <span className="text-[10px] text-slate-400">1-Tap Select</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {[
+                                            { label: "Access Bank", match: "access" },
+                                            { label: "GTBank", match: "guaranty" },
+                                            { label: "Zenith Bank", match: "zenith" },
+                                            { label: "First Bank", match: "first bank" },
+                                            { label: "UBA", match: "united bank for africa" },
+                                            { label: "Kuda", match: "kuda" },
+                                            { label: "OPay", match: "paycom" },
+                                            { label: "PalmPay", match: "palmpay" },
+                                        ].map((p, i) => {
+                                            const found = bankList.find(b => b.name.toLowerCase().includes(p.match))
+                                            if (!found) return null
+                                            const isSelected = newSelectedBank === found.code
 
-                            {/* Card Bottom Row */}
-                            <div className="relative z-10 flex items-end justify-between gap-4 pt-2 border-t border-white/10">
-                                <div className="min-w-0 flex-1">
-                                    <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase block">
-                                        School Account Beneficiary
-                                    </span>
-                                    <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-100 truncate">
-                                        {newBusinessName.trim() || schoolDisplayName.toUpperCase() || "SCHOOL INSTITUTION"}
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setNewSelectedBank(found.code)
+                                                        setResolvedNewAccountName(null)
+                                                        setNewResolutionError(null)
+                                                        setNewNameConfirmed(false)
+                                                    }}
+                                                    className={cn(
+                                                        "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+                                                        isSelected
+                                                            ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/30 scale-105"
+                                                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                                    )}
+                                                >
+                                                    {p.label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Full Bank Selector */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Commercial Bank <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select 
+                                        value={newSelectedBank} 
+                                        onValueChange={(val) => {
+                                            setNewSelectedBank(val)
+                                            setResolvedNewAccountName(null)
+                                            setNewResolutionError(null)
+                                            setNewNameConfirmed(false)
+                                        }}
+                                        disabled={fetchingBankList}
+                                    >
+                                        <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-bold">
+                                            <SelectValue placeholder={fetchingBankList ? "Loading bank directory..." : "Choose commercial bank from full list"} />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-60">
+                                            {bankList.map((b) => (
+                                                <SelectItem key={b.code} value={b.code} className="text-xs font-medium">
+                                                    {b.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* 10-Digit Account Number */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                            10-Digit NUBAN Account Number <span className="text-red-500">*</span>
+                                        </Label>
+                                        <span className="text-[11px] font-mono text-slate-400">
+                                            {newAccountNumber.length} / 10 digits
+                                        </span>
+                                    </div>
+                                    <div className="relative">
+                                        <Input
+                                            type="text"
+                                            maxLength={10}
+                                            placeholder="e.g. 0123456789"
+                                            value={newAccountNumber}
+                                            onChange={(e) => setNewAccountNumber(e.target.value.replace(/\D/g, ""))}
+                                            className="h-11 text-sm font-black tracking-widest font-mono rounded-xl border-slate-200 dark:border-slate-800 pr-10"
+                                            required
+                                        />
+                                        {resolvingNewAccount ? (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                                            </div>
+                                        ) : resolvedNewAccountName ? (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </div>
+
+                                {/* Account Name Resolution Card */}
+                                {resolvingNewAccount && (
+                                    <div className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-3">
+                                        <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />
+                                        <div>
+                                            <p className="text-xs font-bold text-blue-900 dark:text-blue-200">Verifying Bank Account...</p>
+                                            <p className="text-[10px] text-blue-600/80 dark:text-blue-400/80">Checking account number with NIBSS banking registry</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {resolvedNewAccountName && (
+                                    <div className="space-y-2.5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
+                                        <div className="flex items-start gap-2.5">
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                                    Verified Account Name (NIBSS)
+                                                </p>
+                                                <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                                                    {resolvedNewAccountName}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <label className="flex items-center gap-2.5 p-2 bg-white dark:bg-slate-900 rounded-lg border border-emerald-200/60 dark:border-emerald-800/30 cursor-pointer hover:bg-emerald-50/40 transition-colors select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={newNameConfirmed}
+                                                onChange={(e) => setNewNameConfirmed(e.target.checked)}
+                                                className="h-4 w-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                                            />
+                                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                                                I confirm this bank account belongs to our school institution.
+                                            </span>
+                                        </label>
+                                    </div>
+                                )}
+
+                                {newResolutionError && (
+                                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300 font-medium">
+                                        <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                                        <span>{newResolutionError}</span>
+                                    </div>
+                                )}
+
+                                {/* School / Display Name */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                            School / Beneficiary Display Name <span className="text-red-500">*</span>
+                                        </Label>
+                                        {resolvedNewAccountName && (
+                                            <div className="flex items-center gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewBusinessName(schoolDisplayName || "")}
+                                                    className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                                                >
+                                                    Use School Name
+                                                </button>
+                                                <span className="text-[10px] text-slate-400">•</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewBusinessName(resolvedNewAccountName)}
+                                                    className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                                                >
+                                                    Use Verified Name
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                        <Input
+                                            type="text"
+                                            placeholder={schoolDisplayName || "e.g. Qefas International Academy"}
+                                            value={newBusinessName}
+                                            onChange={(e) => setNewBusinessName(e.target.value)}
+                                            className="pl-10 h-11 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Business / Settlement Email */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Business / Settlement Notification Email <span className="text-red-500">*</span>
+                                    </Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                        <Input
+                                            type="email"
+                                            placeholder="e.g. finance@yourschool.ng"
+                                            value={newBusinessEmail}
+                                            onChange={(e) => setNewBusinessEmail(e.target.value)}
+                                            className="pl-10 h-11 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="text-[11px] text-slate-400">
+                                        Official contact email for payment gateway settlement notifications and disbursement receipts.
                                     </p>
                                 </div>
 
-                                <div className="shrink-0">
-                                    {resolvedNewAccountName ? (
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm animate-in fade-in">
-                                            <CheckCircle2 size={12} className="text-emerald-400" /> VERIFIED
-                                        </div>
-                                    ) : resolvingNewAccount ? (
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-blue-500/20 text-blue-300 border border-blue-400/40 animate-pulse">
-                                            <Loader2 size={12} className="animate-spin text-blue-400" /> VERIFYING
-                                        </div>
-                                    ) : (
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/5 text-slate-400 border border-white/10">
-                                            NUBAN ROUTING
-                                        </div>
-                                    )}
+                                {/* Actions */}
+                                <div className="flex items-center justify-end gap-3 pt-3">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setIsAddBankModalOpen(false)}
+                                        className="rounded-xl h-11 text-xs font-bold text-slate-500"
+                                        disabled={savingNewBank}
+                                    >
+                                        Cancel
+                                    </Button>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={savingNewBank || !newSelectedBank || newAccountNumber.trim().length !== 10 || !newBusinessName.trim() || !newBusinessEmail.trim() || (!!resolvedNewAccountName && !newNameConfirmed)}
+                                        className="rounded-xl h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white text-xs font-bold shadow-lg shadow-blue-600/25 dark:shadow-blue-900/40 transition-all cursor-pointer"
+                                    >
+                                        {savingNewBank ? (
+                                            <>
+                                                <Loader2 size={14} className="animate-spin mr-1.5" />
+                                                Connecting Bank...
+                                            </>
+                                        ) : (
+                                            "Save & Connect Bank"
+                                        )}
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Sandbox Test Mode Helper */}
-                        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                            <div className="flex items-center gap-2.5">
-                                <span className="text-lg">🧪</span>
-                                <div>
-                                    <span className="text-xs font-bold text-amber-900 dark:text-amber-200 block">
-                                        Testing in Sandbox Mode?
-                                    </span>
-                                    <span className="text-[11px] text-amber-700 dark:text-amber-400">
-                                        Test with Access Bank (044) & account <code className="font-mono font-bold">0690000031</code>
-                                    </span>
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                    const access = bankList.find(b => b.code === "044") || bankList.find(b => b.name.toLowerCase().includes("access"))
-                                    if (access) setNewSelectedBank(access.code)
-                                    setNewAccountNumber("0690000031")
-                                    if (!newBusinessName.trim() && schoolDisplayName) {
-                                        setNewBusinessName(schoolDisplayName)
-                                    }
-                                }}
-                                className="h-8 px-3 text-[11px] font-black rounded-xl border-amber-400/50 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-950/40 self-start sm:self-auto shrink-0 cursor-pointer"
-                            >
-                                ⚡ Auto-Fill Test Account
-                            </Button>
-                        </div>
-
-                        {/* Popular Banks Quick-Select Chips */}
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                    Popular Commercial Banks
-                                </span>
-                                <span className="text-[10px] text-slate-400">1-Tap Select</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {[
-                                    { label: "Access Bank", match: "access" },
-                                    { label: "GTBank", match: "guaranty" },
-                                    { label: "Zenith Bank", match: "zenith" },
-                                    { label: "First Bank", match: "first bank" },
-                                    { label: "UBA", match: "united bank for africa" },
-                                    { label: "Kuda", match: "kuda" },
-                                    { label: "OPay", match: "paycom" },
-                                    { label: "PalmPay", match: "palmpay" },
-                                ].map((p, i) => {
-                                    const found = bankList.find(b => b.name.toLowerCase().includes(p.match))
-                                    if (!found) return null
-                                    const isSelected = newSelectedBank === found.code
-
-                                    return (
-                                        <button
-                                            key={i}
-                                            type="button"
-                                            onClick={() => {
-                                                setNewSelectedBank(found.code)
-                                                setResolvedNewAccountName(null)
-                                                setNewResolutionError(null)
-                                                setNewNameConfirmed(false)
-                                            }}
-                                            className={cn(
-                                                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border",
-                                                isSelected
-                                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/30 scale-105"
-                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700"
-                                            )}
-                                        >
-                                            {p.label}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Full Bank Selector */}
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                Commercial Bank <span className="text-red-500">*</span>
-                            </Label>
-                            <Select 
-                                value={newSelectedBank} 
-                                onValueChange={(val) => {
-                                    setNewSelectedBank(val)
-                                    setResolvedNewAccountName(null)
-                                    setNewResolutionError(null)
-                                    setNewNameConfirmed(false)
-                                }}
-                                disabled={fetchingBankList}
-                            >
-                                <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-bold">
-                                    <SelectValue placeholder={fetchingBankList ? "Loading bank directory..." : "Choose commercial bank from full list"} />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-60">
-                                    {bankList.map((b) => (
-                                        <SelectItem key={b.code} value={b.code} className="text-xs font-medium">
-                                            {b.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* 10-Digit Account Number */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    10-Digit NUBAN Account Number <span className="text-red-500">*</span>
-                                </Label>
-                                <span className="text-[11px] font-mono text-slate-400">
-                                    {newAccountNumber.length} / 10 digits
-                                </span>
-                            </div>
-                            <div className="relative">
-                                <Input
-                                    type="text"
-                                    maxLength={10}
-                                    placeholder="e.g. 0123456789"
-                                    value={newAccountNumber}
-                                    onChange={(e) => setNewAccountNumber(e.target.value.replace(/\D/g, ""))}
-                                    className="h-11 text-sm font-black tracking-widest font-mono rounded-xl border-slate-200 dark:border-slate-800 pr-10"
-                                    required
-                                />
-                                {resolvingNewAccount ? (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                                    </div>
-                                ) : resolvedNewAccountName ? (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600">
-                                        <CheckCircle2 className="h-4 w-4" />
-                                    </div>
-                                ) : null}
-                            </div>
-                            <p className="text-[11px] text-slate-400">
-                                Enter your 10-digit NUBAN number. The official account name will be verified automatically with the banking registry.
-                            </p>
-                        </div>
-
-                        {/* Account Name Resolution Card */}
-                        {resolvingNewAccount && (
-                            <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-3">
-                                <Loader2 className="h-5 w-5 animate-spin text-blue-600 shrink-0" />
-                                <div>
-                                    <p className="text-xs font-bold text-blue-900 dark:text-blue-200">Verifying Bank Account...</p>
-                                    <p className="text-[10px] text-blue-600/80 dark:text-blue-400/80">Checking account number with NIBSS registry</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {resolvedNewAccountName && (
-                            <div className="space-y-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
-                                <div className="flex items-start gap-3">
-                                    <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                                            Verified Account Name (NIBSS)
-                                        </p>
-                                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
-                                            {resolvedNewAccountName}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <label className="flex items-center gap-3 p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-emerald-200/60 dark:border-emerald-800/30 cursor-pointer hover:bg-emerald-50/40 transition-colors select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={newNameConfirmed}
-                                        onChange={(e) => setNewNameConfirmed(e.target.checked)}
-                                        className="h-4 w-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
-                                    />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                        I confirm this bank account belongs to our school institution.
-                                    </span>
-                                </label>
-                            </div>
-                        )}
-
-                        {newResolutionError && (
-                            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/30 flex items-center gap-2.5 text-xs text-rose-700 dark:text-rose-300 font-medium">
-                                <AlertCircle className="h-4 w-4 text-rose-600 flex-shrink-0" />
-                                <span>{newResolutionError}</span>
-                            </div>
-                        )}
-
-                        {/* School / Display Name (Requirement 1: Auto add school name in the display name) */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    School / Beneficiary Display Name <span className="text-red-500">*</span>
-                                </Label>
-                                {resolvedNewAccountName && (
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewBusinessName(schoolDisplayName || "")}
-                                            className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                                        >
-                                            Use School Name
-                                        </button>
-                                        <span className="text-[10px] text-slate-400">•</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewBusinessName(resolvedNewAccountName)}
-                                            className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                                        >
-                                            Use Verified Name
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="relative">
-                                <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                <Input
-                                    type="text"
-                                    placeholder={schoolDisplayName || "e.g. Qefas International Academy"}
-                                    value={newBusinessName}
-                                    onChange={(e) => setNewBusinessName(e.target.value)}
-                                    className="pl-10 h-11 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                                    required
-                                />
-                            </div>
-                            <p className="text-[11px] text-slate-400">
-                                Auto-populated with your school name. This display name is recorded in the bank audit log and shown on student payment receipts.
-                            </p>
-                        </div>
-
-                        {/* Security Notice */}
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
-                            <Lock className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                            <span>Encrypted connection. Direct bank transfers & online fee payouts are processed with 256-bit SSL encryption.</span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-end gap-3 pt-2">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setIsAddBankModalOpen(false)}
-                                className="rounded-xl h-11 text-xs font-bold text-slate-500"
-                                disabled={savingNewBank}
-                            >
-                                Cancel
-                            </Button>
-
-                            <Button
-                                type="submit"
-                                disabled={savingNewBank || !newSelectedBank || newAccountNumber.trim().length !== 10 || !newBusinessName.trim() || (!!resolvedNewAccountName && !newNameConfirmed)}
-                                className="rounded-xl h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white text-xs font-bold shadow-lg shadow-blue-600/25 dark:shadow-blue-900/40 transition-all cursor-pointer"
-                            >
-                                {savingNewBank ? (
-                                    <>
-                                        <Loader2 size={14} className="animate-spin mr-1.5" />
-                                        Connecting Bank...
-                                    </>
-                                ) : (
-                                    "Save & Connect Bank"
-                                )}
-                            </Button>
                         </div>
                     </form>
                 </DialogContent>

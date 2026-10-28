@@ -28,6 +28,29 @@ export const getMyNotifications = async (req: Request, res: Response) => {
       ...(statusFilter ? { status: statusFilter } : {}),
     };
 
+    let teacherAssignedClassIds: Set<string> | null = null;
+    if (req.user.userType === "TEACHER") {
+      const [classTeacherClasses, classSubjectClasses] = await Promise.all([
+        prisma.classTeacher.findMany({
+          where: { teacherId: userId },
+          select: { classId: true },
+        }),
+        prisma.classSubject.findMany({
+          where: {
+            OR: [
+              { subject: { teacherId: userId } },
+              { subject: { teacherSubjects: { some: { teacherId: userId } } } },
+            ],
+          },
+          select: { classId: true },
+        }),
+      ]);
+      teacherAssignedClassIds = new Set([
+        ...classTeacherClasses.map((c) => c.classId),
+        ...classSubjectClasses.map((s) => s.classId),
+      ]);
+    }
+
     const notifications = await prisma.notification.findMany({
       where: whereClause,
       include: {
@@ -41,13 +64,27 @@ export const getMyNotifications = async (req: Request, res: Response) => {
             targetTeacher: { select: { id: true, name: true, teacherCode: true } },
             targetParent: { select: { id: true, fullName: true, parentCode: true } },
             targetSchool: { select: { id: true, name: true, schoolCode: true } },
+            class: { select: { id: true, name: true, classCode: true } },
           },
         },
       },
       orderBy: { createdAt: "desc" },
-      take: limit,
+      take: teacherAssignedClassIds ? limit * 2 : limit,
       skip: offset,
     });
+
+    const visibleNotifications = teacherAssignedClassIds
+      ? notifications
+          .filter((n) => {
+            const meta = (n.meta || {}) as Record<string, any>;
+            const classId = meta.classId || n.linkRequest?.classId;
+            if (classId) {
+              return teacherAssignedClassIds!.has(classId);
+            }
+            return true;
+          })
+          .slice(0, limit)
+      : notifications;
 
     const studentSenderIds = new Set<string>();
     const teacherSenderIds = new Set<string>();
@@ -55,7 +92,7 @@ export const getMyNotifications = async (req: Request, res: Response) => {
     const adminSenderIds = new Set<string>();
     const schoolSenderIds = new Set<string>();
 
-    for (const n of notifications) {
+    for (const n of visibleNotifications) {
       if (n.senderId && n.senderType) {
         if (n.senderType === "STUDENT") studentSenderIds.add(n.senderId);
         else if (n.senderType === "TEACHER") teacherSenderIds.add(n.senderId);
@@ -105,7 +142,7 @@ export const getMyNotifications = async (req: Request, res: Response) => {
     admins.forEach((a) => senderNameMap.set(`ADMIN:${a.id}`, { name: a.name, role: "School Admin" }));
     schools.forEach((sc) => senderNameMap.set(`SCHOOL:${sc.id}`, { name: sc.name, role: "School" }));
 
-    const enrichedNotifications = notifications.map((n) => {
+    const enrichedNotifications = visibleNotifications.map((n) => {
       const meta = (n.meta || {}) as Record<string, any>;
       let senderName: string | undefined = meta.senderName;
       let senderRole: string | undefined = meta.senderRole;
@@ -266,6 +303,52 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     const recipientConditions: any[] = [{ recipientId: userId }];
     if (schoolId && req.user.userType === "ADMIN") {
       recipientConditions.push({ recipientType: "SCHOOL", recipientId: schoolId });
+    }
+
+    if (req.user.userType === "TEACHER") {
+      const [classTeacherClasses, classSubjectClasses] = await Promise.all([
+        prisma.classTeacher.findMany({
+          where: { teacherId: userId },
+          select: { classId: true },
+        }),
+        prisma.classSubject.findMany({
+          where: {
+            OR: [
+              { subject: { teacherId: userId } },
+              { subject: { teacherSubjects: { some: { teacherId: userId } } } },
+            ],
+          },
+          select: { classId: true },
+        }),
+      ]);
+      const assignedClassIds = new Set([
+        ...classTeacherClasses.map((c) => c.classId),
+        ...classSubjectClasses.map((s) => s.classId),
+      ]);
+
+      const unreadNotifs = await prisma.notification.findMany({
+        where: {
+          OR: recipientConditions,
+          status: "UNREAD",
+        },
+        include: {
+          linkRequest: { select: { classId: true } },
+        },
+      });
+
+      const count = unreadNotifs.filter((n) => {
+        const meta = (n.meta || {}) as Record<string, any>;
+        const classId = meta.classId || n.linkRequest?.classId;
+        if (classId) {
+          return assignedClassIds.has(classId);
+        }
+        return true;
+      }).length;
+
+      return res.status(200).json({
+        success: true,
+        count,
+      });
     }
 
     const count = await prisma.notification.count({

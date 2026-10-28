@@ -74,6 +74,16 @@ export interface PlatformPlanBreakdownItem {
   name: string;
   type: string;
   count: number;
+  monthlyPrice?: number;
+  yearlyPrice?: number;
+  maxStudents?: number;
+  maxTeachers?: number;
+  maxClasses?: number;
+  maxExams?: number;
+  maxStorageGb?: number;
+  badgeLabel?: string | null;
+  isPopular?: boolean;
+  description?: string | null;
   [key: string]: unknown;
 }
 
@@ -144,6 +154,7 @@ export interface PlatformSchoolDetails {
   schoolEmail?: string;
   phone?: string;
   address?: string;
+  schoolType?: string;
   subscriptionStatus: string;
   isActive?: boolean;
   status?: string;
@@ -182,6 +193,19 @@ export interface PlatformSchoolDetails {
     accountNumber: string;
     percentageCharge: number;
     isDefault: boolean;
+  }[];
+  admins?: {
+    admin: {
+      id: string;
+      name: string;
+      email: string;
+      phone?: string;
+      role?: string;
+      adminCode?: string;
+      profileImage?: string;
+      lastLogin?: string;
+      isActive?: boolean;
+    };
   }[];
   emailLogs?: {
     subject: string;

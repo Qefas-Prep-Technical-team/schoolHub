@@ -67,6 +67,30 @@ export const createNotification = async (input: CreateNotificationInput) => {
     return { success: true, count: schoolAdmins.length };
   } else {
     // Normal single-recipient flow
+    if (input.recipientType === "STUDENT") {
+      const student = await prisma.student.findUnique({
+        where: { id: input.recipientId },
+        select: { status: true },
+      });
+      const isAlumni = student?.status === "GRADUATED" || student?.status === "ALUMNI";
+      if (isAlumni) {
+        const isAlumniSpecific =
+          input.meta?.targetAudience === "ALUMNI" ||
+          input.meta?.isAlumni === true ||
+          input.meta?.forAlumni === true ||
+          input.title?.toLowerCase().includes("alumni") ||
+          input.message?.toLowerCase().includes("alumni") ||
+          input.type === "LINK_REQUEST" ||
+          input.type === "LINK_ACCEPTED" ||
+          input.type === "LINK_REJECTED";
+
+        if (!isAlumniSpecific && (input.senderType === "ADMIN" || input.senderType === "SCHOOL" || input.senderType === "TEACHER")) {
+          // Graduated alumni do not receive regular school operational or classroom notifications
+          return null;
+        }
+      }
+    }
+
     const notification = await prisma.notification.create({
       data: {
         recipientType: input.recipientType as any,
@@ -100,8 +124,40 @@ export type BulkNotificationInput = Omit<CreateNotificationInput, "recipientType
 export const createNotificationsBulk = async (inputs: BulkNotificationInput[]) => {
   if (inputs.length === 0) return { count: 0 };
 
+  // Filter out graduated students unless notifications are alumni-specific
+  const studentRecipientIds = inputs
+    .filter((i) => i.recipientType === "STUDENT")
+    .map((i) => i.recipientId);
+
+  let graduatedStudentIds = new Set<string>();
+  if (studentRecipientIds.length > 0) {
+    const graduatedStudents = await prisma.student.findMany({
+      where: {
+        id: { in: studentRecipientIds },
+        status: { in: ["GRADUATED", "ALUMNI"] },
+      },
+      select: { id: true },
+    });
+    graduatedStudentIds = new Set(graduatedStudents.map((s) => s.id));
+  }
+
+  const filteredInputs = inputs.filter((input) => {
+    if (input.recipientType === "STUDENT" && graduatedStudentIds.has(input.recipientId)) {
+      const isAlumniSpecific =
+        input.meta?.targetAudience === "ALUMNI" ||
+        input.meta?.isAlumni === true ||
+        input.meta?.forAlumni === true ||
+        input.title?.toLowerCase().includes("alumni") ||
+        input.message?.toLowerCase().includes("alumni");
+      return Boolean(isAlumniSpecific);
+    }
+    return true;
+  });
+
+  if (filteredInputs.length === 0) return { count: 0 };
+
   const createdAt = new Date();
-  const data = inputs.map((input) => ({
+  const data = filteredInputs.map((input) => ({
     recipientType: input.recipientType as any,
     recipientId: input.recipientId,
     senderType: input.senderType as any,

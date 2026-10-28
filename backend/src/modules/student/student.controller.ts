@@ -219,10 +219,17 @@ export const getStudentById = async (req: Request, res: Response) => {
     }
 
     if (currentUserType === UserRole.ADMIN && req.user!.schoolId && profile.schoolId !== req.user!.schoolId) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied: You can only view profiles of students in your school",
-      });
+      const isAlumni =
+        profile.originalSchoolId === req.user!.schoolId ||
+        (await prisma.studentEnrollment.findFirst({
+          where: { studentId: studentId as string, schoolId: req.user!.schoolId },
+        })) !== null;
+      if (!isAlumni) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You can only view profiles of students in your school",
+        });
+      }
     }
 
     return res.status(200).json({
@@ -447,14 +454,15 @@ export const exitStudent = async (req: Request, res: Response) => {
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: { adminId: currentUserId, active: true },
     });
+    const schoolId = schoolAdmin?.schoolId || req.user?.schoolId;
 
-    if (!schoolAdmin) {
+    if (!schoolId) {
       return res.status(403).json({ success: false, message: 'You are not assigned to a school' });
     }
 
     await exitStudentService(
       studentId as string,
-      schoolAdmin.schoolId,
+      schoolId,
       {
         exitType: exitType as EnrollmentStatus,
         exitDate,
@@ -486,15 +494,16 @@ export const batchExitStudents = async (req: Request, res: Response) => {
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: { adminId: currentUserId, active: true },
     });
+    const schoolId = schoolAdmin?.schoolId || req.user?.schoolId;
 
-    if (!schoolAdmin) {
+    if (!schoolId) {
       return res.status(403).json({ success: false, message: 'You are not assigned to a school' });
     }
 
     for (const sId of studentIds) {
       await exitStudentService(
         sId,
-        schoolAdmin.schoolId,
+        schoolId,
         {
           exitType: exitType as EnrollmentStatus,
           exitDate: new Date(exitDate),

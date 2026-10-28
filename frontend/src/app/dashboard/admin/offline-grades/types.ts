@@ -18,6 +18,7 @@ export interface OfflineStudentGradeEntry {
   departmentId?: string | null;
   departmentName?: string | null;
   score: string | number;
+  grade?: string;
   remarks?: string;
   existingGradeId?: string;
   status?: 'DRAFT' | 'PUBLISHED';

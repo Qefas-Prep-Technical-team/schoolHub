@@ -25,7 +25,8 @@ import {
     Tag,
     Mail,
     UserX,
-    ChevronRight
+    ChevronRight,
+    BellRing
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -73,6 +74,7 @@ const CONSOLE_NAV_SECTIONS: ConsoleNavCategory[] = [
         title: "Operations & Telemetry",
         items: [
             { icon: MessageSquare, label: "Support Center", href: "/console/support" },
+            { icon: BellRing, label: "Notification Routing", href: "/console/notifications" },
             { icon: Activity, label: "Monitoring", href: "/console/monitoring" },
             { icon: Terminal, label: "Activity Logs", href: "/console/logs" },
         ]
@@ -80,6 +82,7 @@ const CONSOLE_NAV_SECTIONS: ConsoleNavCategory[] = [
     {
         title: "Administration",
         items: [
+            { icon: UserCircle, label: "Admin Profile & Socials", href: "/console/profile" },
             { icon: UserCheck, label: "Staff Accounts", href: "/console/staff" },
             { icon: Settings, label: "Platform Settings", href: "/console/settings" },
             { icon: Mail, label: "Email Templates", href: "/console/email-templates" },

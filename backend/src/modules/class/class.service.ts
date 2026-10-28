@@ -23,6 +23,8 @@ type CreateClassInput = {
   scope: ClassScope;
   schoolId?: string;
   level?: string;
+  term?: string;
+  session?: string;
   subjectIds?: string[];
   departmentIds?: string[];
   teacherIds?: string[];
@@ -37,6 +39,8 @@ export const createClassService = async ({
   scope,
   schoolId,
   level,
+  term,
+  session,
   subjectIds = [],
   departmentIds = [],
   teacherIds = [],
@@ -66,13 +70,15 @@ export const createClassService = async ({
       throw new Error("You are not allowed to create a class in this school");
     }
 
-    return prisma.class.create({
+    const createdClass = await prisma.class.create({
       data: {
         name,
         section: section || null,
         schoolId,
         classCode,
         level: level || null,
+        term: term || null,
+        session: session || null,
         scope,
         status: ClassStatus.ACTIVE,
         createdById: currentUserId,
@@ -87,7 +93,7 @@ export const createClassService = async ({
           create: studentIds.filter(Boolean).map((studentId) => ({ studentId })),
         },
         teachers: {
-          create: teacherIds.filter(Boolean).map((teacherId) => ({ teacherId })),
+          create: teacherIds.filter(Boolean).map((teacherId, index) => ({ teacherId, isLead: index === 0 })),
         },
       },
       include: {
@@ -98,6 +104,25 @@ export const createClassService = async ({
         enrollments: { include: { student: true } },
       },
     });
+
+    // Notify assigned teachers
+    if (teacherIds && teacherIds.length > 0) {
+      const validTeacherIds = teacherIds.filter(Boolean);
+      for (const tId of validTeacherIds) {
+        createNotification({
+          recipientType: "TEACHER",
+          recipientId: tId,
+          senderType: "ADMIN",
+          senderId: currentUserId,
+          type: "ACADEMIC",
+          title: "Assigned to New Class",
+          message: `You have been assigned to teach ${createdClass.name}${createdClass.section ? ` (${createdClass.section})` : ""}.`,
+          link: `/dashboard/teacher/my-classes/${createdClass.id}`,
+        }).catch(err => console.error(`[Notification] Failed to notify teacher ${tId}:`, err));
+      }
+    }
+
+    return createdClass;
   }
 
   if (currentUserType !== UserRole.TEACHER) {
@@ -119,6 +144,8 @@ export const createClassService = async ({
         section: section || null,
         schoolId: null,
         level: level || null,
+        term: term || null,
+        session: session || null,
         teachers: {
           create: { teacherId: teacher.id, isLead: true }
         },
@@ -171,8 +198,12 @@ export const createClassService = async ({
       section: section || null,
       schoolId: schoolId || teacher.activeSchoolId || teacher.primarySchoolId,
       level: level || null,
+      term: term || null,
+      session: session || null,
       teachers: {
-        create: { teacherId: teacher.id, isLead: true }
+        create: teacherIds && teacherIds.length > 0
+          ? teacherIds.filter(Boolean).map((id, index) => ({ teacherId: id, isLead: id === teacher.id || index === 0 }))
+          : [{ teacherId: teacher.id, isLead: true }]
       },
       classCode,
       scope: ClassScope.SCHOOL,
@@ -344,6 +375,7 @@ export const getClassesService = async ({
                   name: true,
                   studentCode: true,
                   gender: true,
+                  status: true,
                 },
               },
             },
@@ -573,8 +605,16 @@ export const getSingleClassService = async (classId: string) => {
 };
 
 export const previewClassByCodeService = async (classCode: string) => {
-  const foundClass = await prisma.class.findUnique({
-    where: { classCode },
+  const trimmed = classCode.trim();
+  const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
+
+  const foundClass = await prisma.class.findFirst({
+    where: {
+      OR: [
+        { classCode: { in: variants } },
+        { id: trimmed },
+      ],
+    },
     include: {
       school: true,
       teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
@@ -596,8 +636,16 @@ export const previewClassByCodeService = async (classCode: string) => {
 };
 
 export const previewClassByIdService = async (id: string) => {
-  const foundClass = await prisma.class.findUnique({
-    where: { id },
+  const trimmed = id.trim();
+  const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
+
+  const foundClass = await prisma.class.findFirst({
+    where: {
+      OR: [
+        { id: trimmed },
+        { classCode: { in: variants } },
+      ],
+    },
     include: {
       school: true,
       teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
@@ -635,8 +683,16 @@ export const requestToJoinClassService = async ({
     throw new Error("Student not found");
   }
 
-  const foundClass = await prisma.class.findUnique({
-    where: { classCode },
+  const trimmed = classCode.trim();
+  const variants = Array.from(new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()]));
+
+  const foundClass = await prisma.class.findFirst({
+    where: {
+      OR: [
+        { classCode: { in: variants } },
+        { id: trimmed },
+      ],
+    },
     include: {
       school: true,
       teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
@@ -662,7 +718,11 @@ export const requestToJoinClassService = async ({
       });
 
     if (!isLinked) {
-      throw new Error("You must be linked to this school to join its classes");
+      if (student.schoolId !== null) {
+        throw new Error("You are currently enrolled in another school. You must be linked to this school to join its classes");
+      }
+      // If student.schoolId === null (unaffiliated independent student), allow them to request to join!
+      // When accepted, StudentLifecycleService.enrollStudentInSchool will enroll them in this school.
     }
   }
 
@@ -881,6 +941,8 @@ export const updateClassService = async ({
   teacherIds,
   departmentIds,
   studentIds,
+  currentUserId,
+  currentUserType,
 }: {
   classId: string;
   name?: string;
@@ -891,14 +953,21 @@ export const updateClassService = async ({
   teacherIds?: string[];
   departmentIds?: string[];
   studentIds?: string[];
+  currentUserId?: string;
+  currentUserType?: string;
 }) => {
   const foundClass = await prisma.class.findUnique({
     where: { id: classId },
+    include: {
+      teachers: { select: { teacherId: true } },
+    },
   });
 
   if (!foundClass) {
     throw new Error("Class not found");
   }
+
+  const existingTeacherIds = new Set(foundClass.teachers.map((t) => t.teacherId));
 
   const updatedClass = await prisma.class.update({
     where: { id: classId },
@@ -929,6 +998,23 @@ export const updateClassService = async ({
       enrollments: { include: { student: true } },
     },
   });
+
+  // Notify newly assigned teachers
+  if (teacherIds && teacherIds.length > 0) {
+    const newlyAssigned = teacherIds.filter(id => Boolean(id) && !existingTeacherIds.has(id));
+    for (const tId of newlyAssigned) {
+      createNotification({
+        recipientType: "TEACHER",
+        recipientId: tId,
+        senderType: currentUserType === "TEACHER" ? "TEACHER" : "ADMIN",
+        senderId: currentUserId || undefined,
+        type: "ACADEMIC",
+        title: "Assigned to Class",
+        message: `You have been assigned to teach ${updatedClass.name}${updatedClass.section ? ` (${updatedClass.section})` : ""}.`,
+        link: `/dashboard/teacher/my-classes/${updatedClass.id}`,
+      }).catch(err => console.error(`[Notification] Failed to notify teacher ${tId}:`, err));
+    }
+  }
 
   if (level && foundClass.level !== level) {
     await prisma.student.updateMany({

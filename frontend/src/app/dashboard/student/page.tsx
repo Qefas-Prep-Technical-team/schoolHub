@@ -19,6 +19,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { useUserStore } from '@/store/useUserStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 import { useLinkProfile } from '@/lib/api/hooks/useLinks';
@@ -81,6 +82,7 @@ interface ClassSubjectItem {
 
 export default function StudentHomeDashboard() {
   const { username } = useUserStore();
+  const { user } = useAuthStore();
   const { data: attemptsData, isLoading: isLoadingExams } = useStudentExamAttempts();
   const { data: standaloneGradesData } = useGrades();
   const { data: profileResponse } = useLinkProfile();
@@ -88,7 +90,6 @@ export default function StudentHomeDashboard() {
   const { data: publishedResultsData } = useMyPublishedResults();
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
   const [isClassSelectionModalOpen, setIsClassSelectionModalOpen] = useState(false);
-  const [hasPromptedClassSelection, setHasPromptedClassSelection] = useState(false);
 
   const attempts: RawExamAttempt[] = (attemptsData?.attempts as RawExamAttempt[]) || [];
   const standaloneGrades: RawGradeRecord[] = (standaloneGradesData?.grades as RawGradeRecord[]) || [];
@@ -97,18 +98,14 @@ export default function StudentHomeDashboard() {
   const connectedSchool = studentProfile?.school || (studentProfile?.schoolId ? { id: studentProfile.schoolId, name: 'Connected School' } : null);
   const isEnrolledInClass = Boolean(studentProfile?.classes && studentProfile.classes.length > 0);
 
-  // Automatically prompt the student to select an available class when connected to a school without an enrolled class
-  useEffect(() => {
-    if (studentProfile && connectedSchool && !isEnrolledInClass && !hasPromptedClassSelection) {
-      const dismissed = typeof window !== 'undefined'
-        ? sessionStorage.getItem(`dismissed_class_prompt_${connectedSchool.id || 'school'}`)
-        : null;
-      if (!dismissed) {
-        setIsClassSelectionModalOpen(true);
-      }
-      setHasPromptedClassSelection(true);
-    }
-  }, [studentProfile, connectedSchool, isEnrolledInClass, hasPromptedClassSelection]);
+  const rawStatus = String(studentProfile?.status || (user as any)?.status || "").toUpperCase();
+  const isGraduated = Boolean(
+    rawStatus === "GRADUATED" ||
+    rawStatus === "ALUMNI" ||
+    studentProfile?.isAlumni ||
+    (user as any)?.isAlumni ||
+    (studentProfile as unknown as Record<string, unknown>)?.graduationStatus?.toString().toUpperCase() === "GRADUATED"
+  );
 
   // Only display if a new final result was published in the last 7 days
   const hasRecentFinalResults = useMemo(() => {
@@ -318,8 +315,8 @@ export default function StudentHomeDashboard() {
           </div>
         )}
 
-        {/* Connected School without Class Banner */}
-        {connectedSchool && !isEnrolledInClass && (
+        {/* Connected School without Class Banner (Only for active non-graduated students) */}
+        {connectedSchool && !isEnrolledInClass && !isGraduated && (
           <div className="bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/5 border border-pink-200 dark:border-pink-800/50 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-pink-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-pink-600/20">
@@ -345,6 +342,44 @@ export default function StudentHomeDashboard() {
               <span>Choose Class</span>
               <ArrowRight size={16} />
             </Button>
+          </div>
+        )}
+
+        {/* Graduated / Alumni Scholar Recognition Banner */}
+        {isGraduated && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-indigo-500/10 border border-amber-300/40 dark:border-amber-700/40 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm relative overflow-hidden">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/25">
+                <GraduationCap className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-200 text-xs font-black uppercase tracking-wider border border-amber-400/30">
+                  <Sparkles size={12} className="text-amber-500" />
+                  Honored Alumni Scholar
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Graduated Scholar • {connectedSchool?.name || "Your School"}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-300 max-w-xl font-medium leading-relaxed">
+                  Congratulations on successfully graduating and completing your studies. Your permanent academic transcript, honors, and graduation credentials are secure in your vault.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full md:w-auto shrink-0">
+              <Link href="/dashboard/student/result/termly" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto rounded-xl h-11 px-5 border-amber-300 dark:border-amber-700/60 font-bold text-xs sm:text-sm">
+                  <BookMarked className="w-4 h-4 mr-2 text-amber-500" />
+                  Academic Vault
+                </Button>
+              </Link>
+              <Button
+                onClick={() => setIsClassSelectionModalOpen(true)}
+                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-bold rounded-xl h-11 px-5 text-xs sm:text-sm gap-2"
+              >
+                <span>View Cohorts</span>
+                <ArrowRight size={15} />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -610,8 +645,9 @@ export default function StudentHomeDashboard() {
         isOpen={isClassSelectionModalOpen}
         onClose={() => {
           setIsClassSelectionModalOpen(false);
-          if (connectedSchool?.id && typeof window !== 'undefined') {
-            sessionStorage.setItem(`dismissed_class_prompt_${connectedSchool.id}`, 'true');
+          if (typeof window !== 'undefined') {
+            const key = connectedSchool?.id ? `dismissed_class_prompt_${connectedSchool.id}` : 'dismissed_class_prompt';
+            localStorage.setItem(key, 'true');
           }
         }}
         schoolId={connectedSchool?.id}

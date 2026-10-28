@@ -5,7 +5,7 @@ import prisma from "../config/database";
 // ─── In-memory session cache ──────────────────────────────────────────────────
 // Short-lived cache to avoid hitting the DB on every request.
 // This is the primary fix for random logouts caused by pgBouncer connection drops.
-const sessionCache = new Map<string, { valid: boolean; schoolId?: string; tenantId?: string; expiresAt: number }>();
+const sessionCache = new Map<string, { valid: boolean; schoolId?: string; tenantId?: string; name?: string; email?: string; role?: string; expiresAt: number }>();
 const SESSION_CACHE_TTL_MS = 30_000; // 30 seconds
 
 function getCachedSession(userId: string, userType: string) {
@@ -16,7 +16,7 @@ function getCachedSession(userId: string, userType: string) {
   return null;
 }
 
-function setCachedSession(userId: string, userType: string, data: { valid: boolean; schoolId?: string; tenantId?: string }) {
+function setCachedSession(userId: string, userType: string, data: { valid: boolean; schoolId?: string; tenantId?: string; name?: string; email?: string; role?: string }) {
   sessionCache.set(`${userId}:${userType}`, { ...data, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
 }
 
@@ -44,6 +44,9 @@ export const authenticateToken = async (
     const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET!);
     let schoolId: string | undefined;
     let tenantId: string | undefined;
+    let userName: string | undefined;
+    let userEmail: string | undefined;
+    let userRole: string | undefined;
     let userExists = false;
 
     // ── Cache check: skip DB on hot path ──────────────────────────────────
@@ -55,6 +58,9 @@ export const authenticateToken = async (
       userExists = true;
       schoolId = cached.schoolId;
       tenantId = cached.tenantId;
+      userName = cached.name;
+      userEmail = cached.email;
+      userRole = cached.role;
     } else {
       // ── DB lookup ──────────────────────────────────────────────────────
       if (decoded.userType === "ADMIN") {
@@ -66,12 +72,18 @@ export const authenticateToken = async (
           userExists = true;
           schoolId = admin.schoolAdmins[0]?.schoolId;
           tenantId = admin.tenantId;
+          userName = admin.name;
+          userEmail = admin.email;
+          userRole = admin.role;
         }
       } else if (decoded.userType === "SUPER_ADMIN") {
         const admin = await prisma.admin.findUnique({ where: { id: decoded.userId } });
         if (admin && admin.isActive !== false) {
           userExists = true;
           tenantId = admin.tenantId;
+          userName = admin.name;
+          userEmail = admin.email;
+          userRole = admin.role;
         }
       } else if (decoded.userType === "TEACHER") {
         const teacher = await prisma.teacher.findUnique({ where: { id: decoded.userId } });
@@ -79,6 +91,9 @@ export const authenticateToken = async (
           userExists = true;
           schoolId = (teacher as any).activeSchoolId || (teacher as any).primarySchoolId || (teacher as any).currentSchoolId || (teacher as any).schoolId || undefined;
           tenantId = (teacher as any).tenantId;
+          userName = teacher.name;
+          userEmail = teacher.email || undefined;
+          userRole = teacher.role;
         }
       } else if (decoded.userType === "STUDENT") {
         const student = await prisma.student.findUnique({ where: { id: decoded.userId } });
@@ -86,12 +101,18 @@ export const authenticateToken = async (
           userExists = true;
           schoolId = student.schoolId || undefined;
           tenantId = student.tenantId;
+          userName = student.name;
+          userEmail = student.email || undefined;
+          userRole = "STUDENT";
         }
       } else if (decoded.userType === "PARENT") {
         const parent = await prisma.parent.findUnique({ where: { id: decoded.userId } });
         if (parent && parent.isActive !== false) {
           userExists = true;
           tenantId = parent.tenantId;
+          userName = parent.fullName;
+          userEmail = parent.email || undefined;
+          userRole = "PARENT";
         }
       } else {
         const [admin, teacher, student, parent] = await Promise.all([
@@ -102,9 +123,14 @@ export const authenticateToken = async (
         ]);
         const matched = admin || teacher || student || parent;
         userExists = !!(matched && (matched as any).isActive !== false);
+        if (matched) {
+          userName = (matched as any).name || (matched as any).fullName;
+          userEmail = (matched as any).email;
+          userRole = (matched as any).role || decoded.userType;
+        }
       }
 
-      setCachedSession(decoded.userId, decoded.userType, { valid: userExists, schoolId, tenantId });
+      setCachedSession(decoded.userId, decoded.userType, { valid: userExists, schoolId, tenantId, name: userName, email: userEmail, role: userRole });
     }
 
     if (!userExists) {
@@ -176,9 +202,13 @@ export const authenticateToken = async (
 
     req.user = {
       id: decoded.userId,
+      userId: decoded.userId,
       userType: decoded.userType,
       schoolId: schoolId || undefined,
-      tenantId: tenantId || undefined
+      tenantId: tenantId || undefined,
+      name: userName || undefined,
+      email: userEmail || undefined,
+      role: userRole || decoded.userType,
     };
 
     next();

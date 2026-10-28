@@ -23,7 +23,7 @@ import { useCreateLinkRequest } from '@/lib/api/hooks/useLinks';
 
 export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [code, setCode] = useState('');
-  const [linkType, setLinkType] = useState<LinkType>('SCHOOL_TEACHER');
+  const [linkType, setLinkType] = useState<LinkType>('TEACHER_STUDENT');
   const [note, setNote] = useState('');
 
   const createMutation = useCreateLinkRequest();
@@ -32,7 +32,7 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) {
-      toast.error('Please enter a linking code');
+      toast.error('Please enter a linking code or email');
       return;
     }
 
@@ -40,9 +40,14 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
       { targetCode: code.trim(), linkType, note: note.trim() },
       {
         onSuccess: () => {
+          toast.success('Connection request sent successfully!');
           onClose();
           setCode('');
           setNote('');
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } }; message?: string };
+          toast.error(error?.response?.data?.message || error?.message || 'Failed to connect. Please check the code.');
         },
       }
     );
@@ -50,16 +55,16 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] rounded-3xl p-8 border-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+      <DialogContent className="sm:max-w-[440px] rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
+        <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
 
-        <DialogHeader className="text-left">
-          <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4">
-            <Link2 className="text-green-600" size={32} />
+        <DialogHeader className="text-left relative z-10">
+          <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-100 dark:border-emerald-800/60 rounded-2xl flex items-center justify-center mb-3">
+            <Link2 className="text-emerald-600 dark:text-emerald-400" size={26} />
           </div>
-          <DialogTitle className="text-2xl font-black tracking-tight leading-tight">Connect with Code</DialogTitle>
-          <DialogDescription className="text-sm font-medium text-slate-500 mt-2">
-            Enter a linking code to establish a secure connection.
+          <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight leading-tight text-slate-900 dark:text-white">Connect with Code</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+            Enter a linking code or registered email to establish a secure connection.
           </DialogDescription>
         </DialogHeader>
 
@@ -71,8 +76,10 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-none shadow-2xl p-1.5">
+                <SelectItem value="TEACHER_STUDENT" className="rounded-lg h-9 text-sm">🎓 Connect with Student</SelectItem>
+                <SelectItem value="SCHOOL_STUDENT" className="rounded-lg h-9 text-sm">🏫 Link Student to School</SelectItem>
                 <SelectItem value="TEACHER_CLASS" className="rounded-lg h-9 text-sm">👨‍🏫 Teacher to Class</SelectItem>
-                <SelectItem value="SCHOOL_TEACHER" className="rounded-lg h-9 text-sm">🏫 Link to School</SelectItem>
+                <SelectItem value="SCHOOL_TEACHER" className="rounded-lg h-9 text-sm">🏢 Link to School</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -80,13 +87,21 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
           <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
             <div className="flex items-center gap-1.5 shrink-0">
               <Hash size={14} className="text-slate-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Code</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Code / Email</span>
             </div>
             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="ABC-123-XYZ"
+              onChange={(e) => {
+                const val = e.target.value;
+                setCode(val);
+                const upper = val.trim().toUpperCase();
+                if (upper.startsWith('STU-')) setLinkType('TEACHER_STUDENT');
+                else if (upper.startsWith('SCH-')) setLinkType('SCHOOL_TEACHER');
+                else if (upper.startsWith('CLS-')) setLinkType('TEACHER_CLASS');
+                else if (upper.startsWith('TEA-')) setLinkType('SCHOOL_TEACHER');
+              }}
+              placeholder="e.g. STU-123456, SCH-123456 or email"
               className="flex-1 bg-transparent text-sm font-black tracking-widest placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-900 dark:text-white outline-none min-w-0"
             />
           </div>
@@ -96,7 +111,7 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. Linking to my primary account"
+              placeholder="e.g. Linking to my primary account or class"
               className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm font-medium focus:ring-green-500 focus:border-green-500 transition-all"
             />
           </div>
@@ -115,16 +130,17 @@ export function TeacherConnectModal({ isOpen, onClose }: { isOpen: boolean; onCl
               disabled={loading}
               className="
                 inline-flex items-center justify-center gap-2
-                h-10 flex-1 rounded-xl font-black text-sm cursor-pointer
+                h-10 flex-1 rounded-xl font-bold text-sm cursor-pointer
                 text-white transition-all duration-300
-                bg-green-600 hover:bg-green-700
-                shadow-lg shadow-green-500/25
-                dark:bg-gradient-to-r dark:from-green-500 dark:to-emerald-600
-                dark:hover:from-green-400 dark:hover:to-emerald-500
-                dark:shadow-[0_4px_20px_rgba(99,102,241,0.35)]
-                dark:hover:shadow-[0_4px_28px_rgba(99,102,241,0.55)]
+                bg-emerald-600 hover:bg-emerald-700
+                shadow-lg shadow-emerald-500/25
+                dark:bg-gradient-to-r dark:from-emerald-600 dark:to-teal-600
+                dark:hover:from-emerald-500 dark:hover:to-teal-500
+                dark:shadow-[0_4px_20px_rgba(16,185,129,0.35)]
+                dark:hover:shadow-[0_4px_28px_rgba(16,185,129,0.55)]
                 hover:scale-[1.02] active:scale-[0.98]
                 disabled:opacity-60 disabled:pointer-events-none
+                ring-1 ring-white/10 dark:ring-emerald-400/20
               "
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : 'Send Request'}

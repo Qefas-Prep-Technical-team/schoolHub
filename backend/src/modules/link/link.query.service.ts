@@ -48,6 +48,16 @@ const buildIncomingWhere = async ({
     };
   }
 
+  if (currentUserType === LinkEntityType.TEACHER) {
+    return {
+      status: LinkRequestStatus.PENDING,
+      OR: [
+        { targetType: LinkEntityType.TEACHER, targetId: currentUserId },
+        { targetTeacherId: currentUserId },
+      ],
+    };
+  }
+
   return {
     status: LinkRequestStatus.PENDING,
     targetType: currentUserType,
@@ -73,7 +83,7 @@ export const getOutgoingLinkRequestsService = async (
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
   } else if (options.category) {
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS, LinkType.TEACHER_STUDENT];
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {
@@ -194,6 +204,11 @@ export const getAllLinkRequestsService = async (
       { schoolId: { in: schoolIds } },
       { targetType: LinkEntityType.SCHOOL, targetSchoolId: { in: schoolIds } },
     ];
+  } else if (currentUserType === LinkEntityType.TEACHER) {
+    incomingWhere.OR = [
+      { targetType: LinkEntityType.TEACHER, targetId: currentUserId },
+      { targetTeacherId: currentUserId },
+    ];
   } else {
     incomingWhere.targetType = currentUserType;
     incomingWhere.targetId = currentUserId;
@@ -216,7 +231,7 @@ export const getAllLinkRequestsService = async (
     where.linkType = options.linkType;
   } else if (options.category) {
     // Grouped by classroom vs network
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS, LinkType.TEACHER_STUDENT];
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {
@@ -295,12 +310,20 @@ export const getActiveLinksService = async (
           : []),
       ],
     };
+  } else if (currentUserType === LinkEntityType.TEACHER) {
+    where = {
+      status: LinkStatus.ACTIVE,
+      OR: [
+        { leftEntityType: currentUserType, leftEntityId: currentUserId },
+        { rightEntityType: currentUserType, rightEntityId: currentUserId },
+      ],
+    };
   }
 
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
   } else if (options.category) {
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS, LinkType.TEACHER_STUDENT];
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {
@@ -336,8 +359,37 @@ export const getActiveLinksService = async (
     prisma.relationshipLink.count({ where }),
   ]);
 
+  const studentIds = new Set<string>();
+  for (const item of items) {
+    if (item.leftEntityType === LinkEntityType.STUDENT) studentIds.add(item.leftEntityId);
+    if (item.rightEntityType === LinkEntityType.STUDENT) studentIds.add(item.rightEntityId);
+  }
+
+  let enrichedItems: any[] = items;
+  if (studentIds.size > 0) {
+    const students = await prisma.student.findMany({
+      where: { id: { in: Array.from(studentIds) } },
+      select: { id: true, name: true, email: true, status: true, studentCode: true, profileImage: true },
+    });
+    const studentMap = new Map(students.map((s) => [s.id, s]));
+
+    enrichedItems = items.map((item) => {
+      const student =
+        item.leftEntityType === LinkEntityType.STUDENT
+          ? studentMap.get(item.leftEntityId)
+          : item.rightEntityType === LinkEntityType.STUDENT
+          ? studentMap.get(item.rightEntityId)
+          : undefined;
+
+      return {
+        ...item,
+        student,
+      };
+    });
+  }
+
   return {
-    items,
+    items: enrichedItems,
     pagination: {
       page,
       limit,

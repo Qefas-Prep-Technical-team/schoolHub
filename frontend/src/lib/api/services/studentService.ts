@@ -7,7 +7,9 @@ export interface Student {
   studentCode: string;
   verified: boolean;
   role: string;
+  status?: string;
   schoolId?: string;
+  originalSchoolId?: string;
   departmentId?: string;
   classes?: {
     class: {
@@ -52,6 +54,8 @@ export interface StudentBehaviourProfile {
 
 export interface StudentProfile extends Student {
   behaviourProfile?: StudentBehaviourProfile | null;
+  graduationStatus?: string | null;
+  isAlumni?: boolean;
   school?: {
     id: string;
     name: string;
@@ -72,6 +76,24 @@ export interface StudentProfile extends Student {
     date: string;
     status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
   }[];
+  enrollments?: Array<{
+    id: string;
+    status: string;
+    schoolId?: string;
+    exitReason?: string | null;
+    exitDate?: string | null;
+    academicSession?: string | null;
+    academicTerm?: string | null;
+    academicLevel?: string | null;
+  }>;
+  histories?: Array<{
+    id: string;
+    eventType: string;
+    title: string;
+    description?: string | null;
+    meta?: any;
+    date: string;
+  }>;
 }
 
 export interface AssessmentGradeItem {

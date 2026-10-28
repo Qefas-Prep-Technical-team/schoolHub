@@ -32,7 +32,7 @@ router.use("/auth", authRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/subscription", subscriptionRoutes);
 router.use("/links", authenticateToken, checkSubscription, linkRoutes);
-router.use("/classes", authenticateToken, checkSubscription, classRoutes);
+router.use("/classes", classRoutes);
 router.use("/academic", authenticateToken, checkSubscription, academicRoutes);
 router.use("/admin", adminRoutes);
 router.use("/sessions", authenticateToken, checkSubscription, sessionRoutes);

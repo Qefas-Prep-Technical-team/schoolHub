@@ -210,7 +210,9 @@ function LinkingHub() {
       <QRCodeModal
         isOpen={isQRCodeModalOpen}
         onClose={() => setIsQRCodeModalOpen(false)}
-        schoolCode={profile?.schoolCode || ''}
+        schoolCode={profile?.schoolCode || (user as any)?.schoolCode || ''}
+        schoolName={profile?.schoolAdmins?.[0]?.school?.name || (user as any)?.schoolName || (user as any)?.schools?.[0]?.name || 'Qefas Hub'}
+        schoolLogo={profile?.schoolAdmins?.[0]?.school?.logo || (user as any)?.schools?.[0]?.logo || null}
       />
 
       <ConfirmationModal 

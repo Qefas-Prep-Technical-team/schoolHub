@@ -310,8 +310,8 @@ export default function TeacherAttendancePage() {
     };
   }, [attendanceRecords, selectedDate, selectedScope]);
 
-  // Early return AFTER all hooks have been called
-  if (isLoading) {
+  // Early return only on first initial mount before class metadata has loaded
+  if (!classData && isLoading) {
     return <TabSkeleton tabId="attendance" />;
   }
 

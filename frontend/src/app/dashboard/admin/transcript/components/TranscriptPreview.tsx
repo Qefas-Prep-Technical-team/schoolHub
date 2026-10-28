@@ -137,9 +137,23 @@ interface TranscriptPreviewProps {
 function TranscriptPreviewSkeleton({
   onBack,
   isSidebarOpen = true,
+  onToggleSidebar,
+  schoolName,
+  schoolLogoUrl,
+  schoolMotto,
+  schoolLocation,
+  studentProfile,
+  enrolledClass,
 }: {
   onBack?: () => void;
   isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+  schoolName?: string;
+  schoolLogoUrl?: string;
+  schoolMotto?: string;
+  schoolLocation?: string;
+  studentProfile?: any;
+  enrolledClass?: string;
 }) {
   return (
     <div className="w-full space-y-6 font-sans animate-pulse">
@@ -151,7 +165,7 @@ function TranscriptPreviewSkeleton({
             variant="outline"
             size="sm"
             onClick={onBack}
-            className="h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs"
+            className="h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs cursor-pointer"
           >
             <ArrowLeft size={15} />
             <span>Select Another Scholar</span>
@@ -160,7 +174,13 @@ function TranscriptPreviewSkeleton({
           {/* Quick Switch Dropdown placeholder */}
           <div className="h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
             <User size={14} className="text-blue-600" />
-            <Skeleton className="h-3.5 w-24 rounded-md" />
+            {studentProfile?.name ? (
+              <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 max-w-[140px] truncate">
+                {studentProfile.name}
+              </span>
+            ) : (
+              <Skeleton className="h-3.5 w-24 rounded-md" />
+            )}
             <ChevronDown size={14} className="text-slate-400" />
           </div>
 
@@ -187,13 +207,23 @@ function TranscriptPreviewSkeleton({
           </div>
 
           {/* Toggle Audit Sidebar Button */}
-          <div className="h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/40 text-blue-600 shadow-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleSidebar}
+            className={cn(
+              "h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border-slate-200 dark:border-zinc-800 transition-colors shadow-xs cursor-pointer",
+              isSidebarOpen
+                ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 border-blue-200 dark:border-blue-900/60"
+                : "bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300"
+            )}
+          >
             <CreditCard size={15} />
             <span className="hidden sm:inline">Access & Payment Audit</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
+          </Button>
 
-          <div className="h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
+          <div className="h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-400 shadow-xs">
             <Printer size={15} />
             <span className="hidden sm:inline">Print Copy</span>
           </div>
@@ -247,30 +277,61 @@ function TranscriptPreviewSkeleton({
             {/* Letterhead Skeleton */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 pb-6 border-b-2 border-slate-100 dark:border-zinc-800">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center shrink-0 shadow-xs text-blue-600 dark:text-blue-400">
-                  <School size={40} />
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center justify-center p-2 shadow-sm shrink-0 overflow-hidden">
+                  {schoolLogoUrl ? (
+                    <img
+                      src={schoolLogoUrl}
+                      alt={schoolName || "School Crest"}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <School size={40} className="text-blue-600 dark:text-blue-400" />
+                  )}
                 </div>
-                <div className="space-y-2 text-center sm:text-left">
+                <div className="space-y-1 text-center sm:text-left">
                   <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">
                     <ShieldCheck size={12} />
                     Official Certified Institutional Record
                   </div>
-                  <Skeleton className="h-7 sm:h-8 w-64 sm:w-80 rounded-lg mx-auto sm:mx-0" />
+                  {schoolName ? (
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      {schoolName}
+                    </h2>
+                  ) : (
+                    <Skeleton className="h-7 sm:h-8 w-64 sm:w-80 rounded-lg mx-auto sm:mx-0" />
+                  )}
                   <p className="text-xs italic text-blue-600 dark:text-blue-400 font-serif font-medium">
-                    "Excellence, Integrity, & Scholastic Achievement"
+                    "{schoolMotto || "Excellence, Integrity, & Scholastic Achievement"}"
                   </p>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
-                    <Skeleton className="h-3.5 w-44 rounded-md" />
-                    <span className="text-slate-300">•</span>
-                    <Skeleton className="h-3.5 w-36 rounded-md" />
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-0.5 text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+                    <span className="flex items-center gap-1">
+                      <MapPin size={12} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                      <span>{schoolLocation || "Official Institutional Campus"}</span>
+                    </span>
+                    <span>•</span>
+                    <span>Cumulative Academic Records Division</span>
                   </div>
                 </div>
               </div>
 
               {/* Scholar Photo Box */}
-              <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl border-2 border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900/50 flex flex-col items-center justify-center p-2 text-center text-slate-400 shrink-0">
-                <User size={28} className="text-slate-300 dark:text-zinc-600" />
-                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-slate-400">Scholar Photo</span>
+              <div className="self-center sm:self-start shrink-0">
+                <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl border-2 border-slate-200 dark:border-zinc-700 overflow-hidden bg-slate-100 dark:bg-zinc-800 shadow-sm relative flex items-center justify-center">
+                  {studentProfile?.profileImage ? (
+                    <img
+                      src={studentProfile.profileImage}
+                      alt={studentProfile.name || "Student Photo"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-zinc-500 bg-gradient-to-b from-slate-100 to-slate-200 dark:from-zinc-800 dark:to-zinc-900">
+                      <User size={32} className="text-slate-400 dark:text-zinc-500" />
+                      <span className="text-[9px] uppercase font-bold tracking-wider mt-1 text-slate-500 dark:text-zinc-400">
+                        Scholar
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -282,33 +343,50 @@ function TranscriptPreviewSkeleton({
             </div>
 
             {/* Student Profile Banner Skeleton (6 metadata columns) */}
-            <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/40 p-4 sm:p-5">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Scholar Full Name</p>
-                  <Skeleton className="h-4 w-28 rounded-md" />
+            <div className="bg-slate-50 dark:bg-zinc-900/50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 text-xs w-full">
+                <div className="space-y-1 min-w-0">
+                  <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Scholar Full Name</p>
+                  {studentProfile?.name ? (
+                    <p className="text-slate-900 dark:text-white font-black text-sm truncate">{studentProfile.name}</p>
+                  ) : (
+                    <Skeleton className="h-4 w-28 rounded-md" />
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Student ID / Code</p>
-                  <Skeleton className="h-4 w-24 rounded-md bg-blue-100 dark:bg-blue-950/60" />
+                <div className="space-y-1 min-w-0">
+                  <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Student ID / Code</p>
+                  {studentProfile?.studentCode ? (
+                    <p className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm truncate">{studentProfile.studentCode}</p>
+                  ) : (
+                    <Skeleton className="h-4 w-24 rounded-md bg-blue-100 dark:bg-blue-950/60" />
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Department / Cohort</p>
-                  <Skeleton className="h-4 w-24 rounded-md" />
+                <div className="space-y-1 min-w-0">
+                  <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Department / Cohort</p>
+                  {studentProfile?.department?.name || enrolledClass ? (
+                    <p className="text-slate-900 dark:text-white font-bold text-sm truncate">{studentProfile?.department?.name || enrolledClass}</p>
+                  ) : (
+                    <Skeleton className="h-4 w-24 rounded-md" />
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Enrollment Status</p>
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 text-[10px] font-bold">
-                    ENROLLED
-                  </span>
+                <div className="space-y-1 min-w-0">
+                  <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Enrollment Status</p>
+                  <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1 truncate">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    <span>Active Enrolled</span>
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Document Ref</p>
-                  <Skeleton className="h-4 w-28 rounded-md font-mono" />
+                <div className="space-y-1 min-w-0">
+                  <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px] truncate">Transcript Ref No.</p>
+                  <p className="font-mono font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
+                    TRX-{studentProfile?.studentCode?.toUpperCase() || "SCH"}-{new Date().getFullYear()}
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Issued Date</p>
-                  <Skeleton className="h-4 w-24 rounded-md" />
+                <div className="space-y-1 min-w-0">
+                  <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">Issued Date</p>
+                  <p className="text-slate-700 dark:text-zinc-300 font-semibold text-xs sm:text-sm truncate">
+                    {format(new Date(), "MMMM d, yyyy")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -364,15 +442,18 @@ function TranscriptPreviewSkeleton({
             </div>
 
             {/* Course Breakdown Table Skeleton */}
-            <div className="space-y-5 pt-2">
+            <div className="space-y-6 pt-2">
               <div className="flex items-center justify-between pb-2 border-b-2 border-slate-900 dark:border-zinc-700">
                 <div className="flex items-center gap-2">
                   <Calendar size={18} className="text-blue-600" />
-                  <Skeleton className="h-5 w-52 rounded-md" />
+                  <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                    2025/2026 Academic Session • Cumulative Assessment
+                  </span>
                 </div>
                 <Skeleton className="h-4 w-28 rounded-md" />
               </div>
 
+              {/* Term 1 Table Skeleton */}
               <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 overflow-hidden shadow-xs">
                 {/* Term Subheader */}
                 <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
@@ -442,22 +523,98 @@ function TranscriptPreviewSkeleton({
                   <Skeleton className="h-4 w-20 rounded-md" />
                 </div>
               </div>
+
+              {/* Term 2 Table Skeleton */}
+              <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 overflow-hidden shadow-xs">
+                {/* Term Subheader */}
+                <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
+                      2nd Term
+                    </span>
+                    <Skeleton className="h-4 w-32 rounded-md" />
+                  </div>
+                  <Skeleton className="h-4 w-24 rounded-md" />
+                </div>
+
+                {/* Table Header & Rows */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-100/70 dark:bg-zinc-800/50 border-b border-slate-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="py-2.5 px-3 w-16">Code</th>
+                        <th className="py-2.5 px-3">Subject / Course Name</th>
+                        <th className="py-2.5 px-2 text-center w-12">CA</th>
+                        <th className="py-2.5 px-2 text-center w-12">Exam</th>
+                        <th className="py-2.5 px-2 text-center w-16">Total (%)</th>
+                        <th className="py-2.5 px-2 text-center w-14">Grade</th>
+                        <th className="py-2.5 px-2 text-center w-10">GP</th>
+                        <th className="py-2.5 px-3 text-right w-24">Remark</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+                      {[1, 2, 3, 4].map((row) => (
+                        <tr key={row}>
+                          <td className="py-3 px-3">
+                            <Skeleton className="h-3.5 w-12 rounded" />
+                          </td>
+                          <td className="py-3 px-3">
+                            <Skeleton className="h-3.5 w-48 rounded" />
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <Skeleton className="h-3.5 w-8 rounded mx-auto" />
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <Skeleton className="h-3.5 w-8 rounded mx-auto" />
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <Skeleton className="h-3.5 w-10 rounded mx-auto font-bold" />
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <Skeleton className="h-5 w-8 rounded-md mx-auto bg-blue-100/80 dark:bg-blue-950/60" />
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <Skeleton className="h-3.5 w-6 rounded mx-auto" />
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <Skeleton className="h-5 w-16 rounded-full ml-auto bg-emerald-100/80 dark:bg-emerald-950/60" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Terminal Summary Footer */}
+                <div className="p-3 bg-slate-50 dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-28 rounded-md" />
+                    <Skeleton className="h-4 w-28 rounded-md" />
+                  </div>
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                </div>
+              </div>
             </div>
 
             {/* Endorsement Signatures Skeleton with Retained Dashed Baseline */}
             <div className="pt-8 border-t-2 border-slate-200 dark:border-zinc-800 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 text-center sm:text-left">
+                {/* Signature 1: Registrar */}
                 <div className="space-y-3">
-                  <div className="h-20 sm:h-24 border-b-2 border-dashed border-slate-300 dark:border-zinc-700 flex items-end justify-start pb-2">
+                  <div className="h-24 sm:h-28 flex items-end justify-center sm:justify-start pb-1 border-b-2 border-dashed border-slate-300 dark:border-zinc-700 w-full relative">
                     <span className="font-['Caveat',cursive] italic text-2xl text-slate-400 select-none">
-                      Class Teacher
+                      Registrar
                     </span>
                   </div>
-                  <div className="space-y-1">
-                    <Skeleton className="h-4 w-36 rounded-md" />
-                    <p className="text-[11px] text-slate-400">Class Teacher / Form Master</p>
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                      Registrar / Academic Director
+                    </p>
+                    <p className="text-[11px] text-slate-400">Office of Academic Records</p>
                   </div>
                 </div>
+
+                {/* Center Seal */}
                 <div className="flex flex-col items-center justify-center space-y-2 py-2">
                   <div className="w-20 h-20 rounded-full border-2 border-dashed border-blue-400 dark:border-blue-600 flex items-center justify-center text-center p-2 text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tighter shadow-xs mx-auto">
                     Official Electronic Seal
@@ -466,15 +623,19 @@ function TranscriptPreviewSkeleton({
                     Certified Verified Copy
                   </p>
                 </div>
+
+                {/* Signature 2: Principal */}
                 <div className="space-y-3 text-center sm:text-right">
-                  <div className="h-20 sm:h-24 border-b-2 border-dashed border-slate-300 dark:border-zinc-700 flex items-end justify-center sm:justify-end pb-2">
+                  <div className="h-24 sm:h-28 flex items-end justify-center sm:justify-end pb-1 border-b-2 border-dashed border-slate-300 dark:border-zinc-700 w-full relative">
                     <span className="font-['Caveat',cursive] italic text-2xl text-slate-400 select-none">
                       Head of Institution
                     </span>
                   </div>
-                  <div className="space-y-1 sm:text-right">
-                    <Skeleton className="h-4 w-36 rounded-md sm:ml-auto" />
-                    <p className="text-[11px] text-slate-400 sm:text-right">Principal / Head of Institution</p>
+                  <div className="space-y-0.5 sm:text-right">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                      Principal / Head of Institution
+                    </p>
+                    <p className="text-[11px] text-slate-400">Office of the Principal</p>
                   </div>
                 </div>
               </div>
@@ -782,6 +943,56 @@ export function TranscriptPreview({
     !logoLoadError && (schoolProfile?.logo || (studentProfile as any)?.school?.logo || schoolProfile?.schoolLogo)
       ? schoolProfile?.logo || (studentProfile as any)?.school?.logo || schoolProfile?.schoolLogo
       : "/schoolhub.png";
+
+  // ── Graduation Status & School Badges ────────────────────────────────────
+  const isGraduated = useMemo(() => {
+    const sStatus = String((studentProfile as any)?.status || "").toUpperCase();
+    const gStatus = String((studentProfile as any)?.graduationStatus || "").toUpperCase();
+    const isAlum = Boolean((studentProfile as any)?.isAlumni || (studentProfile as any)?.graduated);
+    return sStatus === "GRADUATED" || sStatus === "ALUMNI" || gStatus === "GRADUATED" || isAlum;
+  }, [studentProfile]);
+
+  const graduatedSchools = useMemo(() => {
+    const list: Array<{ id: string; name: string; logo?: string | null; motto?: string | null }> = [];
+    const seen = new Set<string>();
+
+    const addSchool = (id?: string | null, name?: string | null, logo?: string | null, motto?: string | null) => {
+      if (!name) return;
+      const key = (id || name).toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push({
+          id: id || key,
+          name: name.trim(),
+          logo: logo || null,
+          motto: motto || null,
+        });
+      }
+    };
+
+    addSchool(schoolProfile?.id || effectiveSchoolId, schoolProfile?.name || schoolName, schoolProfile?.logo || schoolLogoUrl, schoolProfile?.motto || schoolMotto);
+
+    if ((studentProfile as any)?.school) {
+      addSchool((studentProfile as any).school.id, (studentProfile as any).school.name, (studentProfile as any).school.logo, (studentProfile as any).school.motto);
+    }
+
+    const origSchool = (studentProfile as any)?.originalSchool;
+    if (origSchool) {
+      addSchool(origSchool.id, origSchool.name, origSchool.logo, origSchool.motto);
+    }
+
+    if (Array.isArray(user?.schools)) {
+      user.schools.forEach((s: any) => {
+        addSchool(s.schoolId || s.id, s.name || s.schoolName, s.logo || s.schoolLogo, s.motto);
+      });
+    }
+
+    if (list.length === 0 && schoolName) {
+      addSchool("default-school", schoolName, schoolLogoUrl, schoolMotto);
+    }
+
+    return list;
+  }, [schoolProfile, effectiveSchoolId, schoolName, schoolLogoUrl, schoolMotto, studentProfile, user]);
 
   // ── Session & Term Filter States ─────────────────────────────────────────
   const [selectedSessionFilter, setSelectedSessionFilter] = useState<string>("ALL");
@@ -1583,26 +1794,6 @@ export function TranscriptPreview({
     );
   };
 
-  // ── Loading Skeleton ─────────────────────────────────────────────────────
-  if (isStudentLoading || isResultsLoading) {
-    return (
-      <div className="w-full max-w-7xl mx-auto space-y-6 animate-pulse">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-9 w-44 rounded-xl" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-28 rounded-xl" />
-            <Skeleton className="h-9 w-36 rounded-xl" />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
-          ))}
-        </div>
-        <Skeleton className="h-96 rounded-3xl" />
-      </div>
-    );
-  }
 
   const enrolledClass =
     studentProfile?.classes?.[0]?.class?.name
@@ -1712,10 +1903,17 @@ export function TranscriptPreview({
           <p className="text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
             Enrollment Status
           </p>
-          <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1 truncate">
-            <CheckCircle2 size={13} className="shrink-0" />
-            <span>Active Enrolled</span>
-          </p>
+          {isGraduated ? (
+            <p className="text-amber-600 dark:text-amber-400 font-bold text-sm flex items-center gap-1 truncate">
+              <GraduationCap size={14} className="shrink-0 text-amber-500" />
+              <span>Graduated Alumnus</span>
+            </p>
+          ) : (
+            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-1 truncate">
+              <CheckCircle2 size={13} className="shrink-0" />
+              <span>Active Enrolled</span>
+            </p>
+          )}
         </div>
 
         {/* Document Reference Number */}
@@ -1870,7 +2068,19 @@ export function TranscriptPreview({
   );
 
   if (isStudentLoading || isResultsLoading) {
-    return <TranscriptPreviewSkeleton onBack={onBack} isSidebarOpen={isSidebarOpen} />;
+    return (
+      <TranscriptPreviewSkeleton
+        onBack={onBack}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        schoolName={schoolName}
+        schoolLogoUrl={schoolLogoUrl}
+        schoolMotto={schoolMotto}
+        schoolLocation={schoolLocation}
+        studentProfile={studentProfile}
+        enrolledClass={enrolledClass}
+      />
+    );
   }
 
   return (
@@ -2166,6 +2376,62 @@ export function TranscriptPreview({
 
             {/* Student Biographical Profile Strip with Ref No. & Issue Date */}
             {renderStudentProfileBanner("Academic Transcript")}
+
+            {/* ── Graduated Scholar Alumni Badges Roll ── */}
+            {isGraduated && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-blue-500/10 border border-amber-300/70 dark:border-amber-700/60 shadow-xs flex flex-wrap items-center justify-between gap-3.5 transition-all print:border-amber-400 print:bg-white">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30 shadow-xs">
+                    <Award size={20} className="text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                        Badge
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                        <GraduationCap size={12} className="text-amber-600 dark:text-amber-400" />
+                        Graduated Scholar
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-zinc-400 font-medium">
+                      Official graduation credential and institutional alumni badge
+                    </p>
+                  </div>
+                </div>
+
+                {/* Roll of schools logo that they graduated from as badges */}
+                <div className="flex items-center flex-wrap gap-2.5 sm:gap-3">
+                  {graduatedSchools.map((sch) => (
+                    <div
+                      key={sch.id}
+                      className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 shadow-xs hover:border-amber-400 dark:hover:border-amber-500 transition-all group"
+                    >
+                      <div className="size-9 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                        {sch.logo ? (
+                          <img
+                            src={sch.logo}
+                            alt={sch.name}
+                            className="size-full object-contain"
+                          />
+                        ) : (
+                          <School size={18} className="text-blue-600 dark:text-blue-400" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                          {sch.name}
+                        </span>
+                        <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 pt-0.5">
+                          <ShieldCheck size={11} className="text-emerald-500 shrink-0" />
+                          <span>Graduated Alumnus</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Cumulative Performance Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

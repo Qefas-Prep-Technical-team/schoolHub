@@ -1,4 +1,4 @@
-export type StudentStatus = 'active' | 'suspended' | 'transferred'
+export type StudentStatus = 'active' | 'enrolled' | 'graduated' | 'expelled' | 'transferred' | 'suspended'
 export type Gender = 'male' | 'female'
 
 export interface Student {

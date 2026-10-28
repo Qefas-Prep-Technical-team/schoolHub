@@ -33,7 +33,571 @@
 
 ## Blockers
 
-- None (code). Manual key swap and webhook registration required before go-live.
+- [x] **Template Export Student Identifiers & Build Verification (Wednesday, October 28, 2026)**:
+    - **Clean Student Identifiers in Export Templates ([RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [OfflineGradeSheetSyncModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradeSheetSyncModal.tsx), [OfflineGradesCSVModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesCSVModal.tsx))**:
+        - Removed raw internal database UUIDs (`Student ID (Do not edit)`) from all exported templates and marksheets (Excel `.xlsx` and `.csv`).
+        - Replaced technical IDs with clean, human-readable student identifiers: `Student Name` and `Student Code / Reg No`.
+        - Upgraded spreadsheet parsers across all offline assessment modals to support flexible column arrangements and match students by `Student Code / Reg No` first, database `ID` second (for backward compatibility), and `Student Name` third.
+    - **Full Production Build & Type Verification ([types.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/types.ts), [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [OfflineGradeSheetSyncModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradeSheetSyncModal.tsx))**:
+        - Fixed TypeScript strict errors (implicit `any` in array map/filter/find closures, missing `grade` on `OfflineStudentGradeEntry`, and missing dynamic grade computation).
+        - Verified backend TypeScript checks with `npx tsc --noEmit` — completed with **0 errors**.
+        - Verified frontend production build with Next.js Turbopack `npm run build` — compiled and generated all static/dynamic routes successfully with **0 errors**.
+- [x] **Platform Direct Email Alerts & Offline Grades Pop-up Modal (Wednesday, October 28, 2026)**:
+    - **Direct Email Alert Dispatching ([recipient.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/notifications/recipient.service.ts), [support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/support/support.controller.ts), [notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/notifications/page.tsx))**:
+        - Ensured alert dispatching on `/console/notifications` sends actual emails directly to each recipient's configured email address (`r.email.trim()`), removing the test diversion so administrators and leads receive real inbox notifications across all 5 event channels.
+        - Connected `createGuestTicket` to automatically trigger email alerts for guest inquiries and support escalations.
+        - Updated `/console/notifications` UI to clearly reflect direct email alert delivery and test dispatch confirmations.
+    - **Offline Grade Sheet Sync Converted to Pop-up Modal ([OfflineGradeSheetSyncModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradeSheetSyncModal.tsx), [OfflineRecordsList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx), [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx))**:
+        - Hidden the offline sync setup card from the main page view on `/dashboard/teacher/offline-grades`.
+        - Added a prominent **"Download Grade Sheet Template"** button to the header of the records directory.
+        - Clicking this button opens a clean, focused pop-up modal (`OfflineGradeSheetSyncModal`) containing the 4-step workflow, class/subject picker, template downloader (Excel & CSV), and drag-and-drop dropzone.
+        - Dropping a spreadsheet or clicking "Open Record Marks Pad" auto-opens the assessment modal with the exact selected setup and parsed student marks populated.
+- [x] **Teacher Offline Grades Spreadsheet Sync, Template Generator & Excel Format Support (Wednesday, October 28, 2026)**:
+    - **Offline Grade Sheet Sync & 4-Step Workflow Card ([OfflineGradeSheetSyncCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradeSheetSyncCard.tsx), [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx))**:
+        - Added interactive 4-step offline workflow component to `/dashboard/teacher/offline-grades` matching the knowledge base guide: (1) Select Assigned Class & Subject, (2) Download Grade Sheet Template, (3) Fill in scores offline, (4) Drag & drop saved spreadsheet to sync.
+        - Teacher selects assigned class and curriculum subject directly on the card; one click downloads the official roster template in Excel (`.xlsx`) or CSV (`.csv`) with enrolled students pre-filled.
+        - Provides a dedicated Drag & Drop Dropzone for `.xlsx`, `.xls`, and `.csv` files. Dropping or selecting a spreadsheet parses marks using SheetJS and immediately launches the **"Record Offline Assessment Marks"** modal with that exact same class, subject, category, and pre-filled student scores.
+        - Clicking "Record Offline Marks" on the card auto-propagates the selected setup (Class, Subject, Category, Max Marks) into the modal so teachers do not have to re-select fields.
+    - **Record Offline Assessment Marks Modal UX & Format Extensions ([RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), [OfflineGradesCSVModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesCSVModal.tsx))**:
+        - **Corrected Import Icon & Label**: Replaced generic `<Upload />` icon with `<FileSpreadsheet />` and updated label to `Import Excel / CSV`.
+        - **Corrected Export Dropdown & Handlers**: Replaced dummy empty handlers with fully working exports:
+            - **Export to Excel (.xlsx)**: Generates formatted `.xlsx` workbook with column widths using SheetJS `XLSX.writeFile`.
+            - **Export to CSV (.csv)**: Generates `.csv` download via Blob.
+            - **Export Marksheet (PDF)**: Generates structured institutional marksheet PDF via `generatePDF`.
+        - **Excel Format Support in Import Modal**: Updated `OfflineGradesCSVModal` to support downloading both Excel (`.xlsx`) and CSV (`.csv`) templates, accept `.xlsx, .xls, .csv` uploads, support drag-and-drop, and parse binary Excel worksheets with validation against `maxMarks`.
+- [x] **Support Agent Persona Hub, Role-Themed Support Centers & Strict Ticket Privacy Isolation (Wednesday, October 28, 2026)**:
+    - **Page Theme Color Customization ([SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx), [console/profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/profile/page.tsx))**:
+        - **Teacher Support Desk (`/dashboard/teacher/support`)**: Themed to **Pink** (`from-slate-900 via-pink-950/70 to-slate-900`, pink active tabs, badges, buttons, active card borders, and user message bubbles).
+        - **Student Support Desk (`/dashboard/student/support`)**: Themed to **Pink** (`from-slate-900 via-pink-950/70 to-slate-900`, pink active tabs, badges, buttons, active card borders, and user message bubbles).
+        - **Console Profile Page (`/console/profile`)**: Themed to **Blue** (`from-blue-950 via-slate-950 to-slate-900`, blue navigation tabs, avatar rings, action buttons, public persona cards, and interactive simulator).
+    - **Discussion Thread Chat UX Parity & Self-Notification Suppression ([SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx))**:
+        - **Optimistic Message Delivery**: The Complaints & Grievances two-way discussion dialog now mirrors the technical live chat. Outgoing messages enter the thread immediately with `sending` status, smoothly transition to delivered (`✓✓`), and provide one-click `Retry` on network errors.
+        - **Eliminated Outgoing Message Toasters**: Removed redundant "Response sent" toasts and suppressed echo notifications when posting responses in discussion threads.
+        - **Socket Self-Notification Guard**: Added strict checks in `handleSocketNewMessage` ignoring messages where `role === "USER"` or `senderId === currentUserId`, ensuring users only ever hear chimes and receive toasts for genuine support replies.
+    - **Console Notification Routing & Alert Dispatcher ([notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/notifications/page.tsx), [usePlatformNotifications.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/usePlatformNotifications.ts))**:
+        - Resolved the 404 "Not Found" error when clicking "Notification Routing" (`/console/notifications`) in the console sidebar.
+        - Built the complete Notification Routing Matrix supporting all 5 platform event channels: `PAYMENTS`, `COMPLAINTS`, `SUGGESTIONS`, `INQUIRIES`, and `SYSTEM_ALERTS`.
+        - Wired to backend `/api/platform/notifications/recipients` with React Query hooks (`usePlatformRecipients`, `useCreateRecipient`, `useUpdateRecipient`, `useToggleRecipient`, `useDeleteRecipient`, `useSendTestAlert`).
+        - Implemented Add/Edit Recipient dialogs with multi-channel subscription toggles, search filtering, one-click alert muting/enabling, and instant test email dispatch.
+    - **Console Dedicated "Support Agent" Tab & Persona Studio ([console/profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/profile/page.tsx))**:
+        - Created a dedicated **"Support Agent"** tab (`SUPPORT_AGENT`) alongside "Personal Details", "Security & Password", and "Login Integrations".
+        - Equipped with native Support Agent Photo upload with client-side FileReader preview, file-size validation (<5MB), and removal action.
+        - Configured agent display name (`displayName` / `agentDisplayName`) management reflecting in platform staff sessions.
+        - Added an interactive live chat simulator preview demonstrating how students, teachers, parents, and admins see the agent's avatar, badge, and persona.
+    - **Agent Profile Photo & Persona Display in User Live Chat ([SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx), [support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts))**:
+        - Live chat conversation header displays the assigned support agent's profile photo with online indicator.
+        - Support agent message bubbles now show the agent's photo avatar (`senderImage`) instead of generic initials.
+        - Backend `getTicketMessages` resolves agent photo (`profileImage` or `socialLinks.agentProfilePicture`) and attaches `assignedAgent: { name, image }` to the ticket payload.
+        - Real-time socket message broadcaster (`new_message` & `ticket_message_received`) forwards `senderImage` for immediate visual rendering.
+    - **Role-Specific Theme Colors Across Support Portals ([SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx))**:
+        - Unified support portal dynamically adapts to each user role's distinct color theme:
+          - **Teacher**: Emerald / Teal theme (`from-emerald-950/60`, emerald tabs, badge, and outgoing bubble)
+          - **Student**: Indigo / Violet theme (`from-indigo-950/60`, indigo tabs, badge, and outgoing bubble)
+          - **Parent**: Orange / Amber theme (`from-amber-950/60`, orange tabs, badge, and outgoing bubble)
+          - **Admin**: Blue / Cyan theme (`from-blue-950/60`, blue tabs, badge, and outgoing bubble)
+        - Theme tokens apply to hero headers, tab indicators, action buttons, active card borders, and user chat bubbles.
+    - **Strict User Ticket & Support Message Privacy Isolation ([support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/support/support.controller.ts), [authMiddleware.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts), [SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx))**:
+        - **Root Cause**: `getMyTickets` accessed `(req as any).user.userId`, but `authMiddleware.ts` was setting `req.user = { id: decoded.userId }` without `userId`. Prisma treated `{ userId: undefined }` as no filter, returning all tickets in the database.
+        - **Backend Fix**: Normalized `authMiddleware.ts` to assign both `id` and `userId`. Hardened `getMyTickets` to check `req.user?.id || req.user?.userId` and abort early if missing.
+        - **Frontend Filter**: Added client-side defense in `SupportCenter.tsx` filtering tickets strictly by `currentUserId`, guaranteeing that users only ever see their own tickets, complaints, proposals, and chats.
+    - **Full TypeScript Verification**: Executed `npx tsc --noEmit` across both `backend` and `frontend` with **0 errors**.
+
+- [x] **Support Desk — Triple Notification/Toast Fix & Universal Multi-Portal Support Center Unlocking (Wednesday, October 28, 2026)**:
+    - **Elimination of Triple Toaster & Duplicate Socket Notifications ([support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts), [useSupportSocket.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/hooks/useSupportSocket.ts), [SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx))**:
+        - **Root Cause**: When support replied, backend emitted both `ticket_message_received` and `support_notification` to `user:${userId}`, in addition to `new_message` to `ticket:${ticketId}`. Furthermore, `useSupportSocket.ts` invoked `onNewMessage` for all 3 events without message deduplication, triggering 3 separate toasts and 3 audio chimes on the client.
+        - **Backend Fix**: Removed redundant `support_notification` emission inside `replyToTicket` since `ticket_message_received` already conveys the message.
+        - **Client Socket Fix**: Added bounded message deduplication cache `processedMessageIds` in `useSupportSocket.ts` so multiple room events for the same message ID never trigger `onNewMessage` more than once. Stopped `support_notification` from calling `onNewMessage`.
+        - **Component Debounce Fix**: Added `lastNotifiedMessageIdsRef` in `SupportCenter.tsx` ensuring at most one toast, chime, and desktop notification per message payload.
+    - **Universal Support Center Unlocking & Multi-Portal Architecture ([SupportCenter.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/shared/SupportCenter.tsx))**:
+        - Replaced previous "Coming Soon / Under Construction" placeholder with the complete, unlocked Multi-Portal Support & Help Center.
+        - Unified all 4 roles across the ecosystem:
+          - Teacher: [teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx) (`role="TEACHER"`)
+          - Student: [student/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/support/page.tsx) (`role="STUDENT"`)
+          - Admin: [admin/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/support/page.tsx) (`role="ADMIN"`)
+          - Parent: [parent/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/support/page.tsx) (`role="PARENT"`)
+        - Features all 4 operational portals in every role:
+          1. **Platform Technicals (Live Chat)**: Real-time chat with Console Support Agent Display Name, online status, optimistic message delivery (`sending`, `sent`, `failed` + retry), WhatsApp audio chime, and mobile responsiveness.
+          2. **Complaints & Grievances**: Role-specific category picker, urgency levels, confidential reporting option, and interactive two-way Discussion Dialog with school leadership.
+          3. **Proposals & Suggestions**: Role-specific suggestion categories and scopes, community idea feed, local upvoting, and two-way administrative discussions.
+          4. **Knowledge Base & FAQs**: Instant search bar, topic filters, and role-tailored step-by-step guidance.
+    - **Full TypeScript Verification**: Executed `npx tsc --noEmit` across both `backend` and `frontend` with **0 errors**.
+
+- [x] **Student Linking Hub — Graduated Scholar Alma Mater Auto-Status & Locked Class Join Prevention (Wednesday, October 28, 2026)**:
+    - **Graduated Scholar Alma Mater Class Status Resolution ([StudentClassSelectionModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentClassSelectionModal.tsx))**:
+        - Updated `getStudentClassStatus`: If the student is graduated (`isStudentGraduated = true`), all classes belonging to their alma mater unconditionally return status `"GRADUATED"` rather than defaulting to `"NONE"`.
+        - Corrects modal counters so all classes are counted under `Graduated (X)` and prevents alumni scholars from seeing classes listed under "Available to Join".
+        - Filter chips dynamically hide the "Available to Join" filter tab whenever `isStudentGraduated` is `true`.
+        - Each class card displays the purple/emerald `Graduated Scholar` status badge.
+    - **Locked Class Join Request Interception & Toast Notification ([StudentClassSelectionModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentClassSelectionModal.tsx))**:
+        - Added `isClassLocked` helper inspecting `cls.isLocked`, `cls.locked`, `cls.status === "LOCKED"`, and `cls.isArchived`.
+        - Added dedicated `Lock` badge (`bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300`) in class card headers when a class is locked.
+        - Made "Request to Join" button non-joinable for locked classes: instead of submitting an enrollment request, clicking renders cursor-not-allowed styling and triggers an immediate warning toast: `"Enrollment Locked: [Class Name] is currently locked by the school administration and is not accepting join requests."`.
+        - Added guard inside `handleJoinClass` intercepting locked and graduated states before mutation dispatch.
+    - **Console Support Agent Display Persona & Teacher Live Chat Sync ([console/profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/profile/page.tsx), [teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**:
+        - Integrated `displayName` / `agentDisplayName` in platform authentication, staff store, profile API hooks, and console profile editor.
+        - Replaced text URL with native file upload with reader preview and size validation.
+        - Enabled official email change and scoped social connections strictly to Google and Facebook.
+        - Teacher support chat dynamically resolves and pins the active Console Agent's Display Name in header and message bubbles.
+    - **Full TypeScript Verification**: Executed `npx tsc --noEmit` across both `backend` and `frontend` with **0 errors**.
+
+- [x] **Console Support Chat UX Overhaul, AI/User Distinct Visual Alignment, Optimistic Sending & Sidebar Link Sectioning (Wednesday, October 28, 2026)**:
+    - **AI & User Message Visual Architecture in Console Support ([console/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/support/page.tsx))**:
+        - **AI Messages on the Right**: Automated AI responses (`senderRole === "AI" | "SYSTEM" | "BOT"`) now render right-aligned in distinctive green/emerald styling (`bg-emerald-600 text-white rounded-2xl rounded-br-none border border-emerald-500/40`), with a dedicated AI bot avatar on the right, an AI Bot badge (`AI Automated`), and `Qefas AI Assistant` header with sparkles icon.
+        - **Human Support Agent Messages on the Right**: Support staff replies render right-aligned in indigo styling (`bg-indigo-600 text-white rounded-2xl rounded-br-none`) with the staff member's avatar photo or initials on the right and `ShieldCheck` verification badge.
+        - **User Messages on the Left**: User messages render left-aligned in a clean slate/white card (`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl rounded-bl-none`) with user avatar on the left, full requester name, and role badge (`Educator`, `Teacher`, `Student`, etc.).
+    - **Optimistic Message Sending & Real-Time Delivery Status Tracking ([console/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/support/page.tsx))**:
+        - Implemented `OptimisticSupportMessage` state. When console staff sends a reply, the message immediately enters the active chat window with a `sending` spinner status indicator.
+        - On server confirmation, status updates smoothly to `sent` (`✓✓ Sent`) with automatic cleanup.
+        - On server or network failure, status updates to `failed` (`Failed to deliver`) with an inline one-click `Retry` action.
+    - **Suppression of Unwanted Self-Message Notifications & Toaster Alert Fix**:
+        - Fixed `handleIncomingSocketMessage` in `console/support/page.tsx`. Previously, `ticket_message_received` emitted `{ ticketId, message }` where `payload.senderRole` was `undefined`, causing `undefined !== "SUPPORT_AGENT"` to evaluate to `true` and trigger an incoming message toast and audio chime whenever the agent sent a reply.
+        - Correctly unwrapped `payload?.message?.senderRole || payload?.senderRole` and strictly checked `role === "USER"`, completely eliminating self-notification toasts and chiming.
+    - **Chat Window Animated Loading Skeleton & Indicator**:
+        - Added animated conversation skeleton with a centered pulsating loading spinner (`Loading conversation thread...`) in the chat workspace whenever a ticket is loading or when switching inquiries, eliminating blank and frozen views.
+        - Added live syncing indicator (`Syncing...`) in the header during background refetches.
+    - **Console Sidebar Link Rearranging & Categorized Sectioning ([ConsoleSidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/components/ConsoleSidebar.tsx))**:
+        - Grouped desktop console navigation links into 4 structured, titled sections with uppercase category headers when expanded and dividers when collapsed:
+            1. **Ecosystem Management**: Overview, Schools, Students, Teachers, Parents, Deletions & Deactivations.
+            2. **Revenue & Billing Architecture**: Revenue Architecture, Coupon Codes, Global Revenue, System Architecture.
+            3. **Operations & Communications**: Support Center, Notification Routing, Activity Logs, Monitoring, Email Templates.
+            4. **Administration & Security**: Admin Profile & Socials, Staff Accounts, Platform Settings.
+    - **Full TypeScript Verification**: Executed `npx tsc --noEmit` across `frontend` with **0 errors**.
+
+- [x] **Support Hub Discussion Threads, Global Audio Chimes, Profile Pictures & Console Admin Profile Hub (Wednesday, October 28, 2026)**:
+    - **Teacher Complaint & Suggestion Two-Way Discussion Architecture ([teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**:
+        - Built an interactive Discussion Dialog (`activeDiscussionTicket`) enabling teachers to click any lodged complaint (Portal 2) or proposal (Portal 3) to view administrator responses and reply back directly.
+        - Includes full conversation history stream, initial statement card, status badge, priority indicator, and live reply input bar wired to `useSendTicketMessage()`.
+        - Upgraded complaint and proposal cards with dynamic reply counters (e.g. `2 Replies` / `1 Discussion Reply`) and hover-accented click targets.
+    - **Global Sound Chime on All Support Communications**:
+        - **Backend Socket Enhancement ([support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts))**: Updated `replyToTicket` and `updateTicketStatus` to broadcast `ticket_message_received`, `support_notification`, and `ticket_updated` directly to the user's personal room (`user:${userId}`).
+        - **Socket Client Room Binding ([useSupportSocket.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/hooks/useSupportSocket.ts))**: Upgraded `useSupportSocket` to accept `userId`, automatically emit `join:user`, and catch `support_notification` events.
+        - Whenever support replies or updates status on any ticket (technical chat, complaint, or suggestion), the teacher's device instantly plays the Web Audio WhatsApp chime (`playWhatsAppChime()`), pops up a toast alert, and triggers browser desktop notifications regardless of which tab is active.
+    - **Teacher Support Mobile Responsiveness & Console Agent Identity Integration ([teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**:
+        - **Mobile-Responsive Live Chat Toggle**: Added seamless mobile switching between the session roster and the active conversation window (`mobileChatView` state). On mobile devices (`< lg`), tapping any chat session transitions smoothly into the full conversation view with a native `← Back to Sessions` navigation button in the pinned header. On desktop screens (`>= lg`), both panels remain docked side-by-side.
+        - **Console Profile Agent Name Integration**: Chat header and message bubbles now dynamically resolve and display the real-time Support Agent's name ([`activeSupportAgent`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx)) configured in their console profile at `/console/profile` (e.g. `Console Agent: Alex Rivera • Assigned Agent`). Discussion dialog headers similarly showcase the assigned administrator handling the grievance.
+        - **Touch-Friendly Viewports & Dialog Bounding**: Wrapped Complaints & Suggestions rosters in responsive height bounds (`min-h-[300px] max-h-[480px] lg:min-h-0 lg:max-h-none`) and bounded the Discussion Thread modal to `w-[94vw] sm:max-w-2xl max-h-[88vh]`, preventing clipping or nested page scrollbars on mobile viewports.
+    - **User and Support Profile Pictures in Chat**:
+        - **Teacher Portal ([teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**: Displays teacher profile avatar (`teacherProfile?.profileImage` with fallback initials) on the right for educator messages, and platform engineering shield badge on the left for support staff messages.
+        - **Console Portal ([console/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/support/page.tsx))**: Displays educator initial avatar badge on the left for user messages, and platform staff avatar image (`staff?.profileImage` with fallback initials) on the right for agent replies.
+    - **Console Admin Profile & Social Authentication Hub ([console/profile/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/profile/page.tsx))**:
+        - Built full profile editor at `/console/profile` with 3 core tabs:
+            - **Profile & Biography**: Edit full name, phone number, bio, and profile avatar URL with live previews.
+            - **Social Login & SSO**: Link and unlink Google, GitHub, LinkedIn, and Twitter/X accounts saved to PostgreSQL database.
+            - **Security & Credentials**: Change console account password with current verification, bcrypt hashing, and security audit telemetry.
+        - **Navigation Integration**: Added "Admin Profile & Socials" link to `ConsoleSidebar.tsx` menu items, made sidebar footer identity card clickable, added link to `ConsoleMobileDrawer.tsx`, and wired up top bar dropdown menu in `ConsoleTopBar.tsx`.
+
+- [x] **Support Hub Layout Fitting, Multi-List Architecture & Real-Time Socket Synchronization**:
+    - **Teacher Support Center Viewport Optimization ([teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**:
+        - Streamlined top hero banner padding (`p-4 md:p-5`), compact tags, and responsive typography, recovering ~80px of vertical space so the interactive workspace is immediately visible without page scrolling.
+        - **Portal 1 (Live Technical Chat)**: Redesigned into a balanced two-pane card layout (`lg:h-[calc(100vh-230px)] lg:min-h-[580px] lg:max-h-[720px]`) with matching heights. Left session roster (4 cols) and right WhatsApp-style conversation window (8 cols) now feature pinned search/headers, pinned quick prompts & input bars, and smooth internal scroll areas (`overflow-y-auto min-h-0`), eliminating asymmetrical card heights and nested double page-scrollbars.
+        - **Portal 2 (Complaints & Grievances)**: Unified the complaint submission form (7 cols) and "My Lodged Complaints" (5 cols) into matching card containers (`lg:h-[calc(100vh-230px)] lg:min-h-[580px] lg:max-h-[720px]`). The filed complaints roster scrolls gracefully inside its dedicated card whether an educator has 0, 5, or 50+ grievances.
+        - **Portal 3 (Suggestions & Innovations)**: Symmetrically bounded the idea submission form (6 cols) and "Submitted Educator Proposals" (6 cols) to `lg:h-[calc(100vh-230px)]` with internal list scrolling, keeping proposal endorsement upvotes cleanly accessible.
+        - **Portal 4 (Teacher Knowledge Base & FAQ)**: Constrained the accordion articles container (`max-h-[calc(100vh-270px)] min-h-[480px] overflow-y-auto pr-1`) so expanding multiple answers never blows out page height and keeps search and topic filters sticky in view.
+    - **Console Support Real-Time Platform Sync & Layout Enhancement ([console/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/support/page.tsx))**:
+        - **Direct Platform Room Binding**: Passed `{ isPlatform: true }` into `useSupportSocket`, subscribing the console to room `platform:support`. The console immediately catches `new_ticket`, `ticket_message_received`, and `ticket_updated` events from teachers in real time, triggering audio alerts, toast previews, and cache invalidations without requiring manual refreshes.
+        - **Dynamic Workspace Sizing**: Converted fixed `h-[760px]` to dynamic `lg:h-[calc(100vh-230px)] lg:min-h-[620px] lg:max-h-[800px]`, fitting standard laptop, 1080p, and ultrawide displays.
+        - **FAQ Management Scroll Boundary**: Added `max-h-[calc(100vh-270px)] min-h-[500px] overflow-y-auto pr-2` to the FAQ list in the console, preserving sticky filter controls while managing extensive database articles.
+    - **Full TypeScript Verification**: Frontend and backend pass `npx tsc --noEmit` with **0 errors**.
+
+- [x] **Platform Notification Alert Routing & Distribution Architecture ([notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/notifications/page.tsx))**:
+    - **Custom Department Email Routing**: Built alert recipient routing engine enabling designated email dispatch for `REGISTRATIONS` (admissions/sales), `DELETIONS` (security/compliance), `PAYMENTS` (billing/finance), `SUPPORT_TICKETS` (customer success), `SECURITY_INCIDENTS` (infosec), and `SYSTEM_ALERTS` (devops).
+    - **Backend Dispatch Service ([recipient.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/notifications/recipient.service.ts))**: Implemented persistent JSON recipient configuration with live email dispatch integration across registration, account deletion, support tickets, and checkout/payment hooks.
+    - **Console Navigation Integration ([ConsoleSidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/components/ConsoleSidebar.tsx), [ConsoleMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/components/ConsoleMobileDrawer.tsx))**: Added `Notification Routing` with `BellRing` icon to desktop sidebar and mobile drawer.
+
+- [x] **Teacher Support Center 4 Operational Portals with Real-Time WhatsApp-Style Chat ([teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**:
+    - **Portal 1 — Platform Technicals (Live In-Time WhatsApp-Style Chat)**:
+        - Bidirectional live chat interface with platform software engineering desk featuring online status indicators, response time SLA, conversation bubbles, timestamps, and read receipts (`✓✓`).
+        - **Web Audio Notification Chime**: Plays a crisp, native Web Audio frequency chime (`830.61Hz` -> `1244.51Hz`) whenever an unread incoming message arrives from support engineers.
+        - **Dual Notification Engine**: Dispatches both in-app `react-toastify` message previews and browser desktop `Notification` alerts with permission request toggles.
+        - **Sound Control**: Added sound toggle (`Sound ON` / `Sound Muted`) allowing teachers to mute audio during classroom periods.
+        - **Socket Enhancement ([useSupportSocket.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/hooks/useSupportSocket.ts))**: Enhanced `useSupportSocket` with an `onNewMessage` callback to trigger instant audio and notification dispatches without waiting for cache invalidations.
+    - **Portal 2 — Complaints & Grievances**:
+        - Formal incident escalation portal for facility breakdowns, administrative delays, academic/grading disputes, and student behavioral infractions.
+        - Includes incident date picker, 4-tier urgency levels (`LOW`, `MEDIUM`, `HIGH`, `URGENT`), confidential grievance toggles, and live tracking of filed grievances.
+    - **Portal 3 — Suggestions & Innovations Hub**:
+        - Proposal system for classroom tech, curriculum enrichment, student competitions, staff wellness, and workflow automation.
+        - Includes impact scope selectors (`Classroom`, `Department-wide`, `Whole School`, `Platform Ecosystem`), community endorsement upvote counters, and status tracking.
+    - **Portal 4 — Teacher Knowledge Base (FAQ)**:
+        - Comprehensive searchable self-service articles on Continuous Assessment (CA) & GPA weighting, offline Excel/CSV grade synchronization, attendance marking, digital exam approval blueprints, and multi-school linking.
+    - **Feature Flag Unlocked ([featureFlags.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/config/featureFlags.ts))**: Set `FEATURE_FLAGS_TEACHERS.support = true`, unlocking the Help & Support module across the teacher desktop sidebar, mobile drawer, and command search palette.
+    - **Runtime Error Resolution ([useSupportTickets.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useSupportTickets.ts), [teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**: Resolved `TypeError: activeTicketMessages.map is not a function` by unwrapping `messages` array from backend ticket object response and memoizing `messagesList` with defensive array checks.
+
+- [x] **Platform Console Support Data Loading & Interactive Database-Backed FAQ Management ([console/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/support/page.tsx))**:
+    - **Resolved Data Display Issue on `/console/support`**:
+        - Identified root cause: `usePlatformTickets` hook had restrictive `enabled: !!platform_token` requiring Zustand store token, failing when admins authenticated via cookies or standard tokens; `platformClient.ts` only read from Zustand store without cookie/localStorage fallback; `platformAuthMiddleware.ts` was rejecting standard Admin tokens with 403.
+        - **Multi-Token Authentication Interceptor ([platformClient.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/platformClient.ts))**: Updated request interceptor with fallback to `Cookies.get("platform_token")`, `Cookies.get("token")`, and `localStorage.getItem("token")`.
+        - **Enhanced Platform Auth Guard ([platformAuthMiddleware.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/platformAuthMiddleware.ts))**: Added fallback to `req.cookies.token` and allowed school `Admin` users (`SUPER_ADMIN` / `ADMIN`) to be recognized with `OWNER` privileges so platform support and inquiry data displays seamlessly.
+        - **Inbox Auto-Selection**: Added auto-selection effect to immediately load the first inquiry's thread on page load.
+    - **PostgreSQL Database-Backed FAQ System ([schema.prisma](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/prisma/schema.prisma))**:
+        - Created `SupportFaq` Prisma model with fields `id`, `category`, `categoryLabel`, `question`, `summary`, `answer` (`String[]`), `targetRole` (`TEACHER`, `STUDENT`, `ADMIN`, `PARENT`, `ALL`), `order`, `isPublished`, `createdAt`, `updatedAt`.
+        - Pushed schema to Supabase/PostgreSQL via `npx prisma db push` and seeded initial production teacher FAQs.
+    - **Strict 3-Layer FAQ Architecture ([faq.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/faq.service.ts), [faq.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/faq.controller.ts))**:
+        - Built `FaqService` and `faq.controller.ts` with strict Zod validation (`CreateFaqSchema`, `UpdateFaqSchema`) and full CRUD capabilities (`getFaqs`, `getFaqById`, `createFaq`, `updateFaq`, `deleteFaq`, `seedInitialFaqs`).
+        - Mounted routes: public/role endpoint at `GET /api/support/faqs?role=TEACHER` and console management endpoints at `GET/POST/PATCH/PUT/DELETE /api/platform/support/faqs`.
+    - **Console Support FAQ Manager ([console/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/support/page.tsx))**:
+        - Added top navigation switcher between **Inquiries Desk** and **FAQ Knowledge Base**.
+        - Interactive FAQ editor dialog with fields for Question, Category (with quick-select category suggestion chips), Subtitle Label, Target Audience/Role, Summary, dynamic Step-by-Step Guidance inputs (add/remove step buttons), Order, and Published/Draft toggle.
+        - Direct database persistence via `useCreateFaq`, `useUpdateFaq`, and `useDeleteFaq` with instant cache invalidation.
+    - **Teacher Support Center Live FAQ Integration ([teacher/support/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/support/page.tsx))**:
+        - Connected Portal 4 (Knowledge Base) to `useSupportFaqs("TEACHER")`, dynamically fetching published articles directly from the database with seamless offline fallback.
+
+- [x] **Restored ATM Style Pricing Plan Cards ([console/schools/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/schools/page.tsx))**:
+    - **ATM Card Style Reinstated**: Restored the iconic ATM credit-card design for Institutional Subscription Tiers matching the design system across `/console/students`, `/console/teachers`, and `/console/parents`.
+    - **Visual Details**: Golden EMV microchip matrix, dynamic gradients (Indigo for Total, Slate for Free/Basic, Amber for Trial, Blue for Starter, Emerald for Growth/Enterprise, Purple for Pro), embossed 4-digit card counter, frosted glass institutional seal with `BuildingIcon`, and glowing active selection rings with instant tier filtering.
+
+- [x] **100% Coupon 0-Amount Checkout Fix**:
+    - **Backend Validation ([payment.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/payment.controller.ts))**: Changed amount validation from `.positive()` to `z.number().min(0)` to permit 0-amount checkouts when a 100% discount coupon is applied.
+    - **Zero-Amount Payment Gateway Bypass ([payment.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/payment.service.ts))**: Added `processZeroAmountCheckout` handling 100% free checkout directly, generating internal transaction record (`COUPON` payment method, `SUCCESS` status), registering coupon usage via `CouponService.recordUsage`, and activating subscriptions without calling external payment gateway APIs.
+    - **Frontend Order Total & Button Indication ([checkout/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/checkout/page.tsx))**: Displayed emerald `FREE (100% OFF)` badge when total is 0, changed action button to `"Activate Subscription (100% Free)"`, and handled instant activation.
+
+- [x] **School Subscription Control Suite & Page Redesign ([console/schools/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/schools/[id]/page.tsx))**:
+    - **Full Subscription & Quota Control**: Implemented interactive plan tier selector (Free, Basic, Standard, Pro, Growth), status controller (`ACTIVE`, `SUSPENDED`, `EXPIRED`, `INACTIVE`), quick expiry extenders (`+1 Mo`, `+3 Mo`, `+6 Mo`, `+1 Yr`, clear), billing cycle switches, trial toggles, and granular quota overrides.
+    - **Institutional Operational Dashboard**: Created live utilization meters (Students, Teachers, Classes/Exams, Cloud Storage GB), tabs for Subscription Control, Utilization, Administrators, Profile, and Communication Logs.
+    - **Backend Plan Synchronization ([support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts))**: Enhanced `updateSchoolPlan` to persist quota overrides, sync `SchoolSubscription` records, and update associated school administrators.
+    - **Teacher Assignment Notifications ([class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts), [teacher-management.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/admin/teacher-management.controller.ts))**: Automated instant real-time notification dispatch whenever teachers are assigned to classes or new class teachers are appointed.
+    - **Full TypeScript Verification**: Both `frontend` and `backend` passed `npx tsc --noEmit` with **0 errors**.
+
+- [x] **Student Promotion Synchronization Across Student & Class Dashboards**:
+    - **Unified Promotion Lifecycle Service ([student.lifecycle.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.lifecycle.service.ts))**: Ensured `StudentLifecycleService.promoteStudents` sets student status to `ACTIVE`, records comprehensive metadata in `StudentHistory` (`fromClassId`, `fromClassName`, `fromClassCode`, `toClassId`, `toClassName`, `toClassCode`, session, achievements), and cleanly handles unassigned or returning students.
+    - **Multi-View Query Cache Synchronization ([PromoteStudentModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/[studentId]/components/PromoteStudentModal.tsx), [PromoteStudentsModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/PromoteStudentsModal.tsx))**: Aligned cache invalidations across both modals (`single-class`, `school-classes`, `adminStudents`, `school-students`, `student-details`, `student-history`, `classes`, `studentProfile`), ensuring promoting students from either view immediately reflects in both without stale cache.
+
+- [x] **Student Alumni Status, Notification Guard & Cohort Selection Modal**:
+    - **Student Dashboard Alumni Recognition ([student/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx))**: Fixed `isGraduated` to read `studentProfile.status === "GRADUATED"`. Prevented the "Join Your School Class Cohort" banner from displaying to graduated students, replacing it with an **Honored Alumni Scholar Recognition Banner** featuring direct links to the Academic Vault and Past Records.
+    - **Alumni Notification Filtering ([notification.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/notification.service.ts))**: Added filtering in both single and bulk notifications to prevent general operational school/classroom alerts from being delivered to graduated alumni, while continuing to deliver communications specifically targeted to alumni.
+    - **Class Selection & Promotion Badges ([StudentClassSelectionModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentClassSelectionModal.tsx))**:
+        - Added `PROMOTED` status with an indigo badge and `TrendingUp` icon for classes the student was promoted from.
+        - Displayed `TRANSFERRED` for transferred classes and `Graduated (Alumni)` for the class graduated from.
+        - Allowed graduated alumni to browse and request to join other classes/cohorts in the same school without being locked out.
+
+### Wednesday, October 28, 2026 (Resend Email Delivery Fix & Console Schools Directory Redesign)
+
+- [x] **Email Delivery & Verification Fix ([mail.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/mail.service.ts))**:
+    - **Root Cause of Failed Communication Logs**: Investigated `EmailLog` records showing `FAILED` statuses for *Official Transcript 30-Day Access Pass*, *Behaviour Alert*, and *New Core Strength*. Discovered the database error `403: The qefashub.flexitistudio.com domain is not verified. Please, add and verify your domain on https://resend.com/domains` caused by hardcoded sender `from: "Qefas Hub <notifications@qefashub.flexitistudio.com>"` in `MailService.sendSchoolEmail`.
+    - **Test Mode & Sender Alignment**: Updated `MailService.sendSchoolEmail` to respect `RESEND_TEST` and `MAIL_FROM` environment variables. When `RESEND_TEST=true`, sender is routed to `onboarding@resend.dev` and recipient to `process.env.TEST_EMAIL` (`qefas.lms@gmail.com`) while preserving original `recipientEmail: input.to` in `emailLog`.
+    - **Live Verification**: Successfully dispatched test email via `MailService.sendSchoolEmail` with status `SENT` and verified Resend message ID.
+
+- [x] **Console Schools & Subscription Management Redesign ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/schools/page.tsx))**:
+    - **Available Institutional Subscription Tiers Showcase**: Built an executive-grade tier catalog displaying all active school plans in the database (*Institutional Basic* @ ₦0/mo, *Institutional Starter* @ ₦5,000/mo, *Institutional Growth* @ ₦15,000/mo) with live quota pills (Max Students, Teachers, Classes, Storage GB), pricing rates, and active enrolled school counts with interactive one-click tier filtering.
+    - **Operational Health Pulse Cards**: Upgraded top KPI cards for Active Paid Schools, Active Trial Cohorts, Expired Access, and Cancelled/Inactive Tenants.
+    - **Modern Directory Table**: Replaced archaic ATM cards with clean typography, monogram school avatars, one-click copyable Tenant IDs and School Codes, glowing real-time status indicators, tier badges, and an updated actions menu (View Full Profile, Impersonate Admin, Override Limits, Suspend/Restore).
+    - **Backend Metadata Enhancement ([support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts))**: Updated `searchSchools` to return rich tier metadata (`monthlyPrice`, `yearlyPrice`, `maxStudents`, `maxTeachers`, `maxClasses`, `maxExams`, `maxStorageGb`, `badgeLabel`, `isPopular`, `description`) in `planBreakdown`.
+
+### Wednesday, October 28, 2026 (QR Poster Light/Dark Mode Contrast Fix & Admin QR Modals Redesign)
+
+- [x] **QR Code Promotional Poster Generator ([QRCodePosterModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/reusable/QRCodePosterModal.tsx))**:
+    - **White Theme (Clean Minimal) Contrast Fix**: Fixed white-on-white text rendering inside the generated poster when selecting Clean Minimal (the blue-accented white theme) — brand title `QEFAS` now uses `text-slate-900` instead of `text-white`, `Education Network` subtext uses `text-slate-500`, corner geometric accents use visible `border-blue-300`, and feature pills provide proper contrast.
+    - **Modal Shell Light & Dark Theme Support**: Replaced hardcoded dark background (`bg-slate-950`) with full light/dark responsiveness (`bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800`), refined variant buttons with active state highlights, and updated the theme selection grid and poster summary cards.
+    - **Cross-Origin CSS SecurityError Fix**: Added `skipFonts: true` to both `handleDownload` and `handlePrint` `toPng` invocations, resolving the `SecurityError: Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules` when trying to access Google Fonts stylesheets.
+
+- [x] **QR Access Hub Redesign ([QRCodeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/QRCodeModal.tsx))**:
+    - Overhauled the QR Access Hub popup on `/dashboard/admin/linking` to strictly follow the admin theme (`primary` / indigo-blue gradient header).
+    - Added quick-copy badge for the institution's school code in the header bar.
+    - Upgraded student, teacher, and quick school link cards with styled role badges, crisp QR frames, gradient "Download / Preview Poster" action buttons with glowing dark mode elevation, and secondary copy link buttons.
+    - Added security level indicator and responsive dark mode support.
+
+- [x] **Class Access QR Modal Redesign ([ClassQRCodeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/ClassQRCodeModal.tsx))**:
+    - Redesigned the Class Access popup on `/dashboard/admin/classes/[id]` to follow the admin theme with glowing gradient header, quick-copy class code chip, and card layout.
+    - Upgraded preview poster and copy link action buttons with dark mode styling and tactile hover states.
+
+### Wednesday, October 28, 2026 (Connect with Code Modal Dark Mode Redesign)
+
+- [x] **Connect with Code Modal Redesign ([ConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/ConnectModal.tsx), [TeacherConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/linking/components/TeacherConnectModal.tsx))**:
+    - Overhauled the "Connect with Code" dialog on the Admin Linking Hub (`/dashboard/admin/linking`) with dark mode compatibility and aesthetics.
+    - **Send Request Button**: Rebuilt with a multi-stop vibrant indigo-blue gradient (`from-blue-600 via-indigo-600 to-indigo-700` light / `from-indigo-600 via-blue-600 to-indigo-500` dark), deep glowing elevation shadows (`dark:shadow-[0_4px_24px_rgba(99,102,241,0.45)]`), white/indigo edge rings, smooth hover micro-translations, and an interactive `Send` icon.
+    - **Modal Shell & Aesthetics**: Added ambient gradient glow backdrops, explicit high-contrast container surfaces (`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90`), and pulse status indicator ("Direct Link Engine").
+    - **Form Controls & Smart Detection**: Added real-time badge detection for student codes (`STU-`), teacher codes (`TEA-`), class codes (`CLS-`), school codes (`SCH-`), and email formats, with styled inputs, dark mode select trigger, dropdown items with role icons, and cancel button.
+    - **Teacher Connect Modal Polish**: Aligned dialog container and emerald button dark mode shadows and ring definition.
+
+### Wednesday, October 28, 2026 (100% Coupon Checkout Fix & Console School Subscription Control Redesign)
+
+- [x] **100% Discount Coupon Checkout Fix ([payment.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/payment.controller.ts), [payment.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/payment.service.ts), [checkout/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/checkout/page.tsx))**:
+    - **Backend Validation**: Relaxed `initializePaymentSchema` in `payment.controller.ts` from `amount: z.number().positive()` to `amount: z.number().min(0, "Amount must be 0 or greater")` so 100% discount coupons do not fail request validation.
+    - **Zero-Amount Payment Bypass**:
+      - Added `processZeroAmountCheckout` in `payment.service.ts` to cleanly handle ₦0 checkouts without invoking external gateways (Paystack/Flutterwave).
+      - Automatically creates a `Transaction` with `status: "SUCCESS"`, `paymentMethod: "COUPON"`, and reference prefix `FREE_`.
+      - Activates school and user subscriptions immediately via `SchoolSubscriptionService` and `StudentSubscriptionService`.
+      - Accurately tracks coupon redemption via `CouponService.recordUsage`.
+      - Returns `isFree: true` along with reference and redirect/success URLs.
+      - Added instant metadata resolution in `getMetadataFromReference` for `FREE_` references to avoid gateway lookup errors.
+    - **Frontend Checkout Flow**:
+      - Updated `checkout/page.tsx` to handle `res.isFree`: shows celebration toast, updates auth user store, and navigates straight to `"SUCCESS"` step with zero gateway redirects.
+      - Displays `"FREE (100% OFF)"` badge in order summary and changes primary action button to `"Activate Subscription (100% Free)"`.
+
+- [x] **Platform Console School Subscription Control & Page Redesign ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/schools/%5Bid%5D/page.tsx), [support.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts), [usePlatformSchools.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/usePlatformSchools.ts))**:
+    - **Console School Detail Page Redesign**:
+      - Built a command-center interface with top live capacity meter cards (students, teachers, exams/classes, cloud storage usage).
+      - Added **Subscription & Plan Control Suite** allowing platform staff to:
+        - Switch subscription plan tier (Free, Basic, Standard, Pro, Growth / Enterprise) with automatic feature sync.
+        - Override subscription status (`ACTIVE`, `SUSPENDED`, `EXPIRED`, `INACTIVE`, `DEACTIVATED`).
+        - Quick expiry extenders (`+1 Mo`, `+3 Mo`, `+6 Mo`, `+1 Yr`, clear/no expiry).
+        - Toggle billing cycle (`MONTHLY`, `YEARLY`) and trial mode (`isTrialActive`).
+        - Configure granular quota overrides for maximum students, teachers, exams, classes, and storage.
+      - Added tabbed management workspace: Subscription Control, Utilization & Capacity, Administrators Directory, Institution Profile, and Communication Logs.
+    - **Backend Support Controller**:
+      - Upgraded `updateSchoolPlan` in `support.controller.ts` to accept all quota overrides (`maxStudentsOverride`, `maxTeachersOverride`, etc.).
+      - Dynamically resolves `subscriptionPlanId` against `prisma.subscriptionPlan`.
+      - Synchronizes `SchoolSubscription` record and cascades plan updates across all associated `SchoolAdmin` accounts.
+
+### Wednesday, October 28, 2026 (QR Code Promotional Poster Generator)
+
+- [x] **QR Code Poster Generator Feature**:
+    - **Reusable Poster Component ([QRCodePosterModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/reusable/QRCodePosterModal.tsx))**:
+      - Designed Canva-grade, responsive 4:5 promotional poster generator using Tailwind CSS, gradients, SVG educational emblems, and `react-qr-code`.
+      - Built 4 design themes/variations:
+        1. **Cyber Navy**: EdTech midnight gradient, cyan and electric blue accents, glow effects.
+        2. **Emerald Prestige**: Academic emerald gradient with warm gold/amber accents.
+        3. **Sunset Violet**: Royal violet to deep magenta with vibrant coral/rose highlights.
+        4. **Clean Minimal**: High-contrast white/slate layout optimized for laser and black-and-white print.
+      - Integrated high-resolution PNG export using `html-to-image` (`toPng` at 2.5x pixel ratio) and `file-saver` (`saveAs`).
+      - Integrated dedicated print workflow opening a clean, margin-free popup window rendering the crisp poster at A4 proportions.
+      - Dynamic metadata population: school name, class name, code badge, join URL, verified badges.
+    - **Admin Linking Hub ([QRCodeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/QRCodeModal.tsx), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/page.tsx))**:
+      - Added **"Download / Preview Poster"** button beneath each QR card (Student Signup, Teacher Signup, and Quick Link).
+      - Enabled seamless in-poster switching between Student, Teacher, and School Network QR variants.
+      - Passed live `schoolName` and `schoolLogo` from admin profile / auth store.
+    - **Admin Class Detail Page ([ClassQRCodeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/ClassQRCodeModal.tsx))**:
+      - Added **"Download / Preview Poster"** button under class QR display.
+      - Pre-populated poster with exact class title (`${classData.name} (${classData.section})`), class code, school name, and logo.
+      - Added variant switching between **Class Join Code** and **Direct Student Signup**.
+
+### Wednesday, October 28, 2026 (Teacher Linking Student & Independent Connection Fix)
+
+- [x] **Teacher Linking Independent Student Connection ([TeacherConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/linking/components/TeacherConnectModal.tsx), [link.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.service.ts), [link.query.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.query.service.ts), [LinkingUtils.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/LinkingUtils.ts))**:
+    - **Frontend Modal ([TeacherConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/linking/components/TeacherConnectModal.tsx))**:
+      - Added missing connection options: `"TEACHER_STUDENT"` (Connect with Student) and `"SCHOOL_STUDENT"` (Link Student to School) alongside `"TEACHER_CLASS"` and `"SCHOOL_TEACHER"`.
+      - Added prefix auto-detection: inputs starting with `STU-` automatically switch to `TEACHER_STUDENT`; `SCH-` switches to `SCHOOL_TEACHER`; `CLS-` switches to `TEACHER_CLASS`.
+      - Added `onError` toast notification and `onSuccess` feedback so teachers receive immediate, clear feedback on connect attempts.
+    - **Backend Link Service ([link.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.service.ts))**:
+      - Added `"TEACHER:STUDENT"` and `"STUDENT:TEACHER"` to `allowedPairs.SCHOOL_STUDENT` and `allowedPairs.STUDENT_CLASS`.
+      - When a Teacher creates a `SCHOOL_STUDENT` request, resolved the teacher's active school and set `effectiveRequester` to the `SCHOOL`, enabling direct school enrollment upon approval for unaffiliated students (`student.schoolId === null`).
+    - **Backend Query Service ([link.query.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.query.service.ts))**:
+      - Added teacher's classes and `targetTeacherId` to `buildIncomingWhere` and `getAllLinkRequestsService` so teachers can view incoming join requests for their classes.
+      - Added `TEACHER_STUDENT` to `classroomTypes` so teacher-student links display in the Classroom tab.
+      - Added class links to `getActiveLinksService` for teachers.
+
+### Wednesday, October 28, 2026 (Admin Class Creation Options Fix: Teachers, Term, Session & Level)
+
+- [x] **Class Creation Popup Options Persistence ([ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx), [class.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.controller.ts), [class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts), [classService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/services/classService.ts))**:
+    - **Backend Controller (`class.controller.ts`)**:
+      - `createClass`: Extracted `teacherIds`, `session`, `sessionId`, `term`, and `level` from `req.body` and forwarded them directly to `createClassService`. (Previously only `subjectIds`, `departmentIds`, and `studentIds` were forwarded).
+      - `updateClass`: Supported both `session` and `sessionId` payload fields seamlessly (`session: session || sessionId`).
+    - **Backend Service (`class.service.ts`)**:
+      - Declared `term` and `session` in `CreateClassInput`.
+      - Persisted `level`, `term`, `session`, and `teachers` (with `isLead: index === 0`) in `prisma.class.create` for Admin classes, Teacher Personal classes, and Teacher School classes.
+    - **Frontend Modal & Services (`ClassModal.tsx`, `classService.ts`, `types.ts`, `page.tsx`)**:
+      - Added `Class Level` select picker (with school profile levels and standard fallback) and `Academic Term` select dropdown ("First Term", "Second Term", "Third Term") to the `ClassModal` popup.
+      - Fixed `ClassModal` state to properly track `level`, `term`, `sessionId`, and `selectedTeacherIds`.
+      - Passed `session`, `sessionId`, `term`, `level`, and `teacherIds` in both `classService.createClass` and `classService.updateClass`.
+      - Updated `Class` interface in `classService.ts` and `ClassData` interface in `types.ts` to include `session`, `term`, and `level`.
+
+### Wednesday, October 28, 2026 (Admin Linking Fix, Independent Student Linking, Public Join & Class Flows)
+
+- [x] **Admin Linking "Connect with Code" Fix ([ConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/linking/components/ConnectModal.tsx), [link.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.service.ts))**:
+    - Backend: Added `"ADMIN:STUDENT"` and `"ADMIN:TEACHER"` to `allowedPairs`.
+    - In `createLinkRequestService`, when an Admin requests `SCHOOL_STUDENT`, `SCHOOL_TEACHER`, or `SCHOOL_ADMIN`, resolved the admin's active school and set the effective requester to that `SCHOOL` (setting `requestedByAdminId` and `requesterSchoolId`).
+    - Added email search fallback to `findEntityByCode` for both students and teachers, allowing admins to connect using either student codes (`STU-...`) or registered emails.
+    - Frontend: Added `onError` toast notification handling so failures are visible; added auto-detection of `STU-`, `TEA-`, `SCH-`, and `CLS-` prefixes; defaulted connection type to `SCHOOL_STUDENT`.
+    - Enabled schools to connect directly with independent/unaffiliated students (`student.schoolId === null`).
+
+- [x] **Universal Join Routes for Visitors, Logged-in Users & Existing Unauthenticated Accounts ([JoinSchoolPage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/join/school/%5Bcode%5D/page.tsx), [JoinClassPage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/join/class/%5Bid%5D/page.tsx), [useLoginMutation](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/%28auth%29/login/services/use-auth-mutations.ts))**:
+    - `http://qefashub.com/join/school/[code]`:
+      - Unauthenticated visitors see an institutional invitation landing card with options to Sign In with an existing account (`/login?redirect=/join/school/${code}`), Register as Student (`/signup/student?schoolCode=${code}`), or Register as Teacher (`/signup/teacher?schoolCode=${code}`).
+      - Logged-in users automatically initiate connection and are redirected to the dashboard.
+      - Gracefully handles "already connected" or "pending request" states with positive, informative UI cards instead of generic errors.
+    - `useLoginMutation`: Added query parameter detection for `redirect`, ensuring existing users returning to sign in are immediately sent back to complete their join action.
+
+- [x] **Class Preview & Public Join Flow ([class.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.route.ts), [class.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.controller.ts), [class.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.service.ts), [JoinClassPage](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/join/class/%5Bid%5D/page.tsx))**:
+    - Made `GET /classes/code/:classCode` and `GET /classes/preview/:id` publicly accessible by removing `authenticateToken` middleware and `if (!req.user)` checks.
+    - Updated `previewClassByCodeService`, `previewClassByIdService`, and `requestToJoinClassService` to accept case-insensitive codes and IDs (`OR: [{ classCode: { in: variants } }, { id: trimmed }]`).
+    - In `requestToJoinClassService`, unaffiliated students (`student.schoolId === null`) are now permitted to submit class join requests without requiring pre-existing school affiliation.
+    - `http://qefashub.com/join/class/[id]`: Renders a class preview with subject, school, and teacher information for unauthenticated visitors, with direct options to Sign In or Register as Student to join.
+
+- [x] **Registration Codes & Independent Student Joining ([auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts), [StudentConnectModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/linking/components/StudentConnectModal.tsx))**:
+    - In `registerStudent`, `registerTeacher`, and `registerParent`, updated all code lookups (`schoolCode`, `teacherCode`, `studentCode`, `classCode`, `parentCode`) to search case-insensitively and support ID fallback.
+    - In `StudentConnectModal`, removed the frontend block that prevented independent students from entering a classroom code, replacing it with an informative hint explaining automatic school linking upon teacher/admin approval.
+
+### Wednesday, October 28, 2026 (Teacher Class Timetable Active Slot Red Badge & Border)
+
+- [x] **Active Time Slot Red Highlighting ([TeacherTimetableGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/timetable/TeacherTimetableGrid.tsx))**:
+    - Enhanced `isCurrentTimeSlot` to reliably evaluate active periods against current clock time supporting both 24-hour and 12-hour AM/PM formats.
+    - Updated `TeacherSubjectCard` to accept `isCurrent` and render a red pulsing `"Now"` tag (`bg-red-600 text-white`) along with an active red border (`border-2 border-red-500 ring-2 ring-red-500/20 shadow-[0_0_16px_rgba(239,68,68,0.25)]`).
+    - Styled break slots and free periods running currently with matching red borders, subtle red backgrounds, and red `"Now"` indicators.
+    - Updated `MobileSubjectCard` to render the red border and red pulsing `"Live Now"` badge.
+
+### Wednesday, October 28, 2026 (Student Lifecycle Status Filter Tags & Graduation Architecture Reference)
+
+- [x] **Student Lifecycle Tags on Admin Students Directory ([admin.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/admin/admin.controller.ts), [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/page.tsx), [StudentsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/StudentsTable.tsx))**:
+    - Backend: Added `lifecycleStatus` query filtering (`ENROLLED`, `GRADUATED`, `EXPELLED`, `TRANSFERRED`) and computed breakdown counts (`allCount`, `enrolledCount`, `graduatedCount`, `expelledCount`, `transferredCount`).
+    - Base school condition now verifies both `schoolId` and `originalSchoolId`, ensuring alumni and transferred/expelled students who originated from the school are tracked.
+    - Frontend: Added interactive lifecycle tag bar displaying:
+      - **All Students** with count pill
+      - **Enrolled** with count pill
+      - **Graduated** with count pill
+      - **Expelled** with count pill
+      - **Transferred** with count pill
+    - Clicking any tag filters the student directory immediately and resets to page 1.
+    - Upgraded `StatusDot` across table, grid, and mobile cards to render distinct badges for `Graduated` (with `GraduationCap` icon and amber badge), `Expelled` (rose badge), `Transferred` (purple badge), and active/pending indicators.
+
+- [x] **Graduation Architecture Analysis for Setup Reusability**:
+    - Analyzed graduation handling across database models (`Student`, `StudentEnrollment`, `StudentHistory`, `ClassEnrollment`), backend services (`student.lifecycle.service.ts`), and frontend views (`[studentId]/page.tsx`, `GraduateStudentModal.tsx`, `TranscriptModal.tsx`).
+    - Documented canonical patterns for student graduation: maintaining school relationship via `schoolId`, archiving class enrollments, recording milestone history, issuing alumni honors, and locking transcript records.
+
+### Wednesday, October 28, 2026 (Link Request Permission Fix, Admin Notification Popup Connection Approval, & Teacher Class Notification Filtering)
+
+- [x] **Resolved `link.getSingleLinkRequest` Access Control Error ([link.manage.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.manage.service.ts))**:
+    - Fixed `Error: You are not allowed to view this request` when requesting `GET /api/v1/links/requests/:id`.
+    - Added inclusion of `class` in the query and expanded authorization checks:
+      - Validates whether an Admin is an active administrator for any school tied to the request (`schoolId`, `targetSchoolId`, `requesterSchoolId`, `class.schoolId`, or `targetId`).
+      - Validates whether a Teacher is assigned to the target class (as `ClassTeacher` or subject teacher in `ClassSubject`) or was directly sent a notification for the request.
+
+- [x] **Secure Connection Request Approval for Admins & Teachers ([link.respond.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/link/link.respond.service.ts), [useLinks.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useLinks.ts))**:
+    - Enhanced `canRespondToRequest` in `link.respond.service.ts` to verify active school administration across all involved school IDs for `CLASS` and `SCHOOL` target requests.
+    - Allowed authorized class teachers and subject teachers to securely approve or decline class join requests.
+    - Updated `useRespondToLinkRequest` in `useLinks.ts` to invalidate both `queryKeys.all` and `['notifications']`, ensuring real-time notification list and badge updates when responding to requests.
+
+- [x] **Class-Specific Notification Scoping for Teachers ([class.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/class.controller.ts), [notification.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/notification/notification.controller.ts))**:
+    - Deduplicated teacher notifications during student class join requests (`requestToJoinClass`) to only target assigned staff, embedding `className` in the notification metadata.
+    - In `getMyNotifications` and `getUnreadCount`, filtered notifications for `TEACHER` accounts so that class alerts (such as join/connection requests) only display for classes the teacher is actively assigned to.
+
+- [x] **Notification Detail Modal & Pane Enhancement ([NotificationDetailModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/notifications/NotificationDetailModal.tsx), [NotificationDetailPane.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/notifications/NotificationDetailPane.tsx), [admin/notifications/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/notifications/page.tsx))**:
+    - Added target class name and code detection (`details.className`, `details.classCode`) to requester details cards in both modal and detail pane views.
+    - Enabled the Accept and Decline actions directly within the notification details popup for administrators and authorized teachers with processing states.
+    - Passed explicit `userType="admin"` to `NotificationDetailModal` in the Admin Notifications view to maintain consistent theme styling.
+
+### Wednesday, October 28, 2026 (Teacher Class Detail Enhancements: Filters, Attendance Refreshes, Student Status Tabs, & Timetable Blur)
+
+- [x] **Exams & Quizzes and Assignments Interactive Filters ([ExamFilterDialog.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/exams&quizzes/components/ExamFilterDialog.tsx), [AssignmentFilterDialog.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/assignments/components/AssignmentFilterDialog.tsx), [exams&quizzes/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/exams&quizzes/page.tsx), [assignments/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/assignments/page.tsx))**:
+    - Created modal filter dialog for Exams & Quizzes supporting multi-criteria filtering by assessment type (`ALL`, `EXAM`, `QUIZ`, `TEST`, `ASSESSMENT`), publication status (`ALL`, `PUBLISHED`, `DRAFT`, `ARCHIVED`), and assigned subject.
+    - Added filter button and modal dialog to Assignments tab with status filters (`ALL`, `PUBLISHED`, `DRAFT`, `CLOSED`), subject selector, and submission status toggles (`Has Submissions`, `Needs Grading`), accompanied by active filter count indicators.
+
+- [x] **Attendance Calendar Refresh Fix ([useClasses.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useClasses.ts), [attendance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/attendance/page.tsx))**:
+    - Resolved tab-level flashing skeleton when clicking dates on the mini-calendar by adding TanStack Query's `placeholderData: (previousData) => previousData`.
+    - Guarded full skeleton loader in `attendance/page.tsx` with `isInitialLoad = !classData && isLoading`, ensuring smooth inline transitions between dates.
+
+- [x] **Student Status Sub-Tabs ([StudentTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/student/components/StudentTable.tsx), [student/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/student/page.tsx))**:
+    - Added filter sub-tabs for `Enrolled`, `Graduated`, `Expelled`, and `Transferred` students alongside `All Students`.
+    - Computed live badge counts for each category and styled corresponding status pills and avatar indicators in `StudentTable`.
+
+- [x] **Teacher Timetable Class Subject Matching & Blur Toggle ([timetable.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/class/timetable.service.ts), [timetable/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/timetable/page.tsx), [TeacherTimetableGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/timetable/TeacherTimetableGrid.tsx))**:
+    - Resolved timetable showing "free all through": eliminated querying backend with `{ termPeriodId: 'NONE' }` and added fallback period loading.
+    - Accurately mapped assigned teacher subjects by matching class teacher subject IDs, subject titles, and teacher profile IDs.
+    - Highlighted teacher's assigned subjects with emerald accents and "You" indicator badges.
+    - Blurred out other subjects on both desktop matrix and mobile daily schedule cards, with an interactive Eye icon allowing the teacher to preview/toggle visibility.
+
+### Wednesday, October 28, 2026 (Enforced Strict Dashboard Lockout, 30-Day Clearance Resend, & Transaction Email Dispatch)
+
+- [x] **Strict Dashboard Direct Access Lockout ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Disallowed unconditional score breakdown visibility when navigating directly from the student dashboard (`/dashboard/student/transcript`) without an explicit, cryptographically signed `?pass=<token>` link.
+    - Removed automatic `localStorage` pass restoration on mount when `!passParam`, preventing direct browser navigation from bypassing the payment paywall.
+    - Scoped `isTermUnlocked` check strictly to the matching academic session and term contained in the validated 30-day token.
+
+- [x] **Active 30-Day Clearance Notification & Resend Action Area ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - If a scholar paid within the last 30 days (`recentClearancePayments.length > 0`) and enters directly from their dashboard without a pass token, an amber & emerald cleared status banner is presented: *"Official Transcript Clearance Record on File"*.
+    - Displays the exact cleared session, term (`1st Term`, `2nd Term`, `3rd Term`), enrolled class cohort (e.g. `JSS 3 A`), paid date, and reference.
+    - Prominently provides **"Resend Transcript Download & Preview Link"** button which dispatches an email with their direct access link containing `?pass=<token>`.
+    - Integrated the same cleared banner and resend action into both individual Page 1 term cards and Page 2 behavioral domain evaluation paywall.
+
+- [x] **Mandatory Session & Term Selection in Clearance Checkout ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Enforced mandatory selection of both Academic Session and Academic Term in the payment clearance modal before Flutterwave checkout is permitted.
+    - Integrated 3-button term selector grid (`1st Term`, `2nd Term`, `3rd Term`) with interactive selection highlight, live price scope preview, and disabled button state until both fields are populated.
+
+- [x] **Comprehensive Transaction Receipt & Clearance Pass Email Delivery ([finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [payment.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/payment.service.ts))**:
+    - Verified payment webhook (`paystackWebhookService`) now properly recognizes and delegates `TRANSCRIPT` and `PORTAL_ACCESS` charges directly to `FinanceService.verifyPayment`.
+    - Dispatches comprehensive receipt email with cleared session, term, enrolled class cohort, transaction reference, amount paid, and direct access URL to all associated recipient emails (student, parent, metadata email).
+    - Hardened `verifyTransaction` on return from Flutterwave to ensure successful redirects preserve `?pass=<token>` instead of getting wiped by finally blocks.
+
+### Tuesday, October 27, 2026 (Fix: Student Dashboard Auto-Popup on Reload & 30-Day Clearance Access Pass)
+
+- [x] **Resolved Unwanted Auto-Popup on Reload ([student/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx), [PrefectCelebration.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/PrefectCelebration.tsx))**:
+    - **Diagnosed Root Cause**: An aggressive `useEffect` hook in `StudentHomeDashboard` (`/dashboard/student`) was triggering `setIsClassSelectionModalOpen(true)` automatically on every page mount/reload whenever `!isEnrolledInClass`.
+    - For graduated students, alumni, or students not yet assigned a class cohort, the large "Select Your Classroom" modal would pop up over the entire screen on every single page refresh.
+    - Dismissal was tracked in ephemeral `sessionStorage` per session rather than durable local persistence, and fired repeatedly if the modal was active during reload.
+    - **Resolution**:
+        - Removed the automatic modal pop-up `useEffect` entirely. The modal now only opens on explicit user intent when clicking "Choose Class" on the dashboard cohort banner.
+        - Added `isGraduated` guard so alumni/graduated scholars are not prompted with active classroom enrollment banners.
+        - Swapped modal dismissal storage to `localStorage` with fallback keys.
+        - Hardened `PrefectCelebration` with a `localStorage` safety guard (`prefect_celebration_seen_${studentId}`) to prevent celebration popups from recurring on network delays or reloads.
+        - Fixed `Users` icon import from `lucide-react` in [transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx) to resolve `ReferenceError: Users is not defined` in guardian download telemetry.
+
+- [x] **30-Day Guaranteed Direct Access Pass & Admin Transaction Notifications ([finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [flutterwave.adapter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/flutterwave.adapter.ts), [transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Cryptographically signed 30-day JWT access pass (`TRANSCRIPT_30_DAY_PASS`) valid for 1 month generated upon payment verification.
+    - Real-time in-app notification dispatched to Admin (`recipientType: "SCHOOL"`) with direct link to transaction history upon transcript payment.
+    - Real-time in-app notification & automated email sent to the student containing their 1-month fail-safe access link.
+    - Self-healing recovery dialog in transcript UI allowing students to paste an access pass or restore clearance directly from their email.
+
+### Tuesday, October 27, 2026 (Student Academic Transcript Payment Clearance & Modal Overhaul)
+
+- [x] **Enforced Transcript Payment Gating & Redesigned Clearance Modal ([student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [financeService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/financeService.ts), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [flutterwave.adapter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/flutterwave.adapter.ts))**:
+    - **Diagnosed Premature Results Visibility**:
+        - `requiresPayment` was incorrectly restricted to `isGraduated`, and `isPreviewUnlocked` fell back to `isSchoolPaidPlan` (evaluating to `true` on active institution tiers). Active students viewing `/dashboard/student/transcript` were bypassing transcript clearance completely and seeing full score tables.
+        - The 4 Cumulative Summary Cards (CGPA, Average, Total Subjects, Completed Terms) were unmasked and exposed real score data even when the clearance paywall was active.
+        - Page 2 (Affective traits and psychomotor skills) lacked gating checks on the evaluations table.
+        - `handleInitiateOnlinePayment` previously ran an optimistic `setUnlockedSessions` locally before payment was verified.
+    - **Fixes & Enhancements Applied**:
+        1. **Strict Clearance Gating**: Configured `requiresPayment = (transcriptFee > 0) || isGraduated || !isSchoolPaidPlan` and `isCurrentViewUnlocked` strictly based on verified `hasPaidTranscript` in `Payment` ledger or unlocked session keys.
+        2. **Masked Preview & Summary Cards**: When clearance is unpaid, all 4 cumulative summary cards mask values with `••••` and a `Locked` badge, and Page 1 / Page 2 course breakdown & evaluations render the official clearance paywall.
+        3. **Removed School Bank Account Number**: Removed the manual offline bank transfer section with the school account number, bank details, and copy buttons from the payment modal.
+        4. **Premium Payment Modal Redesign**: Modernized dialog with a deep indigo gradient, SSL encryption pill, scholar snapshot strip, target session selector, itemized clearance benefits (registrar seals, verifiable reference hash, high-res PDF generation), accepted payment channel badges, and prominent 1-click Flutterwave checkout button.
+        5. **End-to-End Payment Flow**:
+            - Allowed `FlutterwaveAdapter.initialize` to accept a custom `redirect_url` pointing to `${FRONTEND_URL}/dashboard/student/transcript?payment=verifying`.
+            - Added auto-verification `useEffect` in `student/transcript/page.tsx` that detects returning payment callbacks, calls `financeService.verifyPayment(txRef, transactionId)`, displays toast confirmation, refetches audit telemetry, and automatically unlocks the transcript records.
+            - Made `FinanceService.verifyPayment` idempotent and updated `FinanceController.verifyPayment` to extract `transaction_id`.
+    - Both frontend and backend TypeScript checks completed with exit code `0` and 0 errors.
+
+### Tuesday, October 27, 2026 (Fix: Circular Structure Error on 'Sync with Bank' Click)
+
+- [x] **Resolved Circular Structure JSON Error on Sync Bank ([PaymentStatusCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/PaymentStatusCard.tsx), [finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx), [financeService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/financeService.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts))**:
+    - **Diagnosed Root Cause**:
+        - In [`PaymentStatusCard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/PaymentStatusCard.tsx), the button was passing `onClick={onRefresh}` directly. React passes a Synthetic `MouseEvent` as the first argument.
+        - Because `onRefresh={handleSync}` in [`finance/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx) took `(accountId?: string)`, `accountId` received the entire `MouseEvent` object containing `event.view === window`.
+        - When Axios prepared the request payload `{ accountId: event }`, `JSON.stringify` failed with `TypeError: Converting circular structure to JSON --> starting at object with constructor 'Window' --- property 'window' closes the circle`.
+    - **Fixes Applied**:
+        1. **Event Shielding**: Wrapped `onClick={() => onRefresh?.()}` in `PaymentStatusCard` and `onRefresh={() => handleSync()}` in `finance/page.tsx` so click events are never forwarded as arguments.
+        2. **Frontend Sanitization**: In `handleSync` and `financeService.syncSubaccountStatus`, strictly validated `typeof accountId === "string"` before including `{ accountId }` in the API payload.
+        3. **Backend Robustness**: In `FinanceController.syncSubaccountStatus`, validated `typeof req.body?.accountId === "string"`. In `FinanceService.syncSubaccountStatus`, resolved subaccount with a fallback to the latest registered settlement account if `isDefault: true` was not explicitly set, and recorded an immutable `ACCOUNT_SYNCED` row in `BankAccountAudit`.
+    - Zero TypeScript compilation errors verified across both frontend and backend.
+
+### Tuesday, October 27, 2026 (Academic Transcript Loading Skeleton UI Overhaul)
+
+- [x] **Full-Fidelity Loading Skeleton for Academic Transcript ([TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx))**:
+    - **Diagnosed Skeleton Disconnect**:
+        - The transcript preview page at `/dashboard/admin/transcript?studentId=...` had a dedicated, multi-section `TranscriptPreviewSkeleton` component that was never being reached because an obsolete, premature 3-box generic skeleton (`<div className="w-full max-w-7xl mx-auto space-y-6 animate-pulse">...`) had been left in the component body above it.
+        - Removed the early generic fallback and activated the real `TranscriptPreviewSkeleton`.
+    - **Full-Fidelity Document Skeleton Matching UI**:
+        - Upgraded `TranscriptPreviewSkeleton` to accept real metadata context (`schoolName`, `schoolLogoUrl`, `schoolMotto`, `schoolLocation`, `studentProfile`, `enrolledClass`, `onToggleSidebar`).
+        - **Header & Navigation Bar**: Working "Select Another Scholar" button, quick-switcher avatar with scholar name, certification badge, page-switcher tabs, and interactive Access & Payment Audit toggle button.
+        - **Letterhead & Crest**: Displays the school logo or crest, certified record pill badge, school name, motto, and campus address.
+        - **Scholar Photo**: Scholar portrait box with student picture if already cached, or styled placeholder.
+        - **Student Profile Banner**: 6-column metadata grid matching the real transcript document (Scholar Full Name, Student ID / Code, Department / Cohort, Enrollment Status, Document Ref No., Issued Date).
+        - **Cumulative Summary Cards**: 4 performance cards (Cumulative CGPA with `/ 5.00` scale, Cumulative Average, Total Subjects, and Academic Standing pill).
+        - **Course Breakdown Tables**: Realistically structured session breakdown with 1st Term and 2nd Term tables, subject rows, CA / Exam / Total columns, grade badges, and terminal summary footers.
+        - **Endorsements & Signatures**: Tri-column endorsement section with handwritten cursive Registrar signature baseline, central circular electronic certification seal, and Principal signature baseline.
+        - **Access & Payment Audit Sidebar**: Right-hand telemetry card with download counters, student vs parent breakdown, payment clearance status, and connected parent records.
+    - Zero TypeScript compilation errors verified via `npx tsc --noEmit`.
+
+### Tuesday, October 27, 2026 (Student Graduation Fix & Bank Account Modal Redesign with Business Email)
+
+- [x] **Student Graduation Fix ([student.lifecycle.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.lifecycle.service.ts), [student.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.service.ts), [student.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/student/student.controller.ts), [GraduateStudentModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/GraduateStudentModal.tsx), [students/[studentId]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/%5BstudentId%5D/page.tsx))**:
+    - **Diagnosed and Resolved Graduation Blockers**:
+        1. Existing students in the database had `schoolId` populated directly on the `Student` table with 0 rows in `StudentEnrollment`. The previous exit logic required an active row in `StudentEnrollment`, throwing `Error: Student does not have an active enrollment in this school.`. Updated `exitStudentFromSchool` to auto-provision an enrollment departure record if none existed.
+        2. Student departures previously set `student.schoolId = null`, severing the school's alumni record and triggering a `403 Access denied` on subsequent profile views. For `exitType === 'GRADUATED'`, the student's status is now permanently marked `status: 'GRADUATED'`, preserving `originalSchoolId` and `schoolId` so the graduating institution retains alumni ownership, transcript clearance, and academic history.
+        3. Allowed administrators to view and manage graduated alumni who completed studies at their institution in `getStudentById` by verifying `profile.originalSchoolId` and enrollment records.
+    - **Graduation UI & Honors Workflow**:
+        - Created [`GraduateStudentModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/students/components/GraduateStudentModal.tsx) with a celebratory UI, student snapshot, graduation date picker, honors classification input (e.g. `Class of 2026 Honors Graduate`), commendation notes, and TanStack mutation.
+        - Added prominent "Graduate Student" button to the student profile hero actions and quick actions sidebar at `/dashboard/admin/students/[studentId]`.
+        - Added a glowing amber `Graduated Scholar (Alumni)` badge on the student profile hero banner when graduated.
+
+- [x] **Bank Account Modal Popup Width & Business Email Requirement ([flutterwave.adapter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/flutterwave.adapter.ts), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [gateway.interface.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/gateway.interface.ts), [finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx), [financeService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/financeService.ts))**:
+    - **Business Email Parameter Fix**:
+        - Identified Flutterwave API requirement where `POST /v3/subaccounts` rejects requests missing `business_email` with `{ status: "error", message: "business_email is required" }`.
+        - Extended `SubaccountCreateParams` with `businessEmail`, `businessContact`, and `businessMobile`.
+        - Updated `FlutterwaveAdapter.createSubaccount` to pass `business_email`, `business_contact`, and `business_mobile`.
+        - In `FinanceService.setupBank`, resolved fallback `resolvedBusinessEmail = data.business_email || userContext?.userEmail || school?.schoolEmail || 'finance@schoolhub.ng'`.
+    - **Modal Popup Width & 2-Column Responsive Layout**:
+        - Increased dialog width from `max-w-xl` (576px) to a spacious `max-w-4xl` (896px).
+        - Created a 2-column layout:
+            - Left: Live interactive Metallic Virtual ATM Card preview, Sandbox Test Mode helper with 1-click test fill, and SSL security reassurance badge.
+            - Right: Popular commercial bank pills, bank directory selector, 10-digit NUBAN input, live account verification card with school confirmation checkbox, customizable display name with quick toggles, and new **Business / Settlement Notification Email** input field (pre-filled with the school's official email or admin email).
 
 ### Tuesday, October 27, 2026 (Workspace Build Verification & Clean Compilation)
 
@@ -44,6 +608,37 @@
 - [x] **Database & Runtime Compatibility**:
     - PostgreSQL schema synced via Prisma with `BankAccountAudit` ledger and `SettlementAccount` tracking fields (`addedBy`, `addedByName`, `addedByRole`).
     - Prisma client regenerated and verified compatible with live background dev servers.
+
+### Tuesday, October 27, 2026 (Student Transcript Payment Clearance Modal Width Expansion & 2-Column Grid Upgrade)
+
+- [x] **Transcript Payment & Clearance Modal Width Expansion ([transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx))**:
+    - Increased modal container width from cramped `max-w-xl` (576px) to a spacious, modern, responsive `max-w-3xl lg:max-w-4xl xl:max-w-5xl w-[95vw]` with `rounded-[2.5rem]`.
+    - Structured modal interior into a 2-column layout (`grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch`):
+        - **Left Column (7 cols)**: Scholar Snapshot Strip (avatar, name, student code, clearance scope), Transcript Scope Selector (Full Cumulative vs Single Session), and "What this official clearance covers" Inclusions List with `CheckCheck` green checkmarks.
+        - **Right Column (5 cols)**: Total Clearance Fee Card (`₦{transcriptFee.toLocaleString()}`, verified subaccount beneficiary badge), Accepted Payment Channel chips (Debit/Credit Cards, Bank Transfer, USSD, Mobile Money), and the full-width Flutterwave Payment CTA button with automatic post-clearance unlock note.
+    - Upgraded header styling with an extra "Instant Auto-Unlock" status badge, glowing ambient backlights, and responsive title typography (`text-2xl sm:text-3xl`).
+- [x] **TypeScript Validation**: Verified clean compilation across both frontend and backend (`npx tsc --noEmit` exited with code 0).
+
+### Tuesday, October 27, 2026 (Graduated Scholar Institutional Badges Roll)
+
+- [x] **Graduated Scholar Badge Roll Under First Card ([student/transcript/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/transcript/page.tsx), [TranscriptPreview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transcript/components/TranscriptPreview.tsx))**:
+    - Implemented a dedicated "Badges" row for graduated scholars directly under the first card (`renderStudentProfileBanner`) across both student and admin transcript views.
+    - Added `graduatedSchools` resolution to gather unique institutions the student graduated from (primary school, student profile school, original school, and historical school memberships) along with their official logos.
+    - Rendered the Badge row with a gold medallion award icon, "Badge" header, "Graduated Scholar" status chip, and a horizontal roll of institutional emblems with the school's logo, school name, and a "Graduated Alumnus" verified badge.
+    - Updated the Enrollment Status indicator in the student biographical profile card to dynamically display "Graduated Alumnus" with an academic cap icon when `isGraduated` is true instead of static "Active Enrolled".
+- [x] **TypeScript Validation**: Verified zero compilation errors across both frontend and backend (`npx tsc --noEmit`).
+
+### Tuesday, October 27, 2026 (Bank Account Processing & Audit History Real Name Resolution)
+
+- [x] **Real Administrator Identity Resolution in Bank Audit History ([authMiddleware.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts), [finance.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.service.ts), [finance.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/finance/finance.controller.ts), [finance/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/page.tsx))**:
+    - Identified why the "Bank Account Processing & Audit History" ledger displayed generic `"School Administrator"` instead of the real name of the admin who added the account:
+        1. In `authMiddleware.ts`, `req.user` only contained `{ id, userType, schoolId, tenantId }` without attaching `name`, `email`, or `role`.
+        2. `FinanceController.setupBank` and `FinanceService.setupBank` defaulted to `"School Administrator"` because `req.user.name` was undefined.
+    - Updated `authMiddleware.ts` to look up and attach the real `name`, `email`, and `role` to `req.user` across all user types (Admin, Teacher, Student, Parent, Super Admin).
+    - Updated `FinanceController.setupBank`, `removeSubaccount`, and `syncSubaccountStatus` to resolve the real administrator name, email, and role from `req.body`, `req.user`, or the database via `prisma.admin.findUnique` / `prisma.schoolAdmin.findFirst`.
+    - Added `FinanceService.enrichBankAudits()` which dynamically resolves the real administrator identity (`name`, `email`, `role`) for any existing audit records displaying generic placeholder names, and auto-heals both `bank_account_audits` and `settlement_accounts` in PostgreSQL in the background.
+    - Updated frontend `finance/page.tsx` and `bank-setup/page.tsx` to forward `addedByName`, `addedByEmail`, and `addedByRole` to `financeService.setupBank` and compute `effectiveUserName` and `effectiveUserEmail` in the audit ledger UI.
+- [x] **TypeScript Validation**: Verified zero compiler errors across both frontend and backend (`npx tsc --noEmit`).
 
 ### Tuesday, October 27, 2026 (Bank Account Modal Redesign, School Name Auto-Population, and DB Audit History Ledger)
 

@@ -46,7 +46,7 @@ const router = Router();
 
 router.post("/", authenticateToken, createClass);
 router.get("/", authenticateToken, getClasses);
-router.get("/code/:classCode", authenticateToken, previewClassByCode);
+router.get("/code/:classCode", previewClassByCode);
 router.post("/join/request", authenticateToken, requestToJoinClass);
 
 router.patch("/:id", authenticateToken, updateClass);
@@ -81,7 +81,7 @@ router.delete("/:id/timetable/:periodId", authenticateToken, deleteTimetablePeri
 router.post("/:id/timetable/generate", authenticateToken, autoGenerateTimetable);
 router.post("/:id/timetable/replicate", authenticateToken, replicateTimetable);
 
-router.get("/preview/:id", authenticateToken, previewClassById);
+router.get("/preview/:id", previewClassById);
 router.get("/:id/stats", authenticateToken, getClassStats);
 router.get("/:id/behaviour-alerts", authenticateToken, getClassBehaviourAlerts);
 router.post("/:id/behaviour-alerts", authenticateToken, createBehaviourAlert);

@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import QRCode from "react-qr-code";
-import { Shield, Zap, Copy, Globe, ArrowUpRight, School } from 'lucide-react';
+import { Shield, Zap, Copy, Globe, ArrowUpRight, School, GraduationCap } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,8 @@ interface PassportProfile {
   studentCode?: string;
   linkingCode?: string;
   profileImage?: string;
+  status?: string;
+  isAlumni?: boolean;
   school?: {
     name?: string;
   };
@@ -23,6 +25,8 @@ interface PassportUser {
   name?: string;
   studentCode?: string;
   profileImage?: string;
+  status?: string;
+  isAlumni?: boolean;
 }
 
 interface StudentLinkingPassportProps {
@@ -32,6 +36,7 @@ interface StudentLinkingPassportProps {
   classroomActiveCount: number;
   networkActiveCount: number;
   onConnectClick: () => void;
+  isGraduated?: boolean;
 }
 
 export function StudentLinkingPassport({
@@ -40,7 +45,8 @@ export function StudentLinkingPassport({
   totalActiveCount,
   classroomActiveCount,
   networkActiveCount,
-  onConnectClick
+  onConnectClick,
+  isGraduated = false
 }: StudentLinkingPassportProps) {
   const displayName = profile?.name || user?.name || "Student Scholar";
   const studentIdCode = profile?.studentCode || user?.studentCode || "STU-VERIFIED";
@@ -61,8 +67,15 @@ export function StudentLinkingPassport({
           <CardContent className="relative p-5 sm:p-7 h-full flex flex-col justify-between z-10">
             <div className="flex justify-between items-start gap-3">
               <div className="space-y-3 min-w-0">
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-white/30 shadow-sm">
-                  <Shield size={12} className="mr-1.5" /> Digital Student Passport
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-white/30 shadow-sm">
+                    <Shield size={12} className="mr-1.5" /> Digital Student Passport
+                  </div>
+                  {isGraduated && (
+                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-400/30 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-amber-300/50 text-amber-100 shadow-sm">
+                      <GraduationCap size={13} className="mr-1.5 text-amber-200" /> Graduated Scholar (Alumni)
+                    </div>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight truncate">

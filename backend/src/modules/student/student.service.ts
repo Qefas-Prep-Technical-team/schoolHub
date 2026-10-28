@@ -190,6 +190,11 @@ export const getStudentProfileService = async (studentId: string) => {
           parent: true,
         },
       },
+      enrollments: true,
+      histories: {
+        orderBy: { date: "desc" },
+        take: 20,
+      },
     },
   });
 };
@@ -454,12 +459,19 @@ export const exitStudentService = async (
   adminId: string
 ) => {
   const student = await prisma.student.findFirst({
-    where: { id: studentId, schoolId },
+    where: {
+      id: studentId,
+      OR: [
+        { schoolId },
+        { originalSchoolId: schoolId },
+        { enrollments: { some: { schoolId } } },
+      ],
+    },
     include: { parentLinks: true },
   });
 
   if (!student) {
-    throw new Error("Student not found or not actively enrolled in your school.");
+    throw new Error("Student not found or not enrolled in your school.");
   }
 
   const result = await prisma.$transaction(async (tx) => {
@@ -1630,18 +1642,25 @@ export const promoteStudentDirectService = async ({
   } else {
     // If student isn't enrolled in a class yet, enroll them directly
     await prisma.$transaction(async (tx) => {
+      // Remove from any prior enrollments
+      await tx.classEnrollment.deleteMany({
+        where: { studentId },
+      });
+
       await tx.classEnrollment.upsert({
         where: { classId_studentId: { classId: toClassId, studentId } },
         create: { classId: toClassId, studentId },
         update: {},
       });
 
-      if (toClass.level) {
-        await tx.student.update({
-          where: { id: studentId },
-          data: { gradeLevel: toClass.level, level: toClass.level },
-        });
-      }
+      await tx.student.update({
+        where: { id: studentId },
+        data: {
+          status: "ACTIVE",
+          schoolId: toClass.schoolId || schoolId,
+          ...(toClass.level ? { gradeLevel: toClass.level, level: toClass.level } : {}),
+        },
+      });
 
       await tx.studentHistory.create({
         data: {
@@ -1650,7 +1669,12 @@ export const promoteStudentDirectService = async ({
           eventType: HistoryEventType.CLASS_CHANGED,
           title: `Enrolled in ${toClass.name}`,
           description: `Student was enrolled into ${toClass.name} ${toClass.section || ""}`.trim(),
-          meta: { toClassId, session: toClass.session },
+          meta: {
+            toClassId,
+            toClassName: `${toClass.name} ${toClass.section || ""}`.trim(),
+            toClassCode: toClass.classCode,
+            session: toClass.session,
+          },
           performedBy: currentUserId,
         },
       });

@@ -96,10 +96,14 @@ export const financeService = {
    */
   setupBank: async (schoolId: string, data: {
     business_name: string;
+    business_email?: string;
     settlement_bank: string;
     bank_name?: string;
     account_number: string;
     percentage_charge: number;
+    addedByName?: string;
+    addedByEmail?: string;
+    addedByRole?: string;
   }) => {
     const response = await apiClient.post(`/finance/setup/${schoolId}`, data);
     return response.data;
@@ -124,7 +128,8 @@ export const financeService = {
   },
 
   syncSubaccountStatus: async (schoolId: string, accountId?: string) => {
-    const response = await apiClient.patch(`/finance/sync/${schoolId}`, { accountId });
+    const payload = typeof accountId === "string" && accountId.trim() ? { accountId: accountId.trim() } : {};
+    const response = await apiClient.patch(`/finance/sync/${schoolId}`, payload);
     return response.data;
   },
 
@@ -146,8 +151,35 @@ export const financeService = {
   /**
    * General: Verify a transaction status
    */
-  verifyPayment: async (reference: string) => {
-    const response = await apiClient.get(`/finance/verify/${reference}`);
+  verifyPayment: async (reference: string, transactionId?: string): Promise<{
+    success: boolean;
+    data?: {
+      payment: any;
+      accessPass?: {
+        token: string;
+        expiresAt: string;
+        accessUrl: string;
+        sessionId?: string;
+        term?: string;
+      };
+    };
+    status?: string;
+  }> => {
+    const params = transactionId ? `?transaction_id=${encodeURIComponent(transactionId)}` : "";
+    const response = await apiClient.get<{
+      success: boolean;
+      data?: {
+        payment: any;
+        accessPass?: {
+          token: string;
+          expiresAt: string;
+          accessUrl: string;
+          sessionId?: string;
+          term?: string;
+        };
+      };
+      status?: string;
+    }>(`/finance/verify/${reference}${params}`);
     return response.data;
   },
 
@@ -236,6 +268,7 @@ export const financeService = {
     data: {
       studentId: string;
       sessionId?: string;
+      term?: string;
       amount?: number;
       email?: string;
       name?: string;
@@ -244,6 +277,13 @@ export const financeService = {
     checkoutUrl?: string;
     paymentReference: string;
     amount: number;
+    accessPass?: {
+      token: string;
+      expiresAt: string;
+      accessUrl: string;
+      sessionId?: string;
+      term?: string;
+    };
     settlementAccount?: {
       bankName: string;
       accountNumber: string;
@@ -256,6 +296,13 @@ export const financeService = {
         checkoutUrl?: string;
         paymentReference: string;
         amount: number;
+        accessPass?: {
+          token: string;
+          expiresAt: string;
+          accessUrl: string;
+          sessionId?: string;
+          term?: string;
+        };
         settlementAccount?: {
           bankName: string;
           accountNumber: string;
@@ -264,6 +311,52 @@ export const financeService = {
       };
     }>(`/finance/transcript-payment/${schoolId}`, data);
     return response.data.data;
+  },
+
+  /**
+   * General: Verify a 30-day transcript access pass token
+   */
+  verifyTranscriptPass: async (token: string): Promise<{
+    valid: boolean;
+    studentId?: string;
+    schoolId?: string;
+    sessionId?: string;
+    term?: string;
+    reference?: string;
+    expiresAt?: string;
+    error?: string;
+  }> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: {
+        valid: boolean;
+        studentId?: string;
+        schoolId?: string;
+        sessionId?: string;
+        term?: string;
+        reference?: string;
+        expiresAt?: string;
+        error?: string;
+      };
+    }>(`/finance/transcript-pass/verify?token=${encodeURIComponent(token)}`);
+    return response.data.data;
+  },
+
+  /**
+   * Student: Send 30-day access pass link to email
+   */
+  emailTranscriptPass: async (data: {
+    studentId: string;
+    schoolId: string;
+    email: string;
+    token?: string;
+    reference?: string;
+  }): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.post<{ success: boolean; message: string }>(
+      "/finance/transcript-pass/email",
+      data
+    );
+    return response.data;
   },
 
   /**

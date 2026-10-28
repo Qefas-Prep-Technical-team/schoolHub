@@ -33,6 +33,7 @@ export const getSingleLinkRequestService = async ({
       targetParent: true,
       relationshipLink: true,
       notifications: true,
+      class: true,
     },
   });
 
@@ -52,6 +53,9 @@ export const getSingleLinkRequestService = async ({
       request.schoolId,
       request.targetSchoolId,
       request.requesterSchoolId,
+      request.class?.schoolId,
+      request.targetType === LinkEntityType.SCHOOL ? request.targetId : null,
+      request.requesterType === LinkEntityType.SCHOOL ? request.requesterId : null,
     ].filter(Boolean) as string[];
 
     if (schoolIds.length > 0) {
@@ -63,6 +67,48 @@ export const getSingleLinkRequestService = async ({
         },
       });
       if (adminOfSchool) {
+        canAccess = true;
+      }
+    }
+  }
+
+  // If user is a Teacher, verify they teach the class or were directly notified
+  if (!canAccess && currentUserType === "TEACHER") {
+    const classId = request.classId || (request.targetType === LinkEntityType.CLASS ? request.targetId : null);
+    if (classId) {
+      const isClassTeacher = await prisma.classTeacher.findFirst({
+        where: {
+          classId,
+          teacherId: currentUserId,
+        },
+      });
+
+      if (isClassTeacher) {
+        canAccess = true;
+      } else {
+        const teachesSubject = await prisma.classSubject.findFirst({
+          where: {
+            classId,
+            OR: [
+              { subject: { teacherId: currentUserId } },
+              { subject: { teacherSubjects: { some: { teacherId: currentUserId } } } },
+            ],
+          },
+        });
+        if (teachesSubject) {
+          canAccess = true;
+        }
+      }
+    }
+
+    if (!canAccess) {
+      const directNotification = await prisma.notification.findFirst({
+        where: {
+          linkRequestId: request.id,
+          recipientId: currentUserId,
+        },
+      });
+      if (directNotification) {
         canAccess = true;
       }
     }

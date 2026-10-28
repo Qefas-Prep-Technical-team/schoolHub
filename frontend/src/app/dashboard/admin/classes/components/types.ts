@@ -33,6 +33,9 @@ export interface ClassData {
   name: string;
   grade?: string;
   section?: string;
+  level?: string;
+  term?: string;
+  session?: string;
   teacher?: {
     name: string;
     avatarUrl?: string;

@@ -16,8 +16,11 @@ interface StudentTableProps {
 
 const statusColors: Record<string, string> = {
   active: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  enrolled: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  graduated: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  expelled: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
+  transferred: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
   suspended: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  transferred: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
 };
 
 const performanceColors: Record<string, string> = {
@@ -28,6 +31,15 @@ const performanceColors: Record<string, string> = {
 
 function Avatar({ student }: { student: Student }) {
   const [imgError, setImgError] = useState(false);
+
+  const getDotColor = (status: string) => {
+    if (status === 'active' || status === 'enrolled') return 'bg-emerald-500';
+    if (status === 'graduated') return 'bg-purple-500';
+    if (status === 'expelled') return 'bg-rose-500';
+    if (status === 'transferred') return 'bg-amber-500';
+    if (status === 'suspended') return 'bg-amber-500';
+    return 'bg-slate-400';
+  };
 
   return (
     <div className="relative flex-shrink-0">
@@ -47,7 +59,7 @@ function Avatar({ student }: { student: Student }) {
           </div>
         )}
       </div>
-      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 ${student.status === 'active' ? 'bg-emerald-500' : student.status === 'suspended' ? 'bg-amber-500' : 'bg-slate-400'}`} />
+      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 ${getDotColor(student.status)}`} />
     </div>
   );
 }

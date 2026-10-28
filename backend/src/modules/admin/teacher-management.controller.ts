@@ -777,6 +777,21 @@ export const inviteTeacher = async (req: Request, res: Response) => {
             isLead: true,
           },
         });
+        const assignedClass = await prisma.class.findUnique({
+          where: { id: classId },
+          select: { name: true, section: true },
+        });
+        if (assignedClass) {
+          createNotification({
+            recipientType: "TEACHER",
+            recipientId: teacher.id,
+            senderType: "ADMIN",
+            type: "ACADEMIC",
+            title: "Assigned to Class",
+            message: `You have been assigned to teach ${assignedClass.name}${assignedClass.section ? ` (${assignedClass.section})` : ""}.`,
+            link: `/dashboard/teacher/my-classes/${classId}`,
+          }).catch(err => console.error(`[Notification] Failed to notify teacher:`, err));
+        }
       }
 
       // Optionally attach to subject

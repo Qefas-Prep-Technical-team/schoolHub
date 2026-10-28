@@ -37,7 +37,10 @@ export default function PrefectCelebration({ studentId, studentName, roleName, h
   const acknowledgeMutation = useAcknowledgePrefectCelebration(studentId);
 
   useEffect(() => {
-    if (!hasSeenCelebration && roleName) {
+    if (!hasSeenCelebration && roleName && studentId) {
+      const alreadyDismissed = typeof window !== 'undefined' && localStorage.getItem(`prefect_celebration_seen_${studentId}`);
+      if (alreadyDismissed) return;
+
       setShowConfetti(true);
       setShowModal(true);
       
@@ -47,11 +50,14 @@ export default function PrefectCelebration({ studentId, studentName, roleName, h
       }, 7000);
       return () => clearTimeout(timer);
     }
-  }, [hasSeenCelebration, roleName]);
+  }, [hasSeenCelebration, roleName, studentId]);
 
   const handleClose = async () => {
     setShowModal(false);
     setShowConfetti(false);
+    if (typeof window !== 'undefined' && studentId) {
+      localStorage.setItem(`prefect_celebration_seen_${studentId}`, 'true');
+    }
     try {
       await acknowledgeMutation.mutateAsync();
       onAcknowledge();

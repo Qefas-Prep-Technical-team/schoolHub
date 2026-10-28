@@ -107,6 +107,7 @@ export const useRespondToLinkRequest = () => {
       linkService.respondToLinkRequest(id, action),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       if (variables.action === "ACCEPT") {
         toast.success("Link request accepted");
       } else {

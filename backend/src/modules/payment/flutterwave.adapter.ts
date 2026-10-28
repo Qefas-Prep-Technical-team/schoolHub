@@ -42,11 +42,16 @@ export class FlutterwaveAdapter implements PaymentGateway {
 
     const subaccountCode = (params.metadata?.['subaccountCode'] || params.metadata?.['subaccountId']) as string | undefined;
 
+    const redirectUrl =
+      (params.metadata?.['redirect_url'] as string) ||
+      (params.metadata?.['callbackUrl'] as string) ||
+      FLW_REDIRECT_URL;
+
     const payload: Record<string, unknown> = {
       tx_ref: txRef,
       amount: params.amount,          // Naira — FLW does NOT use kobo
       currency: 'NGN',
-      redirect_url: FLW_REDIRECT_URL,
+      redirect_url: redirectUrl,
       customer: {
         email: params.email,
         name: params.metadata?.['name'] as string | undefined,
@@ -97,25 +102,36 @@ export class FlutterwaveAdapter implements PaymentGateway {
   // Verify
   // ─────────────────────────────────────────────────────────────
   async verify(txRef: string, flwTransactionId?: string): Promise<VerifyResult> {
-    // FLW requires a numeric transaction_id for server-side verification.
-    // This comes from the redirect callback query param: ?transaction_id=xxxxx
-    if (!flwTransactionId) {
-      throw new Error('Flutterwave verify requires a transaction_id from the redirect callback');
-    }
-
     try {
-      const response = await flwApi.get<{
-        status: string;
-        data: {
+      let response;
+      if (flwTransactionId) {
+        response = await flwApi.get<{
           status: string;
-          charged_amount: number;
-          flw_ref: string;
-          tx_ref: string;
-          payment_type: string;
-          card?: { token?: string };
-          meta: Record<string, string>;
-        };
-      }>(`/transactions/${flwTransactionId}/verify`);
+          data: {
+            status: string;
+            charged_amount: number;
+            flw_ref: string;
+            tx_ref: string;
+            payment_type: string;
+            card?: { token?: string };
+            meta: Record<string, string>;
+          };
+        }>(`/transactions/${flwTransactionId}/verify`);
+      } else {
+        // Fallback: verify directly using the unique transaction reference
+        response = await flwApi.get<{
+          status: string;
+          data: {
+            status: string;
+            charged_amount: number;
+            flw_ref: string;
+            tx_ref: string;
+            payment_type: string;
+            card?: { token?: string };
+            meta: Record<string, string>;
+          };
+        }>(`/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`);
+      }
 
       const tx = response.data.data;
 
@@ -128,7 +144,7 @@ export class FlutterwaveAdapter implements PaymentGateway {
       console.log("[Flutterwave Adapter] Raw verify metadata:", JSON.stringify(meta));
 
       // Flutterwave is notorious for changing metadata key casings.
-      // Build a case-insensitive map.
+      // Build a case-insensitive map while preserving all metadata keys.
       const lowerMeta: Record<string, string> = {};
       for (const [k, v] of Object.entries(meta)) {
         lowerMeta[k.toLowerCase()] = String(v);
@@ -142,8 +158,14 @@ export class FlutterwaveAdapter implements PaymentGateway {
         channel: tx.payment_type,
         authorizationToken: tx.card?.token,   // Stored for recurring charge eligibility
         meta: {
+          ...lowerMeta,
           userId: lowerMeta['userid'] || lowerMeta['user_id'] || "",
           userRole: lowerMeta['userrole'] || lowerMeta['user_role'] || lowerMeta['role'] || "",
+          schoolId: lowerMeta['schoolid'] || lowerMeta['school_id'] || "",
+          studentId: lowerMeta['studentid'] || lowerMeta['student_id'] || "",
+          sessionId: lowerMeta['sessionid'] || lowerMeta['session_id'] || "",
+          term: lowerMeta['term'] || "",
+          paymentType: lowerMeta['paymenttype'] || lowerMeta['payment_type'] || "",
           plan: lowerMeta['plan'] || "",
           billing: lowerMeta['billing'] || "",
           isUpgrade: lowerMeta['is_upgrade'] === 'true' || lowerMeta['isupgrade'] === 'true',
@@ -265,6 +287,10 @@ export class FlutterwaveAdapter implements PaymentGateway {
         account_bank: params.bankCode,
         account_number: params.accountNumber,
         business_name: params.businessName,
+        business_email: params.businessEmail || 'finance@schoolhub.ng',
+        business_contact: params.businessContact || params.businessName,
+        business_contact_mobile: params.businessMobile,
+        business_mobile: params.businessMobile,
         split_type: 'percentage',
         split_value: params.splitPercentage / 100, // FLW expects 0.1 for 10%
         country: 'NG',

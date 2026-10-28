@@ -4,8 +4,12 @@ import { persist, createJSONStorage } from "zustand/middleware";
 interface PlatformStaff {
   id: string;
   fullName: string;
+  displayName?: string | null;
   email: string;
   role: "OWNER" | "FINANCE_ADMIN" | "SUPPORT_AGENT" | "TECH_ADMIN";
+  profileImage?: string | null;
+  phone?: string | null;
+  bio?: string | null;
 }
 
 interface PlatformStaffStore {
@@ -14,6 +18,7 @@ interface PlatformStaffStore {
   isAuthenticated: boolean;
   isHydrated: boolean; // Track when localStorage is loaded
   setStaff: (staff: PlatformStaff, token: string) => void;
+  updateStaff: (partial: Partial<PlatformStaff>) => void;
   clearStaff: () => void;
   setHydrated: (value: boolean) => void;
 }
@@ -27,6 +32,10 @@ export const usePlatformStaffStore = create<PlatformStaffStore>()(
       isHydrated: false,
       setStaff: (staff, token) =>
         set({ staff, platform_token: token, isAuthenticated: true }),
+      updateStaff: (partial) =>
+        set((state) => ({
+          staff: state.staff ? { ...state.staff, ...partial } : null,
+        })),
       clearStaff: () =>
         set({ staff: null, platform_token: null, isAuthenticated: false }),
       setHydrated: (value) => set({ isHydrated: value }),

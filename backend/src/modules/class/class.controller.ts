@@ -30,7 +30,20 @@ import { handleError } from "../../utils/error-handler";
 
 export const createClass = async (req: Request, res: Response) => {
   try {
-    const { name, section, scope, schoolId, level, subjectIds, departmentIds, studentIds } = req.body;
+    const {
+      name,
+      section,
+      scope,
+      schoolId,
+      level,
+      term,
+      session,
+      sessionId,
+      subjectIds,
+      departmentIds,
+      teacherIds,
+      studentIds,
+    } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -121,8 +134,11 @@ export const createClass = async (req: Request, res: Response) => {
       scope,
       schoolId,
       level,
+      term,
+      session: session || sessionId,
       subjectIds,
       departmentIds,
+      teacherIds,
       studentIds,
     });
 
@@ -307,10 +323,6 @@ export const getSingleClass = async (req: Request, res: Response) => {
 
 export const previewClassByCode = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
     const foundClass = await previewClassByCodeService(
       req.params.classCode as string
     );
@@ -358,10 +370,6 @@ export const previewClassByCode = async (req: Request, res: Response) => {
 
 export const previewClassById = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
     const foundClass = await previewClassByIdService(
       req.params.id as string
     );
@@ -438,26 +446,31 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
     const notificationPromises: Promise<any>[] = [];
 
     // Notifications for Teachers
+    const notifiedTeacherIds = new Set<string>();
     for (const classTeacher of result.class.teachers) {
-      notificationPromises.push(
-        createNotification({
-          recipientType: "TEACHER",
-          recipientId: classTeacher.teacherId,
-          senderType: "STUDENT",
-          senderId: result.student.id,
-          type: "LINK_REQUEST",
-          title: "New Class Join Request",
-          message: `${result.student.name} requested to join ${result.class.name}`,
-          linkRequestId: result.request.id,
-          meta: {
-            classId: result.class.id,
-            classCode: result.class.classCode,
-            linkType: result.request.linkType,
-            studentId: result.student.id,
-            studentCode: result.student.studentCode,
-          },
-        }).catch(err => console.error(`Failed to notify teacher ${classTeacher.teacherId}:`, err))
-      );
+      if (classTeacher.teacherId && !notifiedTeacherIds.has(classTeacher.teacherId)) {
+        notifiedTeacherIds.add(classTeacher.teacherId);
+        notificationPromises.push(
+          createNotification({
+            recipientType: "TEACHER",
+            recipientId: classTeacher.teacherId,
+            senderType: "STUDENT",
+            senderId: result.student.id,
+            type: "LINK_REQUEST",
+            title: "New Class Join Request",
+            message: `${result.student.name} requested to join ${result.class.name}`,
+            linkRequestId: result.request.id,
+            meta: {
+              classId: result.class.id,
+              className: result.class.name,
+              classCode: result.class.classCode,
+              linkType: result.request.linkType,
+              studentId: result.student.id,
+              studentCode: result.student.studentCode,
+            },
+          }).catch(err => console.error(`Failed to notify teacher ${classTeacher.teacherId}:`, err))
+        );
+      }
     }
 
     // Notifications for School Admins
@@ -482,6 +495,7 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
             linkRequestId: result.request.id,
             meta: {
               classId: result.class.id,
+              className: result.class.name,
               classCode: result.class.classCode,
               linkType: result.request.linkType,
               studentId: result.student.id,
@@ -623,8 +637,8 @@ export const attachSubjectsToClass = async (req: Request, res: Response) => {
 export const updateClass = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, section, term, session, level, teacherIds, departmentIds, studentIds } = req.body;
-    console.log("Updating class with data:", { id, name, section, term, session, level, teacherIds, departmentIds, studentIds });
+    const { name, section, term, session, sessionId, level, teacherIds, departmentIds, studentIds } = req.body;
+    console.log("Updating class with data:", { id, name, section, term, session: session || sessionId, level, teacherIds, departmentIds, studentIds });
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -648,11 +662,13 @@ export const updateClass = async (req: Request, res: Response) => {
       name,
       section,
       term,
-      session,
+      session: session || sessionId,
       level,
       teacherIds,
       departmentIds,
       studentIds,
+      currentUserId: req.user.id,
+      currentUserType: req.user.userType,
     });
 
     return res.status(200).json({

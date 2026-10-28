@@ -5,6 +5,9 @@ import {
   FileSpreadsheet,
   Download,
   Upload,
+  FileDown,
+  FileUp,
+  FileText,
   Camera,
   Layers,
   BookOpen,
@@ -52,6 +55,7 @@ interface OfflineGradesHeaderProps {
   onOpenOCRModal: () => void;
   onExportPDF: () => void;
   onExportCSV: () => void;
+  onExportExcel?: () => void;
   onResetScores: () => void;
 }
 
@@ -79,6 +83,7 @@ export default function OfflineGradesHeader({
   onOpenOCRModal,
   onExportPDF,
   onExportCSV,
+  onExportExcel,
   onResetScores,
 }: OfflineGradesHeaderProps) {
   return (
@@ -133,10 +138,10 @@ export default function OfflineGradesHeader({
             variant="outline"
             size="sm"
             onClick={onOpenCSVModal}
-            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800/80 font-bold text-xs gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800/80 font-bold text-xs gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shadow-xs"
           >
-            <Upload size={14} className={isTeacher ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'} />
-            <span className="hidden sm:inline">Import</span> CSV
+            <FileSpreadsheet size={15} className={isTeacher ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'} />
+            <span className="hidden sm:inline">Import</span> Excel / CSV
           </Button>
 
           <Button
@@ -155,19 +160,34 @@ export default function OfflineGradesHeader({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800/80 font-bold text-xs gap-1.5 cursor-pointer"
+                className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800/80 font-bold text-xs gap-1.5 cursor-pointer shadow-xs"
               >
                 <Download size={14} className="text-slate-600 dark:text-slate-300" />
-                Export
+                <span>Export</span>
                 <ChevronDown size={12} className="opacity-60" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[70] w-44 rounded-xl dark:bg-slate-800 dark:border-slate-700">
-              <DropdownMenuItem onClick={onExportPDF} className="text-xs font-semibold gap-2 cursor-pointer">
-                Export to PDF
+            <DropdownMenuContent align="end" className="z-[70] w-52 rounded-xl dark:bg-slate-800 dark:border-slate-700 p-1.5 shadow-xl">
+              <DropdownMenuItem
+                onClick={onExportExcel}
+                className="text-xs font-semibold gap-2 py-2 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400" />
+                <span>Export to Excel (.xlsx)</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onExportCSV} className="text-xs font-semibold gap-2 cursor-pointer">
-                Export to CSV
+              <DropdownMenuItem
+                onClick={onExportCSV}
+                className="text-xs font-semibold gap-2 py-2 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <FileText size={14} className="text-blue-600 dark:text-blue-400" />
+                <span>Export to CSV (.csv)</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={onExportPDF}
+                className="text-xs font-semibold gap-2 py-2 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <FileDown size={14} className="text-rose-600 dark:text-rose-400" />
+                <span>Export Marksheet (PDF)</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

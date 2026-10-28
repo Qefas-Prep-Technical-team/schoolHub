@@ -154,7 +154,10 @@ export default function BankSetupPage() {
                 business_name: businessName,
                 settlement_bank: selectedBank,
                 account_number: accountNumber.trim(),
-                percentage_charge: percentageCharge
+                percentage_charge: percentageCharge,
+                addedByName: user?.name || undefined,
+                addedByEmail: user?.email || undefined,
+                addedByRole: user?.role || "ADMIN",
             })
             toast.success("Settlement subaccount created & configured successfully")
             
@@ -197,10 +200,11 @@ export default function BankSetupPage() {
 
     const handleSync = async (accountId?: string) => {
         if (!schoolId) return
+        const resolvedAccountId = typeof accountId === "string" && accountId.trim() ? accountId.trim() : undefined
 
         try {
             setLoading(true)
-            const result = await financeService.syncSubaccountStatus(schoolId, accountId)
+            const result = await financeService.syncSubaccountStatus(schoolId, resolvedAccountId)
             toast.success(result.message)
             
             // Refresh data
@@ -208,7 +212,7 @@ export default function BankSetupPage() {
             setPaymentStatus(analytics.paymentStatus)
             setAccounts(analytics.accounts || [])
         } catch (error: any) {
-            toast.error(error.message || "Failed to sync status")
+            toast.error(error?.response?.data?.message || error?.message || "Failed to sync status")
         } finally {
             setLoading(false)
         }

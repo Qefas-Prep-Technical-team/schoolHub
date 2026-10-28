@@ -33,6 +33,7 @@ export interface Exam {
 export interface ExamFilter {
   type?: ExamType
   status?: ExamStatus
+  subject?: string
   dateRange?: {
     start: Date
     end: Date

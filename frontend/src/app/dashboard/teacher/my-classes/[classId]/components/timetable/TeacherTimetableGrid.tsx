@@ -1,28 +1,41 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Period } from '@/app/dashboard/admin/classes/[id]/components/timetable/components/types';
+import { Period, Subject } from '@/app/dashboard/admin/classes/[id]/components/timetable/components/types';
 import { MapPin, Eye, EyeOff, Clock, CalendarDays, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+export interface TeacherTimetableSubject extends Subject {
+  isTeacherSubject?: boolean;
+}
 
 interface TeacherTimetableGridProps {
   periods: Period[];
   days: string[];
 }
 
-const TeacherSubjectCard = ({ subject }: { subject: any }) => {
+const TeacherSubjectCard = ({ subject, isCurrent }: { subject: TeacherTimetableSubject; isCurrent?: boolean }) => {
   const isOwn = !!subject.isTeacherSubject;
   const [previewing, setPreviewing] = useState(false);
 
   return (
     <div className={`group relative h-full min-h-[85px] p-3 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:shadow-lg ${
-      isOwn
+      isCurrent
+        ? 'bg-red-50/60 dark:bg-red-950/25 border-2 border-red-500 dark:border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.25)] ring-2 ring-red-500/20'
+        : isOwn
         ? 'bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-500 dark:border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
         : 'bg-white dark:bg-[#2a3650] border border-slate-200 dark:border-emerald-700/50'
     }`}>
+      {/* "Now" badge for class running now */}
+      {isCurrent && (
+        <span className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md z-30 animate-pulse shadow-md ring-1 ring-red-400 border border-red-300/40">
+          Now
+        </span>
+      )}
+
       {/* "You" badge for own subjects */}
       {isOwn && (
-        <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md z-10">
+        <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md z-10 shadow-xs">
           You
         </span>
       )}
@@ -54,30 +67,162 @@ const TeacherSubjectCard = ({ subject }: { subject: any }) => {
       )}
 
       {/* Card Content */}
-      <div className="flex flex-col gap-1 pr-6">
+      <div className={cn("flex flex-col gap-1 pr-6", isCurrent ? "pt-5" : "")}>
         <h4 className={`text-xs font-black leading-tight line-clamp-2 uppercase tracking-wide ${
-          isOwn ? 'text-emerald-800 dark:text-emerald-300' : 'text-slate-900 dark:text-white'
+          isCurrent
+            ? 'text-red-900 dark:text-red-200'
+            : isOwn
+            ? 'text-emerald-800 dark:text-emerald-300'
+            : 'text-slate-900 dark:text-white'
         }`}>
           {subject.name}
         </h4>
         <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-          <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+          <span className={cn("w-1 h-1 rounded-full", isCurrent ? "bg-red-500" : "bg-slate-300 dark:bg-slate-600")} />
           {subject.teacher}
         </p>
       </div>
 
       {subject.room && (
         <div className={`mt-2 flex items-center gap-1 w-fit px-2 py-1 rounded-md border ${
-          isOwn
+          isCurrent
+            ? 'bg-red-100 dark:bg-red-900/40 border-red-200 dark:border-red-800'
+            : isOwn
             ? 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700'
-            : 'bg-slate-100 dark:bg-emerald-900/40/50 border-slate-200 dark:border-emerald-700/50'
+            : 'bg-slate-100 dark:bg-emerald-900/40 border-slate-200 dark:border-emerald-700/50'
         }`}>
-          <MapPin size={8} className="text-emerald-600" />
-          <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+          <MapPin size={8} className={isCurrent ? "text-red-600 dark:text-red-400" : "text-emerald-600"} />
+          <span className={cn(
+            "text-[9px] font-bold uppercase tracking-wider",
+            isCurrent ? "text-red-800 dark:text-red-300" : "text-slate-700 dark:text-slate-300"
+          )}>
             {subject.room}
           </span>
         </div>
       )}
+    </div>
+  );
+};
+
+const MobileSubjectCard: React.FC<{
+  period: Period;
+  day: string;
+  isCurrent: boolean;
+  formatSlotTo12Hour: (s: string) => string;
+}> = ({ period, day, isCurrent, formatSlotTo12Hour }) => {
+  const subject = (period.subjects[day] ?? null) as TeacherTimetableSubject | null;
+  const isOwn = !!subject?.isTeacherSubject;
+  const [previewing, setPreviewing] = useState(false);
+
+  return (
+    <div
+      className={cn(
+        "p-3.5 rounded-2xl border transition-all shadow-xs relative overflow-hidden",
+        isCurrent
+          ? "ring-2 ring-red-500 border-2 border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.25)] bg-red-50/40 dark:bg-red-950/20"
+          : subject?.isBreak
+          ? "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50"
+          : subject
+          ? isOwn
+            ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60"
+            : "bg-white dark:bg-[#2a3650]/80 border-slate-200 dark:border-emerald-800/50"
+          : "bg-slate-50/70 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 opacity-80"
+      )}
+    >
+      {/* Blurred overlay for other teachers' subjects */}
+      {subject && !subject.isBreak && !isOwn && (
+        <div
+          className={cn(
+            "absolute inset-0 rounded-2xl z-20 flex items-center justify-center transition-all duration-300 cursor-pointer",
+            previewing
+              ? "backdrop-blur-none bg-transparent pointer-events-none"
+              : "backdrop-blur-[3px] bg-white/60 dark:bg-emerald-950/60"
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPreviewing((p) => !p);
+          }}
+        >
+          {!previewing ? (
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 shadow-md border border-slate-200 dark:border-slate-700 select-none pointer-events-auto"
+            >
+              <Eye size={13} className="text-slate-600 dark:text-slate-300" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                Preview
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPreviewing(false);
+              }}
+              className="pointer-events-auto absolute top-2 right-2 p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white"
+              title="Hide Preview"
+            >
+              <EyeOff size={13} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Now badge */}
+      {isCurrent && (
+        <span className="absolute top-2 right-2 bg-red-600 text-white text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md animate-pulse shadow-md ring-1 ring-red-400 border border-red-300/40">
+          Live Now
+        </span>
+      )}
+
+      <div className="flex items-start gap-3">
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 shrink-0">
+          <Clock size={11} className="text-slate-400" />
+          <span>{formatSlotTo12Hour(period.timeSlot)}</span>
+        </div>
+
+        <div className="flex-1 min-w-0 pr-8">
+          {subject ? (
+            subject.isBreak ? (
+              <p className="text-xs font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+                {subject.breakLabel || subject.name || 'Recess / Break'}
+              </p>
+            ) : (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className={cn(
+                    "text-xs font-black uppercase tracking-wide truncate",
+                    isOwn ? "text-emerald-800 dark:text-emerald-300" : "text-slate-900 dark:text-white"
+                  )}>
+                    {subject.name}
+                  </h4>
+                  {isOwn && (
+                    <span className="bg-emerald-500 text-white text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shrink-0">
+                      You
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <span>{subject.teacher}</span>
+                  {subject.room && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                        <MapPin size={9} /> {subject.room}
+                      </span>
+                    </>
+                  )}
+                </p>
+              </div>
+            )
+          ) : (
+            <p className="text-[11px] font-semibold text-slate-400 italic">
+              Free Period / Self Study
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -113,11 +258,19 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const [start, end] = slotStr.split(' - ');
     const parse = (t: string) => {
-      const m = t.trim().match(/^(\d{1,2}):(\d{2})/);
+      const m = t.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
       if (!m) return -1;
-      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      let hours = parseInt(m[1], 10);
+      const minutes = parseInt(m[2], 10);
+      const modifier = m[3]?.toUpperCase();
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+      return hours * 60 + minutes;
     };
-    return currentMinutes >= parse(start) && currentMinutes <= parse(end);
+    const startM = parse(start);
+    const endM = parse(end);
+    if (startM === -1 || endM === -1) return false;
+    return currentMinutes >= startM && currentMinutes <= endM;
   };
 
   const activeMobileDay = days[selectedMobileDay] || days[0];
@@ -191,80 +344,15 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
       {mobileViewMode === 'daily' && (
         <div className="md:hidden space-y-2.5">
           {periods.map((period) => {
-            const subject = (period.subjects as any)[activeMobileDay];
             const isCurrent = isCurrentTimeSlot(activeMobileDay, period.timeSlot);
-            const isOwn = !!subject?.isTeacherSubject;
-
             return (
-              <div
+              <MobileSubjectCard
                 key={`mobile-slot-${period.id}-${activeMobileDay}`}
-                className={cn(
-                  "p-3.5 rounded-2xl border transition-all shadow-xs relative overflow-hidden",
-                  isCurrent ? "ring-2 ring-emerald-500 shadow-sm" : "",
-                  subject?.isBreak
-                    ? "bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50"
-                    : subject
-                    ? isOwn
-                      ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60"
-                      : "bg-white dark:bg-[#2a3650]/80 border-slate-200 dark:border-emerald-800/50"
-                    : "bg-slate-50/70 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 opacity-80"
-                )}
-              >
-                {/* Now badge */}
-                {isCurrent && (
-                  <span className="absolute top-2 right-2 bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md animate-pulse">
-                    Live Now
-                  </span>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 shrink-0">
-                    <Clock size={11} className="text-slate-400" />
-                    <span>{formatSlotTo12Hour(period.timeSlot)}</span>
-                  </div>
-
-                  <div className="flex-1 min-w-0 pr-8">
-                    {subject ? (
-                      subject.isBreak ? (
-                        <p className="text-xs font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider">
-                          {subject.breakLabel || subject.name || 'Recess / Break'}
-                        </p>
-                      ) : (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className={cn(
-                              "text-xs font-black uppercase tracking-wide truncate",
-                              isOwn ? "text-emerald-800 dark:text-emerald-300" : "text-slate-900 dark:text-white"
-                            )}>
-                              {subject.name}
-                            </h4>
-                            {isOwn && (
-                              <span className="bg-emerald-500 text-white text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shrink-0">
-                                You
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <span>{subject.teacher}</span>
-                            {subject.room && (
-                              <>
-                                <span className="text-slate-300">•</span>
-                                <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
-                                  <MapPin size={9} /> {subject.room}
-                                </span>
-                              </>
-                            )}
-                          </p>
-                        </div>
-                      )
-                    ) : (
-                      <p className="text-[11px] font-semibold text-slate-400 italic">
-                        Free Period / Self Study
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+                period={period}
+                day={activeMobileDay}
+                isCurrent={isCurrent}
+                formatSlotTo12Hour={formatSlotTo12Hour}
+              />
             );
           })}
         </div>
@@ -308,39 +396,54 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
               </div>
 
               {days.map((day) => {
-                const subject = (period.subjects as any)[day];
+                const subject = (period.subjects[day] ?? null) as TeacherTimetableSubject | null;
                 const isCurrent = isCurrentTimeSlot(day, period.timeSlot);
 
                 return (
                   <div
                     key={`${period.id}-${day}`}
                     className={`p-2.5 sm:p-3 border-b border-r border-slate-100 dark:border-emerald-800/50 last:border-r-0 transition-all duration-300 relative ${
-                      isCurrent ? 'bg-emerald-600/5 dark:bg-emerald-600/10 z-10' : ''
+                      isCurrent ? 'bg-red-500/[0.04] dark:bg-red-950/20 z-10' : ''
                     }`}
                   >
-                    {isCurrent && (
-                      <div className="absolute top-2 left-2 z-50 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md animate-pulse shadow-sm ring-1 ring-emerald-300">
-                        Now
-                      </div>
-                    )}
-
                     {subject ? (
                       subject.isBreak ? (
-                        <div className="h-full min-h-[85px] p-3 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 flex flex-col items-center justify-center">
-                          <p className="text-xs text-amber-700 dark:text-amber-400 font-black uppercase tracking-widest text-center">
+                        <div className={cn(
+                          "h-full min-h-[85px] p-3 rounded-2xl flex flex-col items-center justify-center relative transition-all",
+                          isCurrent
+                            ? "bg-red-50/60 dark:bg-red-950/25 border-2 border-red-500 dark:border-red-500 ring-2 ring-red-500/20 shadow-[0_0_16px_rgba(239,68,68,0.25)]"
+                            : "bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800"
+                        )}>
+                          {isCurrent && (
+                            <span className="absolute top-2 left-2 z-30 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md animate-pulse shadow-md ring-1 ring-red-400 border border-red-300/40">
+                              Now
+                            </span>
+                          )}
+                          <p className={cn(
+                            "text-xs font-black uppercase tracking-widest text-center",
+                            isCurrent ? "text-red-800 dark:text-red-300" : "text-amber-700 dark:text-amber-400"
+                          )}>
                             {subject.breakLabel || subject.name || 'Recess / Break'}
                           </p>
                         </div>
                       ) : (
-                        <TeacherSubjectCard subject={subject} />
+                        <TeacherSubjectCard subject={subject} isCurrent={isCurrent} />
                       )
                     ) : (
-                      <div className={`h-full min-h-[85px] rounded-2xl flex items-center justify-center transition-colors ${
+                      <div className={`h-full min-h-[85px] rounded-2xl flex items-center justify-center transition-colors relative ${
                         isCurrent
-                          ? 'border-2 border-dashed border-emerald-600/30 dark:border-emerald-600/20 bg-white dark:bg-emerald-950/60'
+                          ? 'border-2 border-red-500 ring-2 ring-red-500/20 bg-red-50/20 dark:bg-red-950/20 shadow-[0_0_16px_rgba(239,68,68,0.2)]'
                           : 'border border-dashed border-slate-200 dark:border-emerald-800/50'
                       }`}>
-                        <span className="text-[10px] text-slate-300 dark:text-slate-600 font-black uppercase tracking-widest">
+                        {isCurrent && (
+                          <span className="absolute top-2 left-2 z-30 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md animate-pulse shadow-md ring-1 ring-red-400 border border-red-300/40">
+                            Now
+                          </span>
+                        )}
+                        <span className={cn(
+                          "text-[10px] font-black uppercase tracking-widest",
+                          isCurrent ? "text-red-500 dark:text-red-400" : "text-slate-300 dark:text-slate-600"
+                        )}>
                           Free
                         </span>
                       </div>

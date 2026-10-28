@@ -13,12 +13,17 @@ import { motion } from 'framer-motion';
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabSkeleton } from '../TabSkeleton';
 
+import { cn } from '@/lib/utils';
+
+export type StudentStatusTab = 'ALL' | 'ENROLLED' | 'GRADUATED' | 'EXPELLED' | 'TRANSFERRED';
+
 export default function StudentsPage() {
   const params = useParams();
   const router = useRouter();
   const classId = params.classId as string;
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatusTab, setSelectedStatusTab] = useState<StudentStatusTab>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [filters, setFilters] = useState<StudentFilters>({ gender: '', status: '', performance: '' });
@@ -45,30 +50,73 @@ export default function StudentsPage() {
     id: string; name: string; studentCode?: string; email?: string;
     gender?: string; status?: string; avatarUrl?: string;
     performance?: string; attendance?: number; grade?: string; lastExam?: string;
-  }) => ({
-    id: s.id,
-    name: s.name,
-    studentId: `#${(s.studentCode || s.id).slice(-6).toUpperCase()}`,
-    studentCode: s.studentCode,
-    email: s.email,
-    gender: (s.gender?.toLowerCase() as Student['gender']) || 'male',
-    status: (s.status?.toLowerCase() as Student['status']) || 'active',
-    avatar: s.avatarUrl,
-    performance: s.performance || 'Medium',
-    attendance: s.attendance ?? 100,
-    grade: s.grade,
-    lastExam: s.lastExam,
-  })), [data]);
+  }) => {
+    const rawStatus = (s.status || '').toLowerCase();
+    let normalizedStatus: Student['status'] = 'enrolled';
+    if (rawStatus.includes('graduat')) normalizedStatus = 'graduated';
+    else if (rawStatus.includes('expel')) normalizedStatus = 'expelled';
+    else if (rawStatus.includes('transfer')) normalizedStatus = 'transferred';
+    else if (rawStatus.includes('suspend')) normalizedStatus = 'suspended';
+    else normalizedStatus = 'enrolled';
+
+    return {
+      id: s.id,
+      name: s.name,
+      studentId: `#${(s.studentCode || s.id).slice(-6).toUpperCase()}`,
+      studentCode: s.studentCode,
+      email: s.email,
+      gender: (s.gender?.toLowerCase() as Student['gender']) || 'male',
+      status: normalizedStatus,
+      avatar: s.avatarUrl || '',
+      performance: s.performance || 'Medium',
+      attendance: s.attendance ?? 100,
+      grade: s.grade,
+      lastExam: s.lastExam,
+    };
+  }), [data]);
+
+  const statusCounts = useMemo(() => {
+    let enrolled = 0;
+    let graduated = 0;
+    let expelled = 0;
+    let transferred = 0;
+
+    allStudents.forEach(s => {
+      if (s.status === 'graduated') graduated++;
+      else if (s.status === 'expelled') expelled++;
+      else if (s.status === 'transferred') transferred++;
+      else enrolled++;
+    });
+
+    return {
+      all: allStudents.length,
+      enrolled,
+      graduated,
+      expelled,
+      transferred
+    };
+  }, [allStudents]);
 
   const filtered = useMemo(() => allStudents.filter((s) => {
     const q = searchQuery.toLowerCase();
-    return (
-      (!q || s.name.toLowerCase().includes(q) || (s.studentCode || s.studentId).toLowerCase().includes(q)) &&
-      (!filters.gender || s.gender === filters.gender) &&
-      (!filters.status || s.status === filters.status) &&
-      (!filters.performance || s.performance === filters.performance)
-    );
-  }), [allStudents, searchQuery, filters]);
+    const matchesSearch = !q || s.name.toLowerCase().includes(q) || (s.studentCode || s.studentId).toLowerCase().includes(q);
+    const matchesGender = !filters.gender || s.gender === filters.gender;
+    const matchesStatus = !filters.status || s.status === filters.status;
+    const matchesPerformance = !filters.performance || s.performance === filters.performance;
+
+    let matchesTab = true;
+    if (selectedStatusTab === 'ENROLLED') {
+      matchesTab = s.status === 'enrolled' || s.status === 'active';
+    } else if (selectedStatusTab === 'GRADUATED') {
+      matchesTab = s.status === 'graduated';
+    } else if (selectedStatusTab === 'EXPELLED') {
+      matchesTab = s.status === 'expelled';
+    } else if (selectedStatusTab === 'TRANSFERRED') {
+      matchesTab = s.status === 'transferred';
+    }
+
+    return matchesSearch && matchesGender && matchesStatus && matchesPerformance && matchesTab;
+  }), [allStudents, searchQuery, filters, selectedStatusTab]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -205,6 +253,114 @@ export default function StudentsPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full space-y-4">
+      {/* Student Status Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <button
+          type="button"
+          onClick={() => { setSelectedStatusTab('ALL'); setCurrentPage(1); }}
+          className={cn(
+            "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5",
+            selectedStatusTab === 'ALL'
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
+              : "bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800"
+          )}
+        >
+          <span>All Students</span>
+          <span className={cn(
+            "px-1.5 py-0.2 rounded-full text-[10px] font-extrabold",
+            selectedStatusTab === 'ALL'
+              ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
+              : "bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200"
+          )}>
+            {statusCounts.all}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setSelectedStatusTab('ENROLLED'); setCurrentPage(1); }}
+          className={cn(
+            "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5",
+            selectedStatusTab === 'ENROLLED'
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800/50"
+          )}
+        >
+          <span>Enrolled</span>
+          <span className={cn(
+            "px-1.5 py-0.2 rounded-full text-[10px] font-extrabold",
+            selectedStatusTab === 'ENROLLED'
+              ? "bg-white/25 text-white"
+              : "bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200"
+          )}>
+            {statusCounts.enrolled}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setSelectedStatusTab('GRADUATED'); setCurrentPage(1); }}
+          className={cn(
+            "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5",
+            selectedStatusTab === 'GRADUATED'
+              ? "bg-purple-600 text-white shadow-sm"
+              : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border border-purple-200/60 dark:border-purple-800/50"
+          )}
+        >
+          <span>Graduated</span>
+          <span className={cn(
+            "px-1.5 py-0.2 rounded-full text-[10px] font-extrabold",
+            selectedStatusTab === 'GRADUATED'
+              ? "bg-white/25 text-white"
+              : "bg-purple-100 dark:bg-purple-900/80 text-purple-800 dark:text-purple-200"
+          )}>
+            {statusCounts.graduated}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setSelectedStatusTab('EXPELLED'); setCurrentPage(1); }}
+          className={cn(
+            "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5",
+            selectedStatusTab === 'EXPELLED'
+              ? "bg-rose-600 text-white shadow-sm"
+              : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 border border-rose-200/60 dark:border-rose-800/50"
+          )}
+        >
+          <span>Expelled</span>
+          <span className={cn(
+            "px-1.5 py-0.2 rounded-full text-[10px] font-extrabold",
+            selectedStatusTab === 'EXPELLED'
+              ? "bg-white/25 text-white"
+              : "bg-rose-100 dark:bg-rose-900/80 text-rose-800 dark:text-rose-200"
+          )}>
+            {statusCounts.expelled}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setSelectedStatusTab('TRANSFERRED'); setCurrentPage(1); }}
+          className={cn(
+            "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5",
+            selectedStatusTab === 'TRANSFERRED'
+              ? "bg-amber-600 text-white shadow-sm"
+              : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 border border-amber-200/60 dark:border-amber-800/50"
+          )}
+        >
+          <span>Transferred</span>
+          <span className={cn(
+            "px-1.5 py-0.2 rounded-full text-[10px] font-extrabold",
+            selectedStatusTab === 'TRANSFERRED'
+              ? "bg-white/25 text-white"
+              : "bg-amber-100 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200"
+          )}>
+            {statusCounts.transferred}
+          </span>
+        </button>
+      </div>
+
       <Toolbar
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}

@@ -1,4 +1,5 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore";
 
 const platformClient = axios.create({
@@ -10,9 +11,12 @@ const platformClient = axios.create({
 // Request interceptor to add platform token
 platformClient.interceptors.request.use(
   (config) => {
-    const { platform_token } = usePlatformStaffStore.getState();
-    if (platform_token) {
-      config.headers.Authorization = `Bearer ${platform_token}`;
+    let token = usePlatformStaffStore.getState().platform_token;
+    if (!token && typeof window !== "undefined") {
+      token = Cookies.get("platform_token") || Cookies.get("token") || localStorage.getItem("token");
+    }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -38,3 +42,4 @@ platformClient.interceptors.response.use(
 );
 
 export { platformClient };
+export default platformClient;

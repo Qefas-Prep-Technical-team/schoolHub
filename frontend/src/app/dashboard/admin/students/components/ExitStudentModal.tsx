@@ -31,6 +31,7 @@ export function ExitStudentModal({ isOpen, onClose, studentId, studentName }: Ex
         onSuccess: () => {
             toast.success(`Student has been marked as ${exitType.toLowerCase()}`)
             queryClient.invalidateQueries({ queryKey: ['student-details', studentId] })
+            queryClient.invalidateQueries({ queryKey: ['student-history', studentId] })
             queryClient.invalidateQueries({ queryKey: ['school-students'] })
             onClose()
         },

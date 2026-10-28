@@ -1514,8 +1514,15 @@ model PlatformStaff {
   email         String                @unique
   password      String?
   role          PlatformRole
+  profileImage  String?
+  phone         String?
+  bio           String?
   googleId      String?               @unique
   facebookId    String?               @unique
+  githubId      String?               @unique
+  linkedinId    String?               @unique
+  twitterId     String?               @unique
+  socialLinks   Json?
   isActive      Boolean               @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime              @default(now())
@@ -2279,4 +2286,22 @@ enum CatalystType {
 enum Novelty {
   NEW
   RECYCLED
+}
+
+model SupportFaq {
+  id            String   @id @default(uuid())
+  category      String
+  categoryLabel String?
+  question      String
+  summary       String
+  answer        String[]
+  targetRole    String   @default("TEACHER")
+  order         Int      @default(0)
+  isPublished   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([targetRole])
+  @@index([category])
+  @@map("support_faqs")
 }

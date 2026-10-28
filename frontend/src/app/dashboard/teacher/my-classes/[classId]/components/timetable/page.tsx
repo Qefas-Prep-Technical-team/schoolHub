@@ -6,6 +6,9 @@ import TeacherTimetableGrid from './TeacherTimetableGrid';
 import { useClassTimetable } from '@/lib/api/hooks/useClasses';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useTeacherProfile, useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
+import { useQuery } from '@tanstack/react-query';
+import { teacherService } from '@/lib/api/services/teacherService';
 import { Period } from '@/app/dashboard/admin/classes/[id]/components/timetable/components/types';
 import { useParams } from 'next/navigation';
 
@@ -22,6 +25,16 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
     const { user } = useAuthStore();
     const schoolId = (user as any)?.school?.id || user?.schools?.[0]?.schoolId || classData?.schoolId || "";
     
+    // Teacher Profile & Assigned Subjects
+    const { data: teacherProfile } = useTeacherProfile();
+    const { data: teacherSubjectsList = [] } = useTeacherSubjects(schoolId);
+    const { data: classDetailData } = useQuery({
+        queryKey: ['class-detail', classId],
+        queryFn: () => teacherService.getClassDetail(classId),
+        staleTime: 1000 * 60 * 10,
+        enabled: !!classId,
+    });
+
     // Sessions and Term logic
     const { data: sessionsData } = useSessions(schoolId);
     const sessions = sessionsData?.data || [];
@@ -41,12 +54,52 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
 
     const selectedSessionObj = sessions.find((s: any) => s.name === selectedSessionName);
     const selectedTerm = selectedTermName === 'First Term' ? 'FIRST' : selectedTermName === 'Second Term' ? 'SECOND' : 'THIRD';
-    const termPeriodId = selectedSessionObj?.termPeriods?.find((tp: any) => tp.term === selectedTerm)?.id || "";
+    const termPeriodId = selectedSessionObj?.termPeriods?.find((tp: any) => tp.term === selectedTerm)?.id;
 
-    // Fetch timetable
-    const { data: rawPeriods = [], isLoading } = useClassTimetable(classId, termPeriodId || 'NONE');
+    // Fetch timetable for specific term, and general fallback
+    const { data: rawPeriods = [], isLoading: isTermLoading } = useClassTimetable(classId, termPeriodId);
+    const { data: fallbackPeriods = [], isLoading: isFallbackLoading } = useClassTimetable(classId, undefined);
+
+    const isLoading = isTermLoading && isFallbackLoading;
+    const effectivePeriods = rawPeriods.length > 0 ? rawPeriods : fallbackPeriods;
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    // Collect all subject IDs and names assigned to this teacher
+    const teacherSubjectIdSet = React.useMemo(() => {
+        const ids = new Set<string>();
+        const fromClass = (classDetailData as any)?.classInfo?.teacherSubjectIds || (classDetailData as any)?.teacherSubjectIds || [];
+        if (Array.isArray(fromClass)) {
+            fromClass.forEach((id: string) => ids.add(id));
+        }
+        if (Array.isArray(teacherSubjectsList)) {
+            teacherSubjectsList.forEach((s: any) => {
+                if (s.id) ids.add(s.id);
+                if (s.subjectId) ids.add(s.subjectId);
+                if (s.subject?.id) ids.add(s.subject.id);
+            });
+        }
+        if (classData?.subjects && Array.isArray(classData.subjects)) {
+            classData.subjects.forEach((cs: any) => {
+                const sub = cs.subject || cs;
+                const tIds = [user?.id, teacherProfile?.id, (teacherProfile as any)?.userId].filter(Boolean);
+                if (cs.teacherId && tIds.includes(cs.teacherId)) ids.add(sub.id);
+                if (sub.teacherId && tIds.includes(sub.teacherId)) ids.add(sub.id);
+            });
+        }
+        return ids;
+    }, [classDetailData, teacherSubjectsList, classData, user?.id, teacherProfile?.id]);
+
+    const teacherSubjectNamesSet = React.useMemo(() => {
+        const names = new Set<string>();
+        if (Array.isArray(teacherSubjectsList)) {
+            teacherSubjectsList.forEach((s: any) => {
+                const n = s.name || s.subject?.name;
+                if (n) names.add(n.toLowerCase().trim());
+            });
+        }
+        return names;
+    }, [teacherSubjectsList]);
 
     const periods: Period[] = React.useMemo(() => {
         const defaultSlots = [
@@ -55,12 +108,12 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
             '15:30 - 16:30'
         ];
 
-        if (rawPeriods.length === 0) {
+        if (effectivePeriods.length === 0) {
             return defaultSlots.map(timeSlot => ({ id: timeSlot, timeSlot, subjects: {} }));
         }
 
         const uniqueSlotsMap = new Map<string, { startTime: string; endTime: string }>();
-        rawPeriods.forEach((rp: any) => {
+        effectivePeriods.forEach((rp: any) => {
             if (rp.startTime && rp.endTime) {
                 const slot = `${rp.startTime} - ${rp.endTime}`;
                 uniqueSlotsMap.set(slot, { startTime: rp.startTime, endTime: rp.endTime });
@@ -69,29 +122,33 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
 
         const sortedSlots = Array.from(uniqueSlotsMap.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-        // IDs we can use to detect the teacher's own periods
-        const teacherSubjectIds: string[] = classData?.teacherSubjectIds || [];
-        const teacherIdFromClass: string = classData?.teacherId || "";
-
         return sortedSlots.map(slot => {
             const timeSlot = `${slot.startTime} - ${slot.endTime}`;
             const slotSubjects: Record<string, any> = {};
 
-            rawPeriods.forEach((rp: any) => {
+            effectivePeriods.forEach((rp: any) => {
                 if (rp.startTime === slot.startTime && rp.endTime === slot.endTime) {
                     const teacherName = rp.teacher?.name || rp.teacher?.user?.name || 'Staff';
 
-                    // Match by teacher.id, teacherId field, OR subjectId in teacherSubjectIds
-                    const byTeacherId = user?.id && rp.teacher?.id === user.id;
-                    const byTeacherIdField = teacherIdFromClass && rp.teacherId === teacherIdFromClass;
-                    const bySubjectId = teacherSubjectIds.length > 0 && rp.subjectId && teacherSubjectIds.includes(rp.subjectId);
-                    const isTeacherSubject = !!(byTeacherId || byTeacherIdField || bySubjectId);
+                    const subName = (rp.subject?.name || '').toLowerCase().trim();
+                    const isMySubject = Boolean(
+                        (rp.subjectId && teacherSubjectIdSet.has(rp.subjectId)) ||
+                        (rp.subject?.id && teacherSubjectIdSet.has(rp.subject.id)) ||
+                        (subName && teacherSubjectNamesSet.has(subName))
+                    );
+
+                    const isMyTeacherRecord = Boolean(
+                        (user?.id && (rp.teacher?.userId === user.id || rp.teacher?.id === user.id || rp.teacherId === user.id)) ||
+                        (teacherProfile?.id && (rp.teacher?.id === teacherProfile.id || rp.teacherId === teacherProfile.id))
+                    );
+
+                    const isTeacherSubject = isMySubject || isMyTeacherRecord;
 
                     slotSubjects[rp.day] = {
                         id: rp.id,
-                        name: rp.isBreak ? 'Recess / Break' : (rp.subject?.name || 'Unknown'),
+                        name: rp.isBreak ? (rp.breakLabel || 'Recess / Break') : (rp.subject?.name || 'Subject Period'),
                         teacher: rp.isBreak ? '' : teacherName,
-                        room: rp.isBreak ? '' : (rp.room || 'TBD'),
+                        room: rp.isBreak ? '' : (rp.room || 'Classroom'),
                         isBreak: !!rp.isBreak,
                         isTeacherSubject: !rp.isBreak && isTeacherSubject
                     };
@@ -100,7 +157,7 @@ export default function TimetablePage({ classData }: TimetablePageProps) {
 
             return { id: timeSlot, timeSlot, subjects: slotSubjects };
         });
-    }, [rawPeriods, user?.id, classData?.teacherSubjectIds, classData?.teacherId]);
+    }, [effectivePeriods, user?.id, teacherProfile?.id, teacherSubjectIdSet, teacherSubjectNamesSet]);
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

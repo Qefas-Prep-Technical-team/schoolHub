@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Loader2,
   User,
-  Monitor
+  Monitor,
+  GraduationCap
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,16 @@ export function ConnectionCard({
     return (
       <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-3 pt-5 md:p-6 md:pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] w-full min-w-0">
         
+        {/* Graduated Alumni Badge */}
+        {details.isGraduated && (
+          <div className="absolute top-4 left-4 z-10">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold tracking-wide text-amber-700 dark:text-amber-400 shadow-sm">
+              <GraduationCap className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+              Graduated
+            </span>
+          </div>
+        )}
+
         {/* Options Menu */}
         <div className="absolute top-4 right-4">
           <DropdownMenu>
@@ -89,7 +100,12 @@ export function ConnectionCard({
         {/* Avatar Area */}
         <div className="relative mb-4 mt-2 cursor-pointer group" onClick={() => onViewProfile?.(item, details)}>
           {/* Avatar Ring */}
-          <div className={cn("absolute -inset-[6px] rounded-full border-[1.5px] border-slate-200/50 dark:border-slate-700 transition-colors group-hover:border-slate-300", cfg.border)}></div>
+          <div className={cn(
+            "absolute -inset-[6px] rounded-full border-[1.5px] transition-colors",
+            details.isGraduated
+              ? "border-amber-400 dark:border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+              : cn("border-slate-200/50 dark:border-slate-700 group-hover:border-slate-300", cfg.border)
+          )}></div>
           
           <Avatar className="h-12 w-12 md:h-16 md:w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105">
             <AvatarImage src={details.image} alt={details.name} className="object-cover" />
@@ -99,7 +115,12 @@ export function ConnectionCard({
           </Avatar>
 
           {/* Status Dot */}
-          <div className={cn("absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900", cfg.avatar)}></div>
+          <div className={cn(
+            "absolute -top-1 -right-1 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center",
+            details.isGraduated ? "w-4 h-4 bg-amber-500 text-white" : cn("w-3 h-3", cfg.avatar)
+          )}>
+            {details.isGraduated && <GraduationCap size={9} className="stroke-[2.5]" />}
+          </div>
         </div>
 
         {/* Name and Email */}
@@ -158,8 +179,11 @@ export function ConnectionCard({
 
         {/* Bottom Role */}
         <div className="text-center w-full pb-1">
-          <span className="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">
-            {cfg.label}
+          <span className={cn(
+            "text-[9px] font-bold uppercase tracking-widest",
+            details.isGraduated ? "text-amber-600 dark:text-amber-400" : "text-[#94a3b8]"
+          )}>
+            {details.isGraduated ? 'Graduated Student • Alumni' : cfg.label}
           </span>
         </div>
 

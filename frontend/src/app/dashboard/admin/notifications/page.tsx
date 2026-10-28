@@ -399,6 +399,7 @@ export default function NotificationsPage() {
         onMarkAsRead={(id) => markAsReadMutation.mutate(id)}
         onRespondToLink={handleLinkAction}
         isResponding={respondMutation.isPending}
+        userType="admin"
       />
     </div>
   );

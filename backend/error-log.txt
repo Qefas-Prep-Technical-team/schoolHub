@@ -57030,4 +57030,1850 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at FlutterwaveAdapter.resolveAccount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\flutterwave.adapter.ts:351:13)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
     at FinanceService.resolveAccount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\finance\finance.service.ts:93:14)
-    at resolveAccount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\finance\finance.controller.ts:264:22)
+    at resolveAccount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\finance\finance.controller.ts:264:22)Error: School record not found for the provided ID: "default-tenant-id". Settings cannot be fetched or created.
+    at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:425:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:272:18)Error: School record not found for the provided ID: "default-tenant-id". Settings cannot be fetched or created.
+    at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:425:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:272:18)Error: School record not found for the provided ID: "default-tenant-id". Settings cannot be fetched or created.
+    at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:425:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:272:18)Error: School record not found for the provided ID: "default-tenant-id". Settings cannot be fetched or created.
+    at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:425:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:272:18)Error: School record not found for the provided ID: "default-tenant-id". Settings cannot be fetched or created.
+    at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:425:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:272:18)Error: School record not found for the provided ID: "default-tenant-id". Settings cannot be fetched or created.
+    at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:425:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:272:18)Error: You are not allowed to view this request
+    at getSingleLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.manage.service.ts:72:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSingleLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:410:21)Error: You are not allowed to view this request
+    at getSingleLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.manage.service.ts:72:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSingleLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:410:21)Error: You are not allowed to view this request
+    at getSingleLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.manage.service.ts:72:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSingleLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:410:21)Error: You are not allowed to view this request
+    at getSingleLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.manage.service.ts:72:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getSingleLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:410:21)Error: An active relationship already exists between these users
+    at createLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.service.ts:304:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)Error: The target school has reached its student capacity for their current plan.
+    at createLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.service.ts:304:21)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)PrismaClientKnownRequestError: 
+Invalid `tx.subscriptionHistory.create()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:558:49
+
+  555 }
+  556 
+  557 // 2. Add entry to SubscriptionHistory
+→ 558 return await tx.subscriptionHistory.create(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:558:20
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:722:18)
+    at PricingService.recordSubscriptionChange (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:404:16)
+    at C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:778:13
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:722:18)PrismaClientKnownRequestError: 
+Invalid `tx.subscriptionHistory.create()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:558:49
+
+  555 }
+  556 
+  557 // 2. Add entry to SubscriptionHistory
+→ 558 return await tx.subscriptionHistory.create(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:558:20
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:722:18)
+    at PricingService.recordSubscriptionChange (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\billing\pricing.service.ts:404:16)
+    at C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:778:13
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:722:18)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientValidationError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:40
+
+  670 
+  671 console.log(`[PlatformSupport] Fetching school details for: ${id}`);
+  672 
+→ 673 const school = await prisma.school.findFirst({
+        where: {
+          OR: [
+            {
+              id: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            },
+            {
+              tenantId: "cbef052a-277c-4987-906c-7e8a41c9ed5e"
+            }
+          ]
+        },
+        include: {
+          subscriptionPlan: true,
+          settings: true,
+          settlementAccounts: true,
+          admins: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  ~~~~~
+                  role: true,
+                  adminCode: true,
+                  profileImage: true,
+                  lastLogin: true,
+                  isActive: true,
+      ?           password?: true,
+      ?           twoFactorSecret?: true,
+      ?           isTwoFactorEnabled?: true,
+      ?           googleId?: true,
+      ?           facebookId?: true,
+      ?           authProvider?: true,
+      ?           verified?: true,
+      ?           status?: true,
+      ?           createdAt?: true,
+      ?           updatedAt?: true,
+      ?           gender?: true,
+      ?           emailVerificationCode?: true,
+      ?           emailVerificationExpiry?: true,
+      ?           pendingEmail?: true,
+      ?           bannerImage?: true,
+      ?           isTrialActive?: true,
+      ?           lastPaymentDate?: true,
+      ?           plan?: true,
+      ?           subscriptionEnd?: true,
+      ?           subscriptionStatus?: true,
+      ?           tenantId?: true,
+      ?           trialEndsAt?: true,
+      ?           trialPlan?: true,
+      ?           trialUsed?: true,
+      ?           billingCycle?: true,
+      ?           paystackCustomerCode?: true,
+      ?           paystackSubaccountCode?: true,
+      ?           planId?: true,
+      ?           subscriptionPlanId?: true,
+      ?           acceptedTerms?: true,
+      ?           termsAcceptedAt?: true,
+      ?           maxAiUsageOverride?: true,
+      ?           maxClassesOverride?: true,
+      ?           maxExamsOverride?: true,
+      ?           maxParentsOverride?: true,
+      ?           maxStorageGbOverride?: true,
+      ?           maxStudentsOverride?: true,
+      ?           maxTeachersOverride?: true,
+      ?           subscriptionPlan?: true,
+      ?           approvedLinkRequests?: true,
+      ?           requestedLinkRequests?: true,
+      ?           schoolAdmins?: true,
+      ?           _count?: true
+                }
+              }
+            }
+          },
+          emailLogs: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 50
+          },
+          _count: {
+            select: {
+              students: true,
+              admins: true,
+              teachers: true,
+              exams: true,
+              classes: true
+            }
+          }
+        }
+      })
+
+Unknown field `phone` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolDetails (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:673:20)PrismaClientKnownRequestError: 
+Invalid `prisma.linkRequest.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.query.service.ts:263:24
+
+  260   skip,
+  261   take: limit,
+  262 }),
+→ 263 prisma.linkRequest.count(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getAllLinkRequestsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.query.service.ts:242:26)
+    at getAllLinkRequests (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:334:20)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\student\student.service.ts:153:25
+
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\student\student.controller.ts:162:21)PrismaClientKnownRequestError: 
+Invalid `prisma.classEnrollment.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:299:34
+
+  296 role === 'TEACHER'
+  297   ? prisma.classTeacher.count({ where: { teacherId: userId } })
+  298   : role === 'STUDENT'
+→ 299     ? prisma.classEnrollment.count(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getUserUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:288:64)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:22:16)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:760:44
+
+  757   });
+  758   break;
+  759 case UserRole.STUDENT:
+→ 760   profileData = await prisma.student.findUnique(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getMyProfile (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:760:23)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:107:26
+
+  104 
+  105 const [students, teachers, parents, admins, schools] = await Promise.all([
+  106   studentSenderIds.size > 0
+→ 107     ? prisma.student.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getMyNotifications (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:105:60)PrismaClientKnownRequestError: 
+Invalid `any).aiUsageLog.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:315:57
+
+  312 const endOfDay = new Date();
+  313 endOfDay.setHours(23, 59, 59, 999);
+  314 
+→ 315 const aiUsageCount = await (prisma as any).aiUsageLog.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUserUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:315:24)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:22:16)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:107:26
+
+  104 
+  105 const [students, teachers, parents, admins, schools] = await Promise.all([
+  106   studentSenderIds.size > 0
+→ 107     ? prisma.student.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getMyNotifications (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:105:60)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:722:38
+
+  719   limit = 5,
+  720 ) => {
+  721   // Resolve school by UUID or tenantId (frontend may pass either)
+→ 722   const school = await prisma.school.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:722:18)
+    at getSchoolBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:378:18)PrismaClientKnownRequestError: 
+Invalid `prisma.relationshipLink.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:94:29
+
+  91   select: { studentId: true }
+  92 }),
+  93 // C. Teacher Links
+→ 94 prisma.relationshipLink.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 2)
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:78:110)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2884:47
+
+  2881   });
+  2882 }
+  2883 
+→ 2884 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2884:21)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2884:47
+
+  2881   });
+  2882 }
+  2883 
+→ 2884 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2884:21)PrismaClientInitializationError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:1348:42
+
+  1345 }
+  1346 
+  1347 const features = await withRetry(
+→ 1348     () => prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:84:22)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:1347:26)PrismaClientInitializationError: 
+Invalid `prisma.platformSettings.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\settings\settings.controller.ts:39:52
+
+  36   "sub_enforced_parents",
+  37   "sub_enforced_students"
+  38 ];
+→ 39 const settings = await prisma.platformSettings.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicPlatformSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\settings\settings.controller.ts:39:22)PrismaClientInitializationError: 
+Invalid `prisma.platformSettings.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.service.ts:636:59
+
+  633   deviceInfo?: any,
+  634 ) => {
+  635   // Check if Google Auth is enabled in platform settings
+→ 636   const googleAuthSetting = await prisma.platformSettings.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at googleAuthService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.service.ts:636:29)
+    at googleAuth (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:3399:24)PrismaClientKnownRequestError: 
+Invalid `prismaModel.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:206:30
+
+  203 const prismaModel = (prisma as any)[roleKey];
+  204 
+  205 if (prismaModel) {
+→ 206   user = await prismaModel.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUserUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:206:12)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:22:16)PrismaClientKnownRequestError: 
+Invalid `prisma.classSubject.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:314:29
+
+  311   where: { teacherId: userId },
+  312   select: { classId: true },
+  313 }),
+→ 314 prisma.classSubject.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getUnreadCount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:309:58)

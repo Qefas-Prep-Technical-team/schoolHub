@@ -1,5 +1,8 @@
 import prisma from "../../config/database";
 import { getPaymentGateway } from "../payment/gateway.factory";
+import jwt from "jsonwebtoken";
+import { createNotification } from "../notification/notification.service";
+import { MailService } from "../notification/mail.service";
 
 /**
  * Service to handle school finance operations.
@@ -17,6 +20,7 @@ export class FinanceService {
     schoolId: string,
     data: {
       business_name: string;
+      business_email?: string;
       settlement_bank: string;       // bank code
       bank_name?: string;            // human readable bank name
       account_number: string;
@@ -32,16 +36,57 @@ export class FinanceService {
     try {
       const gateway = getPaymentGateway();
 
+      const school = await prisma.school.findUnique({
+        where: { id: schoolId },
+        select: { schoolEmail: true, phone: true },
+      });
+
+      const resolvedBusinessEmail =
+        data.business_email ||
+        userContext?.userEmail ||
+        school?.schoolEmail ||
+        'finance@schoolhub.ng';
+
       const sub = await gateway.createSubaccount({
         schoolId,
         businessName: data.business_name,
         bankCode: data.settlement_bank,
         accountNumber: data.account_number,
         splitPercentage: data.percentage_charge,
+        businessEmail: resolvedBusinessEmail,
+        businessMobile: school?.phone || undefined,
       });
 
       const isFlw = gateway.name === 'FLUTTERWAVE';
       const resolvedBankName = data.bank_name || data.settlement_bank;
+
+      let resolvedUserName = userContext?.userName;
+      let resolvedUserEmail = userContext?.userEmail;
+      let resolvedUserRole = userContext?.userRole || "ADMIN";
+
+      if ((!resolvedUserName || resolvedUserName === "School Administrator" || !resolvedUserEmail) && userContext?.userId) {
+        const adminUser = await prisma.admin.findUnique({
+          where: { id: userContext.userId },
+          select: { name: true, email: true, role: true }
+        });
+        if (adminUser) {
+          resolvedUserName = adminUser.name || resolvedUserName;
+          resolvedUserEmail = adminUser.email || resolvedUserEmail;
+          resolvedUserRole = adminUser.role || resolvedUserRole;
+        }
+      }
+
+      if (!resolvedUserName || resolvedUserName === "School Administrator") {
+        const sa = await prisma.schoolAdmin.findFirst({
+          where: { schoolId },
+          include: { admin: { select: { name: true, email: true, role: true } } }
+        });
+        if (sa?.admin) {
+          resolvedUserName = sa.admin.name || resolvedUserName;
+          resolvedUserEmail = sa.admin.email || resolvedUserEmail;
+          resolvedUserRole = sa.admin.role || resolvedUserRole;
+        }
+      }
 
       const account = await prisma.settlementAccount.create({
         data: {
@@ -61,8 +106,8 @@ export class FinanceService {
           percentageCharge: data.percentage_charge,
           isDefault: true,
           addedBy: userContext?.userId,
-          addedByName: userContext?.userName,
-          addedByRole: userContext?.userRole,
+          addedByName: resolvedUserName || "School Administrator",
+          addedByRole: resolvedUserRole || "ADMIN",
         }
       });
 
@@ -83,9 +128,9 @@ export class FinanceService {
           accountNumber: data.account_number,
           accountName: data.business_name,
           userId: userContext?.userId,
-          userName: userContext?.userName,
-          userEmail: userContext?.userEmail,
-          userRole: userContext?.userRole,
+          userName: resolvedUserName || "School Administrator",
+          userEmail: resolvedUserEmail,
+          userRole: resolvedUserRole || "ADMIN",
           gateway: gateway.name,
           details: {
             subaccountCode: sub.code,
@@ -132,12 +177,268 @@ export class FinanceService {
   }
 
   /**
+   * Cryptographically generate a 30-Day Guaranteed Direct Access Pass for a student.
+   * Gives uninterrupted, self-healing access to their transcript records for 1 full month.
+   */
+  static generateTranscriptPass(data: {
+    studentId: string;
+    schoolId: string;
+    sessionId?: string;
+    term?: string;
+    paymentReference: string;
+  }): { token: string; expiresAt: Date; accessUrl: string; sessionId: string; term: string } {
+    const secret = process.env.JWT_SECRET || "qefas_default_transcript_secret_key";
+    const expiresInSeconds = 30 * 24 * 60 * 60; // 30 days = 1 month
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+
+    const payload = {
+      type: "TRANSCRIPT_30_DAY_PASS",
+      studentId: data.studentId,
+      schoolId: data.schoolId,
+      sessionId: data.sessionId || "ALL",
+      term: data.term || "ALL",
+      reference: data.paymentReference,
+      expiresAt: expiresAt.toISOString(),
+    };
+
+    const token = jwt.sign(payload, secret, { expiresIn: "30d" });
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const accessUrl = `${frontendUrl}/dashboard/student/transcript?pass=${encodeURIComponent(token)}`;
+
+    return { token, expiresAt, accessUrl, sessionId: payload.sessionId, term: payload.term };
+  }
+
+  /**
+   * Verify a 30-day access pass token and return authenticated access permissions.
+   */
+  static verifyTranscriptPass(token: string): {
+    valid: boolean;
+    studentId?: string;
+    schoolId?: string;
+    sessionId?: string;
+    term?: string;
+    reference?: string;
+    expiresAt?: Date;
+    error?: string;
+  } {
+    try {
+      const secret = process.env.JWT_SECRET || "qefas_default_transcript_secret_key";
+      const decoded = jwt.verify(token, secret) as {
+        type: string;
+        studentId: string;
+        schoolId: string;
+        sessionId: string;
+        term?: string;
+        reference: string;
+        expiresAt: string;
+      };
+
+      if (decoded.type !== "TRANSCRIPT_30_DAY_PASS") {
+        return { valid: false, error: "Invalid token type" };
+      }
+
+      const expiresAt = new Date(decoded.expiresAt);
+      if (Date.now() > expiresAt.getTime()) {
+        return { valid: false, error: "Access pass has expired (valid for 30 days from clearance payment)" };
+      }
+
+      return {
+        valid: true,
+        studentId: decoded.studentId,
+        schoolId: decoded.schoolId,
+        sessionId: decoded.sessionId,
+        term: decoded.term || "ALL",
+        reference: decoded.reference,
+        expiresAt,
+      };
+    } catch (err: any) {
+      return { valid: false, error: err?.message || "Invalid or expired access token" };
+    }
+  }
+
+  /**
+   * Helper to build a 30-day access pass from a payment record
+   */
+  static buildPassForPayment(p: any) {
+    return this.generateTranscriptPass({
+      studentId: p.studentId,
+      schoolId: p.schoolId,
+      sessionId: p.session,
+      term: p.term,
+      paymentReference: p.paymentReference,
+    });
+  }
+
+  /**
+   * Send 30-Day Access Pass link directly to the student's email address.
+   */
+  static async sendTranscriptPassEmail(params: {
+    studentId: string;
+    schoolId: string;
+    email: string;
+    token?: string;
+    reference?: string;
+  }) {
+    let token = params.token;
+    let targetReference = params.reference;
+
+    if (!token) {
+      const payment = targetReference
+        ? await prisma.payment.findFirst({
+            where: { paymentReference: targetReference, status: "SUCCESS" }
+          })
+        : await prisma.payment.findFirst({
+            where: {
+              studentId: params.studentId,
+              status: "SUCCESS",
+              OR: [
+                { paymentType: "TRANSCRIPT" },
+                { term: "All Terms" },
+                { session: { contains: "Session" } }
+              ]
+            },
+            orderBy: { paidAt: "desc" }
+          });
+
+      if (payment) {
+        const generated = this.buildPassForPayment(payment);
+        token = generated.token;
+        if (!targetReference) targetReference = payment.paymentReference;
+      } else {
+        throw new Error("No verified transcript clearance payment found for this scholar.");
+      }
+    }
+
+    if (!token) {
+      throw new Error("Failed to resolve or generate valid 30-day transcript access pass.");
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { id: params.studentId },
+      include: {
+        school: { select: { name: true } },
+        classes: {
+          include: {
+            class: { select: { name: true, section: true } }
+          }
+        }
+      }
+    });
+
+    const verifyResult = this.verifyTranscriptPass(token);
+    const expiryStr = verifyResult.expiresAt ? verifyResult.expiresAt.toDateString() : "30 days from confirmation";
+
+    let sessionName = "All Sessions";
+    if (verifyResult.sessionId && verifyResult.sessionId !== "ALL") {
+      const sess = await prisma.session.findUnique({ where: { id: verifyResult.sessionId } });
+      if (sess?.name) sessionName = sess.name;
+    }
+
+    const termLabel =
+      verifyResult.term === "ALL"
+        ? "All Terms"
+        : verifyResult.term === "FIRST"
+        ? "1st Term"
+        : verifyResult.term === "SECOND"
+        ? "2nd Term"
+        : verifyResult.term === "THIRD"
+        ? "3rd Term"
+        : (verifyResult.term || "All Terms");
+
+    const className = student?.classes?.[0]?.class
+      ? `${student.classes[0].class.name} ${student.classes[0].class.section || ""}`.trim()
+      : "Active Class Cohort";
+
+    const studentName = student?.name || "Scholar";
+    const schoolName = student?.school?.name || "Institution";
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const accessUrl = `${frontendUrl}/dashboard/student/transcript?pass=${encodeURIComponent(token)}`;
+
+    return await MailService.sendSchoolEmail({
+      schoolId: params.schoolId,
+      to: params.email,
+      subject: `Official Transcript 30-Day Access Pass & Clearance Receipt — ${schoolName}`,
+      type: "GENERAL_ALERT",
+      body: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <span style="display: inline-block; padding: 6px 14px; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+              Official Academic Clearance Pass & Receipt
+            </span>
+          </div>
+          <h2 style="color: #0f172a; margin: 0 0 8px 0; font-size: 22px; font-weight: 800; text-align: center; letter-spacing: -0.025em;">
+            Your Certified Transcript is Ready
+          </h2>
+          <p style="color: #64748b; font-size: 13px; text-align: center; margin: 0 0 24px 0;">
+            ${schoolName} • Office of the Registrar
+          </p>
+
+          <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+            Hello <strong>${studentName}</strong>,
+          </p>
+          <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+            Your official transcript clearance payment has been verified. To protect institutional record integrity, certified transcripts cannot be accessed directly from the general dashboard. Below is your private <strong>30-Day Guaranteed Direct Access Pass</strong> to preview and download records for what you paid for.
+          </p>
+
+          <!-- Clearance Details Card -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Cleared Session:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 800; text-align: right;">${sessionName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Academic Term:</td>
+                <td style="padding: 6px 0; color: #2563eb; font-weight: 800; text-align: right;">${termLabel}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Class Cohort:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 700; text-align: right;">${className}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Transaction Reference:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-family: monospace; font-weight: 700; text-align: right;">${targetReference || verifyResult.reference || "CONFIRMED"}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Access Expiry:</td>
+                <td style="padding: 6px 0; color: #059669; font-weight: 700; text-align: right;">${expiryStr}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${accessUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 14px; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 14px rgba(37,99,235,0.3);">
+              Preview & Download Certified Transcript
+            </a>
+          </div>
+
+          <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 14px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 12px; color: #1e40af; line-height: 1.5;">
+              💡 <strong>Direct Access Note:</strong> This link gives you 30 days of exclusive preview and PDF download access for <strong>${sessionName} • ${termLabel}</strong>. You can open it on your phone, laptop, or home computer anytime without paying again.
+            </p>
+          </div>
+
+          <p style="font-size: 11px; color: #94a3b8; word-break: break-all; margin: 20px 0 0 0; text-align: center;">
+            Direct recovery URL: <br/>
+            <a href="${accessUrl}" style="color: #2563eb; text-decoration: underline;">${accessUrl}</a>
+          </p>
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0 16px 0;" />
+          <p style="font-size: 10px; color: #94a3b8; margin: 0; text-align: center;">
+            Verification Hash: ${token.slice(0, 24)}... • Powered by Qefas Hub
+          </p>
+        </div>
+      `
+    });
+  }
+
+  /**
    * Initiate transcript or graduated student session portal access payment.
    */
   static async initiateTranscriptPayment(params: {
     schoolId: string;
     studentId: string;
     sessionId?: string;
+    term?: string;
     amount?: number;
     email: string;
     name?: string;
@@ -178,6 +479,9 @@ export class FinanceService {
 
     const parentId = params.parentId || student?.parentLinks?.[0]?.parentId || "";
 
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const redirectUrl = `${frontendUrl}/dashboard/student/transcript?payment=verifying`;
+
     const result = await gateway.initialize({
       userId: parentId || student?.id || "student-guest",
       email: params.email || student?.email || "student@example.com",
@@ -187,9 +491,11 @@ export class FinanceService {
         schoolId: params.schoolId,
         studentId: params.studentId,
         sessionId: params.sessionId || "All Sessions",
+        term: params.term || "All Terms",
         paymentType: 'TRANSCRIPT',
         subaccountCode,
         name: params.name || student?.name || "Student",
+        redirect_url: redirectUrl,
       }
     });
 
@@ -200,7 +506,7 @@ export class FinanceService {
         studentId: params.studentId,
         parentId: parentId || (await prisma.parent.findFirst())?.id || "",
         amount: feeAmount,
-        term: "All Terms",
+        term: params.term || "All Terms",
         session: params.sessionId || "All Sessions",
         paymentType: "TRANSCRIPT",
         status: "PENDING",
@@ -208,10 +514,20 @@ export class FinanceService {
       }
     });
 
+    // Generate prospective 30-day access pass token
+    const pass = this.generateTranscriptPass({
+      studentId: params.studentId,
+      schoolId: params.schoolId,
+      sessionId: params.sessionId,
+      term: params.term,
+      paymentReference: result.txRef,
+    });
+
     return {
       checkoutUrl: result.checkoutUrl,
       paymentReference: result.txRef,
       amount: feeAmount,
+      accessPass: pass,
       settlementAccount: activeAccount ? {
         bankName: activeAccount.bankName,
         accountNumber: activeAccount.accountNumber,
@@ -353,14 +669,56 @@ export class FinanceService {
    */
   static async verifyPayment(reference: string, flwTransactionId?: string) {
     try {
+      const existingPayment = await prisma.payment.findUnique({
+        where: { paymentReference: reference },
+        include: {
+          student: { select: { id: true, name: true, studentCode: true, email: true } },
+          school: { select: { id: true, name: true } },
+          parent: { select: { id: true, fullName: true, email: true } }
+        }
+      });
+
+      // Helper to generate access pass
+      const buildPassForPayment = (p: any) => {
+        return this.generateTranscriptPass({
+          studentId: p.studentId,
+          schoolId: p.schoolId,
+          sessionId: p.session,
+          term: p.term,
+          paymentReference: p.paymentReference,
+        });
+      };
+
+      if (existingPayment && (existingPayment.status === "SUCCESS" || existingPayment.status === "PAID")) {
+        // Ensure transactionHistory exists so it always appears in admin ledger
+        const existingTx = await prisma.transactionHistory.findUnique({
+          where: { transactionReference: reference }
+        });
+        if (!existingTx) {
+          await prisma.transactionHistory.create({
+            data: {
+              schoolId: existingPayment.schoolId,
+              paymentId: existingPayment.id,
+              transactionReference: reference,
+              amount: existingPayment.amount,
+              channel: existingPayment.paymentMethod || "GATEWAY",
+              currency: "NGN",
+              status: "SUCCESS",
+              paidAt: existingPayment.paidAt || new Date(),
+            }
+          });
+        }
+        const pass = buildPassForPayment(existingPayment);
+        return { success: true, payment: existingPayment, accessPass: pass };
+      }
+
       const gateway = getPaymentGateway();
       const verified = await gateway.verify(reference, flwTransactionId);
 
       if (verified.success) {
         const paymentMeta = verified.meta as Record<string, unknown>;
-        const schoolId = paymentMeta['schoolId'] as string | undefined;
-        const studentId = paymentMeta['studentId'] as string | undefined;
-        const parentId = paymentMeta['parentId'] as string | undefined;
+        const schoolId = (paymentMeta['schoolId'] || paymentMeta['schoolid']) as string | undefined;
+        const studentId = (paymentMeta['studentId'] || paymentMeta['studentid']) as string | undefined;
 
         // Update Payment status
         const payment = await prisma.payment.update({
@@ -369,12 +727,24 @@ export class FinanceService {
             status: "SUCCESS",
             paidAt: new Date(),
             paymentMethod: verified.channel,
+          },
+          include: {
+            student: { select: { id: true, name: true, studentCode: true, email: true } },
+            school: { select: { id: true, name: true } },
+            parent: { select: { id: true, fullName: true, email: true } }
           }
         });
 
-        // Create Transaction History record
-        await prisma.transactionHistory.create({
-          data: {
+        // Ensure Transaction History record exists or is created
+        await prisma.transactionHistory.upsert({
+          where: { transactionReference: reference },
+          update: {
+            status: "SUCCESS",
+            amount: verified.amountNaira,
+            channel: verified.channel,
+            paidAt: new Date(),
+          },
+          create: {
             schoolId: schoolId || payment.schoolId,
             paymentId: payment.id,
             transactionReference: reference,
@@ -387,14 +757,93 @@ export class FinanceService {
           }
         });
 
-        return { success: true, payment };
+        // Generate 30-Day Guaranteed Direct Access Pass
+        const pass = buildPassForPayment(payment);
+
+        // Notify School Admins in real-time
+        const studentName = payment.student?.name || "Student";
+        const studentCode = payment.student?.studentCode || "Scholar";
+        const sessionLabel = payment.session === "ALL" ? "Cumulative Transcript" : (payment.session || "Official Transcript");
+        const termLabel = payment.term && payment.term !== "ALL" && payment.term !== "All Terms" ? ` (${payment.term})` : "";
+
+        try {
+          await createNotification({
+            recipientType: "SCHOOL",
+            recipientId: payment.schoolId,
+            type: "GENERAL",
+            title: "Transcript Clearance Fee Received",
+            message: `${studentName} (${studentCode}) has completed clearance payment of ₦${verified.amountNaira.toLocaleString()} for ${sessionLabel}${termLabel}.`,
+            link: `/dashboard/admin/finance?tab=transcripts`,
+            priority: "HIGH",
+            meta: {
+              paymentId: payment.id,
+              paymentReference: reference,
+              studentId: payment.studentId,
+              amount: verified.amountNaira,
+              paymentType: "TRANSCRIPT",
+              accessUrl: pass.accessUrl,
+            }
+          });
+        } catch (notifErr: any) {
+          console.warn("[FinanceService] Admin notification skipped:", notifErr?.message);
+        }
+
+        // Notify Student in real-time
+        if (payment.studentId) {
+          try {
+            await createNotification({
+              recipientType: "STUDENT",
+              recipientId: payment.studentId,
+              type: "GENERAL",
+              title: "Official Transcript Clearance Confirmed",
+              message: `Your clearance payment of ₦${verified.amountNaira.toLocaleString()} has been confirmed. Your transcript records are unlocked with 30-day guaranteed access.`,
+              link: `/dashboard/student/transcript?pass=${encodeURIComponent(pass.token)}`,
+              priority: "HIGH",
+              meta: {
+                paymentReference: reference,
+                amount: verified.amountNaira,
+                paymentType: "TRANSCRIPT",
+                accessPass: pass.token,
+                expiresAt: pass.expiresAt.toISOString(),
+              }
+            });
+          } catch (studentNotifErr: any) {
+            console.warn("[FinanceService] Student notification skipped:", studentNotifErr?.message);
+          }
+        }
+
+        // Send Email with 30-Day Direct Access Link & Clearance Receipt
+        const emailsToSend = new Set<string>();
+        if (payment.student?.email) emailsToSend.add(payment.student.email.trim());
+        if (payment.parent?.email) emailsToSend.add(payment.parent.email.trim());
+        if (paymentMeta['email'] && typeof paymentMeta['email'] === 'string') {
+          emailsToSend.add((paymentMeta['email'] as string).trim());
+        }
+
+        for (const recipientEmail of emailsToSend) {
+          if (!recipientEmail || !recipientEmail.includes('@')) continue;
+          try {
+            await this.sendTranscriptPassEmail({
+              studentId: payment.studentId,
+              schoolId: payment.schoolId,
+              email: recipientEmail,
+              token: pass.token,
+              reference,
+            });
+            console.log(`[FinanceService] Dispatched transcript clearance email to ${recipientEmail}`);
+          } catch (mailErr: any) {
+            console.warn(`[FinanceService] Email dispatch to ${recipientEmail} skipped:`, mailErr?.message);
+          }
+        }
+
+        return { success: true, payment, accessPass: pass };
       }
 
       return { success: false, status: 'failed' };
     } catch (error: unknown) {
       const err = error as { message?: string };
       console.error("[FinanceService] Verify Payment Error:", err.message);
-      throw new Error("Verification failed");
+      throw new Error("Verification failed: " + (err.message || "Unknown error"));
     }
   }
 
@@ -563,6 +1012,38 @@ export class FinanceService {
         .filter(c => c.paymentType === 'TRANSCRIPT' || c.paymentType === 'PORTAL_ACCESS')
         .reduce((sum, c) => sum + c._count.id, 0);
 
+      // Fetch dedicated transcript transactions for the Transcripts tab
+      const transcriptTransactions = await prisma.transactionHistory.findMany({
+        where: {
+          schoolId,
+          status: "SUCCESS",
+          payment: {
+            paymentType: { in: ["TRANSCRIPT", "PORTAL_ACCESS"] }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        include: {
+          payment: {
+            include: {
+              student: { select: { id: true, name: true, studentCode: true } },
+              parent: { select: { id: true, fullName: true, email: true, phone: true } }
+            }
+          }
+        }
+      }).then(list => list.map(t => ({
+        id: t.id,
+        amount: t.amount,
+        createdAt: t.createdAt,
+        paidAt: t.paidAt,
+        paymentReference: t.transactionReference,
+        channel: t.channel || 'GATEWAY',
+        status: t.status,
+        student: t.payment?.student,
+        session: t.payment?.session,
+        paymentType: t.payment?.paymentType
+      })));
+
       return {
         totalRevenue: totalRev,
         pendingRevenue: pendingRev,
@@ -570,6 +1051,7 @@ export class FinanceService {
         averageTransaction: averageTx,
         transcriptRevenue,
         transcriptCount,
+        transcriptTransactions,
         monthlyTrends,
         categoryBreakdown,
         recentTransactions: transactions.map(t => ({
@@ -585,11 +1067,11 @@ export class FinanceService {
         })),
         paymentStatus: this.getSchoolPaymentStatus({ paystackSubaccountStatus: overallStatusValue }),
         accounts,
-        bankAudits: await prisma.bankAccountAudit.findMany({
+        bankAudits: await this.enrichBankAudits(schoolId, await prisma.bankAccountAudit.findMany({
           where: { schoolId },
           orderBy: { createdAt: "desc" },
           take: 30,
-        }),
+        })),
         isVerified: overallStatusValue === "active"
       };
     } catch (error: unknown) {
@@ -600,10 +1082,121 @@ export class FinanceService {
   }
 
   /**
+   * Helper to enrich bank audit records with real admin user info if missing or generic,
+   * and auto-heal the database records so future direct queries are clean.
+   */
+  private static async enrichBankAudits(schoolId: string, audits: any[]) {
+    if (!audits || audits.length === 0) return audits;
+
+    // Collect all userIds and settlementAccount.addedBy
+    const userIdsToFetch = new Set<string>();
+    for (const a of audits) {
+      if (a.userId) userIdsToFetch.add(a.userId);
+      if (a.settlementAccount?.addedBy) userIdsToFetch.add(a.settlementAccount.addedBy);
+    }
+
+    const adminMap = new Map<string, { id: string; name: string; email: string; role: string }>();
+    if (userIdsToFetch.size > 0) {
+      const admins = await prisma.admin.findMany({
+        where: { id: { in: Array.from(userIdsToFetch) } },
+        select: { id: true, name: true, email: true, role: true }
+      });
+      for (const adm of admins) {
+        adminMap.set(adm.id, adm);
+      }
+    }
+
+    // Fallback: Primary school admin if an audit has no userId or generic info
+    let primaryAdmin: { id: string; name: string; email: string; role: string } | null = null;
+    const hasGeneric = audits.some((a: any) =>
+      !a.userName ||
+      a.userName === "School Administrator" ||
+      a.userName === "System Administrator" ||
+      !a.userEmail
+    );
+    if (hasGeneric) {
+      const sa = await prisma.schoolAdmin.findFirst({
+        where: { schoolId },
+        include: { admin: { select: { id: true, name: true, email: true, role: true } } }
+      });
+      if (sa?.admin) {
+        primaryAdmin = sa.admin;
+      }
+    }
+
+    const updates: Promise<any>[] = [];
+
+    const enriched = audits.map((audit: any) => {
+      let resolvedName = audit.userName;
+      let resolvedEmail = audit.userEmail;
+      let resolvedRole = audit.userRole;
+      let resolvedUserId = audit.userId;
+
+      const isGenericName = !resolvedName || 
+        resolvedName === "School Administrator" || 
+        resolvedName === "System Administrator" || 
+        resolvedName === "Admin";
+
+      const matchedAdmin = (audit.userId && adminMap.get(audit.userId)) || 
+        (audit.settlementAccount?.addedBy && adminMap.get(audit.settlementAccount.addedBy)) ||
+        primaryAdmin;
+
+      if (matchedAdmin) {
+        if (!resolvedUserId) resolvedUserId = matchedAdmin.id;
+        if (isGenericName && matchedAdmin.name) resolvedName = matchedAdmin.name;
+        if (!resolvedEmail && matchedAdmin.email) resolvedEmail = matchedAdmin.email;
+        if (!resolvedRole && matchedAdmin.role) resolvedRole = matchedAdmin.role;
+      }
+
+      // If the row had generic data in DB, schedule a background healing update
+      if ((isGenericName || !audit.userEmail) && matchedAdmin?.name) {
+        updates.push(
+          prisma.bankAccountAudit.update({
+            where: { id: audit.id },
+            data: {
+              userId: resolvedUserId,
+              userName: resolvedName,
+              userEmail: resolvedEmail,
+              userRole: resolvedRole,
+            }
+          }).catch((e: any) => console.warn("[FinanceService] Audit auto-heal skipped:", e?.message))
+        );
+
+        if (audit.settlementAccountId) {
+          updates.push(
+            prisma.settlementAccount.update({
+              where: { id: audit.settlementAccountId },
+              data: {
+                addedBy: resolvedUserId,
+                addedByName: resolvedName,
+                addedByRole: resolvedRole,
+              }
+            }).catch((e: any) => console.warn("[FinanceService] Settlement account auto-heal skipped:", e?.message))
+          );
+        }
+      }
+
+      return {
+        ...audit,
+        userId: resolvedUserId || audit.userId,
+        userName: resolvedName || "Administrator",
+        userEmail: resolvedEmail || null,
+        userRole: resolvedRole || "ADMIN",
+      };
+    });
+
+    if (updates.length > 0) {
+      Promise.all(updates).catch(() => {});
+    }
+
+    return enriched;
+  }
+
+  /**
    * Get complete bank account audit history
    */
   static async getBankAccountAudits(schoolId: string) {
-    return await prisma.bankAccountAudit.findMany({
+    const audits = await prisma.bankAccountAudit.findMany({
       where: { schoolId },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -615,10 +1208,15 @@ export class FinanceService {
             accountNumber: true,
             accountName: true,
             isDefault: true,
+            addedBy: true,
+            addedByName: true,
+            addedByRole: true,
           }
         }
       }
     });
+
+    return await this.enrichBankAudits(schoolId, audits);
   }
 
   /**
@@ -911,7 +1509,16 @@ export class FinanceService {
   /**
    * Manually sync subaccount status from the active gateway.
    */
-  static async syncSubaccountStatus(schoolId: string, accountId?: string) {
+  static async syncSubaccountStatus(
+    schoolId: string,
+    accountId?: string,
+    userContext?: {
+      userId?: string;
+      userName?: string;
+      userEmail?: string;
+      userRole?: string;
+    }
+  ) {
     try {
       const gateway = getPaymentGateway();
       const isFlw = gateway.name === 'FLUTTERWAVE';
@@ -920,24 +1527,25 @@ export class FinanceService {
       let subaccountCodeOrId: string | null = null;
       let dbAccountId: string | null = null;
 
-      if (accountId) {
+      let acc: any = null;
+      if (accountId && typeof accountId === 'string') {
         // @ts-ignore
-        const acc = await prisma.settlementAccount.findUnique({ where: { id: accountId } });
-        subaccountCodeOrId = isFlw
-          ? acc?.flwSubaccountId || acc?.flwSubaccountCode || null
-          : acc?.paystackSubaccountCode || null;
-        dbAccountId = acc?.id || null;
-      } else {
+        acc = await prisma.settlementAccount.findUnique({ where: { id: accountId } });
+      }
+      if (!acc) {
         // @ts-ignore
-        const acc = await prisma.settlementAccount.findFirst({ where: { schoolId, isDefault: true } });
-        subaccountCodeOrId = isFlw
-          ? acc?.flwSubaccountId || acc?.flwSubaccountCode || null
-          : acc?.paystackSubaccountCode || null;
-        dbAccountId = acc?.id || null;
+        acc = (await prisma.settlementAccount.findFirst({ where: { schoolId, isDefault: true } }))
+          // @ts-ignore
+          || (await prisma.settlementAccount.findFirst({ where: { schoolId }, orderBy: { createdAt: 'desc' } }));
       }
 
+      subaccountCodeOrId = isFlw
+        ? acc?.flwSubaccountId || acc?.flwSubaccountCode || null
+        : acc?.paystackSubaccountCode || null;
+      dbAccountId = acc?.id || null;
+
       if (!subaccountCodeOrId) {
-        throw new Error("No linked gateway subaccount found to sync.");
+        throw new Error("No linked gateway subaccount found to sync. Please set up a school bank account first.");
       }
 
       const synced = await gateway.syncSubaccount(subaccountCodeOrId);
@@ -950,6 +1558,29 @@ export class FinanceService {
           data: isFlw
             ? { flwAccountStatus: synced.status }
             : { paystackSubaccountStatus: synced.status }
+        });
+
+        // @ts-ignore
+        await prisma.bankAccountAudit.create({
+          data: {
+            schoolId,
+            settlementAccountId: dbAccountId,
+            action: "ACCOUNT_SYNCED",
+            accountNumber: acc?.accountNumber,
+            bankName: acc?.bankName,
+            accountName: acc?.accountName,
+            userId: userContext?.userId,
+            userName: userContext?.userName || "School Administrator",
+            userEmail: userContext?.userEmail,
+            userRole: userContext?.userRole || "ADMIN",
+            gateway: gateway.name,
+            details: {
+              syncedStatus: synced.status,
+              subaccountCodeOrId,
+            }
+          }
+        }).catch((auditErr: any) => {
+          console.warn("[FinanceService] Audit log skipped for sync:", auditErr?.message);
         });
       }
 

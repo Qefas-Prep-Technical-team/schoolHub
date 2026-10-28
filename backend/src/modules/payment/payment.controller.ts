@@ -9,7 +9,7 @@ import prisma from "../../config/database";
 // ─── Zod Schemas ───────────────────────────────────────────────────────────────
 
 const initializePaymentSchema = z.object({
-  amount: z.number().positive("Amount must be positive"),
+  amount: z.number().min(0, "Amount must be 0 or greater"),
   email: z.string().email("Invalid email address"),
   plan: z.string().min(1, "Plan cannot be empty"),
   planCode: z.string().optional(),

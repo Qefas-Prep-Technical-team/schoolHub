@@ -77,6 +77,7 @@ export const useClassAttendance = (classId: string, date?: string) => {
     queryFn: () => classService.getAttendance(classId, date),
     enabled: !!classId,
     staleTime: 60000,
+    placeholderData: (previousData) => previousData,
   });
 };
 

@@ -25,6 +25,7 @@ interface StudentsTableProps {
     classId: string;
     gender: string;
     status: string;
+    lifecycleStatus?: string;
   };
   page: number;
   onPageChange: (page: number) => void;
@@ -52,22 +53,49 @@ const GenderBadge = ({ gender }: { gender?: string }) => {
   );
 };
 
-const StatusDot = ({ verified }: { verified: boolean }) => (
-  <span
-    className={cn(
-      "inline-flex items-center gap-1.5 text-xs font-medium",
-      verified ? "text-emerald-600" : "text-amber-500"
-    )}
-  >
+const StatusDot = ({ verified, status }: { verified: boolean; status?: string }) => {
+  const upperStatus = status?.toUpperCase();
+  if (upperStatus === "GRADUATED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60">
+        <GraduationCap size={12} className="text-amber-600 dark:text-amber-400" />
+        Graduated
+      </span>
+    );
+  }
+  if (upperStatus === "EXPELLED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-800/60">
+        <span className="size-1.5 rounded-full bg-rose-500" />
+        Expelled
+      </span>
+    );
+  }
+  if (upperStatus === "TRANSFERRED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/60">
+        <span className="size-1.5 rounded-full bg-purple-500" />
+        Transferred
+      </span>
+    );
+  }
+  return (
     <span
       className={cn(
-        "size-1.5 rounded-full",
-        verified ? "bg-emerald-500" : "bg-amber-400"
+        "inline-flex items-center gap-1.5 text-xs font-medium",
+        verified ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400"
       )}
-    />
-    {verified ? "Active" : "Pending"}
-  </span>
-);
+    >
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          verified ? "bg-emerald-500" : "bg-amber-400"
+        )}
+      />
+      {verified ? "Active" : "Pending"}
+    </span>
+  );
+};
 
 export default function StudentsTable({
   searchTerm,
@@ -216,7 +244,7 @@ export default function StudentsTable({
                   </span>
                 </div>
                 <div className="absolute top-3.5 right-3.5 z-10">
-                  <StatusDot verified={student.verified} />
+                  <StatusDot verified={student.verified} status={student.status} />
                 </div>
                 
                 <div className="flex flex-col items-center text-center mt-2">
@@ -247,7 +275,7 @@ export default function StudentsTable({
                   </div>
                   
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 w-full flex items-center justify-between">
-                    <StatusDot verified={student.verified} />
+                    <StatusDot verified={student.verified} status={student.status} />
                     <Link
                       href={`/dashboard/admin/students/${student.id}`}
                       className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -395,7 +423,7 @@ export default function StudentsTable({
 
                   {/* Status */}
                   <td className="px-3 py-3">
-                    <StatusDot verified={student.verified} />
+                    <StatusDot verified={student.verified} status={student.status} />
                   </td>
 
 
@@ -452,7 +480,7 @@ export default function StudentsTable({
                   </span>
                 </div>
                 
-                <StatusDot verified={student.verified} />
+                <StatusDot verified={student.verified} status={student.status} />
               </div>
 
               {/* Student main info: Avatar + Name + Email */}

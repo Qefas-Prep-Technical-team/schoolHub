@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Link2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link2, AlertCircle, School, GraduationCap, Users } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
@@ -13,37 +13,90 @@ import { Input } from "@/components/ui/input";
 import { useCreateLinkRequest } from '@/lib/api/hooks/useLinks';
 import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { toast } from 'react-toastify';
 
 interface StudentConnectModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultLinkType?: string;
 }
 
-export function StudentConnectModal({ isOpen, onClose }: StudentConnectModalProps) {
+export function StudentConnectModal({ isOpen, onClose, defaultLinkType }: StudentConnectModalProps) {
+  const { data: studentProfile } = useStudentProfile();
+  const connectedSchool = studentProfile?.school || (studentProfile?.schoolId ? { name: 'Connected School' } : null);
+
   const [code, setCode] = useState('');
   const [note, setNote] = useState('');
-  const [linkType, setLinkType] = useState('STUDENT_CLASS');
+  const [linkType, setLinkType] = useState<string>(() => {
+    if (defaultLinkType) return defaultLinkType;
+    return connectedSchool ? 'STUDENT_CLASS' : 'SCHOOL_STUDENT';
+  });
   
   const createMutation = useCreateLinkRequest();
   const joinClassMutation = useRequestToJoinClass();
-  const { data: studentProfile } = useStudentProfile();
-  
-  const connectedSchool = studentProfile?.school;
+
+  // Reset or initialize default link type when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCode('');
+      setNote('');
+      if (defaultLinkType) {
+        setLinkType(defaultLinkType);
+      } else if (!connectedSchool) {
+        setLinkType('SCHOOL_STUDENT');
+      } else {
+        setLinkType('STUDENT_CLASS');
+      }
+    }
+  }, [isOpen, connectedSchool, defaultLinkType]);
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCode(val);
+    const clean = val.trim().toUpperCase();
+    if (clean.startsWith('SCH-') || clean.startsWith('SCH_')) {
+      if (linkType !== 'SCHOOL_STUDENT') {
+        setLinkType('SCHOOL_STUDENT');
+      }
+    } else if (clean.startsWith('PAR-') || clean.startsWith('PAR_')) {
+      if (linkType !== 'PARENT_STUDENT') {
+        setLinkType('PARENT_STUDENT');
+      }
+    }
+  };
 
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();
-    const formattedCode = linkType === 'STUDENT_CLASS' ? code.toUpperCase() : 
-                         (linkType === 'SCHOOL_STUDENT' ? code.toLowerCase() : code);
-    
+    const trimmedCode = code.trim();
+    if (!trimmedCode) return;
+
     if (linkType === 'STUDENT_CLASS') {
       joinClassMutation.mutate(
-        { classCode: formattedCode, note },
-        { onSuccess: onClose }
+        { classCode: trimmedCode.toUpperCase(), note },
+        { 
+          onSuccess: () => {
+            toast.success("Class join request sent successfully!");
+            onClose();
+          },
+          onError: (err: any) => {
+            const msg = err?.response?.data?.message || err?.message || "Failed to join class";
+            toast.error(msg);
+          }
+        }
       );
     } else {
       createMutation.mutate(
-        { targetCode: formattedCode, linkType: linkType as any, note },
-        { onSuccess: onClose }
+        { targetCode: trimmedCode, linkType: linkType as any, note },
+        { 
+          onSuccess: () => {
+            toast.success("Connection request sent successfully!");
+            onClose();
+          },
+          onError: (err: any) => {
+            const msg = err?.response?.data?.message || err?.message || "Failed to send connection request";
+            toast.error(msg);
+          }
+        }
       );
     }
   };
@@ -78,11 +131,24 @@ export function StudentConnectModal({ isOpen, onClose }: StudentConnectModalProp
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800">
-                <SelectItem value="STUDENT_CLASS">🎓 Student to Classroom</SelectItem>
                 <SelectItem value="SCHOOL_STUDENT">🏫 Student to School</SelectItem>
+                <SelectItem value="STUDENT_CLASS">🎓 Student to Classroom</SelectItem>
                 <SelectItem value="PARENT_STUDENT">👪 Student to Parent</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Informational tip if user selects STUDENT_CLASS without being connected to a school */}
+            {linkType === 'STUDENT_CLASS' && !connectedSchool && (
+              <div className="mt-2.5 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl space-y-1.5 animate-in fade-in">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-400 leading-relaxed">
+                    Note: Joining a school class will automatically connect you to that school once your request is accepted.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {linkType === 'SCHOOL_STUDENT' && connectedSchool && (
               <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl">
                 <p className="text-xs font-medium text-amber-700 dark:text-amber-400 leading-relaxed">
@@ -94,14 +160,15 @@ export function StudentConnectModal({ isOpen, onClose }: StudentConnectModalProp
 
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Secure Code
+              {linkType === 'SCHOOL_STUDENT' ? 'School Code' : 
+               linkType === 'STUDENT_CLASS' ? 'Classroom Code' : 'Parent Code'}
             </label>
             <Input 
               value={code} 
-              onChange={(e) => setCode(e.target.value)}
+              onChange={handleCodeChange}
               placeholder={
-                linkType === 'STUDENT_CLASS' ? 'e.g. MATH101' : 
-                (linkType === 'SCHOOL_STUDENT' ? 'e.g. SCH-XXXX' : 'e.g. PAR-XXXX')
+                linkType === 'SCHOOL_STUDENT' ? 'e.g. SCH-XXXXXX' : 
+                (linkType === 'STUDENT_CLASS' ? 'e.g. MATH101' : 'e.g. PAR-XXXXXX')
               } 
               className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 font-mono tracking-wider uppercase text-zinc-900 dark:text-zinc-100"
               required 
@@ -115,7 +182,11 @@ export function StudentConnectModal({ isOpen, onClose }: StudentConnectModalProp
             <Input 
               value={note} 
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Hi, I am joining your class..." 
+              placeholder={
+                linkType === 'SCHOOL_STUDENT' ? "Hi, I am connecting to my school..." :
+                linkType === 'STUDENT_CLASS' ? "Hi, I am joining your class..." :
+                "Hi, linking parent account..."
+              } 
               className="h-11 rounded-xl border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-xs"
             />
           </div>

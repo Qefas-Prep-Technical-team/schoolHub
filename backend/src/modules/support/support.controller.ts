@@ -3,10 +3,14 @@ import prisma from "../../config/database";
 import { getIO } from "../../socket";
 import { getSingleString } from "../../utils/request-utils";
 import { handleError } from "../../utils/error-handler";
+import { PlatformAlertRecipientService, AlertEventType } from "../platform/notifications/recipient.service";
 
 export const getMyTickets = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.id || (req as any).user?.userId;
+    if (!userId) {
+      return res.status(200).json({ success: true, data: [] });
+    }
     const tickets = await prisma.supportTicket.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
@@ -62,6 +66,7 @@ export const createTicket = async (req: Request, res: Response) => {
       getIO().to('platform:support').emit('new_ticket', {
         id: ticket.id,
         subject: ticket.subject,
+        category: ticket.category,
         userName: ticket.userName,
         userEmail: ticket.userEmail,
         schoolName: ticket.schoolName,
@@ -70,6 +75,30 @@ export const createTicket = async (req: Request, res: Response) => {
         createdAt: ticket.createdAt
       });
     } catch (_) { /* Socket might not be initialized in tests */ }
+
+    // Dispatch email alert to platform notification recipients
+    const normalizedCategory = (category || "").toUpperCase();
+    let alertEvent: AlertEventType = "INQUIRIES";
+    let alertTitle = `Support Inquiry: ${subject}`;
+
+    if (normalizedCategory === "SUGGESTION") {
+      alertEvent = "SUGGESTIONS";
+      alertTitle = `New Suggestion: ${subject}`;
+    } else if (normalizedCategory === "COMPLAINT") {
+      alertEvent = "COMPLAINTS";
+      alertTitle = `New Complaint: ${subject}`;
+    }
+
+    PlatformAlertRecipientService.dispatchAlert(alertEvent, {
+      subject: `[${alertEvent}] ${subject}`,
+      title: alertTitle,
+      description,
+      userName,
+      userEmail,
+      schoolName: user.schoolName || undefined,
+      userType,
+      priority: ticket.priority,
+    }).catch(err => console.error("[SupportController] Alert dispatch failed:", err));
 
     res.status(201).json({ success: true, data: ticket });
   } catch (error) {
@@ -125,6 +154,17 @@ export const createGuestTicket = async (req: Request, res: Response) => {
       });
     } catch (_) { /* Socket might not be initialized in tests */ }
 
+    // Dispatch email alert to registered platform recipients
+    PlatformAlertRecipientService.dispatchAlert("INQUIRIES", {
+      subject: `[INQUIRIES] Guest Ticket: ${ticket.subject}`,
+      title: `New Guest Support Inquiry: ${ticket.subject}`,
+      description: ticket.description || 'Guest user requested representative assistance.',
+      userName: ticket.userName || 'Guest User',
+      userEmail: ticket.userEmail || email,
+      userType: 'GUEST',
+      priority: ticket.priority,
+    }).catch(err => console.error("[SupportController] Guest alert dispatch failed:", err));
+
     res.status(201).json({ success: true, data: ticket });
   } catch (error) {
     return handleError(res, error, "support.createGuestTicket");
@@ -134,7 +174,7 @@ export const createGuestTicket = async (req: Request, res: Response) => {
 export const getTicketMessages = async (req: Request, res: Response) => {
   try {
     const id = getSingleString(req.params.id);
-    const userId = (req as any).user.userId || (req as any).user.id;
+    const userId = (req as any).user?.id || (req as any).user?.userId;
 
     const ticket = await prisma.supportTicket.findUnique({
       where: { id },
@@ -146,7 +186,66 @@ export const getTicketMessages = async (req: Request, res: Response) => {
     if (!ticket) return res.status(404).json({ success: false, message: "Ticket not found" });
     if (ticket.userId !== userId) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    res.status(200).json({ success: true, data: ticket });
+    // Look up support agent profile photos and names
+    const supportStaffIds = ticket.messages
+      .filter((m) => m.senderRole === "SUPPORT_AGENT" && m.senderId && m.senderId !== "AI_SYSTEM")
+      .map((m) => m.senderId);
+
+    const staffMembers = supportStaffIds.length > 0
+      ? await prisma.platformStaff.findMany({
+          where: { id: { in: supportStaffIds } },
+          select: { id: true, fullName: true, profileImage: true, socialLinks: true }
+        })
+      : [];
+
+    const staffMap = new Map(staffMembers.map((s) => [s.id, s]));
+
+    const enrichedMessages = ticket.messages.map((m) => {
+      const staff = staffMap.get(m.senderId);
+      const socialLinks = staff?.socialLinks as any;
+      const avatarUrl =
+        staff?.profileImage ||
+        socialLinks?.agentProfilePicture ||
+        socialLinks?.avatarUrl ||
+        null;
+      const agentDisplayName =
+        (staff as any)?.displayName ||
+        socialLinks?.displayName ||
+        socialLinks?.agentDisplayName ||
+        m.senderName;
+
+      return {
+        ...m,
+        senderName: m.senderRole === "SUPPORT_AGENT" ? agentDisplayName : m.senderName,
+        senderImage: avatarUrl,
+      };
+    });
+
+    const activeAgentStaff = staffMembers[0];
+    const activeSocialLinks = activeAgentStaff?.socialLinks as any;
+    const assignedAgent = activeAgentStaff
+      ? {
+          name:
+            (activeAgentStaff as any)?.displayName ||
+            activeSocialLinks?.displayName ||
+            activeSocialLinks?.agentDisplayName ||
+            activeAgentStaff.fullName,
+          image:
+            activeAgentStaff.profileImage ||
+            activeSocialLinks?.agentProfilePicture ||
+            activeSocialLinks?.avatarUrl ||
+            null,
+        }
+      : null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...ticket,
+        messages: enrichedMessages,
+        assignedAgent,
+      }
+    });
   } catch (error) {
     return handleError(res, error, "support.getTicketMessages");
   }
@@ -181,8 +280,15 @@ export const sendTicketMessage = async (req: Request, res: Response) => {
       data: { updatedAt: new Date(), status: "OPEN" } // reopen if closed
     });
 
-    // Real-time broadcast
+    // Real-time broadcast to ticket room and platform support agents
     getIO().to(`ticket:${ticketId}`).emit("new_message", message);
+    getIO().to("platform:support").emit("ticket_message_received", {
+      ticketId,
+      message,
+      userName: senderName,
+      subject: ticket.subject,
+      category: ticket.category
+    });
 
     res.status(201).json({ success: true, data: message });
   } catch (error) {

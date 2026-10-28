@@ -101,6 +101,22 @@ export function getLinkTypeConfig(linkType: string) {
         hover: 'hover:text-amber-500',
         progressBar: 'bg-gradient-to-r from-amber-400 to-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.6)]',
       };
+    case 'TEACHER_STUDENT':
+      return {
+        label: 'Teacher → Student',
+        border: 'border-l-indigo-500',
+        shadow: 'shadow-indigo-100/60 dark:shadow-indigo-900/20',
+        badge: 'bg-indigo-600 text-white',
+        avatar: 'bg-indigo-600',
+        avatarGlow: 'bg-indigo-500',
+        topBar: 'bg-indigo-500',
+        code: 'text-indigo-600 dark:text-indigo-400',
+        codeBox: 'bg-indigo-50/60 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-800/40',
+        acceptBtn: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20',
+        noteBar: 'bg-indigo-300',
+        hover: 'hover:text-indigo-500',
+        progressBar: 'bg-gradient-to-r from-indigo-400 to-indigo-600 shadow-[0_0_8px_rgba(99,102,241,0.6)]',
+      };
     default:
       return {
         label: linkType?.replace(/_/g, ' ') || 'Link',
@@ -168,12 +184,30 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
     : 'Member';
 
   if (person) {
+    const isStudent = Boolean(
+      req.requesterStudent ||
+      req.targetStudent ||
+      person.studentCode ||
+      item.student ||
+      item.linkType?.includes('STUDENT')
+    );
+
     // Determine role label from which field matched
     const role = req.requesterTeacher || req.targetTeacher ? 'Teacher'
       : req.requesterStudent || req.targetStudent ? 'Student'
       : req.requesterParent || req.targetParent ? 'Parent'
       : req.requesterAdmin || req.approverAdmin ? 'Admin'
       : inferredRole;
+
+    const personStatus = String(
+      person.status ||
+      item.student?.status ||
+      req.requesterStudent?.status ||
+      req.targetStudent?.status ||
+      ''
+    ).toUpperCase();
+
+    const isGraduated = isStudent && (personStatus === 'GRADUATED' || personStatus === 'ALUMNI');
 
     return {
       name: person.name || person.fullName || person.username || bestCode || `Verified ${role}`,
@@ -187,7 +221,9 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       schoolName: school?.name || null,
       schoolLogo: school?.logo || null,
       code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || bestCode,
-      image: person.profileImage || person.avatar
+      image: person.profileImage || person.avatar,
+      status: personStatus,
+      isGraduated,
     };
   }
 

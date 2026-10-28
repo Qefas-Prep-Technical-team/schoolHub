@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MoreVertical, X, Loader2, User, Monitor, Link2, Info, Copy } from 'lucide-react';
+import { MoreVertical, X, Loader2, User, Monitor, Link2, Info, Copy, GraduationCap } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +24,7 @@ export interface ActiveLinkEntity {
   leftCode?: string;
   userId?: string;
   linkType: string;
+  isGraduated?: boolean;
 }
 
 interface StudentActiveLinksGridProps {
@@ -56,15 +57,31 @@ export function StudentActiveLinksGrid({ links, onRevoke, revokingId, mainTab }:
         const isClass = link.variant === 'classroom';
         const isRevoking = revokingId === link.id;
 
-        const borderClass = isClass ? "border-purple-500" : "border-pink-500";
-        const avatarBg = isClass ? "bg-purple-600" : "bg-pink-600";
-        const textClass = isClass ? "text-purple-600 dark:text-purple-400" : "text-pink-600 dark:text-pink-400";
+        const borderClass = link.isGraduated
+          ? "border-amber-400 dark:border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+          : (isClass ? "border-purple-500" : "border-pink-500");
+        const avatarBg = link.isGraduated
+          ? "bg-amber-600"
+          : (isClass ? "bg-purple-600" : "bg-pink-600");
+        const textClass = link.isGraduated
+          ? "text-amber-600 dark:text-amber-400"
+          : (isClass ? "text-purple-600 dark:text-purple-400" : "text-pink-600 dark:text-pink-400");
 
         return (
           <Card 
             key={link.id} 
             className="rounded-2xl overflow-hidden bg-white dark:bg-zinc-950 border border-slate-200/80 dark:border-zinc-800 shadow-sm hover:shadow-md relative flex flex-col items-center p-5 pt-6 transition-all duration-200"
           >
+            {/* Graduated Alumni Badge */}
+            {link.isGraduated && (
+              <div className="absolute top-3.5 left-3.5 z-10">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold tracking-wide text-amber-700 dark:text-amber-400 shadow-sm">
+                  <GraduationCap className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                  Graduated Scholar
+                </span>
+              </div>
+            )}
+
             {/* Options Dropdown Menu */}
             <div className="absolute top-3.5 right-3.5">
               <DropdownMenu>
@@ -110,7 +127,12 @@ export function StudentActiveLinksGrid({ links, onRevoke, revokingId, mainTab }:
               </Avatar>
 
               {/* Status Dot */}
-              <div className={cn("absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-zinc-950", avatarBg)} />
+              <div className={cn(
+                "absolute -top-0.5 -right-0.5 rounded-full border-2 border-white dark:border-zinc-950 flex items-center justify-center",
+                link.isGraduated ? "w-4 h-4 bg-amber-500 text-white" : cn("w-3 h-3", avatarBg)
+              )}>
+                {link.isGraduated && <GraduationCap size={9} className="stroke-[2.5]" />}
+              </div>
             </div>
 
             {/* Name and Contact */}
@@ -145,7 +167,7 @@ export function StudentActiveLinksGrid({ links, onRevoke, revokingId, mainTab }:
                    }
                  `}} />
                  
-                 <div className={cn("animate-travel-pulse-student h-1.5 w-1.5 rounded-full", avatarBg)} />
+                 <div className={cn("animate-travel-pulse-student h-1.5 w-1.5 rounded-full", link.isGraduated ? "bg-amber-500" : avatarBg)} />
 
                  <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center z-10 border border-slate-200/80 dark:border-zinc-800 shadow-sm text-zinc-400">
                    <Monitor size={10} />
@@ -161,8 +183,11 @@ export function StudentActiveLinksGrid({ links, onRevoke, revokingId, mainTab }:
 
             {/* Bottom Role Badge */}
             <div className="text-center w-full">
-              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-                {link.roleDisplay || link.linkType?.replace('_', ' ')}
+              <span className={cn(
+                "text-[10px] font-bold uppercase tracking-widest",
+                link.isGraduated ? "text-amber-600 dark:text-amber-400" : "text-zinc-400 dark:text-zinc-500"
+              )}>
+                {link.isGraduated ? 'Alumni • Graduated from School' : (link.roleDisplay || link.linkType?.replace('_', ' '))}
               </span>
             </div>
 

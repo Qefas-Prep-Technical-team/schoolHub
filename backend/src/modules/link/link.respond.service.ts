@@ -95,20 +95,29 @@ const canRespondToRequest = async ({
   if (request.targetType === LinkEntityType.SCHOOL) {
     if (currentUserType !== LinkEntityType.ADMIN) return false;
 
+    const schoolIds = [
+      request.targetSchoolId,
+      request.targetId,
+      request.schoolId,
+    ].filter(Boolean) as string[];
+
+    if (schoolIds.length === 0) return false;
+
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: {
         adminId: currentUserId,
-        schoolId: request.targetSchoolId || request.schoolId || "",
+        schoolId: { in: schoolIds },
         active: true,
       },
     });
 
     if (!schoolAdmin) {
-        throw new Error("You are not an active admin of the target school.");
+      throw new Error("You are not an active admin of the target school.");
     }
 
     return true;
   }
+
   if (request.targetType === LinkEntityType.CLASS) {
     const classId = request.targetId || request.classId;
     if (!classId) return false;
@@ -120,27 +129,26 @@ const canRespondToRequest = async ({
     if (!foundClass) return false;
 
     if (currentUserType === LinkEntityType.TEACHER) {
-      const classTeacher = await prisma.classTeacher.findUnique({
-        where: {
-          classId_teacherId: {
-            classId,
-            teacherId: currentUserId,
-          },
-        },
-      });
-      return !!classTeacher;
+      throw new Error("Teachers cannot accept connection requests on behalf of a class or school. Only school administrators have this permission.");
     }
 
-    if (currentUserType === LinkEntityType.ADMIN && foundClass.schoolId) {
-      const schoolAdmin = await prisma.schoolAdmin.findFirst({
-        where: {
-          adminId: currentUserId,
-          schoolId: foundClass.schoolId,
-          active: true,
-        },
-      });
+    if (currentUserType === LinkEntityType.ADMIN) {
+      const schoolIds = [
+        foundClass.schoolId,
+        request.schoolId,
+        request.targetSchoolId,
+      ].filter(Boolean) as string[];
 
-      return !!schoolAdmin;
+      if (schoolIds.length > 0) {
+        const schoolAdmin = await prisma.schoolAdmin.findFirst({
+          where: {
+            adminId: currentUserId,
+            schoolId: { in: schoolIds },
+            active: true,
+          },
+        });
+        return !!schoolAdmin;
+      }
     }
 
     return false;

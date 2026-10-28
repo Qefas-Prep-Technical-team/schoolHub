@@ -298,7 +298,15 @@ export default function CheckoutPage() {
           couponDiscount: appliedCoupon?.discountNaira || 0,
         },
       });
-      const checkoutUrl: string = res.authorization_url || res.checkoutUrl;
+
+      if ((res as any)?.isFree) {
+        toast.success("100% discount applied! Activating your subscription...");
+        updateUser({ plan, subscriptionStatus: "ACTIVE" });
+        setStep("SUCCESS");
+        return;
+      }
+
+      const checkoutUrl: string = res.authorization_url || (res as any).checkoutUrl;
       if (checkoutUrl) window.location.href = checkoutUrl;
       else throw new Error("No checkout URL returned");
     } catch (error: unknown) {
@@ -592,7 +600,7 @@ export default function CheckoutPage() {
                         </div>
                         <button onClick={handlePayment} disabled={isLoading}
                           className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3 disabled:opacity-60">
-                          {isLoading ? <><Loader2 className="w-6 h-6 animate-spin" />Redirecting...</> : canUseTrial ? "Start Free Trial" : `Pay ₦${checkoutAmount.toLocaleString()}`}
+                          {isLoading ? <><Loader2 className="w-6 h-6 animate-spin" />Redirecting...</> : checkoutAmount === 0 ? "Activate Subscription (100% Free)" : canUseTrial ? "Start Free Trial" : `Pay ₦${checkoutAmount.toLocaleString()}`}
                         </button>
                       </div>
                     )}
@@ -713,7 +721,14 @@ export default function CheckoutPage() {
             <div className="border-t border-slate-100 dark:border-slate-800 pt-5 mb-6">
               <div className="flex justify-between items-center">
                 <span className="font-black text-slate-900 dark:text-white text-lg">Total</span>
-                <span className="text-4xl font-black text-indigo-600">₦{checkoutAmount.toLocaleString()}</span>
+                {checkoutAmount === 0 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-black text-emerald-500">FREE</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">100% OFF</span>
+                  </div>
+                ) : (
+                  <span className="text-4xl font-black text-indigo-600">₦{checkoutAmount.toLocaleString()}</span>
+                )}
               </div>
               {selectedBilling === "yearly" && monthlyPrice > 0 && (
                 <p className="text-xs text-slate-400 mt-1 text-right line-through">₦{(monthlyPrice * 12).toLocaleString()} if billed monthly</p>

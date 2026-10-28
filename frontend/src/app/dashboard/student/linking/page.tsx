@@ -148,6 +148,17 @@ export default function StudentLinkingPage() {
 
   const isClassLink = (type: string) => type === 'STUDENT_CLASS' || type === 'TEACHER_CLASS';
 
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const userStatus = typeof userRecord?.status === "string" ? userRecord.status : "";
+  const profileStatus = String(studentProfile?.status || userStatus).toUpperCase();
+  const isStudentGraduated = Boolean(
+    studentProfile?.isAlumni ||
+    Boolean(userRecord?.isAlumni) ||
+    profileStatus === "GRADUATED" ||
+    profileStatus === "ALUMNI" ||
+    studentProfile?.graduationStatus?.toUpperCase() === "GRADUATED"
+  );
+
   const getPeer = (item: RawLinkEntity): RawPeerUser | null => {
     const r = item.approvedFromRequest || item;
     const type = item.linkType || r.linkType;
@@ -194,6 +205,8 @@ export default function StudentLinkingPage() {
     if (link.linkType === 'PARENT_STUDENT') roleDisplay = 'Parent';
     if (link.linkType === 'STUDENT_CLASS') roleDisplay = 'Classroom';
 
+    const isGraduated = isStudentGraduated && (link.linkType?.includes('SCHOOL') || isClassLink(link.linkType));
+
     return {
       id: link.id,
       linkType: link.linkType,
@@ -206,7 +219,8 @@ export default function StudentLinkingPage() {
       leftEntityId: link.leftEntityId,
       rightCode: link.rightCode,
       leftCode: link.leftCode,
-      userId: user?.id
+      userId: user?.id,
+      isGraduated
     };
   }).filter((link) => link.peerName !== "Verified Member" || link.linkType.includes('CLASS'));
 
@@ -304,6 +318,7 @@ export default function StudentLinkingPage() {
         classroomActiveCount={classroomActiveCount}
         networkActiveCount={networkActiveCount}
         onConnectClick={() => setIsConnectModalOpen(true)}
+        isGraduated={isStudentGraduated}
       />
 
       <div className="space-y-4 sm:space-y-6">
@@ -383,6 +398,7 @@ export default function StudentLinkingPage() {
         schoolId={studentProfile?.schoolId || studentProfile?.school?.id}
         schoolName={studentProfile?.school?.name || 'Your School'}
         studentName={studentProfile?.name || user?.name || 'Scholar'}
+        onConnectSchoolClick={() => setIsConnectModalOpen(true)}
       />
     </div>
   );

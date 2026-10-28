@@ -72,7 +72,7 @@ export function PaymentStatusCard({ status, schoolId, onRefresh }: PaymentStatus
                                     </Button>
                                 </Link>
                                 {onRefresh && (
-                                    <Button onClick={onRefresh} variant="ghost" className="text-red-600 hover:bg-red-100 dark:hover:bg-red-950/40 gap-2">
+                                    <Button onClick={() => onRefresh()} variant="ghost" className="text-red-600 hover:bg-red-100 dark:hover:bg-red-950/40 gap-2 cursor-pointer">
                                         <RefreshCw className="h-4 w-4" />
                                         Sync with Bank
                                     </Button>
@@ -85,7 +85,7 @@ export function PaymentStatusCard({ status, schoolId, onRefresh }: PaymentStatus
                                     Awaiting Verification
                                 </Button>
                                 {onRefresh && (
-                                    <Button onClick={onRefresh} variant="ghost" className="text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950/40 gap-2">
+                                    <Button onClick={() => onRefresh()} variant="ghost" className="text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-950/40 gap-2 cursor-pointer">
                                         <RefreshCw className="h-4 w-4" />
                                         Sync with Bank
                                     </Button>

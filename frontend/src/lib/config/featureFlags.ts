@@ -29,7 +29,7 @@ export const FEATURE_FLAGS_TEACHERS = {
   profile: true,
   settings: true,
   billing: true,
-  support: false,
+  support: true,
 };
 
 export type FeatureTeacherFlagKey = keyof typeof FEATURE_FLAGS_TEACHERS;

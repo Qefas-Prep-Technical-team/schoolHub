@@ -12,6 +12,7 @@ import { toast } from 'react-toastify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import OfflineRecordsList from './OfflineRecordsList';
 import RecordScoreEntryModal from './RecordScoreEntryModal';
+import OfflineGradeSheetSyncModal from './OfflineGradeSheetSyncModal';
 import { GradeBatchSummary, OfflineAssessmentCategory } from '../types';
 import { generatePDF } from '@/utils/pdfGenerator';
 
@@ -195,14 +196,40 @@ export default function OfflineGradesDashboard({
 
   const records = recordsData || [];
 
-  // Modal State for Entering/Editing Grades
+  // Modal State for Entering/Editing Grades & Sync Pop-up
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [selectedRecordForEdit, setSelectedRecordForEdit] = useState<GradeBatchSummary | null>(null);
   const [defaultCategoryForNew, setDefaultCategoryForNew] = useState<OfflineAssessmentCategory | undefined>();
+  const [defaultClassIdForNew, setDefaultClassIdForNew] = useState<string | undefined>();
+  const [defaultSubjectForNew, setDefaultSubjectForNew] = useState<string | undefined>();
+  const [defaultMaxMarksForNew, setDefaultMaxMarksForNew] = useState<number | undefined>();
+  const [initialScoresForNew, setInitialScoresForNew] = useState<Record<string, { score: number; remarks?: string }> | undefined>();
 
   const handleAddNewRecord = (category?: OfflineAssessmentCategory) => {
     setSelectedRecordForEdit(null);
     setDefaultCategoryForNew(category);
+    setDefaultClassIdForNew(undefined);
+    setDefaultSubjectForNew(undefined);
+    setDefaultMaxMarksForNew(undefined);
+    setInitialScoresForNew(undefined);
+    setIsScoreModalOpen(true);
+  };
+
+  const handleAddNewRecordWithSetup = (setup: {
+    classId: string;
+    className?: string;
+    subject: string;
+    category: OfflineAssessmentCategory;
+    maxMarks: number;
+    initialScores?: Record<string, { score: number; remarks?: string }>;
+  }) => {
+    setSelectedRecordForEdit(null);
+    setDefaultClassIdForNew(setup.classId);
+    setDefaultSubjectForNew(setup.subject);
+    setDefaultCategoryForNew(setup.category);
+    setDefaultMaxMarksForNew(setup.maxMarks);
+    setInitialScoresForNew(setup.initialScores);
     setIsScoreModalOpen(true);
   };
 
@@ -302,7 +329,7 @@ export default function OfflineGradesDashboard({
   };
 
   return (
-    <div className="w-full max-w-full">
+    <div className="w-full max-w-full space-y-6">
       {/* Primary View: Directory of Offline Assessment Records */}
       <OfflineRecordsList
         records={records}
@@ -316,7 +343,24 @@ export default function OfflineGradesDashboard({
         onDeleteRecord={handleDeleteRecord}
         onExportPDF={handleExportPDF}
         onExportCSV={handleExportCSV}
+        onOpenSyncModal={() => setIsSyncModalOpen(true)}
       />
+
+      {/* Offline Grade Sheet Sync Pop-up Modal (Hidden by default, shows on button click) */}
+      {isSyncModalOpen && (
+        <OfflineGradeSheetSyncModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          classes={classes}
+          schoolId={schoolId}
+          schoolName={schoolProfile?.name}
+          sessions={sessions}
+          isTeacher={isTeacher}
+          teacherSubjects={Array.isArray(teacherSubjectsData) ? teacherSubjectsData : []}
+          activeClassId={activeClassId}
+          onOpenRecordModalWithSetup={handleAddNewRecordWithSetup}
+        />
+      )}
 
       {/* Score Entry / Edit Modal */}
       {isScoreModalOpen && (
@@ -326,6 +370,10 @@ export default function OfflineGradesDashboard({
             setIsScoreModalOpen(false);
             setSelectedRecordForEdit(null);
             setDefaultCategoryForNew(undefined);
+            setDefaultClassIdForNew(undefined);
+            setDefaultSubjectForNew(undefined);
+            setDefaultMaxMarksForNew(undefined);
+            setInitialScoresForNew(undefined);
           }}
           schoolId={schoolId}
           gradingSystem={schoolProfile?.gradingSystem}
@@ -333,7 +381,10 @@ export default function OfflineGradesDashboard({
           sessions={sessions}
           initialRecord={selectedRecordForEdit}
           defaultCategory={defaultCategoryForNew}
-          defaultClassId={activeClassId}
+          defaultClassId={defaultClassIdForNew || activeClassId}
+          defaultSubject={defaultSubjectForNew}
+          defaultMaxMarks={defaultMaxMarksForNew}
+          initialScores={initialScoresForNew}
           onSavedSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['offline-grades-history'] });
           }}

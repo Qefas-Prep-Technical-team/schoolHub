@@ -20,6 +20,10 @@ import {
   X,
   List,
   LayoutGrid,
+  Users,
+  Award,
+  UserX,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StudentsTable from "./components/StudentsTable";
@@ -50,6 +54,14 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({ classId: "", gender: "", status: "" });
+  const [lifecycleTab, setLifecycleTab] = useState<"ALL" | "ENROLLED" | "GRADUATED" | "EXPELLED" | "TRANSFERRED">("ALL");
+  const activeFilters = useMemo(
+    () => ({
+      ...filters,
+      lifecycleStatus: lifecycleTab !== "ALL" ? lifecycleTab : "",
+    }),
+    [filters, lifecycleTab]
+  );
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -104,7 +116,7 @@ export default function StudentsPage() {
 
   const genderOptions = ["MALE", "FEMALE", "OTHER"];
   const statusOptions = ["Verified", "Pending"];
-  const hasFilters = Object.values(filters).some((v) => v !== "");
+  const hasFilters = Object.values(filters).some((v) => v !== "") || lifecycleTab !== "ALL";
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -113,6 +125,7 @@ export default function StudentsPage() {
 
   const clearFilters = () => {
     setFilters({ classId: "", gender: "", status: "" });
+    setLifecycleTab("ALL");
     setPage(1);
   };
 
@@ -157,6 +170,59 @@ export default function StudentsPage() {
       iconColor: "#2563eb",
       note: "This Semester",
       tooltip: "The overall average attendance rate calculated from today's active roll calls across all classes.",
+    },
+  ];
+
+  const lifecycleTabs = [
+    {
+      id: "ALL" as const,
+      label: "All Students",
+      count: studentStats?.allCount ?? studentStats?.total ?? 0,
+      icon: Users,
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      activeColor: "bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-600",
+      badgeColor: "bg-white/20 text-white",
+      inactiveBadge: "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300",
+    },
+    {
+      id: "ENROLLED" as const,
+      label: "Enrolled",
+      count: studentStats?.enrolledCount ?? 0,
+      icon: ShieldCheck,
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      activeColor: "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-600",
+      badgeColor: "bg-white/20 text-white",
+      inactiveBadge: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300",
+    },
+    {
+      id: "GRADUATED" as const,
+      label: "Graduated",
+      count: studentStats?.graduatedCount ?? 0,
+      icon: GraduationCap,
+      iconColor: "text-amber-600 dark:text-amber-400",
+      activeColor: "bg-amber-600 text-white shadow-sm ring-1 ring-amber-600",
+      badgeColor: "bg-white/20 text-white",
+      inactiveBadge: "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300",
+    },
+    {
+      id: "EXPELLED" as const,
+      label: "Expelled",
+      count: studentStats?.expelledCount ?? 0,
+      icon: UserX,
+      iconColor: "text-rose-600 dark:text-rose-400",
+      activeColor: "bg-rose-600 text-white shadow-sm ring-1 ring-rose-600",
+      badgeColor: "bg-white/20 text-white",
+      inactiveBadge: "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300",
+    },
+    {
+      id: "TRANSFERRED" as const,
+      label: "Transferred",
+      count: studentStats?.transferredCount ?? 0,
+      icon: ArrowRightLeft,
+      iconColor: "text-purple-600 dark:text-purple-400",
+      activeColor: "bg-purple-600 text-white shadow-sm ring-1 ring-purple-600",
+      badgeColor: "bg-white/20 text-white",
+      inactiveBadge: "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300",
     },
   ];
 
@@ -239,7 +305,7 @@ export default function StudentsPage() {
     try {
       const exportLimit = isFreePlan ? 10 : 10000;
       const result = await adminService.getSchoolStudents(schoolId!, 1, exportLimit, searchTerm, {
-        ...filters,
+        ...activeFilters,
         ...exportFilters
       });
       const rows = result?.data || [];
@@ -378,6 +444,40 @@ export default function StudentsPage() {
           ))}
         </div>
 
+        {/* Lifecycle Status Tags */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar sm:pb-0">
+          {lifecycleTabs.map((tab) => {
+            const isSelected = lifecycleTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setLifecycleTab(tab.id);
+                  setPage(1);
+                }}
+                className={cn(
+                  "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer border",
+                  isSelected
+                    ? `${tab.activeColor} border-transparent`
+                    : "bg-white dark:bg-slate-900 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800/80"
+                )}
+              >
+                <tab.icon size={15} className={isSelected ? "text-white" : tab.iconColor} />
+                <span>{tab.label}</span>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-xs font-bold tabular-nums transition-colors",
+                    isSelected ? tab.badgeColor : tab.inactiveBadge
+                  )}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Filter Bar */}
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-2xs p-3 sm:p-3.5">
           <div className="flex flex-col md:flex-row gap-3">
@@ -511,7 +611,7 @@ export default function StudentsPage() {
         <div className={cn("bg-white dark:bg-slate-900 rounded-2xl shadow-2xs overflow-hidden", viewMode === "list" ? "border border-gray-150 dark:border-white/10" : "bg-transparent shadow-none dark:bg-transparent border-none")}>
           <StudentsTable
             searchTerm={searchTerm}
-            filters={filters}
+            filters={activeFilters}
             page={page}
             onPageChange={setPage}
             viewMode={viewMode}

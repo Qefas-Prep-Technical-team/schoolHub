@@ -39,6 +39,13 @@ router.post("/resolve-account", FinanceController.resolveAccount);
 router.post("/transcript-payment/:schoolId", authenticateToken, FinanceController.initiateTranscriptPayment);
 
 /**
+ * General / Student: Verify 30-day transcript access pass or send to email
+ */
+router.get("/transcript-pass/verify", FinanceController.verifyTranscriptPass);
+router.post("/transcript-pass/verify", FinanceController.verifyTranscriptPass);
+router.post("/transcript-pass/email", authenticateToken, FinanceController.emailTranscriptPass);
+
+/**
  * School Admin: Get financial analytics and recent transactions
  */
 router.get("/analytics/:schoolId", authenticateToken, requireRoles("ADMIN", "SUPER_ADMIN"), FinanceController.getSchoolAnalytics);

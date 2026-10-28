@@ -68,6 +68,15 @@ export const useLoginMutation = () => {
 
         const isAdminWithoutPlan = actualRole === 'ADMIN' && !response.data.user.plan;
 
+        const redirectUrl = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get("redirect")
+          : null;
+
+        if (redirectUrl) {
+          router.replace(redirectUrl);
+          return;
+        }
+
         if (isNewUser || isAdminWithoutPlan) {
           setHasCompletedOnboarding(false);
           router.replace(`/onboarding?type=${variables.userType}`);

@@ -75,13 +75,15 @@ export const searchSchools = async (req: Request, res: Response) => {
       })
     ]);
 
-    // Count schools for each plan
+    // Count schools and return rich tier metadata for each plan
     const planBreakdown = await Promise.all(allPlans.map(async (p) => {
         const count = await prisma.school.count({
             where: { 
                 OR: [
                     { subscriptionPlanId: p.id },
-                    { planId: p.id }
+                    { planId: p.id },
+                    { plan: p.type.toUpperCase() },
+                    { plan: p.name }
                 ]
             }
         });
@@ -89,7 +91,17 @@ export const searchSchools = async (req: Request, res: Response) => {
             id: p.id,
             name: p.name,
             count,
-            type: p.type
+            type: p.type,
+            monthlyPrice: p.monthlyPrice,
+            yearlyPrice: p.yearlyPrice,
+            maxStudents: p.maxStudents,
+            maxTeachers: p.maxTeachers,
+            maxClasses: p.maxClasses,
+            maxExams: p.maxExams,
+            maxStorageGb: p.maxStorageGb,
+            badgeLabel: p.badgeLabel,
+            isPopular: p.isPopular,
+            description: p.description
         };
     }));
 
@@ -508,55 +520,84 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
     
     // Broadcast status change 
     getIO().to(`ticket:${id}`).emit("ticket_updated", ticket);
+    getIO().to("platform:support").emit("ticket_updated", ticket);
+    if (ticket.userId) {
+      getIO().to(`user:${ticket.userId}`).emit("ticket_updated", ticket);
+      getIO().to(`user:${ticket.userId}`).emit("support_notification", {
+        type: "STATUS_UPDATE",
+        title: status ? `Ticket ${status}` : "Ticket Updated",
+        content: `Your inquiry "${ticket.subject}" status was updated to ${ticket.status}.`,
+        ticketId: id,
+        status: ticket.status
+      });
+    }
 
     // If marked as RESOLVED or CLOSED, emit session ended to return control to AI
     if (status === "RESOLVED" || status === "CLOSED") {
       getIO().to(`ticket:${id}`).emit("session_ended");
     }
 
-    // If marked as RESOLVED, send notifications
-    if (status === "RESOLVED") {
+    // Notify user in-dashboard of any status change so they stay updated
+    if (status && ticket.userId && ticket.userType && ticket.userType !== "GUEST") {
       try {
-        if (ticket.userId && ticket.userType && ticket.userType !== "GUEST") {
+        const statusTitleMap: Record<string, string> = {
+          IN_PROGRESS: "Support Ticket Under Investigation",
+          RESOLVED: "Support Ticket Resolved",
+          CLOSED: "Support Ticket Concluded",
+          OPEN: "Support Ticket Reopened",
+        };
+        const statusMsgMap: Record<string, string> = {
+          IN_PROGRESS: `Your request "${ticket.subject}" is now being actively investigated by our team.`,
+          RESOLVED: `Your support ticket "${ticket.subject}" has been marked as resolved.`,
+          CLOSED: `Your support inquiry "${ticket.subject}" has been concluded and closed.`,
+          OPEN: `Your support inquiry "${ticket.subject}" has been reopened.`,
+        };
+
+        if (statusTitleMap[status]) {
           await createNotification({
             recipientType: ticket.userType as any,
             recipientId: ticket.userId,
             type: "GENERAL",
-            title: "Support Ticket Resolved",
-            message: `Your support ticket "${ticket.subject}" has been marked as resolved.`
+            title: statusTitleMap[status],
+            message: statusMsgMap[status],
+            meta: { ticketId: id, status, category: ticket.category }
           });
         }
+      } catch (notifErr) {
+        console.error("[SupportController] Failed to dispatch status update notification:", notifErr);
+      }
+    }
+
+    if (status === "RESOLVED" && ticket.userEmail) {
+      try {
+        const isTest = process.env.RESEND_TEST?.trim() === 'true';
+        const recipient = isTest ? process.env.TEST_EMAIL as string : ticket.userEmail;
         
-        if (ticket.userEmail) {
-          const isTest = process.env.RESEND_TEST?.trim() === 'true';
-          const recipient = isTest ? process.env.TEST_EMAIL as string : ticket.userEmail;
-          
-          await resend.emails.send({
-            from: process.env.MAIL_FROM as string,
-            to: recipient,
-            subject: "Your Support Ticket has been Resolved",
-            html: `
-              <div style="font-family: 'Inter', Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                  <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">Support Ticket Resolved</h2>
-                </div>
-                <div style="background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <p style="color: #334155; font-size: 16px; margin-top: 0;">Hello <strong>${ticket.userName || "Guest"}</strong>,</p>
-                  <p style="color: #475569; font-size: 15px; line-height: 1.6;">We are writing to let you know that your support request regarding:</p>
-                  <div style="background-color: #f1f5f9; padding: 15px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 15px 0;">
-                    <p style="margin: 0; color: #1e293b; font-weight: 500; font-style: italic;">"${ticket.subject}"</p>
-                  </div>
-                  <p style="color: #475569; font-size: 15px; line-height: 1.6;">has been fully resolved by our support team.</p>
-                  <p style="color: #475569; font-size: 15px; line-height: 1.6;">If you have any further questions or if the issue persists, please feel free to reach out to us again at any time.</p>
-                </div>
-                <div style="margin-top: 20px; text-align: center; color: #64748b; font-size: 13px;">
-                  <p style="margin: 0;">Best regards,</p>
-                  <p style="margin: 5px 0 0 0; font-weight: 600;">The Qefas Hub Support Team</p>
-                </div>
+        await resend.emails.send({
+          from: process.env.MAIL_FROM as string,
+          to: recipient,
+          subject: "Your Support Ticket has been Resolved",
+          html: `
+            <div style="font-family: 'Inter', Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">Support Ticket Resolved</h2>
               </div>
-            `
-          });
-        }
+              <div style="background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <p style="color: #334155; font-size: 16px; margin-top: 0;">Hello <strong>${ticket.userName || "Guest"}</strong>,</p>
+                <p style="color: #475569; font-size: 15px; line-height: 1.6;">We are writing to let you know that your support request regarding:</p>
+                <div style="background-color: #f1f5f9; padding: 15px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 15px 0;">
+                  <p style="margin: 0; color: #1e293b; font-weight: 500; font-style: italic;">"${ticket.subject}"</p>
+                </div>
+                <p style="color: #475569; font-size: 15px; line-height: 1.6;">has been fully resolved by our support team.</p>
+                <p style="color: #475569; font-size: 15px; line-height: 1.6;">If you have any further questions or if the issue persists, please feel free to reach out to us again at any time.</p>
+              </div>
+              <div style="margin-top: 20px; text-align: center; color: #64748b; font-size: 13px;">
+                <p style="margin: 0;">Best regards,</p>
+                <p style="margin: 5px 0 0 0; font-weight: 600;">The Qefas Hub Support Team</p>
+              </div>
+            </div>
+          `
+        });
       } catch (err) {
         console.error("[SupportController] Error sending resolution notifications:", err);
       }
@@ -577,12 +618,14 @@ export const replyToTicket = async (req: Request, res: Response) => {
     const { content } = req.body;
     const staff = (req as any).staff;
 
+    const agentSenderName = staff.displayName || staff.fullName || "Support Agent";
+
     const message = await prisma.supportMessage.create({
       data: {
         ticketId,
         content,
         senderId: staff.id,
-        senderName: staff.fullName,
+        senderName: agentSenderName,
         senderRole: "SUPPORT_AGENT"
       }
     });
@@ -596,8 +639,48 @@ export const replyToTicket = async (req: Request, res: Response) => {
       });
     }
 
-    // Broadcast new message to the room
-    getIO().to(`ticket:${ticketId}`).emit("new_message", message);
+    // Broadcast new message with agent profile photo to the ticket room, platform room, and user's personal room
+    const socialLinks = staff.socialLinks as any;
+    const agentProfileImage =
+      staff.profileImage ||
+      socialLinks?.agentProfilePicture ||
+      socialLinks?.avatarUrl ||
+      null;
+
+    const messageWithMeta = {
+      ...message,
+      senderImage: agentProfileImage,
+    };
+
+    getIO().to(`ticket:${ticketId}`).emit("new_message", messageWithMeta);
+    getIO().to("platform:support").emit("ticket_message_received", {
+      ticketId,
+      message: messageWithMeta,
+      userName: currentTicket?.userName || "User",
+      subject: currentTicket?.subject,
+      category: currentTicket?.category
+    });
+
+    if (currentTicket?.userId) {
+      getIO().to(`user:${currentTicket.userId}`).emit("ticket_message_received", {
+        ticketId,
+        message: messageWithMeta,
+        subject: currentTicket.subject,
+        category: currentTicket.category
+      });
+    }
+
+    // Notify user in-dashboard so their notification badge updates
+    if (currentTicket && currentTicket.userId && currentTicket.userType && currentTicket.userType !== "GUEST") {
+      createNotification({
+        recipientType: currentTicket.userType as any,
+        recipientId: currentTicket.userId,
+        type: "GENERAL",
+        title: "Support Response Received",
+        message: `${agentSenderName} replied to your inquiry: "${content.slice(0, 75)}${content.length > 75 ? '...' : ''}"`,
+        meta: { ticketId, category: currentTicket.category }
+      }).catch(err => console.error("[SupportController] Failed notifying user of agent reply:", err));
+    }
 
     // Create activity log
     await createActivityLog(
@@ -681,6 +764,22 @@ export const getSchoolDetails = async (req: Request, res: Response) => {
         subscriptionPlan: true,
         settings: true,
         settlementAccounts: true,
+        admins: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                adminCode: true,
+                profileImage: true,
+                status: true,
+                isActive: true,
+              }
+            }
+          }
+        },
         emailLogs: {
           orderBy: {
             createdAt: "desc"
@@ -737,34 +836,85 @@ export const updateSchoolPlan = async (req: Request, res: Response) => {
       subscriptionEnd,
       isTrialActive,
       trialEndsAt,
-      billingCycle
+      billingCycle,
+      maxStudentsOverride,
+      maxTeachersOverride,
+      maxExamsOverride,
+      maxStorageGbOverride,
+      maxClassesOverride,
+      maxParentsOverride,
+      maxAiUsageOverride,
     } = req.body;
 
     const school = await prisma.$transaction(async (tx) => {
-        const updateData: any = {
-            plan,
-            subscriptionStatus,
-            isTrialActive: isTrialActive ?? false,
-            billingCycle: billingCycle || undefined
-        };
+        const updateData: any = {};
+
+        if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
+        if (isTrialActive !== undefined) updateData.isTrialActive = Boolean(isTrialActive);
+        if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
+
+        // Quota overrides
+        if (maxStudentsOverride !== undefined) updateData.maxStudentsOverride = maxStudentsOverride === null ? null : Number(maxStudentsOverride);
+        if (maxTeachersOverride !== undefined) updateData.maxTeachersOverride = maxTeachersOverride === null ? null : Number(maxTeachersOverride);
+        if (maxExamsOverride !== undefined) updateData.maxExamsOverride = maxExamsOverride === null ? null : Number(maxExamsOverride);
+        if (maxStorageGbOverride !== undefined) updateData.maxStorageGbOverride = maxStorageGbOverride === null ? null : Number(maxStorageGbOverride);
+        if (maxClassesOverride !== undefined) updateData.maxClassesOverride = maxClassesOverride === null ? null : Number(maxClassesOverride);
+        if (maxParentsOverride !== undefined) updateData.maxParentsOverride = maxParentsOverride === null ? null : Number(maxParentsOverride);
+        if (maxAiUsageOverride !== undefined) updateData.maxAiUsageOverride = maxAiUsageOverride === null ? null : Number(maxAiUsageOverride);
+
+        // Safe Plan & SubscriptionPlanId Resolution
+        let resolvedPlanId: string | null = null;
+        let resolvedPlanType: string = plan ? plan.toUpperCase() : "FREE";
 
         if (subscriptionPlanId) {
             const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subscriptionPlanId);
-            if (!isUuid && subscriptionPlanId.includes('-')) {
-                const parts = subscriptionPlanId.split('-');
-                const category = parts[0];
-                const type = parts[1];
-                const resolved = await PricingService.getPlan(type, category);
-                if (resolved?.id) {
-                    updateData.subscriptionPlanId = resolved.id;
+            if (isUuid) {
+                const dbPlan = await tx.subscriptionPlan.findUnique({ where: { id: subscriptionPlanId } });
+                if (dbPlan) {
+                    resolvedPlanId = dbPlan.id;
+                    resolvedPlanType = dbPlan.type.toUpperCase();
                 }
-            } else if (isUuid) {
-                updateData.subscriptionPlanId = subscriptionPlanId;
+            } else if (subscriptionPlanId.includes("-")) {
+                const parts = subscriptionPlanId.split("-");
+                const type = parts[1] || parts[0];
+                const dbPlan = await tx.subscriptionPlan.findFirst({
+                    where: { type: { equals: type, mode: "insensitive" } }
+                });
+                if (dbPlan) {
+                    resolvedPlanId = dbPlan.id;
+                    resolvedPlanType = dbPlan.type.toUpperCase();
+                }
             }
         }
 
-        if (subscriptionEnd) updateData.subscriptionEnd = new Date(subscriptionEnd);
-        if (trialEndsAt) updateData.trialEndsAt = new Date(trialEndsAt);
+        if (!resolvedPlanId && plan) {
+            const dbPlan = await tx.subscriptionPlan.findFirst({
+                where: {
+                    OR: [
+                        { type: { equals: plan, mode: "insensitive" } },
+                        { name: { equals: plan, mode: "insensitive" } },
+                    ]
+                }
+            });
+            if (dbPlan) {
+                resolvedPlanId = dbPlan.id;
+                resolvedPlanType = dbPlan.type.toUpperCase();
+            }
+        }
+
+        updateData.plan = resolvedPlanType;
+        if (resolvedPlanId) {
+            updateData.subscriptionPlanId = resolvedPlanId;
+            updateData.planId = resolvedPlanId;
+        }
+
+        // Subscription dates
+        if (subscriptionEnd !== undefined) {
+            updateData.subscriptionEnd = subscriptionEnd ? new Date(subscriptionEnd) : null;
+        }
+        if (trialEndsAt !== undefined) {
+            updateData.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : null;
+        }
 
         // Update school
         const updatedSchool = await tx.school.update({
@@ -773,19 +923,86 @@ export const updateSchoolPlan = async (req: Request, res: Response) => {
             include: { subscriptionPlan: true }
         });
 
-        // Use PricingService to sync everything else (SchoolSubscription, Admins, History)
-        if (updatedSchool.subscriptionPlanId) {
-            await PricingService.recordSubscriptionChange({
-                entityId: id,
-                entityType: 'SCHOOL',
-                planId: updatedSchool.subscriptionPlanId,
-                status: updatedSchool.subscriptionStatus,
-                type: updatedSchool.subscriptionPlan?.type || (isTrialActive ? 'TRIAL' : 'PAID'),
-                expiresAt: updatedSchool.subscriptionEnd,
-                billingCycle: updatedSchool.billingCycle,
-                note: 'Manual plan override via platform support console',
-                staffId: (req as any).staff?.id
+        const activeStatus = updatedSchool.subscriptionStatus || "ACTIVE";
+        const normalizedType = updatedSchool.isTrialActive 
+            ? "TRIAL" 
+            : (updatedSchool.plan === "FREE" ? "FREE" : "PAID");
+
+        // Sync SchoolSubscription table
+        const finalPlanId = updatedSchool.subscriptionPlanId || 
+            (await tx.subscriptionPlan.findFirst({ where: { type: { equals: "free", mode: "insensitive" } } }))?.id ||
+            (await tx.subscriptionPlan.findFirst())?.id;
+
+        if (finalPlanId) {
+            await tx.schoolSubscription.upsert({
+                where: { schoolId: id },
+                update: {
+                    subscriptionPlanId: updatedSchool.subscriptionPlanId || finalPlanId,
+                    subscriptionType: normalizedType as any,
+                    status: activeStatus as any,
+                    expiresAt: updatedSchool.subscriptionEnd || null,
+                    updatedAt: new Date()
+                },
+                create: {
+                    schoolId: id,
+                    subscriptionPlanId: finalPlanId,
+                    subscriptionType: normalizedType as any,
+                    status: activeStatus as any,
+                    expiresAt: updatedSchool.subscriptionEnd || null,
+                    startedAt: new Date()
+                }
             });
+        }
+
+        // Sync all associated School Admins
+        const schoolAdmins = await tx.schoolAdmin.findMany({
+            where: { schoolId: id }
+        });
+
+        for (const sa of schoolAdmins) {
+            await tx.admin.update({
+                where: { id: sa.adminId },
+                data: {
+                    plan: updatedSchool.plan,
+                    planId: updatedSchool.subscriptionPlanId || undefined,
+                    subscriptionPlanId: updatedSchool.subscriptionPlanId || undefined,
+                    subscriptionStatus: activeStatus,
+                    subscriptionEnd: updatedSchool.subscriptionEnd,
+                    billingCycle: updatedSchool.billingCycle,
+                    isTrialActive: updatedSchool.isTrialActive,
+                    trialEndsAt: updatedSchool.trialEndsAt,
+                }
+            });
+
+            await tx.userSubscription.updateMany({
+                where: { userId: sa.adminId },
+                data: {
+                    subscriptionPlanId: updatedSchool.subscriptionPlanId || undefined,
+                    subscriptionType: normalizedType as any,
+                    status: activeStatus as any,
+                    expiresAt: updatedSchool.subscriptionEnd || null,
+                    startedAt: new Date()
+                }
+            });
+        }
+
+        // Use PricingService to record subscription change if plan is linked
+        if (updatedSchool.subscriptionPlanId) {
+            try {
+                await PricingService.recordSubscriptionChange({
+                    entityId: id,
+                    entityType: 'SCHOOL',
+                    planId: updatedSchool.subscriptionPlanId,
+                    status: activeStatus,
+                    type: normalizedType,
+                    expiresAt: updatedSchool.subscriptionEnd,
+                    billingCycle: updatedSchool.billingCycle,
+                    note: 'Manual plan override via platform support console',
+                    staffId: (req as any).staff?.id
+                });
+            } catch (recordErr) {
+                console.warn("[SupportController] Could not record subscription change history:", recordErr);
+            }
         }
 
         return updatedSchool;
@@ -801,15 +1018,15 @@ export const updateSchoolPlan = async (req: Request, res: Response) => {
             id,
             { 
                 schoolName: school.name,
-                newPlan: plan,
-                status: subscriptionStatus
+                newPlan: school.plan,
+                status: school.subscriptionStatus
             }
         );
     }
 
     return res.status(200).json({ 
       success: true, 
-      message: `Plan for ${school.name} updated to ${plan || 'custom'}`,
+      message: `Subscription for ${school.name} updated to ${school.plan} (${school.subscriptionStatus})`,
       data: school 
     });
   } catch (error) {
