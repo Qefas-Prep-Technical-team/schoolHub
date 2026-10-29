@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     request.cookies.get("google_intended_role")?.value || "student";
   const storedRedirectUri = request.cookies.get("google_redirect_uri")?.value;
   const inviteToken = request.cookies.get("google_invite_token")?.value;
+  // Pending join redirect (e.g. /join/school/sch-xxx or /join/class/id)
+  const postAuthRedirect = request.cookies.get("google_post_auth_redirect")?.value || "";
 
   const rolePathMap: Record<string, string> = {
     student: "/login/student",
@@ -158,8 +160,8 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    // 8. Determine destination dashboard
-    let destination = `/dashboard/${userRole.toLowerCase().replace("_", "-")}`;
+    // 8. Determine destination dashboard — honor pending join redirect if present
+    let destination = postAuthRedirect || `/dashboard/${userRole.toLowerCase().replace("_", "-")}`;
     if (isNewUser) {
       destination = `/onboarding?type=${userRole.toLowerCase()}`;
     }
@@ -177,6 +179,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("google_code_verifier");
     response.cookies.delete("google_intended_role");
     response.cookies.delete("google_redirect_uri");
+    response.cookies.delete("google_post_auth_redirect");
 
     // 10. Set session cookies
     response.cookies.set("token", accessToken, {

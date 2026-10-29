@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -20,6 +21,7 @@ export default function SocialAuthRow({
 }: SocialAuthRowProps) {
   const [loadingProvider, setLoadingProvider] = useState<"google" | "facebook" | null>(null);
   const { data: settings } = usePublicPlatformSettings();
+  const searchParams = useSearchParams();
 
   // Map URL role to backend feature role
   const roleMap: Record<string, string> = {
@@ -53,7 +55,9 @@ export default function SocialAuthRow({
 
   const handleGoogleClick = () => {
     setLoadingProvider("google");
-    window.location.href = `/api/auth/google?role=${encodeURIComponent(backendRole)}`;
+    // Preserve any pending join redirect through the OAuth round-trip
+    const redirect = searchParams?.get("redirect") || (typeof window !== "undefined" ? sessionStorage.getItem("pendingJoinRedirect") : null);
+    window.location.href = `/api/auth/google?role=${encodeURIComponent(backendRole)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
   };
 
   const handleFacebookClick = () => {

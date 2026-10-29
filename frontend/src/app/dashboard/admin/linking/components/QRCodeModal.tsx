@@ -35,9 +35,10 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const [selectedVariantId, setSelectedVariantId] = useState<string>("student");
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const baseUrl =
+  const baseUrl = (
     process.env.NEXT_PUBLIC_FRONTEND_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+    (typeof window !== "undefined" ? window.location.origin : "")
+  ).replace(/\/+$/, "");
 
   const links = [
     {

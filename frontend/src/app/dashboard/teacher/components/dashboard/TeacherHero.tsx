@@ -78,7 +78,9 @@ export default function TeacherHero({
           </h2>
           
           <p className="text-slate-300 text-sm md:text-base max-w-lg mb-8 leading-relaxed">
-            You have {totalClasses} classes assigned this term. Attendance is up 3.2% this week and students are performing well. Great momentum heading into mid-terms.
+            {totalClasses > 0
+              ? `You have ${totalClasses} class${totalClasses === 1 ? '' : 'es'} assigned this term. Attendance is up and students are performing well. Great momentum heading into the academic session.`
+              : "Welcome to your digital teaching workspace. Link with your school or create assessments to start managing classes, attendance, and grades effortlessly."}
           </p>
           
           <div className="flex items-center gap-3">

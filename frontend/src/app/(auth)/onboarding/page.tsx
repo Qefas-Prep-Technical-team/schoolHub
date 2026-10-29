@@ -131,9 +131,16 @@ function OnboardingContent() {
   const [previewRole, setPreviewRole] = useState<string | null>(null);
   
   const queryRole = (searchParams.get('type') || searchParams.get('role'))?.toUpperCase();
-  const userType = previewRole || queryRole || user?.userType || 'ADMIN';
+  const userType = previewRole || user?.userType || queryRole || 'ADMIN';
   const theme = THEME_MAP[userType as keyof typeof THEME_MAP] || THEME_MAP.ADMIN;
   const currentSteps = getSteps(userType);
+
+  React.useEffect(() => {
+    // If not authenticated and no explicit preview/role query param is set, redirect to login
+    if (!isAuthenticated && !user && !queryRole && !previewRole) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, user, queryRole, previewRole, router]);
   
   const getLoginRoute = (role: string) => {
       switch (role) {

@@ -7,7 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Image from 'next/image';
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSchoolRegistration, useAdminSelfRegistration } from '../../services/useRegistrationMutations';
 import { SchoolFormData, schoolSchema, AdminJoinFormData, adminJoinSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
@@ -53,6 +53,7 @@ export default function SchoolCard() {
   const [showOptional,        setShowOptional]        = useState(false);
   const [activeFeature,       setActiveFeature]       = useState(0);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { mutate: registerSchool, isPending: isRegistering } = useSchoolRegistration();
   const { mutate: joinSchool, isPending: isJoining } = useAdminSelfRegistration();
@@ -140,9 +141,11 @@ export default function SchoolCard() {
           const email = response.data.data?.school?.email || data.email;
           setShowOverlay(true);
           resetRegister();
+          const redirectParam = searchParams.get('redirect');
+          const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
           setTimeout(() => {
             router.push(
-              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true`
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true${redirectQuery}`
             );
           }, 2000);
         },

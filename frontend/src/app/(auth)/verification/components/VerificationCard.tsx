@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useRequestCode, useVerifyCode, useResendCode } from '../services/useVerificationMutations';
 import { useLoginMutation } from '../../login/services/use-auth-mutations';
+import { useAuthStore, resolveUserDashboard } from '../../login/services/auth-store';
 import CodeInputGroup from './CodeInputGroup';
 import VerifyButton from './VerifyButton';
 import MetaText from './MetaText';
@@ -57,54 +58,62 @@ export default function VerificationCard() {
         { email, code: verificationCode, userType },
         {
           onSuccess: (response: any) => {
-            const isNewUser = response?.data?.isNewUser ?? false;
-            const preAuthToken = sessionStorage.getItem("preAuthToken");
+            const resData = response?.data;
+            const token = resData?.token || resData?.accessToken || resData?.data?.token || resData?.data?.accessToken;
+            const userData = resData?.user || resData?.data?.user;
+            const returnedUserType = (resData?.userRole || userType || 'ADMIN').toUpperCase();
 
-            if (preAuthToken) {
-              // Auto-login with the preAuthToken
-              loginMutation.mutate(
-                {
-                  email: email,
-                  userType: userType as any,
-                  isNewUser: isNewUser,
-                  preAuthToken: preAuthToken,
-                },
-                {
-                  onSuccess: () => {
-                    sessionStorage.removeItem("preAuthToken");
-                    // Redirect to onboarding for new users
-                    if (isNewUser) {
-                      setIsSuccess(true);
-                      setTimeout(() => {
-                        router.push('/onboarding');
-                      }, 1500);
-                    }
-                  },
-                  onError: () => {
-                    // If auto-login fails, redirect to onboarding for new users or sign in for existing
-                    sessionStorage.removeItem("preAuthToken");
-                    setIsSuccess(true);
-                    setTimeout(() => {
-                      if (isNewUser) {
-                        router.push('/onboarding');
-                      } else {
-                        router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
-                      }
-                    }, 1500);
-                  },
-                }
-              );
-            } else {
-              // No token found, redirect to onboarding for new users or login for existing users
-              setIsSuccess(true);
-              setTimeout(() => {
-                if (isNewUser) {
-                  router.push('/onboarding');
-                } else {
-                  router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
-                }
-              }, 1500);
+            // Check if there is a pending redirect (e.g. join link)
+            const pendingRedirect =
+              (typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('redirect') || sessionStorage.getItem('pendingJoinRedirect')
+                : null);
+
+            if (pendingRedirect && typeof window !== 'undefined') {
+              sessionStorage.removeItem('pendingJoinRedirect');
             }
+
+            if (token && userData) {
+              const fullUser = {
+                ...userData,
+                userType: returnedUserType as any,
+                name: userData.name || userData.fullName || email.split('@')[0],
+              };
+              useAuthStore.getState().setAuth(fullUser, token);
+              useAuthStore.getState().setHasCompletedOnboarding(true);
+            }
+
+            setIsSuccess(true);
+
+            setTimeout(() => {
+              if (pendingRedirect) {
+                router.push(pendingRedirect);
+                return;
+              }
+
+              // Route directly to the user's correct dashboard
+              switch (returnedUserType) {
+                case 'TEACHER':
+                  router.push('/dashboard/teacher');
+                  break;
+                case 'STUDENT':
+                  router.push('/dashboard/student');
+                  break;
+                case 'PARENT':
+                  router.push('/dashboard/parent');
+                  break;
+                case 'ADMIN':
+                  if (userData && !userData.plan && !userData.isSchoolOwner) {
+                    router.push('/select-plan');
+                  } else {
+                    router.push('/dashboard/admin');
+                  }
+                  break;
+                default:
+                  router.push('/dashboard');
+                  break;
+              }
+            }, 1500);
           },
         }
       );

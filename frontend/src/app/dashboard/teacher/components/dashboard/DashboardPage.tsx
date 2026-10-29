@@ -86,20 +86,49 @@ export default function DashboardPage() {
       const filterId = isPersonal ? undefined : selectedSchoolId;
       const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
       
-      // Merge with default to ensure session string exists if backend hasn't updated yet
-      setStats({
-        ...dashboardData.stats,
-        session: dashboardData.stats.session || "Session Not Set",
-        classNames: dashboardData.stats.classNames || [],
-        subjectNames: dashboardData.stats.subjectNames || []
-      });
-      setPerformanceMetrics(dashboardData.performanceMetrics);
-      setRecentExams(dashboardData.recentExams);
-      setTodaySchedule(dashboardData.todaySchedule || []);
+      if (dashboardData) {
+        setStats({
+          ...dashboardData.stats,
+          session: dashboardData.stats?.session || "Session Not Set",
+          classNames: dashboardData.stats?.classNames || [],
+          subjectNames: dashboardData.stats?.subjectNames || []
+        });
+        setPerformanceMetrics(dashboardData.performanceMetrics || {
+          topStudents: [],
+          distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
+        });
+        setRecentExams(dashboardData.recentExams || []);
+        setTodaySchedule(dashboardData.todaySchedule || []);
+      }
     } catch (err: any) {
-      console.error('Failed to load dashboard data', err);
-      const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
-      setError(isTimeout ? 'The server is taking too long to respond. This might be due to a large amount of data. Please try again.' : 'Failed to synchronize dashboard. Check your connection.');
+      console.warn('Teacher dashboard: using empty baseline state for new/unlinked educator', err);
+      // For new accounts or unlinked teachers with no institutional data yet,
+      // fallback to clean baseline zeroes so the dashboard renders beautifully without stalling!
+      setStats({
+        totalClasses: 0,
+        classNames: [],
+        subjectNames: [],
+        totalStudents: 0,
+        upcomingLessons: 0,
+        averagePerformance: 0,
+        attendanceRate: 0,
+        session: "Independent Educator"
+      });
+      setPerformanceMetrics({
+        topStudents: [],
+        distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
+      });
+      setRecentExams([]);
+      setTodaySchedule([]);
+
+      // Never show "Sync Stalled" if it's 403, 404, or no data
+      const status = err?.response?.status;
+      if (status !== 403 && status !== 404) {
+        const isTimeout = err?.code === 'ECONNABORTED' || err?.message?.includes('timeout');
+        if (isTimeout) {
+          setError('The server is taking too long to respond. Please try again.');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -224,6 +253,87 @@ export default function DashboardPage() {
             onAnnounce={() => setIsAnnounceModalOpen(true)}
             onViewWeeklyReport={() => setIsWeeklyReportModalOpen(true)}
           />
+
+          {/* New Educator Quick Start Guide when no classes are linked yet */}
+          {stats.totalClasses === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-slate-900/5 to-teal-500/10 dark:from-emerald-950/40 dark:via-slate-900/40 dark:to-teal-950/40 border border-emerald-500/20 p-6 sm:p-8 backdrop-blur-md shadow-xl"
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
+                    <Sparkles size={14} /> Get Started with Qefas Hub
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Welcome to your teaching workspace
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl font-medium">
+                    You do not have any classes or student rosters assigned yet. Follow these quick steps to set up your teaching hub:
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white/80 dark:bg-slate-900/80 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between hover:border-emerald-500/40 transition-colors shadow-sm">
+                  <div className="space-y-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+                      1
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-base">Connect to School</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Enter your school code or accept an invitation to sync with institutional classes, students, and curriculum.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => router.push('/dashboard/teacher/linking')}
+                    className="mt-4 w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                  >
+                    Link to School
+                  </Button>
+                </div>
+
+                <div className="bg-white/80 dark:bg-slate-900/80 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between hover:border-teal-500/40 transition-colors shadow-sm">
+                  <div className="space-y-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-black">
+                      2
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-base">Offline Grade Sheets</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Download curriculum mark sheets in Excel or CSV, record student grades offline, and sync with one drag-and-drop.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => router.push('/dashboard/teacher/offline-grades')}
+                    variant="outline"
+                    className="mt-4 w-full h-10 rounded-xl border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-bold text-xs"
+                  >
+                    Offline Grades
+                  </Button>
+                </div>
+
+                <div className="bg-white/80 dark:bg-slate-900/80 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between hover:border-indigo-500/40 transition-colors shadow-sm">
+                  <div className="space-y-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black">
+                      3
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-base">Assessments & Quizzes</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Create interactive online quizzes, timed exams, and assignments for students with instant auto-grading.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => router.push('/dashboard/teacher/exams&quizzes')}
+                    variant="outline"
+                    className="mt-4 w-full h-10 rounded-xl border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 font-bold text-xs"
+                  >
+                    Create Assessment
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           <AnimatePresence mode="wait">
             <motion.div

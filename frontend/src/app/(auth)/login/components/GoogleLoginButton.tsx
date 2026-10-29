@@ -2,6 +2,7 @@
 
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 
 interface GoogleLoginButtonProps {
@@ -46,11 +47,15 @@ export default function GoogleLoginButton({
         );
     }
 
-    if (!isEnabled) return null;
+    const searchParams = useSearchParams();
 
+    if (!isEnabled) return null;
     const handleGoogleLogin = () => {
         setIsLoading(true);
-        window.location.href = `/api/auth/google?role=${encodeURIComponent(backendRole)}`;
+        // Preserve any pending join redirect through the OAuth round-trip
+        const redirect = searchParams?.get("redirect") || (typeof window !== "undefined" ? sessionStorage.getItem("pendingJoinRedirect") : null);
+        const url = `/api/auth/google?role=${encodeURIComponent(backendRole)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
+        window.location.href = url;
     };
 
     const isSignUp = mode === "signup";

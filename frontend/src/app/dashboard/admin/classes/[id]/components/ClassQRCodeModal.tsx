@@ -32,9 +32,10 @@ const ClassQRCodeModal: React.FC<ClassQRCodeModalProps> = ({
   const [selectedVariantId, setSelectedVariantId] = useState<string>("join");
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const baseUrl =
+  const baseUrl = (
     process.env.NEXT_PUBLIC_FRONTEND_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+    (typeof window !== "undefined" ? window.location.origin : "")
+  ).replace(/\/+$/, "");
 
   const classCode = classData?.classCode || "";
   const schoolCode = classData?.school?.schoolCode || "";

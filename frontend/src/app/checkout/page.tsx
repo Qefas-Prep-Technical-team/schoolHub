@@ -114,9 +114,9 @@ export default function CheckoutPage() {
   }
 
   const planDisplayName = selectedPlanName || (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)}` : "Standard");
-  // Allow trial if: plan has trial AND (unauthenticated user OR user on FREE plan with no trial used)
+  // Allow trial if: plan has trial AND (unauthenticated user OR user on FREE plan with no trial used) AND no coupon applied
   // Note: Users upgrading FROM free to paid still qualify for trial on their first time
-  const canUseTrial = hasPlanTrial && !isUpgrade && (!isAuthenticated || !user?.trialUsed);
+  const canUseTrial = hasPlanTrial && !isUpgrade && (!isAuthenticated || !user?.trialUsed) && !appliedCoupon;
   const isDowngrade = !isUpgrade && discountedAmount === 0 && !!plan;
   const baseAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
   const couponDiscount = appliedCoupon?.discountNaira || 0;
@@ -126,12 +126,12 @@ export default function CheckoutPage() {
   // Redirect guard
   useEffect(() => {
     if (!plan) { router.push("/pricing"); return; }
-    // If already logged in, skip email/OTP entirely
-    if (isAuthenticated && user?.email) {
+    // If already logged in, skip email/OTP entirely on initial entry
+    if (isAuthenticated && user?.email && step === "EMAIL_ENTRY") {
       setEmail(user.email); // lock in the server-known email
       setStep("PAYMENT_READY");
     }
-  }, [isAuthenticated, user, plan, router]);
+  }, [isAuthenticated, user?.email, plan, router, step]);
 
   // Success redirect
   useEffect(() => {
@@ -142,14 +142,13 @@ export default function CheckoutPage() {
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       }
       const timer = setTimeout(() => {
-        let targetUrl = `/dashboard/${role?.toLowerCase() || "admin"}/billing`;
-        if (isAuthenticated && !hasCompletedOnboarding) targetUrl = `/onboarding?type=${role}`;
+        const targetUrl = `/dashboard/${role?.toLowerCase() || "admin"}/billing`;
         clearCheckout();
         router.push(targetUrl);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [step, router, clearCheckout, queryClient, user, role, isAuthenticated, hasCompletedOnboarding]);
+  }, [step, router, clearCheckout, queryClient, user, role]);
 
   // Resend OTP timer
   useEffect(() => {
@@ -299,9 +298,11 @@ export default function CheckoutPage() {
         },
       });
 
-      if ((res as any)?.isFree) {
+      if ((res as any)?.isFree || checkoutAmount === 0) {
         toast.success("100% discount applied! Activating your subscription...");
         updateUser({ plan, subscriptionStatus: "ACTIVE" });
+        setIsLoading(false);
+        isPaymentInFlight.current = false;
         setStep("SUCCESS");
         return;
       }
@@ -357,7 +358,20 @@ export default function CheckoutPage() {
               </div>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Payment Successful! 🎉</h2>
               <p className="text-slate-500 text-sm mb-6">Your <span className="font-bold text-indigo-600">{planDisplayName}</span> plan is now active.</p>
-              <div className="flex items-center justify-center gap-2 text-xs text-slate-400"><Loader2 className="w-3 h-3 animate-spin" /><span>Redirecting in 3 seconds...</span></div>
+              <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mb-4">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Redirecting to your billing dashboard in 3 seconds...</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  clearCheckout();
+                  router.push(`/dashboard/${role?.toLowerCase() || "admin"}/billing`);
+                }}
+                className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-indigo-600/30 cursor-pointer"
+              >
+                Go to Billing Dashboard Now
+              </button>
             </>
           ) : (
             <>

@@ -7,7 +7,15 @@ const recipientSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Valid email is required"),
   role: z.string().optional(),
-  events: z.array(z.enum(["PAYMENTS", "COMPLAINTS", "SUGGESTIONS", "INQUIRIES", "SYSTEM_ALERTS"])).min(1, "At least one event must be selected"),
+  events: z.array(z.enum([
+    "NEW_USERS",
+    "PAYMENTS",
+    "SUBSCRIPTIONS",
+    "COMPLAINTS",
+    "SUGGESTIONS",
+    "INQUIRIES",
+    "SYSTEM_ALERTS",
+  ])).min(1, "At least one event must be selected"),
   isActive: z.boolean().optional(),
 });
 

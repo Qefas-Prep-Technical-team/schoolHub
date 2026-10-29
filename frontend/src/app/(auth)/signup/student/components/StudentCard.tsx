@@ -175,13 +175,15 @@ export default function StudentCard() {
       const email = regData.data?.data?.student?.email || watch('email');
       setShowOverlay(true);
       reset();
+      const redirectParam = searchParams.get('redirect');
+      const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
       setTimeout(() => {
         router.push(
-          `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.STUDENT}&requestCode=true`
+          `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.STUDENT}&requestCode=true${redirectQuery}`
         );
       }, 2000);
     }
-  }, [isSuccess, regData, router, reset, watch]);
+  }, [isSuccess, regData, router, reset, watch, searchParams]);
 
   const onSubmit = (data: StudentFormData) => {
     const backendData = {

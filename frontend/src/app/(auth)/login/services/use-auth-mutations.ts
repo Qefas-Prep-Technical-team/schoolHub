@@ -69,26 +69,30 @@ export const useLoginMutation = () => {
         const isAdminWithoutPlan = actualRole === 'ADMIN' && !response.data.user.plan;
 
         const redirectUrl = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get("redirect")
+          ? new URLSearchParams(window.location.search).get("redirect") || sessionStorage.getItem("pendingJoinRedirect")
           : null;
 
         if (redirectUrl) {
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem("pendingJoinRedirect");
+          }
           router.replace(redirectUrl);
           return;
         }
 
-        if (isNewUser || isAdminWithoutPlan) {
+        if (isAdminWithoutPlan) {
           setHasCompletedOnboarding(false);
-          router.replace(`/onboarding?type=${variables.userType}`);
-        } else {
-          setHasCompletedOnboarding(true);
-          setTransitioning(true, actualRole, userWithType.name);
-
-          setTimeout(() => {
-            setTransitioning(false);
-            router.replace(`/dashboard/${userDash}`);
-          }, 2500);
+          router.replace('/select-plan');
+          return;
         }
+
+        setHasCompletedOnboarding(true);
+        setTransitioning(true, actualRole, userWithType.name);
+
+        setTimeout(() => {
+          setTransitioning(false);
+          router.replace(`/dashboard/${userDash}`);
+        }, 2500);
       } catch (err: any) {
         console.error("CRITICAL: Error in login onSuccess handler:", err);
         errorToast.show(err.message || "Failed to set up login session");

@@ -172,9 +172,11 @@ export default function TeacherCard() {
           const email = response.data.data?.teacher?.email || data.email;
           setShowOverlay(true);
           reset();
+          const redirectParam = searchParams.get('redirect');
+          const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
           setTimeout(() => {
             router.push(
-              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.TEACHER}&requestCode=true`
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.TEACHER}&requestCode=true${redirectQuery}`
             );
           }, 2000);
         },

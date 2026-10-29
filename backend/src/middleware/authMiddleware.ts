@@ -142,16 +142,47 @@ export const authenticateToken = async (
     }
 
     // Require schoolId for Teachers and Students (403 — not a session issue, don't logout)
-    // EXEMPTION: Allow /auth routes (like sessions, me) and independent teachers
+    // EXEMPTIONS:
+    // Allow routes needed by unlinked/onboarding users:
+    // - /links: Creating, viewing, responding, and managing school/teacher/class link requests
+    // - /subscription: Viewing subscription status, usage, plan options
+    // - /notifications: Reading notifications & alerts (e.g., link acceptance updates)
+    // - /auth, /settings, /profile: Account and profile management
+    // - /schools, /classes: Public/cohort lookup during linking
+    // - /support, /ai-complaints: Getting help
+    // - /upload: Uploading user avatar
+    // - /payment, /finance: Subscriptions and payments
     if ((decoded.userType === "TEACHER" || decoded.userType === "STUDENT") && !schoolId) {
-      const isAuthRoute = req.originalUrl.includes('/auth/');
-      const isSettingsRoute = req.originalUrl.includes('/settings') || req.originalUrl.includes('/profile');
-      
-      if (!isAuthRoute && !isSettingsRoute) {
-        console.warn(`[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) has no schoolId on protected route ${req.originalUrl}`);
+      const allowedPatterns = [
+        "/auth",
+        "/links",
+        "/subscription",
+        "/notifications",
+        "/settings",
+        "/profile",
+        "/schools",
+        "/classes",
+        "/teacher",
+        "/student",
+        "/support",
+        "/ai-complaints",
+        "/upload",
+        "/payment",
+        "/finance",
+      ];
+
+      const isAllowed = allowedPatterns.some((pattern) =>
+        req.originalUrl.includes(pattern)
+      );
+
+      if (!isAllowed) {
+        console.warn(
+          `[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) has no schoolId on protected route ${req.originalUrl}`
+        );
         return res.status(403).json({
           success: false,
-          message: "Your account is not linked to a school yet. Please contact your school admin.",
+          message:
+            "Your account is not linked to a school yet. Please contact your school admin.",
         });
       }
     }

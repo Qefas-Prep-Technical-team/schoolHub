@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { platformClient } from "@/lib/api/platformClient";
 
-export type AlertEventType = "PAYMENTS" | "COMPLAINTS" | "SUGGESTIONS" | "INQUIRIES" | "SYSTEM_ALERTS";
+export type AlertEventType = 
+  | "NEW_USERS"
+  | "PAYMENTS" 
+  | "SUBSCRIPTIONS"
+  | "COMPLAINTS" 
+  | "SUGGESTIONS" 
+  | "INQUIRIES" 
+  | "SYSTEM_ALERTS";
 
 export interface AlertRecipient {
   id: string;

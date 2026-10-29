@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const role = searchParams.get("role") || "student";
     const inviteToken = searchParams.get("inviteToken") || "";
+    const redirect = searchParams.get("redirect") || "";
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -38,6 +39,9 @@ export async function GET(request: NextRequest) {
     response.cookies.set("google_redirect_uri", redirectUri, cookieOptions);
     if (inviteToken) {
       response.cookies.set("google_invite_token", inviteToken, cookieOptions);
+    }
+    if (redirect) {
+      response.cookies.set("google_post_auth_redirect", redirect, cookieOptions);
     }
 
     return response;

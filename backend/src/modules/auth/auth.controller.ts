@@ -37,12 +37,10 @@ import {
   verifyDeviceCookie,
   processNewDeviceLogin,
 } from "./auth.device";
-import {
-  enforceStudentLimit,
-  enforceTeacherLimit,
-} from "../subscription/quota.helpers";
+import { enforceStudentLimit, enforceTeacherLimit } from "../subscription/quota.helpers";
 import { getSchoolUsageService } from "../subscription/quota.service";
 import { handleError } from "../../utils/error-handler";
+import { PlatformAlertRecipientService } from "../platform/notifications/recipient.service";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -202,6 +200,17 @@ export const registerSchool = async (req: Request, res: Response) => {
         timeout: 20000, // 20 seconds to handle multi-step registration
       },
     );
+
+    PlatformAlertRecipientService.dispatchAlert("NEW_USERS", {
+      subject: `🏫 [New Registration] School Admin: ${result.admin.name} (${result.school.name})`,
+      title: "New School Registered",
+      description: `A new school institution and administrator account was created.\n\nSchool: ${result.school.name}\nSubdomain: ${result.school.subdomain}\nAdmin: ${result.admin.name}\nEmail: ${result.admin.email}`,
+      userName: result.admin.name,
+      userEmail: result.admin.email,
+      schoolName: result.school.name,
+      userType: "ADMIN",
+      priority: "MEDIUM",
+    }).catch(err => console.error("[PlatformAlert] Failed dispatching new school alert:", err));
 
     return res.status(201).json({
       success: true,
@@ -491,6 +500,18 @@ export const registerTeacher = async (req: Request, res: Response) => {
         ? `Your registration is complete and your request to join ${schoolToConnect.name} has been sent.`
         : "Your teacher registration was successful.",
     });
+
+    // Dispatch platform alert for new teacher
+    PlatformAlertRecipientService.dispatchAlert("NEW_USERS", {
+      subject: `🧑‍🏫 [New Registration] Teacher: ${result.teacher.name}`,
+      title: "New Teacher Registered",
+      description: `A new teacher account was created on Qefas Hub.\n\nName: ${result.teacher.name}\nEmail: ${result.teacher.email}\nTeacher Code: ${result.teacher.teacherCode}${schoolToConnect ? `\nLinked School: ${schoolToConnect.name}` : "\nStatus: Independent"}`,
+      userName: result.teacher.name,
+      userEmail: result.teacher.email,
+      schoolName: schoolToConnect?.name,
+      userType: "TEACHER",
+      priority: "LOW",
+    }).catch(err => console.error("[PlatformAlert] Failed dispatching new teacher alert:", err));
 
     return res.status(201).json({
       success: true,
@@ -897,6 +918,18 @@ export const registerStudent = async (
         : "Your student registration was successful.",
     });
 
+    // Dispatch platform alert for new student
+    PlatformAlertRecipientService.dispatchAlert("NEW_USERS", {
+      subject: `🎓 [New Registration] Scholar / Student: ${result.name}`,
+      title: "New Student Registered",
+      description: `A new student account was created on Qefas Hub.\n\nName: ${result.name}\nEmail: ${result.email}\nStudent Code: ${result.studentCode}${school ? `\nEnrolled School: ${school.name}` : ""}`,
+      userName: result.name,
+      userEmail: result.email,
+      schoolName: school?.name,
+      userType: "STUDENT",
+      priority: "LOW",
+    }).catch(err => console.error("[PlatformAlert] Failed dispatching new student alert:", err));
+
     return res.status(201).json({
       success: true,
       message: "Student registered successfully and link requests sent",
@@ -1083,6 +1116,17 @@ export const registerParent = async (
           "You can link to your child's account later using their student code.",
       };
     }
+
+    // Dispatch platform alert for new parent
+    PlatformAlertRecipientService.dispatchAlert("NEW_USERS", {
+      subject: `👨‍👩‍👧 [New Registration] Parent / Guardian: ${result.parent.fullName}`,
+      title: "New Parent Registered",
+      description: `A new parent guardian account was created on Qefas Hub.\n\nName: ${result.parent.fullName}\nEmail: ${result.parent.email}\nParent Code: ${result.parent.parentCode}`,
+      userName: result.parent.fullName,
+      userEmail: result.parent.email,
+      userType: "PARENT",
+      priority: "LOW",
+    }).catch(err => console.error("[PlatformAlert] Failed dispatching new parent alert:", err));
 
     return res.status(201).json(response);
   } catch (error: any) {
@@ -2688,16 +2732,42 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           // The /login route will handle sending the New Device alert.
         }
 
+        const adminAccessToken = generateAccessToken(user.id, "ADMIN");
+        res.cookie("token", adminAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         setDeviceVerifiedCookie(user.id);
+        const normalizedAdmin = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role || "ADMIN",
+          userType: "ADMIN",
+          tenantId: user.tenantId,
+          status: user.status,
+          verified: user.verified,
+          isSchoolOwner,
+          schools,
+        };
         return res.status(200).json({
           success: true,
           isNewUser,
+          token: adminAccessToken,
+          accessToken: adminAccessToken,
           message: isSchoolOwner
             ? "School owner verified and account approved!"
             : "Admin verified! Waiting for school owner approval.",
           userRole: userType,
           code: schoolCode,
+          user: normalizedAdmin,
           data: {
+            token: adminAccessToken,
+            accessToken: adminAccessToken,
+            user: normalizedAdmin,
             admin: {
               id: user.id,
               name: user.name,
@@ -2747,14 +2817,40 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           // Device verification for existing user
         }
 
+        const teacherAccessToken = generateAccessToken(user.id, "TEACHER");
+        res.cookie("token", teacherAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         setDeviceVerifiedCookie(user.id);
+        const normalizedTeacher = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role || "TEACHER",
+          userType: "TEACHER",
+          teacherCode: user.teacherCode,
+          tenantId: user.tenantId,
+          verified: user.verified,
+        };
         return res.status(200).json({
           success: true,
           isNewUser,
+          token: teacherAccessToken,
+          accessToken: teacherAccessToken,
           message: "Teacher verified successfully!",
           userRole: userType,
           code: user.teacherCode,
-          data: { teacher: user },
+          user: normalizedTeacher,
+          data: {
+            token: teacherAccessToken,
+            accessToken: teacherAccessToken,
+            user: normalizedTeacher,
+            teacher: user,
+          },
         });
 
       case UserRole.STUDENT:
@@ -2794,14 +2890,40 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           // Device verification for existing user
         }
 
+        const studentAccessToken = generateAccessToken(user.id, "STUDENT");
+        res.cookie("token", studentAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         setDeviceVerifiedCookie(user.id);
+        const normalizedStudent = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: "STUDENT",
+          userType: "STUDENT",
+          studentCode: user.studentCode,
+          tenantId: user.tenantId,
+          verified: user.verified,
+        };
         return res.status(200).json({
           success: true,
           isNewUser,
+          token: studentAccessToken,
+          accessToken: studentAccessToken,
           message: "Student verified successfully!",
           userRole: userType,
           code: user.studentCode,
-          data: { student: user },
+          user: normalizedStudent,
+          data: {
+            token: studentAccessToken,
+            accessToken: studentAccessToken,
+            user: normalizedStudent,
+            student: user,
+          },
         });
 
       case UserRole.PARENT:
@@ -2841,14 +2963,40 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           // Device verification for existing user
         }
 
+        const parentAccessToken = generateAccessToken(user.id, "PARENT");
+        res.cookie("token", parentAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         setDeviceVerifiedCookie(user.id);
+        const normalizedParent = {
+          id: user.id,
+          name: user.fullName,
+          email: user.email,
+          role: "PARENT",
+          userType: "PARENT",
+          parentCode: user.parentCode,
+          tenantId: user.tenantId,
+          verified: user.verified,
+        };
         return res.status(200).json({
           success: true,
           isNewUser,
+          token: parentAccessToken,
+          accessToken: parentAccessToken,
           message: "Parent verified successfully!",
           userRole: userType,
           code: user.parentCode,
-          data: { parent: user },
+          user: normalizedParent,
+          data: {
+            token: parentAccessToken,
+            accessToken: parentAccessToken,
+            user: normalizedParent,
+            parent: user,
+          },
         });
 
       default:

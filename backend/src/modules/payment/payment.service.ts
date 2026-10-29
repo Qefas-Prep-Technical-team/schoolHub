@@ -200,15 +200,15 @@ export const processZeroAmountCheckout = async (params: {
     }
   }
 
-  // Dispatch payment alert to registered platform recipients
-  PlatformAlertRecipientService.dispatchAlert("PAYMENTS", {
-    subject: `💳 [100% Discount] Plan Activated: ${plan.toUpperCase()}`,
+  // Dispatch subscription & payment alert to registered platform recipients
+  PlatformAlertRecipientService.dispatchAlert("SUBSCRIPTIONS", {
+    subject: `⭐ [Plan Activated] 100% Discount: ${plan.toUpperCase()}`,
     title: "100% Discount Subscription Activation",
     description: `A user has activated a ${plan.toUpperCase()} subscription using a 100% coupon discount.\n\nPlan: ${plan.toUpperCase()}\nBilling: ${billingType}\nReference: ${reference}`,
     userEmail: email,
     userType: userRole,
-    priority: "LOW"
-  }).catch(err => console.error("[PaymentService] Failed dispatching payment alert:", err));
+    priority: "MEDIUM"
+  }).catch(err => console.error("[PaymentService] Failed dispatching subscription alert:", err));
 
   return { reference, status: "SUCCESS", plan, subscriptionEnd };
 };
@@ -609,15 +609,24 @@ export const verifyPaymentService = async (
         // Don't throw here as the payment was successful
     }
 
-    // Dispatch payment alert to registered platform recipients
+    // Dispatch payment and subscription alerts to registered platform recipients
     PlatformAlertRecipientService.dispatchAlert("PAYMENTS", {
       subject: `💳 Payment Received: ₦${paystackAmount.toLocaleString()} (${plan.toUpperCase()})`,
       title: "Subscription Payment Received",
       description: `A payment of ₦${paystackAmount.toLocaleString()} was successfully processed via ${gateway.name} (${channel || 'Card'}).\n\nPlan: ${plan.toUpperCase()}\nReference: ${paystackRef}\nExpiry: ${updateData.subscriptionEnd?.toISOString()}`,
       userEmail: userEmail,
       userType: userRole,
-      priority: "MEDIUM"
+      priority: "HIGH"
     }).catch(err => console.error("[PaymentService] Failed dispatching payment alert:", err));
+
+    PlatformAlertRecipientService.dispatchAlert("SUBSCRIPTIONS", {
+      subject: `⭐ [Subscription Upgraded] ${plan.toUpperCase()} Plan Active`,
+      title: "Subscription Tier Upgraded / Renewed",
+      description: `User ${userEmail} (${userRole}) has subscribed to ${plan.toUpperCase()}.\n\nAmount: ₦${paystackAmount.toLocaleString()}\nGateway: ${gateway.name}\nReference: ${paystackRef}\nExpiry Date: ${updateData.subscriptionEnd?.toISOString()}`,
+      userEmail: userEmail,
+      userType: userRole,
+      priority: "HIGH"
+    }).catch(err => console.error("[PaymentService] Failed dispatching subscription alert:", err));
 
     return { 
         reference: paystackRef, 

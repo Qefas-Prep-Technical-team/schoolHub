@@ -28,7 +28,7 @@ const TeacherQRCodeModal: React.FC<TeacherQRCodeModalProps> = ({
   schoolCode,
   isPersonal
 }) => {
-  const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const baseUrl = (process.env.NEXT_PUBLIC_FRONTEND_URL || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/+$/, "");
   
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;

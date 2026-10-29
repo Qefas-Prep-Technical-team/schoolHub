@@ -718,10 +718,10 @@ export const requestToJoinClassService = async ({
       });
 
     if (!isLinked) {
-      if (student.schoolId !== null) {
+      if (Boolean(student.schoolId)) {
         throw new Error("You are currently enrolled in another school. You must be linked to this school to join its classes");
       }
-      // If student.schoolId === null (unaffiliated independent student), allow them to request to join!
+      // If student has no schoolId (unaffiliated independent student), allow them to request to join!
       // When accepted, StudentLifecycleService.enrollStudentInSchool will enroll them in this school.
     }
   }

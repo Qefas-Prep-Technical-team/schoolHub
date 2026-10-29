@@ -9,13 +9,19 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const detectedRole = (searchParams?.get("detected_role") || "").toLowerCase().trim();
 
+  const getPortalHref = (basePath: string) => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    const queryString = params.toString();
+    return queryString ? `${basePath}?${queryString}` : basePath;
+  };
+
   const portals = [
     {
       role: "ADMIN",
       icon: "admin_panel_settings",
       title: "School Admin",
       description: "Oversee entire school operations, staff, and analytics.",
-      href: "/login/school-admin",
+      href: getPortalHref("/login/school-admin"),
       isMatched: detectedRole === "school admin" || detectedRole === "admin",
     },
     {
@@ -23,7 +29,7 @@ function SignInContent() {
       icon: "school",
       title: "Teacher",
       description: "Manage classes, assignments, grades, and student progress.",
-      href: "/login/teacher",
+      href: getPortalHref("/login/teacher"),
       isMatched: detectedRole === "teacher",
     },
     {
@@ -31,7 +37,7 @@ function SignInContent() {
       icon: "person",
       title: "Student",
       description: "Access courses, submit assignments, and track your performance.",
-      href: "/login/student",
+      href: getPortalHref("/login/student"),
       isMatched: detectedRole === "student",
     },
     {
@@ -39,7 +45,7 @@ function SignInContent() {
       icon: "family_restroom",
       title: "Parent",
       description: "Stay updated on your child's academic journey and school news.",
-      href: "/login/parent",
+      href: getPortalHref("/login/parent"),
       isMatched: detectedRole === "parent",
     },
   ];

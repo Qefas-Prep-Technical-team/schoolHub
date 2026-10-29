@@ -131,9 +131,11 @@ export default function ParentCard() {
           const email = response.data.data.parent.email;
           setShowOverlay(true);
           reset();
+          const redirectParam = searchParams.get('redirect');
+          const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
           setTimeout(() => {
             router.push(
-              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.PARENT}&requestCode=true`
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.PARENT}&requestCode=true${redirectQuery}`
             );
           }, 2000);
         },

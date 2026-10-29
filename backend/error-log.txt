@@ -58876,4 +58876,7 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
     at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at async Promise.all (index 1)
-    at getUnreadCount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:309:58)
+    at getUnreadCount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:309:58)Error: A pending request already exists between these users
+    at createLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.service.ts:420:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)

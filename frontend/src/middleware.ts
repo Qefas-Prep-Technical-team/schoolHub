@@ -4,6 +4,14 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const host = req.headers.get("host") || "";
 
+  // 0. Normalize duplicate slashes (e.g. //join/school/... -> /join/school/...)
+  if (url.pathname.includes("//")) {
+    const cleanPath = url.pathname.replace(/\/+/g, "/");
+    const cleanUrl = new URL(cleanPath, req.url);
+    cleanUrl.search = url.search;
+    return NextResponse.redirect(cleanUrl);
+  }
+
   // 1. Exclude static assets, API routes, and standard next components
   if (
     url.pathname.startsWith("/_next") ||
