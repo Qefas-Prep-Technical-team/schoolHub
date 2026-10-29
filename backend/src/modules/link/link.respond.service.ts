@@ -171,10 +171,22 @@ const canRespondToRequest = async ({
   return true;
 };
 
+/**
+ * Class-targeted requests may only carry the class id in `targetId`
+ * (targetType === CLASS) without populating `classId`. Resolve both.
+ */
+const resolveClassId = (request: any): string | null => {
+  if (request.classId) return request.classId;
+  if (request.targetType === LinkEntityType.CLASS && request.targetId) return request.targetId;
+  if (request.requesterType === LinkEntityType.CLASS && request.requesterId) return request.requesterId;
+  return null;
+};
+
 const applyDomainSideEffects = async (
   tx: Prisma.TransactionClient,
-  request: any,
+  rawRequest: any,
 ) => {
+  const request = { ...rawRequest, classId: resolveClassId(rawRequest) };
   switch (request.linkType) {
     case "PARENT_STUDENT": {
       const parentId =
@@ -440,7 +452,19 @@ export const respondToLinkRequestService = async ({
       }
   }
 
+  const classId = resolveClassId(request);
+
   const result = await prisma.$transaction(async (tx) => {
+    // Atomically claim the request: prevents double acceptance when the same
+    // request is accepted concurrently (single + batch, or two admins).
+    const claimed = await tx.linkRequest.updateMany({
+      where: { id: requestId, status: LinkRequestStatus.PENDING },
+      data: { respondedAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      throw new Error("This request has already been responded to");
+    }
+
     // console.log("REQUEST BEFORE ACCEPT:", {
     //   id: request.id,
     //   linkType: request.linkType,
@@ -465,7 +489,7 @@ export const respondToLinkRequestService = async ({
         id: request.targetId,
         schoolId: request.targetSchoolId,
       },
-      classId: request.classId || undefined,
+      classId: classId || undefined,
     });
     // console.log("RESOLVED SCHOOL ID:", resolvedSchoolId);
     const relationship = await tx.relationshipLink.create({
@@ -476,10 +500,10 @@ export const respondToLinkRequestService = async ({
         leftEntityId: request.requesterId,
         leftCode: request.requesterCode,
         rightEntityType: request.targetType,
-        rightEntityId: request.targetId || request.classId || "",
+        rightEntityId: request.targetId || classId || "",
         rightCode: request.targetCode,
         schoolId: resolvedSchoolId,
-        classId: request.classId || undefined,
+        classId: classId || undefined,
       },
     });
 
@@ -501,22 +525,27 @@ export const respondToLinkRequestService = async ({
       request: acceptedRequest,
       relationship,
     };
-  });
+  }, { timeout: 20000, maxWait: 10000 });
 
-  await createNotification({
-    recipientType: request.requesterType as any,
-    recipientId: request.requesterId,
-    senderType: request.targetType as any,
-    senderId: request.targetId || undefined,
-    type: "LINK_ACCEPTED",
-    title: "Link Request Accepted",
-    message: "Your link request was accepted",
-    linkRequestId: request.id,
-    meta: {
-      linkType: request.linkType,
-      relationshipLinkId: result.relationship.id,
-    },
-  });
+  try {
+    await createNotification({
+      recipientType: request.requesterType as any,
+      recipientId: request.requesterId,
+      senderType: request.targetType as any,
+      senderId: request.targetId || undefined,
+      type: "LINK_ACCEPTED",
+      title: "Link Request Accepted",
+      message: "Your link request was accepted",
+      linkRequestId: request.id,
+      meta: {
+        linkType: request.linkType,
+        relationshipLinkId: result.relationship.id,
+      },
+    });
+  } catch (notifyError) {
+    // The link is already committed — never fail the accept because of a notification.
+    console.error("[link.respond] Failed to send LINK_ACCEPTED notification:", notifyError);
+  }
 
   return result;
 };

@@ -21,7 +21,6 @@ export const getGradeHub = async (req: Request, res: Response) => {
     }
 
     if (userRole === 'TEACHER') {
-      queryFilters.teacherClassesOnly = 'true';
       queryFilters.currentTeacherId = userId;
     }
 

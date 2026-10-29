@@ -3,66 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "npm start -- -c",
-      "timestamp": 1785851738971,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "npm start",
-      "timestamp": 1785853625608,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "cd Mobile",
-      "timestamp": 1785917754110,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "Remove-Item -Recurse -Force android",
-      "timestamp": 1785917893948,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_ittusj.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_ittusj.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1785918356222,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_6o4yds.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_6o4yds.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1785918440213,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_zsllm5.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_zsllm5.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1785918441295,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd Mobile",
-      "timestamp": 1785918447982,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "Remove-Item -Recurse -Force android",
-      "timestamp": 1785918451762,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "eas build --platform android --profile preview",
-      "timestamp": 1785918673197,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "npx expo prebuild",
-      "timestamp": 1785918695934,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "clkear",
-      "timestamp": 1785919131295,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
       "command": "cd Mobile",
       "timestamp": 1785919142330,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
@@ -2501,7 +2441,67 @@
       "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_cb153o.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_cb153o.ps1\" -ErrorAction SilentlyContinue",
       "timestamp": 1792728362793,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_u7ix2c.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_u7ix2c.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793279509394,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_2xfsr.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_2xfsr.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793279569676,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_v7iadq.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_v7iadq.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793280910575,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_ixac.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_ixac.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793281012980,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd \"c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\" ; python - <<'PY'",
+      "timestamp": 1793281013433,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "from pathlib import Path",
+      "timestamp": 1793281013542,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "p = Path('frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx')",
+      "timestamp": 1793281013921,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "text = p.read_text(encoding='utf-8')",
+      "timestamp": 1793281014253,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "for marker in ['const teacherAssignedSubjectIds = useMemo', 'const { data: classDetails, isLoading: isLoadingClassDetails } = useSingleClass', 'const saveMutation = useMutation', 'export default function RecordScoreEntryModal']:",
+      "timestamp": 1793281014271,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "print(marker, text.count(marker))",
+      "timestamp": 1793281014299,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "print('len', len(text.splitlines()))",
+      "timestamp": 1793281015783,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "PY",
+      "timestamp": 1793281020437,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
     }
   ],
-  "lastUpdated": 1792728362793
+  "lastUpdated": 1793281020437
 }

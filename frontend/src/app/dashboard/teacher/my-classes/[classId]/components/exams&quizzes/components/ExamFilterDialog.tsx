@@ -72,11 +72,10 @@ export function ExamFilterDialog({
               onChange={(e) => setLocalFilters({ ...localFilters, type: (e.target.value as ExamType) || undefined })}
               className="w-full h-10 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/70 px-3 text-xs sm:text-sm font-semibold text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">All Types (Exams, Quizzes, CAs)</option>
-              <option value="exam">Official Examination</option>
-              <option value="quiz">Quiz</option>
+              <option value="">All Categories</option>
+              <option value="exam">Terminal Examination</option>
               <option value="ca">Continuous Assessment (CA)</option>
-              <option value="subject_paper">Subject Paper</option>
+              <option value="quiz">Quiz / Test</option>
               <option value="assignment">Assignment</option>
             </select>
           </div>

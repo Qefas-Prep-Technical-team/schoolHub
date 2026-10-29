@@ -24,8 +24,26 @@ import { getSchoolStatsService } from "../school/school.service";
 import { getIO } from "../../socket";
 import { handleError } from "../../utils/error-handler";
 
-const isClassLinkType = (type: string) =>
-  ["TEACHER_CLASS", "STUDENT_CLASS"].includes(type);
+import { z } from "zod";
+import {
+  getIncomingPendingRequestIdsService,
+  isClassroomLinkType,
+} from "./link.query.service";
+
+const isClassLinkType = (type: string) => isClassroomLinkType(type);
+
+/** Max requests processed in one batch call (sequential queue on the server). */
+const MAX_BATCH_SIZE = 200;
+
+const batchActionSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(MAX_BATCH_SIZE),
+  action: z.enum(["ACCEPT", "REJECT", "CANCEL"]),
+  rejectionReason: z.string().max(500).optional(),
+});
+
+const acceptAllSchema = z.object({
+  category: z.enum(["network", "classroom"]).optional(),
+});
 
 const userRoleToEntityType = (role: UserRole): LinkEntityType | null => {
   switch (role) {
@@ -504,7 +522,7 @@ export const revokeActiveLink = async (req: Request, res: Response) => {
 
 export const batchRequestAction = async (req: Request, res: Response) => {
   try {
-    const { ids, action, rejectionReason } = req.body;
+    const parsed = batchActionSchema.safeParse(req.body);
 
     if (!req.user) {
       return res.status(401).json({
@@ -513,19 +531,16 @@ export const batchRequestAction = async (req: Request, res: Response) => {
       });
     }
 
-    if (!Array.isArray(ids) || ids.length === 0) {
+    if (!parsed.success) {
       return res.status(400).json({
         success: false,
-        message: "ids must be a non-empty array",
+        message: parsed.error.issues[0]?.message || "Invalid batch payload",
       });
     }
 
-    if (!action || !["ACCEPT", "REJECT", "CANCEL"].includes(action)) {
-      return res.status(400).json({
-        success: false,
-        message: "action must be ACCEPT, REJECT, or CANCEL",
-      });
-    }
+    // De-duplicate ids so the same request is never processed twice in one batch
+    const ids = Array.from(new Set(parsed.data.ids));
+    const { action, rejectionReason } = parsed.data;
 
     const currentUserType = userRoleToEntityType(req.user.userType);
 
@@ -562,73 +577,34 @@ export const batchRequestAction = async (req: Request, res: Response) => {
 
 export const acceptAllRequestsByCategory = async (req: Request, res: Response) => {
   try {
-    const { category } = req.body; // 'network' | 'classroom'
+    const parsed = acceptAllSchema.safeParse(req.body ?? {});
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
+
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, message: "Invalid category" });
+    }
+    const { category } = parsed.data;
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
       return res.status(400).json({ success: false, message: "Unsupported user type" });
     }
 
-    // 1. Get all pending requests for this user (including school-targeted ones)
-    const schoolAdminLinks = await prisma.schoolAdmin.findMany({
-      where: { adminId: req.user.id, active: true },
-      select: { schoolId: true },
-    });
-    const schoolIds = schoolAdminLinks.map((s) => s.schoolId);
-
-    const pendingRequests = await prisma.linkRequest.findMany({
-      where: {
-        status: "PENDING",
-        OR: [
-          { targetType: LinkEntityType.ADMIN, targetId: req.user.id },
-          { targetSchoolId: { in: schoolIds } },
-          { 
-            targetType: { in: [LinkEntityType.SCHOOL, LinkEntityType.CLASS] },
-            schoolId: { in: schoolIds } 
-          },
-          {
-            targetType: LinkEntityType.SCHOOL,
-            targetSchool: {
-              admins: { some: { adminId: req.user.id, active: true } },
-            },
-          },
-        ],
-      },
-      select: { id: true, linkType: true }
-    });
-
-    if (pendingRequests.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No pending requests to accept",
-        data: { total: 0, successCount: 0, failedCount: 0, results: [] }
-      });
-    }
-
-    // 2. Filter by category
-    let targetIds: string[] = [];
-    if (category === 'classroom') {
-      targetIds = pendingRequests
-        .filter(r => isClassLinkType(r.linkType))
-        .map(r => r.id);
-    } else if (category === 'network') {
-      targetIds = pendingRequests
-        .filter(r => !isClassLinkType(r.linkType))
-        .map(r => r.id);
-    } else {
-      // If no category specified, accept ALL
-      targetIds = pendingRequests.map(r => r.id);
-    }
+    // 1. Same query the pending list uses — guarantees Accept All == what the admin sees.
+    const allIds = await getIncomingPendingRequestIdsService(
+      { currentUserId: req.user.id, currentUserType },
+      category,
+    );
+    const targetIds = allIds.slice(0, MAX_BATCH_SIZE);
 
     if (targetIds.length === 0) {
        return res.status(200).json({
         success: true,
-        message: `No pending ${category} requests to accept`,
-        data: { total: 0, successCount: 0, failedCount: 0, results: [] }
+        message: `No pending ${category || ''} requests to accept`.replace(/\s+/g, ' '),
+        data: { total: 0, successCount: 0, failedCount: 0, remaining: 0, results: [] }
       });
     }
 
@@ -649,7 +625,7 @@ export const acceptAllRequestsByCategory = async (req: Request, res: Response) =
     return res.status(200).json({
       success: true,
       message: `Batch accept for ${category || 'all'} completed`,
-      data: result,
+      data: { ...result, remaining: Math.max(allIds.length - targetIds.length, 0) },
     });
 
   } catch (error: any) {

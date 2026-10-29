@@ -96,10 +96,60 @@ export default function OfflineGradesDashboard({
   const { data: teacherSubjectsData } = useTeacherSubjects(isTeacher ? schoolId : undefined);
   const { data: teacherClassesData } = useTeacherClasses(isTeacher ? schoolId : undefined);
 
+  const teacherSubjectIdSet = useMemo(() => {
+    if (!isTeacher || !teacherSubjectsData) return new Set<string>();
+    return new Set(
+      teacherSubjectsData
+        .map((s: any) => (s.id || s.subjectId || s.subject?.id || '').toString())
+        .filter(Boolean)
+    );
+  }, [isTeacher, teacherSubjectsData]);
+
+  const teacherClassSubjectIdSet = useMemo(() => {
+    if (!isTeacher || !activeClassId) return new Set<string>();
+
+    const classMatch = Array.isArray(teacherClassesData)
+      ? teacherClassesData.find((c: any) => c.id === activeClassId || c.classId === activeClassId)
+      : null;
+
+    const classSubjectIds = Array.isArray((classMatch as any)?.teacherSubjectIds)
+      ? (classMatch as any).teacherSubjectIds
+      : Array.isArray((classMatch as any)?.subjects)
+        ? (classMatch as any).subjects
+          .map((s: any) => s?.subjectId || s?.id || s?.subject?.id)
+          .filter(Boolean)
+        : [];
+
+    const fallback = Array.isArray((classMatch as any)?.classInfo?.teacherSubjectIds)
+      ? (classMatch as any).classInfo.teacherSubjectIds
+      : [];
+
+    return new Set<string>([...classSubjectIds, ...fallback].map((id) => String(id)).filter(Boolean));
+  }, [activeClassId, isTeacher, teacherClassesData]);
+
+  const teacherScopeSubjectIds = useMemo(() => {
+    if (!isTeacher) return new Set<string>();
+    const set = new Set<string>();
+    Array.from(teacherSubjectIdSet).forEach((id) => set.add(String(id)));
+    Array.from(teacherClassSubjectIdSet).forEach((id) => set.add(String(id)));
+    return set;
+  }, [isTeacher, teacherSubjectIdSet, teacherClassSubjectIdSet]);
+
   const teacherSubjectNames = useMemo(() => {
     if (!isTeacher || !teacherSubjectsData) return null;
-    return new Set(teacherSubjectsData.map((s: any) => (s.name || '').trim().toLowerCase()));
+    return new Set(
+      teacherSubjectsData
+        .map((s: any) => (s.name || s.subject?.name || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
   }, [isTeacher, teacherSubjectsData]);
+
+  const teacherScopeSubjectNames = useMemo(() => {
+    if (!isTeacher || !teacherSubjectNames) return new Set<string>();
+    const set = new Set<string>();
+    Array.from(teacherSubjectNames).forEach((name) => set.add(String(name)));
+    return set;
+  }, [isTeacher, teacherSubjectNames]);
 
   // 1. Fetch school classes & sessions
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(schoolId);
@@ -126,7 +176,9 @@ export default function OfflineGradesDashboard({
         offlineOnly: 'true',
         limit: 1000,
       });
-      const grades = Array.isArray(res?.grades) ? res.grades : (Array.isArray(res?.data) ? res.data : []);
+      const grades = Array.isArray(res?.data)
+        ? res.data
+        : (Array.isArray(res?.grades) ? res.grades : (Array.isArray(res) ? res : []));
 
       // Group offline grades by normalized category + assessmentType + classId + subject + term
       const groupMap = new Map<string, GradeBatchSummary & { _scoreSum?: number }>();
@@ -138,15 +190,23 @@ export default function OfflineGradesDashboard({
         // If activeClassId is defined, only include matching class
         if (activeClassId && g.classId !== activeClassId) return;
 
-        // If teacher, only display assessment records for their assigned subjects or created by them
-        if (isTeacher && teacherSubjectNames) {
-          const sName = (g.subject || '').trim().toLowerCase();
-          const isAssigned = teacherSubjectNames.has(sName) || g.teacherId === user?.id;
-          if (!isAssigned) return;
+        // If teacher on global dashboard, show records for assigned subjects/classes or created by them.
+        // On a specific class page (activeClassId), all records belonging to this class are shown directly.
+        if (isTeacher && !activeClassId) {
+          const sId = (g.subjectId || g.subject?.id || '').toString();
+          const sName = (g.subject || g.subjectName || '').toString().trim().toLowerCase();
+          const isCreatedByTeacher = g.teacherId && (g.teacherId === user?.id || (user as any)?.teacherId === g.teacherId);
+          const isAssignedSubjectId = Boolean(sId && teacherScopeSubjectIds?.has(sId));
+          const isAssignedSubjectName = Boolean(sName && teacherScopeSubjectNames?.has(sName));
+          const isTeacherClass = Array.isArray(teacherClassesData) && teacherClassesData.some((c: any) => (c.id || c.classId) === g.classId);
+
+          if (!isCreatedByTeacher && !isAssignedSubjectId && !isAssignedSubjectName && !isTeacherClass) {
+            return;
+          }
         }
 
         const classObj = classes.find((c: any) => c.id === g.classId);
-        const resolvedClassName = classObj?.name 
+        const resolvedClassName = classObj?.name
           ? `${classObj.name} ${classObj.section || ''}`.trim()
           : (g.class?.name ? `${g.class.name} ${g.class.section || ''}`.trim() : 'General Cohort');
 
@@ -209,7 +269,7 @@ export default function OfflineGradesDashboard({
   const handleAddNewRecord = (category?: OfflineAssessmentCategory) => {
     setSelectedRecordForEdit(null);
     setDefaultCategoryForNew(category);
-    setDefaultClassIdForNew(undefined);
+    setDefaultClassIdForNew(activeClassId || undefined);
     setDefaultSubjectForNew(undefined);
     setDefaultMaxMarksForNew(undefined);
     setInitialScoresForNew(undefined);

@@ -265,6 +265,16 @@ export const getExamsService = async (filters: {
         where.AND = [{ id: "none" }]; // no access to any exams
       }
 
+      // If a specific class was requested, allow exams assigned to that class or unassigned to any class (classId is null)
+      if (filters.classId) {
+        where.AND.push({
+          OR: [
+            { classId: filters.classId },
+            { classId: null }
+          ]
+        });
+      }
+
       // Implement teacherClassesOnly scoping
       const isTeacherClassesOnly = filters.teacherClassesOnly === 'true';
       if (isTeacherClassesOnly) {
@@ -418,8 +428,18 @@ export const getExamsService = async (filters: {
       };
     });
     
+    const calculatedTotalMarks = (exam.totalMarks && Number(exam.totalMarks) > 0)
+      ? Number(exam.totalMarks)
+      : papers.reduce((sum: number, p: any) => {
+          const pMarks = (p.totalMarks && Number(p.totalMarks) > 0)
+            ? Number(p.totalMarks)
+            : (p.questions || []).reduce((qSum: number, q: any) => qSum + (Number(q.marks) || 1), 0);
+          return sum + pMarks;
+        }, 0);
+
     return {
       ...exam,
+      totalMarks: calculatedTotalMarks,
       subjectExamPapers: papers,
       totalPapers: papers.length,
       totalQuestions: papers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)
@@ -690,7 +710,7 @@ export const getSubjectPapersService = async (filters: {
       examConditions.push({ OR: [{ term: filters.term }, { term: null }] });
     }
     if (filters.classId) {
-      examConditions.push({ OR: [{ classId: filters.classId }, { scope: 'SCHOOL' }, { scope: 'DEPARTMENT' }] });
+      examConditions.push({ OR: [{ classId: filters.classId }, { classId: null }] });
     }
     if (filters.departmentIds && filters.departmentIds.length > 0) {
       examConditions.push({ departments: { some: { departmentId: { in: filters.departmentIds } } } });
@@ -746,7 +766,7 @@ export const getSubjectPapersService = async (filters: {
         include: { exam: true }
       },
       questions: {
-        select: { id: true }
+        select: { id: true, marks: true }
       },
       _count: {
         select: { examAttempts: true }
@@ -785,8 +805,13 @@ export const getSubjectPapersService = async (filters: {
       }
     }
 
+    const calculatedTotalMarks = (paper.totalMarks && paper.totalMarks > 0)
+      ? paper.totalMarks
+      : (paper.questions || []).reduce((sum: number, q: any) => sum + (Number(q.marks) || 1), 0);
+
     return {
       ...paper,
+      totalMarks: calculatedTotalMarks,
       questionsCount: paper.questions?.length ?? 0,
       assignedTeachers: Array.from(teachersMap.values()),
     };

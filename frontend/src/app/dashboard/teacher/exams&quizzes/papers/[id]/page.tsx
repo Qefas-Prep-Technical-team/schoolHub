@@ -256,6 +256,50 @@ export default function TeacherPaperDetailPage() {
     e.exam?.status === "PUBLISHED" || e.exam?.status === "ONGOING" || e.exam?.status === "COMPLETED"
   );
 
+  // Single-paper types (e.g. CA, QUIZ, ASSIGNMENT, or single subject exams)
+  const SINGLE_PAPER_TYPES = ['QUIZ', 'CA', 'ASSIGNMENT'];
+  const mainExam = paper?.exams?.[0]?.exam || null;
+  const isSinglePaperType = !!(
+    (paper as any)?.category && SINGLE_PAPER_TYPES.includes((paper as any).category)
+  ) || !!(
+    mainExam && (
+      SINGLE_PAPER_TYPES.includes((mainExam as any).category || (mainExam as any).type || '') ||
+      (mainExam as any).mode === 'SINGLE_SUBJECT'
+    )
+  );
+
+  const effectiveSchoolId = paperSchoolId || fallbackSchoolId;
+
+  // Fetch Classes for the selector
+  const { data: classesData = [] } = useQuery({
+    queryKey: ["school-classes", effectiveSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/classes?schoolId=${effectiveSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!effectiveSchoolId && isEditModalOpen,
+  });
+
+  // Fetch Departments for the selector
+  const { data: departmentsData = [] } = useQuery({
+    queryKey: ["school-departments", effectiveSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/departments?schoolId=${effectiveSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!effectiveSchoolId && isEditModalOpen,
+  });
+
+  // Fetch Sessions for the selector
+  const { data: sessionsData = [] } = useQuery({
+    queryKey: ["school-sessions", effectiveSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/sessions?schoolId=${effectiveSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!effectiveSchoolId && isEditModalOpen,
+  });
+
   // Normalize and merge results from online attempts and manual grades
   const onlineResults = useMemo(() => (paper?.examAttempts || []).map((a: any) => ({
     id: a.id,
@@ -1351,8 +1395,13 @@ export default function TeacherPaperDetailPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         paper={paper as any}
+        exam={mainExam}
+        isSinglePaperType={isSinglePaperType}
         subjects={subjects}
         teachers={teachers}
+        classes={classesData}
+        departments={departmentsData}
+        sessions={sessionsData}
         isLoadingData={isLoadingSubjects || isLoadingTeachers}
       />
 

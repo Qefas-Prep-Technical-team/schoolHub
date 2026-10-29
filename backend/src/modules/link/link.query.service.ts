@@ -25,6 +25,36 @@ const getPagination = (page = 1, limit = 10) => {
   };
 };
 
+/** Canonical classroom link types — keep identical across list, count and batch endpoints. */
+export const CLASSROOM_LINK_TYPES: LinkType[] = [
+  LinkType.TEACHER_CLASS,
+  LinkType.STUDENT_CLASS,
+  LinkType.TEACHER_STUDENT,
+];
+
+export const isClassroomLinkType = (type: string) =>
+  (CLASSROOM_LINK_TYPES as string[]).includes(type);
+
+/**
+ * Returns all pending request IDs the current user can act on, filtered by category.
+ * Uses the same WHERE clause as the pending list so "Accept All" matches what the UI shows.
+ */
+export const getIncomingPendingRequestIdsService = async (
+  user: CurrentUserInput,
+  category?: "network" | "classroom",
+): Promise<string[]> => {
+  const where: any = await buildIncomingWhere(user);
+  if (category === "classroom") where.linkType = { in: CLASSROOM_LINK_TYPES };
+  else if (category === "network") where.linkType = { notIn: CLASSROOM_LINK_TYPES };
+
+  const rows = await prisma.linkRequest.findMany({
+    where,
+    select: { id: true },
+    orderBy: { createdAt: "asc" }, // FIFO queue: oldest requests are processed first
+  });
+  return rows.map((r) => r.id);
+};
+
 const buildIncomingWhere = async ({
   currentUserId,
   currentUserType,
@@ -83,7 +113,7 @@ export const getOutgoingLinkRequestsService = async (
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
   } else if (options.category) {
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS, LinkType.TEACHER_STUDENT];
+    const classroomTypes: LinkType[] = CLASSROOM_LINK_TYPES;
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {
@@ -137,7 +167,7 @@ export const getIncomingPendingLinkRequestsService = async (
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
   } else if (options.category) {
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    const classroomTypes: LinkType[] = CLASSROOM_LINK_TYPES;
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {
@@ -231,7 +261,7 @@ export const getAllLinkRequestsService = async (
     where.linkType = options.linkType;
   } else if (options.category) {
     // Grouped by classroom vs network
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS, LinkType.TEACHER_STUDENT];
+    const classroomTypes: LinkType[] = CLASSROOM_LINK_TYPES;
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {
@@ -323,7 +353,7 @@ export const getActiveLinksService = async (
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
   } else if (options.category) {
-    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS, LinkType.TEACHER_STUDENT];
+    const classroomTypes: LinkType[] = CLASSROOM_LINK_TYPES;
     if (options.category === 'classroom') {
       where.linkType = { in: classroomTypes };
     } else {

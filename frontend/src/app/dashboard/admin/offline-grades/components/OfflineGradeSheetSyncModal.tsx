@@ -691,11 +691,12 @@ interface EnrolledStudentItem {
         <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100 dark:border-slate-800">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={onClose}
-            className="text-xs font-bold text-slate-500"
+            className="h-10 px-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 font-bold text-xs sm:text-sm shadow-xs cursor-pointer transition-colors"
           >
-            Close
+            <X size={15} className="mr-1.5 text-slate-500 dark:text-slate-400" />
+            Cancel
           </Button>
 
           <Button

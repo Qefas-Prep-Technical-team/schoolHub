@@ -161,10 +161,34 @@ export const linkService = {
   },
 
   // Accept all requests by category (network | classroom)
-  acceptAllRequests: async (category?: "network" | "classroom") => {
-    const response = await apiClient.post("/links/requests/accept-all", {
-      category,
-    });
-    return response.data;
+  acceptAllRequests: async (
+    category?: "network" | "classroom",
+  ): Promise<BatchActionResult> => {
+    const response = await apiClient.post<{ success: boolean; data: BatchActionResult }>(
+      "/links/requests/accept-all",
+      { category },
+    );
+    return response.data.data;
+  },
+
+  // Accept / reject / cancel a selected set of requests in one server-side queue
+  batchRequestAction: async (
+    ids: string[],
+    action: "ACCEPT" | "REJECT" | "CANCEL",
+    rejectionReason?: string,
+  ): Promise<BatchActionResult> => {
+    const response = await apiClient.post<{ success: boolean; data: BatchActionResult }>(
+      "/links/requests/batch-action",
+      { ids, action, rejectionReason },
+    );
+    return response.data.data;
   },
 };
+
+export interface BatchActionResult {
+  total: number;
+  successCount: number;
+  failedCount: number;
+  remaining?: number;
+  results: Array<{ id: string; success: boolean; message: string }>;
+}

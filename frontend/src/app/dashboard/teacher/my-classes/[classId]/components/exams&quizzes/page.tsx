@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ExamToolbar } from './components/ExamToolbar'
 import { ExamTable } from './components/ExamTable'
 import { ExamFilterDialog } from './components/ExamFilterDialog'
-import { Exam, ExamFilter, ExamStatus } from './components/types'
+import { Exam, ExamFilter, ExamStatus, ExamType } from './components/types'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore'
@@ -97,6 +97,8 @@ export default function ExamsPage() {
     const hasAuthorizedFilter = authorizedSubjectIds.size > 0 || authorizedSubjects.size > 0;
 
     const filteredRawExams = (data?.exams || []).filter((e: any) => {
+      // Must strictly belong to this class if classId is defined on the exam
+      if (e.classId && e.classId !== classId) return false;
       if (!hasAuthorizedFilter) return true;
       if (e.teacherId && currentTeacherId && e.teacherId === currentTeacherId) return true;
       if (e.subjectId && authorizedSubjectIds.has(e.subjectId)) return true;
@@ -115,6 +117,14 @@ export default function ExamsPage() {
     });
 
     const filteredRawPapers = (data?.papers || []).filter((p: any) => {
+      // Check if paper is linked to an exam for another class
+      if (Array.isArray(p.exams) && p.exams.length > 0) {
+        const hasMatchingClass = p.exams.some((pe: any) => {
+          const ex = pe.exam || pe;
+          return !ex?.classId || ex.classId === classId;
+        });
+        if (!hasMatchingClass) return false;
+      }
       if (!hasAuthorizedFilter) return true;
       if (p.teacherId && currentTeacherId && p.teacherId === currentTeacherId) return true;
       const subId = p.subject?.id || p.subjectId;
@@ -123,6 +133,19 @@ export default function ExamsPage() {
       if (subName && authorizedSubjects.has(subName)) return true;
       return false;
     });
+
+    const normalizeCategory = (cat?: string, title?: string): ExamType => {
+      const c = (cat || '').toLowerCase().trim();
+      const t = (title || '').toLowerCase().trim();
+      if (c === 'exam' || c === 'terminal' || c === 'final') return 'exam';
+      if (c === 'ca' || c === 'continuous_assessment') return 'ca';
+      if (c === 'quiz' || c === 'class_test' || c === 'test') return 'quiz';
+      if (c === 'assignment' || c === 'homework' || c === 'project') return 'assignment';
+      if (t.includes('ca ') || t.includes(' ca') || t === 'ca' || t.includes('continuous assessment')) return 'ca';
+      if (t.includes('quiz') || t.includes('class test') || t.includes('pop test')) return 'quiz';
+      if (t.includes('assignment') || t.includes('homework') || t.includes('project')) return 'assignment';
+      return 'exam';
+    };
 
     return [
     ...filteredRawExams.map((e: any) => {
@@ -143,12 +166,36 @@ export default function ExamsPage() {
         return (subId && authorizedSubjectIds.has(subId)) || (subName && authorizedSubjects.has(subName)) || isMyPaper;
       });
 
+      const assessmentType = normalizeCategory(e.category, e.title);
+
+      const examPaperTotalMarks = relevantSubjectPapers.reduce((sum: number, sep: any) => {
+        const pMarks = Number(sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0);
+        const qMarks = (sep.questions || sep.subjectPaper?.questions || sep.paper?.questions || []).reduce(
+          (qSum: number, q: any) => qSum + (Number(q.marks) || 1),
+          0
+        );
+        return sum + (pMarks > 0 ? pMarks : qMarks);
+      }, 0);
+
+      const calculatedTotalMarks = Number(e.totalMarks || 0) > 0 ? Number(e.totalMarks) : examPaperTotalMarks;
+
+      const examPaperTotalQuestions = relevantSubjectPapers.reduce((sum: number, sep: any) => {
+        return sum + Number(
+          sep.questions?.length ||
+          sep.totalQuestions ||
+          sep._count?.questions ||
+          sep.subjectPaper?.questions?.length ||
+          sep.paper?.questions?.length ||
+          0
+        );
+      }, 0);
+
+      const calculatedQuestions = Number(e.totalQuestions || 0) > 0 ? Number(e.totalQuestions) : examPaperTotalQuestions;
+
       return {
       id: e.id,
       title: e.title,
-      type: e.category?.toLowerCase() || 
-            ((e.title || '').toLowerCase().includes('ca ') || (e.title || '').toLowerCase().includes(' ca') || (e.title || '').toLowerCase() === 'ca' ? 'ca' : 
-            (e.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'exam'),
+      type: assessmentType,
       subjects: [
         ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
         e.subject?.name || e.subject
@@ -158,8 +205,8 @@ export default function ExamsPage() {
         e.subject?.id || e.subjectId
       ].filter(Boolean),
       teacherId: e.teacherId,
-      questions: e.totalQuestions || 0,
-      totalMarks: e.totalMarks || 0,
+      questions: calculatedQuestions,
+      totalMarks: calculatedTotalMarks,
       scheduledDate: new Date(e.startDate || e.createdAt),
       status: e.status?.toLowerCase() || 'draft',
       createdAt: new Date(e.createdAt),
@@ -171,39 +218,66 @@ export default function ExamsPage() {
         const title = sep.title || sep.subjectPaper?.title || sep.paper?.title || sep.subjectPaper?.subject?.name || sep.subject?.name || 'Untitled Subject Paper';
         const subjectId = sep.subject?.id || sep.subjectId || sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId;
         const subjectName = sep.subject?.name || sep.subjectPaper?.subject?.name;
+        const pQuestions = Number(sep.questions?.length || sep.totalQuestions || sep._count?.questions || sep.subjectPaper?.questions?.length || sep.paper?.questions?.length || 0);
+        const pMarksRaw = Number(sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0);
+        const qSumMarks = (sep.questions || sep.subjectPaper?.questions || sep.paper?.questions || []).reduce(
+          (sum: number, q: any) => sum + (Number(q.marks) || 1),
+          0
+        );
+        const pMarks = pMarksRaw > 0 ? pMarksRaw : qSumMarks;
         
         return {
           id: sep.id || sep.subjectPaperId || sep.subjectPaper?.id,
           title: title,
           subjectId: subjectId,
           subjectName: subjectName !== title ? subjectName : undefined,
-          questionsCount: sep.questions?.length || sep.totalQuestions || sep._count?.questions || sep.subjectPaper?.questions?.length || sep.paper?.questions?.length || 0,
-          totalMarks: sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0
+          questionsCount: pQuestions,
+          totalMarks: pMarks
         };
       })
     };
     }),
-    ...filteredRawPapers.map((p: any) => ({
-      id: p.id,
-      title: p.title || 'Untitled Subject Paper',
-      type: p.category?.toLowerCase() || 
-            ((p.title || '').toLowerCase().includes('ca ') || (p.title || '').toLowerCase().includes(' ca') || (p.title || '').toLowerCase() === 'ca' ? 'ca' : 
-            (p.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'subject_paper'),
-      subjects: [p.subject?.name || p.subject].filter(Boolean),
-      subjectIds: [p.subject?.id || p.subjectId].filter(Boolean),
-      teacherId: p.teacherId,
-      questions: p.totalQuestions || p.questions?.length || p._count?.questions || 0,
-      totalMarks: p.totalMarks || 0,
-      scheduledDate: new Date(p.createdAt),
-      status: p.status === 'APPROVED' ? 'published' : 'draft',
-      createdAt: new Date(p.createdAt),
-      updatedAt: new Date(p.updatedAt),
-      classId: classId,
-      subjectPaperIds: [p.id], // paper itself IS the subject paper
-      mySubjectPaperId: p.id
-    }))
+    ...filteredRawPapers.map((p: any) => {
+      const assessmentType = normalizeCategory(p.category, p.title);
+      const paperMarksRaw = Number(p.totalMarks || 0);
+      const questionCount = Number(p.questionsCount || p.totalQuestions || p.questions?.length || p._count?.questions || 0);
+      const questionsSum = Array.isArray(p.questions)
+        ? p.questions.reduce((sum: number, q: any) => sum + (Number(q.marks) || 1), 0)
+        : questionCount;
+      const calculatedPaperMarks = paperMarksRaw > 0 ? paperMarksRaw : questionsSum;
+
+      return {
+        id: p.id,
+        title: p.title || 'Untitled Subject Paper',
+        type: assessmentType,
+        subjects: [p.subject?.name || p.subject].filter(Boolean),
+        subjectIds: [p.subject?.id || p.subjectId].filter(Boolean),
+        teacherId: p.teacherId,
+        questions: questionCount,
+        totalMarks: calculatedPaperMarks,
+        scheduledDate: new Date(p.createdAt),
+        status: p.status === 'APPROVED' ? 'published' : 'draft',
+        createdAt: new Date(p.createdAt),
+        updatedAt: new Date(p.updatedAt),
+        classId: classId,
+        subjectPaperIds: [p.id],
+        mySubjectPaperId: p.id
+      };
+    })
   ];
   }, [data, classId, authorizedSubjects, authorizedSubjectIds, currentTeacherId]);
+
+  const [activeSubTab, setActiveSubTab] = useState<'all' | 'exam' | 'ca' | 'quiz' | 'assignment'>('all');
+
+  const counts = useMemo(() => {
+    return {
+      all: exams.length,
+      exam: exams.filter((e) => e.type === 'exam').length,
+      ca: exams.filter((e) => e.type === 'ca').length,
+      quiz: exams.filter((e) => e.type === 'quiz').length,
+      assignment: exams.filter((e) => e.type === 'assignment').length,
+    };
+  }, [exams]);
 
   const availableSubjects = useMemo(() => {
     const subs = new Set<string>();
@@ -219,6 +293,11 @@ export default function ExamsPage() {
 
   useEffect(() => {
     let filtered = exams
+
+    // Apply subtab category filter (all, exam, ca, quiz, assignment)
+    if (activeSubTab !== 'all') {
+      filtered = filtered.filter((exam) => exam.type === activeSubTab)
+    }
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -251,7 +330,7 @@ export default function ExamsPage() {
 
     setFilteredExams(filtered)
     setCurrentPage(1)
-  }, [searchQuery, exams, filters])
+  }, [searchQuery, exams, filters, activeSubTab])
 
   const handleViewExam = (exam: Exam) => {
     const params: Record<string, string> = {
@@ -324,8 +403,43 @@ export default function ExamsPage() {
 
        
 
-        {/* Stats Cards (Optional) */}
-        {/* <ExamStats exams={exams} className="my-6" /> */}
+        {/* Assessment Category Sub-Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {[
+            { id: 'all' as const, label: 'All Assessments', count: counts.all },
+            { id: 'exam' as const, label: 'Terminal Exams', count: counts.exam },
+            { id: 'ca' as const, label: 'Continuous Assessment (CA)', count: counts.ca },
+            { id: 'quiz' as const, label: 'Quizzes / Tests', count: counts.quiz },
+            { id: 'assignment' as const, label: 'Assignments', count: counts.assignment },
+          ].map((tab) => {
+            const isActive = activeSubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveSubTab(tab.id);
+                  setCurrentPage(1);
+                }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
+                  isActive
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <ExamToolbar
           searchQuery={searchQuery}

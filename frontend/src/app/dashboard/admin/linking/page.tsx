@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Clock, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -14,7 +14,8 @@ import {
   useRespondToLinkRequest,
   useCancelLinkRequest,
   useRevokeActiveLink,
-  useAcceptAllLinkRequests
+  useAcceptAllLinkRequests,
+  useBatchLinkRequestAction
 } from '@/lib/api/hooks/useLinks';
 
 import { LinkingHeader } from './components/LinkingHeader';
@@ -71,17 +72,35 @@ function LinkingHub() {
   const cancelMutation = useCancelLinkRequest();
   const revokeMutation = useRevokeActiveLink();
   const acceptAllMutation = useAcceptAllLinkRequests();
+  const batchMutation = useBatchLinkRequestAction();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{item: any, details: any} | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  // Track every request currently being processed so several can be accepted in parallel
+  const [respondingIds, setRespondingIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Reset page when tabs change
+  // Reset page + selection when tabs change
   React.useEffect(() => {
     setCurrentPage(1);
+    setSelectedIds(new Set());
   }, [mainTab, subTab]);
+
+  // Clear selection on page change
+  React.useEffect(() => {
+    setSelectedIds(new Set());
+  }, [currentPage]);
+
+  // If accepting items emptied the current page, step back to the last valid page
+  React.useEffect(() => {
+    const totalPages = pagination?.totalPages ?? 0;
+    if (currentPage > 1 && totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [pagination?.totalPages, currentPage]);
   
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -100,57 +119,116 @@ function LinkingHub() {
 
   const { user } = useAuthStore();
 
-  const filteredActiveLinks = activeLinks.filter((link: any) => {
+  const filteredActiveLinks = useMemo(() => activeLinks.filter((link: any) => {
     // Hide private links that don't directly involve the school as an entity
     const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
     if (privateTypes.includes(link.linkType)) return false;
 
     const details = getMemberDetails(link, user?.id);
-    const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      details.email.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
-  });
+    const q = searchQuery.toLowerCase();
+    return (details.name || '').toLowerCase().includes(q) ||
+      (details.email || '').toLowerCase().includes(q);
+  }), [activeLinks, searchQuery, user?.id]);
 
-  const filteredRequests = requests.filter((req: any) => {
-    if (req.status !== 'PENDING') return false;
+  // Pending tab uses the incoming-pending endpoint so items match its pagination exactly
+  const filteredRequests = useMemo(() => pendingRequests.filter((req: any) => {
+    if (req.status && req.status !== 'PENDING') return false;
     
     // Hide private requests in admin hub
     const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
     if (privateTypes.includes(req.linkType)) return false;
 
     const details = getMemberDetails(req, user?.id);
-    const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      details.email.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
-  });
+    const q = searchQuery.toLowerCase();
+    return (details.name || '').toLowerCase().includes(q) ||
+      (details.email || '').toLowerCase().includes(q);
+  }), [pendingRequests, searchQuery, user?.id]);
 
   const networkPendingCount = (networkTotalData as any)?.pagination?.total || 0;
   const classroomPendingCount = (classroomTotalData as any)?.pagination?.total || 0;
+  const categoryPendingTotal = (pendingRequestsData as any)?.pagination?.total ?? filteredRequests.length;
 
   const handleAcceptAll = () => {
     const category = mainTab === 'classroom' ? 'classroom' : 'network';
     setConfirmModal({
       isOpen: true,
       title: `Accept All ${category === 'classroom' ? 'Classroom' : 'Network'} Requests?`,
-      description: `This will automatically approve all pending ${category} link requests. This action cannot be undone.`,
+      description: `This will approve all ${categoryPendingTotal} pending ${category} request(s) across every page, oldest first. Requests that exceed plan limits will be skipped and reported.`,
       variant: 'default',
       onConfirm: () => {
         acceptAllMutation.mutate(category, {
-          onSuccess: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+          onSettled: () => {
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            setSelectedIds(new Set());
+          }
         });
       }
     });
   };
 
-  const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
+  const handleRespond = useCallback((id: string, action: 'ACCEPT' | 'REJECT') => {
+    setRespondingIds(prev => new Set(prev).add(id));
     respondMutation.mutate({ id, action }, {
-      onSuccess: () => {
-        // Query invalidation is handled in the hook
+      onSettled: () => {
+        setRespondingIds(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        setSelectedIds(prev => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       },
-      onError: (err: any) => {
-        console.error('Failed to respond:', err);
-      }
     });
+  }, [respondMutation]);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllOnPage = useCallback(() => {
+    setSelectedIds(prev => {
+      const pageIds = filteredRequests.map((r: any) => r.id as string);
+      const allSelected = pageIds.length > 0 && pageIds.every((id: string) => prev.has(id));
+      return allSelected ? new Set() : new Set(pageIds);
+    });
+  }, [filteredRequests]);
+
+  const handleBatchAction = (action: 'ACCEPT' | 'REJECT') => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const run = () => {
+      setRespondingIds(prev => new Set([...prev, ...ids]));
+      batchMutation.mutate({ ids, action }, {
+        onSettled: () => {
+          setRespondingIds(prev => {
+            const next = new Set(prev);
+            ids.forEach(id => next.delete(id));
+            return next;
+          });
+          setSelectedIds(new Set());
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
+      });
+    };
+    if (action === 'REJECT') {
+      setConfirmModal({
+        isOpen: true,
+        title: `Reject ${ids.length} request(s)?`,
+        description: 'The selected requesters will be notified that their request was rejected.',
+        variant: 'destructive',
+        onConfirm: run,
+      });
+    } else {
+      run();
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -222,7 +300,7 @@ function LinkingHub() {
         title={confirmModal.title}
         description={confirmModal.description}
         variant={confirmModal.variant}
-        isLoading={acceptAllMutation.isPending || revokeMutation.isPending}
+        isLoading={acceptAllMutation.isPending || revokeMutation.isPending || batchMutation.isPending}
       />
 
       <LinkingCodeCards 
@@ -243,7 +321,7 @@ function LinkingHub() {
           classroomPendingCount={classroomPendingCount}
         />
 
-        {isLoadingActive || isLoadingRequests ? (
+        {(subTab === 'active' ? isLoadingActive : subTab === 'pending' ? isLoadingPending : isLoadingRequests) ? (
           <LinkingSkeleton count={8} />
         ) : subTab === 'active' ? (
           <ActiveLinksGrid 
@@ -261,13 +339,19 @@ function LinkingHub() {
             mainTab={mainTab}
             currentUserId={user?.id}
             isAcceptAllPending={acceptAllMutation.isPending}
+            totalPending={categoryPendingTotal}
             onAcceptAll={handleAcceptAll}
             onRespond={handleRespond}
             onCancel={handleCancel}
             onCopy={copyToClipboard}
             onViewProfile={handleViewProfile}
-            respondingId={respondMutation.isPending ? (respondMutation.variables as any)?.id : null}
+            respondingIds={respondingIds}
             cancellingId={cancelMutation.isPending ? (cancelMutation.variables as string) : null}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAllOnPage}
+            onBatchAction={handleBatchAction}
+            isBatchPending={batchMutation.isPending}
           />
         ) : (
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
@@ -281,7 +365,7 @@ function LinkingHub() {
           </div>
         )}
 
-        {pagination && (
+        {pagination && subTab !== 'history' && pagination.totalPages > 1 && (
           <div className="px-2 pb-4 md:px-4 md:pb-6">
             <Pagination
               currentPage={currentPage}

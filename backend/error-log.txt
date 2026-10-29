@@ -58879,4 +58879,260 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at getUnreadCount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:309:58)Error: A pending request already exists between these users
     at createLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.service.ts:420:11)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)
+    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)PrismaClientValidationError: 
+Invalid `prisma.teacher.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:49
+
+  41 
+  42 // Resolve both Teacher.id and User.id variants for robustness
+  43 let teacherRecordId = teacherId;
+→ 44 const teacherProfile = await prisma.teacher.findFirst({
+       where: {
+         OR: [
+           {
+             id: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           },
+           {
+             userId: "758f4b7d-e29d-46a2-a261-1399e72e4a36"
+           }
+         ]
+       },
+       select: {
+         id: true,
+         userId: true
+       }
+     })
+
+Unknown argument `userId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getGradeHubService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.service.ts:44:28)
+    at getGradeHub (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\grade\grade.controller.ts:28:31)

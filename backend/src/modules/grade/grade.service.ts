@@ -15,62 +15,14 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
     where.schoolId = schoolId;
   }
 
-  // Support teacherId filter (Personal Dashboard or teacher-specific view)
-  if (filters.teacherId && filters.teacherId !== 'all' && filters.teacherId !== '') {
-    const teacherSubjects = await prisma.teacherSubject.findMany({
-      where: { teacherId: filters.teacherId },
-      select: { subjectId: true }
-    });
-    
-    const subjectIds = teacherSubjects.map(ts => ts.subjectId);
-
-    if (subjectIds.length > 0) {
-      where.OR = [
-        { teacherId: filters.teacherId },
-        { subjectPaper: { subjectId: { in: subjectIds } } }
-      ];
-    } else {
-      where.teacherId = filters.teacherId;
-    }
+  // If a specific class is requested (e.g. from the class details page), filter to that class
+  if (filters.classId && filters.classId !== 'all' && filters.classId !== 'undefined') {
+    where.classId = filters.classId;
   }
 
-  // Restrict to teacher's assigned classes & subjects if teacherClassesOnly is requested
-  if (filters.teacherClassesOnly === 'true' && filters.currentTeacherId) {
-    const teacherId = filters.currentTeacherId;
-
-    // Fetch subjects assigned to teacher (via teacherId, teacherSubjects, or timetablePeriods)
-    const teacherSubjectRecords = await prisma.subject.findMany({
-      where: {
-        ...(where.schoolId ? { schoolId: where.schoolId } : {}),
-        isArchived: false,
-        OR: [
-          { teacherId },
-          { teacherSubjects: { some: { teacherId } } },
-          { timetablePeriods: { some: { teacherId } } }
-        ]
-      },
-      select: { id: true, name: true }
-    });
-
-    const assignedSubjectNames = teacherSubjectRecords.map(s => s.name);
-    const assignedSubjectIds = teacherSubjectRecords.map(s => s.id);
-
-    // Filter to grades matching the teacher's assigned subjects or created by the teacher
-    if (assignedSubjectNames.length > 0) {
-      where.OR = [
-        { teacherId },
-        { subject: { in: assignedSubjectNames, mode: 'insensitive' } },
-        { subjectPaper: { subjectId: { in: assignedSubjectIds } } }
-      ];
-    } else {
-      where.teacherId = teacherId;
-    }
-
-    if (filters.classId && filters.classId !== 'all') {
-      where.classId = filters.classId;
-    }
-  } else {
-    if (filters.classId && filters.classId !== 'all') where.classId = filters.classId;
+  // If a specific subject is requested, filter to that subject
+  if (filters.subject && filters.subject !== 'all' && filters.subject !== 'undefined') {
+    where.subject = { equals: filters.subject, mode: 'insensitive' };
   }
   if (filters.category && filters.category !== 'all') where.category = filters.category;
   if (filters.status && filters.status !== 'all') where.status = filters.status;
@@ -361,6 +313,12 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     'weight', 'remarks', 'releaseDate', 'examId', 'subjectPaperId', 'examAttemptId', 'subjectExamAttemptId'
   ]);
 
+  // Resolve teacher record ID if created by teacher
+  let resolvedTeacherId: string | undefined = undefined;
+  if (userRole === 'TEACHER' && userId) {
+    resolvedTeacherId = userId;
+  }
+
   // Resolve studentName -> studentId if studentId is missing
   const resolved = await Promise.all(
     grades.map(async (g) => {
@@ -385,6 +343,10 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
         if (VALID_FIELDS.has(k) && v !== undefined && v !== null && v !== '') {
           clean[k] = v;
         }
+      }
+
+      if (!clean.teacherId && resolvedTeacherId) {
+        clean.teacherId = resolvedTeacherId;
       }
 
       return {
@@ -453,6 +415,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
           data: {
             score: g.score,
             maxMarks: g.maxMarks,
+            teacherId: existingGrade.teacherId || g.teacherId || resolvedTeacherId || undefined,
             category: g.category || existingGrade.category,
             assessmentType: g.assessmentType || existingGrade.assessmentType,
             status: g.status,

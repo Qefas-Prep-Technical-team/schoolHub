@@ -151,6 +151,12 @@ export default function OfflineRecordsList({
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  React.useEffect(() => {
+    if (activeClassId) {
+      setSelectedClassId(activeClassId);
+    }
+  }, [activeClassId]);
+
   const categoryTabs = useMemo(() => [
     {
       id: 'all' as OfflineCategoryTab,
@@ -233,8 +239,8 @@ export default function OfflineRecordsList({
         if (!matchesTitle && !matchesSubject && !matchesClass) return false;
       }
 
-      // 3. Class filter
-      if (selectedClassId !== 'all' && rec.classId !== selectedClassId) {
+      // 3. Class filter (ignore if class filter is hidden, since activeClassId is already scoped by parent)
+      if (!hideClassFilter && selectedClassId !== 'all' && rec.classId !== selectedClassId) {
         return false;
       }
 
