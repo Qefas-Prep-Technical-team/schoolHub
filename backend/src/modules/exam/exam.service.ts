@@ -161,60 +161,58 @@ export const getExamsService = async (filters: {
     });
     
     where.status = AssessmentStatus.PUBLISHED;
-    const classIds = student.classes.map((c) => c.classId);
-    
-    // SCHOOL-scope: visible to students of that school (respecting department restriction if present)
-    const orConditions: any[] = [];
-    
-    if (resolvedSchoolId) {
-      if (student.departmentId) {
-        orConditions.push({
-          schoolId: resolvedSchoolId,
-          scope: "SCHOOL",
+    const studentClassIds = student.classes.map((c) => c.classId);
+
+    // Consider class filter: if a specific classId filter was passed, verify the student is enrolled in it
+    let targetClassIds: string[] = studentClassIds;
+    if (filters.classId) {
+      targetClassIds = studentClassIds.includes(filters.classId) ? [filters.classId] : [];
+    }
+
+    const deptFilter = student.departmentId
+      ? {
           OR: [
             { departments: { none: {} } },
             { departments: { some: { departmentId: student.departmentId } } }
           ]
-        });
-      } else {
-        orConditions.push({
-          schoolId: resolvedSchoolId,
-          scope: "SCHOOL",
-          departments: { none: {} }
-        });
-      }
-    }
+        }
+      : { departments: { none: {} } };
 
-    // DEPARTMENT-scope: visible to students of matching department
-    if (resolvedSchoolId && student.departmentId) {
+    const orConditions: any[] = [];
+
+    // 1. Exams with a connected class (exam.classId is not null):
+    // Regardless of scope (CLASS, SCHOOL, DEPARTMENT), if there is a class connected to the exam,
+    // verify the student's connected class matches (classId in targetClassIds).
+    if (targetClassIds.length > 0) {
       orConditions.push({
-        schoolId: resolvedSchoolId,
-        scope: "DEPARTMENT",
-        departments: { some: { departmentId: student.departmentId } }
+        classId: { in: targetClassIds },
+        ...deptFilter,
       });
     }
 
-    // CLASS-scope: visible to students enrolled in matching class (respecting department restriction if present)
-    if (classIds.length > 0) {
+    // 2. School-wide or Department-wide exams WITHOUT a connected class (exam.classId is null):
+    // Only include general non-class-specific exams if no specific class was requested by filter
+    if (!filters.classId && resolvedSchoolId) {
+      // SCHOOL-scope with NO class connected
+      orConditions.push({
+        schoolId: resolvedSchoolId,
+        scope: "SCHOOL",
+        classId: null,
+        ...deptFilter,
+      });
+
+      // DEPARTMENT-scope with NO class connected
       if (student.departmentId) {
         orConditions.push({
-          scope: "CLASS",
-          classId: { in: classIds },
-          OR: [
-            { departments: { none: {} } },
-            { departments: { some: { departmentId: student.departmentId } } }
-          ]
-        });
-      } else {
-        orConditions.push({
-          scope: "CLASS",
-          classId: { in: classIds },
-          departments: { none: {} }
+          schoolId: resolvedSchoolId,
+          scope: "DEPARTMENT",
+          classId: null,
+          departments: { some: { departmentId: student.departmentId } }
         });
       }
     }
     
-    // Fallback: if student has NO school and NO classes, return nothing
+    // Fallback: if student has NO school and NO classes (or requested a class they aren't enrolled in), return nothing
     if (orConditions.length === 0) {
       where.id = "none";
     } else {

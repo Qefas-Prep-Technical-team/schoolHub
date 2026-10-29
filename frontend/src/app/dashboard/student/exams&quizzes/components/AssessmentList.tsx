@@ -56,9 +56,16 @@ export default function AssessmentList({
                                             <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                                                 {assessment.title}
                                             </h4>
-                                            <p className="text-xs font-medium text-slate-500 dark:text-zinc-400 truncate">
-                                                {assessment.subject}
-                                            </p>
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                                <p className="text-xs font-medium text-slate-500 dark:text-zinc-400 truncate">
+                                                    {assessment.subject}
+                                                </p>
+                                                {assessment.className && (
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-pink-50/80 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border border-pink-200/50 dark:border-pink-900/30">
+                                                        {assessment.className}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <Badge variant={assessment.status} size="sm">

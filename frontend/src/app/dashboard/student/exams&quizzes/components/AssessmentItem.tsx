@@ -85,8 +85,13 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                             {assessment.title}
                         </h3>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
                             <span className="truncate">{assessment.subject}</span>
+                            {assessment.className && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-pink-50/80 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border border-pink-200/50 dark:border-pink-900/30">
+                                    {assessment.className}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

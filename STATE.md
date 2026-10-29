@@ -31,6 +31,18 @@
 - Add coupon usage recording in `verifyPaymentService` (read couponId from payment metadata and call `CouponService.recordUsage`).
 - Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features.
 
+- [x] **Student Profile Academic Setup & Exam Class Targeting (Thursday, October 29, 2026)**:
+    - **Academic Setup on Student Profile**:
+        - Synced Department/Faculty and Academic Grade Level features from `/dashboard/student/settings` to `/dashboard/student/profile` ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/profile/page.tsx)).
+        - Added an **Academic Setup Card** in the profile right column showing enrolled department, department code badge, academic level, and lock status.
+        - Integrated an **"Academic" tab** in the profile edit modal allowing students to select and lock in their department or grade level using `useMutation` with [studentService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/studentService.ts).
+        - Provided one-time lock-in warnings, school connection checks, and instant cache invalidation via `studentKeys.profile()`.
+    - **Exam Class Filtering & Student Cohort Targeting**:
+        - Backend `getExamsService` in [exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts) verifies student class enrollment against connected exam class IDs.
+        - Assessment page at `/dashboard/student/exams&quizzes` dynamically filters exams and assignments by the student's enrolled classes and selected cohort dropdown.
+    - **Build Fix**:
+        - Restored missing `'use client';` directive at the top of the student profile `page.tsx` (Turbopack flagged `useState`/`useEffect`/`useRouter` imports in a Server Component).
+        - Next.js production build (`npm run build`) passed with exit code 0.
 - [x] **Google Sign-Up Flow for Class Invites & Device/Location Consent Permission (Thursday, October 29, 2026)**:
     - **Class Invite Google Sign-In & Redirect Preservation**:
         - Updated [join/class/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/join/class/%5Bid%5D/page.tsx) to mount [GoogleLoginButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/GoogleLoginButton.tsx) directly on the unauthenticated class invitation page for seamless single-click student registration.

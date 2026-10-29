@@ -86,9 +86,9 @@ export const getExams = async (req: Request, res: Response) => {
 
 export const getExamById = async (req: Request, res: Response) => {
   try {
-    // Only teachers and admins connected to a school may fetch exam details
+    // Allow teachers, admins, students, and parents to fetch exam details
     const userType = req.user?.userType?.toUpperCase();
-    if (!req.user || !['TEACHER', 'ADMIN'].includes(userType as string)) {
+    if (!req.user || !['TEACHER', 'ADMIN', 'STUDENT', 'PARENT'].includes(userType as string)) {
       return res.status(403).json({ success: false, message: 'Forbidden: insufficient role' });
     }
     if (userType === 'TEACHER' && !req.user.schoolId) {
@@ -105,6 +105,18 @@ export const getExamById = async (req: Request, res: Response) => {
         success: false,
         message: "Exam not found",
       });
+    }
+
+    // For students: if the exam is connected to a class, verify student is enrolled in that class
+    if (userType === 'STUDENT' && data.classId) {
+      const student = await prisma.student.findUnique({
+        where: { id: req.user.id },
+        select: { classes: { select: { classId: true } } }
+      });
+      const isEnrolled = student?.classes?.some(c => c.classId === data.classId);
+      if (!isEnrolled) {
+        return res.status(403).json({ success: false, message: 'Forbidden: This exam is not designated for your class cohort' });
+      }
     }
 
     return res.status(200).json({

@@ -35,4 +35,6 @@ export interface Assessment {
   type: "exam" | "quiz" | "ca" | "assignment";
   durationMinutes?: number;
   questionsCount?: number;
+  classId?: string;
+  className?: string;
 }

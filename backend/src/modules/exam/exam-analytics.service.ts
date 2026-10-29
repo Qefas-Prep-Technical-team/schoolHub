@@ -204,11 +204,26 @@ export const getStudentGlobalStatsService = async ({
   }
 
   // 4. Calculate Upcoming count
-  // (We'll count published exams that have no started attempt for this student)
-  const upcomingExamsCount = classId ? await prisma.exam.count({
+  // (We'll count published exams for student's connected classes or school-wide that have no started attempt)
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { schoolId: true, departmentId: true, classes: { select: { classId: true } } }
+  });
+  const studentClassIds = student?.classes?.map(c => c.classId) || (classId ? [classId] : []);
+  const resolvedSchoolId = student?.schoolId;
+
+  const upcomingOr: any[] = [];
+  if (studentClassIds.length > 0) {
+    upcomingOr.push({ classId: { in: studentClassIds } });
+  }
+  if (resolvedSchoolId) {
+    upcomingOr.push({ schoolId: resolvedSchoolId, scope: "SCHOOL", classId: null });
+  }
+
+  const upcomingExamsCount = upcomingOr.length > 0 ? await prisma.exam.count({
     where: {
       status: "PUBLISHED",
-      classId,
+      OR: upcomingOr,
       examAttempts: { none: { studentId } },
       startDate: { gte: new Date() },
     }

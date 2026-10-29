@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
     User, 
     Mail, 
@@ -24,7 +25,11 @@ import {
     Cake,
     Activity,
     Award,
-    Sparkles
+    Sparkles,
+    Building2,
+    BookOpen,
+    Lock,
+    AlertTriangle
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,12 +37,15 @@ import {
     useStudentProfile, 
     useUpdateStudentProfile, 
     useRequestEmailUpdate, 
-    useVerifyEmailUpdate 
+    useVerifyEmailUpdate,
+    studentKeys
 } from '@/lib/api/hooks/useStudent';
-import { StudentProfile } from '@/lib/api/services/studentService';
+import { StudentProfile, studentService } from '@/lib/api/services/studentService';
+import { schoolService } from '@/lib/api/services/schoolService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { 
     Select, 
     SelectContent, 
@@ -45,12 +53,28 @@ import {
     SelectTrigger, 
     SelectValue 
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ImageUpload from '@/components/reusable/ImageUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
+import { toast } from 'react-toastify';
+
+interface DepartmentItem {
+    id: string;
+    name: string;
+    code?: string;
+    departmentId?: string;
+}
+
+interface EnrolledClassItem {
+    class: {
+        id: string;
+        name: string;
+        section?: string;
+    };
+}
 
 interface ExtendedStudentProfile extends StudentProfile {
     twoFactorEnabled?: boolean;
@@ -59,11 +83,59 @@ interface ExtendedStudentProfile extends StudentProfile {
 
 export default function StudentProfilePage() {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const { data: rawProfile, isLoading } = useStudentProfile();
     const profile = rawProfile as ExtendedStudentProfile | undefined;
     const updateProfile = useUpdateStudentProfile();
     const requestEmailUpdate = useRequestEmailUpdate();
     const verifyEmailUpdate = useVerifyEmailUpdate();
+
+    // Department & Level state (synced with settings page)
+    const [selectedDept, setSelectedDept] = useState<string>('');
+    const [selectedLevel, setSelectedLevel] = useState<string>('');
+
+    const { data: departments = [], isLoading: isDeptsLoading } = useQuery<DepartmentItem[]>({
+        queryKey: ['schoolDepartments', profile?.schoolId],
+        queryFn: () => schoolService.getDepartments(profile?.schoolId!),
+        enabled: !!profile?.schoolId,
+        staleTime: 1000 * 60 * 10,
+    });
+
+    const updateDeptMutation = useMutation({
+        mutationFn: (deptId: string) => studentService.updateDepartment(deptId),
+        onSuccess: () => {
+            toast.success('Department locked in successfully!');
+            queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
+        },
+        onError: (error: { response?: { data?: { message?: string } } }) => {
+            toast.error(error.response?.data?.message || 'Failed to update department');
+        },
+    });
+
+    const updateLevelMutation = useMutation({
+        mutationFn: (level: string) => studentService.updateLevel(level),
+        onSuccess: () => {
+            toast.success('Grade level locked in successfully!');
+            queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
+        },
+        onError: (error: { response?: { data?: { message?: string } } }) => {
+            toast.error(error.response?.data?.message || 'Failed to update level');
+        },
+    });
+
+    const isLocked = Boolean(profile?.departmentId || profile?.department?.id || profile?.department?.name);
+    const isLevelLocked = Boolean(profile?.level);
+    const hasSchool = Boolean(profile?.schoolId || profile?.school?.id);
+    const schoolLevels: string[] = (profile as any)?.school?.levels || [];
+
+    const enrolledDeptName =
+        profile?.department?.name ||
+        departments.find((d: DepartmentItem) => d.id === (profile?.departmentId || selectedDept) || d.departmentId === (profile?.departmentId || selectedDept))?.name ||
+        'Assigned Department';
+
+    const enrolledDeptCode =
+        profile?.department?.code ||
+        departments.find((d: DepartmentItem) => d.id === (profile?.departmentId || selectedDept) || d.departmentId === (profile?.departmentId || selectedDept))?.code;
 
     // editingTab controls which tab is open in the modal, null means modal is closed
     const [editingTab, setEditingTab] = useState<string | null>(null);
@@ -105,6 +177,12 @@ export default function StudentProfilePage() {
             });
         }
     }, [profile, editingTab]);
+
+    useEffect(() => {
+        const deptId = profile?.departmentId || profile?.department?.id;
+        if (deptId) setSelectedDept(deptId);
+        if (profile?.level) setSelectedLevel(profile.level);
+    }, [profile]);
 
     const handleEdit = (tab: string = 'personal') => setEditingTab(tab);
 
@@ -499,6 +577,92 @@ export default function StudentProfilePage() {
                         </CardContent>
                     </Card>
 
+                    {/* Academic Setup Card */}
+                    <Card className="rounded-2xl border-slate-200/80 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 overflow-hidden">
+                        <CardHeader className="px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-row items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CardTitle className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                                    <GraduationCap className="text-pink-500 h-5 w-5" /> Academic Setup
+                                </CardTitle>
+                                <HeaderTooltip 
+                                    content="Your department (academic faculty or division) and grade level. These are one-time selections that get permanently locked into your student records once confirmed."
+                                />
+                            </div>
+                            {(!isLocked || !isLevelLocked) && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleEdit('academic')}
+                                    className="h-8 w-8 text-zinc-400 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-500/10 rounded-lg"
+                                    aria-label="Set up academic division"
+                                >
+                                    <Edit3 size={16} />
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent className="p-5 sm:p-6 space-y-4">
+                            {/* Department row */}
+                            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                                <div className="h-9 w-9 rounded-xl bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center shrink-0 text-pink-600 dark:text-pink-400">
+                                    <Building2 size={18} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Department</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                                            {isLocked ? enrolledDeptName : 'Not Set'}
+                                        </p>
+                                        {isLocked && enrolledDeptCode && (
+                                            <Badge className="bg-pink-100/70 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-none font-bold text-[10px] px-2 py-0.5">
+                                                {enrolledDeptCode}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+                                {isLocked ? (
+                                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                                ) : (
+                                    <button
+                                        onClick={() => handleEdit('academic')}
+                                        className="text-xs font-semibold text-pink-600 dark:text-pink-400 hover:underline shrink-0"
+                                    >
+                                        Set up
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Level row */}
+                            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                                <div className="h-9 w-9 rounded-xl bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center shrink-0 text-pink-600 dark:text-pink-400">
+                                    <BookOpen size={18} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Grade Level</p>
+                                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                                        {isLevelLocked ? profile.level : 'Not Set'}
+                                    </p>
+                                </div>
+                                {isLevelLocked ? (
+                                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                                ) : (
+                                    <button
+                                        onClick={() => handleEdit('academic')}
+                                        className="text-xs font-semibold text-pink-600 dark:text-pink-400 hover:underline shrink-0"
+                                    >
+                                        Set up
+                                    </button>
+                                )}
+                            </div>
+
+                            {(isLocked || isLevelLocked) && (
+                                <div className="flex gap-2 items-start px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                    <Lock size={13} className="text-zinc-400 shrink-0 mt-0.5" />
+                                    <span>Locked academic records. Contact administration to request changes.</span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Quick Actions / Services */}
                     <Card className="rounded-2xl border-slate-200/80 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 overflow-hidden">
                         <CardHeader className="px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-row items-center justify-between">
@@ -572,6 +736,7 @@ export default function StudentProfilePage() {
                                 <TabsList className="w-full flex mb-5 sm:mb-6 bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800 rounded-xl p-1 overflow-x-auto scrollbar-hide">
                                     <TabsTrigger value="personal" className="flex-1 rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm">Personal</TabsTrigger>
                                     <TabsTrigger value="attributes" className="flex-1 rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm">Attributes</TabsTrigger>
+                                    <TabsTrigger value="academic" className="flex-1 rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm">Academic</TabsTrigger>
                                     <TabsTrigger value="visuals" className="flex-1 rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm">Visuals</TabsTrigger>
                                     <TabsTrigger value="security" className="flex-1 rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm">Security</TabsTrigger>
                                 </TabsList>
@@ -693,6 +858,144 @@ export default function StudentProfilePage() {
                                                 />
                                             </div>
                                         </div>
+                                    </div>
+                                </TabsContent>
+
+                                {/* Academic Tab */}
+                                <TabsContent value="academic" className="space-y-5 mt-0 outline-none">
+                                    {!hasSchool ? (
+                                        <div className="flex gap-2.5 items-start px-4 py-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-xs font-medium text-amber-800 dark:text-amber-300">
+                                            <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={15} />
+                                            <span>You are not currently linked to a school. Connect with a school join code first to set your academic department and grade level.</span>
+                                        </div>
+                                    ) : null}
+
+                                    {/* Department section */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 size={16} className="text-pink-500" />
+                                            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Department / Faculty</h4>
+                                            {isLocked && (
+                                                <Badge className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0 font-black text-[10px] uppercase tracking-wider">
+                                                    <CheckCircle2 size={10} className="mr-1" /> Locked In
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Your academic division or major study branch.</p>
+
+                                        {isLocked ? (
+                                            <div className="flex items-center gap-3 p-4 rounded-xl bg-pink-50/60 dark:bg-pink-950/20 border border-pink-200/80 dark:border-pink-900/30">
+                                                <div className="h-9 w-9 rounded-xl bg-pink-100 dark:bg-pink-900/40 flex items-center justify-center shrink-0 text-pink-600 dark:text-pink-400">
+                                                    <Building2 size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Enrolled Department</p>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="text-base font-bold text-zinc-900 dark:text-zinc-100">{enrolledDeptName}</p>
+                                                        {enrolledDeptCode && (
+                                                            <Badge className="bg-pink-100/70 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-none font-bold text-[10px] px-2 py-0.5">
+                                                                {enrolledDeptCode}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Department selection is a one-time choice. Please choose carefully.</p>
+                                                <div className="flex flex-col sm:flex-row gap-2.5">
+                                                    <div className="flex-1">
+                                                        <Select value={selectedDept} onValueChange={setSelectedDept} disabled={!hasSchool || isDeptsLoading}>
+                                                            <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                                                                <SelectValue placeholder={!hasSchool ? 'No School Connected' : (isDeptsLoading ? 'Loading...' : 'Choose Department')} />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800">
+                                                                {departments.map((dept) => {
+                                                                    const deptValue = dept.id || dept.departmentId || '';
+                                                                    return (
+                                                                        <SelectItem key={deptValue} value={deptValue} className="text-xs font-medium">
+                                                                            {dept.name} {dept.code ? `(${dept.code})` : ''}
+                                                                        </SelectItem>
+                                                                    );
+                                                                })}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <Button
+                                                        onClick={() => {
+                                                            if (!selectedDept) { toast.warn('Please select a department first'); return; }
+                                                            updateDeptMutation.mutate(selectedDept);
+                                                        }}
+                                                        disabled={!hasSchool || updateDeptMutation.isPending || !selectedDept}
+                                                        className="h-10 px-5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md shadow-pink-500/20 cursor-pointer disabled:opacity-50"
+                                                    >
+                                                        {updateDeptMutation.isPending && <Loader2 className="animate-spin h-3.5 w-3.5 mr-1.5" />}
+                                                        Lock In
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="border-t border-slate-100 dark:border-zinc-800 pt-4 space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <GraduationCap size={16} className="text-pink-500" />
+                                            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Academic Grade Level</h4>
+                                            {isLevelLocked && (
+                                                <Badge className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0 font-black text-[10px] uppercase tracking-wider">
+                                                    <CheckCircle2 size={10} className="mr-1" /> Locked In
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Your current grade or academic standing level.</p>
+
+                                        {isLevelLocked ? (
+                                            <div className="flex items-center gap-3 p-4 rounded-xl bg-pink-50/60 dark:bg-pink-950/20 border border-pink-200/80 dark:border-pink-900/30">
+                                                <div className="h-9 w-9 rounded-xl bg-pink-100 dark:bg-pink-900/40 flex items-center justify-center shrink-0 text-pink-600 dark:text-pink-400">
+                                                    <BookOpen size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Enrolled Level</p>
+                                                    <p className="text-base font-bold text-zinc-900 dark:text-zinc-100">{profile?.level}</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Level selection is permanent once confirmed.</p>
+                                                <div className="flex flex-col sm:flex-row gap-2.5">
+                                                    <div className="flex-1">
+                                                        <Select value={selectedLevel} onValueChange={setSelectedLevel} disabled={!hasSchool}>
+                                                            <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                                                                <SelectValue placeholder={!hasSchool ? 'No School Connected' : 'Choose Level'} />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800">
+                                                                {schoolLevels.map((lvl) => (
+                                                                    <SelectItem key={lvl} value={lvl} className="text-xs font-medium">{lvl}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <Button
+                                                        onClick={() => {
+                                                            if (!selectedLevel) { toast.warn('Please select a level first'); return; }
+                                                            updateLevelMutation.mutate(selectedLevel);
+                                                        }}
+                                                        disabled={!hasSchool || updateLevelMutation.isPending || !selectedLevel}
+                                                        className="h-10 px-5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md shadow-pink-500/20 cursor-pointer disabled:opacity-50"
+                                                    >
+                                                        {updateLevelMutation.isPending && <Loader2 className="animate-spin h-3.5 w-3.5 mr-1.5" />}
+                                                        Lock In
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {(isLocked || isLevelLocked) && (
+                                            <div className="flex gap-2 items-start px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                                <Lock size={13} className="text-zinc-400 shrink-0 mt-0.5" />
+                                                <span>Locked fields are permanent in your student records. Contact administration if changes are required.</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </TabsContent>
 

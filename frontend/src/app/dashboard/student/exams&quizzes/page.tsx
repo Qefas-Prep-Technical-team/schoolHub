@@ -9,9 +9,10 @@ import TimeFilter from './components/TimeFilter';
 import AssessmentList from './components/AssessmentList';
 import { useExams, useStudentStats } from '@/lib/api/hooks/useExams';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { Assessment, StatCard } from './components/types';
 import { timeFilters } from './components/data';
-import { Loader2, Search, X, LayoutGrid, List } from 'lucide-react';
+import { Loader2, Search, X, LayoutGrid, List, GraduationCap, ChevronDown } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import { Input } from '@/components/ui/input';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
@@ -39,6 +40,8 @@ interface RawExamItem {
   durationMinutes?: number;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
+  classId?: string;
+  class?: { id: string; name: string; section?: string };
   subjectPapers?: RawSubjectPaper[];
   attempts?: RawAttempt[];
 }
@@ -47,6 +50,7 @@ interface RawAssignmentItem {
   id: string;
   title: string;
   subject?: string;
+  classId?: string;
   dueDate?: string;
   createdAt?: string;
   grade?: string;
@@ -57,6 +61,7 @@ interface RawAssignmentItem {
 export default function StudentAssessmentsPage() {
     const [assessmentType, setAssessmentType] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
     const [timeFilter, setTimeFilter] = useState('term');
+    const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
@@ -69,13 +74,30 @@ export default function StudentAssessmentsPage() {
         }
     }, []);
 
+    // Fetch student profile to get connected classes
+    const { data: studentProfile, isLoading: isProfileLoading } = useStudentProfile();
+    const studentClasses = useMemo(() => {
+        return (studentProfile?.classes || [])
+            .map((c) => c.class)
+            .filter((cls): cls is { id: string; name: string; section?: string } => Boolean(cls && cls.id));
+    }, [studentProfile]);
+
+    // Construct query filters considering class selection
+    const examsQueryFilters = useMemo(() => {
+        const filters: Record<string, unknown> = { status: 'PUBLISHED' };
+        if (selectedClassId !== 'all') {
+            filters.classId = selectedClassId;
+        }
+        return filters;
+    }, [selectedClassId]);
+
     // Fetch student stats and published assessments
     const { data: statsData, isLoading: isStatsLoading } = useStudentStats();
-    const { data: examsData = [], isLoading: isExamsLoading, isError: isExamsError } = useExams({ status: 'PUBLISHED' });
+    const { data: examsData = [], isLoading: isExamsLoading, isError: isExamsError } = useExams(examsQueryFilters);
     const { data: assignmentsResponse, isLoading: isAssignmentsLoading, isError: isAssignmentsError } = useStudentAssignments({ limit: 100 });
     
     const isError = isExamsError || isAssignmentsError;
-    const isLoading = isExamsLoading || isAssignmentsLoading || isStatsLoading;
+    const isLoading = isExamsLoading || isAssignmentsLoading || isStatsLoading || isProfileLoading;
     
     // Normalize and combine assessments and assignments
     const assessments = useMemo(() => {
@@ -94,6 +116,7 @@ export default function StudentAssessmentsPage() {
             if (isAssignment) {
                 const assignment = item as RawAssignmentItem;
                 const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
+                const matchedClass = studentClasses.find(c => c.id === assignment.classId);
                 
                 let status: Assessment['status'] = 'open';
                 if (assignment.status === 'overdue') status = 'missing';
@@ -119,6 +142,8 @@ export default function StudentAssessmentsPage() {
                     type: 'assignment',
                     durationMinutes: 0,
                     questionsCount: assignment.questionCount || 0,
+                    classId: assignment.classId,
+                    className: matchedClass?.name,
                 };
             }
 
@@ -131,6 +156,7 @@ export default function StudentAssessmentsPage() {
             const durationMinutes = (exam.durationMinutes ?? 0) > 0 
                 ? (exam.durationMinutes ?? 0) 
                 : exam.subjectPapers?.reduce((acc: number, paper) => acc + (paper.durationMinutes || 0), 0) || 0;
+            const matchedClass = exam.class?.name || (exam.classId ? studentClasses.find(c => c.id === exam.classId)?.name : undefined);
 
             let status: Assessment['status'] = 'open';
             if (startDate && now < startDate) {
@@ -164,9 +190,11 @@ export default function StudentAssessmentsPage() {
                 type: exam.category?.toLowerCase() === 'quiz' ? 'quiz' : exam.category?.toLowerCase() === 'ca' ? 'ca' : 'exam',
                 durationMinutes,
                 questionsCount,
+                classId: exam.classId,
+                className: matchedClass,
             };
         });
-    }, [assessments]);
+    }, [assessments, studentClasses]);
 
     // Construct Dynamic Stats Cards
     const dynamicStatCards: StatCard[] = useMemo(() => {
@@ -212,7 +240,7 @@ export default function StudentAssessmentsPage() {
         ];
     }, [statsData]);
 
-    // Filter assessments by type and search query
+    // Filter assessments by type, search query, and selected class
     const filteredAssessments = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         return allAssessments.filter(assessment => {
@@ -222,10 +250,18 @@ export default function StudentAssessmentsPage() {
                 : assessment.type === 'assignment';
 
             if (!matchesType) return false;
+            
+            // If a specific class cohort is selected, filter assessments connected to classes
+            if (selectedClassId !== 'all' && assessment.classId && assessment.classId !== selectedClassId) {
+                return false;
+            }
+
             if (!q) return true;
-            return assessment.title.toLowerCase().includes(q) || assessment.subject.toLowerCase().includes(q);
+            return assessment.title.toLowerCase().includes(q) || 
+                   assessment.subject.toLowerCase().includes(q) ||
+                   (assessment.className && assessment.className.toLowerCase().includes(q));
         });
-    }, [allAssessments, assessmentType, searchQuery]);
+    }, [allAssessments, assessmentType, searchQuery, selectedClassId]);
 
     if (isLoading) {
         return (
@@ -263,7 +299,7 @@ export default function StudentAssessmentsPage() {
                     <PerformanceChart stats={statsData} />
                 </div>
 
-                {/* Assessment Type, Search, and Time Filter Toolbar */}
+                {/* Assessment Type, Search, Class Filter, and Time Filter Toolbar */}
                 <div className="space-y-3 pt-2">
                     <div className="flex items-center gap-2">
                         <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">
@@ -278,9 +314,35 @@ export default function StudentAssessmentsPage() {
                             setCurrentPage(1);
                         }} />
                         
-                        <div className="flex items-center gap-2.5 sm:gap-3 flex-1 md:flex-none justify-between md:justify-end">
+                        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 flex-1 md:flex-none justify-between md:justify-end">
+                            {/* Class Cohort Filter */}
+                            {studentClasses.length > 0 && (
+                                <div className="relative shrink-0">
+                                    <select
+                                        value={selectedClassId}
+                                        onChange={(e) => {
+                                            setSelectedClassId(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        aria-label="Filter by connected class cohort"
+                                        className="h-10 pl-8 pr-7 text-xs font-bold rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 cursor-pointer appearance-none hover:border-slate-300 dark:hover:border-zinc-700 transition-colors"
+                                    >
+                                        <option value="all">
+                                            {studentClasses.length > 1 ? "All My Classes" : `Class: ${studentClasses[0].name}`}
+                                        </option>
+                                        {studentClasses.length > 1 && studentClasses.map((cls) => (
+                                            <option key={cls.id} value={cls.id}>
+                                                {cls.name} {cls.section ? `(${cls.section})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <GraduationCap className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                </div>
+                            )}
+
                             {/* Search input */}
-                            <div className="relative flex-1 sm:w-60">
+                            <div className="relative flex-1 sm:w-60 min-w-[160px]">
                                 <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                 <Input
                                     value={searchQuery}
