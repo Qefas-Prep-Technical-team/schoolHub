@@ -11,6 +11,7 @@ import { Loader2, CheckCircle2, AlertCircle, BookOpen, LogIn, GraduationCap, Sch
 import { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+import GoogleLoginButton from "@/app/(auth)/login/components/GoogleLoginButton";
 
 type JoinStatus =
   | "idle"
@@ -332,8 +333,17 @@ export default function JoinClassPage() {
           </div>
 
           <div className="space-y-3 text-left mb-6">
+            {/* Google Sign-In — fastest path for new students */}
+            <GoogleLoginButton
+              userType="student"
+              mode="signup"
+              pill={false}
+              showDivider={false}
+              className="mb-1"
+            />
+
             <Button
-              onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/join/class/${id}`)}`)}
+              onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/join/class/${id}`)}&role=student`)}
               className="w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white font-bold flex items-center justify-center gap-3 shadow-lg shadow-emerald-600/25 dark:shadow-emerald-950/60 hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99] transition-all border border-emerald-500/20 dark:border-emerald-500/30 cursor-pointer"
             >
               <LogIn size={20} className="text-white shrink-0" />
@@ -350,12 +360,12 @@ export default function JoinClassPage() {
             </div>
 
             <Button
-              onClick={() => router.push(`/signup/student?schoolCode=${schoolCode}&classCode=${classCode}&redirect=${encodeURIComponent(`/join/class/${id}`)}`)}
+              onClick={() => router.push(`/signup/student?schoolCode=${schoolCode}&classCode=${classCode}&redirect=${encodeURIComponent(`/join/class/${id}`)}`)}               
               variant="outline"
               className="w-full h-14 rounded-2xl border-2 border-slate-200 dark:border-slate-800 font-bold flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-300 dark:hover:border-slate-700 transition-all cursor-pointer"
             >
               <GraduationCap size={20} className="text-emerald-500 dark:text-emerald-400 shrink-0" />
-              Register as Student to Join
+              Register with Email
             </Button>
           </div>
 

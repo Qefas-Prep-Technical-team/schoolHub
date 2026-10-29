@@ -85,6 +85,7 @@ const Footer: FC = () => {
                         <h3 className="text-lg font-semibold mb-4">Resources</h3>
                         <ul className="space-y-2">
                             <li><Link className="text-slate-400 hover:text-white transition-colors" href="/features">Features</Link></li>
+                            <li><Link className="text-slate-400 hover:text-white transition-colors" href="/tutorials">Tutorials</Link></li>
                             <li><Link className="text-slate-400 hover:text-white transition-colors" href="/pricing">Pricing</Link></li>
                             <li><Link className="text-slate-400 hover:text-white transition-colors" href="/contact">Contact Us</Link></li>
                         </ul>

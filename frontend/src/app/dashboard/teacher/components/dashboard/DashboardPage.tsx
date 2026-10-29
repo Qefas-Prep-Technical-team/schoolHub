@@ -62,7 +62,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isPersonal = selectedSchoolId === user?.id;
+  const isPersonal = !selectedSchoolId || selectedSchoolId === user?.id || selectedSchoolId === "personal";
 
   // Fetch teacher classes for announcement & report modals
   const { data: rawTeacherClasses = [] } = useQuery({

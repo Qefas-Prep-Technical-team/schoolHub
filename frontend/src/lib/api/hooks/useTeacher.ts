@@ -99,6 +99,8 @@ export const useTeacherLinkedSchools = () => {
   return useQuery({
     queryKey: teacherKeys.linkedSchools(),
     queryFn: () => teacherService.getLinkedSchools(),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };
 

@@ -31,8 +31,102 @@
 - Add coupon usage recording in `verifyPaymentService` (read couponId from payment metadata and call `CouponService.recordUsage`).
 - Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features.
 
-## Blockers
-
+- [x] **Google Sign-Up Flow for Class Invites & Device/Location Consent Permission (Thursday, October 29, 2026)**:
+    - **Class Invite Google Sign-In & Redirect Preservation**:
+        - Updated [join/class/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/join/class/%5Bid%5D/page.tsx) to mount [GoogleLoginButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/GoogleLoginButton.tsx) directly on the unauthenticated class invitation page for seamless single-click student registration.
+        - Fixed [route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/api/auth/google/callback/route.ts) to forward `postAuthRedirect` through new user onboarding as a `?redirect=<encoded>` query parameter (`/onboarding?type=student&redirect=...`).
+        - Updated [onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx) to detect `redirect` query parameter on tour completion and "Skip Tour & Continue", ensuring newly registered students are automatically routed back to `/join/class/[id]` to trigger their class join request.
+    - **Device & Location Permission Consent Dialog (`GoogleAuthConsentModal`)**:
+        - Created [GoogleAuthConsentModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/GoogleAuthConsentModal.tsx) with rich glassmorphism, Framer Motion animations, dark/light theme support, security badge, and transparent explanations for why location (city/country) and hardware specs (device model, browser, OS) are requested.
+        - Integrated consent modal into both [GoogleLoginButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/GoogleLoginButton.tsx) and [SocialAuthRow.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/SocialAuthRow.tsx) for Google registration.
+        - Supported high-accuracy reverse geocoding via `requestDeviceLocationPermission()`, granular hardware profiling via `getClientDeviceInfo()`, and optional skip fallback (`withLocation: false`) using timezone location.
+        - Updated [google/route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/api/auth/google/route.ts) and [google/callback/route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/api/auth/google/callback/route.ts) to store and forward `x-device-type`, `x-device-model`, `x-os-version`, `x-device-location`, `x-location-permission`, and `x-client-timezone` to the Express backend during Google authentication for accurate device tracking and session logs.
+    - **Build Validation**:
+        - Next.js frontend production build (`npm run build`) passed with exit code 0 across all 100+ application routes.
+        - Express backend TypeScript compiler (`npx tsc --noEmit`) passed with exit code 0.
+- [x] **Teacher Timeline & Daily Agenda Focus & Free Period Engine (Thursday, October 29, 2026)**:
+    - Updated [teacher-dashboard.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-dashboard.service.ts) in `getTeacherDashboardStatsService` to source schedule periods across all classes assigned to the teacher in the school (via both `ClassTeacher` and direct `TimetablePeriod` assignments).
+    - Refactored daily agenda processing to focus strictly on the teacher's active subjects: matches periods assigned to `teacherId` or matching subjects in `teacherSubjects` / `teacherSubjectNames`.
+    - Synthesizes and accurately flags **Free Periods** (`type: 'free'`, `isFree: true`, "Free Period", "Staff Room / Office") during time slots in the school timetable where the teacher has no assigned teaching duties, avoiding false duplicate free slots during active lessons.
+    - Accurately identifies designated school breaks (`type: 'break'`).
+    - Corrected `stats.upcomingLessons` count to strictly reflect classes the teacher is actively teaching today (`todaySchedule.filter(s => s.type === 'class').length`).
+    - Upgraded [TeacherSchedule.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/TeacherSchedule.tsx) with custom visual indicators for active teaching sessions, free planning periods, and breaks, accurate minute-level live status checking (`status === 'current'`), and class/free workload counter badges.
+- [x] **Teacher TopNav School Auto-Selection & Context Persistence (Thursday, October 29, 2026)**:
+    - Updated [TopNavBar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TopNavBar.tsx) to query linked institutions via `useTeacherLinkedSchools` with 5-minute `staleTime`.
+    - Implemented auto-selection: if a teacher has one or more connected schools and the current selection is not one of their connected schools (e.g. initial load or personal fallback), the top nav workspace dropdown automatically selects their primary connected school. If they have no connected schools, it defaults cleanly to "Personal Dashboard".
+    - Exposed the `SchoolSwitcher` dropdown responsively on mobile (`flex items-center min-w-0`), removing the `hidden sm:block` restriction.
+    - Updated [DashboardPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/dashboard/DashboardPage.tsx) `isPersonal` resolver to safely match empty, `"personal"`, and `user.id`.
+    - Added an active workspace indicator badge inside [TeacherMobileDrawer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TeacherMobileDrawer.tsx).
+- [x] **Video Thumbnail Auto-Extraction & Snapshot Generator (Thursday, October 29, 2026)**:
+    - Built an in-browser video frame extraction engine in [console/tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/tutorials/page.tsx) (`captureVideoFrame` via HTML5 `<video>` and `<canvas>` APIs).
+    - Added dedicated **"Extract Thumbnail from Video"** action button with loading states.
+    - Supported automatic YouTube HD thumbnail resolution (`maxresdefault.jpg` with `hqdefault.jpg` fallback).
+    - Supported direct video files, local uploads, and HTML5 video streams with multiple candidate frame snapshots (captured at 1.5s, 4s, and 7.5s) for quick one-click preview and selection.
+    - Automated instant thumbnail capture whenever a video file is uploaded in the tutorial studio.
+- [x] **Tutorial Deletion Dialog & Mobile Responsiveness Upgrades (Thursday, October 29, 2026)**:
+    - **Proper Delete Pop-up Modal**: Replaced browser `confirm()` in [console/tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/tutorials/page.tsx) with a custom danger-themed confirmation modal featuring dark backdrop blur (`backdrop-blur-md`), glowing red trash icon badge, warning notice explaining catalog impact, and styled Cancel & Delete Tutorial action buttons.
+    - **Reset to Defaults Modal**: Replaced native prompt with a custom dialog for catalog restoration.
+    - **Mobile Responsiveness on `/console/tutorials`**: Optimized top actions bar for small screen wrapping, reorganized stats bar into an auto-adapting mobile grid (2 columns on mobile with "Total Guides" spanning full top row, and 4 role counters in clean 2x2 grid), and refined step editor touch targets.
+    - **Mobile Responsiveness on `/tutorials/[id]`**: Updated breadcrumb truncation, responsive padding (`pt-24 sm:pt-28 pb-16 sm:pb-24`), step checklist sizing, and added horizontal scroll safety on rich LaTeX mathematical formula blocks.
+    - **Mobile Responsiveness on `/tutorials`**: Optimized hero heading scales (`text-3xl sm:text-5xl`), search bar height and padding, full-width action buttons in the featured spotlight section on mobile screens, and mobile padding inside the interactive preview modal.
+- [x] **Video Preview & Cinema Mode Aesthetics Revamp (Thursday, October 29, 2026)**:
+    - Upgraded [VideoPlayer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/VideoPlayer.tsx) with new `cinema` and `frameless` display modes and custom `poster` support.
+    - Added ambient multi-hue background glow (`blur-2xl`), frosted glassmorphic top control bar with provider branding dot (`YouTube`, `Vimeo`, `Loom`, `Google Drive`, `Direct MP4`), `1080p Full HD` indicator badge, and responsive 16:9 viewport.
+    - Updated [tutorials/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/tutorials/[id]/page.tsx) to use cinema mode with ambient glow and thumbnail poster, resolving container aspect-ratio clipping and squishing.
+    - Updated [console/tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/tutorials/page.tsx) live video preview box and preview modal to use auto-formatted 16:9 cinema layout.
+    - Updated [tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/tutorials/page.tsx) interactive preview modal to use cinema mode.
+- [x] **New Lifecycle & Academic Email Templates — Draft Preview Mode (Thursday, October 29, 2026)**:
+    - Added 8 requested institutional lifecycle email templates to [email-templates/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/email-templates/page.tsx) with complete HTML designs, typography, tables, and illustrations:
+        1. **School Accepts Student (`school-accept-student`)**: Welcome to the school, admission number, class placement, resumption date, orientation docket, and portal access CTA.
+        2. **School Accepts Teacher (`school-accept-teacher`)**: Faculty appointment notice, staff ID, department, assigned subjects/classes, gradebook access credentials.
+        3. **Student Graduating (`student-graduating`)**: Formal valedictory honors notice, cumulative GPA honors, valedictory certificate ID, and digital alumni vault access.
+        4. **Transcript Payment Success (`transcript-payment-success`)**: Official payment receipt for transcript processing, reference token, destination institution, status tracking.
+        5. **Transcript Receipt and Link (`transcript-receipt-link`)**: Certified academic transcript issuance notice, PDF download CTA, cryptographic verification QR & SHA-256 hash.
+        6. **Parent-Child Link Accepted (`parent-child-link-accepted`)**: Pairing confirmation between parent and student accounts with delegated permissions for grades and attendance.
+        7. **Student Suspension Notice (`student-suspension`)**: Disciplinary suspension docket, grounds, temporary portal restriction, and mandatory parent reinstatement conference.
+        8. **Student Transfer Certificate (`student-transfer`)**: Academic clearance release, origin and destination school, dues settlement confirmation, and transfer claim token for records ingestion.
+    - Tagged all 8 new templates as `Not Functional` (`isFunctional: false`) with warning badges and guarded test sending so they function as drafts/previews without prematurely triggering backend APIs.
+- [x] **Console Tutorials Setup, LaTeX Rich Text & Dedicated Video Detail Pages (Thursday, October 29, 2026)**:
+    - **Console Tutorials & Academy Studio (`/console/tutorials`)**:
+        - Created comprehensive management console page at [console/tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/tutorials/page.tsx) with statistics, role & category filters, full-text search, and full CRUD operations.
+        - Supported video file upload (with drag-and-drop, object URL preview, and file size indicator) as well as hosted/external video URLs.
+        - Supported rich text editing with dedicated formatting toolbar for:
+            - Inline LaTeX math formulas (`$...$`) and display equations (`$$...$$`)
+            - Numbered lists (`1. ...`)
+            - Bullet points (`- ...`)
+            - Indented notes & blockquotes (`> ...`)
+            - Paragraph spacing and dividers (`---`)
+            - Headers, bold, italic, and code blocks
+        - Integrated split-screen real-time preview powered by [LaTeXRenderer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/LaTeXRenderer.tsx).
+        - Built shared catalog storage in [tutorialData.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/tutorials/tutorialData.ts) using `localStorage` (`qefas_tutorials_data`) and custom event broadcasting (`qefas_tutorials_updated`).
+    - **Dedicated Tutorial Details Pages (`/tutorials/[id]`)**:
+        - Created individual dedicated page at [tutorials/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/tutorials/[id]/page.tsx) where the video player comes first in full 16:9 widescreen format, followed immediately by:
+            - Step-by-step numbered implementation guide with actionable points and pro-tips
+            - Rich academic documentation & LaTeX mathematical formulations
+            - Core learning outcomes with status checks
+            - Interactive FAQs and Related Tutorials carousel
+        - Updated main [tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/tutorials/page.tsx) cards and featured spotlight so that clicking cards, play buttons, or "Watch Video" / "Text Guide" routes to the dedicated `/tutorials/[id]` page.
+    - **Footer Link Alignment**:
+        - In [Footer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/reusable/Footer.tsx), removed flex item misalignment and styled the "Tutorials" link identically to "Features", "Pricing", and "Contact Us".
+    - **Console Sidebar Logo Navigation**:
+        - In [ConsoleSidebar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/components/ConsoleSidebar.tsx), wrapped the Operations Console header logo in a link pointing to `/?view=landing` (http://localhost:3000/?view=landing).
+        - Added "Tutorials & Academy" navigation item with video icon under Operations & Communications section.
+- [x] **Tutorials Learning Academy, Onboarding & Device Geolocation Security (Thursday, October 29, 2026)**:
+    - **Student Onboarding Routing**:
+        - In [VerificationCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/verification/components/VerificationCard.tsx), fixed newly registered students being sent directly to dashboard. Now routes newly registered users to `/onboarding?type=student` (or role) with `hasCompletedOnboarding: false` preserved.
+        - In [onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx), both completing the tour steps and clicking `Skip Tour` properly set `useAuthStore.getState().setHasCompletedOnboarding(true)`.
+    - **Browser Location Data Permission & Device Verification Enforcement**:
+        - Enhanced [deviceDetector.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/utils/deviceDetector.ts) to prompt user via HTML5 Geolocation API, reverse geocode exact city/country coordinates, and track `qefas_location_granted`.
+        - In [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts), attached `x-location-permission` and `x-device-location` headers on all API requests.
+        - In [use-auth-mutations.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/use-auth-mutations.ts), prompted for location permission before dispatching login credentials.
+        - In [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts), enforced that if location permission is not granted, device cookies cannot bypass verification—requiring email OTP verification on every login attempt.
+    - **Google Auth Device Recognition & Location Integration**:
+        - Updated [GoogleLoginButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/GoogleLoginButton.tsx) and [SocialAuthRow.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/SocialAuthRow.tsx) to prompt for location permission on click and preserve `google_device_location` and `google_location_permission` cookies.
+        - In [google/callback/route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/api/auth/google/callback/route.ts), forwarded browser's `User-Agent`, IP, and `deviceVerified` cookies to backend `/auth/google`.
+        - Fixed false positive "New Device Login Detected" alert by setting 365-day persistent `deviceVerified` cookie on browser response and updating `isNewDevice` check in [auth.device.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.device.ts).
+    - **Tutorials & Video Walkthroughs Feature**:
+        - Created high-aesthetic dedicated page at [tutorials/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/tutorials/page.tsx) featuring user-type tabs (School Admins, Teachers, Students, Parents), search filter, featured video spotlight, step-by-step text guides, FAQs, and interactive video playback modal via [VideoPlayer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/ui/VideoPlayer.tsx).
+        - Added prominent link to Tutorials in [Footer.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/reusable/Footer.tsx) under the Resources column.
 - [x] **Join Link OAuth & Sign-Up Redirect Chain (Thursday, October 29, 2026)**:
     - **Google OAuth Round-Trip State Preservation**:
         - Stored `redirect` in `google_post_auth_redirect` HTTP-only cookie on `/api/auth/google/route.ts` so that it survives full-page navigation to Google.

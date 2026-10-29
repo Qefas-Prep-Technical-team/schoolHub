@@ -250,10 +250,13 @@ export async function getClientDeviceInfo(): Promise<ClientDeviceInfo> {
 
 /**
  * Requests high-accuracy HTML5 Geolocation permission from the user's browser.
- * Returns the exact city and country name if granted.
+ * Sets permission status in localStorage and returns the resolved city/country.
  */
 export async function requestDeviceLocationPermission(): Promise<string> {
   if (typeof window === "undefined" || !("geolocation" in navigator)) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("qefas_location_granted", "false");
+    }
     return getTimezoneLocation();
   }
 
@@ -261,8 +264,8 @@ export async function requestDeviceLocationPermission(): Promise<string> {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
         try {
+          localStorage.setItem("qefas_location_granted", "true");
           // Reverse-geocode coordinates via open reverse geocoding API
           const response = await fetch(
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -290,14 +293,24 @@ export async function requestDeviceLocationPermission(): Promise<string> {
       },
       (error) => {
         console.info("Location permission denied or unavailable:", error.message);
+        localStorage.setItem("qefas_location_granted", "false");
         const fallback = getTimezoneLocation();
         resolve(fallback);
       },
       {
         enableHighAccuracy: true,
-        timeout: 8000,
+        timeout: 10000,
         maximumAge: 1000 * 60 * 60, // 1 hour cache
       }
     );
   });
 }
+
+/**
+ * Checks whether location permission was granted by the user.
+ */
+export function isLocationPermissionGranted(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("qefas_location_granted") === "true";
+}
+

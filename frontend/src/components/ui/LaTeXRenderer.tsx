@@ -11,26 +11,31 @@ interface LaTeXRendererProps {
   content: string;
   className?: string;
   onZoom?: (src: string, alt?: string) => void;
+  forceMarkdown?: boolean;
 }
 
-/** Returns true if the content contains any LaTeX math delimiters */
-function hasMath(text: string): boolean {
-  return /\$/.test(text) || /\\[a-zA-Z]/.test(text);
+/** Returns true if the content contains any LaTeX math delimiters or Markdown syntax */
+function hasMathOrMarkdown(text: string, forceMarkdown?: boolean): boolean {
+  if (forceMarkdown) return true;
+  return /\$/.test(text) || /\\[a-zA-Z]/.test(text) || /[*#_`~>|\-+]|^\s*\d+\.\s/m.test(text);
 }
 
 /**
- * Preprocess content for ReactMarkdown so that single newlines
- * are treated as paragraph breaks. This lets teachers write
- * multi-line questions naturally without needing double-returns.
+ * Preprocess content for ReactMarkdown.
+ * If forceMarkdown is enabled, it preserves standard markdown block structure.
+ * Otherwise, it joins newlines with double-returns for question-style multi-line content.
  */
-function preprocessForMarkdown(text: string): string {
+function preprocessForMarkdown(text: string, forceMarkdown?: boolean): string {
+  if (forceMarkdown) {
+    return text;
+  }
   return text
     .split('\n')
     .map(line => line.trimEnd())
     .join('\n\n');
 }
 
-const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererProps) => {
+const LaTeXRenderer = memo(({ content, className = "", onZoom, forceMarkdown = false }: LaTeXRendererProps) => {
 
   const components: Components = useMemo(() => ({
     p: ({ children }: { children?: React.ReactNode }) => (
@@ -117,8 +122,8 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
     className,
   ].join(" ");
 
-  // ── Plain text (no math) — preserve whitespace and newlines exactly ───────
-  if (!hasMath(content)) {
+  // ── Plain text (no math or markdown) — preserve whitespace and newlines exactly ───────
+  if (!hasMathOrMarkdown(content, forceMarkdown)) {
     return (
       <div
         className={baseClass}
@@ -129,7 +134,7 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
     );
   }
 
-  // ── Math content — use ReactMarkdown + KaTeX pipeline ────────────────────
+  // ── Math & Markdown content — use ReactMarkdown + KaTeX pipeline ──────────
   return (
     <div className={baseClass}>
       <ReactMarkdown
@@ -137,7 +142,7 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
         rehypePlugins={[rehypeKatex]}
         components={components}
       >
-        {preprocessForMarkdown(content)}
+        {preprocessForMarkdown(content, forceMarkdown)}
       </ReactMarkdown>
     </div>
   );

@@ -156,8 +156,7 @@ export const processNewDeviceLogin = async ({
 
     const isNewDevice =
       isPreAuthVerified ||
-      (!isMobileClient && !hasValidCookie) ||
-      existingDeviceCount === 0;
+      (!isMobileClient && !hasValidCookie && existingDeviceCount === 0);
 
     if (isNewDevice) {
       // Resolve clean human-readable location (e.g. "Lagos, Nigeria (197.210.x.x)")

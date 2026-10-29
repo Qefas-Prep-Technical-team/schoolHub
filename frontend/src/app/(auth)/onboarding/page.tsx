@@ -158,12 +158,16 @@ function OnboardingContent() {
       return `/dashboard/${normalized}`;
   };
 
+  const pendingRedirect = searchParams.get('redirect') || null;
+
   const handleNext = () => {
     if (currentStep < currentSteps.length - 1) {
         setCurrentStep(prev => prev + 1);
     } else {
+        useAuthStore.getState().setHasCompletedOnboarding(true);
         if (isAuthenticated || user) {
-            router.push(getDashboardRoute(userType));
+            // Honor a pending join redirect (e.g. from Google sign-up via class invite link)
+            router.push(pendingRedirect || getDashboardRoute(userType));
         } else {
             router.push(getLoginRoute(userType));
         }
@@ -238,10 +242,14 @@ function OnboardingContent() {
               <div className="w-full max-w-xl mx-auto mb-4 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => router.push(getDashboardRoute(userType))}
+                  onClick={() => {
+                    useAuthStore.getState().setHasCompletedOnboarding(true);
+                    // Honor a pending join redirect (e.g. from Google sign-up via class invite link)
+                    router.push(pendingRedirect || getDashboardRoute(userType));
+                  }}
                   className="text-xs font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
                 >
-                  Skip Tour & Go to Dashboard <ChevronRight size={13} />
+                  {pendingRedirect ? 'Skip Tour & Continue' : 'Skip Tour & Go to Dashboard'} <ChevronRight size={13} />
                 </button>
               </div>
             )}

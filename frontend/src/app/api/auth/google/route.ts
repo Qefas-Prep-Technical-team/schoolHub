@@ -8,6 +8,12 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get("role") || "student";
     const inviteToken = searchParams.get("inviteToken") || "";
     const redirect = searchParams.get("redirect") || "";
+    const loc = searchParams.get("loc") || request.cookies.get("google_device_location")?.value || "";
+    const locPerm = searchParams.get("locPerm") || request.cookies.get("google_location_permission")?.value || "";
+    const deviceType = searchParams.get("deviceType") || request.cookies.get("google_device_type")?.value || "";
+    const deviceModel = searchParams.get("deviceModel") || request.cookies.get("google_device_model")?.value || "";
+    const osVersion = searchParams.get("osVersion") || request.cookies.get("google_os_version")?.value || "";
+    const timeZone = searchParams.get("timeZone") || request.cookies.get("google_client_timezone")?.value || "";
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -42,6 +48,24 @@ export async function GET(request: NextRequest) {
     }
     if (redirect) {
       response.cookies.set("google_post_auth_redirect", redirect, cookieOptions);
+    }
+    if (loc) {
+      response.cookies.set("google_device_location", loc, cookieOptions);
+    }
+    if (locPerm) {
+      response.cookies.set("google_location_permission", locPerm, cookieOptions);
+    }
+    if (deviceType) {
+      response.cookies.set("google_device_type", deviceType, cookieOptions);
+    }
+    if (deviceModel) {
+      response.cookies.set("google_device_model", deviceModel, cookieOptions);
+    }
+    if (osVersion) {
+      response.cookies.set("google_os_version", osVersion, cookieOptions);
+    }
+    if (timeZone) {
+      response.cookies.set("google_client_timezone", timeZone, cookieOptions);
     }
 
     return response;

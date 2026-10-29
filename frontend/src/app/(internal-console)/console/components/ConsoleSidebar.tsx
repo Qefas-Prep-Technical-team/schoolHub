@@ -34,7 +34,8 @@ import {
     Tag,
     Mail,
     UserX,
-    BellRing
+    BellRing,
+    Video
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
@@ -77,6 +78,7 @@ export const CONSOLE_SIDEBAR_SECTIONS: ConsoleSidebarSection[] = [
             { icon: Terminal, label: "Activity Logs", href: "/console/logs" },
             { icon: Activity, label: "Monitoring", href: "/console/monitoring" },
             { icon: Mail, label: "Email Templates", href: "/console/email-templates" },
+            { icon: Video, label: "Tutorials & Academy", href: "/console/tutorials" },
         ]
     },
     {
@@ -110,17 +112,21 @@ export function ConsoleSidebar({ isCollapsed, setIsCollapsed }: ConsoleSidebarPr
             )}
         >
             <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+                <Link
+                    href="/?view=landing"
+                    title="Go to Landing Page"
+                    className="flex items-center gap-3 group transition-opacity hover:opacity-85 focus:outline-none"
+                >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-sm group-hover:scale-105 transition-transform">
                         <ShieldCheck className="h-5 w-5 text-white" />
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">OPERATIONS</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">OPERATIONS</span>
                             <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Console v1.0</span>
                         </div>
                     )}
-                </div>
+                </Link>
 
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}

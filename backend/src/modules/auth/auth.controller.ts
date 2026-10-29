@@ -35,6 +35,7 @@ import UAParser from "ua-parser-js";
 import {
   extractDeviceInfo,
   verifyDeviceCookie,
+  setDeviceVerifiedCookie,
   processNewDeviceLogin,
 } from "./auth.device";
 import { enforceStudentLimit, enforceTeacherLimit } from "../subscription/quota.helpers";
@@ -2110,17 +2111,28 @@ export const login = async (req: Request, res: Response) => {
     // Device Verification Check
     const isMobileClient = req.headers["x-device-type"] === "mobile";
     const hasValidDeviceCookie = verifyDeviceCookie(req, user.id);
-    let isDeviceVerified = isMobileClient || hasValidDeviceCookie || !!preAuthToken;
+    const locationPermissionGranted = req.headers["x-location-permission"] === "granted";
+
+    // If the user does not allow us to read browser location data, they must verify the device on each login
+    let isDeviceVerified = false;
+    if (locationPermissionGranted) {
+      isDeviceVerified = isMobileClient || hasValidDeviceCookie || !!preAuthToken;
+    } else {
+      // Permission not granted: cookie cannot bypass verification; requires preAuthToken OTP
+      isDeviceVerified = !!preAuthToken;
+    }
 
     if (!isDeviceVerified) {
-      const validDevice = await prisma.refreshToken.findFirst({
-        where: {
-          userId: user.id,
-          deviceModel: deviceInfo.deviceModel,
-          osVersion: deviceInfo.osVersion,
-          isValid: true,
-        },
-      });
+      const validDevice = locationPermissionGranted
+        ? await prisma.refreshToken.findFirst({
+            where: {
+              userId: user.id,
+              deviceModel: deviceInfo.deviceModel,
+              osVersion: deviceInfo.osVersion,
+              isValid: true,
+            },
+          })
+        : null;
 
       if (!validDevice) {
         const generatedPreAuthToken = jwt.sign(
@@ -2130,8 +2142,9 @@ export const login = async (req: Request, res: Response) => {
         );
         return res.status(403).json({
           success: false,
-          message:
-            "Unrecognized or revoked device detected. Verification required.",
+          message: !locationPermissionGranted
+            ? "Location permission not granted. Security verification required for this device."
+            : "Unrecognized or revoked device detected. Verification required.",
           requiresVerification: true,
           preAuthToken: generatedPreAuthToken,
         });
@@ -3584,6 +3597,16 @@ export const googleAuth = async (req: Request, res: Response) => {
       });
     }
 
+    let deviceVerifiedToken = "";
+    if (user) {
+      deviceVerifiedToken = jwt.sign(
+        { userId: user.id, deviceModel: deviceInfo.deviceModel || "Known Device" },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "365d" }
+      );
+      setDeviceVerifiedCookie(res, user.id, deviceInfo.deviceModel);
+    }
+
     return res.status(200).json({
       success: true,
       message: "Google Authentication successful",
@@ -3603,6 +3626,7 @@ export const googleAuth = async (req: Request, res: Response) => {
         accessToken: accessToken || token,
         refreshToken,
         token: accessToken || token,
+        deviceVerifiedToken,
         userRole: actualRole,
         isNewUser: !!isNewUser,
         isPlatformStaff: !!isPlatformStaff,

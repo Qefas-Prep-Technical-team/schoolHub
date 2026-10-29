@@ -22,13 +22,12 @@ import {
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { cn } from "@/lib/utils";
-import { useTeacherProfile } from "@/lib/api/hooks/useTeacher";
+import { useTeacherProfile, useTeacherLinkedSchools } from "@/lib/api/hooks/useTeacher";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { TeacherMobileDrawer } from "./TeacherMobileDrawer";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
-import { teacherService } from "@/lib/api/services/teacherService";
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
@@ -52,6 +51,7 @@ export default function TopNavBar() {
   const { user } = useAuthStore();
   const { mutate: logout } = useLogoutMutation();
   const { data: teacherProfile } = useTeacherProfile();
+  const { data: linkedSchoolsData, isSuccess: isLinkedSchoolsSuccess } = useTeacherLinkedSchools();
 
   const { selectedSchoolId, selectedSchoolName, schools, setSelectedSchoolId, setSchools } =
     useDashboardStore();
@@ -59,34 +59,39 @@ export default function TopNavBar() {
   const router = useRouter();
   
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const hasAutoSelectedRef = useRef(false);
 
-  const [isFetchingSchools, setIsFetchingSchools] = useState(true);
-
+  // Auto-select connected school if linked, or default to personal dashboard
   useEffect(() => {
-    setIsFetchingSchools(true);
-    teacherService
-      .getLinkedSchools()
-      .then((data) => {
-        setSchools(data);
-        setIsFetchingSchools(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch linked schools:", err);
-        setIsFetchingSchools(false);
-      });
-  }, [setSchools]);
+    if (!isLinkedSchoolsSuccess || !linkedSchoolsData) return;
 
-  // Auto-select first connected school, or personal if none
-  useEffect(() => {
-    // Wait until schools are fetched before attempting auto-selection
-    if (!isFetchingSchools && !selectedSchoolId) {
-      if (schools && schools.length > 0) {
-        setSelectedSchoolId(schools[0].id as string, schools[0].name as string);
-      } else if (user?.id) {
-        setSelectedSchoolId(user.id, "Personal Dashboard");
+    const schoolList = Array.isArray(linkedSchoolsData) ? linkedSchoolsData : [];
+    setSchools(schoolList);
+
+    // Auto-selection rule:
+    // If a teacher is connected to a school already, make sure the drop down auto-selects that school;
+    // but if not, default to personal dashboard.
+    if (!hasAutoSelectedRef.current) {
+      hasAutoSelectedRef.current = true;
+
+      if (schoolList.length > 0) {
+        // Teacher has connected school(s)
+        const isCurrentSelectionConnected = schoolList.some((s) => s.id === selectedSchoolId);
+        if (!isCurrentSelectionConnected) {
+          const defaultSchool = schoolList[0];
+          setSelectedSchoolId(defaultSchool.id, defaultSchool.name);
+        }
+      } else {
+        // Teacher has no connected schools -> default to personal dashboard
+        setSelectedSchoolId(user?.id || "personal", "Personal Dashboard");
+      }
+    } else {
+      // If schools list is updated and empty, ensure fallback to personal dashboard
+      if (schoolList.length === 0 && selectedSchoolId !== (user?.id || "personal")) {
+        setSelectedSchoolId(user?.id || "personal", "Personal Dashboard");
       }
     }
-  }, [selectedSchoolId, schools, user?.id, setSelectedSchoolId, isFetchingSchools]);
+  }, [isLinkedSchoolsSuccess, linkedSchoolsData, selectedSchoolId, setSchools, setSelectedSchoolId, user?.id]);
 
   const currentFeatures = { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true };
 
@@ -99,12 +104,12 @@ export default function TopNavBar() {
       <div className="flex items-center justify-between w-full max-w-[1800px] mx-auto gap-3">
 
         {/* ── LEFT: Sidebar toggle + Identity block ────────────────────── */}
-        <div className="flex items-center gap-3 flex-1 justify-start min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-start min-w-0">
           {/* Mobile drawer */}
           <TeacherMobileDrawer />
 
           {/* School switcher */}
-          <div className="hidden sm:block">
+          <div className="flex items-center min-w-0">
             <SchoolSwitcher
               schools={schools}
               selectedId={selectedSchoolId}

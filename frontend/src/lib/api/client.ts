@@ -54,8 +54,9 @@ apiClient.interceptors.request.use(
           config.headers["x-device-type"] = deviceInfo.deviceType;
           config.headers["x-device-model"] = deviceInfo.deviceModel;
           config.headers["x-os-version"] = deviceInfo.osVersion;
-          config.headers["x-device-location"] = deviceInfo.location;
+          config.headers["x-device-location"] = localStorage.getItem("qefas_device_location") || deviceInfo.location;
           config.headers["x-client-timezone"] = deviceInfo.timeZone;
+          config.headers["x-location-permission"] = localStorage.getItem("qefas_location_granted") === "true" ? "granted" : "denied";
         }
       } catch {
         // Fallback silently if device detection is unavailable

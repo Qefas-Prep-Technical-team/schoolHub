@@ -121,6 +121,16 @@ export async function GET(request: NextRequest) {
     };
     const mappedRole = roleMapping[storedRole.toLowerCase()] || "STUDENT";
 
+    const userAgent = request.headers.get("user-agent") || "";
+    const clientIp = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "";
+    const deviceVerifiedCookie = request.cookies.get("deviceVerified")?.value || "";
+    const googleLocation = request.cookies.get("google_device_location")?.value || "";
+    const googleLocPerm = request.cookies.get("google_location_permission")?.value || "";
+    const googleDeviceType = request.cookies.get("google_device_type")?.value || "";
+    const googleDeviceModel = request.cookies.get("google_device_model")?.value || "";
+    const googleOsVersion = request.cookies.get("google_os_version")?.value || "";
+    const googleTimezone = request.cookies.get("google_client_timezone")?.value || "";
+
     const res = await axios.post(`${backendUrl}/auth/google`, {
       googleId: claims.sub,
       email: claims.email,
@@ -128,6 +138,18 @@ export async function GET(request: NextRequest) {
       userRole: mappedRole,
       emailVerified: claims.email_verified,
       inviteToken: inviteToken || undefined,
+    }, {
+      headers: {
+        "user-agent": userAgent,
+        "x-forwarded-for": clientIp,
+        "x-device-type": googleDeviceType,
+        "x-device-model": googleDeviceModel,
+        "x-os-version": googleOsVersion,
+        "x-device-location": googleLocation,
+        "x-location-permission": googleLocPerm,
+        "x-client-timezone": googleTimezone,
+        "cookie": deviceVerifiedCookie ? `deviceVerified=${deviceVerifiedCookie}` : "",
+      }
     });
 
     if (!res.data.success) {
@@ -138,7 +160,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const { accessToken, refreshToken, userRole, isNewUser, isPlatformStaff } = res.data.data;
+    const { accessToken, refreshToken, userRole, isNewUser, isPlatformStaff, deviceVerifiedToken } = res.data.data;
     const isProd = process.env.NODE_ENV === "production";
 
     // Handle Platform Staff Console Login
@@ -148,6 +170,12 @@ export async function GET(request: NextRequest) {
       response.cookies.delete("google_code_verifier");
       response.cookies.delete("google_intended_role");
       response.cookies.delete("google_invite_token");
+      response.cookies.delete("google_device_location");
+      response.cookies.delete("google_location_permission");
+      response.cookies.delete("google_device_type");
+      response.cookies.delete("google_device_model");
+      response.cookies.delete("google_os_version");
+      response.cookies.delete("google_client_timezone");
 
       response.cookies.set("platform_token", accessToken, {
         path: "/",
@@ -163,7 +191,9 @@ export async function GET(request: NextRequest) {
     // 8. Determine destination dashboard — honor pending join redirect if present
     let destination = postAuthRedirect || `/dashboard/${userRole.toLowerCase().replace("_", "-")}`;
     if (isNewUser) {
-      destination = `/onboarding?type=${userRole.toLowerCase()}`;
+      // Pass postAuthRedirect through onboarding so it's honored after the tour completes
+      const onboardingUrl = `/onboarding?type=${userRole.toLowerCase()}${postAuthRedirect ? `&redirect=${encodeURIComponent(postAuthRedirect)}` : ""}`;
+      destination = onboardingUrl;
     }
 
     // Redirect to login/callback to populate client Zustand store and show welcome toast
@@ -180,6 +210,12 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("google_intended_role");
     response.cookies.delete("google_redirect_uri");
     response.cookies.delete("google_post_auth_redirect");
+    response.cookies.delete("google_device_location");
+    response.cookies.delete("google_location_permission");
+    response.cookies.delete("google_device_type");
+    response.cookies.delete("google_device_model");
+    response.cookies.delete("google_os_version");
+    response.cookies.delete("google_client_timezone");
 
     // 10. Set session cookies
     response.cookies.set("token", accessToken, {
@@ -197,6 +233,16 @@ export async function GET(request: NextRequest) {
         secure: isProd,
         sameSite: "strict",
         maxAge: 30 * 24 * 60 * 60,
+      });
+    }
+
+    if (deviceVerifiedToken) {
+      response.cookies.set("deviceVerified", deviceVerifiedToken, {
+        path: "/",
+        httpOnly: true,
+        secure: isProd,
+        sameSite: "lax",
+        maxAge: 365 * 24 * 60 * 60,
       });
     }
 

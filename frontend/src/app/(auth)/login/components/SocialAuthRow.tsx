@@ -5,6 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { 
+  requestDeviceLocationPermission, 
+  getClientDeviceInfo, 
+  getTimezoneLocation,
+  ClientDeviceInfo 
+} from "@/lib/utils/deviceDetector";
+import GoogleAuthConsentModal from "./GoogleAuthConsentModal";
+import Cookies from "js-cookie";
 
 interface SocialAuthRowProps {
   userType: string;
@@ -20,6 +28,7 @@ export default function SocialAuthRow({
   className = "",
 }: SocialAuthRowProps) {
   const [loadingProvider, setLoadingProvider] = useState<"google" | "facebook" | null>(null);
+  const [showConsent, setShowConsent] = useState(false);
   const { data: settings } = usePublicPlatformSettings();
   const searchParams = useSearchParams();
 
@@ -53,11 +62,84 @@ export default function SocialAuthRow({
   const defaultLabel = mode === "signup" ? "or sign up with" : "or sign in with";
   const displayLabel = label || defaultLabel;
 
-  const handleGoogleClick = () => {
+  const handleProceed = async (withLocation: boolean) => {
     setLoadingProvider("google");
+    let loc = "";
+    let locPerm = "denied";
+
+    if (withLocation) {
+      try {
+        loc = await requestDeviceLocationPermission();
+        locPerm = localStorage.getItem("qefas_location_granted") === "true" ? "granted" : "denied";
+      } catch {
+        locPerm = "denied";
+        loc = getTimezoneLocation();
+      }
+    } else {
+      loc = getTimezoneLocation();
+      locPerm = "denied";
+      if (typeof window !== "undefined") {
+        localStorage.setItem("qefas_location_granted", "false");
+      }
+    }
+
+    let deviceInfo: ClientDeviceInfo | null = null;
+    try {
+      deviceInfo = await getClientDeviceInfo();
+    } catch {
+      // Fallback silently if device detection is unavailable
+    }
+
+    const finalLoc = loc || deviceInfo?.location || getTimezoneLocation();
+    const deviceType = deviceInfo?.deviceType || "desktop";
+    const deviceModel = deviceInfo?.deviceModel || "Web Client";
+    const osVersion = deviceInfo?.osVersion || "Web";
+    const timeZone = deviceInfo?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    // Store cookies for server-side OAuth handling
+    Cookies.set("google_device_location", finalLoc, { path: "/", expires: 1 });
+    Cookies.set("google_location_permission", locPerm, { path: "/", expires: 1 });
+    Cookies.set("google_device_type", deviceType, { path: "/", expires: 1 });
+    Cookies.set("google_device_model", deviceModel, { path: "/", expires: 1 });
+    Cookies.set("google_os_version", osVersion, { path: "/", expires: 1 });
+    Cookies.set("google_client_timezone", timeZone, { path: "/", expires: 1 });
+
     // Preserve any pending join redirect through the OAuth round-trip
     const redirect = searchParams?.get("redirect") || (typeof window !== "undefined" ? sessionStorage.getItem("pendingJoinRedirect") : null);
-    window.location.href = `/api/auth/google?role=${encodeURIComponent(backendRole)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
+
+    const queryParams = new URLSearchParams({
+      role: backendRole,
+      loc: finalLoc,
+      locPerm,
+      deviceType,
+      deviceModel,
+      osVersion,
+      timeZone,
+    });
+
+    if (redirect) {
+      queryParams.set("redirect", redirect);
+    }
+
+    window.location.href = `/api/auth/google?${queryParams.toString()}`;
+  };
+
+  const handleGoogleClick = () => {
+    // On registration / sign up, ALWAYS ask for location and device permission first
+    if (mode === "signup") {
+      setShowConsent(true);
+      return;
+    }
+
+    // For sign-in, if user has never responded to permission prompt, show consent modal
+    const existingConsent = typeof window !== "undefined" ? localStorage.getItem("qefas_location_granted") : null;
+    if (existingConsent === null) {
+      setShowConsent(true);
+      return;
+    }
+
+    // If previously granted or denied, proceed with existing permission preference
+    handleProceed(existingConsent === "true");
   };
 
   const handleFacebookClick = () => {
@@ -132,6 +214,16 @@ export default function SocialAuthRow({
           </button>
         )}
       </div>
+
+      {/* Permission Consent Modal */}
+      <GoogleAuthConsentModal
+        isOpen={showConsent}
+        onClose={() => setShowConsent(false)}
+        onProceed={handleProceed}
+        isSubmitting={loadingProvider === "google"}
+        userType={userType}
+        mode={mode}
+      />
     </div>
   );
 }

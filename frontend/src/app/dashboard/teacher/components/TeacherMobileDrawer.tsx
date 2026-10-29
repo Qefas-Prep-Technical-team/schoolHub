@@ -14,11 +14,14 @@ import { FEATURE_FLAGS_TEACHERS, type FeatureTeacherFlagKey } from "@/lib/config
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { menuGroups } from "./app-sidebar";
 
+import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
+
 export function TeacherMobileDrawer() {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
   const { data: dynamicFeatures } = useGlobalFeatures('teacher');
+  const { selectedSchoolName } = useDashboardStore();
 
   const currentFeatures = React.useMemo(() => {
     return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true } as Record<FeatureTeacherFlagKey, boolean>;
@@ -56,7 +59,7 @@ export function TeacherMobileDrawer() {
         <SheetTitle className="sr-only">Teacher Navigation Menu</SheetTitle>
 
         {/* Header */}
-        <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-white/5 space-y-3">
           <Link href="/?view=landing" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
               <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
@@ -66,6 +69,13 @@ export function TeacherMobileDrawer() {
               <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Teacher Hub</span>
             </div>
           </Link>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+            <span className="size-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.7)]" />
+            <span className="font-bold text-slate-700 dark:text-slate-300 truncate text-[11px]">
+              {selectedSchoolName || "Personal Dashboard"}
+            </span>
+          </div>
         </div>
 
         {/* Menu - Only active and available links */}

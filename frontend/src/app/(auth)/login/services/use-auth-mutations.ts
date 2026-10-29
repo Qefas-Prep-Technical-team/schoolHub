@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore, UserType } from "./auth-store";
 import { useAuthToast, useErrorToast, useToast } from "@/lib/hooks/useToast";
 import { authAPI } from "./auth-api";
+import { requestDeviceLocationPermission } from "@/lib/utils/deviceDetector";
 
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
@@ -19,13 +20,20 @@ export const useLoginMutation = () => {
   const setTransitioning = useAuthStore((state) => state.setTransitioning);
 
   return useMutation({
-    mutationFn: (credentials: {
+    mutationFn: async (credentials: {
       email: string;
       password?: string;
       userType: UserType;
       isNewUser?: boolean;
       preAuthToken?: string;
     }) => {
+      // Prompt user for location permission prior to sign-in
+      try {
+        await requestDeviceLocationPermission();
+      } catch (locErr) {
+        console.warn("Location permission check deferred:", locErr);
+      }
+
       const { isNewUser, ...rest } = credentials;
       return authAPI.login(rest);
     },

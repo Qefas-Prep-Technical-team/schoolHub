@@ -2,7 +2,30 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { Mail, ArrowRight, CheckCircle2, ShieldAlert, CreditCard, Ticket, KeyRound, UserPlus, Smartphone, Loader2, UserX, UserMinus, ShieldCheck } from "lucide-react"
+import { 
+    Mail, 
+    ArrowRight, 
+    CheckCircle2, 
+    ShieldAlert, 
+    CreditCard, 
+    Ticket, 
+    KeyRound, 
+    UserPlus, 
+    Smartphone, 
+    Loader2, 
+    UserX, 
+    UserMinus, 
+    ShieldCheck,
+    GraduationCap,
+    Award,
+    FileText,
+    FileCheck,
+    Users,
+    AlertTriangle,
+    ArrowRightLeft,
+    UserCheck,
+    Receipt
+} from "lucide-react"
 import { platformClient } from "@/lib/api/platformClient";
 import { toast } from "react-toastify";
 
@@ -182,6 +205,358 @@ function receiptRow(label: string, value: string, highlight = false): string {
 // --- Email Mock Data ---
 
 const templates = [
+  // --- 1. School Accepting a Student ---
+  {
+    id: "school-accept-student",
+    title: "School Accepts Student",
+    icon: GraduationCap,
+    color: "text-blue-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'success',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Welcome to Springfield High, Jane!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Jane Doe & Guardians,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We are thrilled to inform you that your formal application for admission to <strong>Springfield High School</strong> has been officially accepted and ratified by the Admissions Board.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Enrollment Record</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Name', 'Jane Doe')}
+            ${receiptRow('Admission Number', 'SCH-2026-STU-8821')}
+            ${receiptRow('Class Placement', 'JSS 1 Gold')}
+            ${receiptRow('Academic Session', '2026/2027 Session')}
+            ${receiptRow('Form Master', 'Mrs. Angela Davies')}
+            ${receiptRow('House / Division', 'Emerald House')}
+            ${receiptRow('Term Resumption', 'Monday, Sept 14, 2026')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Admission Confirmed:</strong> Your student profile has been provisioned on Qefas Hub. Access your student portal to review your timetable, syllabus, and orientation documents.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Access Student Portal →', 'http://localhost:3000/login', '#2563eb')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Next Steps:</strong> Please present your digital enrollment docket at the school bursar desk on orientation day to collect physical textbooks and student ID badges.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">Have questions regarding your enrollment? Contact our admissions registry at <a href="mailto:admissions@springfieldhigh.edu" style="color:#2563eb;text-decoration:none;font-weight:600;">admissions@springfieldhigh.edu</a>.</p>
+      `
+    })
+  },
+
+  // --- 2. School Accepting a Teacher ---
+  {
+    id: "school-accept-teacher",
+    title: "School Accepts Teacher",
+    icon: UserCheck,
+    color: "text-emerald-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'invite',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Welcome to the Faculty, Mr. Adeleke!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Mr. David Adeleke,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">The Governing Board and Principal of <strong>Springfield High School</strong> are delighted to officially approve your faculty appointment and welcome you to the academic instructional staff.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Faculty Appointment Details</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Staff Full Name', 'David Adeleke')}
+            ${receiptRow('Staff ID', 'TCH-SPG-4091')}
+            ${receiptRow('Academic Department', 'Department of Physical Sciences')}
+            ${receiptRow('Assigned Subject', 'Senior Mathematics')}
+            ${receiptRow('Allocated Classes', 'SS 1 Gold, SS 2 Diamond')}
+            ${receiptRow('Employment Status', 'Verified Academic Staff')}
+            ${receiptRow('Effective Date', 'Sept 1, 2026')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Faculty Privileges Active:</strong> Your Teacher Portal on Qefas Hub has been unlocked with broadsheet gradebook management, class attendance registers, and CBT exam authoring tools.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Access Teacher Console →', 'http://localhost:3000/login', '#059669')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          Please review the curriculum guidelines and continuous assessment weighting matrices in the teacher resource center prior to term commencement.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For staff assistance, reach out to the Vice Principal (Academics) at <a href="mailto:academics@springfieldhigh.edu" style="color:#2563eb;text-decoration:none;font-weight:600;">academics@springfieldhigh.edu</a>.</p>
+      `
+    })
+  },
+
+  // --- 3. Student Graduating ---
+  {
+    id: "student-graduating",
+    title: "Student Graduation",
+    icon: Award,
+    color: "text-purple-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'success',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Congratulations on Your Graduation!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Jane Doe & Family,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">On behalf of the Board of Trustees, Principal, and Faculty of <strong>Springfield High School</strong>, we warmly congratulate you on fulfilling all statutory requirements for secondary graduation.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Graduation Honours Roll</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Graduate Name', 'Jane Doe')}
+            ${receiptRow('Student Reg No', 'SCH-2020-0491')}
+            ${receiptRow('Graduating Class', 'Class of 2026')}
+            ${receiptRow('Academic Standing', 'First Class Distinction', true)}
+            ${receiptRow('Cumulative GPA', '4.85 / 5.00', true)}
+            ${receiptRow('Valedictory Certificate ID', 'CERT-QEF-2026-9942')}
+            ${receiptRow('Ceremony Date', 'July 25, 2026')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Lifelong Alumni Vault:</strong> Your certified terminal broadsheets and signed digital diploma have been cryptographically sealed and archived on Qefas Hub for perpetual university and employer verification.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Claim Digital Alumni Vault →', 'http://localhost:3000/login', '#7c3aed')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          As an alumnus of Springfield High, you retain permanent access to verify transcripts, request recommendation letters, and connect with fellow alumni.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">Once a Springfieldian, always a Springfieldian. We celebrate your distinguished success!</p>
+      `
+    })
+  },
+
+  // --- 4. Successful Payment of Transcript ---
+  {
+    id: "transcript-payment-success",
+    title: "Transcript Payment Success",
+    icon: CreditCard,
+    color: "text-emerald-500",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'payment',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Payment Received: Academic Transcript Order</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hello Jane,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Thank you for your payment. We have successfully processed your transaction for an official certified academic transcript from <strong>Springfield High School</strong>.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Payment Receipt & Order Docket</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Transaction Reference', 'TRX-TRN-98412-QEF')}
+            ${receiptRow('Order Type', 'Certified Transcript (Digital + Verification QR)')}
+            ${receiptRow('Amount Paid', '₦15,000.00 / $25.00', true)}
+            ${receiptRow('Payment Method', 'Card • Paystack')}
+            ${receiptRow('Destination Institution', 'University of London Admissions')}
+            ${receiptRow('Current Status', 'Processing (Registrar Review)')}
+            ${receiptRow('Transaction Date', 'Oct 29, 2026, 08:30 AM')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Order in Progress:</strong> The Registry and Records Office has been dispatched your file. Your certified transcript with digital verification seal will be issued within 1–2 business days.', 'info')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Track Order Status →', 'http://localhost:3000/login', '#059669')}
+        </div>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">A downloadable tax invoice and transaction receipt is available anytime in your billing dashboard.</p>
+      `
+    })
+  },
+
+  // --- 5. Transcript Receipt and Link to Transcript ---
+  {
+    id: "transcript-receipt-link",
+    title: "Transcript Delivery & Link",
+    icon: FileCheck,
+    color: "text-indigo-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'success',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Your Official Academic Transcript is Ready!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi Jane,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">The Office of the Registrar at <strong>Springfield High School</strong> has finalized, digitally signed, and stamped your certified academic transcript.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Certificate Verification Metadata</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Document Docket', 'TRANS-DOC-2026-8812')}
+            ${receiptRow('Student Name', 'Jane Doe')}
+            ${receiptRow('Issuing Authority', 'Springfield High Registrar')}
+            ${receiptRow('Verification Hash', 'SHA-256: 7f8a9b2c3d4e5f...')}
+            ${receiptRow('Validation QR', 'Embedded Holographic Seal')}
+            ${receiptRow('Validity Period', 'Permanent Certified Record', true)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Cryptographic Verification:</strong> This PDF contains an embedded cryptographic verification key recognized and validated directly by universities and visa boards globally.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Download Certified Transcript (PDF) →', 'http://localhost:3000/api/v1/transcripts/download?doc=TRANS-DOC-2026-8812', '#2563eb')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Direct Verification URL:</strong> You can provide third-party institutions with this link to verify your transcript authenticity directly:
+          <br/>
+          <a href="http://localhost:3000/verify/transcript/TRANS-DOC-2026-8812" style="color:#2563eb;word-break:break-all;font-size:13px;font-weight:600;">http://localhost:3000/verify/transcript/TRANS-DOC-2026-8812</a>
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For certified embassy copies or hardcopy courier delivery, contact <a href="mailto:records@springfieldhigh.edu" style="color:#2563eb;text-decoration:none;font-weight:600;">records@springfieldhigh.edu</a>.</p>
+      `
+    })
+  },
+
+  // --- 6. Parent Accepting Linking to Children (and vice versa) ---
+  {
+    id: "parent-child-link-accepted",
+    title: "Parent-Child Link Accepted",
+    icon: Users,
+    color: "text-teal-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'invite',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Parent & Student Link Approved!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hello Chief Robert Doe & Jane Doe,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Great news! The connection request linking your parent account with your student profile at <strong>Springfield High School</strong> has been confirmed and verified.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Linked Account Roster</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Parent / Guardian', 'Chief Robert Doe')}
+            ${receiptRow('Linked Student', 'Jane Doe')}
+            ${receiptRow('Institution', 'Springfield High School')}
+            ${receiptRow('Class & Arm', 'SS 2 Science')}
+            ${receiptRow('Relationship', 'Father / Primary Guardian')}
+            ${receiptRow('Link Status', 'Active & Certified', true)}
+            ${receiptRow('Delegated Permissions', 'Grades, Attendance, Billing, Messages')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Real-Time Monitoring Active:</strong> Parents receive immediate automated alerts for classroom attendance, continuous assessment milestones, and official terminal report cards.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Open Parent Portal →', 'http://localhost:3000/login', '#0d9488')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          To manage permissions or link additional siblings attending Qefas Hub-enabled schools, visit your <strong>Parent Dashboard -> Manage Children</strong>.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">If you did not authorize this connection, please report immediately to <a href="mailto:security@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">security@qefashub.com</a>.</p>
+      `
+    })
+  },
+
+  // --- 7. Student Being Suspended by School ---
+  {
+    id: "student-suspension",
+    title: "Student Suspension Notice",
+    icon: AlertTriangle,
+    color: "text-rose-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'security',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#991b1b;letter-spacing:-0.5px;">Confidential: Notice of Disciplinary Suspension</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Parent/Guardian and Student Jane Doe,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This letter serves as an official statutory communication from the Office of the Vice Principal (Administration) and the Disciplinary Board of <strong>Springfield High School</strong>.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Disciplinary Docket Summary</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Name', 'Jane Doe')}
+            ${receiptRow('Admission Number', 'SCH-2026-STU-8821')}
+            ${receiptRow('Class & Arm', 'SS 2 Science')}
+            ${receiptRow('Sanction Imposed', 'Temporary Academic Suspension', true)}
+            ${receiptRow('Duration', '5 School Days')}
+            ${receiptRow('Effective Period', 'Monday, Nov 2 – Friday, Nov 6, 2026')}
+            ${receiptRow('Hearing Ref Docket', 'DISC-BRD-2026-042')}
+            ${receiptRow('Reinstatement Session', 'Friday, Nov 6, 2026 • 10:00 AM')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Restricted Access:</strong> During the term of this suspension, student online examination privileges, classroom access, and campus premises are restricted. Continued academic study should occur from home using offline syllabus materials.', 'danger')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Review Disciplinary Policy & Appeal Guidelines →', 'http://localhost:3000/login', '#b91c1c')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Reinstatement Conference:</strong> The presence of at least one parent or registered legal guardian is mandatory at the reinstatement hearing on Friday, Nov 6, 2026, at 10:00 AM in the Principal\'s Conference Hall.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For queries or written appeals, contact the Disciplinary Secretary at <a href="mailto:disciplinary@springfieldhigh.edu" style="color:#2563eb;text-decoration:none;font-weight:600;">disciplinary@springfieldhigh.edu</a>.</p>
+      `
+    })
+  },
+
+  // --- 8. Student Being Transferred ---
+  {
+    id: "student-transfer",
+    title: "Student Transfer Certificate",
+    icon: ArrowRightLeft,
+    color: "text-sky-600",
+    badge: "Not Functional",
+    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    isFunctional: false,
+    generate: () => buildEmail({
+      illustration: 'reset',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Student Transfer Clearance & File Release</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">To Whom It May Concern & Guardians of Jane Doe,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This official notice confirms that student <strong>Jane Doe</strong> has completed all statutory clearances for academic transfer from <strong>Springfield High School</strong> to their new educational institution.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Transfer Clearance Dossier</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Full Name', 'Jane Doe')}
+            ${receiptRow('National Student ID', 'QEF-STU-94821-NG')}
+            ${receiptRow('Origin School', 'Springfield High School')}
+            ${receiptRow('Destination School', 'St. Gregory\'s College, Lagos')}
+            ${receiptRow('Transfer Docket Ref', 'TRF-2026-9041')}
+            ${receiptRow('Tuition & Fee Clearance', 'Fully Cleared (No Dues)', true)}
+            ${receiptRow('Library & Asset Return', 'Cleared / Books Returned', true)}
+            ${receiptRow('Academic Records Status', 'Broadsheets & CA Attached')}
+            ${receiptRow('Transfer Claim Token', 'QEF-XFER-K98L-39P')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Destination School Electronic Ingestion:</strong> The admissions administrator at the destination school can ingest Jane\'s historical continuous assessments directly onto Qefas Hub using the Transfer Claim Token above.', 'warning')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Download Transfer Clearance Certificate (PDF) →', 'http://localhost:3000/api/v1/transfers/certificate?ref=TRF-2026-9041', '#0284c7')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          We extend our sincere appreciation to Jane Doe for their contributions to Springfield High School and wish them continued academic excellence at their new institution.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For registrar-to-registrar verification, contact the Registry at <a href="mailto:transfer@springfieldhigh.edu" style="color:#2563eb;text-decoration:none;font-weight:600;">transfer@springfieldhigh.edu</a>.</p>
+      `
+    })
+  },
+
   {
     id: "account-deactivation-request",
     title: "Account Deactivation Request",
@@ -558,6 +933,11 @@ function EmailTemplatesContent() {
     const [isSending, setIsSending] = useState(false)
 
     const handleSendTestEmail = async () => {
+        if ((activeTemplate as any).isFunctional === false) {
+            toast.info(`"${activeTemplate?.title}" is tagged as Not Functional (Preview Only). Backend API trigger is not yet connected.`);
+            return;
+        }
+
         const testEmail = prompt(`Enter the email address to receive the "${activeTemplate?.title}" template test:`, "");
         if (!testEmail) return;
 
@@ -627,15 +1007,22 @@ function EmailTemplatesContent() {
                                 <span className="text-slate-400">Preview:</span>
                                 <span className="font-bold">{activeTemplate?.title}</span>
                             </div>
-                            <div className="flex justify-end w-24">
-                                <button 
-                                    onClick={handleSendTestEmail}
-                                    disabled={isSending}
-                                    className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSending ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
-                                    Send Test
-                                </button>
+                            <div className="flex justify-end min-w-28">
+                                {(activeTemplate as any).isFunctional === false ? (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 text-xs font-bold shadow-sm whitespace-nowrap">
+                                        <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                                        <span>Not Functional</span>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        onClick={handleSendTestEmail}
+                                        disabled={isSending}
+                                        className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSending ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+                                        Send Test
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="flex-1 bg-[#f0f2f8] p-4 relative">

@@ -36,12 +36,35 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     },
     select: { 
       classId: true,
-      class: { select: { name: true } }
+      class: { select: { name: true, schoolId: true } }
     },
   });
 
   const assignedClassIds = classTeachers.map((ct) => ct.classId);
   const classNames = classTeachers.map((ct) => ct.class?.name).filter(Boolean) as string[];
+
+  // Also include classes where the teacher has direct timetable period assignments in this school
+  const directPeriodClasses = await prisma.timetablePeriod.findMany({
+    where: {
+      teacherId,
+      ...(schoolId ? { class: { schoolId } } : {})
+    },
+    select: {
+      classId: true,
+      class: { select: { name: true } }
+    },
+    distinct: ['classId']
+  });
+
+  directPeriodClasses.forEach((d) => {
+    if (d.classId && !assignedClassIds.includes(d.classId)) {
+      assignedClassIds.push(d.classId);
+      if (d.class?.name && !classNames.includes(d.class.name)) {
+        classNames.push(d.class.name);
+      }
+    }
+  });
+
   const totalClasses = assignedClassIds.length;
 
   // Calculate Session
@@ -78,8 +101,10 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
   if (totalClasses === 0) {
     return {
       stats: { totalClasses: 0, classNames: [], subjectNames: [], totalStudents: 0, upcomingLessons: 0, averagePerformance: 0, attendanceRate: 0, session: currentSession },
-      performanceMetrics: { topStudents: [], distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 } },
+      performanceMetrics: { topStudents: [], distribution: { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 } },
       recentExams: [],
+      recentAssignments: [],
+      todaySchedule: []
     };
   }
 
@@ -133,7 +158,8 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
 
   // Calculate Today's Schedule Data Setup
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const currentDayStr = days[new Date().getDay()];
+  const currentDayIndex = new Date().getDay();
+  const currentDayStr = days[currentDayIndex];
 
   // Batch 2: Lists and Detailed Data
   const [
@@ -162,7 +188,8 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
       },
       include: {
         class: { select: { name: true } },
-        subject: { select: { name: true } }
+        subject: { select: { name: true } },
+        teacher: { select: { id: true, name: true } }
       },
       orderBy: {
         startTime: 'asc'
@@ -170,8 +197,11 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     }),
     
     prisma.teacherSubject.findMany({
-      where: { teacherId },
-      include: { subject: { select: { name: true } } }
+      where: { 
+        teacherId,
+        ...(schoolId ? { OR: [{ schoolId }, { schoolId: null }] } : {})
+      },
+      include: { subject: { select: { id: true, name: true } } }
     }),
     
     prisma.assignment.findMany({
@@ -182,6 +212,28 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
       orderBy: { createdAt: "desc" },
     })
   ]);
+
+  // If today is a weekend and no periods exist, fallback to Monday schedule for upcoming preview
+  let schedulePeriods = rawSchedule;
+  if (schedulePeriods.length === 0 && (currentDayStr === "Saturday" || currentDayStr === "Sunday")) {
+    schedulePeriods = await prisma.timetablePeriod.findMany({
+      where: {
+        OR: [
+          { classId: { in: assignedClassIds } },
+          { teacherId }
+        ],
+        day: "Monday"
+      },
+      include: {
+        class: { select: { name: true } },
+        subject: { select: { name: true } },
+        teacher: { select: { id: true, name: true } }
+      },
+      orderBy: {
+        startTime: 'asc'
+      }
+    });
+  }
 
   // 5. Process Distribution
   const distribution = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
@@ -223,16 +275,153 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     };
   });
 
-  const todaySchedule = rawSchedule.map(p => ({
-    id: p.id,
-    time: `${p.startTime} - ${p.endTime}`,
-    title: p.isBreak ? p.breakLabel || "Break Time" : `${p.subject?.name || "Subject"} - ${p.class?.name || "Class"}`,
-    type: p.isBreak ? "break" : "class",
-    room: p.room || "TBA",
-    startTime: p.startTime // For sorting on frontend
-  }));
+  // 7. Process Timeline / Daily Agenda (Focused on teacher's subjects + shows Free when not teaching)
+  const teacherSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId).filter(Boolean));
+  const teacherSubjectNames = new Set(
+    teacherSubjects.map(ts => ts.subject?.name?.toLowerCase().trim()).filter(Boolean) as string[]
+  );
+
+  // Also include any subjects directly assigned to this teacher on timetable periods
+  schedulePeriods.forEach(p => {
+    if (p.teacherId === teacherId) {
+      if (p.subjectId) teacherSubjectIds.add(p.subjectId);
+      if (p.subject?.name) teacherSubjectNames.add(p.subject.name.toLowerCase().trim());
+    }
+  });
+
+  const parseMins = (timeStr: string) => {
+    const [h, m] = (timeStr || "00:00").split(':').map(Number);
+    return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+  };
+
+  // Group periods across all assigned classes by standardized time slot
+  interface SlotGroup {
+    startTime: string;
+    endTime: string;
+    startMins: number;
+    endMins: number;
+    periods: typeof schedulePeriods;
+  }
+
+  const timeSlotMap = new Map<string, SlotGroup>();
+
+  schedulePeriods.forEach(p => {
+    if (!p.startTime || !p.endTime) return;
+    const start = p.startTime.trim();
+    const end = p.endTime.trim();
+    const key = `${start}-${end}`;
+
+    if (!timeSlotMap.has(key)) {
+      timeSlotMap.set(key, {
+        startTime: start,
+        endTime: end,
+        startMins: parseMins(start),
+        endMins: parseMins(end),
+        periods: []
+      });
+    }
+    timeSlotMap.get(key)!.periods.push(p);
+  });
+
+  const sortedSlots = Array.from(timeSlotMap.values()).sort((a, b) => a.startMins - b.startMins);
+
+  interface ScheduleOutputItem {
+    id: string;
+    time: string;
+    title: string;
+    subject: string;
+    className: string;
+    type: 'class' | 'break' | 'free';
+    room: string;
+    startTime: string;
+    endTime: string;
+    isFree: boolean;
+  }
+
+  const todaySchedule: ScheduleOutputItem[] = [];
+  const activeTeachingIntervals: { start: number; end: number }[] = [];
+
+  // Pass 1: Identify all slots where teacher is actively taking a subject
+  sortedSlots.forEach(slot => {
+    const teachingPeriod = slot.periods.find(p => {
+      if (p.isBreak) return false;
+      // Explicitly assigned to this teacher
+      if (p.teacherId === teacherId) return true;
+      // Assigned to teacher's class and matches teacher's subject (and not assigned to another teacher)
+      if (!p.teacherId && assignedClassIds.includes(p.classId)) {
+        if (p.subjectId && teacherSubjectIds.has(p.subjectId)) return true;
+        if (p.subject?.name && teacherSubjectNames.has(p.subject.name.toLowerCase().trim())) return true;
+      }
+      return false;
+    });
+
+    if (teachingPeriod) {
+      activeTeachingIntervals.push({ start: slot.startMins, end: slot.endMins });
+      todaySchedule.push({
+        id: teachingPeriod.id,
+        time: `${slot.startTime} - ${slot.endTime}`,
+        title: `${teachingPeriod.subject?.name || "Subject"} - ${teachingPeriod.class?.name || "Class"}`,
+        subject: teachingPeriod.subject?.name || "Subject",
+        className: teachingPeriod.class?.name || "Class",
+        type: 'class',
+        room: teachingPeriod.room || "Classroom",
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        isFree: false
+      });
+    }
+  });
+
+  // Pass 2: Fill in school breaks and free periods
+  sortedSlots.forEach(slot => {
+    // Skip if teacher is already actively teaching during this time
+    const isAlreadyTeaching = activeTeachingIntervals.some(
+      interval => Math.max(interval.start, slot.startMins) < Math.min(interval.end, slot.endMins)
+    );
+    if (isAlreadyTeaching) return;
+
+    // Check if period is a designated school break
+    const breakPeriod = slot.periods.find(p => p.isBreak);
+    if (breakPeriod) {
+      todaySchedule.push({
+        id: breakPeriod.id,
+        time: `${slot.startTime} - ${slot.endTime}`,
+        title: breakPeriod.breakLabel || "Break Time",
+        subject: breakPeriod.breakLabel || "Recess / Break",
+        className: "Break",
+        type: 'break',
+        room: "Campus / Grounds",
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        isFree: false
+      });
+      return;
+    }
+
+    // Teacher has no teaching commitment during this period across their assigned classes: Free period
+    todaySchedule.push({
+      id: `free-${slot.startTime}-${slot.endTime}`,
+      time: `${slot.startTime} - ${slot.endTime}`,
+      title: "Free Period",
+      subject: "Free Period",
+      className: "Free",
+      type: 'free',
+      room: "Staff Room / Office",
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      isFree: true
+    });
+  });
+
+  // Sort final schedule chronologically
+  todaySchedule.sort((a, b) => parseMins(a.startTime) - parseMins(b.startTime));
 
   const subjectNames = Array.from(new Set(teacherSubjects.map(ts => ts.subject?.name).filter(Boolean))) as string[];
+  todaySchedule.forEach(s => {
+    if (s.type === 'class' && s.subject && !subjectNames.includes(s.subject)) {
+      subjectNames.push(s.subject);
+    }
+  });
 
   const classMap = new Map(classTeachers.map(ct => [ct.classId, ct.class?.name]));
 

@@ -73,6 +73,11 @@ export default function VerificationCard() {
               sessionStorage.removeItem('pendingJoinRedirect');
             }
 
+            const isDeviceVerification = typeof window !== 'undefined' && !!sessionStorage.getItem('preAuthToken');
+            if (isDeviceVerification && typeof window !== 'undefined') {
+              sessionStorage.removeItem('preAuthToken');
+            }
+
             if (token && userData) {
               const fullUser = {
                 ...userData,
@@ -80,7 +85,8 @@ export default function VerificationCard() {
                 name: userData.name || userData.fullName || email.split('@')[0],
               };
               useAuthStore.getState().setAuth(fullUser, token);
-              useAuthStore.getState().setHasCompletedOnboarding(true);
+              // For existing user device verification: mark onboarding true; for new account registration: mark onboarding false
+              useAuthStore.getState().setHasCompletedOnboarding(isDeviceVerification);
             }
 
             setIsSuccess(true);
@@ -91,27 +97,37 @@ export default function VerificationCard() {
                 return;
               }
 
-              // Route directly to the user's correct dashboard
-              switch (returnedUserType) {
-                case 'TEACHER':
-                  router.push('/dashboard/teacher');
-                  break;
-                case 'STUDENT':
-                  router.push('/dashboard/student');
-                  break;
-                case 'PARENT':
-                  router.push('/dashboard/parent');
-                  break;
-                case 'ADMIN':
-                  if (userData && !userData.plan && !userData.isSchoolOwner) {
-                    router.push('/select-plan');
-                  } else {
-                    router.push('/dashboard/admin');
-                  }
-                  break;
-                default:
-                  router.push('/dashboard');
-                  break;
+              // If it's a device verification for an existing user, return to dashboard
+              if (isDeviceVerification) {
+                switch (returnedUserType) {
+                  case 'TEACHER':
+                    router.push('/dashboard/teacher');
+                    break;
+                  case 'STUDENT':
+                    router.push('/dashboard/student');
+                    break;
+                  case 'PARENT':
+                    router.push('/dashboard/parent');
+                    break;
+                  case 'ADMIN':
+                    if (userData && !userData.plan && !userData.isSchoolOwner) {
+                      router.push('/select-plan');
+                    } else {
+                      router.push('/dashboard/admin');
+                    }
+                    break;
+                  default:
+                    router.push('/dashboard');
+                    break;
+                }
+                return;
+              }
+
+              // Newly registered account: send directly to the onboarding tour
+              if (returnedUserType === 'ADMIN' && userData && !userData.plan && !userData.isSchoolOwner) {
+                router.push('/select-plan');
+              } else {
+                router.push(`/onboarding?type=${returnedUserType.toLowerCase()}`);
               }
             }, 1500);
           },

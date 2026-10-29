@@ -4,6 +4,14 @@ import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
+import { 
+  requestDeviceLocationPermission, 
+  getClientDeviceInfo, 
+  getTimezoneLocation,
+  ClientDeviceInfo 
+} from "@/lib/utils/deviceDetector";
+import GoogleAuthConsentModal from "./GoogleAuthConsentModal";
+import Cookies from "js-cookie";
 
 interface GoogleLoginButtonProps {
     userType: string;
@@ -21,6 +29,7 @@ export default function GoogleLoginButton({
     showDivider = true,
 }: GoogleLoginButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [showConsent, setShowConsent] = useState(false);
     const { data: settings, isLoading: settingsLoading } = usePublicPlatformSettings();
 
     const googleAuthEnabledGlobal = settings ? String(settings.google_auth_enabled) !== "false" : true;
@@ -41,21 +50,94 @@ export default function GoogleLoginButton({
     const googleAuthEnabledForRole = googleLoginFeature ? googleLoginFeature[backendRole] !== false : true;
     const isEnabled = googleAuthEnabledGlobal && googleAuthEnabledForRole;
 
+    const searchParams = useSearchParams();
+
     if (settingsLoading) {
         return (
             <div className={`h-14 w-full bg-slate-100 dark:bg-slate-800 animate-pulse ${pill ? 'rounded-full' : 'rounded-2xl'} my-4`} />
         );
     }
 
-    const searchParams = useSearchParams();
-
     if (!isEnabled) return null;
-    const handleGoogleLogin = () => {
+
+    const handleProceed = async (withLocation: boolean) => {
         setIsLoading(true);
+        let loc = "";
+        let locPerm = "denied";
+
+        if (withLocation) {
+            try {
+                loc = await requestDeviceLocationPermission();
+                locPerm = localStorage.getItem("qefas_location_granted") === "true" ? "granted" : "denied";
+            } catch {
+                locPerm = "denied";
+                loc = getTimezoneLocation();
+            }
+        } else {
+            loc = getTimezoneLocation();
+            locPerm = "denied";
+            if (typeof window !== "undefined") {
+                localStorage.setItem("qefas_location_granted", "false");
+            }
+        }
+
+        let deviceInfo: ClientDeviceInfo | null = null;
+        try {
+            deviceInfo = await getClientDeviceInfo();
+        } catch {
+            // Fallback silently if device detection is unavailable
+        }
+
+        const finalLoc = loc || deviceInfo?.location || getTimezoneLocation();
+        const deviceType = deviceInfo?.deviceType || "desktop";
+        const deviceModel = deviceInfo?.deviceModel || "Web Client";
+        const osVersion = deviceInfo?.osVersion || "Web";
+        const timeZone = deviceInfo?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+        // Store cookies for server-side OAuth handling
+        Cookies.set("google_device_location", finalLoc, { path: "/", expires: 1 });
+        Cookies.set("google_location_permission", locPerm, { path: "/", expires: 1 });
+        Cookies.set("google_device_type", deviceType, { path: "/", expires: 1 });
+        Cookies.set("google_device_model", deviceModel, { path: "/", expires: 1 });
+        Cookies.set("google_os_version", osVersion, { path: "/", expires: 1 });
+        Cookies.set("google_client_timezone", timeZone, { path: "/", expires: 1 });
+
         // Preserve any pending join redirect through the OAuth round-trip
         const redirect = searchParams?.get("redirect") || (typeof window !== "undefined" ? sessionStorage.getItem("pendingJoinRedirect") : null);
-        const url = `/api/auth/google?role=${encodeURIComponent(backendRole)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
-        window.location.href = url;
+
+        const queryParams = new URLSearchParams({
+            role: backendRole,
+            loc: finalLoc,
+            locPerm,
+            deviceType,
+            deviceModel,
+            osVersion,
+            timeZone,
+        });
+
+        if (redirect) {
+            queryParams.set("redirect", redirect);
+        }
+
+        window.location.href = `/api/auth/google?${queryParams.toString()}`;
+    };
+
+    const handleButtonClick = () => {
+        // On registration / sign up, ALWAYS ask for location and device permission first
+        if (mode === "signup") {
+            setShowConsent(true);
+            return;
+        }
+
+        // For sign-in, if user has never responded to permission prompt, show consent modal
+        const existingConsent = typeof window !== "undefined" ? localStorage.getItem("qefas_location_granted") : null;
+        if (existingConsent === null) {
+            setShowConsent(true);
+            return;
+        }
+
+        // If previously granted or denied, proceed with existing permission preference
+        handleProceed(existingConsent === "true");
     };
 
     const isSignUp = mode === "signup";
@@ -76,7 +158,7 @@ export default function GoogleLoginButton({
             )}
             <button
                 type="button"
-                onClick={handleGoogleLogin}
+                onClick={handleButtonClick}
                 disabled={isLoading}
                 className={`flex items-center justify-center w-full h-14 gap-3 cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 ${pill ? 'rounded-full' : 'rounded-2xl'} hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden`}
             >
@@ -86,11 +168,11 @@ export default function GoogleLoginButton({
                     <div className="flex items-center gap-2">
                         <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                         <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-                            {isSignUp ? "Connecting Google..." : "Connecting Google..."}
+                            Connecting Google...
                         </span>
                     </div>
                 ) : (
-                    <>
+                  <>
                         <FcGoogle size={22} className="group-hover:scale-110 transition-transform duration-200" />
                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200 tracking-wide">
                             {isSignUp ? "Sign up with Google" : "Sign in with Google"}
@@ -98,6 +180,16 @@ export default function GoogleLoginButton({
                     </>
                 )}
             </button>
+
+            {/* Permission Consent Modal */}
+            <GoogleAuthConsentModal
+                isOpen={showConsent}
+                onClose={() => setShowConsent(false)}
+                onProceed={handleProceed}
+                isSubmitting={isLoading}
+                userType={userType}
+                mode={mode}
+            />
         </div>
     );
 }
