@@ -2,15 +2,17 @@ import { StudentGrade, IndividualGrade } from './types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getGradeStatusColor, calculateLetterGrade, getLetterGradeColor, getLetterGradeBgColor } from './gradeUtils'
 import { cn } from '@/lib/utils'
+import { computeGradePill, type GradingTier } from '@/utils/gradingSystem'
 
 interface ViewGradeDetailsDialogProps {
   grade: StudentGrade
   item?: IndividualGrade
   open: boolean
   onClose: () => void
+  gradingSystem?: GradingTier[]
 }
 
-export function ViewGradeDetailsDialog({ grade, item, open, onClose }: ViewGradeDetailsDialogProps) {
+export function ViewGradeDetailsDialog({ grade, item, open, onClose, gradingSystem }: ViewGradeDetailsDialogProps) {
   if (!grade) return null
 
   const isIndividual = !!item
@@ -66,18 +68,22 @@ export function ViewGradeDetailsDialog({ grade, item, open, onClose }: ViewGrade
                 <div className="p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Score</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className={cn("font-semibold text-lg", item.score !== undefined ? getLetterGradeColor(calculateLetterGrade(Math.round((item.score / item.maxMarks) * 100))) : "text-gray-400")}>
-                      {item.score !== undefined ? `${item.score} / ${item.maxMarks}` : '-'}
-                    </p>
-                    {item.score !== undefined && (
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-xs font-bold", 
-                        getLetterGradeColor(calculateLetterGrade(Math.round((item.score / item.maxMarks) * 100))),
-                        getLetterGradeBgColor(calculateLetterGrade(Math.round((item.score / item.maxMarks) * 100)))
-                      )}>
-                        {calculateLetterGrade(Math.round((item.score / item.maxMarks) * 100))}
-                      </span>
-                    )}
+                    {(() => {
+                      const pct = item.score !== undefined && item.maxMarks > 0 ? Math.round((item.score / item.maxMarks) * 100) : 0;
+                      const pill = computeGradePill(pct, gradingSystem);
+                      return (
+                        <>
+                          <p className={cn("font-semibold text-lg", item.score !== undefined ? pill.color : "text-gray-400")}>
+                            {item.score !== undefined ? `${item.score} / ${item.maxMarks}` : '-'}
+                          </p>
+                          {item.score !== undefined && (
+                            <span className={cn("px-2 py-0.5 rounded text-xs font-bold", pill.bg)}>
+                              {pill.label}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
@@ -117,9 +123,19 @@ export function ViewGradeDetailsDialog({ grade, item, open, onClose }: ViewGrade
             /* Overall Grade Info */
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-center">
+                <div className="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-center flex flex-col items-center justify-center">
                   <p className="text-sm text-gray-500 mb-1 font-medium">Total Score</p>
-                  <p className="text-3xl font-bold text-emerald-600">{grade.grades.total}%</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-3xl font-bold text-emerald-600">{grade.grades.total}%</p>
+                    {(() => {
+                      const pill = computeGradePill(grade.grades.total, gradingSystem);
+                      return (
+                        <span className={cn("px-2 py-0.5 rounded text-xs font-bold", pill.bg)}>
+                          {pill.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
                 <div className="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-center">
                   <p className="text-sm text-gray-500 mb-1 font-medium">Overall Status</p>

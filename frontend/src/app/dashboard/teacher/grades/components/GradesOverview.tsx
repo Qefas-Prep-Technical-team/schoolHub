@@ -43,6 +43,7 @@ import GradeUploadModal from '@/app/dashboard/admin/grades/components/GradeUploa
 import GradeUploadInstructionsModal from '@/app/dashboard/admin/grades/components/GradeUploadInstructionsModal';
 import GradeOCRModal from '@/app/dashboard/admin/grades/components/GradeOCRModal';
 import { generatePDF } from '@/utils/pdfGenerator';
+import { getEffectiveGradingSystem, DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
 
 const GradesOverview: React.FC = () => {
   const queryClient = useQueryClient();
@@ -243,6 +244,10 @@ const GradesOverview: React.FC = () => {
   const rawData = useMemo(() => response?.data || [], [response?.data]);
   const apiPagination = response?.pagination || { totalPages: 1, total: 0 };
 
+  const activeGradingScale = useMemo(() => {
+    return getEffectiveGradingSystem(schoolProfile?.gradingSystem);
+  }, [schoolProfile?.gradingSystem]);
+
   const mappedGrades: StudentGrade[] = useMemo(() => {
     if (!rawData || !Array.isArray(rawData)) return [];
     
@@ -274,7 +279,7 @@ const GradesOverview: React.FC = () => {
         rawScore: score,
         maxMarks: maxMarks,
         totalScore: `${percentage.toFixed(1)}%`,
-        grade: calculateGrade(score, maxMarks, gradingScale) as GradeLetter,
+        grade: calculateGrade(score, maxMarks, activeGradingScale) as GradeLetter,
         status: (item.status || 'Graded') as GradeStatus,
         remarks: item.remarks || '',
         profilePicture: item.student?.profileImage || item.student?.avatar || ''
@@ -296,7 +301,7 @@ const GradesOverview: React.FC = () => {
     }
     
     return grades;
-  }, [rawData, gradingScale, sortConfig]);
+  }, [rawData, activeGradingScale, sortConfig]);
 
   const filters: FilterOption[] = useMemo(() => {
     const activeFilters: FilterOption[] = [];
@@ -488,6 +493,9 @@ const GradesOverview: React.FC = () => {
           <GradeSettingsModal
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
+            schoolName={schoolProfile?.name || selectedSchoolName}
+            hasCustomSchoolSystem={Boolean(schoolProfile?.gradingSystem && schoolProfile.gradingSystem.length > 0)}
+            effectiveGradingScale={activeGradingScale}
           />
 
           <EditGradeModal

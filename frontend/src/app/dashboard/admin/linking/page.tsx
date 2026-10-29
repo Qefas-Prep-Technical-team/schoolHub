@@ -37,24 +37,24 @@ function LinkingHub() {
   const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
   const [subTab, setSubTab] = useState<'active' | 'pending' | 'history'>('active');
 
-  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ 
+  const { data: requestsData, isLoading: isLoadingRequests, refetch: refetchRequests, isFetching: isFetchingRequests } = useLinkRequests({ 
     page: currentPage, 
     category: mainTab 
   });
-  const { data: pendingRequestsData, isLoading: isLoadingPending } = usePendingLinkRequests({
+  const { data: pendingRequestsData, isLoading: isLoadingPending, refetch: refetchPending, isFetching: isFetchingPending } = usePendingLinkRequests({
     page: currentPage,
     category: mainTab
   });
 
   // Independent fetches for persistent badges
-  const { data: networkTotalData } = usePendingLinkRequests({ category: 'network', limit: 1 });
-  const { data: classroomTotalData } = usePendingLinkRequests({ category: 'classroom', limit: 1 });
+  const { data: networkTotalData, refetch: refetchNetworkTotal } = usePendingLinkRequests({ category: 'network', limit: 1 });
+  const { data: classroomTotalData, refetch: refetchClassroomTotal } = usePendingLinkRequests({ category: 'classroom', limit: 1 });
 
-  const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({
+  const { data: activeLinksData, isLoading: isLoadingActive, refetch: refetchActive, isFetching: isFetchingActive } = useActiveLinks({
     page: currentPage,
     category: mainTab
   });
-  const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
+  const { data: profileResponse, isLoading: isLoadingProfile, refetch: refetchProfile, isFetching: isFetchingProfile } = useLinkProfile();
 
   const requests = (requestsData as any)?.items || [];
   const activeLinks = (activeLinksData as any)?.items || [];
@@ -75,6 +75,7 @@ function LinkingHub() {
   const batchMutation = useBatchLinkRequestAction();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState<string>('ALL');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{item: any, details: any} | null>(null);
@@ -87,6 +88,7 @@ function LinkingHub() {
   React.useEffect(() => {
     setCurrentPage(1);
     setSelectedIds(new Set());
+    setSelectedClassId('ALL');
   }, [mainTab, subTab]);
 
   // Clear selection on page change
@@ -119,30 +121,89 @@ function LinkingHub() {
 
   const { user } = useAuthStore();
 
+  // Extract list of unique connected classes from active classroom links and pending requests
+  const connectedClasses = useMemo(() => {
+    const classMap = new Map<string, { id: string; name: string; section?: string | null; count: number }>();
+    const considerItem = (item: any) => {
+      const cls = item.class || item.approvedFromRequest?.class;
+      const classId = item.classId || cls?.id;
+      if (!classId) return;
+      const name = cls?.name || 'Classroom';
+      const section = cls?.section || null;
+      if (!classMap.has(classId)) {
+        classMap.set(classId, { id: classId, name, section, count: 0 });
+      }
+      classMap.get(classId)!.count += 1;
+    };
+
+    activeLinks.forEach(considerItem);
+    pendingRequests.forEach(considerItem);
+
+    return Array.from(classMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [activeLinks, pendingRequests]);
+
   const filteredActiveLinks = useMemo(() => activeLinks.filter((link: any) => {
     // Hide private links that don't directly involve the school as an entity
     const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
     if (privateTypes.includes(link.linkType)) return false;
 
+    // Filter by class in classroom tab if a specific class is selected
+    if (mainTab === 'classroom' && selectedClassId !== 'ALL') {
+      const linkClassId = link.classId || link.class?.id || link.approvedFromRequest?.classId;
+      if (linkClassId !== selectedClassId) return false;
+    }
+
     const details = getMemberDetails(link, user?.id);
     const q = searchQuery.toLowerCase();
     return (details.name || '').toLowerCase().includes(q) ||
       (details.email || '').toLowerCase().includes(q);
-  }), [activeLinks, searchQuery, user?.id]);
+  }), [activeLinks, mainTab, selectedClassId, searchQuery, user?.id]);
+
+  // Build set of entities that already have active relationships with this school
+  const activePeerIds = useMemo(() => {
+    const ids = new Set<string>();
+    activeLinks.forEach((link: any) => {
+      if (link.leftEntityId) ids.add(link.leftEntityId);
+      if (link.rightEntityId) ids.add(link.rightEntityId);
+      if (link.requesterStudentId) ids.add(link.requesterStudentId);
+      if (link.targetStudentId) ids.add(link.targetStudentId);
+      if (link.requesterTeacherId) ids.add(link.requesterTeacherId);
+      if (link.targetTeacherId) ids.add(link.targetTeacherId);
+      if (link.requesterParentId) ids.add(link.requesterParentId);
+      if (link.targetParentId) ids.add(link.targetParentId);
+    });
+    return ids;
+  }, [activeLinks]);
 
   // Pending tab uses the incoming-pending endpoint so items match its pagination exactly
+  // Self-cleans: drops requests that already have relationshipLink populated or already connected peer
   const filteredRequests = useMemo(() => pendingRequests.filter((req: any) => {
     if (req.status && req.status !== 'PENDING') return false;
+    if (req.relationshipLinkId || req.relationshipLink) return false;
     
     // Hide private requests in admin hub
     const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
     if (privateTypes.includes(req.linkType)) return false;
 
+    // Filter by class in classroom tab if a specific class is selected
+    if (mainTab === 'classroom' && selectedClassId !== 'ALL') {
+      const reqClassId = req.classId || req.class?.id;
+      if (reqClassId !== selectedClassId) return false;
+    }
+
+    // Self-clean check: if the school student/teacher link is already active in the school network, no need to show duplicate pending request
+    if (req.linkType === 'SCHOOL_STUDENT' && req.requesterStudentId && activePeerIds.has(req.requesterStudentId)) {
+      return false;
+    }
+    if (req.linkType === 'SCHOOL_TEACHER' && req.requesterTeacherId && activePeerIds.has(req.requesterTeacherId)) {
+      return false;
+    }
+
     const details = getMemberDetails(req, user?.id);
     const q = searchQuery.toLowerCase();
     return (details.name || '').toLowerCase().includes(q) ||
       (details.email || '').toLowerCase().includes(q);
-  }), [pendingRequests, searchQuery, user?.id]);
+  }), [pendingRequests, mainTab, selectedClassId, activePeerIds, searchQuery, user?.id]);
 
   const networkPendingCount = (networkTotalData as any)?.pagination?.total || 0;
   const classroomPendingCount = (classroomTotalData as any)?.pagination?.total || 0;
@@ -264,12 +325,40 @@ function LinkingHub() {
   const studentLimit = (profile?.limits as any)?.students || 0;
   const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
 
+  const isRefreshing = isFetchingRequests || isFetchingPending || isFetchingActive || isFetchingProfile;
+
+  const handleManualRefresh = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchPending(),
+        refetchActive(),
+        refetchRequests(),
+        refetchProfile(),
+        refetchNetworkTotal(),
+        refetchClassroomTotal(),
+      ]);
+      toast.success('Linking Hub refreshed');
+    } catch (err) {
+      console.error('Refresh error:', err);
+      toast.error('Failed to refresh data');
+    }
+  }, [
+    refetchPending,
+    refetchActive,
+    refetchRequests,
+    refetchProfile,
+    refetchNetworkTotal,
+    refetchClassroomTotal,
+  ]);
+
   return (
     <div className="p-2 md:p-6 lg:p-8 w-full md:w-[95%] lg:w-[90%] max-w-full lg:max-w-[90%] mx-auto space-y-6 md:space-y-8 min-h-[calc(100vh-4rem)]">
       <LinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)} 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
         isLimitReached={isLimitReached}
+        onRefresh={handleManualRefresh}
+        isRefreshing={isRefreshing}
       />
 
       <LinkingStats 
@@ -291,6 +380,7 @@ function LinkingHub() {
         schoolCode={profile?.schoolCode || (user as any)?.schoolCode || ''}
         schoolName={profile?.schoolAdmins?.[0]?.school?.name || (user as any)?.schoolName || (user as any)?.schools?.[0]?.name || 'Qefas Hub'}
         schoolLogo={profile?.schoolAdmins?.[0]?.school?.logo || (user as any)?.schools?.[0]?.logo || null}
+        isLoading={isLoadingProfile}
       />
 
       <ConfirmationModal 
@@ -319,6 +409,9 @@ function LinkingHub() {
           setSearchQuery={setSearchQuery}
           networkPendingCount={networkPendingCount}
           classroomPendingCount={classroomPendingCount}
+          connectedClasses={connectedClasses}
+          selectedClassId={selectedClassId}
+          onSelectClass={setSelectedClassId}
         />
 
         {(subTab === 'active' ? isLoadingActive : subTab === 'pending' ? isLoadingPending : isLoadingRequests) ? (

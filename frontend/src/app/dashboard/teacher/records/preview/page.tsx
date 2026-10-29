@@ -14,6 +14,8 @@ import { useSubjectPapers } from "@/lib/api/hooks/useExams";
 import { useTeacherAssignments } from "@/lib/api/hooks/useAssignments";
 import { useStudents } from "@/lib/api/hooks/useStudent";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { computeGradePill } from "@/utils/gradingSystem";
 import { toast } from "react-toastify";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 
@@ -48,6 +50,7 @@ export default function NewFinalResultDataEntryPage() {
   // Data Hooks
   const { data: config, isLoading: isLoadingConfig } = useClassSubjectResult(id || undefined);
   const effectiveSchoolId = config?.schoolId || user?.schools?.[0]?.schoolId || (user as any)?.school?.id || user?.tenantId || "";
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
   
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
@@ -451,7 +454,17 @@ export default function NewFinalResultDataEntryPage() {
                 </div>
                 <div>
                   <div className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Class Average</div>
-                  <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{classAverage}%</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-slate-800 dark:text-slate-100">{classAverage}%</span>
+                    {(() => {
+                      const pill = computeGradePill(parseFloat(classAverage) || 0, schoolProfile?.gradingSystem);
+                      return (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${pill.bg} ${pill.color}`}>
+                          {pill.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
 
@@ -582,7 +595,19 @@ export default function NewFinalResultDataEntryPage() {
                         )}
                         <td className="px-6 py-4 text-center">
                           {student.assignment || student.quiz || student.ca || student.exam ? (
-                            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-bold ${total < 40 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>{total}</span>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-bold ${total < 40 ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"}`}>{total}</span>
+                              {(() => {
+                                const maxPossible = (config?.assignmentMax || 0) + (config?.quizMax || 0) + (config?.caMax || 0) + (config?.examMax || 0);
+                                const pct = maxPossible > 0 ? (total / maxPossible) * 100 : total;
+                                const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                                return (
+                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                    {pill.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           ) : (
                             <span className="text-slate-300">-</span>
                           )}
@@ -849,6 +874,7 @@ export default function NewFinalResultDataEntryPage() {
         config={config}
         subjectPapers={subjectPapers}
         assignments={assignments}
+        gradingSystem={schoolProfile?.gradingSystem}
       />
 
       <ResultRecordUploadModal

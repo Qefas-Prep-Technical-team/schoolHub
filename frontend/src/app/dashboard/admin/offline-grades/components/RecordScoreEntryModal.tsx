@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const EMPTY_ARRAY: unknown[] = [];
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
@@ -37,7 +38,7 @@ import OfflineGradesCSVModal from './OfflineGradesCSVModal';
 import OfflineGradesOCRModal from './OfflineGradesOCRModal';
 import * as XLSX from 'xlsx';
 import { generatePDF } from '@/utils/pdfGenerator';
-import { computeGradePill } from '@/utils/gradingSystem';
+import { computeGradePill, getEffectiveGradingSystem, DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
 import {
   OfflineGradesBatchConfig,
   OfflineStudentGradeEntry,
@@ -129,7 +130,9 @@ export default function RecordScoreEntryModal({
 
   // Fetch school profile for grading system configuration
   const { data: schoolProfile } = useSchoolProfile(schoolId);
-  const activeGradingSystem = (gradingSystem as unknown[]) || schoolProfile?.gradingSystem;
+  const activeGradingSystem = useMemo(() => {
+    return getEffectiveGradingSystem((gradingSystem as any[]) || schoolProfile?.gradingSystem);
+  }, [gradingSystem, schoolProfile?.gradingSystem]);
 
   // 1. Auto-select current active session and term
   const currentSession = useMemo(() => {
@@ -550,19 +553,36 @@ export default function RecordScoreEntryModal({
 
   // 3. Roster State and Existing Grades Synchronization
   const [roster, setRoster] = useState<OfflineStudentGradeEntry[]>([]);
+  const [hasSyncedGrades, setHasSyncedGrades] = useState(false);
 
   // Fetch existing grades for this class, subject to pre-populate
-  const { data: existingGradesData, isLoading: isLoadingGrades } = useGradeHub(schoolId, {
+  const {
+    data: existingGradesData,
+    isLoading: isLoadingGrades,
+    isFetching: isFetchingGrades,
+  } = useGradeHub(schoolId, {
     classId: config.classId || undefined,
     subject: config.subject || undefined,
     offlineOnly: 'true',
     limit: 1000,
   });
 
+  // Reset sync tracking when active configuration or initialRecord changes
+  useEffect(() => {
+    setHasSyncedGrades(false);
+  }, [config.classId, config.subject, config.assessmentType, initialRecord?.id]);
+
   // Construct initial roster from enrollments and sync existing grades / initialScores
   useEffect(() => {
     if (!classDetails?.enrollments) {
       setRoster([]);
+      setHasSyncedGrades(false);
+      return;
+    }
+
+    // If we are editing an existing record or existing grades are still loading/fetching,
+    // delay roster population until the assessment grades have arrived to prevent flash of empty inputs
+    if (Boolean(initialRecord) && (isLoadingGrades || isFetchingGrades) && !existingGradesData) {
       return;
     }
 
@@ -649,9 +669,13 @@ export default function RecordScoreEntryModal({
 
     list.sort((a, b) => a.studentName.localeCompare(b.studentName));
     setRoster(list);
+    setHasSyncedGrades(true);
   }, [
     classDetails?.enrollments,
     existingGradesData,
+    isLoadingGrades,
+    isFetchingGrades,
+    initialRecord,
     config.assessmentType,
     config.classId,
     config.subject,
@@ -659,7 +683,13 @@ export default function RecordScoreEntryModal({
     isStudentAssociatedWithSubject,
   ]);
 
-  // Update single student score
+  // Roster loading condition:
+  // Shows full skeleton when class details are loading, or when editing an existing record until scores are synced,
+  // or when initial score fetching is in progress.
+  const isRosterLoading =
+    isLoadingClassDetails ||
+    (Boolean(initialRecord) && (isLoadingGrades || isFetchingGrades || !hasSyncedGrades)) ||
+    (isLoadingGrades && roster.length === 0);
   const handleUpdateScore = useCallback(
     (studentId: string, score: string | number) => {
       setRoster((prev) =>
@@ -1006,7 +1036,7 @@ export default function RecordScoreEntryModal({
             subjects={classSubjects}
             sessions={sessions}
             isTeacher={isTeacher}
-            isLoadingRoster={isLoadingClassDetails || isLoadingGrades}
+            isLoadingRoster={isRosterLoading}
             isLoadingSubjects={isLoadingTeacherSubjects || isLoadingClassDetails}
             isSaving={saveMutation.isPending}
             onSave={(status) => saveMutation.mutate(status)}
@@ -1020,14 +1050,29 @@ export default function RecordScoreEntryModal({
 
           {/* Quick Stats Banner */}
           {config.classId && (
-            <OfflineGradesStats
-              totalStudents={stats.totalStudents}
-              gradedCount={stats.gradedCount}
-              averageScore={stats.averageScore}
-              maxMarks={config.maxMarks}
-              passCount={stats.passCount}
-              isTeacher={isTeacher}
-            />
+            isRosterLoading ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 mb-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-3.5 w-24 bg-slate-200 dark:bg-slate-800" />
+                      <Skeleton className="size-8 sm:size-9 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                    </div>
+                    <Skeleton className="h-8 w-16 bg-slate-200 dark:bg-slate-800" />
+                    <Skeleton className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <OfflineGradesStats
+                totalStudents={stats.totalStudents}
+                gradedCount={stats.gradedCount}
+                averageScore={stats.averageScore}
+                maxMarks={config.maxMarks}
+                passCount={stats.passCount}
+                isTeacher={isTeacher}
+              />
+            )
           )}
 
           {/* Roster Entry Views */}
@@ -1049,12 +1094,88 @@ export default function RecordScoreEntryModal({
                 Please pick a class and curriculum subject in the controls above to load the student roster and enter physical marks.
               </p>
             </div>
-          ) : isLoadingClassDetails ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">
-              <Loader2 size={32} className="animate-spin text-slate-400 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                Loading enrolled student cohort...
-              </p>
+          ) : isRosterLoading ? (
+            <div className="space-y-4">
+              {/* Indicator Pill */}
+              <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-full bg-slate-100 dark:bg-slate-800/80 text-xs font-semibold text-slate-600 dark:text-slate-300 w-fit mx-auto border border-slate-200 dark:border-slate-700/60">
+                <Loader2 size={13} className={`animate-spin ${isTeacher ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
+                <span>Loading enrolled student cohort and assessment scores...</span>
+              </div>
+
+              {/* Desktop Spreadsheet Skeleton */}
+              <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                {/* Search & Actions Bar Skeleton */}
+                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50">
+                  <Skeleton className="h-10 w-72 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                    <Skeleton className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                    <Skeleton className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  </div>
+                </div>
+
+                {/* Table Header & Rows Skeleton */}
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <div className="grid grid-cols-12 gap-4 py-3.5 px-4 bg-slate-100/60 dark:bg-slate-800/40">
+                    <Skeleton className="col-span-1 h-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="col-span-3 h-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="col-span-2 h-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="col-span-2 h-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="col-span-1 h-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="col-span-1 h-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="col-span-2 h-4 bg-slate-200 dark:bg-slate-700" />
+                  </div>
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="grid grid-cols-12 gap-4 py-4 px-4 items-center">
+                      <div className="col-span-1 flex justify-center">
+                        <Skeleton className="size-5 rounded-full bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                      <div className="col-span-3 flex items-center gap-3">
+                        <Skeleton className="size-9 rounded-full shrink-0 bg-slate-200 dark:bg-slate-800" />
+                        <div className="space-y-1.5 w-full">
+                          <Skeleton className="h-3.5 w-3/4 bg-slate-200 dark:bg-slate-800" />
+                          <Skeleton className="h-2.5 w-1/2 bg-slate-200 dark:bg-slate-800" />
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <Skeleton className="h-5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                      <div className="col-span-2">
+                        <Skeleton className="h-9 w-28 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                      <div className="col-span-1">
+                        <Skeleton className="h-4 w-10 mx-auto bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                      <div className="col-span-1">
+                        <Skeleton className="h-6 w-12 rounded-full mx-auto bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                      <div className="col-span-2">
+                        <Skeleton className="h-9 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile Cards Skeleton */}
+              <div className="block md:hidden space-y-3">
+                <Skeleton className="h-10 w-full rounded-xl bg-slate-200 dark:bg-slate-800 mb-3" />
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-11 rounded-full shrink-0 bg-slate-200 dark:bg-slate-800" />
+                      <div className="space-y-1.5 flex-1">
+                        <Skeleton className="h-4 w-32 bg-slate-200 dark:bg-slate-800" />
+                        <Skeleton className="h-3 w-20 bg-slate-200 dark:bg-slate-800" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <Skeleton className="h-10 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+                      <Skeleton className="h-10 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : roster.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">

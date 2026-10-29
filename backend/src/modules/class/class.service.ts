@@ -772,8 +772,53 @@ export const requestToJoinClassService = async ({
     },
   });
 
+  // If the class belongs to a school and student is not yet connected to the school, also create a SCHOOL_STUDENT request
+  let schoolRequest = null;
+  if (foundClass.schoolId && foundClass.school) {
+    const isLinkedToSchool =
+      student.schoolId === foundClass.schoolId ||
+      await hasActiveSchoolLink({
+        userId: student.id,
+        userType: LinkEntityType.STUDENT,
+        schoolId: foundClass.schoolId,
+      });
+
+    if (!isLinkedToSchool) {
+      const existingSchoolPending = await prisma.linkRequest.findFirst({
+        where: {
+          linkType: LinkType.SCHOOL_STUDENT,
+          status: LinkRequestStatus.PENDING,
+          requesterType: LinkEntityType.STUDENT,
+          requesterId: student.id,
+          targetType: LinkEntityType.SCHOOL,
+          targetId: foundClass.schoolId,
+        },
+      });
+
+      if (!existingSchoolPending) {
+        schoolRequest = await prisma.linkRequest.create({
+          data: {
+            linkType: LinkType.SCHOOL_STUDENT,
+            status: LinkRequestStatus.PENDING,
+            requesterType: LinkEntityType.STUDENT,
+            requesterId: student.id,
+            requesterCode: student.studentCode,
+            requesterStudentId: student.id,
+            targetType: LinkEntityType.SCHOOL,
+            targetId: foundClass.schoolId,
+            targetSchoolId: foundClass.schoolId,
+            schoolId: foundClass.schoolId,
+            targetCode: foundClass.school.schoolCode,
+            note: note || `Requested to join school via class ${foundClass.name}`,
+          },
+        });
+      }
+    }
+  }
+
   return {
     request,
+    schoolRequest,
     class: foundClass,
     student,
   };

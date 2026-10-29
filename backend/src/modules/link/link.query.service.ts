@@ -47,6 +47,9 @@ export const getIncomingPendingRequestIdsService = async (
   if (category === "classroom") where.linkType = { in: CLASSROOM_LINK_TYPES };
   else if (category === "network") where.linkType = { notIn: CLASSROOM_LINK_TYPES };
 
+  where.relationshipLinkId = null;
+  where.relationshipLink = null;
+
   const rows = await prisma.linkRequest.findMany({
     where,
     select: { id: true },
@@ -174,6 +177,10 @@ export const getIncomingPendingLinkRequestsService = async (
       where.linkType = { notIn: classroomTypes };
     }
   }
+
+  // Filter out requests that already have an active relationship link
+  where.relationshipLinkId = null;
+  where.relationshipLink = null;
 
   const [items, total] = await Promise.all([
     prisma.linkRequest.findMany({
@@ -418,13 +425,30 @@ export const getActiveLinksService = async (
     });
   }
 
+  // Deduplicate active items by entity and context to protect against historical duplicate records
+  const seenActiveKeys = new Set<string>();
+  const deduplicatedItems = enrichedItems.filter((item) => {
+    const peerId =
+      item.leftEntityType === LinkEntityType.STUDENT || item.leftEntityType === LinkEntityType.TEACHER
+        ? item.leftEntityId
+        : item.rightEntityType === LinkEntityType.STUDENT || item.rightEntityType === LinkEntityType.TEACHER
+        ? item.rightEntityId
+        : `${item.leftEntityId}_${item.rightEntityId}`;
+    const contextKey = `${item.linkType}_${peerId}_${item.classId || item.schoolId || 'none'}`;
+    if (seenActiveKeys.has(contextKey)) {
+      return false;
+    }
+    seenActiveKeys.add(contextKey);
+    return true;
+  });
+
   return {
-    items: enrichedItems,
+    items: deduplicatedItems,
     pagination: {
       page,
       limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      total: Math.min(total, deduplicatedItems.length === enrichedItems.length ? total : deduplicatedItems.length),
+      totalPages: Math.ceil((deduplicatedItems.length === enrichedItems.length ? total : deduplicatedItems.length) / limit),
     },
   };
 };

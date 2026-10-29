@@ -202,6 +202,9 @@ export default function GoogleAuthCallback() {
           // Complete step progression and navigate gracefully
           setTimeout(() => {
             const targetDest = destParam || `/dashboard/${finalRole.replace("_", "-")}`;
+            if (targetDest.startsWith('/onboarding')) {
+              useAuthStore.getState().setHasCompletedOnboarding(false);
+            }
             router.replace(targetDest);
           }, 1500);
 

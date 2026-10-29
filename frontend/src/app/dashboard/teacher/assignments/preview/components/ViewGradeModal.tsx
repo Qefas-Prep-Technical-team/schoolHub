@@ -2,20 +2,27 @@ import React from 'react';
 import Image from 'next/image';
 import { X, Check, XCircle } from 'lucide-react';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface ViewGradeModalProps {
     isOpen: boolean;
     onClose: () => void;
     submission: any | null;
     assignment: any;
+    gradingSystem?: any[] | null;
 }
 
-export default function ViewGradeModal({ isOpen, onClose, submission, assignment }: ViewGradeModalProps) {
+export default function ViewGradeModal({ isOpen, onClose, submission, assignment, gradingSystem }: ViewGradeModalProps) {
     if (!isOpen || !submission) return null;
 
     const getQuestion = (questionId: string) => {
         return assignment?.questions?.find((q: any) => q.id === questionId);
     };
+
+    const maxMarks = assignment.totalMarks || 100;
+    const scoreVal = submission.score ?? 0;
+    const scorePct = maxMarks > 0 ? (scoreVal / maxMarks) * 100 : 0;
+    const gradePill = computeGradePill(scorePct, gradingSystem);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
@@ -42,8 +49,12 @@ export default function ViewGradeModal({ isOpen, onClose, submission, assignment
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {submission.student?.name || 'Student'}
                             </h2>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                <span>Score: <span className="font-bold text-gray-900 dark:text-white">{submission.score ?? 0} / {assignment.totalMarks || 100}</span></span>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2 flex-wrap">
+                                <span>Score: <span className="font-bold text-gray-900 dark:text-white">{scoreVal} / {maxMarks}</span></span>
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border ${gradePill.bg} ${gradePill.color}`}>
+                                    <span>{gradePill.label}</span>
+                                    {gradePill.remark && <span className="opacity-80 uppercase tracking-wider text-[9px]">({gradePill.remark})</span>}
+                                </span>
                                 <span>•</span>
                                 <span>Submitted: {new Date(submission.submittedAt || submission.createdAt).toLocaleDateString()}</span>
                             </div>

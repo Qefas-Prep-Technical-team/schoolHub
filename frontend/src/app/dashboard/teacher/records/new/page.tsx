@@ -2168,6 +2168,7 @@ export default function NewFinalResultDataEntryPage() {
         config={config}
         subjectPapers={subjectPapers}
         assignments={assignments}
+        gradingSystem={schoolProfile?.gradingSystem}
       />
 
       <ResultRecordUploadModal

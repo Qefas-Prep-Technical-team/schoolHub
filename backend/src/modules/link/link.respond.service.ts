@@ -491,21 +491,66 @@ export const respondToLinkRequestService = async ({
       },
       classId: classId || undefined,
     });
-    // console.log("RESOLVED SCHOOL ID:", resolvedSchoolId);
-    const relationship = await tx.relationshipLink.create({
-      data: {
+    // Check if an active relationship already exists to prevent duplicates
+    let relationship = await tx.relationshipLink.findFirst({
+      where: {
         linkType: request.linkType,
         status: LinkStatus.ACTIVE,
-        leftEntityType: request.requesterType,
-        leftEntityId: request.requesterId,
-        leftCode: request.requesterCode,
-        rightEntityType: request.targetType,
-        rightEntityId: request.targetId || classId || "",
-        rightCode: request.targetCode,
-        schoolId: resolvedSchoolId,
-        classId: classId || undefined,
+        OR: [
+          {
+            leftEntityId: request.requesterId,
+            rightEntityId: request.targetId || classId || "",
+          },
+          {
+            leftEntityId: request.targetId || classId || "",
+            rightEntityId: request.requesterId,
+          },
+          ...(classId
+            ? [
+                {
+                  classId,
+                  OR: [
+                    { leftEntityId: request.requesterId },
+                    { rightEntityId: request.requesterId },
+                    ...(request.targetId
+                      ? [
+                          { leftEntityId: request.targetId },
+                          { rightEntityId: request.targetId },
+                        ]
+                      : []),
+                  ],
+                },
+              ]
+            : []),
+        ],
       },
     });
+
+    if (!relationship) {
+      relationship = await tx.relationshipLink.create({
+        data: {
+          linkType: request.linkType,
+          status: LinkStatus.ACTIVE,
+          leftEntityType: request.requesterType,
+          leftEntityId: request.requesterId,
+          leftCode: request.requesterCode,
+          rightEntityType: request.targetType,
+          rightEntityId: request.targetId || classId || "",
+          rightCode: request.targetCode,
+          schoolId: resolvedSchoolId,
+          classId: classId || undefined,
+        },
+      });
+    }
+
+    // Check if an existing linkRequest already holds this relationshipLinkId (1-to-1 unique)
+    const existingApprovedRequest = await tx.linkRequest.findFirst({
+      where: { relationshipLinkId: relationship.id },
+      select: { id: true },
+    });
+
+    // Only set relationshipLinkId if no other linkRequest is already referencing it
+    const shouldAttachRelationshipId = !existingApprovedRequest || existingApprovedRequest.id === requestId;
 
     const acceptedRequest = await tx.linkRequest.update({
       where: { id: requestId },
@@ -514,12 +559,39 @@ export const respondToLinkRequestService = async ({
         respondedAt: new Date(),
         approvedByAdminId:
           currentUserType === LinkEntityType.ADMIN ? currentUserId : null,
-        relationshipLinkId: relationship.id,
+        ...(shouldAttachRelationshipId ? { relationshipLinkId: relationship.id } : {}),
         schoolId: resolvedSchoolId,
       },
     });
 
     await applyDomainSideEffects(tx, request);
+
+    // Clean up any remaining duplicate pending requests for this same entity & context by marking them accepted
+    // Do not set relationshipLinkId on updateMany because relationshipLinkId has a @@unique constraint
+    if (classId) {
+      const peerId = request.requesterStudentId || request.targetStudentId || request.requesterId;
+      if (peerId) {
+        await tx.linkRequest.updateMany({
+          where: {
+            id: { not: requestId },
+            status: LinkRequestStatus.PENDING,
+            classId,
+            OR: [
+              { requesterStudentId: peerId },
+              { targetStudentId: peerId },
+              { requesterId: peerId },
+              { targetId: peerId },
+            ],
+          },
+          data: {
+            status: LinkRequestStatus.ACCEPTED,
+            respondedAt: new Date(),
+            approvedByAdminId: currentUserType === LinkEntityType.ADMIN ? currentUserId : null,
+            schoolId: resolvedSchoolId,
+          },
+        });
+      }
+    }
 
     return {
       request: acceptedRequest,

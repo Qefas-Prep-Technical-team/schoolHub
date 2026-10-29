@@ -8,13 +8,15 @@ interface StudentGradingTableProps {
   onScoreChange: (submissionId: string, score: number) => void;
   onViewSubmission?: (submissionId: string) => void;
   onDownloadFile?: (submissionId: string) => void;
+  gradingSystem?: any[] | null;
 }
 
 export default function StudentGradingTable({ 
   submissions, 
   onScoreChange,
   onViewSubmission,
-  onDownloadFile 
+  onDownloadFile,
+  gradingSystem 
 }: StudentGradingTableProps) {
   const sortedSubmissions = [...submissions].sort((a, b) => {
     // Sort by status priority
@@ -56,6 +58,7 @@ export default function StudentGradingTable({
               onScoreChange={onScoreChange}
               onViewSubmission={onViewSubmission}
               onDownloadFile={onDownloadFile}
+              gradingSystem={gradingSystem}
             />
           ))}
         </tbody>

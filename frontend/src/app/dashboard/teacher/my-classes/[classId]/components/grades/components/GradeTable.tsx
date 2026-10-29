@@ -6,6 +6,7 @@ import { StudentGrade, IndividualGrade, GradeStatus } from './types'
 import Image from 'next/image'
 import { Icon } from '../../Icon'
 import { TeacherPagination as Pagination } from '@/app/dashboard/teacher/components/TeacherPagination'
+import { computeGradePill, type GradingTier } from '@/utils/gradingSystem'
 
 interface GradeTableProps {
   grades: StudentGrade[]
@@ -20,6 +21,7 @@ interface GradeTableProps {
   startIndex?: number
   selectedStudentId?: string | null
   onStudentSelect?: (id: string | null) => void
+  gradingSystem?: GradingTier[]
 }
 
 export function GradeTable({
@@ -34,7 +36,8 @@ export function GradeTable({
   className,
   startIndex = 0,
   selectedStudentId,
-  onStudentSelect
+  onStudentSelect,
+  gradingSystem
 }: GradeTableProps) {
   const [drillDownPage, setDrillDownPage] = useState(1)
   const drillDownItemsPerPage = 10
@@ -227,7 +230,7 @@ export function GradeTable({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {grades.map((grade, idx) => {
             const isGraded = grade.status === 'graded'
-            const letterGrade = isGraded ? calculateLetterGrade(grade.grades.total) : '-'
+            const letterGrade = isGraded ? calculateLetterGrade(grade.grades.total, gradingSystem) : '-'
             const position = grade.grades.position ? formatPosition(grade.grades.position) : '-'
 
             return (

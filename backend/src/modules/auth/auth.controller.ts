@@ -704,6 +704,13 @@ export const registerStudent = async (
           message: `Class with code ${classCode} not found`,
         });
       }
+
+      // If student registered via class connect link and no school was specified, auto-resolve the class's school
+      if (!school && classToConnect.schoolId) {
+        school = await prisma.school.findUnique({
+          where: { id: classToConnect.schoolId },
+        });
+      }
     }
 
     // Hash password
@@ -838,7 +845,7 @@ export const registerStudent = async (
           type: "LINK_REQUEST",
           title: "New Student Join Request",
           message: `${fullName} has requested to join your school.`,
-          meta: { studentId: result.id, schoolCode },
+          meta: { studentId: result.id, schoolCode: school.schoolCode },
         });
       } catch (notifError) {
         console.error("Failed to create school notification:", notifError);

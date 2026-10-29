@@ -7,6 +7,9 @@ import GradingToolbar from '../components/GradingToolbar';
 import StudentGradingTable from '../components/StudentGradingTable';
 import Breadcrumbs from '../../preview/components/Breadcrumbs';
 import { AssignmentInfo, AssignmentStats, StudentSubmission } from '../components/types';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 
 
 // Mock data
@@ -82,6 +85,11 @@ const mockStats: AssignmentStats = {
 export default function BulkGradingPage() {
   const params = useParams();
   const router = useRouter();
+  const { selectedSchoolId } = useDashboardStore();
+  const { user } = useAuthStore();
+  const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [stats, setStats] = useState<AssignmentStats>(mockStats);
   const [assignment, setAssignment] = useState<AssignmentInfo | null>(null);
@@ -300,6 +308,7 @@ export default function BulkGradingPage() {
             onScoreChange={handleScoreChange}
             onViewSubmission={handleViewSubmission}
             onDownloadFile={handleDownloadFile}
+            gradingSystem={schoolProfile?.gradingSystem}
           />
         </div>
 

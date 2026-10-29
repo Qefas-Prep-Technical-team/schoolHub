@@ -1,5 +1,5 @@
 export type GradeStatus = 'Graded' | 'Pending' | 'Missing' | 'Excused';
-export type GradeLetter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | '-';
+export type GradeLetter = 'A+' | 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D' | 'F' | 'F9' | '-' | string;
 
 export interface StudentGrade {
   id: string;

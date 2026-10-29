@@ -483,6 +483,7 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
       });
 
       for (const sa of schoolAdmins) {
+        // Notification for class join request
         notificationPromises.push(
           createNotification({
             recipientType: "ADMIN",
@@ -503,6 +504,28 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
             },
           }).catch(err => console.error(`Failed to notify admin ${sa.adminId}:`, err))
         );
+
+        // If a new school request was also generated, notify admin as well
+        if (result.schoolRequest) {
+          notificationPromises.push(
+            createNotification({
+              recipientType: "ADMIN",
+              recipientId: sa.adminId,
+              senderType: "STUDENT",
+              senderId: result.student.id,
+              type: "LINK_REQUEST",
+              title: "New Student School Join Request",
+              message: `${result.student.name} requested to connect with school via class ${result.class.name}`,
+              linkRequestId: result.schoolRequest.id,
+              meta: {
+                linkType: result.schoolRequest.linkType,
+                studentId: result.student.id,
+                studentCode: result.student.studentCode,
+                schoolId: result.class.schoolId,
+              },
+            }).catch(err => console.error(`Failed to notify admin ${sa.adminId} for school link:`, err))
+          );
+        }
       }
     }
 

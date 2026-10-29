@@ -85,11 +85,12 @@ const GradeCard: React.FC<GradeCardProps> = ({
         <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
           {/* Big Letter Grade Pill */}
           <div className={cn(
-            "inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl text-base sm:text-lg font-black shadow-sm",
+            "inline-flex min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 px-2.5 py-1 items-center justify-center rounded-xl sm:rounded-2xl text-sm sm:text-base font-black shadow-sm",
             grade.grade.startsWith('A') ? "bg-emerald-500 text-white shadow-emerald-500/20" :
-            grade.grade.startsWith('B') ? "bg-blue-500 text-white shadow-blue-500/20" :
-            grade.grade.startsWith('C') ? "bg-amber-500 text-white shadow-amber-500/20" :
-            "bg-red-500 text-white shadow-red-500/20"
+            grade.grade.startsWith('B') ? "bg-teal-500 text-white shadow-teal-500/20" :
+            grade.grade.startsWith('C') ? "bg-blue-500 text-white shadow-blue-500/20" :
+            grade.grade.startsWith('D') ? "bg-amber-500 text-white shadow-amber-500/20" :
+            "bg-rose-500 text-white shadow-rose-500/20"
           )}>
             {grade.grade}
           </div>

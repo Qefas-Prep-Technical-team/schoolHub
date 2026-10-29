@@ -14,6 +14,9 @@ import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { computeGradePill } from "@/utils/gradingSystem";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import AddExistingPaperModal from "@/app/dashboard/admin/exams/components/AddExistingPaperModal";
@@ -34,8 +37,11 @@ import ConfirmationModal from "@/app/dashboard/admin/exams/components/ui/Confirm
 
 export default function ExamPapersPage() {
   const { user } = useAuthStore();
+  const { selectedSchoolId } = useDashboardStore();
   const router = useRouter();
-  const schoolId = user?.schools?.[0]?.schoolId; // Assuming user is associated with at least one school
+  const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+  const schoolId = effectiveSchoolId;
   const params = useParams();
   const examId = params.examId as string;
 
@@ -1569,10 +1575,18 @@ export default function ExamPapersPage() {
                         <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 mb-3">
                           <div>
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Score</p>
-                            <div className="flex items-baseline gap-1 mt-0.5">
+                            <div className="flex items-baseline gap-1 mt-0.5 flex-wrap">
                               <span className="text-lg font-black text-primary">{attempt.totalScore}</span>
                               <span className="text-xs font-bold text-slate-400">/{attempt.totalMarks}</span>
                               <span className="text-[10px] font-bold text-slate-400 ml-0.5">({scorePercent}%)</span>
+                              {(() => {
+                                const pill = computeGradePill(scorePercent, schoolProfile?.gradingSystem);
+                                return (
+                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                    {pill.label}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                           <div>
@@ -1705,6 +1719,14 @@ export default function ExamPapersPage() {
                             <span className="text-slate-300">/</span>
                             <span className="text-xs font-bold text-slate-400">{attempt.totalMarks}</span>
                             <span className="text-[10px] font-bold text-slate-400">({scorePercent}%)</span>
+                            {(() => {
+                              const pill = computeGradePill(scorePercent, schoolProfile?.gradingSystem);
+                              return (
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                  {pill.label}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="px-4 sm:px-8 py-3.5 sm:py-4 text-right">

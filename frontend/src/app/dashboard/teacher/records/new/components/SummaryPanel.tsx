@@ -4,15 +4,17 @@ import { useMemo } from "react";
 import { CheckCircle2, AlertCircle, BarChart3, FileText, ClipboardCheck, BookOpen, PenTool } from "lucide-react";
 import { useState } from "react";
 import { PaperScoresModal } from "./PaperScoresModal";
+import { computeGradePill, type GradingTier } from "@/utils/gradingSystem";
 
 interface SummaryPanelProps {
   students: any[];
   config: any;
   subjectPapers: any[];
   assignments: any[];
+  gradingSystem?: GradingTier[];
 }
 
-export function SummaryPanel({ students, config, subjectPapers, assignments }: SummaryPanelProps) {
+export function SummaryPanel({ students, config, subjectPapers, assignments, gradingSystem }: SummaryPanelProps) {
   const summary = useMemo(() => {
     const totalStudents = students.length;
     if (totalStudents === 0) return null;
@@ -159,8 +161,16 @@ export function SummaryPanel({ students, config, subjectPapers, assignments }: S
           <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
             {summary.academicFilled} <span className="text-sm font-normal text-slate-500">/ {summary.totalStudents} students</span>
           </p>
-          <div className="mt-2 text-xs font-medium text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded-md inline-block w-fit border border-slate-100 dark:border-slate-700">
-            Class Avg: <span className="text-[#10b981]">{summary.averagePercentage}%</span>
+          <div className="mt-2 text-xs font-medium text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded-md inline-flex items-center gap-2 w-fit border border-slate-100 dark:border-slate-700">
+            <span>Class Avg: <span className="text-[#10b981] font-semibold">{summary.averagePercentage}%</span></span>
+            {(() => {
+              const pill = computeGradePill(parseFloat(summary.averagePercentage) || 0, gradingSystem);
+              return (
+                <span className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold ${pill.bg} ${pill.color}`}>
+                  {pill.label}
+                </span>
+              );
+            })()}
           </div>
         </div>
 

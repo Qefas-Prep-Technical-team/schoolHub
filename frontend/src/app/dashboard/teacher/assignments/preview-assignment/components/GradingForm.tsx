@@ -9,17 +9,30 @@ import Toggle from './ui/Toggle';
 
 
 
+import { useMemo } from 'react';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { computeGradePill, getGradeEvaluation } from '@/utils/gradingSystem';
+
 interface GradingFormProps {
   assignment: Assignment;
   initialData?: Partial<GradingFormData>;
   onSubmit: (data: GradingFormData) => Promise<void>;
+  schoolId?: string;
 }
 
 export default function GradingForm({ 
   assignment, 
   initialData = {}, 
-  onSubmit 
+  onSubmit,
+  schoolId
 }: GradingFormProps) {
+  const { selectedSchoolId } = useDashboardStore();
+  const { user } = useAuthStore();
+  const effectiveSchoolId = schoolId || selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+
   const [formData, setFormData] = useState<GradingFormData>({
     score: initialData.score || 0,
     feedback: initialData.feedback || '',
@@ -57,18 +70,15 @@ export default function GradingForm({
     }
   };
 
-const calculatePercentage = (): number => {
-  if (assignment.maxScore <= 0) return 0;
-  return Number(((formData.score / assignment.maxScore) * 100).toFixed(1));
-};
-
-  const getGradeLetter = (percentage: number) => {
-    if (percentage >= 90) return 'A';
-    if (percentage >= 80) return 'B';
-    if (percentage >= 70) return 'C';
-    if (percentage >= 60) return 'D';
-    return 'F';
+  const calculatePercentage = (): number => {
+    if (assignment.maxScore <= 0) return 0;
+    return Number(((formData.score / assignment.maxScore) * 100).toFixed(1));
   };
+
+  const gradeEval = useMemo(() => {
+    const pct = calculatePercentage();
+    return getGradeEvaluation(pct, schoolProfile?.gradingSystem);
+  }, [formData.score, assignment.maxScore, schoolProfile?.gradingSystem]);
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
@@ -112,8 +122,11 @@ const calculatePercentage = (): number => {
                 <span className="text-sm text-slate-600 dark:text-slate-300">
                   Grade:
                 </span>
-                <span className="text-sm font-semibold text-slate-900 dark:text-white px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">
-                  {getGradeLetter(parseFloat(`${calculatePercentage()}`))}
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border ${gradeEval.bg} ${gradeEval.color}`}>
+                  <span>{gradeEval.grade}</span>
+                  {gradeEval.remark && (
+                    <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">({gradeEval.remark})</span>
+                  )}
                 </span>
               </div>
             </div>

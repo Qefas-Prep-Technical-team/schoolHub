@@ -22,6 +22,7 @@ interface QRCodeModalProps {
   schoolCode: string;
   schoolName?: string;
   schoolLogo?: string | null;
+  isLoading?: boolean;
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({
@@ -30,10 +31,13 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
   schoolCode,
   schoolName = "Qefas Hub",
   schoolLogo = null,
+  isLoading = false,
 }) => {
   const [isPosterModalOpen, setIsPosterModalOpen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("student");
   const [copiedCode, setCopiedCode] = useState(false);
+
+  const isReady = !isLoading && Boolean(schoolCode && schoolCode.trim() !== "");
 
   const baseUrl = (
     process.env.NEXT_PUBLIC_FRONTEND_URL ||
@@ -47,7 +51,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
       role: "Student Signup",
       description: "Direct registration link for students to link into your school network.",
       icon: <GraduationCap className="w-4 h-4" />,
-      url: `${baseUrl}/signup/student?schoolCode=${schoolCode}`,
+      url: isReady ? `${baseUrl}/signup/student?schoolCode=${schoolCode}` : "",
       color: "blue",
       posterTitle: `Join ${schoolName} on Qefas Hub`,
       posterSubtitle:
@@ -60,7 +64,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
       role: "Teacher Signup",
       description: "Invite educators and faculty members to register and manage classes.",
       icon: <User className="w-4 h-4" />,
-      url: `${baseUrl}/signup/teacher?schoolCode=${schoolCode}`,
+      url: isReady ? `${baseUrl}/signup/teacher?schoolCode=${schoolCode}` : "",
       color: "emerald",
       posterTitle: `Faculty Access - ${schoolName}`,
       posterSubtitle:
@@ -73,7 +77,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
       role: "Quick School Link",
       description: "Allow registered students & teachers to instantly link to your school.",
       icon: <Users className="w-4 h-4" />,
-      url: `${baseUrl}/join/school/${schoolCode}`,
+      url: isReady ? `${baseUrl}/join/school/${schoolCode}` : "",
       color: "indigo",
       posterTitle: `Connect to ${schoolName}`,
       posterSubtitle:
@@ -94,11 +98,13 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
   }));
 
   const handleOpenPoster = (variantId: string) => {
+    if (!isReady) return;
     setSelectedVariantId(variantId);
     setIsPosterModalOpen(true);
   };
 
   const handleCopySchoolCode = () => {
+    if (!isReady || !schoolCode) return;
     copyToClipboard(schoolCode, "School Code");
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
@@ -140,7 +146,8 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
                   <button
                     type="button"
                     onClick={handleCopySchoolCode}
-                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer ml-1"
+                    disabled={!isReady}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Copy School Code"
                   >
                     {copiedCode ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />}
@@ -177,21 +184,28 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
                   </p>
 
                   {/* QR Code Container */}
-                  <div className="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/90 dark:border-slate-700 group-hover:shadow-md transition-shadow duration-300">
-                    <QRCode
-                      value={link.url}
-                      size={145}
-                      level="H"
-                      className="max-w-full h-auto"
-                    />
+                  <div className="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/90 dark:border-slate-700 group-hover:shadow-md transition-shadow duration-300 min-h-[165px] min-w-[165px] flex items-center justify-center">
+                    {isReady && link.url ? (
+                      <QRCode
+                        value={link.url}
+                        size={145}
+                        level="H"
+                        className="max-w-full h-auto"
+                      />
+                    ) : (
+                      <div className="w-[145px] h-[145px] bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse flex items-center justify-center text-slate-400 text-[11px] text-center p-2">
+                        Loading QR code...
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons under QR */}
                   <div className="mt-5 w-full space-y-2">
                     <Button
                       type="button"
+                      disabled={!isReady || !link.url}
                       onClick={() => handleOpenPoster(link.id)}
-                      className="w-full h-11 flex items-center justify-center gap-2 font-bold rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:via-indigo-500 hover:to-indigo-600 dark:from-indigo-600 dark:via-blue-600 dark:to-indigo-500 dark:hover:from-indigo-500 dark:hover:via-blue-500 dark:hover:to-indigo-400 text-white shadow-md shadow-indigo-600/20 dark:shadow-[0_4px_16px_rgba(99,102,241,0.35)] ring-1 ring-white/15 dark:ring-indigo-400/25 transition-all active:scale-95 text-xs cursor-pointer"
+                      className="w-full h-11 flex items-center justify-center gap-2 font-bold rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:via-indigo-500 hover:to-indigo-600 dark:from-indigo-600 dark:via-blue-600 dark:to-indigo-500 dark:hover:from-indigo-500 dark:hover:via-blue-500 dark:hover:to-indigo-400 text-white shadow-md shadow-indigo-600/20 dark:shadow-[0_4px_16px_rgba(99,102,241,0.35)] ring-1 ring-white/15 dark:ring-indigo-400/25 transition-all active:scale-95 text-xs cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Download / Preview Poster</span>
@@ -199,9 +213,13 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
                     <Button
                       type="button"
-                      onClick={() => copyToClipboard(link.url, link.role)}
+                      disabled={!isReady || !link.url}
+                      onClick={() => {
+                        if (!isReady || !link.url) return;
+                        copyToClipboard(link.url, link.role);
+                      }}
                       variant="outline"
-                      className="w-full h-10 flex items-center justify-center gap-2 font-bold rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 transition-all active:scale-95 text-xs shadow-xs cursor-pointer"
+                      className="w-full h-10 flex items-center justify-center gap-2 font-bold rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 transition-all active:scale-95 text-xs shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Copy className="w-3.5 h-3.5" />
                       <span>Copy Link</span>

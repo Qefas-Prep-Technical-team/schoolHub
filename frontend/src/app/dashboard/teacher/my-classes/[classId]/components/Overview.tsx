@@ -4,6 +4,12 @@ import PerformanceChart from "./PerformanceChart";
 import BehaviourAlert from "./BehaviourAlert";
 import StatsCard from "./StatsCard";
 import UpcomingExams from "./UpcomingExams";
+import { useClassAttendanceSummary, useClassStats } from "@/lib/api/hooks/useClasses";
+import { useParams } from "next/navigation";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { computeGradePill } from "@/utils/gradingSystem";
 
 interface OverviewProps {
   behaviourAlerts: any[];
@@ -12,14 +18,19 @@ interface OverviewProps {
   teacherClassDetail?: any;
 }
 
-import { useClassAttendanceSummary, useClassStats } from "@/lib/api/hooks/useClasses";
-import { useParams } from "next/navigation";
-
 const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomingExams, teacherClassDetail }) => {
   const params = useParams();
   const classId = (params.classId as string) || (params.id as string) || classData?.id;
   const { data: attendanceSummary, isLoading: isAttendanceSummaryLoading } = useClassAttendanceSummary(classId);
   const { data: stats, isLoading: isStatsLoading } = useClassStats(classId);
+
+  const { user } = useAuthStore();
+  const { selectedSchoolId } = useDashboardStore();
+  const currentTeacherId = (user as any)?.id as string | undefined;
+  const effectiveSchoolId = (selectedSchoolId && selectedSchoolId !== currentTeacherId)
+    ? selectedSchoolId
+    : (classData?.schoolId || (user as any)?.schools?.[0]?.schoolId || (user as any)?.schoolId);
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   // Derived data: prioritize teacher's subject-focused upcoming activities
   const realUpcomingExams = upcomingExams !== undefined
@@ -37,6 +48,12 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
         date: new Date(e.createdAt).toLocaleDateString(),
         type: e.category || 'Exam'
       }));
+
+  const subjectAverageVal = teacherClassDetail?.stats?.averageGrade !== undefined
+    ? teacherClassDetail.stats.averageGrade
+    : stats?.overallAvgScore;
+  const avgNum = subjectAverageVal !== undefined && !isNaN(Number(subjectAverageVal)) ? Number(subjectAverageVal) : null;
+  const avgPill = avgNum !== null ? computeGradePill(avgNum, schoolProfile?.gradingSystem) : null;
 
   return (
     <div className="mt-4 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-3">
@@ -61,10 +78,13 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6 lg:gap-8">
           <StatsCard 
             title="Subject Average Score" 
-            value={teacherClassDetail?.stats?.averageGrade !== undefined
-              ? `${teacherClassDetail.stats.averageGrade}%`
-              : stats ? `${stats.overallAvgScore}%` : "0%"} 
+            value={avgNum !== null ? `${avgNum}%` : "0%"} 
             isLoading={isStatsLoading && !teacherClassDetail}
+            badge={avgPill ? (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${avgPill.bg} ${avgPill.color}`}>
+                {avgPill.label}
+              </span>
+            ) : undefined}
           />
           <StatsCard 
             title="Attendance Summary" 

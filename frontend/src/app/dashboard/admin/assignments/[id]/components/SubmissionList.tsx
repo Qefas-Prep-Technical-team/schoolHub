@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { computeGradePill } from "@/utils/gradingSystem";
 import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -207,8 +208,21 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
                   </span>
                 </td>
                 <td className="py-4 text-right">
-                  <div className="flex flex-col items-end">
+                  <div className="flex flex-col items-end gap-1">
                     <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{sub.score ?? 0} / {assignment.maxScore || 100}</span>
+                    {sub.score !== null && sub.score !== undefined && (
+                      (() => {
+                        const max = assignment.maxScore || 100;
+                        const pct = max > 0 ? (sub.score / max) * 100 : 0;
+                        const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}>
+                            <span>{pill.label}</span>
+                            {pill.remark && <span className="opacity-75 uppercase tracking-wider text-[9px]">({pill.remark})</span>}
+                          </span>
+                        );
+                      })()
+                    )}
                   </div>
                 </td>
                 <td className="py-4 text-right">
@@ -275,7 +289,19 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
                   {sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, h:mm a") : "Unknown"}
                 </span>
               </div>
-              <div className="text-right">
+              <div className="text-right flex items-center gap-1.5">
+                {sub.score !== null && sub.score !== undefined && (
+                  (() => {
+                    const max = assignment.maxScore || 100;
+                    const pct = max > 0 ? (sub.score / max) * 100 : 0;
+                    const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                    return (
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}>
+                        {pill.label}
+                      </span>
+                    );
+                  })()
+                )}
                 <span className="text-sm font-black text-slate-900 dark:text-white">
                   {sub.score ?? 0}
                 </span>

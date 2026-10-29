@@ -474,9 +474,10 @@ export default function ClassDetailsPage() {
                
                <div className="flex gap-2 sm:gap-3 w-full sm:w-auto items-center">
                  <button 
+                    disabled={loading || !classData}
                     onClick={() => setIsQRModalOpen(true)}
-                    className="size-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-all shadow-2xs hover:shadow-sm hover:-translate-y-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
-                    title="QR Access"
+                    className="size-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-all shadow-2xs hover:shadow-sm hover:-translate-y-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                    title={loading ? "Loading class..." : "QR Access"}
                   >
                     <QrCode size={19} />
                   </button>

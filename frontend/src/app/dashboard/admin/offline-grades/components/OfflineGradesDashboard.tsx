@@ -398,6 +398,7 @@ export default function OfflineGradesDashboard({
         isTeacher={isTeacher}
         hideClassFilter={hideClassFilter ?? !!defaultClassId}
         activeClassId={activeClassId}
+        gradingSystem={schoolProfile?.gradingSystem}
         onAddNewRecord={handleAddNewRecord}
         onEditRecord={handleEditRecord}
         onDeleteRecord={handleDeleteRecord}

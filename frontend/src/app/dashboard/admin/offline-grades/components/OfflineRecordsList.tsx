@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { computeGradePill } from '@/utils/gradingSystem';
 import { GradeBatchSummary, OfflineAssessmentCategory } from '../types';
 
 interface OfflineRecordsListProps {
@@ -50,6 +51,7 @@ interface OfflineRecordsListProps {
   isTeacher?: boolean;
   hideClassFilter?: boolean;
   activeClassId?: string;
+  gradingSystem?: any[];
   onAddNewRecord: (defaultCategory?: OfflineAssessmentCategory) => void;
   onEditRecord: (record: GradeBatchSummary) => void;
   onDeleteRecord: (recordId: string) => void;
@@ -137,6 +139,7 @@ export default function OfflineRecordsList({
   isTeacher = false,
   hideClassFilter = false,
   activeClassId,
+  gradingSystem,
   onAddNewRecord,
   onEditRecord,
   onDeleteRecord,
@@ -637,9 +640,19 @@ export default function OfflineRecordsList({
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2 mb-4">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500 font-medium">Class Average:</span>
-                      <span className="font-bold text-slate-900 dark:text-white tabular-nums">
-                        {rec.averageScore.toFixed(1)} / {rec.maxMarks} ({percentage}%)
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-900 dark:text-white tabular-nums">
+                          {rec.averageScore.toFixed(1)} / {rec.maxMarks} ({percentage}%)
+                        </span>
+                        {(() => {
+                          const pill = computeGradePill(percentage, gradingSystem);
+                          return (
+                            <span className={`inline-flex px-1.5 py-0.2 rounded text-[10px] font-black border ${pill.bg} ${pill.color}`}>
+                              {pill.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
@@ -737,7 +750,18 @@ export default function OfflineRecordsList({
                         {rec.gradedStudents}
                       </td>
                       <td className="py-3.5 px-4 text-center font-bold tabular-nums">
-                        {rec.averageScore.toFixed(1)} / {rec.maxMarks}
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span>{rec.averageScore.toFixed(1)} / {rec.maxMarks}</span>
+                          {(() => {
+                            const pct = rec.maxMarks > 0 ? Math.round((rec.averageScore / rec.maxMarks) * 100) : 0;
+                            const pill = computeGradePill(pct, gradingSystem);
+                            return (
+                              <span className={`inline-flex px-1.5 py-0.2 rounded text-[10px] font-black border ${pill.bg} ${pill.color}`}>
+                                {pill.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <div className="flex flex-col items-center gap-1">

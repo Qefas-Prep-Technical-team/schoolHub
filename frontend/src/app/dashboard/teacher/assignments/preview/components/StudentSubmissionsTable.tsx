@@ -7,17 +7,20 @@ import Link from 'next/link';
 import StatusBadge from './ui/StatusBadge';
 import { useState } from 'react';
 import Pagination from '../../components/Pagination';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface StudentSubmissionsTableProps {
     submissions: StudentSubmission[];
     onGradeStudent?: (submissionId: string) => void;
     onViewGrade?: (submissionId: string) => void;
+    gradingSystem?: any[] | null;
 }
 
 export default function StudentSubmissionsTable({
     submissions,
     onGradeStudent,
-    onViewGrade
+    onViewGrade,
+    gradingSystem
 }: StudentSubmissionsTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -45,10 +48,19 @@ export default function StudentSubmissionsTable({
             );
         }
 
+        const maxScore = submission.maxScore || submission.assignment?.totalMarks || 100;
+        const pct = maxScore > 0 ? (submission.score / maxScore) * 100 : 0;
+        const pill = computeGradePill(pct, gradingSystem);
+
         return (
-            <span className="text-gray-900 dark:text-white font-medium">
-                {submission.score}/{submission.maxScore || submission.assignment?.totalMarks || 100}
-            </span>
+            <div className="flex items-center gap-2">
+                <span className="text-gray-900 dark:text-white font-medium">
+                    {submission.score}/{maxScore}
+                </span>
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                    {pill.label}
+                </span>
+            </div>
         );
     };
 

@@ -6,19 +6,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Input from '../../create-assignment/components/ui/Input';
 import StatusBadge from './StatusBadge';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface StudentGradingRowProps {
   submission: StudentSubmission;
   onScoreChange: (submissionId: string, score: number) => void;
   onViewSubmission?: (submissionId: string) => void;
   onDownloadFile?: (submissionId: string) => void;
+  gradingSystem?: any[] | null;
 }
 
 export default function StudentGradingRow({ 
   submission, 
   onScoreChange,
   onViewSubmission,
-  onDownloadFile 
+  onDownloadFile,
+  gradingSystem 
 }: StudentGradingRowProps) {
   const [localScore, setLocalScore] = useState<string>(submission.score?.toString() || '');
 
@@ -117,6 +120,17 @@ export default function StudentGradingRow({
           <span className="text-slate-500 dark:text-slate-400">
             / {submission.maxScore}
           </span>
+          {localScore !== '' && !isNaN(parseFloat(localScore)) && submission.maxScore > 0 && (
+            (() => {
+              const pct = (parseFloat(localScore) / submission.maxScore) * 100;
+              const pill = computeGradePill(pct, gradingSystem);
+              return (
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ml-1 ${pill.bg} ${pill.color}`} title={pill.remark}>
+                  {pill.label}
+                </span>
+              );
+            })()
+          )}
         </div>
       </td>
 

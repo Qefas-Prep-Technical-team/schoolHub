@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import { Check } from "lucide-react";
@@ -138,6 +139,7 @@ export default function AssignmentDetailsPage() {
     const { user } = useAuthStore();
     const assignmentId = params.id as string;
     const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+    const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
     const { data: assignmentData, isLoading, isPending, isError, error } = useQuery({
         queryKey: ["assignment-detail", assignmentId],
@@ -324,6 +326,7 @@ export default function AssignmentDetailsPage() {
                             submissions={submissions}
                             onGradeStudent={isAuthorized ? handleGradeStudent : undefined}
                             onViewGrade={handleViewGrade} // Anyone can view grade? Maybe limit it too?
+                            gradingSystem={schoolProfile?.gradingSystem}
                         />
                     </TabsContent>
 
@@ -401,6 +404,7 @@ export default function AssignmentDetailsPage() {
                 onClose={() => setViewGradeSubmission(null)}
                 submission={viewGradeSubmission}
                 assignment={assignment}
+                gradingSystem={schoolProfile?.gradingSystem}
             />
         </main>
     );

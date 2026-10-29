@@ -124,10 +124,11 @@ const GradeDetailsModal: React.FC<GradeDetailsModalProps> = ({ grade, isOpen, on
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Grade</p>
                 <div className={cn(
                   "px-3 py-1 rounded-xl text-lg font-black shadow-sm flex items-center justify-center min-w-[3rem]",
-                  grade.grade.startsWith('A') ? "bg-emerald-500 text-white" :
-                  grade.grade.startsWith('B') ? "bg-blue-500 text-white" :
-                  grade.grade.startsWith('C') ? "bg-amber-500 text-white" :
-                  "bg-red-500 text-white"
+                  grade.grade.startsWith('A') ? "bg-emerald-500 text-white shadow-emerald-500/20" :
+                  grade.grade.startsWith('B') ? "bg-teal-500 text-white shadow-teal-500/20" :
+                  grade.grade.startsWith('C') ? "bg-blue-500 text-white shadow-blue-500/20" :
+                  grade.grade.startsWith('D') ? "bg-amber-500 text-white shadow-amber-500/20" :
+                  "bg-rose-500 text-white shadow-rose-500/20"
                 )}>
                   {grade.grade}
                 </div>

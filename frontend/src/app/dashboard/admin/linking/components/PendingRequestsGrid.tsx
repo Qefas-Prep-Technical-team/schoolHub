@@ -139,8 +139,9 @@ export function PendingRequestsGrid({
                   type="button"
                   onClick={() => onToggleSelect(req.id)}
                   disabled={busy}
-                  className="absolute top-3 left-3 z-10 w-7 h-7 rounded-lg bg-white/90 dark:bg-slate-900/90 shadow flex items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
+                  className="absolute top-3.5 right-3.5 z-20 w-7 h-7 rounded-lg bg-white/95 dark:bg-slate-800/95 shadow-md border border-slate-200/80 dark:border-slate-700 flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                   aria-label={isSelected ? 'Deselect request' : 'Select request'}
+                  title={isSelected ? 'Deselect request' : 'Select request'}
                 >
                   {isSelected ? <CheckSquare className="text-primary" size={16} /> : <Square className="text-slate-400" size={16} />}
                 </button>

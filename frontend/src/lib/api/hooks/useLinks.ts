@@ -115,23 +115,91 @@ export const useRespondToLinkRequest = () => {
   return useMutation<
     Awaited<ReturnType<typeof linkService.respondToLinkRequest>>,
     AxiosError<{ message?: string }>,
-    { id: string; action: "ACCEPT" | "REJECT" }
+    { id: string; action: "ACCEPT" | "REJECT" },
+    { previousPendingQueries: [readonly unknown[], unknown][]; toastId: string | number }
   >({
     mutationFn: ({ id, action }) =>
       linkService.respondToLinkRequest(id, action),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.all });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      if (variables.action === "ACCEPT") {
-        toast.success("Link request accepted");
+    onMutate: async ({ id, action }) => {
+      // Show loading toast indicating the request is processing
+      const toastId = toast.loading(
+        action === "ACCEPT" ? "Accepting link request..." : "Rejecting link request..."
+      );
+
+      // Cancel any outgoing refetches for pending requests so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: [...queryKeys.all, "requests", "pending"] });
+
+      // Snapshot all matching pending queries
+      const queryCache = queryClient.getQueryCache();
+      const pendingQueries = queryCache.findAll({
+        queryKey: [...queryKeys.all, "requests", "pending"],
+      });
+
+      const previousPendingQueries: [readonly unknown[], unknown][] = pendingQueries.map((q) => [
+        q.queryKey,
+        queryClient.getQueryData(q.queryKey),
+      ]);
+
+      // Optimistically remove the acted-upon request from all pending lists in cache
+      pendingQueries.forEach((q) => {
+        queryClient.setQueryData(q.queryKey, (oldData: any) => {
+          if (!oldData || !Array.isArray(oldData.items)) return oldData;
+          const nextItems = oldData.items.filter((item: any) => item.id !== id);
+          const wasRemoved = nextItems.length !== oldData.items.length;
+          const currentTotal = oldData.pagination?.total ?? oldData.items.length;
+          return {
+            ...oldData,
+            items: nextItems,
+            pagination: oldData.pagination
+              ? {
+                  ...oldData.pagination,
+                  total: wasRemoved ? Math.max(0, currentTotal - 1) : currentTotal,
+                }
+              : oldData.pagination,
+          };
+        });
+      });
+
+      return { previousPendingQueries, toastId };
+    },
+    onSuccess: (_, variables, context) => {
+      const msg = variables.action === "ACCEPT" ? "Link request accepted" : "Link request rejected";
+      if (context?.toastId) {
+        toast.update(context.toastId, {
+          render: msg,
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+          closeButton: true,
+        });
       } else {
-        toast.success("Link request rejected");
+        toast.success(msg);
       }
     },
-    onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(
-        error.response?.data?.message || "Failed to respond to request",
-      );
+    onError: (error, _, context) => {
+      // Rollback to previous queries on error
+      if (context?.previousPendingQueries) {
+        context.previousPendingQueries.forEach(([key, data]) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
+      const errorMsg = error.response?.data?.message || "Failed to respond to request";
+      if (context?.toastId) {
+        toast.update(context.toastId, {
+          render: errorMsg,
+          type: "error",
+          isLoading: false,
+          autoClose: 4000,
+          closeButton: true,
+        });
+      } else {
+        toast.error(errorMsg);
+      }
+    },
+    onSettled: () => {
+      // Always resync with server on settled
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 };

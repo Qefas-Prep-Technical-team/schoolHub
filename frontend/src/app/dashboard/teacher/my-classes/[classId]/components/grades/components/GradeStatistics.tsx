@@ -5,14 +5,15 @@ import { cn } from '@/lib/utils'
 import { GradeStatistics as GradeStatisticsT, StudentGrade } from './types'
 import { calculateClassAverage } from './gradeUtils'
 import { Icon } from '../../Icon'
-
+import { getGradeEvaluation, getGradeColorAndBg, type GradingTier } from '@/utils/gradingSystem'
 
 interface GradeStatisticsProps {
   grades: StudentGrade[]
   className?: string
+  gradingSystem?: GradingTier[]
 }
 
-export function GradeStatistics({ grades, className }: GradeStatisticsProps) {
+export function GradeStatistics({ grades, className, gradingSystem }: GradeStatisticsProps) {
   const gradedGrades = grades.filter(g => g.status === 'graded')
   const stats: GradeStatisticsT = {
     averageScore: calculateClassAverage(gradedGrades),
@@ -23,19 +24,20 @@ export function GradeStatistics({ grades, className }: GradeStatisticsProps) {
       ? Math.min(...gradedGrades.map(g => g.grades.total))
       : 0,
     passingRate: gradedGrades.length > 0
-      ? Math.round((gradedGrades.filter(g => g.grades.total >= 60).length / gradedGrades.length) * 100)
+      ? Math.round((gradedGrades.filter(g => {
+          const evalRes = getGradeEvaluation(g.grades.total, gradingSystem)
+          return evalRes.grade !== 'F' && evalRes.grade !== 'F9'
+        }).length / gradedGrades.length) * 100)
       : 0,
-    gradeDistribution: calculateGradeDistribution(gradedGrades)
+    gradeDistribution: calculateGradeDistribution(gradedGrades, gradingSystem)
   }
 
   const getScoreColors = (score: number) => {
-    const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-    switch (grade) {
-      case 'A': return { color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/20' };
-      case 'B': return { color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20' };
-      case 'C': return { color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20' };
-      case 'D': return { color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-50 dark:bg-orange-900/20' };
-      default: return { color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-900/20' };
+    const evalRes = getGradeEvaluation(score, gradingSystem)
+    const styling = getGradeColorAndBg(evalRes.grade)
+    return {
+      color: styling.color,
+      bgColor: styling.bg.split(' ')[0] || 'bg-slate-50 dark:bg-slate-800'
     }
   };
 
@@ -107,16 +109,22 @@ export function GradeStatistics({ grades, className }: GradeStatisticsProps) {
   )
 }
 
-function calculateGradeDistribution(grades: StudentGrade[]): Record<string, number> {
-  const distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 }
+import { getEffectiveGradingSystem } from '@/utils/gradingSystem'
+
+function calculateGradeDistribution(grades: StudentGrade[], gradingSystem?: GradingTier[]): Record<string, number> {
+  const tiers = getEffectiveGradingSystem(gradingSystem)
+  const distribution: Record<string, number> = {}
+  tiers.forEach(t => {
+    distribution[t.grade] = 0
+  })
   
   grades.forEach(grade => {
-    const percentage = grade.grades.total
-    if (percentage >= 90) distribution.A++
-    else if (percentage >= 80) distribution.B++
-    else if (percentage >= 70) distribution.C++
-    else if (percentage >= 60) distribution.D++
-    else distribution.F++
+    const evalRes = getGradeEvaluation(grade.grades.total, gradingSystem)
+    if (distribution[evalRes.grade] !== undefined) {
+      distribution[evalRes.grade]++
+    } else {
+      distribution[evalRes.grade] = 1
+    }
   })
   
   return distribution

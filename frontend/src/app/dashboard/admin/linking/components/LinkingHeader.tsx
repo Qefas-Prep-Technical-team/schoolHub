@@ -1,4 +1,4 @@
-import { Link2, QrCode } from 'lucide-react';
+import { Link2, QrCode, RefreshCw } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,17 @@ interface LinkingHeaderProps {
   onConnectClick: () => void;
   onShowQRCodeClick: () => void;
   isLimitReached?: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReached }: LinkingHeaderProps) {
+export function LinkingHeader({
+  onConnectClick,
+  onShowQRCodeClick,
+  isLimitReached,
+  onRefresh,
+  isRefreshing = false,
+}: LinkingHeaderProps) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
@@ -36,12 +44,27 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
+      <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0 items-center">
+        {/* Real-time Refresh Button */}
+        {onRefresh && (
+          <Button
+            type="button"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            variant="outline"
+            className="w-full sm:w-auto h-11 px-5 rounded-full font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm transition-all text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-60"
+            title="Refresh links and requests"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin text-primary")} />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </Button>
+        )}
+
         {/* View QR Codes — pill shaped */}
         <Button
           onClick={onShowQRCodeClick}
           variant="outline"
-          className="w-full sm:w-auto h-11 px-6 rounded-full font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm transition-all text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="w-full sm:w-auto h-11 px-6 rounded-full font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm transition-all text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
         >
           <QrCode className="mr-2 h-4 w-4" /> View QR Codes
         </Button>

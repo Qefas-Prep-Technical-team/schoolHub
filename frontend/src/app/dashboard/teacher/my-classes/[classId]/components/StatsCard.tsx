@@ -5,9 +5,10 @@ interface StatsCardProps {
   value: string;
   className?: string;
   isLoading?: boolean;
+  badge?: React.ReactNode;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, className = '', isLoading }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, className = '', isLoading, badge }) => {
   return (
     <div className={`flex flex-col gap-2 rounded-3xl p-6 bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-emerald-800/50 shadow-sm ${className}`}>
       {isLoading ? (
@@ -20,9 +21,12 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, className = '', isL
           <p className="text-gray-600 dark:text-gray-300 text-base font-medium leading-normal">
             {title}
           </p>
-          <p className="text-gray-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
-            {value}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-gray-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+              {value}
+            </p>
+            {badge}
+          </div>
         </>
       )}
     </div>

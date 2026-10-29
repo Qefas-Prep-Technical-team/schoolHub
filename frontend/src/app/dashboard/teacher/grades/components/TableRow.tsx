@@ -101,11 +101,12 @@ const TableRow: React.FC<TableRowProps> = ({
 
       <td className="px-6 py-4 text-center">
         <div className={cn(
-          "inline-flex h-9 w-9 items-center justify-center rounded-xl text-lg font-black shadow-sm",
+          "inline-flex min-h-9 min-w-9 px-2 py-1 items-center justify-center rounded-xl text-sm font-black shadow-sm",
           grade.grade.startsWith('A') ? "bg-emerald-500 text-white" :
-          grade.grade.startsWith('B') ? "bg-blue-500 text-white" :
-          grade.grade.startsWith('C') ? "bg-amber-500 text-white" :
-          "bg-red-500 text-white"
+          grade.grade.startsWith('B') ? "bg-teal-500 text-white" :
+          grade.grade.startsWith('C') ? "bg-blue-500 text-white" :
+          grade.grade.startsWith('D') ? "bg-amber-500 text-white" :
+          "bg-rose-500 text-white"
         )}>
           {grade.grade}
         </div>

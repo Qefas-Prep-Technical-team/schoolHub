@@ -92,13 +92,12 @@ export default function VerificationCard() {
             setIsSuccess(true);
 
             setTimeout(() => {
-              if (pendingRedirect) {
-                router.push(pendingRedirect);
-                return;
-              }
-
-              // If it's a device verification for an existing user, return to dashboard
+              // If it's a device verification for an existing user, honor pendingRedirect or return to dashboard
               if (isDeviceVerification) {
+                if (pendingRedirect) {
+                  router.push(pendingRedirect);
+                  return;
+                }
                 switch (returnedUserType) {
                   case 'TEACHER':
                     router.push('/dashboard/teacher');
@@ -123,11 +122,14 @@ export default function VerificationCard() {
                 return;
               }
 
-              // Newly registered account: send directly to the onboarding tour
+              // Newly registered account: send directly to the onboarding tour, preserving any pendingRedirect (e.g., class/school join links)
               if (returnedUserType === 'ADMIN' && userData && !userData.plan && !userData.isSchoolOwner) {
                 router.push('/select-plan');
               } else {
-                router.push(`/onboarding?type=${returnedUserType.toLowerCase()}`);
+                const onboardingQuery = pendingRedirect
+                  ? `/onboarding?type=${returnedUserType.toLowerCase()}&redirect=${encodeURIComponent(pendingRedirect)}`
+                  : `/onboarding?type=${returnedUserType.toLowerCase()}`;
+                router.push(onboardingQuery);
               }
             }, 1500);
           },

@@ -19,6 +19,7 @@ import EditPaperModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId
 import React, { useState, useEffect, useMemo } from "react";
 import { AxiosError } from "axios";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { computeGradePill } from "@/utils/gradingSystem";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1013,12 +1014,20 @@ export default function TeacherPaperDetailPage() {
                                   <span className="text-slate-400 text-xs font-bold">/ {result.maxMarks}</span>
                                 </div>
                               ) : (
-                                <div className="flex items-baseline gap-1">
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
                                   <span className="text-lg font-black text-slate-900 dark:text-white">{result.score}</span>
                                   <span className="text-xs font-bold text-slate-400">/ {result.maxMarks}</span>
-                                  <span className={`ml-2 text-xs font-black ${isPass ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
+                                  <span className={`text-xs font-black ${isPass ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
                                     ({percentage.toFixed(0)}%)
                                   </span>
+                                  {(() => {
+                                    const pill = computeGradePill(percentage, school?.gradingSystem);
+                                    return (
+                                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                        {pill.label}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
@@ -1207,6 +1216,14 @@ export default function TeacherPaperDetailPage() {
                                   <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">
                                     {percentage.toFixed(0)}%
                                   </span>
+                                  {(() => {
+                                    const pill = computeGradePill(percentage, school?.gradingSystem);
+                                    return (
+                                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                        {pill.label}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-right">
@@ -1426,9 +1443,22 @@ export default function TeacherPaperDetailPage() {
               
               <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl">
                 <span className="text-xs font-bold text-emerald-600/70 dark:text-emerald-400/70 uppercase tracking-widest">Score</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{selectedGradeDetail.score}</span>
-                  <span className="text-sm font-bold text-emerald-600/50 dark:text-emerald-400/50">/ {selectedGradeDetail.maxMarks}</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{selectedGradeDetail.score}</span>
+                    <span className="text-sm font-bold text-emerald-600/50 dark:text-emerald-400/50">/ {selectedGradeDetail.maxMarks}</span>
+                  </div>
+                  {(() => {
+                    const max = selectedGradeDetail.maxMarks || 100;
+                    const pct = max > 0 ? (selectedGradeDetail.score / max) * 100 : 0;
+                    const pill = computeGradePill(pct, school?.gradingSystem);
+                    return (
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${pill.bg} ${pill.color}`}>
+                        <span>{pill.label}</span>
+                        {pill.remark && <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">({pill.remark})</span>}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
               

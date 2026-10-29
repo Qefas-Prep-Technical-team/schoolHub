@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react'
 import { TeacherPagination as Pagination } from '@/app/dashboard/teacher/components/TeacherPagination'
 import { toast } from 'react-toastify'
 import { TabSkeleton } from '../TabSkeleton'
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool'
 
 export default function GradesPage() {
   const params = useParams()
@@ -24,6 +25,10 @@ export default function GradesPage() {
   const { user } = useAuthStore()
   const { selectedSchoolId } = useDashboardStore()
   const currentTeacherId = (user as any)?.id as string | undefined
+  const effectiveSchoolId = (selectedSchoolId && selectedSchoolId !== currentTeacherId)
+    ? selectedSchoolId
+    : ((user as any)?.schools?.[0]?.schoolId || (user as any)?.schoolId || (user as any)?.school?.id);
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<GradeFilter>({})
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false)
@@ -285,7 +290,7 @@ export default function GradesPage() {
     <>
       <div className="w-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-        <GradeStatistics grades={grades} />
+        <GradeStatistics grades={grades} gradingSystem={schoolProfile?.gradingSystem} />
 
         <GradeToolbar
           searchQuery={searchQuery}
@@ -311,6 +316,7 @@ export default function GradesPage() {
           startIndex={startIndex}
           selectedStudentId={selectedStudentId}
           onStudentSelect={setSelectedStudentId}
+          gradingSystem={schoolProfile?.gradingSystem}
         />
 
         {totalPages > 1 && !selectedStudentId && (
@@ -352,6 +358,7 @@ export default function GradesPage() {
               setViewingGrade(null)
               setViewingItem(undefined)
             }}
+            gradingSystem={schoolProfile?.gradingSystem}
           />
         )}
         {isFilterDialogOpen && (

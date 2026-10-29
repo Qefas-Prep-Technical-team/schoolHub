@@ -32,31 +32,18 @@ export function getStatusLabel(status: GradeStatus): string {
   return labels[status]
 }
 
-export function calculateLetterGrade(percentage: number): string {
-  if (percentage >= 70) return 'A'
-  if (percentage >= 60) return 'B'
-  if (percentage > 40) return 'C'
-  return 'F'
+import { getGradeEvaluation, computeGradePill, getGradeColorAndBg, type GradingTier } from '@/utils/gradingSystem'
+
+export function calculateLetterGrade(percentage: number, customGradingSystem?: GradingTier[] | null): string {
+  return getGradeEvaluation(percentage, customGradingSystem).grade
 }
 
 export function getLetterGradeColor(grade: string): string {
-  switch (grade) {
-    case 'A': return 'text-emerald-600 dark:text-emerald-400' // green
-    case 'B': return 'text-blue-600 dark:text-blue-400'       // blue
-    case 'C': return 'text-yellow-600 dark:text-yellow-400'   // yellow
-    case 'F': return 'text-red-600 dark:text-red-400'         // red
-    default: return 'text-gray-600 dark:text-gray-400'
-  }
+  return getGradeColorAndBg(grade).color
 }
 
 export function getLetterGradeBgColor(grade: string): string {
-  switch (grade) {
-    case 'A': return 'bg-emerald-100 dark:bg-emerald-900/30'
-    case 'B': return 'bg-blue-100 dark:bg-blue-900/30'
-    case 'C': return 'bg-yellow-100 dark:bg-yellow-900/30'
-    case 'F': return 'bg-red-100 dark:bg-red-900/30'
-    default: return 'bg-gray-100 dark:bg-gray-800'
-  }
+  return getGradeColorAndBg(grade).bg
 }
 
 export function formatPosition(position: number): string {
