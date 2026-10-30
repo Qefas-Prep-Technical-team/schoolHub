@@ -133,21 +133,44 @@ export const startCronJobs = () => {
 
   // ─── Database Keep-Alive Ping ────────────────────────────────────────────────
   // Supabase PgBouncer drops idle connections after ~5 minutes. This lightweight
-  // ping every 2 minutes keeps the pool alive, with active reconnect on failure.
+  // ping every 2 minutes keeps the pool alive.
+  // Note: Observe-only — does NOT initiate reconnects to prevent racing with request-level recovery.
+  // If 3 consecutive keep-alive pings fail, exit with code 1 so Render automatically restarts the container with a fresh engine.
+  let consecutivePingFailures = 0;
+
   cron.schedule('*/2 * * * *', async () => {
+    const { isReconnecting } = require('../config/database');
+    if (isReconnecting && isReconnecting()) {
+      console.log('[CRON] Database reconnect is currently in flight — skipping keep-alive ping.');
+      return;
+    }
+
     try {
       await prisma.$queryRaw`SELECT 1`;
+      if (consecutivePingFailures > 0) {
+        console.log(`[CRON] DB keep-alive recovered after ${consecutivePingFailures} failure(s).`);
+      }
+      consecutivePingFailures = 0;
       console.log('[CRON] DB keep-alive ping OK');
-    } catch (err) {
-      console.warn('[CRON] DB keep-alive ping failed — attempting reconnect:', (err as any)?.message || err);
-      try {
-        await prisma.$disconnect();
-        await prisma.$connect();
-        await prisma.$queryRaw`SELECT 1`;
-        console.log('[CRON] DB reconnected and verified OK');
-      } catch (reconnectErr) {
-        console.error('[CRON] DB reconnect also failed:', (reconnectErr as any)?.message || reconnectErr);
+    } catch (err: unknown) {
+      consecutivePingFailures++;
+      console.error(
+        `[CRON] ❌ DB keep-alive ping failed (consecutive failures: ${consecutivePingFailures}/3):`,
+        {
+          name: (err as Error)?.name,
+          message: (err as Error)?.message,
+          code: (err as Record<string, unknown>)?.code,
+          meta: (err as Record<string, unknown>)?.meta,
+        }
+      );
+
+      if (consecutivePingFailures >= 3) {
+        console.error(
+          '[CRON] 🚨 FATAL: 3 consecutive DB keep-alive pings failed. Exiting process with code 1 for clean Render container restart...'
+        );
+        process.exit(1);
       }
     }
   });
 };
+

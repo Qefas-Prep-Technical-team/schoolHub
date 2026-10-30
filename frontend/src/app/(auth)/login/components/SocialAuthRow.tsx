@@ -11,7 +11,6 @@ import {
   getTimezoneLocation,
   ClientDeviceInfo 
 } from "@/lib/utils/deviceDetector";
-import GoogleAuthConsentModal from "./GoogleAuthConsentModal";
 import Cookies from "js-cookie";
 
 interface SocialAuthRowProps {
@@ -28,7 +27,6 @@ export default function SocialAuthRow({
   className = "",
 }: SocialAuthRowProps) {
   const [loadingProvider, setLoadingProvider] = useState<"google" | "facebook" | null>(null);
-  const [showConsent, setShowConsent] = useState(false);
   const { data: settings } = usePublicPlatformSettings();
   const searchParams = useSearchParams();
 
@@ -125,21 +123,8 @@ export default function SocialAuthRow({
   };
 
   const handleGoogleClick = () => {
-    // On registration / sign up, ALWAYS ask for location and device permission first
-    if (mode === "signup") {
-      setShowConsent(true);
-      return;
-    }
-
-    // For sign-in, if user has never responded to permission prompt, show consent modal
-    const existingConsent = typeof window !== "undefined" ? localStorage.getItem("qefas_location_granted") : null;
-    if (existingConsent === null) {
-      setShowConsent(true);
-      return;
-    }
-
-    // If previously granted or denied, proceed with existing permission preference
-    handleProceed(existingConsent === "true");
+    // Directly request permission via native browser prompt (no custom popups)
+    handleProceed(true);
   };
 
   const handleFacebookClick = () => {
@@ -215,15 +200,6 @@ export default function SocialAuthRow({
         )}
       </div>
 
-      {/* Permission Consent Modal */}
-      <GoogleAuthConsentModal
-        isOpen={showConsent}
-        onClose={() => setShowConsent(false)}
-        onProceed={handleProceed}
-        isSubmitting={loadingProvider === "google"}
-        userType={userType}
-        mode={mode}
-      />
     </div>
   );
 }

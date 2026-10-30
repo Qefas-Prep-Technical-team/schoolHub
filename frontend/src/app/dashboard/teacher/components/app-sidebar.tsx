@@ -152,12 +152,15 @@ export function AppSidebar() {
             .map((group) => ({
                 ...group,
                 items: group.items.filter((item) => {
+                    if (dynamicFeatures && dynamicFeatures[item.featureKey] !== undefined) {
+                        return !!dynamicFeatures[item.featureKey];
+                    }
                     if (item.featureKey === 'offlineGrades') return true;
                     return !!(currentFeatures as any)[item.featureKey];
                 }),
             }))
             .filter((group) => group.items.length > 0);
-    }, [currentFeatures]);
+    }, [currentFeatures, dynamicFeatures]);
 
     return (
         <Sidebar

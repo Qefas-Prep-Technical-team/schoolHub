@@ -29,7 +29,7 @@ import { toast } from 'react-toastify';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
 export default function ExamsQuizzesOverview() {
-  const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment'>('exams');
+  const [activeTab, setActiveTab] = useState<'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment'>('all');
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [filters, setFilters] = useState({
@@ -53,7 +53,7 @@ export default function ExamsQuizzesOverview() {
   const itemsPerPage = 10;
 
   const isPersonal = selectedSchoolId === user?.id;
-  const category = activeTab === 'exams' ? 'EXAM' : activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM';
+  const category = activeTab === 'exams' ? 'EXAM' : activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : undefined;
 
   const filterId = (isPersonal || selectedSchoolId === 'all') ? undefined : selectedSchoolId;
 
@@ -88,11 +88,45 @@ export default function ExamsQuizzesOverview() {
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters.status, filters.class],
     queryFn: async () => {
+      if (activeTab === 'all') {
+        const [allExams, allPapers, allAssignments] = await Promise.all([
+          teacherService.getExams({
+            schoolId: filterId,
+            status: filters.status || undefined,
+            classId: filters.class || undefined,
+          }).catch(() => []),
+          teacherService.getSubjectPapers({
+            schoolId: filterId,
+          }).catch(() => []),
+          teacherService.getAssignments({
+            schoolId: filterId,
+            status: filters.status || undefined,
+            classId: filters.class || undefined,
+          }).catch(() => []),
+        ]);
+
+        const taggedExams = (allExams || []).map((e: any) => ({
+          ...e,
+          _tabType: (e.category === 'QUIZ' ? 'quizzes' : e.category === 'CA' ? 'ca' : 'exams') as 'exams' | 'quizzes' | 'ca',
+        }));
+        const taggedPapers = (allPapers || []).map((p: any) => ({
+          ...p,
+          _tabType: 'subject-papers' as const,
+          type: 'subject_paper',
+        }));
+        const taggedAssignments = (allAssignments || []).map((a: any) => ({
+          ...a,
+          _tabType: 'assignment' as const,
+          type: 'assignment',
+        }));
+
+        return [...taggedExams, ...taggedPapers, ...taggedAssignments];
+      }
       if (activeTab === 'subject-papers') {
         const result = await teacherService.getSubjectPapers({
           schoolId: filterId,
         });
-        return result;
+        return (result || []).map((p: any) => ({ ...p, _tabType: 'subject-papers', type: 'subject_paper' }));
       }
       if (activeTab === 'assignment') {
         const result = await teacherService.getAssignments({
@@ -100,7 +134,7 @@ export default function ExamsQuizzesOverview() {
           status: filters.status || undefined,
           classId: filters.class || undefined,
         });
-        return result;
+        return (result || []).map((a: any) => ({ ...a, _tabType: 'assignment', type: 'assignment' }));
       }
       const result = await teacherService.getExams({
         schoolId: filterId,
@@ -108,7 +142,10 @@ export default function ExamsQuizzesOverview() {
         status: filters.status || undefined,
         classId: filters.class || undefined,
       });
-      return result;
+      return (result || []).map((e: any) => ({
+        ...e,
+        _tabType: (e.category === 'QUIZ' ? 'quizzes' : e.category === 'CA' ? 'ca' : 'exams'),
+      }));
     },
   });
 
@@ -141,7 +178,7 @@ export default function ExamsQuizzesOverview() {
     setCurrentPage(1);
   };
 
-  const handleTabChange = (tab: 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment') => {
+  const handleTabChange = (tab: 'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment') => {
       setActiveTab(tab);
       setCurrentPage(1);
   };
@@ -166,19 +203,53 @@ export default function ExamsQuizzesOverview() {
       });
     }
 
-    // Filter quizzes strictly according to teacher permissions (client-side fallback)
-    const mySubjectIds = subjectsData?.map((s: any) => s.id || s.subjectId) || [];
-    if (activeTab === 'quizzes' && !isPersonal) {
+    // Strict assigned-subject filter for CA, quizzes, subject-papers, and assignments
+    const mySubjectIds = new Set((subjectsData || []).map((s: any) => s.id || s.subjectId).filter(Boolean));
+    const mySubjectNames = new Set((subjectsData || []).map((s: any) => (s.name || s.subject?.name || '').toLowerCase()).filter(Boolean));
+    const hasSubjectRestriction = mySubjectIds.size > 0 || mySubjectNames.size > 0;
+
+    if (!isPersonal && hasSubjectRestriction) {
       list = list.filter(item => {
+        const effectiveType = item._tabType || (
+          item.type === 'assignment' ? 'assignment' :
+          item.type === 'subject_paper' ? 'subject-papers' :
+          item.category === 'QUIZ' ? 'quizzes' :
+          item.category === 'CA' ? 'ca' :
+          'exams'
+        );
+
+        // Terminal exams can be viewed by class teachers even across multiple subjects
+        if (effectiveType === 'exams') return true;
+
+        // For CA, quizzes, subject-papers, and assignments:
+        // Must belong to teacher's assigned subject OR be created by the teacher
         const isCreator = item.teacherId === user?.id || item.teacherId === (user as any)?.tenantId;
-        const isSubjectAssigned = mySubjectIds.includes(item.subjectId) || 
-                                  mySubjectIds.includes(item.subject?.id);
+        if (isCreator) return true;
+
+        const directSubId = item.subjectId || item.subject?.id;
+        const directSubName = (item.subject?.name || (typeof item.subject === 'string' ? item.subject : '')).toLowerCase();
+
+        if (directSubId && mySubjectIds.has(directSubId)) return true;
+        if (directSubName && mySubjectNames.has(directSubName)) return true;
+
+        // Check assignedTeachers if provided on the paper/exam
         const isAssignedDirectly = item.assignedTeachers?.some((t: any) => t.id === user?.id || t.id === (user as any)?.tenantId);
-        return isCreator || isSubjectAssigned || isAssignedDirectly;
+        if (isAssignedDirectly) return true;
+
+        // Check attached papers (for CA or quiz containers)
+        if (Array.isArray(item.subjectExamPapers) && item.subjectExamPapers.length > 0) {
+          return item.subjectExamPapers.some((sep: any) => {
+            const paper = sep.subjectPaper || sep;
+            const subId = paper.subjectId || paper.subject?.id;
+            const subName = (paper.subject?.name || '').toLowerCase();
+            const paperCreator = paper.teacherId === user?.id || paper.teacherId === (user as any)?.tenantId;
+            return (subId && mySubjectIds.has(subId)) || (subName && mySubjectNames.has(subName)) || paperCreator;
+          });
+        }
+
+        return false;
       });
     }
-    // Note: subject-papers tab filtering (creator/assigned-subject + category exclusion) is done in the backend
-
 
     // Filter by date client-side
     if (filters.date) {
@@ -197,7 +268,7 @@ export default function ExamsQuizzesOverview() {
     }
 
     return list;
-  }, [data, filters.class, filters.subject, filters.date, activeTab, isPersonal, subjectsData, user?.id]);
+  }, [data, filters.class, filters.subject, filters.date, isPersonal, subjectsData, user?.id]);
 
   // On mobile screens, default to Grid View
   useEffect(() => {
@@ -233,6 +304,7 @@ export default function ExamsQuizzesOverview() {
 
     try {
       const tabLabels: Record<string, string> = {
+        'all': 'All Assessments',
         'exams': 'Exams',
         'quizzes': 'Quizzes',
         'subject-papers': 'Subject Papers',
@@ -431,6 +503,13 @@ export default function ExamsQuizzesOverview() {
             {/* Scrollable Category Tabs */}
             <div className="relative w-full md:w-auto overflow-hidden">
               <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl sm:rounded-2xl shadow-inner border border-emerald-100/60 dark:border-emerald-800/30 overflow-x-auto no-scrollbar scroll-smooth overscroll-x-contain">
+                <TabButton 
+                  active={activeTab === 'all'} 
+                  onClick={() => handleTabChange('all')}
+                  icon={LayoutGrid}
+                  label="All Assessments"
+                  count={activeTab === 'all' ? filteredData.length : undefined}
+                />
                 <TabButton 
                   active={activeTab === 'exams'} 
                   onClick={() => handleTabChange('exams')}

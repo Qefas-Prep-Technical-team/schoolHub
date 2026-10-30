@@ -12,7 +12,7 @@ interface PageHeaderProps {
   title: string;
   onCreateNew: (category: 'EXAM' | 'QUIZ' | 'CA' | 'ASSIGNMENT') => void;
   onAddPaper?: () => void;
-  activeTab?: 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
+  activeTab?: 'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
   onExportPDF?: () => void;
   onExportCSV?: () => void;
   isExporting?: boolean;

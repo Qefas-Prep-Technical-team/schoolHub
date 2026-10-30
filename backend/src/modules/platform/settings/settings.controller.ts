@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../../config/database";
+import prisma, { withRetry } from "../../../config/database";
 import { createActivityLog } from "../logs/logs.controller";
 import { handleError } from "../../../utils/error-handler";
 
@@ -34,11 +34,20 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
       "sub_enforced_schools",
       "sub_enforced_teachers",
       "sub_enforced_parents",
-      "sub_enforced_students"
+      "sub_enforced_students",
+      "admin_pages_visibility",
+      "admin_role_permissions",
+      "teacher_pages_visibility",
+      "student_pages_visibility",
+      "parent_pages_visibility"
     ];
-    const settings = await prisma.platformSettings.findMany({
-      where: { key: { in: publicKeys } }
-    });
+    const settings = await withRetry(
+      () =>
+        prisma.platformSettings.findMany({
+          where: { key: { in: publicKeys } },
+        }),
+      "getPublicPlatformSettings_platformSettings_findMany"
+    );
     
     const settingsMap = settings.reduce((acc: any, s: any) => {
       acc[s.key] = s.value;
@@ -51,9 +60,13 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
     if (settingsMap.maintenance_mode === undefined) settingsMap.maintenance_mode = "false";
 
     // Fetch Google Login feature status for role-specific checks
-    const googleLoginFeature = await prisma.platformFeature.findUnique({
-      where: { featureKey: "googleLogin" }
-    });
+    const googleLoginFeature = await withRetry(
+      () =>
+        prisma.platformFeature.findUnique({
+          where: { featureKey: "googleLogin" },
+        }),
+      "getPublicPlatformSettings_googleLoginFeature_findUnique"
+    );
 
     if (googleLoginFeature) {
       settingsMap.google_login_feature = {
@@ -73,9 +86,13 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
     }
 
     // Fetch Facebook Login feature status for role-specific checks
-    const facebookLoginFeature = await prisma.platformFeature.findUnique({
-      where: { featureKey: "facebookLogin" }
-    });
+    const facebookLoginFeature = await withRetry(
+      () =>
+        prisma.platformFeature.findUnique({
+          where: { featureKey: "facebookLogin" },
+        }),
+      "getPublicPlatformSettings_facebookLoginFeature_findUnique"
+    );
 
     if (facebookLoginFeature) {
       settingsMap.facebook_login_feature = {
@@ -98,6 +115,7 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
     return handleError(res, error, "settings.getPublicPlatformSettings");
   }
 };
+
 
 /**
  * Update a specific platform setting

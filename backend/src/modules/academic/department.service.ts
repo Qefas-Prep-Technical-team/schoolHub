@@ -140,19 +140,36 @@ export const getDepartmentsService = async ({
   currentUserId,
   currentUserType,
   schoolId,
+  classId,
 }: {
   currentUserId: string;
   currentUserType: UserRole;
   schoolId?: string;
+  classId?: string;
 }) => {
   if (currentUserType === UserRole.ADMIN) {
     if (!schoolId) return [];
+
+    const where: any = {
+      isArchived: false,
+      schoolId,
+      scope: AcademicOwnershipScope.SCHOOL,
+    };
+
+    if (classId) {
+      // Check if this class has specific departments attached
+      const classDeptsCount = await prisma.classDepartment.count({
+        where: { classId },
+      });
+      if (classDeptsCount > 0) {
+        where.classes = {
+          some: { classId },
+        };
+      }
+    }
+
     return prisma.department.findMany({
-      where: {
-        isArchived: false,
-        schoolId,
-        scope: AcademicOwnershipScope.SCHOOL
-      },
+      where,
       include: {
         subjects: { include: { subject: true } },
         _count: {

@@ -16,10 +16,7 @@ export const canTeacherManageSubject = async ({
 
   if (!subject || subject.isArchived) return false;
 
-  if (
-    subject.scope === AcademicOwnershipScope.PERSONAL &&
-    subject.teacherId === teacherId
-  ) {
+  if (subject.teacherId === teacherId) {
     return true;
   }
 

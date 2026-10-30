@@ -17,63 +17,127 @@ const prisma =
 
 if (process.env.NODE_ENV === "development") global.prisma = prisma;
 
-// Track whether we know the connection is healthy
-let connectionHealthy = true;
+// Single-flight reconnect promise: guarantees only one reconnect is ever in flight
 let reconnectPromise: Promise<void> | null = null;
+let consecutiveConnectionErrors = 0;
 
-async function performReconnect(): Promise<void> {
+/**
+ * Returns true if a database reconnect is currently in progress.
+ */
+export function isReconnecting(): boolean {
+  return reconnectPromise !== null;
+}
+
+/**
+ * Single-flight reconnect handler.
+ * If a reconnect is already running, callers await the same promise instead of starting another.
+ * Catches disconnect errors so engine tear-down does not abort reconnect, then connects with no short timeout.
+ */
+export async function performReconnect(): Promise<void> {
   if (reconnectPromise) return reconnectPromise;
-  
+
   reconnectPromise = (async () => {
     try {
-      // Add a 5 second timeout to reconnect attempts to prevent deadlocks
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Reconnect timed out")), 5000)
-      );
-      
-      await Promise.race([
-        (async () => {
-          await prisma.$disconnect();
-          await prisma.$connect();
-        })(),
-        timeoutPromise
-      ]);
-      
-      connectionHealthy = true;
+      console.warn("[DB] Performing single-flight database reconnection...");
+      await prisma.$disconnect().catch((discErr) => {
+        console.warn("[DB] prisma.$disconnect() caught error during reconnect:", discErr);
+      });
+      await prisma.$connect();
+      console.log("[DB] ✅ Database reconnected successfully.");
+      consecutiveConnectionErrors = 0;
+    } catch (connErr) {
+      console.error("[DB] ❌ Reconnect attempt failed:", connErr);
+      throw connErr;
     } finally {
       reconnectPromise = null;
     }
   })();
-  
+
   return reconnectPromise;
 }
 
-// Listen to Prisma's query events to detect connection failures
-prisma.$on("error" as never, () => {
-  connectionHealthy = false;
+// Listen to Prisma's error events for observability
+prisma.$on("error" as never, (err: unknown) => {
+  console.error("[DB Event] Prisma engine error encountered:", err);
 });
 
 /**
- * Wraps a Prisma operation with automatic reconnect-and-retry logic.
- * Retries up to `maxAttempts` times with exponential backoff.
- * This handles the window where pgBouncer drops idle connections
- * before the CRON keep-alive has had a chance to re-establish them.
+ * Identifies whether an error is a genuine connection/network issue.
+ * Explicitly excludes validation, unique constraints, and business logic errors.
+ */
+export function isPrismaConnectionError(error: unknown): boolean {
+  if (!error) return false;
+
+  // Initialization errors (e.g. engine binary crash, startup failure)
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    return true;
+  }
+
+  // Known Request Errors with connection-specific codes
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    // P1001: Can't reach database server
+    // P1002: The database server was reached but timed out
+    // P1008: Operations timed out
+    // P1017: Server has closed the connection
+    if (["P1001", "P1002", "P1008", "P1017"].includes(error.code)) {
+      return true;
+    }
+  }
+
+  // Unknown Request Errors (e.g. socket drops mid-query)
+  if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+    return true;
+  }
+
+  const errObj = error as Record<string, unknown>;
+  const errName = typeof errObj.name === "string" ? errObj.name : "";
+  if (
+    errName === "PrismaClientInitializationError" ||
+    errName === "PrismaClientUnknownRequestError"
+  ) {
+    return true;
+  }
+
+  const errorMessage =
+    error instanceof Error ? error.message : typeof error === "string" ? error : JSON.stringify(error);
+
+  const connectionKeywords = [
+    "Engine is not yet connected",
+    "Server has closed the connection",
+    "Can't reach database server",
+    "too many connections",
+    "Connection terminated unexpectedly",
+    "terminating connection",
+    "Connection lost",
+    "socket has been closed",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "EHOSTUNREACH",
+    "ENETUNREACH"
+  ];
+
+  return connectionKeywords.some((keyword) =>
+    errorMessage.toLowerCase().includes(keyword.toLowerCase())
+  );
+}
+
+/**
+ * Wraps a Prisma operation with single-flight automatic reconnect-and-retry logic.
+ * Retries up to `maxAttempts` times with exponential backoff and randomized jitter.
+ * Exclusively triggers reconnection for real connection errors.
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
   label = "prisma operation",
   maxAttempts = 3
 ): Promise<T> {
-  // If we already know the connection is broken, reconnect proactively
-  if (!connectionHealthy) {
-    console.warn(`[DB] Proactive reconnect before "${label}" (connection was unhealthy)...`);
+  // If a reconnect is currently running, wait for it first
+  if (reconnectPromise) {
+    console.log(`[DB] Operation "${label}" waiting for existing single-flight reconnect to finish...`);
     try {
-      await performReconnect();
-      console.log(`[DB] Proactive reconnect succeeded.`);
-    } catch (reconnectErr) {
-      console.error(`[DB] Proactive reconnect failed:`, reconnectErr);
-      // Continue anyway — the operation may still succeed if Prisma
-      // auto-reconnects internally
+      await reconnectPromise;
+    } catch {
+      // If it failed, loop below will attempt its own guarded reconnect cycle
     }
   }
 
@@ -82,43 +146,47 @@ export async function withRetry<T>(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const result = await operation();
-      connectionHealthy = true;
+      consecutiveConnectionErrors = 0;
       return result;
     } catch (error) {
       lastError = error;
 
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const isConnectionError =
-        error instanceof Prisma.PrismaClientInitializationError ||
-        (error instanceof Prisma.PrismaClientKnownRequestError &&
-          ["P1001", "P1002", "P1008", "P1017"].includes(error.code)) ||
-        errorMessage.includes("Engine is not yet connected") ||
-        errorMessage.includes("Connection terminated unexpectedly") ||
-        errorMessage.includes("terminating connection") ||
-        (error as any)?.name === "PrismaClientInitializationError" ||
-        (error as any)?.name === "PrismaClientUnknownRequestError";
+      const isConnError = isPrismaConnectionError(error);
 
-      if (!isConnectionError || attempt === maxAttempts) {
-        // Non-connection error, or we've exhausted all retries
-        console.error(`[DB] Operation "${label}" failed on attempt ${attempt}. isConnectionError: ${isConnectionError}`, error);
+      // Log full error details on first failure or when connection error occurs
+      if (attempt === 1 || isConnError) {
+        console.error(`[DB] Operation "${label}" failed on attempt ${attempt}/${maxAttempts}. (isConnectionError: ${isConnError})`, {
+          name: (error as Error)?.name,
+          message: (error as Error)?.message,
+          code: (error as Record<string, unknown>)?.code,
+          meta: (error as Record<string, unknown>)?.meta,
+          stack: (error as Error)?.stack,
+        });
+      }
+
+      // Do NOT retry or reconnect if this is not a connection-level error
+      if (!isConnError || attempt === maxAttempts) {
         throw error;
       }
 
-      connectionHealthy = false;
-      const backoffMs = 500 * attempt; // 500ms, 1000ms, 1500ms ...
+      consecutiveConnectionErrors++;
+
+      // Exponential backoff with jitter: (500 * 2^(attempt - 1)) + (0 to 300ms random)
+      const baseDelay = 500 * Math.pow(2, attempt - 1); // 500ms, 1000ms, 2000ms
+      const jitter = Math.floor(Math.random() * 300);
+      const backoffMs = baseDelay + jitter;
+
       console.warn(
-        `[DB] Connection error on "${label}" (attempt ${attempt}/${maxAttempts}). ` +
-        `Reconnecting in ${backoffMs}ms...`
+        `[DB] Connection error on "${label}" (attempt ${attempt}/${maxAttempts}). Waiting ${backoffMs}ms before single-flight reconnect...`
       );
 
-      await new Promise(res => setTimeout(res, backoffMs));
+      await new Promise((res) => setTimeout(res, backoffMs));
 
       try {
         await performReconnect();
-        console.log(`[DB] Reconnected. Retrying "${label}" (attempt ${attempt + 1})...`);
+        console.log(`[DB] Reconnect complete. Retrying "${label}" (attempt ${attempt + 1}/${maxAttempts})...`);
       } catch (reconnectErr) {
-        console.error(`[DB] Reconnect failed on attempt ${attempt}:`, reconnectErr);
-        // Try the operation anyway on next loop iteration
+        console.error(`[DB] Single-flight reconnect failed on attempt ${attempt}:`, reconnectErr);
       }
     }
   }
@@ -127,3 +195,4 @@ export async function withRetry<T>(
 }
 
 export default prisma;
+

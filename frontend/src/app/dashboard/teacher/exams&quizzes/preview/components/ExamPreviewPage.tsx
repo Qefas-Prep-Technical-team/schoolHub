@@ -24,6 +24,7 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import { examService } from '@/lib/api/services/examService';
 import { SubjectExamQuestion, SubjectPaper } from '@/lib/api/services/examService';
 import { useTeacherProfile } from '@/lib/api/hooks/useTeacher';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import {
   Dialog,
   DialogContent,
@@ -62,9 +63,12 @@ export default function ExamPreviewPage({
   const type = providedType || searchParams?.get('type') || 'exam';
   const id = providedId || searchParams?.get('id');
 
-  // --- Auth Gate: verify teacher has an active school connection ---
-  const { data: profile, isLoading: isLoadingProfile } = useTeacherProfile();
-  const hasSchoolAccess = !!(profile?.activeSchoolId || profile?.primarySchoolId);
+  // --- Auth Gate: verify user (ADMIN or connected TEACHER) has school access ---
+  const { user } = useAuthStore();
+  const isAdmin = user?.userType === 'ADMIN';
+  const { data: profile, isLoading: isLoadingProfileQuery } = useTeacherProfile();
+  const isLoadingProfile = !isAdmin && isLoadingProfileQuery;
+  const hasSchoolAccess = isAdmin || !!(profile?.activeSchoolId || profile?.primarySchoolId || user?.schools?.length);
 
   const [activePaperIndex, setActivePaperIndex] = useState(0);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
@@ -73,20 +77,46 @@ export default function ExamPreviewPage({
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt?: string } | null>(null);
 
   // Fetch the full structure — only when user has a confirmed school connection
-  const { data: livePapers, isLoading: isLoadingPapers } = useQuery({
+  const { data: livePapers, isLoading: isLoadingPapers } = useQuery<SubjectPaper[]>({
     queryKey: ['previewPapers', id, type],
     queryFn: async () => {
       if (!id) return [];
       
       if (type === 'subject_paper') {
         const paper = await examService.getPaperById('none', id);
-        return [paper];
+        return paper ? [paper] : [];
       } else if (type === 'exam' || type === 'quiz' || type === 'ca') {
-        const papers = await examService.getExamPapers(id);
+        let papers: any[] = [];
+        try {
+          papers = await examService.getExamPapers(id);
+        } catch {
+          papers = [];
+        }
+
+        // If no linked papers found via examId, check if id is itself a subject paper
+        if (!papers || papers.length === 0) {
+          try {
+            const directPaper = await examService.getPaperById('none', id);
+            if (directPaper && directPaper.id) {
+              return [directPaper];
+            }
+          } catch {
+            // Not a direct paper
+          }
+          return [];
+        }
+
         const fullPapers = await Promise.all(
-          papers.map(p => examService.getPaperById(id, p.id))
+          papers.map(async (p) => {
+            try {
+              return await examService.getPaperById(id, p.id);
+            } catch {
+              // Fallback to the paper summary if getPaperById fails
+              return p;
+            }
+          })
         );
-        return fullPapers;
+        return fullPapers.filter(Boolean);
       }
       return [];
     },
@@ -105,28 +135,31 @@ export default function ExamPreviewPage({
   const questions = useMemo(() => {
     if (!activePaper?.questions) return [];
     
-    return activePaper.questions.sort((a, b) => a.order - b.order).map((q, index) => {
-      const options = [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean) as string[];
-      let correctIndex = undefined;
-      
-      if (q.correctAnswer) {
-        const matchingIndex = options.findIndex(
-          (opt, i) => 
-            opt === q.correctAnswer || 
-            (q.correctAnswer.length === 1 && String.fromCharCode(65 + i) === q.correctAnswer)
-        );
-        if (matchingIndex !== -1) {
-          correctIndex = matchingIndex;
+    return activePaper.questions
+      .slice()
+      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+      .map((q: any, index: number) => {
+        const options = [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean) as string[];
+        let correctIndex = undefined;
+        
+        if (q.correctAnswer) {
+          const matchingIndex = options.findIndex(
+            (opt, i) => 
+              opt === q.correctAnswer || 
+              (q.correctAnswer.length === 1 && String.fromCharCode(65 + i) === q.correctAnswer)
+          );
+          if (matchingIndex !== -1) {
+            correctIndex = matchingIndex;
+          }
         }
-      }
 
-      return {
-        id: index + 1,
-        text: q.question,
-        options,
-        correctAnswer: correctIndex,
-      };
-    });
+        return {
+          id: index + 1,
+          text: q.question,
+          options,
+          correctAnswer: correctIndex,
+        };
+      });
   }, [activePaper]);
 
   const examData = {

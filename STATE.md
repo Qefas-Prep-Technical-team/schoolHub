@@ -17,6 +17,259 @@
 
 # Project State: Qefas Hub
 
+- [x] **Page Controls Redesign (Teacher, Student, Parent), Registry & Admin Modules Tab Removal & Production Build Verification (Friday, October 30, 2026)**:
+  - **Removal of Redundant 'Registry' and 'Admin Modules' Tabs**:
+    - Removed `admin` (Admin Modules) and `registry` (Entitlement Registry) tabs from [`console/features/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/page.tsx), streamlining the view down to the 4 core dashboards:
+      1. **Admin Pages**
+      2. **Teacher Hub**
+      3. **Student Portal**
+      4. **Parent Portal**
+  - **Redesigned Teacher, Student & Parent Page Controls**:
+    - Built [`rolePagesManifest.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/components/rolePagesManifest.ts) (79 lines) covering all actual pages and sub-routes for Teacher (22 pages), Student (15 pages), and Parent (14 pages).
+    - Created modular [`RolePagesControlContent.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/components/RolePagesControlContent.tsx) (234 lines) supporting live section filtering, instant visibility toggles, subscription enforcement switches, and bulk show/hide actions.
+  - **Visibility & Direct Route Access Enforcement**:
+    - Updated [`support.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/support/support.controller.ts) to overlay saved `${role}_pages_visibility` directly into `/api/platform/config/features/:role`.
+    - Whitelisted `teacher_pages_visibility`, `student_pages_visibility`, and `parent_pages_visibility` in [`settings.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/settings/settings.controller.ts).
+    - Updated navigation sidebars and mobile drawers across all three portals:
+      - Teacher: [`app-sidebar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/app-sidebar.tsx) & [`TeacherMobileDrawer.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TeacherMobileDrawer.tsx)
+      - Student: [`app-sidebar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/app-sidebar.tsx) & [`StudentMobileDrawer.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentMobileDrawer.tsx)
+      - Parent: [`app-sidebar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/app-sidebar.tsx) & [`ParentMobileDrawer.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/parent/components/ParentMobileDrawer.tsx)
+    - Enhanced [`FeatureGuard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/auth/FeatureGuard.tsx): If a user attempts to navigate directly to a disabled page's URL, the guard renders an informative "Section Unavailable" state with an immediate redirect button back to their dashboard.
+  - **Verification**:
+    - Backend TypeScript build (`npx tsc --noEmit`): Clean exit with code 0 (`task-2775`).
+    - Frontend TypeScript check (`npx tsc --noEmit --skipLibCheck`): Clean exit with code 0 (`task-2833`).
+    - Frontend Production Build (`npm run build`): Compiled successfully across all 150+ routes with code 0 (`task-2856`).
+
+- [x] **Platform Console Features Redesign & Admin Pages Access Control Matrix (Friday, October 30, 2026)**:
+  - **Console Features Redesign (`/console/features`)**:
+    - Transformed [`console/features/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/page.tsx) into a modern, accessible interface with modular tab views for Admin Pages, Admin Modules, Teacher Hub, Student Portal, Parent Portal, and Entitlement Registry.
+    - Extracted dedicated [`AdminPagesControlContent.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/components/AdminPagesControlContent.tsx) and [`adminPagesManifest.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/components/adminPagesManifest.ts).
+    - Built and integrated [`AdminModulesContent.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/features/components/AdminModulesContent.tsx) for the **Admin Modules** tab: completely redesigned to align with all 30+ visible admin dashboard pages and routes, supporting live module toggling and sidebar visibility syncing.
+  - **Granular Admin Page Visibility & Sub-Role RBAC Matrix**:
+    - **Page Visibility Toggles**: Administrators can toggle visibility of any page on the Admin Dashboard (`admin_pages_visibility`) on or off with a single click. When disabled, the page is hidden from the sidebar across all devices.
+    - **Sub-Role Access Control**: Enabled granular selection of which sub-role (`SCHOOL_OWNER`, `PRINCIPAL`, `REGISTRAR`, `ACCOUNTANT`, `SUPPORT`, `ADMIN`) can access each admin dashboard page (`admin_role_permissions`).
+  - **Backend Settings & Route Access Support**:
+    - Updated [`settings.route.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/settings/settings.route.ts) to authorize both `OWNER` and `TECH_ADMIN` to update settings and batch settings.
+    - Whitelisted `admin_pages_visibility` and `admin_role_permissions` in `getPublicPlatformSettings` in [`settings.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/platform/settings/settings.controller.ts) allowing the frontend dashboard sidebars to synchronize permission shifts in real-time.
+  - **Sidebar & Mobile Drawer Dynamic Synchronization**:
+    - Enhanced [`app-sidebar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/app-sidebar.tsx) and [`AdminMobileDrawer.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/AdminMobileDrawer.tsx) to evaluate custom visibility and role permissions from `usePublicPlatformSettings()`.
+  - **Verification**:
+    - Backend TypeScript build (`npx tsc --noEmit`): Clean exit with code 0 (`task-2614`).
+    - Frontend TypeScript build (`npx tsc --noEmit --skipLibCheck`): Clean exit with code 0 (`task-2621`).
+
+- [x] **Login Flow Architecture, Revoked Device De-Trusting, Admin Skeleton & Modular Decomposition (Friday, October 30, 2026)**:
+  - **Comprehensive Login Flow Architecture**:
+    - Created [`docs/LOGIN_FLOW.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/LOGIN_FLOW.md) documenting dual login channels (Email/Password vs Google OAuth SSO), 365-day trusted device cookie caching model, pre-auth verification redirection, and device security alerts.
+    - Registered specification in [`docs/README.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md).
+  - **Trusted Device Revocation Architecture**:
+    - In [`auth.device.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.device.ts): Implemented and exported `clearDeviceVerifiedCookie(res)` to wipe the 365-day persistent device cookie.
+    - In [`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts): Updated `revokeUserSession` to clear `deviceVerified` cookie in addition to session tokens when the user revokes their device session from settings, ensuring revoked devices are completely de-trusted and required to verify anew.
+  - **Admin Board High-Contrast Loading Skeleton**:
+    - Created [`loading.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/loading.tsx) under `/dashboard/admin/` with balanced slate opacity styling (`dark:bg-slate-700/80` and `bg-slate-200/90`) ensuring distinct contrast on both dark and light modes.
+  - **Admin Dashboard Modular Component Decomposition**:
+    - Decomposed monolithic [`page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/page.tsx) from 338 lines down to 166 lines by cleanly extracting:
+      - [`AdminStatsGrid.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/dashboard/AdminStatsGrid.tsx) (165 lines — 4 responsive metric cards with tooltips)
+      - [`AdminTodayGlance.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/dashboard/AdminTodayGlance.tsx) (79 lines — live operational summary card)
+  - **Verification**:
+    - Backend TypeScript build (`npx tsc --noEmit`): Clean exit with code 0 (`task-2408`).
+    - Frontend TypeScript build (`npx tsc --noEmit --skipLibCheck`): Clean exit with code 0 (`task-2379`).
+
+- [x] **Registration Flow Architecture, Native Browser Permission & Modular Decomposition (Friday, October 30, 2026)**:
+  - **Comprehensive Architecture Documentation**:
+    - Created [`docs/REGISTRATION_FLOW.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/REGISTRATION_FLOW.md) detailing dual registration paths (Social OAuth vs Email/Password + OTP), 6-digit cryptographic verification, native browser permission handling, and onboarding redirection with pending invite preservation.
+    - Added dedicated Section 5 on **Onboarding Navigation & Session Retention Architecture** explaining the root causes and resolutions for the premature "bounced to login or dashboard" bug.
+    - Registered specification in [`docs/README.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md).
+  - **Onboarding Session Retention & Route Guard Fixes**:
+    - In [`(auth)/onboarding/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx): Guarded auth evaluation in `OnboardingContent` with `if (!isInitialized) return;` preventing premature `router.replace('/login')` while Zustand's persisted state is hydrating.
+    - In [`useProtectedRoute.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/hooks/useProtectedRoute.ts): Permitted authenticated users on `/onboarding` to remain on onboarding without being forcibly kicked to `/dashboard`, and honored custom `redirectTo` from `AuthLayout`.
+    - In [`(auth)/layout.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/layout.tsx): Prevented circular redirect loops by returning empty string when the browser is already at `/onboarding`.
+  - **Native Browser Permission Handling (Zero Custom Popups)**:
+    - Updated [`SocialAuthRow.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/SocialAuthRow.tsx) and [`GoogleLoginButton.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/components/GoogleLoginButton.tsx) to completely bypass the custom `GoogleAuthConsentModal` popup.
+    - Trigger permission requests directly via the browser's native `navigator.geolocation.getCurrentPosition` API, seamlessly falling back to system timezone and client hints without intermediary dialogs.
+  - **School Registration Subdomain Auto-Sync & Modular Decomposition**:
+    - Fixed subdomain suggestion in `SchoolCard.tsx` to automatically synchronize with the typed `schoolName` in real time, matching backend normalization (`slugify`). Uses `previousAutoSubdomainRef` so manual custom edits by the user are never overwritten, but editing the school name keeps the suggested subdomain in sync.
+    - Decomposed monolithic `SchoolCard.tsx` (previously 788 lines) into clean, focused subcomponents under `frontend/src/app/(auth)/signup/school/components/`:
+      - [`SchoolCard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolCard.tsx) (228 lines — container & form orchestration)
+      - [`SchoolFormHeader.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolFormHeader.tsx) (88 lines — mode toggle & header)
+      - [`SchoolRegisterForm.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolRegisterForm.tsx) (228 lines — register inputs, synced subdomain preview, terms)
+      - [`SchoolJoinForm.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolJoinForm.tsx) (136 lines — admin join by school code)
+      - [`SchoolVisualPanel.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolVisualPanel.tsx) (148 lines — 3D artwork, features carousel, trust stats)
+      - [`SchoolModals.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolModals.tsx) (97 lines — accessible Privacy and Terms modals)
+  - **Separation of Device Verification vs Email Verification**:
+    - Decoupled previously conflated email account activation and new-device security verification into two purpose-built components:
+      - [`EmailVerificationCard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/verification/components/EmailVerificationCard.tsx) (190 lines): Used for brand new registrations (`isDeviceVerification: false`), sets `hasCompletedOnboarding: false`, and routes to `/select-plan` or `/onboarding?type={role}`.
+      - [`DeviceVerificationCard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/verification/components/DeviceVerificationCard.tsx) (192 lines): Used for existing users signing in from unrecognized devices/locations (`isDeviceVerification: true`), consumes `preAuthToken`, sets `hasCompletedOnboarding: true`, and navigates directly to `/dashboard/{role}` (bypassing onboarding).
+      - [`VerificationCard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/verification/components/VerificationCard.tsx) (23 lines): Serves as a clean router dispatcher checking query params (`reason=device`) and `sessionStorage.getItem('preAuthToken')`.
+    - Documented complete architecture, separation matrix, and dispatcher pattern in Section 6 of [`docs/REGISTRATION_FLOW.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/REGISTRATION_FLOW.md).
+
+  - **Post-Verification Session Persistence Fix (`NO_SESSION_ROW` Resolution)**:
+    - Fixed `/api/auth/verify-code` in [`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) which previously issued an `accessToken` without calling `generateRefreshToken` or creating a session row in the database.
+    - Implemented `issueSessionTokens` helper across all 4 roles (`ADMIN`, `TEACHER`, `STUDENT`, `PARENT`) issuing both access and refresh tokens, setting `token` and `refreshToken` cookies, and registering the session in the database so subsequent API calls do not fail `authMiddleware`'s `NO_SESSION_ROW` validation check.
+  - **Select-Plan & Dashboard Circular Redirect Loop Resolution**:
+    - Identified circular redirection bouncing between `/select-plan` and `/dashboard/admin`:
+      1. [`useProtectedRoute.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/hooks/useProtectedRoute.ts) on `/dashboard/admin` checked `user.plan`, found none, and redirected to `/select-plan`.
+      2. `/select-plan` lives inside the `(auth)` route group wrapped by [`AuthLayout.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/layout.tsx), which ran `useProtectedRoute({ requireAuth: false })` and assumed any authenticated user with completed onboarding must be kicked to `/dashboard/${safeType}` (`/dashboard/admin`).
+    - Fixed [`AuthLayout.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/layout.tsx) and [`useProtectedRoute.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/hooks/useProtectedRoute.ts) to explicitly allow users to remain on `/select-plan` and `/checkout` routes without triggering the reverse redirect to the dashboard.
+    - Verified clean TypeScript build (`npx tsc --noEmit --skipLibCheck`) exiting with code 0.
+  - **Institutional AI Usage Scoping & Plan Limits Sync**:
+    - Fixed `getSchoolUsageService` in [`quota.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/subscription/quota.service.ts) which previously counted all global system-wide `aiUsageLog` entries across the entire database instead of scoping to users of the active school (`schoolUserIds`).
+    - Synced `PLAN_LIMITS` in [`plan.constants.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/subscription/plan.constants.ts) to include `INSTITUTIONAL BASIC` (50 students, 200 exams, 10 classes, 10 teachers, 2GB storage, 20 AI credits) matching canonical plan definitions in [`plans.data.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/payment/plans.data.ts), resolving the `0` limit and `17` shared count issue for new schools.
+  - **Admin Dashboard Sub-Role RBAC & School Owner Billing Access Fix (`/dashboard/admin/billing`)**:
+    - Identified root cause of *"Access Restricted: Billing and subscription management is restricted to the School Owner and Accountant only"* when logging into a newly created school account:
+      1. When verifying email OTP at `/api/auth/verify-code`, `verifyEmailCode` in [`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) confirmed `isSchoolOwner = true` but omitted `adminRole` from the returned user object (only setting generic `role: "ADMIN"`).
+      2. [`AdminRoleGuard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/auth/AdminRoleGuard.tsx) inspected `user.adminRole || user.role`, evaluating to `"ADMIN"`, which failed the allowed roles check `["SCHOOL_OWNER", "ACCOUNTANT"]`.
+    - **Full Resolution Across Subsystems**:
+      1. In [`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts): Explicitly set `adminRole: resolvedAdminRole` (evaluating to `"SCHOOL_OWNER"` for school creators) in `normalizedAdmin` and the response payload.
+      2. In [`auth-store.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/auth-store.ts): Enhanced `normalizeUser` to automatically derive `adminRole` and `isSchoolOwner` from `user.adminRole`, `user.isSchoolOwner`, and the user's `schools` affiliation list.
+      3. In [`AdminRoleGuard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/auth/AdminRoleGuard.tsx): Enhanced access evaluation to check `user?.isSchoolOwner || user?.adminRole === "SCHOOL_OWNER" || schoolAdminRole === "SCHOOL_OWNER"`, guaranteeing institutional creators immediate, frictionless access to billing and school settings.
+    - Documented the architecture, institutional hierarchy, and route gating matrix in [`docs/ADMIN_DASHBOARD_ROLES.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/ADMIN_DASHBOARD_ROLES.md) and linked it in [`docs/README.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md).
+  - **Turbopack Build Syntax Fix (`auth-store.ts`)**:
+    - Fixed Next.js Turbopack parser error in [`auth-store.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/auth-store.ts) (`Nullish coalescing operator(??) requires parens when mixing with logical operators`). Disambiguated mixed operator precedence using `Boolean(...)` logic.
+  - **Admin Route Role Protection Matrix Verified & Tightened**:
+    - Verified strict role protections across all critical administration sub-dashboards:
+      - [`/dashboard/admin/team`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/layout.tsx): Restricted to `["SCHOOL_OWNER", "PRINCIPAL"]`.
+      - [`/dashboard/admin/settings`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/settings/layout.tsx): Restricted strictly to `["SCHOOL_OWNER"]`.
+      - [`/dashboard/admin/grades`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/layout.tsx): Restricted to `["SCHOOL_OWNER", "PRINCIPAL", "REGISTRAR"]`.
+      - [`/dashboard/admin/finance`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/finance/layout.tsx): Restricted strictly to `["SCHOOL_OWNER", "ACCOUNTANT"]` with updated institutional guard messaging.
+      - [`/dashboard/admin/payments`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/payments/layout.tsx): Created dedicated Payments & Fee Collections dashboard page (`page.tsx`), loading state (`loading.tsx`), and role protection layout (`layout.tsx`) resolving 404 Not Found error and restricting access to `["SCHOOL_OWNER", "ACCOUNTANT"]`.
+      - [`/dashboard/admin/transactions`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/transactions/page.tsx): Redesigned the transaction audit log page with KPI summaries (Total Settled Volume, Total Invoices Recorded, Active Subscription Tier), real-time search & status filtering, CSV export, and a custom dark/light mode loading skeleton (`loading.tsx`) resolving visual contrast issues.
+  - **Auth Controller Modular Decomposition & Legacy Code Purge**:
+    - Purged 558 lines of dead, commented-out legacy code in [`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts).
+    - Decomposed `verifyEmailCode` into [`verify-code.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/services/verify-code.service.ts) and [`verify-code.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/controllers/verify-code.controller.ts).
+    - Decomposed `requestVerificationCode` into [`request-code.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/services/request-code.service.ts) and [`request-code.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/controllers/request-code.controller.ts).
+    - Decomposed `googleAuth` into dedicated controller [`google-auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/controllers/google-auth.controller.ts).
+    - Overall [`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) size reduced from **5,649 lines down to 4,363 lines** (a total reduction of 1,286 lines) while maintaining 100% backwards compatibility and passing all backend TypeScript checks.
+  - **Login Flow Review & Trusted Device Invariant Enforced**:
+    - Documented comprehensive login architecture in [`docs/LOGIN_FLOW.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/LOGIN_FLOW.md) covering both Email/Password and Google OAuth sign-in channels.
+    - Fixed trusted device check in `login` handler ([`auth.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts)): guaranteed that an existing valid 365-day `deviceVerified` cookie or verified database hardware session (`RefreshToken`) automatically marks the device as verified, eliminating redundant verification prompts for returning devices.
+    - Verified Google SSO native location permission collection with automatic fallback to client timezone.
+
+- [x] **Subsystem Architecture Documentation & Non-Regression Protocol (Friday, October 30, 2026)**:
+  - Created central architecture directory [`docs/`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md) organizing critical subsystem specifications to prevent regressions:
+    - [`docs/README.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md): Master subsystem table, invariants, and Non-Regression workflow.
+    - [`docs/LINKING_ARCHITECTURE.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/LINKING_ARCHITECTURE.md): Multi-role `RelationshipLink` state machine, self-healing active schools, class join dual-linking, and quota check guards.
+    - [`docs/SOCIAL_LOGIN_AND_ONBOARDING.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/SOCIAL_LOGIN_AND_ONBOARDING.md): Supabase/Google/Facebook OAuth handshakes, role feature gates, wrong portal detection, and onboarding tour redirection preservation.
+  - Updated [.agents/AGENTS.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/AGENTS.md) Section 0 ("Subsystem Architecture Gate") to mandate pre-edit reviews and post-edit documentation for all subsystem changes.
+
+- [x] **Agent Engineering Rules — Controller Decomposition Protocol Adopted (Friday, October 30, 2026)**:
+
+  - Added Section `5.1 Controller Decomposition Protocol` to [.agents/AGENTS.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/AGENTS.md).
+  - Enforced mandatory decomposition whenever reading/touching any controller file $>300$ lines or handler $>40$ lines.
+  - Mandated scoped decomposition into `controllers/<feature>.controller.ts`, `controllers/index.ts` (barrel), `services/<feature>.service.ts` with `withRetry`, and `schemas/<feature>.schemas.ts`.
+  - Enforced strict 5-step workflow: baseline check, pure move refactor, verification (tsc, build, tests, smoke test), behavior change, and detailed reporting.
+
+- [x] **Auth Session Stabilization & Token Rotation Race Elimination (Friday, October 30, 2026)**:
+
+  - **Eliminated False-Alarm Session Logouts from Database Glitches**:
+    - In [authMiddleware.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts), decoupled JWT validation from unexpected server errors. Database and unexpected runtime errors now return `503 SERVICE_UNAVAILABLE` rather than `401 "Invalid token"`, preventing clients from wiping valid sessions during database latency spikes.
+    - Wrapped all database session queries (`prisma.refreshToken.findFirst`, user account lookups) in `withRetry`.
+    - Added structured error codes (`TOKEN_EXPIRED`, `TOKEN_INVALID`, `NO_SESSION_ROW`, `USER_INACTIVE`, `SCHOOL_LINK_REQUIRED`) with structured line logging (`code`, `userId`, `route`).
+  - **Token Rotation Grace Window & Atomic Concurrency**:
+    - In [schema.prisma](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/prisma/schema.prisma), added nullable `rotatedAt` and `replacedByTokenId` to `RefreshToken`.
+    - In [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts), implemented a 30s rotation grace window (`REFRESH_GRACE_SECONDS`). Parallel requests replaying a rotated token within the grace window receive a fresh access token instead of 401. Replays beyond the grace window trigger `REFRESH_REUSED`.
+    - Wrapped token rotation in an atomic transaction with conditional `updateMany` (`where: { id, isValid: true }`), safely handling concurrency. Wrapped lookups in `withRetry` and return 503 on DB failures.
+  - **Web & Mobile Client Single-Flight Refresh**:
+    - In Web [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) and Mobile [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/Mobile/lib/api/client.ts), replaced naive arrays with a shared `refreshPromise` single-flight function so concurrent 401s share one network request.
+    - Replaced message string-matching (`includes("invalid token")`) on mobile with explicit terminal codes: only clearing auth state on `{NO_REFRESH_TOKEN, REFRESH_INVALID, REFRESH_EXPIRED, REFRESH_REUSED, USER_INACTIVE, DEVICE_UNAUTHORIZED, NO_SESSION_ROW}`.
+    - Network errors and 5xx/503 errors are retried with exponential backoff without clearing user credentials.
+    - Added proactive token refresh on window focus (Web) and `AppState` foreground active (Mobile).
+
+- [x] **Prisma Database Connection Stabilization & Auto-Recovery (Friday, October 30, 2026)**:
+
+  - **Eliminated Engine Disconnect Collision Loops**:
+    - Rewrote [database.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/config/database.ts) to utilize single-flight reconnect mechanism (`reconnectPromise`) with `await prisma.$disconnect().catch(...)` and no short timeout racing.
+    - Restricted `withRetry` re-connections strictly to authentic connection and network errors (`P1001`, `P1002`, `P1008`, `P1017`, `Engine is not yet connected`, socket closures) rather than app or validation errors.
+    - Added exponential backoff with randomized jitter.
+  - **Decoupled CRON Keep-Alive Ping**:
+    - Converted keep-alive ping in [cron.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/scripts/cron.ts) to observe-only. Skipped execution if reconnect is in-flight. Tracks consecutive failures and exits (`process.exit(1)`) on 3 consecutive failures to trigger clean Render container restart.
+  - **Fail-Fast Startup & Graceful Container Shutdown**:
+    - Updated [index.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/index.ts) to exit on cold connection failure at startup, and cleanly disconnect Prisma on `SIGINT` / `SIGTERM`.
+  - **Prisma Client Singleton Consolidation & withRetry Coverage**:
+    - Replaced `new PrismaClient()` instances in `termlyEvaluation.service.ts`, `records.service.ts`, and `seed-subscriptions.ts` with shared client from `config/database.ts`.
+    - Protected `getPublicPlatformSettings`, `getPublicRoleFeatures`, and `googleAuthService` with `withRetry`.
+    - Documented PgBouncer URL parameters in `.env.example`.
+
+- [x] **Student Class View Department-Scoped Assessments & Subject Tab Removal (Friday, October 30, 2026)**:
+
+  - **Removed Redundant "Subjects" Tab & "Subject Paper" Type**:
+    - In [ClassTabs.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/components/ClassTabs.tsx) and [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/page.tsx), removed the redundant "Subjects" tab from the student's class navigation.
+    - Eliminated the `"Subject Paper"` label under the Assessments list; assessments are now explicitly categorized by their true nature (`Test (Quiz)`, `Continuous Assessment`, or `Exam`).
+  - **Strict Department Scoping for Class Assessments**:
+    - Built comprehensive student department subject scoping in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/page.tsx) matching `studentProfile.departmentId` across `classData.departments`, `classData.subjects`, and `subject.departments`.
+    - Filtered exams, quizzes, continuous assessments, homework assignments, and offline CA grades so that students in a department only see assessments and grades belonging to their department's subjects.
+
+- [x] **Admin Assessment Creation Department Selection with Class (Friday, October 30, 2026)**:
+  - In [CreateExamForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/new/components/CreateExamForm.tsx), fixed the issue where selecting a target class disabled or forcefully cleared department selections.
+  - In [department.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/department.controller.ts) and [department.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/department.service.ts), supported optional `classId` query filtering to return departments associated with the selected class (or all school departments if the class has none attached).
+  - Users can now filter by department even when targeting a specific class.
+
+- [x] **Subject Paper Settings Release Date, Department Section & Main Exam Sync (Friday, October 30, 2026)**:
+  - In [EditPaperModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/%5BpaperId%5D/components/EditPaperModal.tsx), auto-resolved the connected parent exam from `paper.exams[0].exam` when opened in standalone mode (`/dashboard/admin/exams/papers/:id`).
+  - Added support for editing **Result Release Date**, result visibility, scope, and target department directly from paper settings, including department selection under class scope.
+  - In [exam.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.controller.ts) and [exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts), enhanced `updateSubjectPaperService` to accept schedule dates, release dates, departments, and class IDs, automatically synchronizing them bidirectional with the connected parent exam.
+
+- [x] **Admin Exam & Paper Preview Authorization Gate Fix (Friday, October 30, 2026)**:
+  - **Root Cause of "School Connection Required" on Admin Preview**:
+    - [PaperPreviewModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/%5BpaperId%5D/components/PaperPreviewModal.tsx) (used when an admin previews an exam or paper at `/dashboard/admin/exams/:examId/papers/:paperId`) renders `<ExamPreviewPage />`.
+    - In `ExamPreviewPage.tsx`, the auth connection gate was previously calling `useTeacherProfile()` only:
+      ```ts
+      const { data: profile, isLoading: isLoadingProfile } = useTeacherProfile();
+      const hasSchoolAccess = !!(profile?.activeSchoolId || profile?.primarySchoolId);
+      ```
+    - When an **admin** opened the preview modal, `useTeacherProfile()` was empty/null because the logged-in user is an `ADMIN` (not a teacher). Consequently, `hasSchoolAccess` was computed as `false`, immediately displaying the blocking warning dialog:
+      > *"School Connection Required: You must be connected to a school to access exam previews. Please contact your school administrator to link your account."*
+  - **The Fix**:
+    - In [ExamPreviewPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/preview/components/ExamPreviewPage.tsx):
+      - Read current user from `useAuthStore`.
+      - Detect `isAdmin = user?.userType === 'ADMIN'`.
+      - Admins inherently have school authorization to view exams in their school admin portal.
+      - Updated `hasSchoolAccess = isAdmin || !!(profile?.activeSchoolId || profile?.primarySchoolId || user?.schools?.length)`.
+      - Guarded `isLoadingProfile = !isAdmin && isLoadingProfileQuery` so admins are never held up waiting for a teacher profile query.
+
+- [x] **Subject Paper Direct Endpoint Route & Fallback Fix (Friday, October 30, 2026)**:
+  - **Root Cause of Paper Not Found at `/dashboard/teacher/exams&quizzes/papers/:paperId`**:
+    - The teacher paper edit page (`/dashboard/teacher/exams&quizzes/papers/[id]`) passed `examId = "none"`, calling `apiClient.get('/exams/none/papers/:paperId')`.
+    - In [backend/src/modules/exam/exam.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.route.ts), there was no direct `router.get('/papers/:paperId')` route registered. The only route was `router.get('/:id/papers/:paperId')`.
+    - When Express parsed `/:id/papers/:paperId`, `:id` was `"none"`. In `exam.service.ts` / permissions, `canManageExam` queries `prisma.exam.findUnique({ where: { id: "none" } })` which returned null, or failed paper lookup under the non-existent exam ID, resulting in a 404 "Subject paper not found" response.
+  - **The Fix**:
+    - **Backend Routes ([exam.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.route.ts))**:
+      - Registered direct endpoints:
+        - `router.get('/papers/:paperId', authenticateToken, getSubjectPaperById)`
+        - `router.delete('/papers/:paperId', authenticateToken, deleteSubjectPaper)`
+        - `router.post('/papers/:paperId/publish', authenticateToken, publishSubjectPaper)`
+        - `router.post('/papers/:paperId/unpublish', authenticateToken, unpublishSubjectPaper)`
+        - `router.post('/papers/:paperId/validate', authenticateToken, validateSubjectPaper)`
+    - **Frontend API Client ([examService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/examService.ts))**:
+      - Updated `getPaperById`, `validatePaper`, `publishPaper`, `unpublishPaper`, and `deletePaper` to use `/exams/papers/${paperId}` whenever `examId` is omitted, empty, or `"none"`.
+      - Added automatic fallback to `/exams/papers/${paperId}` if a nested exam route returns 404.
+
+- [x] **Teacher Assessments All-Assessment Tab, Real Name Resolution & Subject Scoping (Friday, October 30, 2026)**:
+  - **"All Assessments" Tab Added**:
+    - Added a master **"All Assessments"** tab (`activeTab: 'all'`) with `LayoutGrid` icon to the teacher assessment portal ([ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsQuizzesOverview.tsx), [PageHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/PageHeader.tsx), [ExamsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx)).
+    - Enables teachers to view, filter, search, and manage terminal exams, quizzes, continuous assessments (CAs), subject papers, and assignments unified in one comprehensive list or grid.
+    - Added parallel multi-endpoint query aggregation (`Promise.all` fetching exams, subject papers, and assignments concurrently) when on the "All Assessments" tab.
+  - **Real Assessment Name Display**:
+    - Created smart title resolver helper `getRealAssessmentTitle(exam)` in [ExamsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx).
+    - Eliminates placeholder/raw labels (such as "Untitled Paper" or "Untitled Assessment"), prioritizing: (1) explicit custom title, (2) `<Subject> - <Paper Title>` for linked subject papers, or (3) `<Subject> <Assessment Type>` fallback.
+    - Updated both Grid view and List view to display this true assessment name consistently.
+  - **Subject-Scoped Visibility for CA, Quizzes, Subject Papers & Assignments**:
+    - **Backend Exam Scoping ([exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts))**: Updated `getExamsService` so that for single-subject assessments (`CA` and `QUIZ`), class form teachers are NOT given automatic blanket access across every subject taught in that class. Instead, teachers only see CA and Quiz assessments belonging to their assigned subjects or assessments they authored.
+    - **Backend Assignment Scoping ([assignment.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/assignment/assignment.service.ts), [assignment.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/assignment/assignment.controller.ts))**: Included primary subject teachers (`Subject.teacherId === teacherId`) in `getTeacherAssignmentsService` and passed optional `classId` filtering from query parameters.
+    - **Frontend Client-Side Guarantee ([ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsQuizzesOverview.tsx))**: Enforced strict subject filtering on `quizzes`, `ca`, `subject-papers`, and `assignment` items so only assessments linked to the teacher's assigned subjects (by ID or name) or created by the teacher are shown.
+
+- [x] **Teacher Exam Preview Authorization & Reading Passage Visibility Fix ([exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts), [teacher-subject.permissions.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/teacher-subject.permissions.ts), [ExamPreviewPage.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/preview/components/ExamPreviewPage.tsx))**:
+  - **Why "Preview Not Available Yet" Occurred**:
+    - When a teacher clicked to preview an assessment (e.g. `type=ca` or `quiz` from class management or direct URL), `getExamPapersService` in `backend/src/modules/exam/exam.service.ts` filtered out papers if the teacher was not directly assigned in `TeacherSubject`, completely ignoring: (1) if the teacher was the creator of the exam (`exam.teacherId === user.id`), (2) if the teacher is a class teacher for the exam's class (`ClassTeacher`), (3) if the teacher is the primary teacher on the `Subject` record, or (4) if the paper had no specific teacher assigned in their school.
+    - Because `getExamPapersService` returned an empty list (`[]`), `livePapers.length === 0` rendered the "Preview Not Available Yet" empty state.
+    - Because no active paper was loaded (`activePaper` was `undefined`), the reading passage feature (`hasReadingContent`) was not triggered.
+  - **Backend Authorization Fix**:
+    - In `exam.service.ts` (`getExamPapersService`), broadened teacher permissions to grant access if the teacher created the exam (`exam.teacherId === user.id`), is assigned as a class teacher for the exam's class, is the primary teacher on the subject (`subject.teacherId === user.id`), or the paper is unassigned within their school.
+    - In `teacher-subject.permissions.ts` (`canTeacherManageSubject`), allowed institutional subject access if `subject.teacherId === teacherId` regardless of whether `scope` is `PERSONAL` or `SCHOOL`.
+  - **Frontend Preview Resilience**:
+    - In `ExamPreviewPage.tsx`, added robust dual-lookup fallback: if `getExamPapers(id)` returns no papers (e.g. if the passed `id` is a direct `subjectPaperId` or single paper assessment), it attempts `getPaperById('none', id)` before falling back to empty.
+    - Wrapped paper details fetching in error handling so single paper retrieval errors don't cause the entire preview to crash.
+    - Verified reading passage UI entry points (top bar, info card, and question viewer) and modal render smoothly once the paper loads.
+
 - [x] **Student & Parent Login Forgot Password Links ([StudentLoginForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/student/components/StudentLoginForm.tsx), [ParentLoginForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/parent/components/ParentLoginForm.tsx))**:
   - Added the missing "Forgot Password?" link to the Student login form (`/login/student`) positioned beneath the password input with matching rose palette styling (`text-rose-600 dark:text-rose-400 hover:text-rose-700`).
   - Added the missing "Forgot Password?" link to the Parent login form (`/login/parent`) positioned beneath the password input with matching orange palette styling (`text-orange-600 dark:text-orange-400 hover:text-orange-700`).

@@ -139,15 +139,49 @@ export const getSchoolUsageService = async (schoolId: string) => {
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
   
-  // For institutional context, we can count logs from users in this school
-  const aiUsageCount = await (prisma as any).aiUsageLog.count({
-    where: {
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay
-      }
-    }
-  });
+  // Fetch all user IDs associated with this school (admins, teachers, students) to scope AI usage
+  const [schoolAdminsList, schoolTeachersList, schoolStudentsList] = await Promise.all([
+    prisma.schoolAdmin.findMany({ where: { schoolId: school.id, active: true }, select: { adminId: true } }),
+    prisma.teacher.findMany({
+      where: {
+        OR: [
+          { id: { in: linkedTeacherIds } },
+          { primarySchoolId: school.id },
+          { activeSchoolId: school.id }
+        ]
+      },
+      select: { id: true }
+    }),
+    prisma.student.findMany({
+      where: {
+        OR: [
+          { id: { in: [...new Set([...linkedStudentIds, ...enrolledStudentIds])] } },
+          { schoolId: school.id },
+          { originalSchoolId: school.id }
+        ]
+      },
+      select: { id: true }
+    })
+  ]);
+
+  const schoolUserIds = [
+    ...schoolAdminsList.map(a => a.adminId),
+    ...schoolTeachersList.map(t => t.id),
+    ...schoolStudentsList.map(s => s.id),
+  ];
+
+  // For institutional context, count only AI logs from users belonging to this school
+  const aiUsageCount = schoolUserIds.length > 0
+    ? await (prisma as any).aiUsageLog.count({
+        where: {
+          userId: { in: schoolUserIds },
+          createdAt: {
+            gte: startOfDay,
+            lte: endOfDay
+          }
+        }
+      })
+    : 0;
 
   const storageBytes = Number(storageMetric._sum.fileSize || 0);
   const storageGb = Number((storageBytes / (1024 * 1024 * 1024)).toFixed(3));

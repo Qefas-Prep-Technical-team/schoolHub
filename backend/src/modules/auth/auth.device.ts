@@ -116,6 +116,18 @@ export const setDeviceVerifiedCookie = (
 };
 
 /**
+ * Clears the persistent deviceVerified cookie on the response so this browser
+ * is no longer treated as a trusted device after revocation or logout.
+ */
+export const clearDeviceVerifiedCookie = (res: Response) => {
+  res.clearCookie("deviceVerified", {
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+};
+
+/**
  * Checks if a login is from a new/unrecognized device and dispatches in-app notification + email.
  * Always establishes a persistent deviceVerified cookie upon successful processing.
  */

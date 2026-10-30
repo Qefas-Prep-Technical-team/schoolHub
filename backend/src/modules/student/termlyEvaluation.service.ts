@@ -1,7 +1,7 @@
-import { PrismaClient, Term } from "@prisma/client";
+import { Term } from "@prisma/client";
 import { UpsertTermlyEvaluationInput } from "./termlyEvaluation.schema";
+import prisma from "../../config/database";
 
-const prisma = new PrismaClient();
 
 export const upsertTermlyEvaluation = async (
   studentId: string,

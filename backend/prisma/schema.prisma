@@ -492,14 +492,17 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   // Device Tracking fields
-  deviceType   String?
-  deviceModel  String?
-  osVersion    String?
-  ipAddress    String?
-  lastActiveAt DateTime @default(now())
-  isValid      Boolean  @default(true)
+  deviceType        String?
+  deviceModel       String?
+  osVersion         String?
+  ipAddress         String?
+  lastActiveAt      DateTime  @default(now())
+  isValid           Boolean   @default(true)
+  rotatedAt         DateTime?
+  replacedByTokenId String?
 
   @@index([userId, userType])
+  @@index([replacedByTokenId])
   @@map("refresh_tokens")
 }
 

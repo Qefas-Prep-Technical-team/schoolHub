@@ -1,67 +1,58 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import Image from 'next/image';
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
-import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSchoolRegistration, useAdminSelfRegistration } from '../../services/useRegistrationMutations';
-import { SchoolFormData, schoolSchema, AdminJoinFormData, adminJoinSchema } from '../../services/regSchema';
-import { UserRole } from '@/lib/types/user.types';
-import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
+import { SchoolFormData, AdminJoinFormData, schoolSchema, adminJoinSchema } from '../../services/regSchema';
 
-/* ─── Design tokens — Admin / School = Blue ─── */
-const BLUE      = '#1d4ed8'; // blue-700
-const BLUE_DARK = '#1e3a8a'; // blue-900
-const BLUE_LITE = '#dbeafe'; // blue-100
-const BLUE_MID  = '#3b82f6'; // blue-500
+import SchoolFormHeader from './SchoolFormHeader';
+import SchoolRegisterForm from './SchoolRegisterForm';
+import SchoolJoinForm from './SchoolJoinForm';
+import SchoolVisualPanel from './SchoolVisualPanel';
+import { SchoolPrivacyModal, SchoolTermsModal } from './SchoolModals';
 
 const featureCards = [
   {
-    icon: 'groups',
-    title: 'Student Lifecycle',
-    desc: 'Enroll, promote, and track every student from admission to graduation.',
+    icon: 'manage_accounts',
+    title: 'Staff & Student Records',
+    desc: 'Centralize admissions, enrollment, profiles, and attendance across all departments.',
   },
   {
-    icon: 'quiz',
-    title: 'Smart Exams',
-    desc: 'Create multi-paper exams, auto-grade, and share results instantly.',
+    icon: 'payments',
+    title: 'Billing & Fee Invoices',
+    desc: 'Generate itemized fee schedules, automate dues, and receive secure online payments.',
   },
   {
     icon: 'analytics',
-    title: 'Live Analytics',
-    desc: 'Real-time dashboards for attendance, performance and fee collection.',
+    title: 'Academic Analytics',
+    desc: 'Track termly exam performances, report cards, and institutional KPIs effortlessly.',
   },
 ];
 
 const trustBadges = [
-  { label: '2 000+', sublabel: 'Schools',    icon: 'school'   },
-  { label: '98%',    sublabel: 'Uptime',     icon: 'verified' },
-  { label: '30-day', sublabel: 'Free Trial', icon: 'redeem'   },
+  { label: '1 200+', sublabel: 'Schools', icon: 'domain' },
+  { label: '99.9%', sublabel: 'Uptime', icon: 'verified' },
+  { label: 'Zero', sublabel: 'Paper Waste', icon: 'eco' },
 ];
 
 export default function SchoolCard() {
   const [mode, setMode] = useState<'register' | 'join'>('register');
-  const [showPassword,        setShowPassword]        = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showOverlay,         setShowOverlay]         = useState(false);
-  const [showPrivacyModal,    setShowPrivacyModal]    = useState(false);
-  const [showTermsModal,      setShowTermsModal]      = useState(false);
-  const [showOptional,        setShowOptional]        = useState(false);
-  const [activeFeature,       setActiveFeature]       = useState(0);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { mutate: registerSchool, isPending: isRegistering } = useSchoolRegistration();
-  const { mutate: joinSchool, isPending: isJoining } = useAdminSelfRegistration();
-  
+  const { mutateAsync: registerSchool, isPending: isRegistering } = useSchoolRegistration();
+  const { mutateAsync: joinSchool, isPending: isJoining } = useAdminSelfRegistration();
   const isPending = mode === 'register' ? isRegistering : isJoining;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: globalFeatures } = useGlobalFeatures('admin');
 
   // --- REGISTER FORM ---
   const {
@@ -72,33 +63,50 @@ export default function SchoolCard() {
     watch: watchRegister,
     setValue: setRegisterValue,
   } = useForm<SchoolFormData>({
-    resolver: yupResolver(schoolSchema) as any,
+    resolver: yupResolver(schoolSchema) as unknown as import('react-hook-form').Resolver<SchoolFormData>,
     mode: 'onBlur',
     defaultValues: {
-      schoolName:      '',
-      adminName:       '',
-      email:           '',
-      password:        '',
+      schoolName: '',
+      adminName: '',
+      email: '',
+      password: '',
       confirmPassword: '',
-      subdomain:       '',
-      acceptTerms:     false,
+      subdomain: '',
+      acceptTerms: false,
     },
   });
 
   const schoolNameValue = watchRegister('schoolName');
+  const subdomainValue = watchRegister('subdomain');
+  const previousAutoSubdomainRef = useRef<string>('');
 
-  /* Auto-generate subdomain */
+  /* Auto-generate and keep subdomain matched to schoolName */
   useEffect(() => {
-    if (schoolNameValue && !watchRegister('subdomain')) {
+    if (!schoolNameValue) {
+      if (!subdomainValue || subdomainValue === previousAutoSubdomainRef.current) {
+        setRegisterValue('subdomain', '', { shouldValidate: false });
+        previousAutoSubdomainRef.current = '';
+      }
+      return;
+    }
+
+    const currentSub = (subdomainValue || '').trim();
+    const isAutoOrEmpty = !currentSub || currentSub === previousAutoSubdomainRef.current;
+
+    if (isAutoOrEmpty) {
       const suggested = schoolNameValue
         .toLowerCase()
-        .replace(/[^a-zA-Z0-9]/g, '-')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
         .substring(0, 63);
-      if (suggested.length >= 3) setRegisterValue('subdomain', suggested);
+
+      setRegisterValue('subdomain', suggested, { shouldValidate: true, shouldDirty: false });
+      previousAutoSubdomainRef.current = suggested;
     }
-  }, [schoolNameValue, setRegisterValue, watchRegister]);
+  }, [schoolNameValue, subdomainValue, setRegisterValue]);
 
   // --- JOIN FORM ---
   const {
@@ -107,14 +115,14 @@ export default function SchoolCard() {
     formState: { errors: joinErrors },
     reset: resetJoin,
   } = useForm<AdminJoinFormData>({
-    resolver: yupResolver(adminJoinSchema) as any,
+    resolver: yupResolver(adminJoinSchema) as unknown as import('react-hook-form').Resolver<AdminJoinFormData>,
     mode: 'onBlur',
     defaultValues: {
-      name:            '',
-      email:           '',
-      password:        '',
+      name: '',
+      email: '',
+      password: '',
       confirmPassword: '',
-      schoolCode:      '',
+      schoolCode: '',
     },
   });
 
@@ -127,12 +135,12 @@ export default function SchoolCard() {
   const onRegisterSubmit = async (data: SchoolFormData) => {
     try {
       const backendData = {
-        schoolName:      data.schoolName.trim(),
-        adminName:       data.adminName.trim(),
-        email:           data.email.toLowerCase().trim(),
-        password:        data.password,
+        schoolName: data.schoolName.trim(),
+        adminName: data.adminName.trim(),
+        email: data.email.toLowerCase().trim(),
+        password: data.password,
         confirmPassword: data.confirmPassword,
-        acceptTerms:     data.acceptTerms,
+        acceptTerms: data.acceptTerms,
         ...(data.subdomain && { subdomain: data.subdomain.trim() }),
       };
 
@@ -144,9 +152,7 @@ export default function SchoolCard() {
           const redirectParam = searchParams.get('redirect');
           const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
           setTimeout(() => {
-            router.push(
-              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true${redirectQuery}`
-            );
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=ADMIN&requestCode=true${redirectQuery}`);
           }, 2000);
         },
         onError: (error: any) => {
@@ -161,11 +167,11 @@ export default function SchoolCard() {
   const onJoinSubmit = async (data: AdminJoinFormData) => {
     try {
       const backendData = {
-        name:            data.name.trim(),
-        email:           data.email.toLowerCase().trim(),
-        password:        data.password,
+        name: data.name.trim(),
+        email: data.email.toLowerCase().trim(),
+        password: data.password,
         confirmPassword: data.confirmPassword,
-        schoolCode:      data.schoolCode.trim(),
+        schoolCode: data.schoolCode.trim(),
       };
 
       await joinSchool(backendData, {
@@ -189,599 +195,57 @@ export default function SchoolCard() {
     <>
       <RedirectOverlay isVisible={showOverlay} />
 
-      {/* ═══════════ OUTER SHELL ═══════════ */}
       <div
         className="w-full flex flex-col lg:flex-row min-h-[780px] rounded-[32px] overflow-hidden shadow-2xl dark:shadow-none dark:ring-1 dark:ring-slate-800"
         style={{ fontFamily: "'Lexend', sans-serif" }}
       >
-
-        {/* ════════════════════════════════════
-            LEFT — FORM PANEL
-        ════════════════════════════════════ */}
+        {/* Left Form Panel */}
         <div className="flex-1 bg-white dark:bg-slate-900 flex flex-col px-10 py-10 lg:px-14 lg:py-12 overflow-y-auto transition-colors duration-300">
+          <SchoolFormHeader
+            mode={mode}
+            setMode={setMode}
+            onSignInClick={() => router.push('/login')}
+          />
 
-          {/* ── Logo row ── */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: BLUE }}
-              >
-                <span className="material-symbols-outlined text-white text-[17px]">school</span>
-              </div>
-              <span className="text-[15px] font-semibold" style={{ color: BLUE }}>Qefas Hub</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push('/login')}
-              className="text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
-            >
-              Already have an account?{' '}
-              <span className="font-semibold" style={{ color: BLUE }}>Sign in</span>
-            </button>
-          </div>
-
-          {/* ── Mode Toggle ── */}
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-6">
-            <button
-              type="button"
-              onClick={() => setMode('register')}
-              className={`flex-1 py-2 text-[14px] font-semibold rounded-lg transition-all ${
-                mode === 'register' 
-                  ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' 
-                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-              }`}
-            >
-              Register New School
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('join')}
-              className={`flex-1 py-2 text-[14px] font-semibold rounded-lg transition-all ${
-                mode === 'join' 
-                  ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' 
-                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
-              }`}
-            >
-              Join Existing School
-            </button>
-          </div>
-
-          {/* ── Heading ── */}
-          <div className="mb-8">
-            <h1 className="text-[2rem] font-bold leading-[1.15] mb-2 text-slate-900 dark:text-white">
-              {mode === 'register' ? (
-                <>Set up your school<br /><span style={{ color: BLUE }}>in minutes</span></>
-              ) : (
-                <>Join your team<br /><span style={{ color: BLUE }}>as an Admin</span></>
-              )}
-            </h1>
-            <p className="text-[14px] text-slate-400 dark:text-slate-500 leading-relaxed">
-              {mode === 'register' 
-                ? 'Join thousands of schools already managing with Qefas Hub.'
-                : 'Enter your school code to request admin access.'}
-            </p>
-          </div>
-
-          {/* ── Form ── */}
           {mode === 'register' ? (
-            <form onSubmit={handleRegisterSubmit(onRegisterSubmit)} className="flex-1 flex flex-col gap-4">
-
-              {/* Row 1: School Name + Admin Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="School Name" icon="apartment" error={registerErrors.schoolName?.message}>
-                  <input
-                    {...registerForm('schoolName')}
-                    placeholder="Green Valley High"
-                    disabled={isPending}
-                    className={inputCls(!!registerErrors.schoolName)}
-                  />
-                </Field>
-                <Field label="Your Name" icon="person" error={registerErrors.adminName?.message}>
-                  <input
-                    {...registerForm('adminName')}
-                    placeholder="Yasir Noori"
-                    disabled={isPending}
-                    className={inputCls(!!registerErrors.adminName)}
-                  />
-                </Field>
-              </div>
-
-              {/* Email */}
-              <Field label="Work Email" icon="mail" error={registerErrors.email?.message}>
-                <input
-                  {...registerForm('email')}
-                  type="email"
-                  placeholder="you@school.edu"
-                  disabled={isPending}
-                  className={inputCls(!!registerErrors.email)}
-                />
-              </Field>
-
-              {/* Row 2: Password + Confirm */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Password" icon="lock" error={registerErrors.password?.message}>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      {...registerForm('password')}
-                      placeholder="••••••••"
-                      disabled={isPending}
-                      className={`${inputCls(!!registerErrors.password)} pr-11`}
-                    />
-                    <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
-                  </div>
-                </Field>
-
-                <Field label="Confirm Password" icon="lock_reset" error={registerErrors.confirmPassword?.message}>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      {...registerForm('confirmPassword')}
-                      placeholder="••••••••"
-                      disabled={isPending}
-                      className={`${inputCls(!!registerErrors.confirmPassword)} pr-11`}
-                    />
-                    <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
-                  </div>
-                </Field>
-              </div>
-
-              {/* Subdomain — always visible */}
-              <Field
-                label={<>Subdomain <span className="font-normal text-slate-400 dark:text-slate-500">(auto-generated if empty)</span></>}
-                icon="link"
-              >
-                <div className="flex rounded-xl overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-blue-500/40 transition-all">
-                  <input
-                    {...registerForm('subdomain')}
-                    placeholder="your-school"
-                    disabled={isPending}
-                    className="flex-1 h-11 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 bg-slate-50 dark:bg-slate-800 outline-none"
-                  />
-                  <div className="flex items-center px-3 bg-slate-100 dark:bg-slate-700 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap border-l border-slate-200 dark:border-slate-700">
-                    .qefashub.com
-                  </div>
-                </div>
-              </Field>
-
-              {/* Terms — premium checkbox card */}
-              {(() => {
-                const isChecked = !!watchRegister('acceptTerms');
-                return (
-                  <label
-                    htmlFor="school-terms"
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
-                      registerErrors.acceptTerms
-                        ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/10'
-                        : isChecked
-                          ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-900/10'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/10'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      id="school-terms"
-                      {...registerForm('acceptTerms')}
-                      className="sr-only"
-                    />
-                    <div
-                      className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200"
-                      style={{
-                        borderColor: isChecked ? BLUE : '#cbd5e1',
-                        background: isChecked ? BLUE : 'transparent',
-                      }}
-                    >
-                      {isChecked && (
-                        <span className="material-symbols-outlined text-white leading-none" style={{ fontSize: '13px' }}>
-                          check
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed select-none">
-                      I agree to the{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
-                        className="font-semibold hover:underline underline-offset-2"
-                        style={{ color: BLUE }}
-                      >
-                        Terms of Service
-                      </button>
-                      {' '}and{' '}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setShowPrivacyModal(true); }}
-                        className="font-semibold hover:underline underline-offset-2"
-                        style={{ color: BLUE }}
-                      >
-                        Privacy Policy
-                      </button>
-                    </span>
-                  </label>
-                );
-              })()}
-              {registerErrors.acceptTerms && (
-                <p className="text-red-500 text-xs -mt-1 ml-1">{registerErrors.acceptTerms.message}</p>
-              )}
-
-
-
-              {/* CTA button */}
-              <button
-                type="submit"
-                disabled={isPending}
-                className="mt-2 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
-                style={{ background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_MID} 100%)`, height: '52px' }}
-              >
-                {/* hover shimmer */}
-                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="relative flex items-center gap-2">
-                  {isPending ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creating your account…
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-                      Create School Account
-                    </>
-                  )}
-                </span>
-              </button>
-
-              <SocialAuthRow userType="admin" mode="signup" />
-
-              {/* Footer */}
-              <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
-                <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">mail</span>
-                <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
-              </div>
-            </form>
+            <SchoolRegisterForm
+              registerForm={registerForm}
+              registerErrors={registerErrors}
+              watchRegister={watchRegister}
+              isPending={isPending}
+              onSubmit={handleRegisterSubmit(onRegisterSubmit)}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              showConfirmPassword={showConfirmPassword}
+              setShowConfirmPassword={setShowConfirmPassword}
+              onOpenTerms={() => setShowTermsModal(true)}
+              onOpenPrivacy={() => setShowPrivacyModal(true)}
+            />
           ) : (
-            <form onSubmit={handleJoinSubmit(onJoinSubmit)} className="flex-1 flex flex-col gap-4">
-              
-              <Field label="School Code" icon="tag" error={joinErrors.schoolCode?.message}>
-                <input
-                  {...joinForm('schoolCode')}
-                  placeholder="SCH-1234"
-                  disabled={isPending}
-                  className={inputCls(!!joinErrors.schoolCode)}
-                />
-              </Field>
-
-              <Field label="Your Name" icon="person" error={joinErrors.name?.message}>
-                <input
-                  {...joinForm('name')}
-                  placeholder="Yasir Noori"
-                  disabled={isPending}
-                  className={inputCls(!!joinErrors.name)}
-                />
-              </Field>
-
-              <Field label="Work Email" icon="mail" error={joinErrors.email?.message}>
-                <input
-                  {...joinForm('email')}
-                  type="email"
-                  placeholder="you@school.edu"
-                  disabled={isPending}
-                  className={inputCls(!!joinErrors.email)}
-                />
-              </Field>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Password" icon="lock" error={joinErrors.password?.message}>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      {...joinForm('password')}
-                      placeholder="••••••••"
-                      disabled={isPending}
-                      className={`${inputCls(!!joinErrors.password)} pr-11`}
-                    />
-                    <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
-                  </div>
-                </Field>
-
-                <Field label="Confirm Password" icon="lock_reset" error={joinErrors.confirmPassword?.message}>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      {...joinForm('confirmPassword')}
-                      placeholder="••••••••"
-                      disabled={isPending}
-                      className={`${inputCls(!!joinErrors.confirmPassword)} pr-11`}
-                    />
-                    <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
-                  </div>
-                </Field>
-              </div>
-
-              {/* CTA button */}
-              <button
-                type="submit"
-                disabled={isPending}
-                className="mt-6 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
-                style={{ background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_MID} 100%)`, height: '52px' }}
-              >
-                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="relative flex items-center gap-2">
-                  {isPending ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Submitting Request…
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
-                      Request Admin Access
-                    </>
-                  )}
-                </span>
-              </button>
-
-              {/* Footer */}
-              <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
-                <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">info</span>
-                <span className="text-[12px] text-slate-400 dark:text-slate-500">Your request will be sent to the school's principal for approval.</span>
-              </div>
-            </form>
+            <SchoolJoinForm
+              joinForm={joinForm}
+              joinErrors={joinErrors}
+              isPending={isPending}
+              onSubmit={handleJoinSubmit(onJoinSubmit)}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              showConfirmPassword={showConfirmPassword}
+              setShowConfirmPassword={setShowConfirmPassword}
+            />
           )}
         </div>
 
-        {/* ════════════════════════════════════
-            RIGHT — VISUAL PANEL (blue gradient)
-        ════════════════════════════════════ */}
-        <div
-          className="hidden lg:flex flex-col w-[44%] shrink-0 relative overflow-hidden"
-          style={{ background: `linear-gradient(160deg, ${BLUE_DARK} 0%, ${BLUE} 60%, ${BLUE_MID} 100%)` }}
-        >
-          {/* Ambient blobs */}
-          <div
-            className="absolute -top-32 -right-32 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
-            style={{ background: '#93c5fd' }}
-          />
-          <div
-            className="absolute bottom-0 -left-20 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
-            style={{ background: '#bfdbfe' }}
-          />
-
-          {/* Top bar */}
-          <div className="relative z-10 flex items-center justify-between px-8 pt-8 pb-4">
-            <div
-              className="flex items-center gap-1.5 text-[12px] font-semibold px-4 py-2 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white' }}
-            >
-              <span className="material-symbols-outlined text-[14px]">redeem</span>
-              Free for 30 days
-            </div>
-            <div className="text-white/60 text-[12px]">No credit card required</div>
-          </div>
-
-          {/* Hero image */}
-          <div className="relative mx-6 rounded-2xl overflow-hidden flex-shrink-0" style={{ height: '320px' }}>
-            <Image
-              src="/images/school_admin.png"
-              alt="School administrator managing their school with Qefas Hub"
-              fill
-              className="object-cover"
-              priority
-            />
-            {/* bottom gradient matching right panel */}
-            <div
-              className="absolute inset-0"
-              style={{ background: `linear-gradient(to top, ${BLUE_DARK} 0%, transparent 60%)` }}
-            />
-            {/* Floating status pill */}
-            <div
-              className="absolute bottom-4 left-4 flex items-center gap-2.5 rounded-full px-4 py-2.5 backdrop-blur-md"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
-            >
-              <span className="w-2 h-2 rounded-full animate-pulse bg-blue-300" />
-              <span className="text-white text-[13px] font-medium">Live dashboard active</span>
-            </div>
-          </div>
-
-          {/* Feature rotating card */}
-          <div className="relative z-10 mx-6 mt-5">
-            <div
-              className="rounded-2xl p-5 backdrop-blur-sm"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.2)' }}
-                >
-                  <span className="material-symbols-outlined text-[20px] text-white">
-                    {featureCards[activeFeature].icon}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-[15px] mb-1">
-                    {featureCards[activeFeature].title}
-                  </p>
-                  <p className="text-white/60 text-[13px] leading-relaxed">
-                    {featureCards[activeFeature].desc}
-                  </p>
-                </div>
-              </div>
-              {/* Dot indicators */}
-              <div className="flex items-center gap-1.5 mt-4 justify-end">
-                {featureCards.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setActiveFeature(i)}
-                    className="rounded-full transition-all duration-300"
-                    style={{
-                      width:  i === activeFeature ? '20px' : '6px',
-                      height: '6px',
-                      background: i === activeFeature ? '#93c5fd' : 'rgba(255,255,255,0.3)',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Trust stats */}
-          <div className="relative z-10 grid grid-cols-3 gap-3 mx-6 mt-5 mb-8">
-            {trustBadges.map(b => (
-              <div
-                key={b.label}
-                className="rounded-xl p-3.5 text-center"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-              >
-                <span className="material-symbols-outlined text-[18px] mb-1.5 block text-blue-300">
-                  {b.icon}
-                </span>
-                <p className="text-white font-bold text-[17px] leading-none">{b.label}</p>
-                <p className="text-white/50 text-[11px] mt-0.5">{b.sublabel}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Right Visual Panel */}
+        <SchoolVisualPanel
+          featureCards={featureCards}
+          trustBadges={trustBadges}
+          activeFeature={activeFeature}
+          onSelectFeature={setActiveFeature}
+        />
       </div>
 
-      <PrivacyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
-      <TermsModal   isOpen={showTermsModal}   onClose={() => setShowTermsModal(false)} />
+      <SchoolPrivacyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+      <SchoolTermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
     </>
   );
 }
-
-/* ─────────────────────────────── helpers ─────────────────────────────── */
-
-function inputCls(hasError: boolean) {
-  return [
-    'w-full h-11 px-4 rounded-xl text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500',
-    'bg-slate-50 dark:bg-slate-800 outline-none border transition-all',
-    hasError
-      ? 'border-red-400 dark:border-red-500 ring-1 ring-red-300 dark:ring-red-800'
-      : 'border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50',
-  ].join(' ');
-}
-
-function Field({
-  label,
-  icon,
-  error,
-  children,
-}: {
-  label: React.ReactNode;
-  icon: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="flex items-center gap-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-        <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[15px]">{icon}</span>
-        {label}
-      </label>
-      {children}
-      {error && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
-
-function EyeBtn({ show, toggle }: { show: boolean; toggle: () => void }) {
-  return (
-    <button
-      type="button"
-      tabIndex={-1}
-      onClick={toggle}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-    >
-      <span className="material-symbols-outlined text-[18px]">
-        {show ? 'visibility_off' : 'visibility'}
-      </span>
-    </button>
-  );
-}
-
-/* ─── Shared modal wrapper ─── */
-function ModalShell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-none dark:ring-1 dark:ring-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function ModalHeader({ icon, title, onClose }: { icon: string; title: string; onClose: () => void }) {
-  return (
-    <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-      <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-        <span className="material-symbols-outlined text-[20px]" style={{ color: BLUE }}>{icon}</span>
-        {title}
-      </h3>
-      <button
-        onClick={onClose}
-        className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500 dark:text-slate-400"
-      >
-        <span className="material-symbols-outlined text-[20px]">close</span>
-      </button>
-    </div>
-  );
-}
-
-function ModalFooter({ label, onClose }: { label: string; onClose: () => void }) {
-  return (
-    <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-      <button
-        onClick={onClose}
-        className="w-full py-3 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
-        style={{ background: `linear-gradient(135deg, ${BLUE_DARK} 0%, ${BLUE} 100%)` }}
-      >
-        {label}
-      </button>
-    </div>
-  );
-}
-
-/* ─── Privacy Modal ─── */
-const PrivacyModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  if (!isOpen) return null;
-  return (
-    <ModalShell onClose={onClose}>
-      <ModalHeader icon="security" title="Privacy Policy" onClose={onClose} />
-      <div className="p-6 max-h-[60vh] overflow-y-auto text-sm leading-relaxed text-slate-600 dark:text-slate-400 space-y-3">
-        <p className="font-semibold text-slate-900 dark:text-white">Last Updated: May 9, 2026</p>
-        <p>Your privacy is important to us. We collect minimal data required for school management, including your name, email, and institutional details.</p>
-        <p>We do not sell your data to third parties. All data is encrypted and stored securely on our servers.</p>
-        <p>We use your information to:</p>
-        <ul className="list-disc ml-5 space-y-1">
-          <li>Provide and maintain our Service</li>
-          <li>Notify you about changes to our Service</li>
-          <li>Provide customer support</li>
-          <li>Gather analysis to improve our Service</li>
-        </ul>
-        <p>By using Qefas Hub, you consent to our data collection practices as outlined in this policy.</p>
-      </div>
-      <ModalFooter label="I Understand" onClose={onClose} />
-    </ModalShell>
-  );
-};
-
-/* ─── Terms Modal ─── */
-const TermsModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  if (!isOpen) return null;
-  return (
-    <ModalShell onClose={onClose}>
-      <ModalHeader icon="gavel" title="Terms of Service" onClose={onClose} />
-      <div className="p-6 max-h-[60vh] overflow-y-auto text-sm leading-relaxed text-slate-600 dark:text-slate-400 space-y-3">
-        <p className="font-semibold text-slate-900 dark:text-white">Last Updated: May 9, 2026</p>
-        <p>By using Qefas Hub, you agree to provide accurate information and use the platform for educational management purposes only.</p>
-        <p>Unauthorized use, data scraping, or any attempt to compromise the security of the platform is strictly prohibited.</p>
-        <p>Users are responsible for maintaining the confidentiality of their account and password. You agree to accept responsibility for all activities that occur under your account.</p>
-        <p>We reserve the right to terminate accounts that violate these terms or engage in behavior harmful to other users or the platform.</p>
-        <p>Qefas Hub is provided &ldquo;as is&rdquo; without any warranties of any kind, either express or implied.</p>
-      </div>
-      <ModalFooter label="Accept Terms" onClose={onClose} />
-    </ModalShell>
-  );
-};

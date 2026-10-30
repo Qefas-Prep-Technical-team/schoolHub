@@ -228,19 +228,23 @@ export default function CreateExamForm() {
   useEffect(() => {
     if (watchedScope === "SCHOOL") {
       // For school scope, class and department are optional filters
-    } else if (watchedScope === "CLASS") {
-      setValue("departmentIds", []);
     } else if (watchedScope === "DEPARTMENT") {
-      setValue("classId", "");
+      // If purely department-scoped without class
+      // classId is optional
     }
   }, [watchedScope, setValue]);
 
-  // TRIGGER 2.5: Clear departments if class changes
+  // TRIGGER 2.5: Resync department selection if class changes and selected departments no longer exist in that class
   useEffect(() => {
-    if (watchedClassId) {
-      setValue("departmentIds", []);
+    if (watchedClassId && departmentsData && departmentsData.length > 0) {
+      const validDeptIds = new Set(departmentsData.map((d: any) => d.id));
+      const current = watch("departmentIds") || [];
+      const filtered = current.filter(id => validDeptIds.has(id));
+      if (filtered.length !== current.length) {
+        setValue("departmentIds", filtered);
+      }
     }
-  }, [watchedClassId, setValue]);
+  }, [watchedClassId, departmentsData, setValue, watch]);
 
   // TRIGGER 3: Clear session if school changes
   useEffect(() => {
@@ -564,15 +568,28 @@ export default function CreateExamForm() {
             </div>
 
             <div className="space-y-3 pt-2">
-              <Label className={`text-xs font-black uppercase tracking-widest ${watchedScope === "DEPARTMENT" ? "text-purple-500" : "text-slate-400"}`}>Target Departments</Label>
+              <div className="flex items-center justify-between">
+                <Label className={`text-xs font-black uppercase tracking-widest ${watchedScope === "DEPARTMENT" || (watchedScope === "CLASS" && watch("classId")) ? "text-purple-500" : "text-slate-400"}`}>
+                  Target Departments {watchedScope === "CLASS" && <span className="text-[10px] lowercase font-normal opacity-70">(optional - filter by department)</span>}
+                </Label>
+                {watch("departmentIds") && watch("departmentIds").length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setValue("departmentIds", [])}
+                    className="text-[11px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
               {isLoadingDepartments ? (
-                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 ${watchedScope !== "DEPARTMENT" ? "opacity-50 pointer-events-none" : ""}`}>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3`}>
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="h-16 rounded-xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 animate-pulse"></div>
                   ))}
                 </div>
               ) : departmentsData && departmentsData.length > 0 ? (
-                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 ${watchedScope !== "DEPARTMENT" ? "opacity-50 pointer-events-none" : ""}`}>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3`}>
                   {departmentsData.map((d: any) => {
                     const isSelected = watch("departmentIds")?.includes(d.id);
                     return (

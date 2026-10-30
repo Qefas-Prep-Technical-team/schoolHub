@@ -299,7 +299,27 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
 export const updateSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { paperId } = req.params;
-    const { title, instructions, durationMinutes, readingContent, subjectId, teacherId, images, imageLabels, category } = req.body;
+    const { 
+      title, 
+      instructions, 
+      durationMinutes, 
+      readingContent, 
+      subjectId, 
+      teacherId, 
+      images, 
+      imageLabels, 
+      category,
+      startDate,
+      endDate,
+      allowImmediateResult,
+      resultReleaseAt,
+      scope,
+      classId,
+      departmentIds,
+      sessionId,
+      term,
+      examDescription
+    } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Authentication required" });
@@ -328,6 +348,16 @@ export const updateSubjectPaper = async (req: Request, res: Response) => {
       images,
       imageLabels,
       category,
+      startDate,
+      endDate,
+      allowImmediateResult,
+      resultReleaseAt,
+      scope,
+      classId,
+      departmentIds,
+      sessionId,
+      term,
+      examDescription,
     });
 
     return res.status(200).json({

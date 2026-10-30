@@ -132,7 +132,10 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
         const filtered = studentMenuItems.filter(item => {
             // Deactivated: hide subscription button from the sidebar
             if (item.featureKey === 'billing') return false;
-            // Core academic tools are always enabled for students
+            if (dynamicFeatures && dynamicFeatures[item.featureKey] !== undefined) {
+                return !!dynamicFeatures[item.featureKey];
+            }
+            // Core academic tools are always enabled for students by default
             if (item.featureKey === 'assignments' || item.featureKey === 'dashboard' || item.featureKey === 'offlineGrades' || item.featureKey === 'transcript') return true;
             // Map 'results' to 'grades' for consistency with schema/seed
             const key = item.featureKey === 'results' ? 'grades' : item.featureKey;

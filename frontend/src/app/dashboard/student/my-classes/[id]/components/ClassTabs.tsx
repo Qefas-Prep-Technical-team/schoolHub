@@ -12,8 +12,8 @@ import {
 import 'react-tabs/style/react-tabs.css';
 
 interface TabNavigationProps {
-  activeTab: 'assessments' | 'materials' | 'timetable' | 'subjects' | 'attendance' | 'discussions';
-  onTabChange: (tab: 'assessments' | 'materials' | 'timetable' | 'subjects' | 'attendance' | 'discussions') => void;
+  activeTab: 'assessments' | 'materials' | 'timetable' | 'attendance' | 'discussions';
+  onTabChange: (tab: 'assessments' | 'materials' | 'timetable' | 'attendance' | 'discussions') => void;
   children?: React.ReactNode;
 }
 
@@ -21,7 +21,6 @@ const tabs = [
   { id: 'assessments', label: 'Assessments', icon: FileText },
   { id: 'materials', label: 'Materials', icon: BookOpen },
   { id: 'timetable', label: 'Timetable', icon: Calendar },
-  { id: 'subjects', label: 'Subjects', icon: BookText },
   { id: 'attendance', label: 'Attendance', icon: CheckCircle2 },
   { id: 'discussions', label: 'Discussions', icon: MessageSquare },
 ] as const;

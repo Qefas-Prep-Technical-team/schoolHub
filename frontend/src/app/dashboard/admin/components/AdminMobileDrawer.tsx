@@ -23,6 +23,7 @@ import { adminMenuItems } from "./app-sidebar";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
+import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 
 const SECTION_TITLES = {
   core: "Core Management",
@@ -52,15 +53,47 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: school } = useSchoolProfile(schoolId);
   const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('admin');
+  const { data: publicPlatformSettings } = usePublicPlatformSettings();
 
   const sections = React.useMemo(() => {
         if (isFeaturesLoading) return {};
         const currentFeatures = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
         const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
 
+        let customVisibility: Record<string, boolean> = {};
+        try {
+            if (publicPlatformSettings?.admin_pages_visibility) {
+                customVisibility = JSON.parse(publicPlatformSettings.admin_pages_visibility as string);
+            }
+        } catch {}
+
+        let customRolePermissions: Record<string, AdminRole[]> = {};
+        try {
+            if (publicPlatformSettings?.admin_role_permissions) {
+                customRolePermissions = JSON.parse(publicPlatformSettings.admin_role_permissions as string);
+            }
+        } catch {}
+
         const filtered = adminMenuItems.filter(item => {
-            if (item.featureKey === 'finance') return true;
-            if (!(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
+            if (customVisibility[item.featureKey] === false) return false;
+
+            if (item.featureKey === 'finance') {
+                if (customVisibility['finance'] === false) return false;
+            } else {
+                const isExplicitlyVisible = customVisibility[item.featureKey] === true;
+                if (!isExplicitlyVisible && !(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
+            }
+
+            if (customRolePermissions[item.featureKey]) {
+                const allowedCustom = customRolePermissions[item.featureKey];
+                if (adminRole && !allowedCustom.includes(adminRole)) {
+                    if (adminRole !== 'SCHOOL_OWNER' && adminRole !== 'SUPER_ADMIN') {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             if (adminRole === 'SCHOOL_OWNER' || adminRole === 'ADMIN' || adminRole === 'SUPER_ADMIN' || !adminRole) return true;
             
             const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey as AdminFeatureFlagKey];
@@ -76,7 +109,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
             advanced: filtered.filter(item => item.section === 'advanced'),
             settings: filtered.filter(item => item.section === 'settings'),
         };
-  }, [dynamicFeatures, isFeaturesLoading, user?.adminRole, user?.role]);
+  }, [dynamicFeatures, isFeaturesLoading, publicPlatformSettings, user?.adminRole, user?.role]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

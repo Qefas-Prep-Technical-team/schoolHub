@@ -159,6 +159,16 @@ export interface CreatePaperDTO {
   images?: string[];
   imageLabels?: string[];
   creationMode?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  allowImmediateResult?: boolean;
+  resultReleaseAt?: string | null;
+  scope?: "SCHOOL" | "CLASS" | "DEPARTMENT";
+  classId?: string | null;
+  departmentIds?: string[];
+  sessionId?: string | null;
+  term?: string | null;
+  examDescription?: string;
 }
 
 export const examService = {
@@ -215,9 +225,8 @@ export const examService = {
 
   getPaperById: async (examId: string, paperId: string) => {
     try {
-      const response = await apiClient.get<{ data: SubjectPaper }>(
-        `/exams/${examId}/papers/${paperId}`,
-      );
+      const url = (!examId || examId === "none") ? `/exams/papers/${paperId}` : `/exams/${examId}/papers/${paperId}`;
+      const response = await apiClient.get<{ data: SubjectPaper }>(url);
       return response.data.data;
     } catch (error: any) {
       if (error.response?.status === 403) {
@@ -228,6 +237,15 @@ export const examService = {
           questions: [],
           _forbiddenMessage: error.response?.data?.message || "Not authorized to preview",
         } as unknown as SubjectPaper;
+      }
+      // If nested route failed with 404, attempt direct paper endpoint as fallback
+      if (examId && examId !== "none" && error.response?.status === 404) {
+        try {
+          const directRes = await apiClient.get<{ data: SubjectPaper }>(`/exams/papers/${paperId}`);
+          return directRes.data.data;
+        } catch {
+          // Ignore fallback error and throw original
+        }
       }
       throw error;
     }
@@ -259,16 +277,14 @@ export const examService = {
   },
 
   validatePaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.post(
-      `/exams/${examId}/papers/${paperId}/validate`,
-    );
+    const url = (!examId || examId === "none") ? `/exams/papers/${paperId}/validate` : `/exams/${examId}/papers/${paperId}/validate`;
+    const response = await apiClient.post(url);
     return response.data;
   },
 
   publishPaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.post(
-      `/exams/${examId}/papers/${paperId}/publish`,
-    );
+    const url = (!examId || examId === "none") ? `/exams/papers/${paperId}/publish` : `/exams/${examId}/papers/${paperId}/publish`;
+    const response = await apiClient.post(url);
     return response.data;
   },
 
@@ -293,16 +309,14 @@ export const examService = {
   },
 
   unpublishPaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.post(
-      `/exams/${examId}/papers/${paperId}/unpublish`,
-    );
+    const url = (!examId || examId === "none") ? `/exams/papers/${paperId}/unpublish` : `/exams/${examId}/papers/${paperId}/unpublish`;
+    const response = await apiClient.post(url);
     return response.data;
   },
 
   deletePaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.delete(
-      `/exams/${examId}/papers/${paperId}`,
-    );
+    const url = (!examId || examId === "none") ? `/exams/papers/${paperId}` : `/exams/${examId}/papers/${paperId}`;
+    const response = await apiClient.delete(url);
     return response.data;
   },
 

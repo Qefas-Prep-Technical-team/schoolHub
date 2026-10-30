@@ -460,13 +460,17 @@ export const getTeacherAssignmentsService = async (options: {
   page: number;
   limit: number;
   status?: string;
+  classId?: string;
 }) => {
-  const { schoolId, teacherId, page, limit, status } = options;
+  const { schoolId, teacherId, page, limit, status, classId } = options;
   const skip = (page - 1) * limit;
 
   const whereClause: any = { schoolId };
+  if (classId) {
+    whereClause.classId = classId;
+  }
   if (teacherId) {
-    const [classTeachers, subjectTeachers] = await Promise.all([
+    const [classTeachers, subjectTeachers, primarySubjects] = await Promise.all([
       prisma.classTeacher.findMany({
         where: { teacherId },
         select: { classId: true }
@@ -474,11 +478,18 @@ export const getTeacherAssignmentsService = async (options: {
       prisma.teacherSubject.findMany({
         where: { teacherId, schoolId: schoolId || undefined },
         select: { subjectId: true }
+      }),
+      prisma.subject.findMany({
+        where: { teacherId, schoolId: schoolId || undefined, isArchived: false },
+        select: { id: true }
       })
     ]);
     
     const assignedClassIds = classTeachers.map(ct => ct.classId);
-    const assignedSubjectIds = subjectTeachers.map(st => st.subjectId);
+    const assignedSubjectIds = Array.from(new Set([
+      ...subjectTeachers.map(st => st.subjectId),
+      ...primarySubjects.map(s => s.id)
+    ]));
     
     whereClause.OR = [
       { teacherId }

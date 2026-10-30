@@ -29,18 +29,29 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
         return;
       }
 
-      // If user is authenticated but shouldn't be on auth pages (like login)
+      // If user is authenticated on a non-auth required route (e.g. login, signup, onboarding)
       if (!requireAuth && isAuthenticated) {
+        // If user is on /onboarding, /select-plan or /checkout, allow them to remain there
+        if (pathname === "/onboarding" || pathname.startsWith("/select-plan") || pathname.startsWith("/checkout")) {
+          setIsChecking(false);
+          return;
+        }
+
         // Allow explicit revisit of onboarding
         if (typeof window !== 'undefined') {
           const search = new URLSearchParams(window.location.search);
-          if (search.get("revisit") === "true" && pathname === "/onboarding") {
+          if (search.get("revisit") === "true") {
             setIsChecking(false);
             return;
           }
         }
         
-        // console.log("🔐 Redirecting to dashboard: Already authenticated");
+        // If an explicit redirectTo was configured (e.g. from AuthLayout), use that
+        if (redirectTo) {
+          router.replace(redirectTo);
+          return;
+        }
+
         const dashPath = user?.userType ? `/dashboard/${user.userType.toLowerCase().replace('_', '-')}` : "/dashboard";
         router.replace(dashPath);
         return;

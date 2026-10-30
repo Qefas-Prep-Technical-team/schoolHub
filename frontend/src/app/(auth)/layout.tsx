@@ -27,6 +27,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       }
     }
 
+    // If already on /onboarding or /select-plan or /checkout, do not redirect
+    if (typeof window !== "undefined") {
+      const p = window.location.pathname;
+      if (p === "/onboarding" || p.startsWith("/select-plan") || p.startsWith("/checkout")) {
+        return "";
+      }
+    }
+
     // If logged in but onboarding not done, push to onboarding
     if (!hasCompletedOnboarding) {
       return `/onboarding?type=${userType ?? ""}`;

@@ -29,10 +29,13 @@ interface AdminRoleGuardProps {
  */
 export default function AdminRoleGuard({ allowedRoles, children, message }: AdminRoleGuardProps) {
     const { user } = useAuthStore()
-    const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined
+    const userSchools = (user as any)?.schools as Array<any> | undefined
+    const schoolAdminRole = userSchools?.find((s) => s.adminRole)?.adminRole || userSchools?.[0]?.adminRole
+    const isOwner = user?.isSchoolOwner || user?.adminRole === "SCHOOL_OWNER" || schoolAdminRole === "SCHOOL_OWNER"
+    const adminRole = (user?.adminRole || schoolAdminRole || user?.role) as AdminRole | undefined
 
-    // SCHOOL_OWNER always has full access
-    if (adminRole === "SCHOOL_OWNER") return <>{children}</>
+    // SCHOOL_OWNER or isSchoolOwner flag always has full access
+    if (isOwner || adminRole === "SCHOOL_OWNER") return <>{children}</>
 
     // If role matches the allowed list, render children
     if (adminRole && allowedRoles.includes(adminRole)) return <>{children}</>

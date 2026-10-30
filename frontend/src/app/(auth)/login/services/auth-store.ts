@@ -40,6 +40,7 @@ interface User {
   isTwoFactorEnabled?: boolean;
   tempToken?: string;
   adminRole?: string; // Sub-role for admin users (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, etc.)
+  isSchoolOwner?: boolean;
 }
 
 interface AuthState {
@@ -207,7 +208,27 @@ export const useAuthStore = create<AuthState>()(
 const normalizeUser = (user: User) => {
   const isTwoFactorEnabled =
     user.isTwoFactorEnabled ?? user.require2FA ?? false;
-  return { ...user, require2FA: isTwoFactorEnabled, isTwoFactorEnabled };
+
+  // Derive adminRole from user, schools list, or isSchoolOwner flag
+  const userSchools = (user as any).schools as Array<any> | undefined;
+  const schoolAdminRole = userSchools?.find((s) => s.adminRole)?.adminRole || userSchools?.[0]?.adminRole;
+  const isSchoolOwner =
+    user.isSchoolOwner ??
+    (user.adminRole === "SCHOOL_OWNER" ||
+      Boolean(userSchools?.some((s) => s.adminRole === "SCHOOL_OWNER")));
+
+  const adminRole =
+    user.adminRole ||
+    schoolAdminRole ||
+    (isSchoolOwner ? "SCHOOL_OWNER" : undefined);
+
+  return {
+    ...user,
+    adminRole,
+    isSchoolOwner,
+    require2FA: isTwoFactorEnabled,
+    isTwoFactorEnabled,
+  };
 };
 
 export const resolveUserDashboard = (

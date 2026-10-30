@@ -65,9 +65,14 @@ router.patch("/review/answers/:answerId", authenticateToken, markSubjectiveAnswe
 
 router.get("/papers/all", authenticateToken, getSubjectPapers);
 router.post("/papers", authenticateToken, createSubjectPaper);
+router.get("/papers/:paperId", authenticateToken, getSubjectPaperById);
+router.delete("/papers/:paperId", authenticateToken, deleteSubjectPaper);
 router.patch("/papers/:paperId", authenticateToken, updateSubjectPaper);
 router.patch("/papers/:paperId/link", authenticateToken, linkSubjectPaperToExam);
 router.patch("/papers/:paperId/unlink", authenticateToken, unlinkSubjectPaper);
+router.post("/papers/:paperId/publish", authenticateToken, publishSubjectPaper);
+router.post("/papers/:paperId/unpublish", authenticateToken, unpublishSubjectPaper);
+router.post("/papers/:paperId/validate", authenticateToken, validateSubjectPaper);
 
 // --- Static /my/* routes MUST come before /:id wildcard ---
 router.get("/my/stats", authenticateToken, getMyGlobalStats);

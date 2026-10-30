@@ -10,7 +10,6 @@ import {
   getTimezoneLocation,
   ClientDeviceInfo 
 } from "@/lib/utils/deviceDetector";
-import GoogleAuthConsentModal from "./GoogleAuthConsentModal";
 import Cookies from "js-cookie";
 
 interface GoogleLoginButtonProps {
@@ -29,7 +28,6 @@ export default function GoogleLoginButton({
     showDivider = true,
 }: GoogleLoginButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [showConsent, setShowConsent] = useState(false);
     const { data: settings, isLoading: settingsLoading } = usePublicPlatformSettings();
 
     const googleAuthEnabledGlobal = settings ? String(settings.google_auth_enabled) !== "false" : true;
@@ -123,21 +121,8 @@ export default function GoogleLoginButton({
     };
 
     const handleButtonClick = () => {
-        // On registration / sign up, ALWAYS ask for location and device permission first
-        if (mode === "signup") {
-            setShowConsent(true);
-            return;
-        }
-
-        // For sign-in, if user has never responded to permission prompt, show consent modal
-        const existingConsent = typeof window !== "undefined" ? localStorage.getItem("qefas_location_granted") : null;
-        if (existingConsent === null) {
-            setShowConsent(true);
-            return;
-        }
-
-        // If previously granted or denied, proceed with existing permission preference
-        handleProceed(existingConsent === "true");
+        // Directly request permission via native browser prompt (no custom popups)
+        handleProceed(true);
     };
 
     const isSignUp = mode === "signup";
@@ -180,16 +165,6 @@ export default function GoogleLoginButton({
                     </>
                 )}
             </button>
-
-            {/* Permission Consent Modal */}
-            <GoogleAuthConsentModal
-                isOpen={showConsent}
-                onClose={() => setShowConsent(false)}
-                onProceed={handleProceed}
-                isSubmitting={isLoading}
-                userType={userType}
-                mode={mode}
-            />
         </div>
     );
 }

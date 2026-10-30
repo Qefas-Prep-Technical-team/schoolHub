@@ -36,6 +36,7 @@ import {
   extractDeviceInfo,
   verifyDeviceCookie,
   setDeviceVerifiedCookie,
+  clearDeviceVerifiedCookie,
   processNewDeviceLogin,
 } from "./auth.device";
 import { enforceStudentLimit, enforceTeacherLimit } from "../subscription/quota.helpers";
@@ -1142,732 +1143,9 @@ export const registerParent = async (
   }
 };
 
-export const requestVerificationCode = async (req: Request, res: Response) => {
-  try {
-    const { userType } = req.body;
-    const email = req.body.email?.toLowerCase().trim();
+// requestVerificationCode decomposed into controllers/request-code.controller.ts
+export { requestVerificationCode } from "./controllers/request-code.controller";
 
-    if (!email || !userType) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and user type are required",
-      });
-    }
-
-    // Normalize userType casing
-    const normalizedRole = (userType as string)
-      ?.toUpperCase()
-      .trim() as UserRole;
-
-    // Validate userType using UserRole enum
-    if (!Object.values(UserRole).includes(normalizedRole)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user type",
-      });
-    }
-
-    // Delete old unused codes for same email and userType
-    await prisma.verificationCode.deleteMany({
-      where: { email, userType: normalizedRole, used: false },
-    });
-
-    const code = generateRandomSixDigit();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    // Save code WITH userType
-    await prisma.verificationCode.create({
-      data: {
-        email,
-        code,
-        userType: normalizedRole,
-        expiresAt,
-      },
-    });
-    const testEmail = process.env.TEST_EMAIL?.trim();
-    console.log(testEmail, "test email");
-    const resendTest = process.env.RESEND_TEST?.trim() === "true"; // default to false if not set
-    const mainEmail = resendTest ? testEmail : email;
-
-    // Detect if user exists to customize email content
-    // Sequential check to avoid hitting connection limits (P1001)
-    const admin = await prisma.admin.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-    const teacher = !admin
-      ? await prisma.teacher.findUnique({
-          where: { email },
-          select: { id: true },
-        })
-      : null;
-    const student =
-      !admin && !teacher
-        ? await prisma.student.findUnique({
-            where: { email },
-            select: { id: true },
-          })
-        : null;
-    const parent =
-      !admin && !teacher && !student
-        ? await prisma.parent.findUnique({
-            where: { email },
-            select: { id: true },
-          })
-        : null;
-
-    const userExists = !!(admin || teacher || student || parent);
-    let actualRole: UserRole | null = null;
-    if (admin) actualRole = UserRole.ADMIN;
-    else if (teacher) actualRole = UserRole.TEACHER;
-    else if (student) actualRole = UserRole.STUDENT;
-    else if (parent) actualRole = UserRole.PARENT;
-
-    // GUARD: If user exists, they MUST request a code for their registered role
-    if (userExists && actualRole !== normalizedRole) {
-      return res.status(403).json({
-        success: false,
-        message: `Email already registered as a ${actualRole}. Cannot request code for ${normalizedRole}.`,
-      });
-    }
-
-    const isDeviceVerification = req.body.isDeviceVerification === true;
-    let emailType: "welcome" | "confirmation" | "device-verification" = userExists ? "confirmation" : "welcome";
-    let deviceInfo: any = undefined;
-
-    if (isDeviceVerification && userExists) {
-        emailType = "device-verification";
-        
-        const userAgent = req.headers["user-agent"] || "";
-        const UAParserClass = UAParser as any;
-        const parser = new UAParserClass(userAgent);
-        const result = parser.getResult();
-        
-        let deviceModel = (req.headers["x-device-model"] as string);
-        if (!deviceModel) {
-            if (result.device.model) {
-                deviceModel = result.device.model;
-            } else if (result.os.name === 'iOS') {
-                deviceModel = 'iPhone';
-            } else if (result.os.name === 'Android') {
-                deviceModel = 'Android Device';
-            } else if (result.os.name === 'Windows') {
-                deviceModel = 'Windows PC';
-            } else if (result.os.name === 'Mac OS') {
-                deviceModel = 'Mac';
-            } else {
-                deviceModel = result.browser.name || "Unknown Device";
-            }
-        }
-        
-        const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim() || "Unknown IP";
-        
-        let location = "Unknown Location";
-        if (ipAddress !== "Unknown IP") {
-            try {
-                const geoip = require('geoip-lite');
-                const geo = geoip.lookup(ipAddress);
-                if (geo) {
-                    const cityPart = geo.city || geo.region;
-                    if (cityPart && geo.country) {
-                        location = `${cityPart}, ${geo.country}`;
-                    } else if (geo.country) {
-                        location = geo.country;
-                    } else if (cityPart) {
-                        location = cityPart;
-                    }
-                }
-            } catch (e) {
-                console.error("GeoIP lookup failed", e);
-            }
-        }
-        
-        deviceInfo = {
-            deviceModel,
-            location,
-            time: new Date().toLocaleString()
-        };
-    }
-
-    // Send email via Resend
-    const result = await sendVerificationEmail(mainEmail, code, emailType, deviceInfo);
-    if (result.error) {
-      // This will print the specific reason (e.g., "Missing required field", "Unauthorized")
-      console.log("RESEND ERROR:", result.error);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send verification email. Please try again later.",
-      });
-    } else {
-      console.log("RESEND SUCCESS:", result.data);
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Verification code sent to email",
-    });
-  } catch (error) {
-    return handleError(res, error, "auth.requestVerificationCode");
-  }
-};
-
-// controllers/auth.controller.ts - Single verifyEmailCode function
-// export const verifyEmailCode = async (req: Request, res: Response) => {
-//   try {
-//     const { email, code, userType } = req.body;
-
-//     if (!email || !code || !userType) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email, code and user type are required",
-//       });
-//     }
-
-//     // Validate userType
-//     if (!Object.values(UserRole).includes(userType as UserRole)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid user type",
-//       });
-//     }
-
-//     // Find the unused code WITH userType
-//     const found = await prisma.verificationCode.findFirst({
-//       where: {
-//         email,
-//         code,
-//         userType: userType as UserRole,
-//         used: false,
-//       },
-//     });
-
-//     if (!found) {
-//       return res.status(400).json({ success: false, message: "Invalid code" });
-//     }
-
-//     if (found.expiresAt < new Date()) {
-//       return res.status(400).json({ success: false, message: "Code expired" });
-//     }
-
-//     // Mark code as used
-//     await prisma.verificationCode.update({
-//       where: { id: found.id },
-//       data: { used: true },
-//     });
-
-//     // Handle all user types in one function
-//     let user: any;
-//     let isSchoolOwner = false;
-
-//     switch (userType) {
-//       case UserRole.ADMIN:
-//         user = await prisma.admin.findUnique({
-//           where: { email },
-//           include: {
-//             schoolAdmins: {
-//               include: {
-//                 school: true,
-//               },
-//             },
-//           },
-//         });
-
-//         if (!user) {
-//           return res.status(404).json({
-//             success: false,
-//             message: "Admin not found",
-//           });
-//         }
-
-//         // Check if this admin is a SCHOOL_OWNER
-//         isSchoolOwner = user.schoolAdmins.some(
-//           (sa: { role: string }) => sa.role === AdminRole.SCHOOL_OWNER
-//         );
-
-//         // Update admin - auto-approve school owners
-//         user = await prisma.admin.update({
-//           where: { email },
-//           data: {
-//             verified: true,
-//             status: isSchoolOwner ? "APPROVED" : "PENDING",
-//           },
-//           include: {
-//             schoolAdmins: {
-//               include: {
-//                 school: true,
-//               },
-//             },
-//           },
-//         });
-//         break;
-
-//       case UserRole.TEACHER:
-//         user = await prisma.teacher.findUnique({
-//           where: { email },
-//           include: {
-//             school: {
-//               select: {
-//                 id: true,
-//                 name: true,
-//               },
-//             },
-//           },
-//         });
-
-//         if (!user) {
-//           return res.status(404).json({
-//             success: false,
-//             message: "Teacher not found",
-//           });
-//         }
-
-//         user = await prisma.teacher.update({
-//           where: { email },
-//           data: { verified: true },
-//         });
-//         break;
-
-//       case UserRole.STUDENT:
-//         user = await prisma.student.findUnique({
-//           where: { email },
-//           include: {
-//             school: {
-//               select: {
-//                 id: true,
-//                 name: true,
-//               },
-//             },
-//           },
-//         });
-
-//         if (!user) {
-//           return res.status(404).json({
-//             success: false,
-//             message: "Student not found",
-//           });
-//         }
-
-//         user = await prisma.student.update({
-//           where: { email },
-//           data: { verified: true },
-//         });
-//         break;
-
-//       case UserRole.PARENT:
-//         user = await prisma.parent.findUnique({
-//           where: { email },
-//           include: {
-//             children: {
-//               include: {
-//                 student: {
-//                   select: {
-//                     id: true,
-//                     name: true,
-//                     studentCode: true,
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         });
-
-//         if (!user) {
-//           return res.status(404).json({
-//             success: false,
-//             message: "Parent not found",
-//           });
-//         }
-
-//         user = await prisma.parent.update({
-//           where: { email },
-//           data: { verified: true },
-//         });
-//         break;
-
-//       default:
-//         return res.status(400).json({
-//           success: false,
-//           message: "Invalid user type",
-//         });
-//     }
-
-//     // Prepare response based on user type
-//     let message = "";
-//     let responseData: any = {};
-
-//     switch (userType) {
-//       case UserRole.ADMIN:
-//         message = isSchoolOwner
-//           ? "School owner email verified and account approved successfully! You can now access your dashboard."
-//           : "Admin email verified successfully! Waiting for approval from school owner.";
-
-//         responseData = {
-//           admin: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             status: user.status,
-//             verified: user.verified,
-//             isSchoolOwner: isSchoolOwner,
-//           },
-//           schools: user.schoolAdmins.map((sa: any) => ({
-//             schoolId: sa.school.id,
-//             schoolName: sa.school.name,
-//             adminRole: sa.role,
-//           })),
-//         };
-//         break;
-
-//       case UserRole.TEACHER:
-//         message = "Teacher email verified successfully! You can now log in.";
-//         responseData = {
-//           teacher: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             verified: user.verified,
-//             teacherCode: user.teacherCode,
-//             school: user.school,
-//           },
-//         };
-//         break;
-
-//       case UserRole.STUDENT:
-//         message = "Student email verified successfully! You can now log in.";
-//         responseData = {
-//           student: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             verified: user.verified,
-//             studentCode: user.studentCode,
-//             school: user.school,
-//           },
-//         };
-//         break;
-
-//       case UserRole.PARENT:
-//         message = "Parent email verified successfully! You can now log in.";
-//         responseData = {
-//           parent: {
-//             id: user.id,
-//             fullName: user.fullName,
-//             email: user.email,
-//             verified: user.verified,
-//           },
-//           children: user.children.map((child: any) => ({
-//             studentId: child.student.id,
-//             studentName: child.student.name,
-//             studentCode: child.student.studentCode,
-//             linkStatus: child.status,
-//           })),
-//         };
-//         break;
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       message,
-//       userRole: userType,
-//       data: responseData,
-//     });
-//   } catch (error) {
-//     console.error("Error verifying code:", error);
-//     return res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
-// ====================================
-// login
-// =======================================
-
-// export const login = async (req: Request, res: Response) => {
-//   try {
-//     const { email, password, userType } = req.body;
-
-//     if (!email || !password || !userType) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email and password  required",
-//       });
-//     }
-
-//     // Validate userType
-//     if (!Object.values(UserRole).includes(userType as UserRole)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid user type",
-//       });
-//     }
-
-//     let user: any;
-//     switch (userType) {
-//       case UserRole.ADMIN:
-//         user = await prisma.admin.findUnique({ where: { email } });
-//         break;
-//       case UserRole.TEACHER:
-//         user = await prisma.teacher.findUnique({ where: { email } });
-//         break;
-//       case UserRole.STUDENT:
-//         user = await prisma.student.findUnique({ where: { email } });
-//         break;
-//       case UserRole.PARENT:
-//         user = await prisma.parent.findUnique({ where: { email } });
-//         break;
-//       default:
-//         return res.status(400).json({
-//           success: false,
-//           message: "email or password incorrect",
-//         });
-//     }
-
-//     if (!user)
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-
-//     if (!user.verified)
-//       return res.status(403).json({
-//         success: false,
-//         message: "Email not verified",
-//       });
-
-//     const validPassword = await comparePassword(password, user.password);
-//     if (!validPassword)
-//       return res.status(404).json({
-//         success: false,
-//         message: "password incorrect",
-//       });
-
-//     const accessToken = generateAccessToken(user.id, userType);
-//     const refreshToken = await generateRefreshToken(user.id, userType);
-
-//     res.cookie("token", accessToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       sameSite: "lax",
-//       path: "/",
-//       maxAge: 24 * 60 * 60 * 1000,
-//     });
-
-//     res.cookie("refreshToken", refreshToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       sameSite: "strict",
-//       path: "/",
-//       maxAge: 30 * 24 * 60 * 60 * 1000,
-//     });
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Logged in successfully",
-//       data: {
-//         accessToken,
-//           },
-//         });
-
-//         if (!user) {
-//           return res.status(404).json({
-//             success: false,
-//             message: "Parent not found",
-//           });
-//         }
-
-//         user = await prisma.parent.update({
-//           where: { email },
-//           data: { verified: true },
-//         });
-//         break;
-
-//       default:
-//         return res.status(400).json({
-//           success: false,
-//           message: "Invalid user type",
-//         });
-//     }
-
-//     // Prepare response based on user type
-//     let message = "";
-//     let responseData: any = {};
-
-//     switch (userType) {
-//       case UserRole.ADMIN:
-//         message = isSchoolOwner
-//           ? "School owner email verified and account approved successfully! You can now access your dashboard."
-//           : "Admin email verified successfully! Waiting for approval from school owner.";
-
-//         responseData = {
-//           admin: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             status: user.status,
-//             verified: user.verified,
-//             isSchoolOwner: isSchoolOwner,
-//           },
-//           schools: user.schoolAdmins.map((sa: any) => ({
-//             schoolId: sa.school.id,
-//             schoolName: sa.school.name,
-//             adminRole: sa.role,
-//           })),
-//         };
-//         break;
-
-//       case UserRole.TEACHER:
-//         message = "Teacher email verified successfully! You can now log in.";
-//         responseData = {
-//           teacher: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             verified: user.verified,
-//             teacherCode: user.teacherCode,
-//             school: user.school,
-//           },
-//         };
-//         break;
-
-//       case UserRole.STUDENT:
-//         message = "Student email verified successfully! You can now log in.";
-//         responseData = {
-//           student: {
-//             id: user.id,
-//             name: user.name,
-//             email: user.email,
-//             verified: user.verified,
-//             studentCode: user.studentCode,
-//             school: user.school,
-//           },
-//         };
-//         break;
-
-//       case UserRole.PARENT:
-//         message = "Parent email verified successfully! You can now log in.";
-//         responseData = {
-//           parent: {
-//             id: user.id,
-//             fullName: user.fullName,
-//             email: user.email,
-//             verified: user.verified,
-//           },
-//           children: user.children.map((child: any) => ({
-//             studentId: child.student.id,
-//             studentName: child.student.name,
-//             studentCode: child.student.studentCode,
-//             linkStatus: child.status,
-//           })),
-//         };
-//         break;
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       message,
-//       userRole: userType,
-//       data: responseData,
-//     });
-//   } catch (error) {
-//     console.error("Error verifying code:", error);
-//     return res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
-// ====================================
-// login
-// =======================================
-
-// export const login = async (req: Request, res: Response) => {
-//   try {
-//     const { email, password, userType } = req.body;
-
-//     if (!email || !password || !userType) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email and password  required",
-//       });
-//     }
-
-//     // Validate userType
-//     if (!Object.values(UserRole).includes(userType as UserRole)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid user type",
-//       });
-//     }
-
-//     let user: any;
-//     switch (userType) {
-//       case UserRole.ADMIN:
-//         user = await prisma.admin.findUnique({ where: { email } });
-//         break;
-//       case UserRole.TEACHER:
-//         user = await prisma.teacher.findUnique({ where: { email } });
-//         break;
-//       case UserRole.STUDENT:
-//         user = await prisma.student.findUnique({ where: { email } });
-//         break;
-//       case UserRole.PARENT:
-//         user = await prisma.parent.findUnique({ where: { email } });
-//         break;
-//       default:
-//         return res.status(400).json({
-//           success: false,
-//           message: "email or password incorrect",
-//         });
-//     }
-
-//     if (!user)
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-
-//     if (!user.verified)
-//       return res.status(403).json({
-//         success: false,
-//         message: "Email not verified",
-//       });
-
-//     const validPassword = await comparePassword(password, user.password);
-//     if (!validPassword)
-//       return res.status(404).json({
-//         success: false,
-//         message: "password incorrect",
-//       });
-
-//     const accessToken = generateAccessToken(user.id, userType);
-//     const refreshToken = await generateRefreshToken(user.id, userType);
-
-//     res.cookie("token", accessToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       sameSite: "lax",
-//       path: "/",
-//       maxAge: 24 * 60 * 60 * 1000,
-//     });
-
-//     res.cookie("refreshToken", refreshToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       sameSite: "strict",
-//       path: "/",
-//       maxAge: 30 * 24 * 60 * 60 * 1000,
-//     });
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Logged in successfully",
-//       data: {
-//         accessToken,
-//         user: {
-//           id: user.id,
-//           email: user.email,
-//           name: user.name || user.fullName,
-//           role: user.role,
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
 
 // =========================
 // LOGIN
@@ -2120,42 +1398,40 @@ export const login = async (req: Request, res: Response) => {
     const hasValidDeviceCookie = verifyDeviceCookie(req, user.id);
     const locationPermissionGranted = req.headers["x-location-permission"] === "granted";
 
-    // If the user does not allow us to read browser location data, they must verify the device on each login
-    let isDeviceVerified = false;
-    if (locationPermissionGranted) {
-      isDeviceVerified = isMobileClient || hasValidDeviceCookie || !!preAuthToken;
-    } else {
-      // Permission not granted: cookie cannot bypass verification; requires preAuthToken OTP
-      isDeviceVerified = !!preAuthToken;
+    // 1. If device is already verified via valid 365-day device cookie, mobile app client, or preAuthToken OTP
+    let isDeviceVerified = isMobileClient || hasValidDeviceCookie || !!preAuthToken;
+
+    // 2. If cookie isn't present yet, check if this exact device model and OS has an existing valid session in the database
+    if (!isDeviceVerified) {
+      const validDevice = await prisma.refreshToken.findFirst({
+        where: {
+          userId: user.id,
+          deviceModel: deviceInfo.deviceModel,
+          osVersion: deviceInfo.osVersion,
+          isValid: true,
+        },
+      });
+
+      if (validDevice) {
+        isDeviceVerified = true;
+      }
     }
 
+    // 3. If device is truly unverified, require device security verification via preAuthToken
     if (!isDeviceVerified) {
-      const validDevice = locationPermissionGranted
-        ? await prisma.refreshToken.findFirst({
-            where: {
-              userId: user.id,
-              deviceModel: deviceInfo.deviceModel,
-              osVersion: deviceInfo.osVersion,
-              isValid: true,
-            },
-          })
-        : null;
-
-      if (!validDevice) {
-        const generatedPreAuthToken = jwt.sign(
-          { userId: user.id, userType: actualRole },
-          process.env.JWT_SECRET || "default_secret",
-          { expiresIn: "15m" },
-        );
-        return res.status(403).json({
-          success: false,
-          message: !locationPermissionGranted
-            ? "Location permission not granted. Security verification required for this device."
-            : "Unrecognized or revoked device detected. Verification required.",
-          requiresVerification: true,
-          preAuthToken: generatedPreAuthToken,
-        });
-      }
+      const generatedPreAuthToken = jwt.sign(
+        { userId: user.id, userType: actualRole },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "15m" },
+      );
+      return res.status(403).json({
+        success: false,
+        message: !locationPermissionGranted
+          ? "Unrecognized device detected. Security verification required for this device."
+          : "Unrecognized device detected. Verification required.",
+        requiresVerification: true,
+        preAuthToken: generatedPreAuthToken,
+      });
     }
 
     // Process new device login detection, real-time in-app notification, and security email
@@ -2597,446 +1873,21 @@ export const checkEmail = async (req: Request, res: Response) => {
   }
 };
 
-export const verifyEmailCode = async (req: Request, res: Response) => {
-  try {
-    const { email, code, userType } = req.body;
-    const normalizedEmail = email?.trim().toLowerCase();
-    console.log("Verifying code for:", {
-      email: normalizedEmail,
-      userType,
-      code,
-    });
+// verifyEmailCode decomposed into controllers/verify-code.controller.ts
+export { verifyEmailCode } from "./controllers/verify-code.controller";
 
-    if (!email || !code || !userType) {
-      return res.status(400).json({
-        success: false,
-        message: "Email, code, and user type are required",
-      });
-    }
-
-    if (!Object.values(UserRole).includes(userType as UserRole)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid user type" });
-    }
-    const check = await prisma.verificationCode.findMany({
-      where: { email: normalizedEmail },
-    });
-    console.log("Existing codes for this email and type:", check);
-    const found = await prisma.verificationCode.findFirst({
-      where: {
-        email: normalizedEmail,
-        code,
-        userType: userType as UserRole,
-        used: false,
-      },
-    });
-
-    if (!found)
-      return res.status(400).json({ success: false, message: "Invalid code" });
-    if (found.expiresAt < new Date())
-      return res.status(400).json({ success: false, message: "Code expired" });
-
-    await prisma.verificationCode.update({
-      where: { id: found.id },
-      data: { used: true },
-    });
-
-    let user: any;
-    let isSchoolOwner = false;
-    let isNewUser = false;
-
-    // Helper to set cookie once user is found
-    const setDeviceVerifiedCookie = (userId: string) => {
-      const deviceToken = jwt.sign(
-        { userId },
-        process.env.JWT_SECRET || "default_secret",
-        { expiresIn: "365d" }
-      );
-      res.cookie("deviceVerified", deviceToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 365 * 24 * 60 * 60 * 1000,
-      });
-    };
-
-    switch (userType) {
-      case UserRole.ADMIN:
-        user = await prisma.admin.findUnique({
-          where: { email: normalizedEmail },
-          include: { schoolAdmins: { include: { school: true } } },
-        });
-
-        if (!user)
-          return res
-            .status(401)
-            .json({ success: false, message: "Invalid credentials" });
-
-        isSchoolOwner = user.schoolAdmins.some(
-          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
-        );
-        isNewUser = !user.verified;
-
-        user = await prisma.admin.update({
-          where: { email: normalizedEmail },
-          data: {
-            verified: true,
-            status: isSchoolOwner ? "APPROVED" : "PENDING",
-          },
-          include: { schoolAdmins: { include: { school: true } } },
-        });
-
-        // Initialize Admin Subscription upon verification ONLY for new users
-        if (isNewUser) {
-          await UserSubscriptionService.initializeFreePlan(
-            user.id,
-            UserRole.ADMIN,
-          );
-
-          // If School Owner, also initialize School Subscription
-          const ownerAdmin = user.schoolAdmins.find(
-            (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
-          );
-          if (ownerAdmin) {
-            await SchoolSubscriptionService.initializeFreePlan(
-              ownerAdmin.school.id,
-            );
-          }
-        }
-
-        const schools = user.schoolAdmins.map((sa: any) => ({
-          schoolId: sa.school.id,
-          schoolName: sa.school.name,
-          adminRole: sa.role,
-          approved:
-            sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
-        }));
-        const ownerSchool = user.schoolAdmins.find(
-          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
-        );
-
-        const schoolCode = ownerSchool?.school?.schoolCode || null;
-
-        // Send email notification for new verified users
-        if (isNewUser && isSchoolOwner && ownerSchool) {
-          sendSetupCompleteEmail(user.email).catch(console.error);
-
-          createNotification({
-            recipientType: "ADMIN",
-            recipientId: user.id,
-            type: "GENERAL",
-            title: "Welcome to Qefas Hub",
-            message:
-              "Your school owner account has been successfully verified and activated. You can now start setting up your digital campus.",
-          }).catch(console.error);
-        } else if (isNewUser) {
-          sendWelcomeEmail({
-            email: user.email,
-            name: user.name,
-            role: userType,
-            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
-          }).catch(console.error);
-
-          createNotification({
-            recipientType: "ADMIN",
-            recipientId: user.id,
-            type: "GENERAL",
-            title: "Email Verified",
-            message:
-              "Your email has been verified. You are currently pending approval from your school owner.",
-          }).catch(console.error);
-        } else {
-          // Device verification for existing user: do not send email verified email.
-          // The /login route will handle sending the New Device alert.
-        }
-
-        const adminAccessToken = generateAccessToken(user.id, "ADMIN");
-        res.cookie("token", adminAccessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-        setDeviceVerifiedCookie(user.id);
-        const normalizedAdmin = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role || "ADMIN",
-          userType: "ADMIN",
-          tenantId: user.tenantId,
-          status: user.status,
-          verified: user.verified,
-          isSchoolOwner,
-          schools,
-        };
-        return res.status(200).json({
-          success: true,
-          isNewUser,
-          token: adminAccessToken,
-          accessToken: adminAccessToken,
-          message: isSchoolOwner
-            ? "School owner verified and account approved!"
-            : "Admin verified! Waiting for school owner approval.",
-          userRole: userType,
-          code: schoolCode,
-          user: normalizedAdmin,
-          data: {
-            token: adminAccessToken,
-            accessToken: adminAccessToken,
-            user: normalizedAdmin,
-            admin: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              status: user.status,
-              verified: user.verified,
-              isSchoolOwner,
-            },
-            schools,
-          },
-        });
-
-      case UserRole.TEACHER:
-        const oldTeacher = await prisma.teacher.findUnique({
-          where: { email: normalizedEmail },
-        });
-        if (oldTeacher) isNewUser = !oldTeacher.verified;
-        user = await prisma.teacher.update({
-          where: { email: normalizedEmail },
-          data: { verified: true },
-        });
-        // Initialize Teacher Subscription upon verification
-        if (isNewUser) {
-          await UserSubscriptionService.initializeFreePlan(
-            user.id,
-            UserRole.TEACHER,
-          );
-        }
-
-        if (isNewUser) {
-          sendWelcomeEmail({
-            email: user.email,
-            name: user.name,
-            role: userType,
-            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
-          }).catch(console.error);
-
-          createNotification({
-            recipientType: "TEACHER",
-            recipientId: user.id,
-            type: "GENERAL",
-            title: "Account Verified",
-            message:
-              "Welcome to Qefas Hub! Your teacher account is verified and ready.",
-          }).catch(console.error);
-        } else {
-          // Device verification for existing user
-        }
-
-        const teacherAccessToken = generateAccessToken(user.id, "TEACHER");
-        res.cookie("token", teacherAccessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-        setDeviceVerifiedCookie(user.id);
-        const normalizedTeacher = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role || "TEACHER",
-          userType: "TEACHER",
-          teacherCode: user.teacherCode,
-          tenantId: user.tenantId,
-          verified: user.verified,
-        };
-        return res.status(200).json({
-          success: true,
-          isNewUser,
-          token: teacherAccessToken,
-          accessToken: teacherAccessToken,
-          message: "Teacher verified successfully!",
-          userRole: userType,
-          code: user.teacherCode,
-          user: normalizedTeacher,
-          data: {
-            token: teacherAccessToken,
-            accessToken: teacherAccessToken,
-            user: normalizedTeacher,
-            teacher: user,
-          },
-        });
-
-      case UserRole.STUDENT:
-        const oldStudent = await prisma.student.findUnique({
-          where: { email: normalizedEmail },
-        });
-        if (oldStudent) isNewUser = !oldStudent.verified;
-        user = await prisma.student.update({
-          where: { email: normalizedEmail },
-          data: { verified: true },
-        });
-        // Initialize Student Subscription upon verification
-        if (isNewUser) {
-          await UserSubscriptionService.initializeFreePlan(
-            user.id,
-            UserRole.STUDENT,
-          );
-        }
-
-        if (isNewUser) {
-          sendWelcomeEmail({
-            email: user.email,
-            name: user.name,
-            role: userType,
-            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
-          }).catch(console.error);
-
-          createNotification({
-            recipientType: "STUDENT",
-            recipientId: user.id,
-            type: "GENERAL",
-            title: "Account Verified",
-            message:
-              "Welcome to Qefas Hub! Your student account is verified and ready to go.",
-          }).catch(console.error);
-        } else {
-          // Device verification for existing user
-        }
-
-        const studentAccessToken = generateAccessToken(user.id, "STUDENT");
-        res.cookie("token", studentAccessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-        setDeviceVerifiedCookie(user.id);
-        const normalizedStudent = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: "STUDENT",
-          userType: "STUDENT",
-          studentCode: user.studentCode,
-          tenantId: user.tenantId,
-          verified: user.verified,
-        };
-        return res.status(200).json({
-          success: true,
-          isNewUser,
-          token: studentAccessToken,
-          accessToken: studentAccessToken,
-          message: "Student verified successfully!",
-          userRole: userType,
-          code: user.studentCode,
-          user: normalizedStudent,
-          data: {
-            token: studentAccessToken,
-            accessToken: studentAccessToken,
-            user: normalizedStudent,
-            student: user,
-          },
-        });
-
-      case UserRole.PARENT:
-        const oldParent = await prisma.parent.findUnique({
-          where: { email: normalizedEmail },
-        });
-        if (oldParent) isNewUser = !oldParent.verified;
-        user = await prisma.parent.update({
-          where: { email: normalizedEmail },
-          data: { verified: true },
-        });
-        // Initialize Parent Subscription upon verification
-        if (isNewUser) {
-          await UserSubscriptionService.initializeFreePlan(
-            user.id,
-            UserRole.PARENT,
-          );
-        }
-
-        if (isNewUser) {
-          sendWelcomeEmail({
-            email: user.email,
-            name: user.fullName || "Parent",
-            role: userType,
-            loginUrl: `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/login`,
-          }).catch(console.error);
-
-          createNotification({
-            recipientType: "PARENT",
-            recipientId: user.id,
-            type: "GENERAL",
-            title: "Account Verified",
-            message:
-              "Welcome to Qefas Hub! Your parent account is now verified.",
-          }).catch(console.error);
-        } else {
-          // Device verification for existing user
-        }
-
-        const parentAccessToken = generateAccessToken(user.id, "PARENT");
-        res.cookie("token", parentAccessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-        setDeviceVerifiedCookie(user.id);
-        const normalizedParent = {
-          id: user.id,
-          name: user.fullName,
-          email: user.email,
-          role: "PARENT",
-          userType: "PARENT",
-          parentCode: user.parentCode,
-          tenantId: user.tenantId,
-          verified: user.verified,
-        };
-        return res.status(200).json({
-          success: true,
-          isNewUser,
-          token: parentAccessToken,
-          accessToken: parentAccessToken,
-          message: "Parent verified successfully!",
-          userRole: userType,
-          code: user.parentCode,
-          user: normalizedParent,
-          data: {
-            token: parentAccessToken,
-            accessToken: parentAccessToken,
-            user: normalizedParent,
-            parent: user,
-          },
-        });
-
-      default:
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid user type" });
-    }
-  } catch (error) {
-    return handleError(res, error, "auth.verifyEmailCode");
-  }
-};
 
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const token = req.cookies.refreshToken;
-    if (!token)
+    const token = req.cookies.refreshToken || req.body?.refreshToken;
+    if (!token) {
+      console.warn(`[auth.refreshToken] 401 Issued | code=NO_REFRESH_TOKEN | route=${req.originalUrl}`);
       return res.status(401).json({
         success: false,
+        code: "NO_REFRESH_TOKEN",
         message: "No refresh token",
       });
+    }
 
     let payload: any;
     try {
@@ -3045,61 +1896,168 @@ export const refreshToken = async (req: Request, res: Response) => {
       console.error("LOG ERROR: [refreshToken] jwt.verify failed", err);
       return res.status(401).json({
         success: false,
+        code: "REFRESH_INVALID",
         message: "Invalid or expired refresh token",
       });
     }
 
-    const dbToken = await prisma.refreshToken.findFirst({
-      where: {
-        token,
-        userId: payload.userId,
-        userType: payload.userType,
-        isValid: true,
-      },
-    });
+    // Lookup token in DB with withRetry
+    const dbToken = await withRetry(
+      () =>
+        prisma.refreshToken.findFirst({
+          where: {
+            token,
+            userId: payload.userId,
+            userType: payload.userType,
+          },
+        }),
+      "refreshToken_findFirst"
+    );
 
-    if (!dbToken || dbToken.expiresAt < new Date()) {
-      console.error(
-        "LOG ERROR: [refreshToken] dbToken missing, invalid, or expired for token",
-        token,
-      );
+    if (!dbToken) {
+      console.error("LOG ERROR: [refreshToken] dbToken not found for token", token);
       return res.status(401).json({
         success: false,
+        code: "REFRESH_INVALID",
         message: "Invalid or revoked refresh token",
       });
     }
 
-    // --- ROTATE REFRESH TOKEN ---
-    // Invalidate the old token and issue a brand-new one.
-    // This prevents replay attacks and detects stolen tokens.
-    await prisma.refreshToken.update({
-      where: { id: dbToken.id },
-      data: { isValid: false },
-    });
+    if (dbToken.expiresAt < new Date()) {
+      console.error("LOG ERROR: [refreshToken] dbToken expired at", dbToken.expiresAt);
+      return res.status(401).json({
+        success: false,
+        code: "REFRESH_EXPIRED",
+        message: "Refresh token has expired",
+      });
+    }
 
-    const newRefreshToken = await generateRefreshToken(
-      payload.userId,
-      payload.userType,
-      {
-        deviceType: dbToken.deviceType || undefined,
-        deviceModel: dbToken.deviceModel || undefined,
-        osVersion: dbToken.osVersion || undefined,
-        ipAddress: req.ip || undefined,
-      },
+    const graceSeconds = parseInt(process.env.REFRESH_GRACE_SECONDS || "30", 10);
+
+    // ── Handle Token that was already rotated ─────────────────────────────────
+    if (!dbToken.isValid) {
+      const nowMs = Date.now();
+      const rotatedAtMs = dbToken.rotatedAt ? new Date(dbToken.rotatedAt).getTime() : 0;
+      const isWithinGrace = dbToken.rotatedAt && (nowMs - rotatedAtMs) <= graceSeconds * 1000;
+
+      if (isWithinGrace) {
+        console.log(`[auth.refreshToken] Benign replay within ${graceSeconds}s grace window for userId=${payload.userId}. Returning fresh access token.`);
+        
+        let successorRefreshToken = token;
+        if (dbToken.replacedByTokenId) {
+          const successorRow = await withRetry(
+            () => prisma.refreshToken.findUnique({ where: { id: dbToken.replacedByTokenId! } }),
+            "refreshToken_findSuccessor"
+          );
+          if (successorRow) {
+            successorRefreshToken = successorRow.token;
+          }
+        }
+
+        const newAccessToken = generateAccessToken(payload.userId, payload.userType);
+
+        res.cookie("token", newAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 24 * 60 * 60 * 1000,
+        });
+
+        res.cookie("refreshToken", successorRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.status(200).json({
+          success: true,
+          accessToken: newAccessToken,
+          refreshToken: successorRefreshToken,
+        });
+      }
+
+      console.error(`[auth.refreshToken] 401 Issued | code=REFRESH_REUSED | userId=${payload.userId} | rotatedAt=${dbToken.rotatedAt}`);
+      return res.status(401).json({
+        success: false,
+        code: "REFRESH_REUSED",
+        message: "Invalid or revoked refresh token",
+      });
+    }
+
+    // ── ROTATE REFRESH TOKEN (Atomic & Concurrency-Safe) ──────────────────────
+    const newExpiresAt = new Date();
+    newExpiresAt.setDate(newExpiresAt.getDate() + 30);
+    const newRefreshJwt = jwt.sign(
+      { userId: payload.userId, userType: payload.userType },
+      process.env.JWT_REFRESH_SECRET!,
+      { expiresIn: "30d" }
     );
 
-    res.cookie("refreshToken", newRefreshToken, {
+    const rotationResult = await withRetry(
+      () =>
+        prisma.$transaction(async (tx) => {
+          // Conditional update to prevent concurrent double-rotations
+          const updateCount = await tx.refreshToken.updateMany({
+            where: { id: dbToken.id, isValid: true },
+            data: {
+              isValid: false,
+              rotatedAt: new Date(),
+            },
+          });
+
+          if (updateCount.count === 0) {
+            // Concurrently rotated by a parallel request, fetch the updated state
+            const current = await tx.refreshToken.findUnique({ where: { id: dbToken.id } });
+            return { concurrent: true, current };
+          }
+
+          const created = await tx.refreshToken.create({
+            data: {
+              token: newRefreshJwt,
+              userId: payload.userId,
+              userType: payload.userType,
+              expiresAt: newExpiresAt,
+              deviceType: dbToken.deviceType,
+              deviceModel: dbToken.deviceModel,
+              osVersion: dbToken.osVersion,
+              ipAddress: req.ip || dbToken.ipAddress,
+            },
+          });
+
+          await tx.refreshToken.update({
+            where: { id: dbToken.id },
+            data: { replacedByTokenId: created.id },
+          });
+
+          return { concurrent: false, newRefreshToken: created.token };
+        }),
+      "refreshToken_rotation_transaction"
+    );
+
+    let activeRefreshToken = newRefreshJwt;
+
+    if (rotationResult.concurrent && rotationResult.current) {
+      if (rotationResult.current.replacedByTokenId) {
+        const succ = await withRetry(
+          () => prisma.refreshToken.findUnique({ where: { id: rotationResult.current!.replacedByTokenId! } }),
+          "refreshToken_findConcurrentSuccessor"
+        );
+        if (succ) activeRefreshToken = succ.token;
+      }
+    }
+
+    const newAccessToken = generateAccessToken(payload.userId, payload.userType);
+
+    res.cookie("refreshToken", activeRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
-
-    const newAccessToken = generateAccessToken(
-      payload.userId,
-      payload.userType,
-    );
 
     res.cookie("token", newAccessToken, {
       httpOnly: true,
@@ -3112,11 +2070,19 @@ export const refreshToken = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       accessToken: newAccessToken,
+      refreshToken: activeRefreshToken,
     });
-  } catch (error) {
-    return handleError(res, error, "auth.refreshToken");
+  } catch (error: any) {
+    console.error("[auth.refreshToken] Error encountered:", error);
+    // Return 503 for connection/Prisma failures so client retries instead of logging out
+    return res.status(503).json({
+      success: false,
+      code: "SERVICE_UNAVAILABLE",
+      message: "Temporary error during token refresh, please retry",
+    });
   }
 };
+
 
 export const logout = async (req: Request, res: Response) => {
   try {
@@ -3549,109 +2515,9 @@ export const validateResetToken = async (req: Request, res: Response) => {
   }
 };
 
-export const googleAuth = async (req: Request, res: Response) => {
-  try {
-    const { idToken, googleId, email, name, userRole, emailVerified, inviteToken } = req.body;
+// googleAuth decomposed into controllers/google-auth.controller.ts
+export { googleAuth } from "./controllers/google-auth.controller";
 
-    if (!idToken && (!googleId || !email) && !inviteToken) {
-      return res.status(400).json({
-        success: false,
-        message: "Google ID or Token is required",
-      });
-    }
-
-    // Extract rich device information
-    const deviceInfo = extractDeviceInfo(req);
-
-    const tokenOrData = idToken || { googleId, email, name, emailVerified, inviteToken };
-    const authResult = await googleAuthService(
-      tokenOrData,
-      userRole as UserRole,
-      deviceInfo,
-    );
-
-    const { user, accessToken, refreshToken, token, isNewUser, userRole: actualRole, isPlatformStaff } = authResult as any;
-
-    if (user && !isNewUser) {
-      await processNewDeviceLogin({
-        req,
-        res,
-        userId: user.id,
-        userEmail: user.email,
-        userRole: actualRole,
-        deviceInfo,
-      });
-    }
-
-    // Set HttpOnly cookies if accessed directly
-    if (accessToken) {
-      res.cookie(isPlatformStaff ? "platform_token" : "token", accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: (isPlatformStaff ? 8 : 24) * 60 * 60 * 1000,
-      });
-    }
-
-    if (refreshToken) {
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
-    }
-
-    let deviceVerifiedToken = "";
-    if (user) {
-      deviceVerifiedToken = jwt.sign(
-        { userId: user.id, deviceModel: deviceInfo.deviceModel || "Known Device" },
-        process.env.JWT_SECRET || "default_secret",
-        { expiresIn: "365d" }
-      );
-      setDeviceVerifiedCookie(res, user.id, deviceInfo.deviceModel);
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Google Authentication successful",
-      data: {
-        user: {
-          id: user.id,
-          name: user.name || user.fullName,
-          email: user.email,
-          role: user.role,
-          require2FA: user.isTwoFactorEnabled || false,
-          adminCode: user.adminCode || undefined,
-          teacherCode: user.teacherCode || undefined,
-          studentCode: user.studentCode || undefined,
-          parentCode: user.parentCode || undefined,
-          plan: user.plan || undefined,
-        },
-        accessToken: accessToken || token,
-        refreshToken,
-        token: accessToken || token,
-        deviceVerifiedToken,
-        userRole: actualRole,
-        isNewUser: !!isNewUser,
-        isPlatformStaff: !!isPlatformStaff,
-      },
-    });
-  } catch (error: any) {
-    if (error.code === "WRONG_PORTAL" || error.detectedRole) {
-      return res.status(403).json({
-        success: false,
-        code: "WRONG_PORTAL",
-        message: error.message,
-        detectedRole: error.detectedRole,
-        correctPortal: error.correctPortal,
-      });
-    }
-    return handleError(res, error, "auth.googleAuth");
-  }
-};
 
 export const facebookAuth = async (req: Request, res: Response) => {
   try {
@@ -4304,8 +3170,9 @@ export const revokeUserSession = async (req: Request, res: Response) => {
 
     const currentToken = req.cookies.refreshToken;
     if (currentToken === session.token) {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
+      res.clearCookie("token", { path: "/" });
+      res.clearCookie("refreshToken", { path: "/" });
+      clearDeviceVerifiedCookie(res);
     }
 
     return res

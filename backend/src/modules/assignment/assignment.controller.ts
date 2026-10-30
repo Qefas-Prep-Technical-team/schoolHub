@@ -114,12 +114,13 @@ export const getTeacherAssignments = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: "Access denied or missing school ID" });
     }
 
-    const { status, page = "1", limit = "10" } = req.query;
+    const { status, page = "1", limit = "10", classId } = req.query;
 
     const data = await assignmentService.getTeacherAssignmentsService({
       schoolId,
       teacherId: userId,
       status: status as string,
+      classId: classId as string,
       page: parseInt(page as string),
       limit: parseInt(limit as string),
     });

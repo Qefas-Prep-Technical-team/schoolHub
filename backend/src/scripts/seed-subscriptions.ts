@@ -1,6 +1,6 @@
-import { PrismaClient, PlanScope } from "@prisma/client";
+import { PlanScope } from "@prisma/client";
+import prisma from "../config/database";
 
-const prisma = new PrismaClient();
 
 async function seed() {
   console.log("Seeding subscription plans...");

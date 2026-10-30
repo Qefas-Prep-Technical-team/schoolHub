@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
     Sidebar,
     SidebarContent,
@@ -61,9 +61,9 @@ import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey, AdminRole, ROLE_NAV_PERMISSIO
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
-import { useEffect, useMemo } from "react"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool"
+import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance"
 
 
 // Define the menu item type
@@ -170,8 +170,9 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
         }
     }, [subdomain])
 
-    // Fetch dynamic feature toggles from platform config
+    // Fetch dynamic feature toggles from platform config & public settings
     const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('admin')
+    const { data: publicPlatformSettings } = usePublicPlatformSettings()
 
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {})
@@ -188,17 +189,58 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
         const currentFeatures = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
         const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
 
+        // Parse custom visibility toggles configured from /console/features
+        let customVisibility: Record<string, boolean> = {};
+        try {
+            if (publicPlatformSettings?.admin_pages_visibility) {
+                customVisibility = JSON.parse(publicPlatformSettings.admin_pages_visibility as string);
+            }
+        } catch {
+            // fallback
+        }
+
+        // Parse custom role permissions configured from /console/features
+        let customRolePermissions: Record<string, AdminRole[]> = {};
+        try {
+            if (publicPlatformSettings?.admin_role_permissions) {
+                customRolePermissions = JSON.parse(publicPlatformSettings.admin_role_permissions as string);
+            }
+        } catch {
+            // fallback
+        }
+
         const filtered = adminMenuItems.filter(item => {
+            // 1. Check if page visibility was explicitly turned off from /console/features
+            if (customVisibility[item.featureKey] === false) {
+                return false;
+            }
+
             // Finance is a core institutional portal feature for administrators
-            if (item.featureKey === 'finance') return true;
+            if (item.featureKey === 'finance') {
+                if (customVisibility['finance'] === false) return false;
+            } else {
+                // Check platform feature flag
+                const isExplicitlyVisible = customVisibility[item.featureKey] === true;
+                if (!isExplicitlyVisible && !(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
+            }
 
-            // Check platform feature flag first
-            if (!(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
+            // 2. Check role access permissions:
+            // If custom role permissions were set from /console/features, prioritize them
+            if (customRolePermissions[item.featureKey]) {
+                const allowedCustom = customRolePermissions[item.featureKey];
+                if (adminRole && !allowedCustom.includes(adminRole)) {
+                    // School owner always retains access unless explicitly disallowed
+                    if (adminRole !== 'SCHOOL_OWNER' && adminRole !== 'SUPER_ADMIN') {
+                        return false;
+                    }
+                }
+                return true;
+            }
 
-            // SCHOOL_OWNER, ADMIN, SUPER_ADMIN see all navigation items
+            // SCHOOL_OWNER, ADMIN, SUPER_ADMIN see all navigation items by default
             if (adminRole === 'SCHOOL_OWNER' || adminRole === 'ADMIN' || adminRole === 'SUPER_ADMIN' || !adminRole) return true;
 
-            // Check role-based nav permission — if no restriction defined, allow all roles
+            // Check default role-based nav permission — if no restriction defined, allow all roles
             const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey];
             if (!allowedRoles) return true;
 
@@ -213,7 +255,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             advanced: filtered.filter(item => item.section === 'advanced'),
             settings: filtered.filter(item => item.section === 'settings'),
         };
-    }, [dynamicFeatures, isFeaturesLoading, user?.adminRole, user?.role]);
+    }, [dynamicFeatures, isFeaturesLoading, publicPlatformSettings, user?.adminRole, user?.role]);
 
     return (
         <Sidebar

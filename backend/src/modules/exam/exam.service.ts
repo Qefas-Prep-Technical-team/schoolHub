@@ -257,6 +257,8 @@ export const getExamsService = async (filters: {
         );
       }
 
+      const isSingleSubjectAssessment = filters.category === 'CA' || filters.category === 'QUIZ';
+
       // Check if they are assigned to any class directly (as form teacher or otherwise)
       const assignedClasses = await prisma.classTeacher.findMany({
         where: { teacherId },
@@ -264,11 +266,12 @@ export const getExamsService = async (filters: {
       });
       const classIds = assignedClasses.map(c => c.classId);
 
-      if (classIds.length > 0) {
+      if (!isSingleSubjectAssessment && classIds.length > 0) {
+        // Multi-subject terminal exams allow class teachers to monitor all papers in their class
         teacherOrConditions.push({ classId: { in: classIds } });
       }
       
-      // They can also always see exams they created
+      // They can also always see assessments they created
       teacherOrConditions.push({ teacherId });
 
       if (teacherOrConditions.length > 0) {
@@ -615,25 +618,48 @@ export const getExamPapersService = async (examId: string, schoolId?: string, us
   if (user && user.userType?.toUpperCase() === "TEACHER") {
     const now = new Date();
 
-    // Get teacher's connected subject IDs once
-    const teacherSubjects = await prisma.teacherSubject.findMany({
-      where: { teacherId: user.id },
-      select: { subjectId: true },
-    });
-    const connectedSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
-
-    // Get the exam's endDate to determine if we are past it
+    // Get the exam details to check ownership and class connection
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
-      select: { endDate: true },
+      select: { endDate: true, teacherId: true, classId: true, schoolId: true },
     });
     const isAfterEndDate = exam?.endDate ? now > new Date(exam.endDate) : false;
 
-    if (!isAfterEndDate) {
-      // Show papers connected to this teacher via subject OR created by this teacher
+    // If teacher is the creator of the exam, allow full access
+    const isExamCreator = exam?.teacherId === user.id;
+
+    // Check if teacher is assigned to the class of the exam
+    let isClassTeacher = false;
+    if (exam?.classId) {
+      const ct = await prisma.classTeacher.findFirst({
+        where: { teacherId: user.id, classId: exam.classId },
+      });
+      if (ct) isClassTeacher = true;
+    }
+
+    if (!isAfterEndDate && !isExamCreator && !isClassTeacher) {
+      // Get teacher's connected subject IDs (via TeacherSubject and primary Subject)
+      const [teacherSubjects, primarySubjects] = await Promise.all([
+        prisma.teacherSubject.findMany({
+          where: { teacherId: user.id },
+          select: { subjectId: true },
+        }),
+        prisma.subject.findMany({
+          where: { teacherId: user.id, isArchived: false },
+          select: { id: true },
+        }),
+      ]);
+
+      const connectedSubjectIds = new Set([
+        ...teacherSubjects.map(ts => ts.subjectId),
+        ...primarySubjects.map(s => s.id),
+      ]);
+
+      // Show papers connected to this teacher via subject, created by this teacher, or unassigned papers in same school
       return allPapers.filter(paper => 
         paper.teacherId === user.id || 
-        (paper.subjectId && connectedSubjectIds.has(paper.subjectId))
+        (paper.subjectId && connectedSubjectIds.has(paper.subjectId)) ||
+        (!paper.teacherId && paper.schoolId === exam?.schoolId)
       );
     }
   }
@@ -1084,6 +1110,16 @@ export const updateSubjectPaperService = async (paperId: string, data: {
   subjectId?: string;
   teacherId?: string;
   category?: string;
+  startDate?: Date | string | null;
+  endDate?: Date | string | null;
+  allowImmediateResult?: boolean;
+  resultReleaseAt?: Date | string | null;
+  scope?: "SCHOOL" | "CLASS" | "DEPARTMENT";
+  classId?: string | null;
+  departmentIds?: string[];
+  sessionId?: string | null;
+  term?: any | null;
+  examDescription?: string;
 }) => {
   const updatedPaper = await prisma.subjectExamPaper.update({
     where: { id: paperId },
@@ -1106,22 +1142,17 @@ export const updateSubjectPaperService = async (paperId: string, data: {
     }
   });
 
-  // For single paper exams (e.g. CA, QUIZ, ASSIGNMENT, or single-paper mode),
-  // keep the main exam in sync if title, durationMinutes, subjectId, or teacherId changed
-  const SINGLE_PAPER_TYPES = ["QUIZ", "CA", "ASSIGNMENT"];
+  // For exams linked to this paper (especially single-paper exams or direct edits),
+  // synchronize the exam level settings (dates, release dates, departments, class, etc.)
   const linkedExams = updatedPaper.exams || [];
   for (const link of linkedExams) {
     const ex = link.exam;
-    const isSingle = ex && (
-      SINGLE_PAPER_TYPES.includes((ex as any).category || "") ||
-      SINGLE_PAPER_TYPES.includes((ex as any).type || "") ||
-      (ex as any).mode === "SINGLE_SUBJECT" ||
-      linkedExams.length === 1
-    );
-
-    if (isSingle && ex) {
+    if (ex) {
       const examSyncData: any = {};
       if (data.title && data.title !== ex.title) examSyncData.title = data.title;
+      if (data.examDescription !== undefined && data.examDescription !== ex.description) {
+        examSyncData.description = data.examDescription || null;
+      }
       if (data.durationMinutes !== undefined && data.durationMinutes !== ex.durationMinutes) {
         examSyncData.durationMinutes = data.durationMinutes;
       }
@@ -1130,6 +1161,36 @@ export const updateSubjectPaperService = async (paperId: string, data: {
       }
       if (data.subjectId !== undefined && data.subjectId !== ex.subjectId) {
         examSyncData.subjectId = data.subjectId === "" ? null : data.subjectId;
+      }
+      if (data.startDate !== undefined) {
+        examSyncData.startDate = data.startDate ? new Date(data.startDate) : null;
+      }
+      if (data.endDate !== undefined) {
+        examSyncData.endDate = data.endDate ? new Date(data.endDate) : null;
+      }
+      if (data.allowImmediateResult !== undefined) {
+        examSyncData.allowImmediateResult = data.allowImmediateResult;
+      }
+      if (data.resultReleaseAt !== undefined) {
+        examSyncData.resultReleaseAt = data.resultReleaseAt ? new Date(data.resultReleaseAt) : null;
+      }
+      if (data.scope !== undefined) {
+        examSyncData.scope = data.scope;
+      }
+      if (data.classId !== undefined) {
+        examSyncData.classId = data.classId || null;
+      }
+      if (data.sessionId !== undefined) {
+        examSyncData.sessionId = data.sessionId || null;
+      }
+      if (data.term !== undefined) {
+        examSyncData.term = data.term || null;
+      }
+      if (data.departmentIds !== undefined) {
+        examSyncData.departments = {
+          deleteMany: {},
+          create: data.departmentIds.filter(Boolean).map(id => ({ departmentId: id })),
+        };
       }
 
       if (Object.keys(examSyncData).length > 0) {

@@ -126,7 +126,7 @@ const getSteps = (userType: string) => {
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isInitialized } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [previewRole, setPreviewRole] = useState<string | null>(null);
   
@@ -136,11 +136,14 @@ function OnboardingContent() {
   const currentSteps = getSteps(userType);
 
   React.useEffect(() => {
+    // Wait until Zustand persist store is hydrated
+    if (!isInitialized) return;
+
     // If not authenticated and no explicit preview/role query param is set, redirect to login
     if (!isAuthenticated && !user && !queryRole && !previewRole) {
       router.replace('/login');
     }
-  }, [isAuthenticated, user, queryRole, previewRole, router]);
+  }, [isInitialized, isAuthenticated, user, queryRole, previewRole, router]);
   
   const getLoginRoute = (role: string) => {
       switch (role) {

@@ -119,6 +119,9 @@ export default function UsageLimitsCard({
   ];
 
   const metrics: Metric[] = allMetrics.filter(m => {
+    // Hide AI usage if the limit is 0 or not configured for the plan
+    if (m.id === 'ai' && (!limits.aiUsage || limits.aiUsage < 1)) return false;
+
     if (role === 'ADMIN') return true;
     if (role === 'PARENT') return ['students', 'exams', 'storage', 'ai'].includes(m.id);
     if (role === 'TEACHER') return ['exams', 'classes', 'storage'].includes(m.id);

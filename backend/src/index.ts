@@ -99,15 +99,22 @@ initSocket(server);
 
 // 4. PRODUCTION-READY LISTENER
 // Explicitly connect Prisma before accepting traffic so the first request
-// never hits a cold/dead connection pool (which caused mobile "Network Error").
+// never hits a cold/dead connection pool. If initial connect fails, log the full
+// error and exit with code 1 so the orchestrator can restart cleanly.
 async function bootstrap() {
   try {
-    console.log("[DB] Connecting to database...");
+    console.log("[DB] Connecting to database on startup...");
     await prisma.$connect();
     console.log("[DB] ✅ Database connected successfully.");
-  } catch (err) {
-    console.error("[DB] ❌ Failed to connect to database on startup:", err);
-    // Don't crash — withRetry will handle reconnects per-request
+  } catch (err: unknown) {
+    console.error("[DB] ❌ FATAL: Failed to connect to database on startup:", {
+      name: (err as Error)?.name,
+      message: (err as Error)?.message,
+      code: (err as Record<string, unknown>)?.code,
+      meta: (err as Record<string, unknown>)?.meta,
+      stack: (err as Error)?.stack,
+    });
+    process.exit(1);
   }
 
   // Start Background Cron Jobs (includes keep-alive ping)
@@ -121,4 +128,34 @@ async function bootstrap() {
   });
 }
 
+// Graceful shutdown handling for container terminations (Render SIGTERM/SIGINT)
+let isShuttingDown = false;
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`[SHUTDOWN] Received ${signal}. Starting graceful shutdown...`);
+
+  server.close(async () => {
+    console.log("[SHUTDOWN] HTTP server closed. Disconnecting database...");
+    try {
+      await prisma.$disconnect();
+      console.log("[SHUTDOWN] ✅ Database disconnected cleanly.");
+      process.exit(0);
+    } catch (err) {
+      console.error("[SHUTDOWN] Error during Prisma disconnect:", err);
+      process.exit(1);
+    }
+  });
+
+  // Force exit if shutdown hangs beyond 10s
+  setTimeout(() => {
+    console.error("[SHUTDOWN] Forced shutdown after timeout.");
+    process.exit(1);
+  }, 10000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
 bootstrap();
+

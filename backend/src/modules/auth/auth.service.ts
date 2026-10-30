@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import prisma from "../../config/database";
+import prisma, { withRetry } from "../../config/database";
 import { Resend } from "resend";
+
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -633,9 +634,13 @@ export const googleAuthService = async (
   deviceInfo?: any,
 ) => {
   // Check if Google Auth is enabled in platform settings
-  const googleAuthSetting = await prisma.platformSettings.findUnique({
-    where: { key: "google_auth_enabled" }
-  });
+  const googleAuthSetting = await withRetry(
+    () =>
+      prisma.platformSettings.findUnique({
+        where: { key: "google_auth_enabled" },
+      }),
+    "googleAuthService_platformSettings_findUnique"
+  );
 
   if (googleAuthSetting && googleAuthSetting.value === "false") {
     throw new Error("Google Authentication is currently deactivated by the platform administrator.");
@@ -643,9 +648,13 @@ export const googleAuthService = async (
 
   // Check if Google Auth is enabled for this specific role (if not STAFF)
   if (userRole && (userRole as string) !== "STAFF") {
-    const googleAuthFeature = await prisma.platformFeature.findUnique({
-      where: { featureKey: "googleLogin" }
-    });
+    const googleAuthFeature = await withRetry(
+      () =>
+        prisma.platformFeature.findUnique({
+          where: { featureKey: "googleLogin" },
+        }),
+      "googleAuthService_platformFeature_findUnique"
+    );
 
     if (googleAuthFeature) {
       const roleKey = `${userRole.toLowerCase()}Enabled` as keyof typeof googleAuthFeature;
@@ -658,6 +667,7 @@ export const googleAuthService = async (
   let email: string | undefined;
   let name: string | undefined;
   let googleId: string | undefined;
+
   let inviteToken: string | undefined;
 
   if (typeof supabaseTokenOrData === "object" && supabaseTokenOrData !== null) {

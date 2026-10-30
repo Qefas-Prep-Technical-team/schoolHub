@@ -1,7 +1,7 @@
-import { PrismaClient, ResultStatus, Term } from "@prisma/client";
+import { ResultStatus, Term } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
+import prisma from "../../config/database";
 
-const prisma = new PrismaClient();
 
 export const getClassSubjectResults = async (
   schoolId: string,

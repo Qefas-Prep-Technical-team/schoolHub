@@ -11,6 +11,19 @@
 - **Start of every session**: Read `STATE.md` in the workspace root. Understand the current focus, blockers, and last completed work before doing anything.
 - **End of every session**: Update `STATE.md` with a dated entry (e.g., `### Wednesday, August 13, 2026`) logging every change made. Use `[x]` checkboxes.
 - `STATE.md` is the system's working memory. Never skip this step.
+- **Subsystem Architecture Gate & Documentation Review (Docs / Non-Regression Protocol)**:
+  - To prevent bug fixes in one area from breaking related subsystems:
+    1. **Pre-edit Review**: Before touching any subsystem (Authentication, Linking, Social OAuth, Multitenancy, Assessments, Subscriptions), you MUST first review its corresponding documentation in [`docs/README.md`](../docs/README.md) and specific spec:
+       - **Authentication & Database**: [`AUTH_STATE.md`](../AUTH_STATE.md)
+       - **School & User Linking**: [`docs/LINKING_ARCHITECTURE.md`](../docs/LINKING_ARCHITECTURE.md)
+       - **Social Login & Onboarding**: [`docs/SOCIAL_LOGIN_AND_ONBOARDING.md`](../docs/SOCIAL_LOGIN_AND_ONBOARDING.md)
+       - **Assessments & Grading**: [`ASSESSMENT_DATA_MODEL.md`](../ASSESSMENT_DATA_MODEL.md)
+    2. **Post-edit Documentation**: Document every update, endpoint change, schema adjustment, or UI behavior shift in the corresponding doc with a clear explanation of what changed, affected files, and verification steps.
+- **Modular Component Architecture (Zero Giant Monoliths)**:
+  - Always break pages and features into small, functional, and reusable components.
+  - Avoid monolithic files (>300–400 lines) combining layout, multiple modals, forms, and business logic.
+  - Subcomponents (modals, cards, forms, headers, filters, row items) must be cleanly extracted into a dedicated `components/` subfolder with explicit prop interfaces.
+
 
 ---
 
@@ -365,7 +378,59 @@ Repository   -> Database queries via Prisma only
 - **Repositories** never contain business logic.
 - **Standard error response**: `{ success: false, error: "message" }`
 
+### 5.1 Controller Decomposition Protocol
+
+#### Trigger
+Whenever you read, edit, fix, or add to any handler in a controller file under `backend/src/modules/**/*.controller.ts`, and that file is over 300 lines OR the handler you touch is over 40 lines OR it contains Prisma calls or business logic, you MUST run this protocol on the handler you touched BEFORE finishing the task. Do not wait to be asked.
+
+#### Scope Rule (Important)
+Only decompose what you touched. Do not refactor the whole controller or unrelated handlers. The controller shrinks gradually, one touched handler at a time.
+
+#### Target Structure
+```
+modules/<module>/
+  controllers/<feature>.controller.ts   (thin handlers, grouped by use case)
+  controllers/index.ts                  (barrel: re-exports every handler)
+  services/<feature>.service.ts         (business logic + Prisma via withRetry)
+  schemas/<feature>.schemas.ts          (zod validation, if the handler validates input)
+  <module>.routes.ts                    (imports from the barrel, unchanged)
+```
+
+A handler should only: parse/validate the request, call a service, and send the response (about 10–20 lines). All Prisma calls and business logic live in services, and all DB calls go through `withRetry`. Services never import controllers. Name files by what they do; if a description needs "and", split it again.
+
+#### Steps
+1. **Baseline first.** Before changing anything, run `npx tsc --noEmit` and the existing tests/build. Note any pre-existing failures so you don't blame yourself for them.
+2. **Refactor commit (pure move, no behavior change).**
+   - Extract the touched handler's logic into the matching service function (create the service file if needed).
+   - Move the thin handler into a feature-named controller file, or keep it in place if the file is already small.
+   - Re-export it from the barrel so no route or import elsewhere breaks.
+   - Preserve the exact response shapes, status codes, error messages and logging. Do not "improve" anything in this step.
+3. **Verify the refactor.** All of these must pass before continuing:
+   - `npx tsc --noEmit` has no new errors.
+   - Build succeeds (`npm run build`).
+   - No circular imports (controller -> service only, never the reverse).
+   - Existing tests pass. If the handler has no test, add a minimal one (or a scripted request) covering the happy path and one error path.
+   - Smoke test the affected route(s): start the server and call the endpoint (curl or the test client). Confirm the status code and response body match what it returned before the move. For auth/session routes, also test the unauthenticated and expired-token paths.
+4. **Behavior change commit (only now).** Apply the actual fix or feature the task asked for, on top of the clean structure. Re-run the verification from step 3.
+5. **Report.** End your reply with:
+   - Files created/moved/changed
+   - Controller line count before -> after
+   - Verification results (tsc, build, tests, routes smoke-tested with status codes)
+   - Anything you could NOT verify and why
+
+#### Hard Rules
+- Never mix a pure move and a behavior change in the same commit.
+- If verification fails and you can't fix it quickly, revert the refactor and tell me instead of leaving things half-moved.
+- Don't rename routes, change response shapes, or alter auth/middleware order during a move.
+- Don't add dependencies for this.
+- If the touched handler is already thin and in a small file, say "no decomposition needed" and move on.
+- Update `STATE.md` (and `AUTH_STATE.md` for auth changes) with a one-line note of what was decomposed.
+
+#### Never Skip
+If you are about to say "done" and haven't run step 3 on the code you moved, you are not done.
+
 ---
+
 
 ## 6. Known Bugs and Anti-Patterns — Do Not Repeat
 
@@ -458,4 +523,6 @@ Before marking any mobile task as complete, verify every item below:
 - [ ] All API calls pass a **`limit`** parameter to paginated endpoints
 - [ ] No **`any`** type in any new code
 - [ ] Query keys match the canonical table in section 2.8
+- [ ] If authentication or database code was touched: [`AUTH_STATE.md`](AUTH_STATE.md) was reviewed prior to edits and documented with changes
+- [ ] Code is broken into small, reusable, and functional components (no giant monolithic files)
 - [ ] `STATE.md` has been updated with a dated entry for today's changes

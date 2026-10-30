@@ -16,11 +16,11 @@ router.get("/", getPlatformSettings);
 /**
  * @route   POST /api/platform/settings
  */
-router.post("/", authorizePlatformRole(["OWNER"]), updateSetting);
+router.post("/", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), updateSetting);
 
 /**
  * @route   POST /api/platform/settings/batch
  */
-router.post("/batch", authorizePlatformRole(["OWNER"]), batchUpdateSettings);
+router.post("/batch", authorizePlatformRole(["OWNER", "TECH_ADMIN"]), batchUpdateSettings);
 
 export default router;

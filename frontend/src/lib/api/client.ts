@@ -4,20 +4,19 @@ import Cookies from "js-cookie";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { getClientDeviceInfo } from "@/lib/utils/deviceDetector";
 
-let isRefreshing = false;
-let failedQueue: any[] = [];
+// Single-flight refresh promise: all concurrent 401s await the exact same promise
+let refreshPromise: Promise<string> | null = null;
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
+// Codes that definitively signal the session is dead and cannot be recovered
+const TERMINAL_AUTH_CODES = new Set([
+  "NO_REFRESH_TOKEN",
+  "REFRESH_INVALID",
+  "REFRESH_EXPIRED",
+  "REFRESH_REUSED",
+  "USER_INACTIVE",
+  "DEVICE_UNAUTHORIZED",
+  "NO_SESSION_ROW",
+]);
 
 /** Clears auth state and redirects to the login page with a session-expired notice. */
 const handleSessionExpiry = () => {
@@ -36,6 +35,47 @@ const apiClient = axios.create({
   timeout: 60000,
   withCredentials: true,
 });
+
+/**
+ * Execute a single-flight token refresh.
+ * Guaranteed to run only one network request at a time; callers share the promise.
+ */
+export async function executeRefreshToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      // Use raw axios instance with credentials so we don't trigger the interceptor recursively
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/refresh`,
+        {},
+        { withCredentials: true }
+      );
+
+      const newToken = response.data?.accessToken;
+      if (!newToken) throw new Error("No access token returned from refresh");
+
+      Cookies.set("token", newToken, {
+        expires: 7, // 7 days alignment
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+
+      const { user } = useAuthStore.getState();
+      if (user) {
+        useAuthStore.getState().setAuth(user, newToken);
+      }
+
+      apiClient.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      return newToken;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
 
 // Request interceptor to add auth token and device tracking headers
 apiClient.interceptors.request.use(
@@ -72,14 +112,31 @@ apiClient.interceptors.request.use(
 
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (!originalRequest) return Promise.reject(error);
 
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const status = error.response?.status;
+    const data = error.response?.data;
+    const code = data?.code;
+
+    // Check if terminal auth failure occurred directly on this request
+    if (code && TERMINAL_AUTH_CODES.has(code)) {
+      handleSessionExpiry();
+      return Promise.reject(error);
+    }
+
+    // Never refresh-loop: do NOT intercept or retry /auth/refresh itself
+    if (originalRequest.url?.includes("/auth/refresh")) {
+      if ((status === 401 || status === 403) && (!code || TERMINAL_AUTH_CODES.has(code))) {
+        handleSessionExpiry();
+      }
+      return Promise.reject(error);
+    }
+
+    // Handle 401 Unauthorized on standard requests (Retry at most once via _retried flag)
+    if (status === 401 && !originalRequest._retried) {
       const isLoginRequest = originalRequest.url?.includes("/auth/login");
       const isCallbackPage = typeof window !== "undefined" && window.location.pathname.includes("/login/callback");
       const isAuthPage = typeof window !== "undefined" && !isCallbackPage && 
@@ -88,11 +145,7 @@ apiClient.interceptors.response.use(
         );
 
       if (isLoginRequest || isAuthPage) {
-        // Silently clear the old/expired tokens without triggering refresh/redirect loops
         Cookies.remove("token", { path: "/" });
-        
-        // Don't clear auth state if we're specifically failing a 2FA attempt, 
-        // otherwise they lose the tempToken and get kicked out of the 2FA form.
         const url = originalRequest?.url || "";
         if (!url.includes("login/2fa")) {
           useAuthStore.getState().clearAuth();
@@ -100,70 +153,69 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // If the refresh call itself failed — session is truly dead, redirect gracefully.
-      if (originalRequest.url?.includes("/auth/refresh")) {
-        handleSessionExpiry();
-        // Return a never-resolving promise so no downstream error handler fires
-        // after the page redirect is already in flight.
-        return new Promise(() => {});
+      originalRequest._retried = true;
+
+      try {
+        const newToken = await executeRefreshToken();
+        originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshErr: any) {
+        const refreshStatus = refreshErr.response?.status;
+        const refreshCode = refreshErr.response?.data?.code;
+
+        // ONLY clear auth if the refresh failed with a terminal code or 401/403
+        if ((refreshStatus === 401 || refreshStatus === 403) && (!refreshCode || TERMINAL_AUTH_CODES.has(refreshCode))) {
+          handleSessionExpiry();
+        }
+        // If it's a 500, 503, network drop or timeout, DO NOT log the user out!
+        return Promise.reject(refreshErr);
       }
+    }
 
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers["Authorization"] = "Bearer " + token;
-            return apiClient(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      return new Promise(function (resolve, reject) {
-        apiClient
-          .post("/auth/refresh")
-          .then(({ data }) => {
-            const newToken = data.accessToken;
-            Cookies.set("token", newToken, {
-              expires: 1,
-              path: "/",
-              sameSite: "lax",
-              secure: process.env.NODE_ENV === "production",
-            });
-
-            const { user } = useAuthStore.getState();
-            if (user) {
-              useAuthStore.getState().setAuth(user, newToken);
-            }
-
-            apiClient.defaults.headers.common["Authorization"] =
-              "Bearer " + newToken;
-            originalRequest.headers["Authorization"] = "Bearer " + newToken;
-
-            processQueue(null, newToken);
-            resolve(apiClient(originalRequest));
-          })
-          .catch((err) => {
-            processQueue(err, null);
-            // The nested /auth/refresh failure is already handled by the guard above,
-            // but as a safety net handle it here too.
-            handleSessionExpiry();
-            reject(err);
-          })
-          .finally(() => {
-            isRefreshing = false;
-          });
-      });
+    // For 503 Service Unavailable or network errors, retry up to 3 times with exponential backoff
+    const isNetworkOr5xx = !status || status >= 500;
+    const retryCount = originalRequest._retryCount || 0;
+    if (isNetworkOr5xx && retryCount < 3 && originalRequest.method?.toLowerCase() === "get") {
+      originalRequest._retryCount = retryCount + 1;
+      const delayMs = 500 * Math.pow(2, retryCount);
+      await new Promise((res) => setTimeout(res, delayMs));
+      return apiClient(originalRequest);
     }
 
     return Promise.reject(error);
   },
 );
 
+// Tab Focus Check: Proactively refresh if token is near expiration or missing
+if (typeof window !== "undefined") {
+  window.addEventListener("focus", () => {
+    const { isAuthenticated, accessToken } = useAuthStore.getState();
+    if (!isAuthenticated) return;
+
+    let shouldRefresh = false;
+    if (!accessToken) {
+      shouldRefresh = true;
+    } else {
+      try {
+        const payloadBase64 = accessToken.split(".")[1];
+        if (payloadBase64) {
+          const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
+          // If less than 2 minutes left on access token, refresh proactively
+          if (decoded.exp && decoded.exp * 1000 - Date.now() < 120000) {
+            shouldRefresh = true;
+          }
+        }
+      } catch {
+        shouldRefresh = true;
+      }
+    }
+
+    if (shouldRefresh) {
+      executeRefreshToken().catch(() => {});
+    }
+  });
+}
+
 export { apiClient };
 export default apiClient;
+

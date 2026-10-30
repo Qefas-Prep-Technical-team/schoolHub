@@ -117,12 +117,14 @@ export const useLoginMutation = () => {
         info("Redirection to verification page for account verification.");
         
         const preAuthToken = error.response?.data?.preAuthToken;
+        const isDeviceCheck = Boolean(preAuthToken);
         if (preAuthToken) {
            sessionStorage.setItem("preAuthToken", preAuthToken);
         }
         
+        const reasonQuery = isDeviceCheck ? "&reason=device" : "&reason=email";
         router.push(
-          `/verification?email=${encodeURIComponent(variables.email)}&userType=${variables.userType}&requestCode=true`,
+          `/verification?email=${encodeURIComponent(variables.email)}&userType=${variables.userType}&requestCode=true${reasonQuery}`,
         );
         return;
       }

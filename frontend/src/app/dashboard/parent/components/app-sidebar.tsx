@@ -131,6 +131,9 @@ export function ParentSidebar() {
         const currentFeatures = { ...PARENT_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
 
         const filtered = parentMenuItems.filter(item => {
+            if (dynamicFeatures && dynamicFeatures[item.featureKey] !== undefined) {
+                return !!dynamicFeatures[item.featureKey];
+            }
             if (item.featureKey === 'offlineGrades') return true;
             // Map 'results' to 'grades' for consistency with schema/seed
             const key = item.featureKey === 'results' ? 'grades' : item.featureKey;

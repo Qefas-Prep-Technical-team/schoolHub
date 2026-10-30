@@ -22,7 +22,6 @@ import MaterialsPage from './components/materials/page';
 import AttendancePage from './components/attendance/page';
 import DiscussionsPage from './components/discussions/page';
 import TimetablePage from './components/timetable/page';
-import SubjectsPage from './components/subjects/page';
 
 interface ClassDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -30,7 +29,7 @@ interface ClassDetailsPageProps {
 
 export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   const { id } = use(params);
-  const [activeTab, setActiveTab] = useState<'assessments' | 'materials' | 'timetable' | 'subjects' | 'attendance' | 'discussions'>('assessments');
+  const [activeTab, setActiveTab] = useState<'assessments' | 'materials' | 'timetable' | 'attendance' | 'discussions'>('assessments');
 
   const { data: classData, isLoading, isError } = useSingleClass(id);
   const { data: attemptsData } = useStudentExamAttempts();
@@ -54,6 +53,49 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
     const allSubjects: string[] = classData.subjects?.map((s: any) => s.subject?.name).filter(Boolean) || [];
     const primarySubject = allSubjects[0] || 'General';
 
+    // ─── Department subject scoping ─────────────────────────────────────────────
+    // Collect all subject IDs and names that belong to the student's department
+    const deptSubjectIds = new Set<string>();
+    const deptSubjectNames = new Set<string>();
+
+    if (hasDepartment) {
+      // 1. Through classData.departments
+      (classData.departments || []).forEach((cd: any) => {
+        const d = cd.department || cd;
+        const dId = d.id || cd.departmentId;
+        if (dId === studentDepartmentId && d.subjects) {
+          d.subjects.forEach((ds: any) => {
+            const s = ds.subject || ds;
+            if (s.id) deptSubjectIds.add(s.id);
+            if (s.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+          });
+        }
+      });
+
+      // 2. Through classData.subjects
+      (classData.subjects || []).forEach((cs: any) => {
+        const s = cs.subject || cs;
+        if (s.departments && Array.isArray(s.departments)) {
+          const belongsToDept = s.departments.some((d: any) => 
+            (d.departmentId === studentDepartmentId) || (d.department?.id === studentDepartmentId) || (d.id === studentDepartmentId)
+          );
+          if (belongsToDept) {
+            if (s.id) deptSubjectIds.add(s.id);
+            if (s.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+          }
+        }
+      });
+    }
+
+    // Helper to test if a subject belongs to the student's department
+    const isSubjectInStudentDept = (subjectId?: string | null, subjectName?: string | null): boolean => {
+      if (!hasDepartment) return true; // If student is not in a department (e.g. Junior secondary), allow all
+      if (deptSubjectIds.size === 0 && deptSubjectNames.size === 0) return true; // If no department mapping configured, do not block everything
+      if (subjectId && deptSubjectIds.has(subjectId)) return true;
+      if (subjectName && deptSubjectNames.has(subjectName.toLowerCase().trim())) return true;
+      return false;
+    };
+
     // ─── Real Attendance calculation ────────────────────────────────────────────
     const studentAttendance = attendanceData || [];
     const classAttendanceRecords = studentAttendance.filter((rec: any) => rec.classId === id);
@@ -64,7 +106,16 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
 
     // ─── Real Assignments calculation ───────────────────────────────────────────
     const studentAssignments = assignmentsData?.assignments || [];
-    const classAssignments = studentAssignments.filter((a: any) => a.classId === id);
+    const classAssignments = studentAssignments.filter((a: any) => {
+      if (a.classId !== id) return false;
+      // Filter out assignments whose subject does not belong to student's department
+      if (hasDepartment) {
+        if (a.departmentId && a.departmentId !== studentDepartmentId) return false;
+        const subjName = a.subject?.name || a.subjectName || '';
+        if (!isSubjectInStudentDept(a.subjectId, subjName)) return false;
+      }
+      return true;
+    });
     const completedAssignments = classAssignments.filter((a: any) => a.status === 'graded' || a.status === 'submitted');
 
     const assignmentsCompleted = completedAssignments.length;
@@ -78,17 +129,40 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
       // Students should only see published or ongoing assessments
       if (exam.status && !['PUBLISHED', 'ONGOING'].includes(exam.status)) return false;
 
-      const scope: string = exam.scope || 'CLASS';
-      if (scope === 'SCHOOL') return true;
-      if (scope === 'CLASS') return true;
-      if (scope === 'DEPARTMENT') {
-        if (!hasDepartment) return false;
+      // Department scoping: if student has a department, the exam MUST belong to their department
+      if (hasDepartment) {
+        // Check explicit exam-department links
         const examDeptIds: string[] = (exam.departments || []).map((d: any) =>
           d.departmentId || d.department?.id || d.id
         );
-        return examDeptIds.includes(studentDepartmentId!);
+        if (examDeptIds.length > 0) {
+          if (!examDeptIds.includes(studentDepartmentId!)) return false;
+        }
+
+        // If exam is explicitly DEPARTMENT scoped but doesn't include student's dept
+        if (exam.scope === 'DEPARTMENT') {
+          if (!examDeptIds.includes(studentDepartmentId!)) return false;
+        }
+
+        // Check if the exam subject belongs to student's department
+        const examSubjId = exam.subjectId || exam.subject?.id;
+        const examSubjName = exam.subject?.name;
+        if (examSubjId || examSubjName) {
+          if (!isSubjectInStudentDept(examSubjId, examSubjName)) return false;
+        }
+
+        // Check subject papers within this exam (if any)
+        if (exam.subjectExamPapers && Array.isArray(exam.subjectExamPapers) && exam.subjectExamPapers.length > 0) {
+          const hasMatchingPaper = exam.subjectExamPapers.some((sep: any) => {
+            const paperSubj = sep.subjectPaper?.subject;
+            if (!paperSubj) return true;
+            return isSubjectInStudentDept(paperSubj.id, paperSubj.name);
+          });
+          if (!hasMatchingPaper) return false;
+        }
       }
-      return false;
+
+      return true;
     });
 
     const examsAsAssessments = filteredExams.map((exam: any, idx: number) => {
@@ -110,10 +184,11 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         ? `${matchedAttempt.totalScore}/${matchedAttempt.totalMarks}`
         : undefined;
 
+      // Do NOT show "Subject Paper". Use real assessment category: Test (Quiz), Continuous Assessment, or Exam
       const type = exam.category === 'QUIZ' 
         ? 'Test (Quiz)' 
-        : exam.subject?.name 
-          ? 'Subject Paper' 
+        : exam.category === 'CA'
+          ? 'Continuous Assessment'
           : 'Exam';
 
       return {
@@ -143,9 +218,14 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
       };
     });
 
-    // Standalone CA grades for subjects taught in this class
+    // Standalone CA grades for subjects taught in this class matching student's department
     const subjectNames = new Set(allSubjects.map((s: string) => s.toLowerCase()));
-    const classGrades = (standaloneGrades as any[]).filter((g) => subjectNames.has((g.subject || '').toLowerCase()));
+    const classGrades = (standaloneGrades as any[]).filter((g) => {
+      const subjName = (g.subject || '').toLowerCase();
+      if (!subjectNames.has(subjName)) return false;
+      if (hasDepartment && !isSubjectInStudentDept(g.subjectId, g.subject)) return false;
+      return true;
+    });
     
     const gradesAsAssessments = classGrades.map((g, idx) => {
       const gDate = g.createdAt ? new Date(g.createdAt) : null;
@@ -318,9 +398,6 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
           </TabPanel>
           <TabPanel>
             <TimetablePage />
-          </TabPanel>
-          <TabPanel>
-            <SubjectsPage classSubjects={classItem!.subjects} className={classItem!.name} />
           </TabPanel>
           <TabPanel>
             <AttendancePage />

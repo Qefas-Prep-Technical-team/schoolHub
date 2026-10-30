@@ -22,6 +22,8 @@ import { PARENT_FEATURE_FLAGS, type ParentFeatureFlagKey } from "./parentFeature
 import { parentMenuItems } from "./app-sidebar";
 // ✅ import from where you export it
 
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
+
 const PARENT_SECTION_TITLES = {
   core: "Children's Progress",
   monitoring: "Monitoring & Communication",
@@ -40,28 +42,35 @@ interface ParentMenuItem {
   section?: string;
 }
 
-function getFilteredParentMenuItemsBySection(items: ParentMenuItem[]) {
-  // Hide Subscription/billing from mobile drawer, and filter by feature flags
-  const filtered = items.filter((i) => i.featureKey !== "billing" && PARENT_FEATURE_FLAGS[i.featureKey]);
-
-  return {
-    core: filtered.filter((i) => i.section === "core"),
-    monitoring: filtered.filter((i) => i.section === "monitoring"),
-    financial: filtered.filter((i) => i.section === "financial"),
-    advanced: filtered.filter((i) => i.section === "advanced"),
-    profile: filtered.filter((i) => i.section === "profile"),
-  } satisfies Record<ParentSectionKey, ParentMenuItem[]>;
-}
-
 export function ParentMobileDrawer() {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
+  const { data: dynamicFeatures } = useGlobalFeatures('parent');
 
-  const sections = React.useMemo(
-    () => getFilteredParentMenuItemsBySection(parentMenuItems as any),
-    []
-  );
+  const sections = React.useMemo(() => {
+    const currentFeatures = {
+      ...PARENT_FEATURE_FLAGS,
+      ...(dynamicFeatures || {}),
+    } as Record<string, boolean>;
+
+    const filtered = (parentMenuItems as ParentMenuItem[]).filter((item) => {
+      if (item.featureKey === "billing") return false;
+      if (item.featureKey === "offlineGrades") return true;
+      const key = item.featureKey === "results" ? "grades" : item.featureKey;
+      return currentFeatures[key] !== undefined
+        ? !!currentFeatures[key]
+        : !!currentFeatures[item.featureKey];
+    });
+
+    return {
+      core: filtered.filter((i) => i.section === "core"),
+      monitoring: filtered.filter((i) => i.section === "monitoring"),
+      financial: filtered.filter((i) => i.section === "financial"),
+      advanced: filtered.filter((i) => i.section === "advanced"),
+      profile: filtered.filter((i) => i.section === "profile"),
+    } satisfies Record<ParentSectionKey, ParentMenuItem[]>;
+  }, [dynamicFeatures]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

@@ -56,10 +56,12 @@ export const getDepartments = async (req: Request, res: Response) => {
     }
 
     const schoolId = (req.query.schoolId as string) || req.user.schoolId;
+    const classId = req.query.classId as string | undefined;
     const departments = await getDepartmentsService({
       currentUserId: req.user.id,
       currentUserType: req.user.userType as UserRole,
       schoolId: schoolId as string,
+      classId,
     });
 
     return res.status(200).json({

@@ -4,8 +4,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { examService } from "@/lib/api/services/examService";
+import { apiClient } from "@/lib/api/client";
 import { 
   Dialog, 
   DialogContent, 
@@ -75,17 +76,59 @@ export default function EditPaperModal({
   isOpen,
   onClose,
   paper,
-  exam,
-  isSinglePaperType,
+  exam: propExam,
+  isSinglePaperType: propIsSinglePaperType,
   subjects,
   teachers,
-  classes,
-  departments,
-  sessions,
+  classes: propClasses,
+  departments: propDepartments,
+  sessions: propSessions,
   isLoadingData
 }: EditPaperModalProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+
+  // Resolve linked exam from paper.exams if propExam is not directly provided
+  const resolvedExam = propExam || paper?.exams?.[0]?.exam || null;
+  const isSinglePaperType = propIsSinglePaperType !== undefined
+    ? propIsSinglePaperType
+    : !!resolvedExam;
+
+  // Active school ID for fetching supplementary data if not provided in props
+  const activeSchoolId = paper?.schoolId || resolvedExam?.schoolId || "";
+
+  const { data: fetchedClasses = [] } = useQuery({
+    queryKey: ["school-classes", activeSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/classes?schoolId=${activeSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!activeSchoolId && !propClasses && isOpen,
+  });
+
+  const { data: fetchedDepartments = [] } = useQuery({
+    queryKey: ["school-departments", activeSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/departments?schoolId=${activeSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!activeSchoolId && !propDepartments && isOpen,
+  });
+
+  const { data: fetchedSessions = [] } = useQuery({
+    queryKey: ["school-sessions", activeSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/sessions?schoolId=${activeSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!activeSchoolId && !propSessions && isOpen,
+  });
+
+  const classes = propClasses || fetchedClasses;
+  const departments = propDepartments || fetchedDepartments;
+  const sessions = propSessions || fetchedSessions;
+
+  const exam = resolvedExam;
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaperFormValues>({
     resolver: zodResolver(paperSchema) as any,
@@ -102,7 +145,7 @@ export default function EditPaperModal({
       allowImmediateResult: exam?.allowImmediateResult ?? true,
       resultReleaseAt: formatDateForInput(exam?.resultReleaseAt) || "",
       shuffleQuestions: !!exam?.shuffleQuestions,
-      scope: exam?.scope || (exam?.classId ? "CLASS" : "SCHOOL"),
+      scope: exam?.scope || (exam?.classId ? "CLASS" : (exam?.departments?.length ? "DEPARTMENT" : "SCHOOL")),
       classId: exam?.classId || "",
       targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
       sessionId: exam?.sessionId || "",
@@ -129,7 +172,7 @@ export default function EditPaperModal({
         allowImmediateResult: exam?.allowImmediateResult ?? true,
         resultReleaseAt: formatDateForInput(exam?.resultReleaseAt) || "",
         shuffleQuestions: !!exam?.shuffleQuestions,
-        scope: exam?.scope || (exam?.classId ? "CLASS" : "SCHOOL"),
+        scope: exam?.scope || (exam?.classId ? "CLASS" : (exam?.departments?.length ? "DEPARTMENT" : "SCHOOL")),
         classId: exam?.classId || "",
         targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
         sessionId: exam?.sessionId || "",
@@ -137,12 +180,11 @@ export default function EditPaperModal({
         examDescription: exam?.description || "",
       });
     }
-  // Re-run when subjects/teachers finish loading so the selected value is reflected
-  // in the now-populated <option> list
   }, [paper, exam, reset, isOpen, isLoadingData]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: PaperFormValues) => {
+      // 1. Update subject paper with core fields and forwarding exam-sync fields
       await examService.updateSubjectPaper(paper.id, {
         subjectId: data.subjectId,
         teacherId: data.teacherId,
@@ -151,10 +193,22 @@ export default function EditPaperModal({
         readingContent: data.readingContent,
         durationMinutes: data.durationMinutes,
         creationMode: data.creationMode,
+        startDate: data.startDate || null,
+        endDate: data.endDate || null,
+        allowImmediateResult: data.allowImmediateResult,
+        resultReleaseAt: !data.allowImmediateResult && data.resultReleaseAt ? data.resultReleaseAt : null,
+        scope: data.scope,
+        classId: data.scope === "CLASS" ? data.classId : null,
+        departmentIds: data.scope === "DEPARTMENT" && data.targetDepartmentId ? [data.targetDepartmentId] : [],
+        sessionId: data.sessionId || null,
+        term: data.term || null,
+        examDescription: data.examDescription,
       });
 
-      if (isSinglePaperType && exam?.id) {
-        await examService.updateExam(exam.id, {
+      // 2. If linked exam ID exists, update exam container explicitly too
+      const targetExamId = exam?.id;
+      if (targetExamId) {
+        await examService.updateExam(targetExamId, {
           title: data.title,
           description: data.examDescription,
           startDate: data.startDate || undefined,
@@ -337,17 +391,34 @@ export default function EditPaperModal({
                       </div>
 
                       {watch("scope") === "CLASS" && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Target Class</Label>
-                          <select
-                            {...register("classId")}
-                            className="w-full h-12 rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                          >
-                            <option value="">Select a class...</option>
-                            {(classes || []).map((c: any) => (
-                              <option key={c.id} value={c.id}>{`${c.name} ${c.section || ""}`.trim()}</option>
-                            ))}
-                          </select>
+                        <div className="space-y-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Target Class</Label>
+                            <select
+                              {...register("classId")}
+                              className="w-full h-12 rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            >
+                              <option value="">Select a class...</option>
+                              {(classes || []).map((c: any) => (
+                                <option key={c.id} value={c.id}>{`${c.name} ${c.section || ""}`.trim()}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-purple-500">
+                              Target Department <span className="text-[9px] lowercase font-normal opacity-70">(optional - filter within class)</span>
+                            </Label>
+                            <select
+                              {...register("targetDepartmentId")}
+                              className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                            >
+                              <option value="">All Departments in Class</option>
+                              {(departments || []).map((d: any) => (
+                                <option key={d.id} value={d.id}>{d.name}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       )}
 
@@ -359,6 +430,23 @@ export default function EditPaperModal({
                             className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
                           >
                             <option value="">Select a department...</option>
+                            {(departments || []).map((d: any) => (
+                              <option key={d.id} value={d.id}>{d.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {watch("scope") === "SCHOOL" && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-purple-500">
+                            Target Department <span className="text-[9px] lowercase font-normal opacity-70">(optional - filter within school)</span>
+                          </Label>
+                          <select
+                            {...register("targetDepartmentId")}
+                            className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                          >
+                            <option value="">All Departments</option>
                             {(departments || []).map((d: any) => (
                               <option key={d.id} value={d.id}>{d.name}</option>
                             ))}

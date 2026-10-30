@@ -1433,6 +1433,27 @@ export const getPublicRoleFeatures = async (req: Request, res: Response) => {
             featureMap['billing'] = false;
         }
 
+        // Overlay explicit role page visibility from PlatformSettings if configured
+        const roleVisibilitySetting = await withRetry(
+            () => prisma.platformSettings.findUnique({
+                where: { key: `${role.toLowerCase()}_pages_visibility` }
+            }),
+            "getPublicRoleFeatures_roleVisibility_findUnique"
+        );
+
+        if (roleVisibilitySetting?.value) {
+            try {
+                const parsedVisibility = JSON.parse(roleVisibilitySetting.value);
+                if (typeof parsedVisibility === 'object' && parsedVisibility !== null) {
+                    Object.entries(parsedVisibility).forEach(([k, v]) => {
+                        featureMap[k] = Boolean(v);
+                    });
+                }
+            } catch {
+                // Ignore parse errors
+            }
+        }
+
         res.json({
             status: "success",
             data: featureMap

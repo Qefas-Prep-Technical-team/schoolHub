@@ -482,14 +482,25 @@ export const getSingleClassService = async (classId: string) => {
           },
           subject: {
             select: {
+              id: true,
               name: true,
+            }
+          },
+          subjectId: true,
+          departments: {
+            include: {
+              department: true,
             }
           },
           subjectExamPapers: {
             include: {
               subjectPaper: {
                 include: {
-                  subject: true,
+                  subject: {
+                    include: {
+                      departments: true
+                    }
+                  },
                   questions: {
                     select: { id: true }
                   }

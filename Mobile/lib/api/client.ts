@@ -8,7 +8,7 @@ import {
 import { authEvents } from "../auth/authEvents";
 import { networkEvents } from "./networkEvents";
 
-import { Platform } from "react-native";
+import { Platform, AppState, AppStateStatus } from "react-native";
 import * as Device from 'expo-device';
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
@@ -23,23 +23,57 @@ export const apiClient = axios.create({
   },
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
-}> = [];
+// Single-flight refresh promise for mobile
+let refreshPromise: Promise<string> | null = null;
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+// Definitive terminal error codes
+const TERMINAL_AUTH_CODES = new Set([
+  "NO_REFRESH_TOKEN",
+  "REFRESH_INVALID",
+  "REFRESH_EXPIRED",
+  "REFRESH_REUSED",
+  "USER_INACTIVE",
+  "DEVICE_UNAUTHORIZED",
+  "NO_SESSION_ROW",
+]);
+
+/**
+ * Execute a single-flight token refresh on Mobile.
+ */
+export async function executeMobileRefreshToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const refreshToken = await getRefreshToken();
+      if (!refreshToken) {
+        throw { isTerminalAuth: true, code: "NO_REFRESH_TOKEN", message: "No refresh token available" };
+      }
+
+      // Use raw axios to bypass interceptor recursion
+      const response = await axios.post(`${API_URL}/auth/refresh`, {
+        refreshToken,
+      });
+
+      const newAccessToken =
+        response.data?.data?.accessToken || response.data?.accessToken;
+      const newRefreshToken =
+        response.data?.data?.refreshToken || response.data?.refreshToken || refreshToken;
+
+      if (!newAccessToken) {
+        throw new Error("Failed to get new access token");
+      }
+
+      await setTokens(newAccessToken, newRefreshToken);
+      apiClient.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+      return newAccessToken;
+    } finally {
+      refreshPromise = null;
     }
-  });
+  })();
 
-  failedQueue = [];
-};
+  return refreshPromise;
+}
 
 // Request Interceptor
 apiClient.interceptors.request.use(
@@ -65,11 +99,10 @@ apiClient.interceptors.request.use(
 
 // Response Interceptor
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (!originalRequest) return Promise.reject(error);
 
     // Detect network-level errors (backend unreachable)
     if (!error.response || error.code === 'ECONNABORTED' || error.message === 'Network Error') {
@@ -83,81 +116,87 @@ apiClient.interceptors.response.use(
       originalRequest.url?.includes("/health");
 
     if (isAuthRoute) {
-      // Do NOT clear tokens here — clearing on a failed login attempt or health check would
-      // erase a valid session.
       return Promise.reject(error);
     }
 
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      const errorMessage = error.response?.data?.message || "";
-      const shouldLogoutImmediately =
-        errorMessage.toLowerCase().includes("user account no longer exists") ||
-        errorMessage.toLowerCase().includes("session expired") ||
-        errorMessage.toLowerCase().includes("device no longer authorized") ||
-        errorMessage.toLowerCase().includes("invalid token");
+    const status = error.response?.status;
+    const data = error.response?.data;
+    const code = data?.code;
 
-      if (shouldLogoutImmediately) {
-        processQueue(error, null);
+    // Check for direct terminal auth rejection
+    if (code && TERMINAL_AUTH_CODES.has(code)) {
+      await clearTokens();
+      authEvents.emit();
+      return Promise.reject(error);
+    }
+
+    // Never refresh-loop on /auth/refresh itself
+    if (originalRequest.url?.includes("/auth/refresh")) {
+      if ((status === 401 || status === 403) && (!code || TERMINAL_AUTH_CODES.has(code))) {
         await clearTokens();
         authEvents.emit();
-        return Promise.reject(error);
       }
+      return Promise.reject(error);
+    }
 
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers["Authorization"] = "Bearer " + token;
-            return apiClient(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
+    // Handle 401 Unauthorized errors (At most 1 retry per request)
+    if (status === 401 && !originalRequest._retried) {
+      originalRequest._retried = true;
 
       try {
-        const refreshToken = await getRefreshToken();
-
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
-        }
-
-        // Use base axios to bypass the interceptors so we don't end up in an infinite loop
-        const response = await axios.post(`${API_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
-        // The exact structure depends on our API response formatting
-        const newAccessToken =
-          response.data?.data?.accessToken || response.data?.accessToken;
-        const newRefreshToken =
-          response.data?.data?.refreshToken || response.data?.refreshToken;
-
-        if (!newAccessToken) {
-          throw new Error("Failed to get new access token");
-        }
-
-        await setTokens(newAccessToken, newRefreshToken);
-        processQueue(null, newAccessToken);
-
-        originalRequest.headers["Authorization"] = "Bearer " + newAccessToken;
+        const newAccessToken = await executeMobileRefreshToken();
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return apiClient(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        await clearTokens();
-        // Token refresh failed — force logout
-        authEvents.emit();
+      } catch (refreshError: any) {
+        const refreshStatus = refreshError.response?.status;
+        const refreshCode = refreshError.response?.data?.code || refreshError?.code;
+
+        // ONLY clear tokens and logout if the refresh was definitively rejected (terminal code or 401/403)
+        if (
+          refreshError.isTerminalAuth ||
+          ((refreshStatus === 401 || refreshStatus === 403) && (!refreshCode || TERMINAL_AUTH_CODES.has(refreshCode)))
+        ) {
+          await clearTokens();
+          authEvents.emit();
+        }
+        // Do NOT clear tokens on 500, 503, or network outage
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
+    }
+
+    // Exponential backoff retry for GET requests on temporary network/5xx glitches
+    const isNetworkOr5xx = !status || status >= 500;
+    const retryCount = originalRequest._retryCount || 0;
+    if (isNetworkOr5xx && retryCount < 2 && originalRequest.method?.toLowerCase() === "get") {
+      originalRequest._retryCount = retryCount + 1;
+      const delayMs = 600 * Math.pow(2, retryCount);
+      await new Promise((res) => setTimeout(res, delayMs));
+      return apiClient(originalRequest);
     }
 
     return Promise.reject(error);
   },
 );
+
+// AppState check: Proactively refresh token on app foreground
+AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+  if (nextAppState === "active") {
+    getAccessToken().then((token) => {
+      if (!token) return;
+      try {
+        const payloadBase64 = token.split(".")[1];
+        if (payloadBase64) {
+          // React Native standard base64 atob fallback
+          const decodedStr = typeof atob === "function" ? atob(payloadBase64) : Buffer.from(payloadBase64, "base64").toString("utf-8");
+          const decoded = JSON.parse(decodedStr);
+          if (decoded.exp && decoded.exp * 1000 - Date.now() < 120000) {
+            executeMobileRefreshToken().catch(() => {});
+          }
+        }
+      } catch {
+        // Silent ignore
+      }
+    });
+  }
+});
+

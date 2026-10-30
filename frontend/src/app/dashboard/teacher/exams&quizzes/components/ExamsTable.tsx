@@ -27,7 +27,7 @@ export interface Exam {
 
 interface ExamsTableProps {
   exams: Exam[];
-  activeTab: 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
+  activeTab: 'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
   viewMode?: 'list' | 'grid';
   currentPage?: number;
   itemsPerPage?: number;
@@ -38,8 +38,40 @@ interface ExamsTableProps {
 export default function ExamsTable({ exams, activeTab, viewMode = 'list', currentPage = 1, itemsPerPage = 10, mySubjectIds = [], onDelete }: ExamsTableProps) {
   const router = useRouter();
   const { user } = useAuthStore();
-  const isSubjectPaperTab = activeTab === 'subject-papers';
   const [expandedExamIds, setExpandedExamIds] = useState<Set<string>>(new Set());
+
+  const getItemType = (exam: any): 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment' => {
+    if (exam._tabType) return exam._tabType;
+    if (exam.type === 'assignment' || activeTab === 'assignment') return 'assignment';
+    if (exam.type === 'subject_paper' || activeTab === 'subject-papers') return 'subject-papers';
+    if (exam.category === 'QUIZ' || exam.type === 'quiz' || activeTab === 'quizzes') return 'quizzes';
+    if (exam.category === 'CA' || exam.type === 'ca' || activeTab === 'ca') return 'ca';
+    return 'exams';
+  };
+
+  const getRealAssessmentTitle = (exam: any) => {
+    const rawTitle = exam.title?.trim();
+    const subjectName = exam.subject?.name || (Array.isArray(exam.subjects) && exam.subjects[0]) || '';
+    const firstPaper = exam.subjectExamPapers?.[0]?.subjectPaper || exam.subjectPapers?.[0];
+    const paperTitle = firstPaper?.title?.trim();
+
+    // If explicit custom title exists and is not a generic placeholder
+    if (rawTitle && rawTitle !== 'Untitled Paper' && rawTitle !== 'Untitled Assessment') {
+      return rawTitle;
+    }
+    // If it's a single paper with a distinct title
+    if (paperTitle && paperTitle !== 'Untitled Subject Paper') {
+      return subjectName && !paperTitle.toLowerCase().includes(subjectName.toLowerCase())
+        ? `${subjectName} - ${paperTitle}`
+        : paperTitle;
+    }
+    // Fall back to subject name or default
+    if (subjectName) {
+      const typeLabel = exam.category === 'QUIZ' ? 'Quiz' : exam.category === 'CA' ? 'Continuous Assessment' : exam.type === 'assignment' ? 'Assignment' : 'Assessment';
+      return `${subjectName} ${typeLabel}`;
+    }
+    return rawTitle || 'Assessment';
+  };
 
   const toggleExpand = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -66,13 +98,13 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
   };
 
   if (exams.length === 0) {
-    const emptyLabel = activeTab === 'subject-papers' ? 'Subject Paper' : activeTab.slice(0, -1);
+    const emptyLabel = activeTab === 'all' ? 'Assessment' : activeTab === 'subject-papers' ? 'Subject Paper' : activeTab.slice(0, -1);
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800 mb-6 opacity-50">
           <FileText className="w-12 h-12 text-slate-400" />
         </div>
-        <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">No {activeTab.replace('-', ' ')} Records</h3>
+        <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">No {activeTab === 'all' ? 'Assessment' : activeTab.replace('-', ' ')} Records</h3>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xs text-sm font-bold uppercase tracking-widest leading-relaxed">
           Start by creating your first {emptyLabel} or adjust filters to see more results.
         </p>
@@ -81,15 +113,19 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
   }
   
   const getPreviewLink = (exam: any) => {
-    const titleParam = encodeURIComponent(exam.title || exam.subject?.name || '');
+    const itemType = getItemType(exam);
+    const realTitle = getRealAssessmentTitle(exam);
+    const titleParam = encodeURIComponent(realTitle);
     const subjectParam = encodeURIComponent(exam.subject?.name || (exam.subjects && exam.subjects[0]) || '');
-    if (activeTab === 'assignment') return `/dashboard/teacher/assignments/${exam.id}?preview=true`;
-    if (isSubjectPaperTab) return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=subject_paper&title=${titleParam}&subject=${subjectParam}`;
-    return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=${exam.type || 'exam'}&title=${titleParam}&subject=${subjectParam}`;
+    if (itemType === 'assignment') return `/dashboard/teacher/assignments/${exam.id}?preview=true`;
+    if (itemType === 'subject-papers') return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=subject_paper&title=${titleParam}&subject=${subjectParam}`;
+    return `/dashboard/teacher/exams&quizzes/preview?id=${exam.id}&type=${exam.type || (itemType === 'ca' ? 'ca' : itemType === 'quizzes' ? 'quiz' : 'exam')}&title=${titleParam}&subject=${subjectParam}`;
   };
 
   const getEditLink = (exam: any) => {
-    if (isSubjectPaperTab) return `/dashboard/teacher/exams&quizzes/papers/${exam.id}`;
+    const itemType = getItemType(exam);
+    if (itemType === 'subject-papers') return `/dashboard/teacher/exams&quizzes/papers/${exam.id}`;
+    if (itemType === 'assignment') return `/dashboard/teacher/assignments/${exam.id}?edit=true`;
 
     const papers: any[] = (exam as any).subjectExamPapers || [];
 
@@ -104,9 +140,10 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
     return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
   };
 
-  const getExamDestinationLink = (exam: Exam) => {
-    if (isSubjectPaperTab) return `/dashboard/teacher/exams&quizzes/papers/${exam.id}`;
-    if (activeTab === 'assignment') return `/dashboard/teacher/assignments/${exam.id}`;
+  const getExamDestinationLink = (exam: any) => {
+    const itemType = getItemType(exam);
+    if (itemType === 'subject-papers') return `/dashboard/teacher/exams&quizzes/papers/${exam.id}`;
+    if (itemType === 'assignment') return `/dashboard/teacher/assignments/${exam.id}`;
     return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
   };
 
@@ -116,17 +153,20 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
         {exams.map((exam, idx) => {
           const baseIndex = (currentPage - 1) * itemsPerPage;
           const numStr = String(baseIndex + idx + 1).padStart(2, '0');
+          const itemType = getItemType(exam);
+          const isSubjectPaper = itemType === 'subject-papers';
+          const isAssignment = itemType === 'assignment';
           let isMyItem = false;
-          if (isSubjectPaperTab) {
+          if (isSubjectPaper) {
             isMyItem = (exam as any).assignedTeachers?.some((t: any) => t.id === user?.id) || exam.teacherId === user?.id;
-          } else if (activeTab === 'assignment') {
-            const isAssignedSubject = mySubjectIds.includes((exam as any).subjectId || (exam.subject as any)?.name); // Using subject object just in case
+          } else if (isAssignment) {
             isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || (exam.subject as any)?.id);
           } else {
             isMyItem = exam.teacherId === user?.id;
           }
           // For assignments, only the owner or subject teacher can edit/delete
-          const canEdit = activeTab !== 'assignment' || isMyItem;
+          const canEdit = !isAssignment || isMyItem;
+          const realTitle = getRealAssessmentTitle(exam);
           
           return (
             <motion.div
@@ -162,13 +202,13 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
               {/* Title & Subjects */}
               <div className="mt-4 flex-1">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                  {exam.title || exam.subject?.name || 'Untitled Paper'}
+                  {realTitle}
                 </h4>
                 
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg shrink-0">
                     <BarChart3 size={10} />
-                    {isSubjectPaperTab 
+                    {isSubjectPaper 
                       ? (exam.subject?.name || 'No Subject') 
                       : (
                         exam.class?.name 
@@ -176,13 +216,13 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                           : (exam.subject?.name || 'All Classes')
                       )}
                   </div>
-                  {isSubjectPaperTab && (exam.exams?.length || 0) > 0 && (
+                  {isSubjectPaper && (exam.exams?.length || 0) > 0 && (
                     <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2 py-0.5 rounded-md">
                       <PlusCircle size={9} />
                       Linked: {exam.exams?.length}
                     </div>
                   )}
-                  {(!isSubjectPaperTab && (exam as any).subjectExamPapers && (exam as any).subjectExamPapers.length > 0) && (
+                  {(!isSubjectPaper && (exam as any).subjectExamPapers && (exam as any).subjectExamPapers.length > 0) && (
                     <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                       <Layers size={10} />
                       {(exam as any).subjectExamPapers.length} Papers Assigned
@@ -190,7 +230,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                   )}
                 </div>
                 
-                {isSubjectPaperTab && (
+                {isSubjectPaper && (
                   <div className="flex flex-wrap items-center gap-1.5 mt-3 text-[9px] text-slate-500 dark:text-slate-400">
                      <Users size={10} className="shrink-0" />
                      {(() => {
@@ -203,7 +243,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                      })()}
                   </div>
                 )}
-                {activeTab === 'assignment' && (exam as any).creator && (
+                {isAssignment && (exam as any).creator && (
                   <div className="flex flex-wrap items-center gap-1.5 mt-3 text-[9px] text-slate-500 dark:text-slate-400">
                      <User size={10} className="shrink-0" />
                      <span className="px-1.5 py-0.5 rounded border font-medium bg-primary/5 text-primary border-primary/20">
@@ -226,17 +266,17 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 <div>
                   <span className="block text-xs font-black text-slate-900 dark:text-slate-100">
                     {(() => {
-                      if (isSubjectPaperTab || activeTab === 'assignment') {
+                      if (isSubjectPaper || isAssignment) {
                         return (exam as any).questionsCount || (exam as any)._count?.questions || exam.questions?.length || 0;
                       }
-                      if (activeTab === 'ca' || activeTab === 'quizzes') {
+                      if (itemType === 'ca' || itemType === 'quizzes') {
                         return (exam as any).totalQuestions || exam.questions?.length || (exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
                       }
                       return (exam as any).subjectExamPapers?.length || 0;
                     })()}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    {(isSubjectPaperTab || activeTab === 'ca' || activeTab === 'quizzes' || activeTab === 'assignment') ? 'Questions' : 'Papers'}
+                    {(isSubjectPaper || itemType === 'ca' || itemType === 'quizzes' || isAssignment) ? 'Questions' : 'Papers'}
                   </span>
                   {isMyItem && (
                     <span className="flex items-center gap-1 text-[8px] uppercase font-black tracking-widest text-primary bg-primary/10 px-1.5 py-0.5 rounded ml-2">
@@ -265,7 +305,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
 
                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {/* Edit button for subject papers */}
-                  {isSubjectPaperTab && isMyItem && (
+                  {isSubjectPaper && isMyItem && (
                     <Link href={`/dashboard/teacher/exams&quizzes/papers/${exam.id}`} onClick={(e) => e.stopPropagation()}>
                       <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Paper">
                         <Edit size={14} strokeWidth={2.5} />
@@ -273,7 +313,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                     </Link>
                   )}
                   {/* Edit button for exams, quizzes, CA */}
-                  {!isSubjectPaperTab && activeTab !== 'assignment' && isMyItem && (
+                  {!isSubjectPaper && !isAssignment && isMyItem && (
                     <Link href={getEditLink(exam)} onClick={(e) => e.stopPropagation()}>
                       <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assessment">
                         <Edit size={14} strokeWidth={2.5} />
@@ -281,7 +321,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                     </Link>
                   )}
                   {/* Edit button for assignments where teacher is assigned/creator */}
-                  {activeTab === 'assignment' && isMyItem && (
+                  {isAssignment && isMyItem && (
                     <Link href={`/dashboard/teacher/assignments/${exam.id}?edit=true`} onClick={(e) => e.stopPropagation()}>
                       <button className="p-2 rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assignment">
                         <Edit size={14} strokeWidth={2.5} />
@@ -320,7 +360,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
     <div className="space-y-4">
       {/* Table Headers (Visual Only) */}
       <div className="hidden lg:flex items-center justify-between px-10 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-        <div className="flex-1 pl-12"># &nbsp;&nbsp;&nbsp; {isSubjectPaperTab ? 'Paper Details' : 'Assessment Details'}</div>
+        <div className="flex-1 pl-12"># &nbsp;&nbsp;&nbsp; {activeTab === 'subject-papers' ? 'Paper Details' : 'Assessment Details'}</div>
         <div className="flex items-center gap-20 px-10">
           <div className="w-20 text-center">Metrics</div>
           <div className="w-24 text-center">Status</div>
@@ -332,16 +372,19 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
         {exams.map((exam, idx) => {
           const baseIndex = (currentPage - 1) * itemsPerPage;
           const numStr = String(baseIndex + idx + 1).padStart(2, '0');
+          const itemType = getItemType(exam);
+          const isSubjectPaper = itemType === 'subject-papers';
+          const isAssignment = itemType === 'assignment';
+          const realTitle = getRealAssessmentTitle(exam);
+
           let isMyItem = false;
-          if (isSubjectPaperTab) {
+          if (isSubjectPaper) {
             isMyItem = (exam as any).assignedTeachers?.some((t: any) => t.id === user?.id) || exam.teacherId === user?.id;
-          } else if (activeTab === 'assignment') {
+          } else if (isAssignment) {
             isMyItem = exam.teacherId === user?.id || mySubjectIds.includes((exam as any).subjectId || (exam.subject as any)?.id);
           } else {
             isMyItem = exam.teacherId === user?.id;
           }
-          // For assignments, only the owner or subject teacher can edit/delete
-          const canEdit = activeTab !== 'assignment' || isMyItem;
 
           return (
             <motion.div
@@ -362,7 +405,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                   </span>
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
-                  {(!isSubjectPaperTab && (exam as any).subjectExamPapers && (exam as any).subjectExamPapers.length > 0) ? (
+                  {(!isSubjectPaper && (exam as any).subjectExamPapers && (exam as any).subjectExamPapers.length > 0) ? (
                     <button 
                       onClick={(e) => toggleExpand(e, exam.id)}
                       className={`p-1.5 rounded-lg border transition-all flex items-center justify-center cursor-pointer ${
@@ -387,12 +430,12 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-base font-black text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
-                    {exam.title || exam.subject?.name || 'Untitled Paper'}
+                    {realTitle}
                   </h4>
                   <div className="flex flex-wrap items-center gap-3 mt-1.5">
                     <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">
                       <BarChart3 size={10} />
-                      {isSubjectPaperTab 
+                      {isSubjectPaper 
                         ? (exam.subject?.name || 'No Subject') 
                         : (
                           exam.class?.name 
@@ -400,7 +443,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                             : (exam.subject?.name || 'All Classes')
                         )}
                     </div>
-                    {isSubjectPaperTab && (exam.exams?.length || 0) > 0 && (
+                    {isSubjectPaper && (exam.exams?.length || 0) > 0 && (
                       <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2 py-1 rounded-lg">
                         <PlusCircle size={10} />
                         Linked to {exam.exams?.length} Exam{(exam.exams?.length || 0) > 1 ? 's' : ''}
@@ -411,7 +454,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                       <Calendar size={12} />
                       {new Date(exam.createdAt || '').toLocaleDateString()}
                     </div>
-                    {isSubjectPaperTab && (
+                    {isSubjectPaper && (
                       <>
                         <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
                         <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
@@ -427,7 +470,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                         </div>
                       </>
                     )}
-                    {activeTab === 'assignment' && (exam as any).creator && (
+                    {isAssignment && (exam as any).creator && (
                       <>
                         <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
                         <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
@@ -455,17 +498,17 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                 <div className="flex flex-col items-center">
                   <span className="text-sm font-black text-slate-900 dark:text-slate-100">
                     {(() => {
-                      if (isSubjectPaperTab || activeTab === 'assignment') {
+                      if (isSubjectPaper || isAssignment) {
                         return (exam as any).questionsCount || (exam as any)._count?.questions || exam.questions?.length || 0;
                       }
-                      if (activeTab === 'ca' || activeTab === 'quizzes') {
+                      if (itemType === 'ca' || itemType === 'quizzes') {
                         return (exam as any).totalQuestions || exam.questions?.length || (exam as any).subjectExamPapers?.reduce((acc: number, p: any) => acc + (p.questionsCount || p.questions?.length || 0), 0) || 0;
                       }
                       return (exam as any).subjectExamPapers?.length || 0;
                     })()}
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">
-                    {(isSubjectPaperTab || activeTab === 'ca' || activeTab === 'quizzes' || activeTab === 'assignment') ? 'Questions' : 'Papers'}
+                    {(isSubjectPaper || itemType === 'ca' || itemType === 'quizzes' || isAssignment) ? 'Questions' : 'Papers'}
                   </span>
                 </div>
                 <div className="flex flex-col items-center">
@@ -491,7 +534,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                       <User size={8} /> Mine
                     </span>
                   )}
-                  {!isMyItem && activeTab === 'assignment' && (
+                  {!isMyItem && isAssignment && (
                     <span className="flex items-center justify-center gap-1 w-full px-2 py-1 text-[8px] font-black uppercase tracking-[0.1em] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400">
                       View Only
                     </span>
@@ -500,7 +543,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {/* Edit button for subject papers where teacher is assigned */}
-                  {isSubjectPaperTab && isMyItem && (
+                  {isSubjectPaper && isMyItem && (
                     <Link href={`/dashboard/teacher/exams&quizzes/papers/${exam.id}`} onClick={(e) => e.stopPropagation()}>
                       <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Paper">
                         <Edit size={16} strokeWidth={2.5} />
@@ -508,7 +551,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                     </Link>
                   )}
                   {/* Edit button for exams, quizzes, CA */}
-                  {!isSubjectPaperTab && activeTab !== 'assignment' && isMyItem && (
+                  {!isSubjectPaper && !isAssignment && isMyItem && (
                     <Link href={getEditLink(exam)} onClick={(e) => e.stopPropagation()}>
                       <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assessment">
                         <Edit size={16} strokeWidth={2.5} />
@@ -516,7 +559,7 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
                     </Link>
                   )}
                   {/* Edit button for assignments where teacher is assigned/creator */}
-                  {activeTab === 'assignment' && isMyItem && (
+                  {isAssignment && isMyItem && (
                     <Link href={`/dashboard/teacher/assignments/${exam.id}?edit=true`} onClick={(e) => e.stopPropagation()}>
                       <button className="p-2.5 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-90" title="Edit Assignment">
                         <Edit size={16} strokeWidth={2.5} />
