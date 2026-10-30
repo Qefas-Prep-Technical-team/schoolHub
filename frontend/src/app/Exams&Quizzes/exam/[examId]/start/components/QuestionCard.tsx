@@ -23,6 +23,8 @@ interface QuestionCardProps {
     onNext?: () => void;
     onZoom?: (src: string, alt?: string) => void;
     showNextButton?: boolean;
+    hasReadingContent?: boolean;
+    onOpenReadingModal?: () => void;
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = memo(({
@@ -39,25 +41,39 @@ const QuestionCard: React.FC<QuestionCardProps> = memo(({
     onSelectOption,
     onNext,
     onZoom,
-    showNextButton = true
+    showNextButton = true,
+    hasReadingContent,
+    onOpenReadingModal
 }) => {
     return (
-        <div className="rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] p-6">
-            <div className="flex justify-between gap-4 items-center mb-4">
-                <h1 className="text-[22px] font-bold leading-tight tracking-tight">
-                    Question {number} of {totalQuestions}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-wrap justify-between gap-3 items-center mb-6">
+                <h1 className="text-xl sm:text-2xl font-black leading-tight tracking-tight text-slate-900 dark:text-white">
+                    Question {number} <span className="text-sm font-normal text-slate-400 dark:text-slate-500">/ {totalQuestions}</span>
                 </h1>
-                {showNextButton && (
-                    <Button
-                        variant="primary"
-                        size="md"
-                        icon="arrow_forward"
-                        onClick={onNext}
-                        disabled={number === totalQuestions}
-                    >
-                        Next
-                    </Button>
-                )}
+                <div className="flex items-center gap-2">
+                    {hasReadingContent && onOpenReadingModal && (
+                        <button
+                            type="button"
+                            onClick={onOpenReadingModal}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs active:scale-95 cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-base">menu_book</span>
+                            <span>Read Passage</span>
+                        </button>
+                    )}
+                    {showNextButton && (
+                        <Button
+                            variant="primary"
+                            size="md"
+                            icon="arrow_forward"
+                            onClick={onNext}
+                            disabled={number === totalQuestions}
+                        >
+                            Next
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <div className="space-y-6">
@@ -99,15 +115,15 @@ const QuestionCard: React.FC<QuestionCardProps> = memo(({
             </div>
             
             {equation && (
-                <div className="mt-4 rounded-lg bg-gray-100 dark:bg-gray-800 p-4 text-center">
-                    <p className="font-mono text-lg">{equation}</p>
+                <div className="mt-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 p-4 text-center">
+                    <p className="font-mono text-lg text-slate-800 dark:text-slate-100">{equation}</p>
                 </div>
             )}
             {type === "SHORT_ANSWER" ? (
                 <div className="mt-6">
-                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Your Answer</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Your Answer</label>
                     <textarea 
-                        className="w-full p-4 rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none min-h-[120px]"
+                        className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none min-h-[120px]"
                         placeholder="Type your answer here..."
                         value={selectedOptionId || ""}
                         onChange={(e) => onSelectOption?.(e.target.value)}

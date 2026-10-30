@@ -20,6 +20,10 @@ import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/Head
 interface RawSubjectPaper {
   durationMinutes?: number;
   questions?: unknown[];
+  totalQuestions?: number;
+  _count?: {
+    questions?: number;
+  };
   subject?: {
     name?: string;
   };
@@ -38,12 +42,15 @@ interface RawExamItem {
   startDate?: string;
   endDate?: string;
   durationMinutes?: number;
+  totalQuestions?: number;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
   classId?: string;
   class?: { id: string; name: string; section?: string };
   subjectPapers?: RawSubjectPaper[];
+  subjectExamPapers?: (RawSubjectPaper | { subjectPaper?: RawSubjectPaper })[];
   attempts?: RawAttempt[];
+  examAttempts?: RawAttempt[];
 }
 
 interface RawAssignmentItem {
@@ -151,11 +158,29 @@ export default function StudentAssessmentsPage() {
             const exam = item as RawExamItem;
             const startDate = exam.startDate ? new Date(exam.startDate) : null;
             const endDate = exam.endDate ? new Date(exam.endDate) : null;
-            const attempt = exam.attempts?.[0];
-            const questionsCount = exam.subjectPapers?.reduce((acc: number, paper) => acc + (paper.questions?.length || 0), 0) || 0;
+            const attempt = exam.examAttempts?.[0] || exam.attempts?.[0];
+            
+            // Normalize papers from subjectPapers or subjectExamPapers
+            const normalizedPapers: RawSubjectPaper[] = (exam.subjectPapers || exam.subjectExamPapers || []).map((p: any) => {
+                if (p && typeof p === 'object' && 'subjectPaper' in p) {
+                    return p.subjectPaper as RawSubjectPaper;
+                }
+                return p as RawSubjectPaper;
+            }).filter(Boolean);
+
+            const calculatedFromPapers = normalizedPapers.reduce((acc: number, paper) => {
+                const count = paper.totalQuestions ?? paper.questions?.length ?? paper._count?.questions ?? 0;
+                return acc + count;
+            }, 0);
+
+            const questionsCount = (exam.totalQuestions && exam.totalQuestions > 0)
+                ? exam.totalQuestions
+                : calculatedFromPapers;
+
             const durationMinutes = (exam.durationMinutes ?? 0) > 0 
                 ? (exam.durationMinutes ?? 0) 
-                : exam.subjectPapers?.reduce((acc: number, paper) => acc + (paper.durationMinutes || 0), 0) || 0;
+                : normalizedPapers.reduce((acc: number, paper) => acc + (paper.durationMinutes || 0), 0);
+            
             const matchedClass = exam.class?.name || (exam.classId ? studentClasses.find(c => c.id === exam.classId)?.name : undefined);
 
             let status: Assessment['status'] = 'open';
@@ -175,7 +200,7 @@ export default function StudentAssessmentsPage() {
             return {
                 id: exam.id,
                 title: exam.title,
-                subject: exam.subjectPapers?.[0]?.subject?.name || 'Multiple Subjects',
+                subject: normalizedPapers[0]?.subject?.name || 'Multiple Subjects',
                 date: exam.startDate ? new Date(exam.startDate).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',

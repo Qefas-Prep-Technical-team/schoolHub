@@ -20,7 +20,7 @@ const Timer: React.FC<TimerProps> = ({ seconds }) => {
   };
 
   return (
-    <p className="mt-1 text-4xl font-bold tracking-tighter tabular-nums">
+    <p className="mt-1 text-4xl font-black tracking-tighter tabular-nums text-slate-900 dark:text-white">
       {formatTime(seconds)}
     </p>
   );

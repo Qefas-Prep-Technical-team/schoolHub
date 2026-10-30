@@ -190,17 +190,16 @@ export default function OfflineGradesDashboard({
         // If activeClassId is defined, only include matching class
         if (activeClassId && g.classId !== activeClassId) return;
 
-        // If teacher on global dashboard, show records for assigned subjects/classes or created by them.
-        // On a specific class page (activeClassId), all records belonging to this class are shown directly.
-        if (isTeacher && !activeClassId) {
+        // If teacher, strictly scope to records created by the teacher or belonging to their assigned subjects.
+        // This applies whether viewing globally or within a specific class tab.
+        if (isTeacher) {
           const sId = (g.subjectId || g.subject?.id || '').toString();
           const sName = (g.subject || g.subjectName || '').toString().trim().toLowerCase();
           const isCreatedByTeacher = g.teacherId && (g.teacherId === user?.id || (user as any)?.teacherId === g.teacherId);
           const isAssignedSubjectId = Boolean(sId && teacherScopeSubjectIds?.has(sId));
           const isAssignedSubjectName = Boolean(sName && teacherScopeSubjectNames?.has(sName));
-          const isTeacherClass = Array.isArray(teacherClassesData) && teacherClassesData.some((c: any) => (c.id || c.classId) === g.classId);
 
-          if (!isCreatedByTeacher && !isAssignedSubjectId && !isAssignedSubjectName && !isTeacherClass) {
+          if (!isCreatedByTeacher && !isAssignedSubjectId && !isAssignedSubjectName) {
             return;
           }
         }

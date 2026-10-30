@@ -89,10 +89,23 @@ export default function UnifiedExamPage() {
 
   const currentSubjectPapers = useMemo(() => {
     if (attempt?.status === "IN_PROGRESS" && attempt.subjectAttempts?.length > 0) {
-      return attempt.subjectAttempts.map((sa: SubjectAttempt) => ({
-        ...sa.subjectPaper,
-        id: sa.subjectPaperId,
-      }));
+      return attempt.subjectAttempts.map((sa: SubjectAttempt) => {
+        const fallbackPaper = exam?.subjectPapers?.find(
+          (p: SubjectPaper) => p.id === sa.subjectPaperId || p.id === sa.subjectPaper?.id
+        );
+        return {
+          ...fallbackPaper,
+          ...sa.subjectPaper,
+          id: sa.subjectPaperId || sa.subjectPaper?.id,
+          readingContent: sa.subjectPaper?.readingContent || fallbackPaper?.readingContent || "",
+          images: (sa.subjectPaper?.images && sa.subjectPaper.images.length > 0) 
+            ? sa.subjectPaper.images 
+            : (fallbackPaper?.images || []),
+          imageLabels: (sa.subjectPaper?.imageLabels && sa.subjectPaper.imageLabels.length > 0) 
+            ? sa.subjectPaper.imageLabels 
+            : (fallbackPaper?.imageLabels || []),
+        };
+      });
     }
     return (exam?.subjectPapers || []) as SubjectPaper[];
   }, [exam?.subjectPapers, attempt]);
@@ -433,7 +446,7 @@ export default function UnifiedExamPage() {
   // DETAILS VIEW
   if (showDetails) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark p-6 lg:p-12 animate-in fade-in duration-500">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark px-4 sm:px-6 lg:px-12 pt-8 sm:pt-12 pb-16 animate-in fade-in duration-500">
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="flex items-center gap-4">
              <ShcnButton variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -596,35 +609,66 @@ export default function UnifiedExamPage() {
     );
   }
 
+  const hasReadingContent = Boolean(
+    activeSubject?.readingContent || 
+    (activeSubject?.images && activeSubject.images.length > 0)
+  );
+
   // TAKER VIEW
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark text-[#111827] dark:text-[#D1D5DB]">
       <div className="flex min-h-screen w-full">
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12">
           <div className="mx-auto max-w-7xl">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                <PageHeader 
                  title={exam.title} 
                  subtitle={exam.class?.name ? `${exam.class.name} ${exam.class.section || ""}` : undefined} 
+                 subject={activeSubject?.title || activeSubject?.subject?.name}
                />
-                <div className="flex items-center gap-3">
-                   <ShcnButton 
-                      variant="outline" 
-                      className={`rounded-xl font-black flex items-center gap-2 px-5 transition-all ${
-                         (activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0))
-                            ? "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10" 
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-transparent opacity-50 cursor-not-allowed"
-                      }`}
-                      onClick={() => (activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0)) && setShowReadingModal(true)}
-                      disabled={!(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0))}
-                   >
-                      <BookOpen size={18} /> Read {(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0)) ? "Passage" : "Paper"}
-                   </ShcnButton>
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                   {hasReadingContent && (
+                     <ShcnButton 
+                        variant="outline" 
+                        className="rounded-xl font-black flex items-center gap-2 px-5 py-2.5 transition-all bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 shadow-sm active:scale-95 cursor-pointer ring-1 ring-emerald-500/20"
+                        onClick={() => setShowReadingModal(true)}
+                     >
+                        <BookOpen size={18} className="text-emerald-600 dark:text-emerald-400" />
+                        <span>Read Passage & Reference</span>
+                     </ShcnButton>
+                   )}
                    <ShcnButton variant="ghost" className="rounded-xl font-bold" onClick={() => setShowDetails(true)}>
                       <Info size={18} className="mr-2" /> View Details
                    </ShcnButton>
                 </div>
             </div>
+
+            {/* High-Visibility Reading Passage Banner */}
+            {hasReadingContent && (
+              <div className="mb-6 px-4 py-3 sm:px-5 sm:py-3.5 bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/70 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-bold text-emerald-950 dark:text-emerald-200">
+                      Reading Passage & Reference Materials Available
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-emerald-800/80 dark:text-emerald-300/80">
+                      This assessment paper includes reading text and reference illustrations. You can open and view them at any time.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReadingModal(true)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs sm:text-sm shrink-0 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Open Passage</span>
+                </button>
+              </div>
+            )}
             
           <ExamDetails 
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
@@ -673,6 +717,8 @@ export default function UnifiedExamPage() {
                   onNext={handleNextQuestion}
                   onZoom={handleZoom}
                   showNextButton={true}
+                  hasReadingContent={hasReadingContent}
+                  onOpenReadingModal={() => setShowReadingModal(true)}
                 />
               </div>
 
@@ -688,11 +734,13 @@ export default function UnifiedExamPage() {
                   onNextQuestion={handleNextQuestion}
                   onSubmit={handleSequentialSubmit}
                   onTimerExpire={handleTimerExpire}
+                  hasReadingContent={hasReadingContent}
+                  onOpenReadingModal={() => setShowReadingModal(true)}
                 />
                 
                  {currentSubjectPapers && currentSubjectPapers.length > 1 && (
-                   <div className="mt-6 p-4 rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937]">
-                      <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-slate-400">Switch Subject</h3>
+                   <div className="mt-6 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm shadow-sm">
+                      <h3 className="text-xs font-bold mb-3 uppercase tracking-wider text-slate-500 dark:text-slate-400">Switch Subject</h3>
                       <div className="space-y-2">
                          {currentSubjectPapers.map((paper: SubjectPaper) => (
                            <button
@@ -701,10 +749,10 @@ export default function UnifiedExamPage() {
                                setActiveSubjectId(paper.id);
                                setActiveQuestionIndex(0);
                              }}
-                             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                             className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                                activeSubjectId === paper.id 
-                                 ? "bg-primary text-white" 
-                                 : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                 ? "bg-indigo-600 dark:bg-indigo-600 text-white shadow-md shadow-indigo-500/25" 
+                                 : "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                              }`}
                            >
                              {paper.title || (paper as { subject?: { name?: string } }).subject?.name || "Unnamed Paper"}

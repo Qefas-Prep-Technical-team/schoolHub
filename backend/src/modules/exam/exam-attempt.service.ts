@@ -92,6 +92,12 @@ export const startExamAttemptService = async ({
     include: {
       subjectExamAttempts: {
         include: {
+          subjectPaper: {
+            include: {
+              subject: true,
+              questions: true,
+            },
+          },
           answers: true,
         },
       },
@@ -127,7 +133,10 @@ export const startExamAttemptService = async ({
         
         throw new Error("Exam violation detected: You cannot resume this exam on a different device. Your exam has been automatically submitted.");
       }
-      return existing;
+      return {
+        ...existing,
+        subjectAttempts: existing.subjectExamAttempts || (existing as any).subjectAttempts,
+      };
     }
   }
 
@@ -144,7 +153,7 @@ export const startExamAttemptService = async ({
     durationMinutes: exam.durationMinutes,
   });
 
-  return prisma.examAttempt.create({
+  const createdAttempt = await prisma.examAttempt.create({
     data: {
       examId,
       studentId,
@@ -174,6 +183,11 @@ export const startExamAttemptService = async ({
       },
     },
   });
+
+  return {
+    ...createdAttempt,
+    subjectAttempts: createdAttempt.subjectExamAttempts,
+  };
 };
 
 const ensureAttemptStillActive = async (attemptId: string) => {
@@ -365,7 +379,10 @@ export const getExamAttemptService = async ({
     });
   }
 
-  return result;
+  return {
+    ...result,
+    subjectAttempts: result.subjectExamAttempts,
+  };
 };
 
 export const saveExamAnswerService = async ({

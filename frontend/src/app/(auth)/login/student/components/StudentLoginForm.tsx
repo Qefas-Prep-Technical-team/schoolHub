@@ -49,6 +49,15 @@ export default function StudentLoginForm() {
           </button>
         </div>
 
+        <div className="flex justify-end -mt-1 sm:-mt-2 px-1">
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer"
+          >
+            Forgot Password?
+          </Link>
+        </div>
+
         <button
           type="submit"
           disabled={isPending || !email || !password}

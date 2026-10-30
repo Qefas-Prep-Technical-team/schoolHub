@@ -283,17 +283,19 @@ export default function ExamDetailsPage() {
                     )}
                  </ShcnButton>
 
-                 {/* Check Again Button */}
-                 <ShcnButton
-                   variant="outline"
-                   size="lg"
-                   className="h-16 px-6 rounded-2xl font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 gap-2 w-full sm:w-auto"
-                   onClick={handleCheckAgain}
-                   disabled={isCheckingAgain || isFetchingExam}
-                 >
-                   <RefreshCw size={18} className={isCheckingAgain || isFetchingExam ? "animate-spin text-primary" : "text-slate-600 dark:text-slate-300"} />
-                   <span>{isCheckingAgain || isFetchingExam ? "Checking..." : "Check Again"}</span>
-                 </ShcnButton>
+                 {/* Check Again Button - Only shown when exam is not available to start */}
+                 {!isAvailable && (
+                   <ShcnButton
+                     variant="outline"
+                     size="lg"
+                     className="h-16 px-6 rounded-2xl font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 gap-2 w-full sm:w-auto"
+                     onClick={handleCheckAgain}
+                     disabled={isCheckingAgain || isFetchingExam}
+                   >
+                     <RefreshCw size={18} className={isCheckingAgain || isFetchingExam ? "animate-spin text-primary" : "text-slate-600 dark:text-slate-300"} />
+                     <span>{isCheckingAgain || isFetchingExam ? "Checking..." : "Check Again"}</span>
+                   </ShcnButton>
+                 )}
                </div>
 
                <p className="text-slate-500 text-sm italic text-center">

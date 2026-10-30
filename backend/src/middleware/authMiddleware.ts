@@ -90,6 +90,40 @@ export const authenticateToken = async (
         if (teacher && teacher.isActive !== false) {
           userExists = true;
           schoolId = (teacher as any).activeSchoolId || (teacher as any).primarySchoolId || (teacher as any).currentSchoolId || (teacher as any).schoolId || undefined;
+
+          // Self-heal: If schoolId is still missing, look up active RelationshipLink, TeacherSubject, or ClassTeacher
+          if (!schoolId) {
+            const [relLink, tSub, cTeach] = await Promise.all([
+              prisma.relationshipLink.findFirst({
+                where: {
+                  status: "ACTIVE",
+                  OR: [
+                    { leftEntityId: teacher.id, leftEntityType: "TEACHER" },
+                    { rightEntityId: teacher.id, rightEntityType: "TEACHER" },
+                  ],
+                },
+                select: { schoolId: true },
+              }),
+              prisma.teacherSubject.findFirst({
+                where: { teacherId: teacher.id, schoolId: { not: null } },
+                select: { schoolId: true },
+              }),
+              prisma.classTeacher.findFirst({
+                where: { teacherId: teacher.id },
+                include: { class: { select: { schoolId: true } } },
+              }),
+            ]);
+
+            const resolvedSchoolId = relLink?.schoolId || tSub?.schoolId || cTeach?.class?.schoolId || undefined;
+            if (resolvedSchoolId) {
+              schoolId = resolvedSchoolId;
+              prisma.teacher.update({
+                where: { id: teacher.id },
+                data: { activeSchoolId: resolvedSchoolId },
+              }).catch((e) => console.error("[authMiddleware] Failed to self-heal teacher activeSchoolId:", e));
+            }
+          }
+
           tenantId = (teacher as any).tenantId;
           userName = teacher.name;
           userEmail = teacher.email || undefined;

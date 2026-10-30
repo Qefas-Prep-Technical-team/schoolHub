@@ -4384,11 +4384,48 @@ export const getMe = async (req: Request, res: Response) => {
         },
       });
       if (teacher) {
-        const normalizedSchool =
+        let normalizedSchool =
           teacher.currentSchool ||
           teacher.primarySchool ||
           teacher.school ||
           null;
+
+        let activeSchoolId = teacher.activeSchoolId || teacher.primarySchoolId || teacher.currentSchoolId || teacher.schoolId;
+
+        if (!normalizedSchool || !activeSchoolId) {
+          const [relLink, tSub, cTeach] = await Promise.all([
+            prisma.relationshipLink.findFirst({
+              where: {
+                status: "ACTIVE",
+                OR: [
+                  { leftEntityId: teacher.id, leftEntityType: "TEACHER" },
+                  { rightEntityId: teacher.id, rightEntityType: "TEACHER" },
+                ],
+              },
+              select: { schoolId: true },
+            }),
+            prisma.teacherSubject.findFirst({
+              where: { teacherId: teacher.id, schoolId: { not: null } },
+              select: { schoolId: true },
+            }),
+            prisma.classTeacher.findFirst({
+              where: { teacherId: teacher.id },
+              include: { class: { select: { schoolId: true } } },
+            }),
+          ]);
+
+          const foundSchoolId = relLink?.schoolId || tSub?.schoolId || cTeach?.class?.schoolId;
+          if (foundSchoolId) {
+            activeSchoolId = foundSchoolId;
+            if (!normalizedSchool) {
+              normalizedSchool = await prisma.school.findUnique({ where: { id: foundSchoolId } });
+            }
+            prisma.teacher.update({
+              where: { id: teacher.id },
+              data: { activeSchoolId: foundSchoolId },
+            }).catch((e) => console.error("[auth.getMe] Failed to self-heal teacher activeSchoolId:", e));
+          }
+        }
 
         responseData = {
           id: teacher.id,
@@ -4401,7 +4438,8 @@ export const getMe = async (req: Request, res: Response) => {
           bannerImage: teacher.bannerImage,
           gender: teacher.gender,
           primarySchoolId: teacher.primarySchoolId,
-          activeSchoolId: teacher.activeSchoolId,
+          activeSchoolId: activeSchoolId || teacher.activeSchoolId,
+          schoolId: activeSchoolId || teacher.schoolId,
           isClaimed: teacher.isClaimed,
           tenantId: teacher.tenantId,
           school: normalizedSchool,

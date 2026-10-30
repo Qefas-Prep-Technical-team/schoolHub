@@ -38,6 +38,28 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
     where.subjectPaperId = null;
   }
 
+  // Teacher scoping: ensure teacher can only see grades for their assigned subjects or created by them
+  if (filters.currentTeacherId && schoolId) {
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+      where: {
+        teacherId: filters.currentTeacherId,
+        ...(schoolId && schoolId !== 'all' ? { schoolId } : {})
+      },
+      include: { subject: { select: { name: true } } }
+    });
+    const subjectNames = teacherSubjects.map(ts => ts.subject?.name).filter(Boolean) as string[];
+
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: [
+          { teacherId: filters.currentTeacherId },
+          ...(subjectNames.length > 0 ? [{ subject: { in: subjectNames, mode: 'insensitive' as const } }] : [])
+        ]
+      }
+    ];
+  }
+
   const page = parseInt(filters.page) || 1;
   const limit = parseInt(filters.limit) || 1000;
   const skip = (page - 1) * limit;
@@ -308,7 +330,7 @@ export const bulkPublishGradesService = async (filters: any) => {
 export const bulkCreateGradesService = async (schoolId: string, grades: any[], userId: string, userRole: string) => {
   // Fields that are valid on the Grade model
   const VALID_FIELDS = new Set([
-    'studentId', 'schoolId', 'teacherId', 'classId', 'sessionId', 'term',
+    'id', 'existingGradeId', 'studentId', 'schoolId', 'teacherId', 'classId', 'sessionId', 'term',
     'subject', 'category', 'assessmentType', 'status', 'score', 'maxMarks',
     'weight', 'remarks', 'releaseDate', 'examId', 'subjectPaperId', 'examAttemptId', 'subjectExamAttemptId'
   ]);
@@ -349,8 +371,11 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
         clean.teacherId = resolvedTeacherId;
       }
 
+      const resolvedGradeId = g.existingGradeId || g.id || undefined;
+
       return {
         ...clean,
+        id: resolvedGradeId,
         studentId,
         score: Number(g.score || 0),
         maxMarks: Number(g.maxMarks || 100),
@@ -375,11 +400,28 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     const subjectPaperId = sample?.subjectPaperId;
     const isOnlineExam = !!(examId || subjectPaperId);
 
-    // 2. Fetch existing grades for these students/exam/paper combo
+    const explicitIds = validGrades.map(g => g.id).filter(Boolean) as string[];
+
+    // 2. Fetch existing grades for these students/exam/paper combo OR explicit IDs
     const existingGrades = await prisma.grade.findMany({
       where: {
         schoolId,
-        ...(isOnlineExam ? {
+        ...(explicitIds.length > 0 ? {
+          OR: [
+            { id: { in: explicitIds } },
+            isOnlineExam ? {
+              examId: examId || undefined,
+              subjectPaperId: subjectPaperId || undefined,
+              studentId: { in: validGrades.map(g => g.studentId) }
+            } : {
+              studentId: { in: validGrades.map(g => g.studentId) },
+              examAttemptId: null,
+              subjectExamAttemptId: null,
+              ...(validGrades[0]?.classId ? { classId: validGrades[0].classId } : {}),
+              ...(validGrades[0]?.subject ? { subject: validGrades[0].subject } : {}),
+            }
+          ]
+        } : (isOnlineExam ? {
           examId: examId || undefined,
           subjectPaperId: subjectPaperId || undefined,
           studentId: { in: validGrades.map(g => g.studentId) }
@@ -389,7 +431,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
           subjectExamAttemptId: null,
           ...(validGrades[0]?.classId ? { classId: validGrades[0].classId } : {}),
           ...(validGrades[0]?.subject ? { subject: validGrades[0].subject } : {}),
-        })
+        }))
       }
     });
 
@@ -398,6 +440,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
       return `${g.studentId}_${g.classId || ''}_${(g.subject || '').trim().toLowerCase()}_${g.category || ''}_${(g.assessmentType || '').trim().toLowerCase()}_${g.term || ''}`;
     };
 
+    const existingById = new Map<string, any>(existingGrades.map(g => [g.id, g]));
     const existingMap = new Map(existingGrades.map(g => [getGradeKey(g), g]));
 
     // 3. Separate into updates and creates
@@ -408,7 +451,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     const { v4: uuidv4 } = require('uuid');
 
     validGrades.forEach((g) => {
-      const existingGrade = existingMap.get(getGradeKey(g));
+      const existingGrade = (g.id && existingById.get(g.id)) || existingMap.get(getGradeKey(g));
       if (existingGrade) {
         operations.push(prisma.grade.update({
           where: { id: existingGrade.id },

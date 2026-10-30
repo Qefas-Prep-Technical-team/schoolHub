@@ -10,9 +10,16 @@ interface ExamInfoProps {
     totalQuestions: number;
   };
   isLoading?: boolean;
+  hasReadingContent?: boolean;
+  onOpenReadingModal?: () => void;
 }
 
-export default function ExamInfo({ examData, isLoading }: ExamInfoProps) {
+export default function ExamInfo({
+  examData,
+  isLoading,
+  hasReadingContent,
+  onOpenReadingModal,
+}: ExamInfoProps) {
   return (
     <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-3 sm:p-5 shadow-sm backdrop-blur-sm">
       {/* 2x2 Grid on Mobile, 4-Cols on Desktop */}
@@ -93,6 +100,28 @@ export default function ExamInfo({ examData, isLoading }: ExamInfoProps) {
           </div>
         </div>
       </div>
+
+      {/* Reading Passage Banner */}
+      {hasReadingContent && onOpenReadingModal && (
+        <div className="mt-2.5 sm:mt-3 px-3.5 py-2.5 bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <p className="text-xs font-semibold text-emerald-950 dark:text-emerald-200 truncate">
+              Reading passage / reference materials attached to this paper
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenReadingModal}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shrink-0 transition-all shadow-xs flex items-center gap-1.5"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Read Passage</span>
+          </button>
+        </div>
+      )}
 
       {/* Preview Mode Notice */}
       <div className="mt-2.5 sm:mt-3 px-3 py-2 sm:px-4 sm:py-2.5 bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-xl flex items-center gap-2 sm:gap-2.5 text-left">

@@ -236,6 +236,18 @@ export const getExamsService = async (filters: {
       });
       const subjectIds = assignedSubjects.map(s => s.subjectId);
 
+      const primarySubjects = await prisma.subject.findMany({
+        where: {
+          teacherId,
+          isArchived: false,
+          schoolId: filters.isPersonal ? null : (filters.schoolId || undefined)
+        },
+        select: { id: true }
+      });
+      primarySubjects.forEach(s => {
+        if (!subjectIds.includes(s.id)) subjectIds.push(s.id);
+      });
+
       const teacherOrConditions: any[] = [];
 
       if (subjectIds.length > 0) {
@@ -441,6 +453,7 @@ export const getExamsService = async (filters: {
       ...exam,
       totalMarks: calculatedTotalMarks,
       subjectExamPapers: papers,
+      subjectPapers: papers,
       totalPapers: papers.length,
       totalQuestions: papers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)
     };
@@ -655,32 +668,42 @@ export const getSubjectPapersService = async (filters: {
     where.title = { contains: filters.search, mode: "insensitive" };
   }
   
-  // 1. Filter by teacher (creator OR assigned via subject)
+  // 1. Filter by teacher (papers related to their assigned subjects)
   if (filters.teacherId) {
     // Get all subjects assigned to this teacher (via TeacherSubject or Subject.teacherId)
     const teacherSubjects = await prisma.teacherSubject.findMany({
-      where: { teacherId: filters.teacherId },
+      where: { 
+        teacherId: filters.teacherId,
+        schoolId: filters.isPersonal ? null : (filters.schoolId || undefined)
+      },
       select: { subjectId: true }
     });
     const teacherSubjectIds = teacherSubjects.map(ts => ts.subjectId);
 
-    // Also include subjects where this teacher is the primary teacher
+    // Also include subjects where this teacher is the primary teacher in this school context
     const primarySubjects = await prisma.subject.findMany({
-      where: { teacherId: filters.teacherId, isArchived: false },
+      where: { 
+        teacherId: filters.teacherId, 
+        isArchived: false,
+        schoolId: filters.isPersonal ? null : (filters.schoolId || undefined)
+      },
       select: { id: true }
     });
     primarySubjects.forEach(s => {
       if (!teacherSubjectIds.includes(s.id)) teacherSubjectIds.push(s.id);
     });
 
-    // OR: paper created by teacher, OR paper's subject is assigned to teacher
     if (!where.AND) where.AND = [];
-    where.AND.push({
-      OR: [
-        { teacherId: filters.teacherId },
-        ...(teacherSubjectIds.length > 0 ? [{ subjectId: { in: teacherSubjectIds } }] : [])
-      ]
-    });
+    if (teacherSubjectIds.length > 0) {
+      // Teacher can only see papers belonging to their assigned subjects
+      // (either created by them or created for that subject in their school cohort)
+      where.AND.push({
+        subjectId: { in: teacherSubjectIds }
+      });
+    } else {
+      // If the teacher has no assigned subjects, they cannot see any subject papers
+      where.AND.push({ id: "none" });
+    }
 
     // Exclude papers linked to CA or QUIZ category exams (ASSIGNMENT is a separate model)
     where.AND.push({

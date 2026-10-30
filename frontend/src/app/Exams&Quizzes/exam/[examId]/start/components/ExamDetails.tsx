@@ -23,14 +23,14 @@ const ExamDetails: React.FC<ExamDetailsProps> = ({
     ];
 
     return (
-        <div className="mt-6 rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] p-4">
-            <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 backdrop-blur-sm p-5 shadow-sm">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 md:grid-cols-4">
                 {details.map((detail) => (
-                    <div key={detail.label} className="flex flex-col gap-1 py-2">
-                        <p className="text-sm font-normal leading-normal text-[#506795] dark:text-[#9CA3AF]">
+                    <div key={detail.label} className="flex flex-col gap-1 py-1">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             {detail.label}
                         </p>
-                        <p className="text-sm font-medium leading-normal">
+                        <p className="text-base font-bold leading-normal text-slate-900 dark:text-slate-100">
                             {detail.value}
                         </p>
                     </div>

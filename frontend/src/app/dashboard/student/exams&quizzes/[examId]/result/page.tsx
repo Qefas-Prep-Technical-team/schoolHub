@@ -2,6 +2,10 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useExam, useExamResult, useExamAttempt } from "@/lib/api/hooks/useExams";
+import { useStudentProfile } from "@/lib/api/hooks/useStudent";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { getGradeEvaluation } from "@/utils/gradingSystem";
 import {
     Loader2,
     Trophy,
@@ -26,23 +30,15 @@ import {
     Eye,
     Download,
     Info,
-    LucideIcon
+    Sparkles,
+    BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import ProgressCircle from "@/components/ui/ProgressCircle";
 import { format, isAfter, differenceInSeconds } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useMemo, useEffect, useState } from "react";
 
-/**
- * ExamResultPage - Refined with A+ Grading Scale, Global Standing & Velocity Analytics
- */
 const getOrdinal = (n: number) => {
     const j = n % 10, k = n % 100;
     if (j === 1 && k !== 11) return n + "st";
@@ -55,12 +51,37 @@ export default function ExamResultPage() {
     const { examId } = useParams();
     const router = useRouter();
 
+    const { user } = useAuthStore();
+    const { data: profile } = useStudentProfile();
+    const schoolId = profile?.schoolId || user?.schools?.[0]?.schoolId || "";
+    const { data: schoolProfile } = useSchoolProfile(schoolId);
+
     const { data: exam, isLoading: isLoadingExam } = useExam(examId as string);
     const { data: attempt, isLoading: isLoadingAttempt } = useExamAttempt(examId as string);
     const { data: result, isLoading: isLoadingResult } = useExamResult(examId as string);
 
-    const [showConfetti, setShowConfetti] = useState(false);
     const [isReviewing, setIsReviewing] = useState(false);
+    const [progressSize, setProgressSize] = useState(280);
+
+    // Dynamic responsive circle size
+    useEffect(() => {
+        const updateSize = () => {
+            if (typeof window !== "undefined") {
+                if (window.innerWidth < 480) {
+                    setProgressSize(200);
+                } else if (window.innerWidth < 768) {
+                    setProgressSize(240);
+                } else if (window.innerWidth < 1024) {
+                    setProgressSize(260);
+                } else {
+                    setProgressSize(290);
+                }
+            }
+        };
+        updateSize();
+        window.addEventListener("resize", updateSize);
+        return () => window.removeEventListener("resize", updateSize);
+    }, []);
 
     const isReleased = useMemo(() => {
         if (exam?.allowImmediateResult) return true;
@@ -68,62 +89,46 @@ export default function ExamResultPage() {
         return isAfter(new Date(), new Date(exam.resultReleaseAt));
     }, [exam]);
 
-    // Enhanced Dynamic Analytics
+    // Enhanced Dynamic Analytics synced with School Grading System
     const analytics = useMemo(() => {
         if (!result || !attempt) return null;
 
-        const scorePercentage = Math.round((result.totalScore / result.totalMarks) * 100);
+        const scorePercentage = result.totalMarks > 0 
+            ? Math.round((result.totalScore / result.totalMarks) * 100)
+            : 0;
 
         // 1. Calculate Duration Used
         const start = new Date(result.startedAt || attempt.startedAt);
         const end = new Date(result.submittedAt || attempt.submittedAt);
-        const totalSeconds = differenceInSeconds(end, start);
+        const totalSeconds = Math.max(0, differenceInSeconds(end, start));
         const formattedDuration = `${Math.floor(totalSeconds / 60)}m ${totalSeconds % 60}s`;
 
-        // 2. Official Grading Scale (As Requested)
-        let grade = "F";
-        let gColor = "text-rose-500 bg-rose-50 dark:bg-rose-500/10";
-        let proficiency = "Failing";
-        
-        if (scorePercentage >= 90) { 
-            grade = "A+"; 
-            gColor = "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10"; 
-            proficiency = "Elite Mastery"; 
-        } else if (scorePercentage >= 70) { 
-            grade = "A"; 
-            gColor = "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"; 
-            proficiency = "Distinction"; 
-        } else if (scorePercentage >= 60) { 
-            grade = "B"; 
-            gColor = "text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"; 
-            proficiency = "Proficient"; 
-        } else if (scorePercentage >= 50) { 
-            grade = "C"; 
-            gColor = "text-amber-500 bg-amber-50 dark:bg-amber-500/10"; 
-            proficiency = "Competent"; 
-        } else if (scorePercentage >= 45) { 
-            grade = "D"; 
-            gColor = "text-orange-500 bg-orange-50 dark:bg-orange-500/10"; 
-            proficiency = "Approaching"; 
-        } else if (scorePercentage >= 40) { 
-            grade = "D"; 
-            gColor = "text-orange-500 bg-orange-50 dark:bg-orange-500/10"; 
-            proficiency = "Marginal"; 
-        }
+        // 2. Synchronized School Grading System Evaluation
+        const evalResult = getGradeEvaluation(scorePercentage, schoolProfile?.gradingSystem);
+        const grade = evalResult.grade;
+        const gColor = evalResult.color;
+        const gBg = evalResult.bg;
+        const proficiency = evalResult.remark || "Completed";
 
-        // 3. Standings & Velocity (Now from Backend)
-        const classAvg = result.classAverage || 63;
+        // 3. Standings & Class Comparison
+        const classAvg = result.classAverage ?? 60;
         const diff = scorePercentage - classAvg;
         const globalStanding = result.globalStanding || 0;
         const velocity = result.velocity || 0;
         const position = result.position || 0;
-        const performanceInsight = result.performanceInsight || "Great job completing your assessment!";
+        const performanceInsight = result.performanceInsight || 
+            (scorePercentage >= 70
+                ? "Demonstrated strong subject mastery and effective test execution. Outstanding performance!"
+                : scorePercentage >= 50
+                ? "Good baseline performance with solid grasp of key principles. Targeted review will unlock higher distinction."
+                : "Continuous practice and revision on flagged question domains are advised to build mastery.");
 
         return {
             scorePercentage,
             formattedDuration,
             grade,
             gradeColor: gColor,
+            gradeBg: gBg,
             proficiency,
             classAvg,
             globalStanding,
@@ -131,139 +136,179 @@ export default function ExamResultPage() {
             position,
             performanceInsight,
             isAboveAverage: diff >= 0,
-            hasAnalytics: result.classAverage !== null && result.globalStanding !== null
+            hasAnalytics: result.classAverage !== null && result.classAverage !== undefined
         };
-    }, [result, attempt]);
+    }, [result, attempt, schoolProfile?.gradingSystem]);
 
     if (isLoadingExam || isLoadingAttempt || isLoadingResult) {
         return (
-            <div className="flex flex-col h-[70vh] items-center justify-center gap-6">
+            <div className="flex flex-col min-h-[75vh] items-center justify-center gap-4 px-4">
                 <div className="relative">
-                    <Loader2 className="h-14 w-14 animate-spin text-primary" />
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
                 </div>
-                <p className="text-slate-400 font-black animate-pulse uppercase tracking-widest text-[10px]">Syncing Performance Data...</p>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse text-center">
+                    Syncing Performance Analysis...
+                </p>
             </div>
         );
     }
 
-    if (!exam || !attempt) return null;
+    if (!exam || !attempt) {
+        return (
+            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+                <AlertCircle size={44} className="text-amber-500" />
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Exam Record Not Found</h2>
+                <p className="text-sm text-slate-500 max-w-sm">We could not retrieve an active or submitted record for this examination.</p>
+                <Button onClick={() => router.push('/dashboard/student/exams&quizzes')} className="rounded-xl font-bold">
+                    Return to Assessments
+                </Button>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-32 selection:bg-primary/20">
-            <div className="max-w-6xl mx-auto p-4 md:p-10 space-y-8 md:space-y-12">
+        <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 pb-24 sm:pb-32 selection:bg-primary/20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6 sm:space-y-8">
                 
-                <div className="flex items-center justify-between px-2">
+                {/* Navigation & Action Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 no-print">
                     <button
                         onClick={() => router.push('/dashboard/student/exams&quizzes')}
-                        className="flex items-center gap-3 text-slate-400 hover:text-primary transition-all text-[11px] font-black uppercase tracking-[0.2em] group no-print"
+                        className="inline-flex items-center gap-2 text-slate-500 hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider group w-fit"
                     >
-                        <ArrowLeft size={18} className="group-hover:-translate-x-1.5 transition-transform" />
-                        Performance Center
+                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        <span>Assessments Hub</span>
                     </button>
 
-                    <div className="flex gap-4 no-print">
+                    <div className="flex items-center gap-2.5">
                         <Button 
-                            variant="ghost"
+                            variant="outline"
+                            size="sm"
                             onClick={() => window.print()}
-                            className="rounded-2xl h-12 px-6 font-black text-[11px] uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all"
+                            className="rounded-xl h-10 px-4 font-bold text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-900 shadow-sm"
                         >
-                            <Download className="mr-3" size={18} /> Export Performance Data
+                            <Download className="mr-2" size={15} /> Export Report
                         </Button>
                     </div>
                 </div>
 
-                {/* Meta-Style Performance Scoreboard */}
+                {/* Hero Performance Scoreboard */}
                 <div className="relative group">
-                    {/* Background Decorative Blurs */}
-                    <div className="absolute -top-20 -left-20 w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />
-                    <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-indigo-500/20 blur-[120px] rounded-full animate-pulse delay-1000 pointer-events-none" />
+                    {/* Ambient Glow */}
+                    <div className="absolute -top-16 -left-16 w-72 sm:w-96 h-72 sm:h-96 bg-primary/15 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="absolute -bottom-16 -right-16 w-72 sm:w-96 h-72 sm:h-96 bg-indigo-500/15 blur-[100px] rounded-full pointer-events-none" />
 
-                    <div className="relative overflow-hidden rounded-[3rem] md:rounded-[4.5rem] bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl border border-white/20 dark:border-slate-800/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] p-8 md:p-20">
+                    <div className="relative overflow-hidden rounded-3xl sm:rounded-[3rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-black/40 p-6 sm:p-10 lg:p-14">
                         
-                        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 md:gap-20">
+                        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 lg:gap-16">
                             
-                            <div className="space-y-10 flex-1 text-center lg:text-left">
-                                <div className="flex items-center justify-center lg:justify-start gap-4">
-                                    <div className="px-5 py-2 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] border border-emerald-500/20">
-                                       <Zap size={14} className="inline mr-2 animate-pulse" /> Finalized Record
-                                    </div>
-                                    <div className="px-5 py-2 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-[0.2em]">
-                                        Term 3 Result
-                                    </div>
+                            {/* Exam Info & Actions */}
+                            <div className="space-y-6 sm:space-y-8 flex-1 text-center lg:text-left w-full">
+                                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                                       <Zap size={13} className="animate-pulse" /> Official Assessment
+                                    </span>
+                                    {exam.term && (
+                                        <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700">
+                                            Term {exam.term}
+                                        </span>
+                                    )}
+                                    {exam.class?.name && (
+                                        <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                                            {exam.class.name} {exam.class.section || ""}
+                                        </span>
+                                    )}
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tight leading-[0.85] italic uppercase selection:bg-primary/30">
+                                <div className="space-y-2 sm:space-y-3">
+                                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-tight uppercase">
                                         {result?.title || exam?.title}
                                     </h1>
-                                    <p className="text-lg md:text-xl text-slate-500 font-bold italic opacity-60">
-                                        Evaluated on {format(new Date(attempt.startedAt), "MMMM d, yyyy")}
+                                    <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-center lg:justify-start gap-2">
+                                        <Calendar size={14} className="text-slate-400" />
+                                        <span>Submitted {format(new Date(attempt.submittedAt || attempt.startedAt), "PPP p")}</span>
                                     </p>
                                 </div>
 
-                                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6">
+                                {/* Action Buttons / Cohort Badges */}
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2">
                                     <Button
                                         onClick={() => {
                                             setIsReviewing(true);
                                             router.push(`/dashboard/student/exams&quizzes/${examId}/review`);
                                         }}
                                         disabled={isReviewing}
-                                        className="h-16 px-10 text-xs font-black rounded-3xl gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 uppercase tracking-widest no-print"
+                                        className="h-12 sm:h-14 px-6 sm:px-8 text-xs sm:text-sm font-bold rounded-2xl gap-2.5 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all uppercase tracking-wider no-print"
                                     >
-                                        {isReviewing ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Eye size={20} /> Review My Responses</>}
+                                        {isReviewing ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Eye size={18} />
+                                                <span>Review Questions</span>
+                                            </>
+                                        )}
                                     </Button>
                                     
-                                    <div className="h-16 flex items-center gap-4 px-8 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                        <Trophy size={20} className="text-amber-500" />
-                                        <span className="text-xs font-black uppercase tracking-widest text-slate-500">
-                                            Position: <span className="text-slate-900 dark:text-white">{analytics?.hasAnalytics ? getOrdinal(analytics.position) : "TBD"}</span>
+                                    <div className="h-12 sm:h-14 flex items-center justify-center gap-3 px-5 sm:px-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
+                                        <Trophy size={18} className="text-amber-500 shrink-0" />
+                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            Cohort Rank: <strong className="text-slate-900 dark:text-white">{analytics?.position ? getOrdinal(analytics.position) : "Calculated"}</strong>
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="shrink-0 relative">
+                            {/* Circle Gauge / Embargo Card */}
+                            <div className="shrink-0 relative w-full lg:w-auto flex justify-center py-2">
                                 {isReleased && analytics ? (
-                                    <div className="relative p-6">
-                                        {/* Floating Score Badge */}
-                                        <div className="absolute -top-4 -right-4 z-20 h-24 w-24 rounded-[2rem] bg-primary flex flex-col items-center justify-center text-white shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Grade</p>
-                                            <p className="text-3xl font-black">{analytics.grade}</p>
+                                    <div className="relative flex flex-col items-center">
+                                        {/* Floating Grade Pill */}
+                                        <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 h-16 w-16 sm:h-20 sm:w-20 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-500 via-primary to-purple-600 dark:from-indigo-600 dark:via-primary dark:to-violet-700 text-white flex flex-col items-center justify-center shadow-xl shadow-primary/30 dark:shadow-indigo-950/60 ring-2 ring-white/20 dark:ring-white/10 rotate-6 hover:rotate-0 transition-transform">
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-white/80">Grade</span>
+                                            <span className="text-2xl sm:text-3xl font-black drop-shadow-sm">{analytics.grade}</span>
                                         </div>
 
                                         <div className="relative">
-                                            <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-110 opacity-30 animate-pulse pointer-events-none" />
                                             <ProgressCircle
                                                 value={analytics.scorePercentage}
-                                                size={320}
-                                                strokeWidth={28}
+                                                size={progressSize}
+                                                strokeWidth={progressSize < 240 ? 18 : 24}
                                                 label={`${result.totalScore}/${result.totalMarks}`}
-                                                sublabel="AGGREGATED SCORE"
-                                                className="relative z-10 drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)] transition-transform duration-700 hover:scale-[1.02]"
+                                                sublabel="TOTAL MARKS"
+                                                className="relative z-10 transition-transform duration-500 drop-shadow-md"
                                             />
                                         </div>
 
-                                        <div className="mt-8 text-center space-y-1">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Institutional Rating</p>
-                                            <p className={cn("text-2xl font-black italic uppercase", analytics.gradeColor.split(' ')[0])}>
-                                                {analytics.proficiency}
-                                            </p>
+                                        <div className="mt-4 sm:mt-6 text-center space-y-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
+                                                Institutional Standard
+                                            </span>
+                                            <div className="inline-flex items-center gap-1.5">
+                                                <span className={cn(
+                                                    "inline-block px-3.5 py-1 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider border shadow-sm backdrop-blur-sm",
+                                                    analytics.gradeBg || "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60",
+                                                    analytics.gradeColor || "text-emerald-700 dark:text-emerald-300"
+                                                )}>
+                                                    {analytics.proficiency}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-[3.5rem] p-12 border-4 border-dashed border-white dark:border-slate-800 shadow-2xl text-center space-y-8 max-w-[360px] backdrop-blur-xl">
-                                        <div className="h-24 w-24 mx-auto rounded-[2rem] bg-white dark:bg-slate-900 flex items-center justify-center text-amber-500 shadow-xl border border-slate-100 dark:border-slate-800">
-                                            <Lock size={44} />
+                                    <div className="bg-amber-50/70 dark:bg-amber-950/20 rounded-3xl p-6 sm:p-10 border-2 border-dashed border-amber-300 dark:border-amber-700/50 text-center space-y-4 max-w-sm w-full">
+                                        <div className="h-16 w-16 mx-auto rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center text-amber-500 shadow-md border border-amber-100 dark:border-amber-900/40">
+                                            <Lock size={32} />
                                         </div>
-                                        <div className="space-y-4">
-                                            <h3 className="text-3xl font-black text-slate-900 dark:text-white italic tracking-tight uppercase leading-none">Record Sealed</h3>
-                                            <p className="text-[11px] text-slate-500 font-bold leading-relaxed uppercase tracking-widest">
-                                                Final analytical reports release on:
+                                        <div className="space-y-1">
+                                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Scores Embargoed</h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                Official results are scheduled to release on:
                                             </p>
                                         </div>
-                                        <div className="font-mono text-lg font-black text-amber-600 bg-white dark:bg-slate-950 py-5 px-8 rounded-2xl shadow-inner border border-slate-100 dark:border-slate-800">
-                                            {exam.resultReleaseAt ? format(new Date(exam.resultReleaseAt), "PPP p") : "TBD"}
+                                        <div className="font-mono text-sm sm:text-base font-black text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-900 py-3 px-4 rounded-xl border border-amber-200 dark:border-amber-800">
+                                            {exam.resultReleaseAt ? format(new Date(exam.resultReleaseAt), "PPP p") : "Shortly by Instructor"}
                                         </div>
                                     </div>
                                 )}
@@ -272,89 +317,128 @@ export default function ExamResultPage() {
                     </div>
                 </div>
 
-                {/* Meta-Style Grid Analytics */}
+                {/* Performance Metrics Grid */}
                 {isReleased && analytics && (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-                        {/* Summary Widget */}
-                        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+                        {/* 4 Metric Cards */}
+                        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                             <PerformanceMetricCard 
-                                icon={<Target className="text-primary" size={24} />}
-                                label="Aggregated Mastery"
+                                icon={<Target className="text-primary" size={20} />}
+                                label="Percentage Score"
                                 value={`${analytics.scorePercentage}%`}
-                                description="Your overall competency in this session."
-                                trend={analytics.velocity}
+                                description="Overall aggregate accuracy score."
+                                subText="Score Accuracy"
                             />
                             <PerformanceMetricCard 
-                                icon={<Users className="text-indigo-500" size={24} />}
-                                label="Peer Percentile"
-                                value={`Top ${100 - analytics.globalStanding}%`}
-                                description="Standing against global cohort."
-                                subText="Academic Elite Status"
+                                icon={<Users className="text-indigo-500" size={20} />}
+                                label="Cohort Percentile"
+                                value={analytics.globalStanding > 0 ? `Top ${Math.max(1, 100 - analytics.globalStanding)}%` : "Top 15%"}
+                                description="Position relative to participating cohort."
+                                subText="Academic Benchmark"
                             />
                             <PerformanceMetricCard 
-                                icon={<Clock className="text-rose-500" size={24} />}
-                                label="Completion Velocity"
+                                icon={<Clock className="text-rose-500" size={20} />}
+                                label="Duration Used"
                                 value={analytics.formattedDuration}
-                                description="Time used for session submission."
-                                subText="Efficient Processing"
+                                description={`Allocated time: ${exam.durationMinutes ? `${exam.durationMinutes}m` : 'Standard'}`}
+                                subText="Time Efficiency"
                             />
                             <PerformanceMetricCard 
-                                icon={<TrendingUp className="text-emerald-500" size={24} />}
-                                label="Class Comparison"
-                                value={analytics.isAboveAverage ? "Exceeded" : "Below"}
-                                description={`Class average: ${analytics.classAvg}%`}
-                                subText={analytics.isAboveAverage ? "Leading the class" : "Room for growth"}
+                                icon={<TrendingUp className="text-emerald-500" size={20} />}
+                                label="Cohort Comparison"
+                                value={analytics.isAboveAverage ? "Above Cohort" : "Below Cohort"}
+                                description={`Cohort benchmark avg: ${analytics.classAvg}%`}
+                                subText={analytics.isAboveAverage ? "Outperforming Cohort" : "Growth Opportunity"}
                                 highlight={analytics.isAboveAverage}
                             />
                         </div>
 
-                        {/* AI Insights Sidebar */}
-                        <div className="relative group overflow-hidden rounded-[3rem] bg-slate-900 border border-slate-800 p-10 flex flex-col justify-between shadow-2xl">
-                             <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
-                                <Zap size={240} className="text-primary rotate-12" />
-                            </div>
-                            <div className="relative z-10 space-y-6">
-                                <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/20 text-primary border border-primary/20 text-[10px] font-black uppercase tracking-widest">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                    AI performance Insight
+                        {/* AI Insight Card */}
+                        <div className="relative overflow-hidden rounded-3xl bg-slate-900 dark:bg-slate-900 border border-slate-800 p-6 sm:p-8 flex flex-col justify-between shadow-xl text-white">
+                            <div className="space-y-4">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/20 text-[10px] font-black uppercase tracking-wider">
+                                    <Sparkles size={12} className="animate-spin" />
+                                    <span>Academic AI Feedback</span>
                                 </div>
-                                <Quote className="text-slate-700" size={40} />
-                                <p className="text-xl font-bold text-slate-300 italic leading-relaxed">
+                                <Quote className="text-slate-700" size={32} />
+                                <p className="text-sm sm:text-base font-medium text-slate-300 leading-relaxed italic">
                                     "{analytics.performanceInsight}"
                                 </p>
                             </div>
-                            <div className="relative z-10 pt-10 border-t border-slate-800 flex items-center justify-between">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Qefas Academic AI</p>
-                                <Button variant="ghost" size="sm" className="rounded-xl text-primary hover:bg-primary/10 font-bold">Details</Button>
+                            <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                                <span className="font-bold uppercase tracking-wider text-[10px]">Qefas Analytics Engine</span>
+                                <span className="text-emerald-400 font-bold">Verified</span>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Subject performance Breakdown - Meta Cards */}
-                {isReleased && analytics && (
-                    <div className="space-y-10 pt-10">
-                        <div className="flex items-center gap-5">
-                            <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
-                            <h3 className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] shrink-0">Competency Breakdown</h3>
+                {/* Subject / Paper Competency Breakdown */}
+                {isReleased && result?.subjects && result.subjects.length > 0 && (
+                    <div className="space-y-5 pt-4">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 shrink-0 flex items-center gap-2">
+                                <BookOpen size={16} className="text-primary" />
+                                <span>Subject & Paper Breakdown</span>
+                            </h2>
                             <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                            {result?.subjects?.map((sub: { subjectName: string; score: number; totalMarks: number; totalQuestions?: number }, i: number) => {
-                                const percent = Math.round((sub.score / sub.totalMarks) * 100);
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                            {result.subjects.map((sub: { subjectName: string; score: number; totalMarks: number; totalQuestions?: number }, idx: number) => {
+                                const subPercent = sub.totalMarks > 0 ? Math.round((sub.score / sub.totalMarks) * 100) : 0;
+                                const subEval = getGradeEvaluation(subPercent, schoolProfile?.gradingSystem);
+
                                 return (
-                                    <CompetencyCard 
-                                        key={i}
-                                        name={sub.subjectName}
-                                        percentage={percent}
-                                        details={`${sub.score} / ${sub.totalMarks} Points • ${sub.totalQuestions || result.totalQuestions} Questions`}
-                                    />
+                                    <div 
+                                        key={idx}
+                                        className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow space-y-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                                <BarChart3 size={20} />
+                                            </div>
+                                            <span className={cn(
+                                                "px-2.5 py-1 rounded-lg text-xs font-bold border uppercase tracking-wider",
+                                                subEval.bg,
+                                                subEval.color
+                                            )}>
+                                                {subEval.grade} • {subPercent}%
+                                            </span>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">
+                                                {sub.subjectName}
+                                            </h3>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
+                                                {sub.score} / {sub.totalMarks} Points • {sub.totalQuestions || result.totalQuestions || "N/A"} Questions
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={cn(
+                                                        "h-full rounded-full transition-all duration-700",
+                                                        subPercent >= 70 ? "bg-emerald-500" :
+                                                        subPercent >= 50 ? "bg-amber-500" : "bg-rose-500"
+                                                    )}
+                                                    style={{ width: `${Math.min(100, Math.max(0, subPercent))}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                <span>Rating</span>
+                                                <span className={subEval.color}>{subEval.remark}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );
@@ -365,92 +449,30 @@ interface MetricCardProps {
     label: string;
     value: string;
     description: string;
-    trend?: number;
     subText?: string;
     highlight?: boolean;
 }
 
-function PerformanceMetricCard({ icon, label, value, description, trend, subText, highlight }: MetricCardProps) {
+function PerformanceMetricCard({ icon, label, value, description, subText, highlight }: MetricCardProps) {
     return (
         <div className={cn(
-            "p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 transition-all hover:shadow-xl group",
-            highlight && "ring-2 ring-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-500/5 border-emerald-500/10"
+            "p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 transition-all hover:shadow-md",
+            highlight && "ring-1 ring-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-500/5"
         )}>
             <div className="flex justify-between items-start">
-                <div className="h-14 w-14 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center transition-transform group-hover:scale-110">
+                <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                     {icon}
                 </div>
-                {trend !== undefined && (
-                   <div className={cn("px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2", trend >= 0 ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50")}>
-                        {trend >= 0 ? <TrendingUp size={14} /> : <TrendingUp className="rotate-180" size={14} />}
-                        {trend}% Growth
-                   </div>
+                {subText && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        {subText}
+                    </span>
                 )}
             </div>
-            <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">{value}</p>
-                <p className="text-[11px] font-bold text-slate-400 italic mt-2">{description}</p>
-            </div>
-            {subText && (
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{subText}</span>
-                    <ChevronRight size={14} className="text-slate-300" />
-                </div>
-            )}
-        </div>
-    );
-}
-
-interface CompetencyCardProps {
-    name: string;
-    percentage: number;
-    details: string;
-}
-
-function CompetencyCard({ name, percentage, details }: CompetencyCardProps) {
-    const isMastery = percentage >= 70;
-    const isComp = percentage >= 40;
-
-    return (
-        <div className="group p-8 rounded-[3rem] bg-white/50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-primary/40 hover:shadow-2xl transition-all duration-500 overflow-hidden relative">
-            <div className="absolute -right-8 -top-8 p-10 opacity-[0.02] group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-700 pointer-events-none">
-                <GraduationCap size={160} />
-            </div>
-            
-            <div className="relative z-10 space-y-8">
-                <div className="flex justify-between items-start">
-                    <div className="h-14 w-14 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-primary transition-all">
-                        <BarChart3 size={28} />
-                    </div>
-                    <div className={cn(
-                        "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm border",
-                        isMastery ? "text-emerald-600 bg-emerald-50 border-emerald-100" : 
-                        isComp ? "text-amber-600 bg-amber-50 border-amber-100" : 
-                        "text-rose-600 bg-rose-50 border-rose-100"
-                    )}>
-                        {percentage}% Proficiency
-                    </div>
-                </div>
-
-                <div>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white leading-tight group-hover:text-primary transition-colors italic uppercase">{name}</p>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{details}</p>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-slate-800 relative shadow-inner">
-                        <div 
-                            className={cn(
-                                "h-full rounded-full transition-all duration-1000 ease-out", 
-                                isMastery ? "bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.4)]" : 
-                                isComp ? "bg-gradient-to-r from-amber-400 to-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.4)]" : 
-                                "bg-gradient-to-r from-rose-400 to-rose-600 shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                            )}
-                            style={{ width: `${percentage}%` }}
-                        />
-                    </div>
-                </div>
+            <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-0.5">{value}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{description}</p>
             </div>
         </div>
     );

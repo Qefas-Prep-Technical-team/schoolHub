@@ -19,6 +19,8 @@ import QuestionViewer from './QuestionViewer';
 import ExamInfo from './ExamInfo';
 import Breadcrumbs from './Breadcrumbs';
 import ExamSidebar from './ExamSidebar';
+import StudentReadingModal from '@/app/Exams&Quizzes/exam/[examId]/components/StudentReadingModal';
+import ImageLightbox from '@/components/ui/ImageLightbox';
 import { examService } from '@/lib/api/services/examService';
 import { SubjectExamQuestion, SubjectPaper } from '@/lib/api/services/examService';
 import { useTeacherProfile } from '@/lib/api/hooks/useTeacher';
@@ -67,6 +69,8 @@ export default function ExamPreviewPage({
   const [activePaperIndex, setActivePaperIndex] = useState(0);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showReadingModal, setShowReadingModal] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; alt?: string } | null>(null);
 
   // Fetch the full structure — only when user has a confirmed school connection
   const { data: livePapers, isLoading: isLoadingPapers } = useQuery({
@@ -92,6 +96,10 @@ export default function ExamPreviewPage({
   });
 
   const activePaper = livePapers?.[activePaperIndex];
+  const hasReadingContent = Boolean(
+    activePaper?.readingContent || 
+    (activePaper?.images && activePaper.images.length > 0)
+  );
 
   // Map SubjectExamQuestion to Question Viewer format
   const questions = useMemo(() => {
@@ -258,6 +266,19 @@ export default function ExamPreviewPage({
 
         {/* Right: Timer & Mobile Question Map Sheet Trigger */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Quick Passage Read Button */}
+          {hasReadingContent && (
+            <button
+              type="button"
+              onClick={() => setShowReadingModal(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm font-bold transition-all shadow-xs"
+              title="Read Passage"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Passage</span>
+            </button>
+          )}
+
           {/* Timer Display */}
           <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-emerald-700 dark:text-emerald-300 font-mono font-bold text-xs sm:text-sm">
             <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
@@ -335,7 +356,12 @@ export default function ExamPreviewPage({
 
         {/* Exam Info Card */}
         <div className="mb-4">
-          <ExamInfo examData={examData} isLoading={isLoadingPapers} />
+          <ExamInfo 
+            examData={examData} 
+            isLoading={isLoadingPapers} 
+            hasReadingContent={hasReadingContent}
+            onOpenReadingModal={() => setShowReadingModal(true)}
+          />
         </div>
 
         {/* Mobile Quick Question Scrubber (One-tap question switching on phone screens) */}
@@ -435,6 +461,8 @@ export default function ExamPreviewPage({
                 onSelectAnswer={handleSelectAnswer}
                 isPreview={true}
                 onNavigateToQuestion={handleNavigateToQuestion}
+                hasReadingContent={hasReadingContent}
+                onOpenReadingModal={() => setShowReadingModal(true)}
               />
             </div>
 
@@ -496,6 +524,25 @@ export default function ExamPreviewPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reading Passage & Reference Material Modal */}
+      <StudentReadingModal
+        isOpen={showReadingModal}
+        onClose={() => setShowReadingModal(false)}
+        content={activePaper?.readingContent || ''}
+        images={activePaper?.images || []}
+        imageLabels={activePaper?.imageLabels || []}
+        subjectName={examData.subject}
+        onZoom={(src, alt) => setLightboxImage({ src, alt })}
+      />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={Boolean(lightboxImage?.src)}
+        src={lightboxImage?.src || ''}
+        alt={lightboxImage?.alt}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   );
 }

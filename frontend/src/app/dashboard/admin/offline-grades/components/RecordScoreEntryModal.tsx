@@ -202,6 +202,9 @@ export default function RecordScoreEntryModal({
     classId: undefined,
   });
 
+  // Track the original assessment type when editing an existing assessment batch
+  const originalAssessmentTypeRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
     if (!isOpen) {
       prevModalStateRef.current.isOpen = false;
@@ -220,6 +223,7 @@ export default function RecordScoreEntryModal({
       };
 
       if (initialRecord) {
+        originalAssessmentTypeRef.current = initialRecord.assessmentType;
         setConfig({
           classId: initialRecord.classId,
           className: initialRecord.className,
@@ -594,6 +598,7 @@ export default function RecordScoreEntryModal({
 
     const existingMap = new Map<string, { id?: string; score: number; remarks?: string; status?: string }>();
     if (rawGradesList.length > 0) {
+      const targetAssessmentTitle = (originalAssessmentTypeRef.current || config.assessmentType || '').trim().toLowerCase();
       rawGradesList.forEach((g: unknown) => {
         const grade = g as {
           studentId: string;
@@ -603,9 +608,8 @@ export default function RecordScoreEntryModal({
           remarks?: string;
           status?: string;
         };
-        const titleMatch =
-          !config.assessmentType ||
-          (grade.assessmentType || '').trim().toLowerCase() === config.assessmentType.trim().toLowerCase();
+        const gradeTitle = (grade.assessmentType || '').trim().toLowerCase();
+        const titleMatch = !targetAssessmentTitle || gradeTitle === targetAssessmentTitle;
         if (titleMatch) {
           existingMap.set(grade.studentId, {
             id: grade.id,
@@ -751,6 +755,8 @@ export default function RecordScoreEntryModal({
       const gradesToSubmit = roster
         .filter((r) => r.score !== '' && r.score !== null && r.score !== undefined)
         .map((r) => ({
+          id: r.existingGradeId,
+          existingGradeId: r.existingGradeId,
           studentId: r.studentId,
           studentName: r.studentName,
           classId: config.classId,

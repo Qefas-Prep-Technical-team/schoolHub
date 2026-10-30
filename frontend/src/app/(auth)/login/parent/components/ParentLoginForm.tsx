@@ -52,6 +52,15 @@ export default function ParentLoginForm() {
           </button>
         </div>
 
+        <div className="flex justify-end -mt-1 sm:-mt-2 px-1">
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors cursor-pointer"
+          >
+            Forgot Password?
+          </Link>
+        </div>
+
         <button
           type="submit"
           disabled={isPending || !email || !password}

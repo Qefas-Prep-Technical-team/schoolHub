@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Check, X, AlertCircle, BookOpen } from 'lucide-react';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 interface Question {
@@ -19,6 +19,8 @@ interface QuestionViewerProps {
   onSelectAnswer: (questionId: number, answerIndex: number) => void;
   isPreview: boolean;
   onNavigateToQuestion?: (questionId: number) => void;
+  hasReadingContent?: boolean;
+  onOpenReadingModal?: () => void;
 }
 
 export default function QuestionViewer({
@@ -28,6 +30,8 @@ export default function QuestionViewer({
   onSelectAnswer,
   isPreview,
   onNavigateToQuestion,
+  hasReadingContent,
+  onOpenReadingModal,
 }: QuestionViewerProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   
@@ -79,29 +83,42 @@ export default function QuestionViewer({
             </span>
           </div>
           
-          {isPreview && (
-            <button
-              type="button"
-              onClick={() => setShowAnswer(!showAnswer)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                showAnswer
-                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                  : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80'
-              }`}
-            >
-              {showAnswer ? (
-                <>
-                  <EyeOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>Hide Answer</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>Show Answer</span>
-                </>
-              )}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {hasReadingContent && onOpenReadingModal && (
+              <button
+                type="button"
+                onClick={onOpenReadingModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Read Passage</span>
+              </button>
+            )}
+
+            {isPreview && (
+              <button
+                type="button"
+                onClick={() => setShowAnswer(!showAnswer)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                  showAnswer
+                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                    : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80'
+                }`}
+              >
+                {showAnswer ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Hide Answer</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Show Answer</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Question Text */}

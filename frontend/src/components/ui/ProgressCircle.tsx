@@ -41,7 +41,7 @@ export default function ProgressCircle({
 
         {/* Background circle */}
         <circle
-          className="stroke-slate-100 dark:stroke-slate-800/50"
+          className="stroke-slate-100 dark:stroke-slate-800/80"
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -66,14 +66,14 @@ export default function ProgressCircle({
       </svg>
 
       {/* Center content */}
-      <div className="absolute flex flex-col items-center justify-center">
+      <div className="absolute flex flex-col items-center justify-center pointer-events-none">
         {label && (
-          <span className="text-slate-900 dark:text-white text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400">
+          <span className="text-slate-900 dark:text-white text-3xl font-black tracking-tight drop-shadow-sm">
             {label}
           </span>
         )}
         {sublabel && (
-          <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+          <span className="text-slate-400 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">
             {sublabel}
           </span>
         )}
