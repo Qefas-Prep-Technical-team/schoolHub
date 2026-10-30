@@ -284,7 +284,7 @@ export default function MaterialsPage() {
         attachmentUrl: null,
         videoUrl: null,
         referenceUrl: null,
-        link: `/dashboard/student/exams/${exam.id}`,
+        link: `/dashboard/student/exams&quizzes/${exam.id}`,
         examId: exam.id,
       });
     });

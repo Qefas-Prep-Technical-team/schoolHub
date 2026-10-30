@@ -59,7 +59,7 @@ interface RawAssignmentItem {
 }
 
 export default function StudentAssessmentsPage() {
-    const [assessmentType, setAssessmentType] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
+    const [assessmentType, setAssessmentType] = useState<'all' | 'exams' | 'quizzes' | 'ca' | 'assignment'>('all');
     const [timeFilter, setTimeFilter] = useState('term');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -244,7 +244,9 @@ export default function StudentAssessmentsPage() {
     const filteredAssessments = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         return allAssessments.filter(assessment => {
-            const matchesType = assessmentType === 'exams' ? assessment.type === 'exam' 
+            const matchesType = assessmentType === 'all' 
+                ? true
+                : assessmentType === 'exams' ? assessment.type === 'exam' 
                 : assessmentType === 'quizzes' ? assessment.type === 'quiz'
                 : assessmentType === 'ca' ? assessment.type === 'ca'
                 : assessment.type === 'assignment';

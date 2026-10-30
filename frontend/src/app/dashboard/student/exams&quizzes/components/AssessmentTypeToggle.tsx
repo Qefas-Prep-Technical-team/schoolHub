@@ -2,22 +2,23 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { FileText, ClipboardList, PenTool, BookOpen } from "lucide-react";
+import { FileText, ClipboardList, PenTool, BookOpen, Layers } from "lucide-react";
 import { HeaderTooltip } from "@/app/dashboard/student/components/dashboard/HeaderTooltip";
 
 interface AssessmentTypeToggleProps {
-    onTypeChange: (type: 'exams' | 'quizzes' | 'ca' | 'assignment') => void;
+    onTypeChange: (type: 'all' | 'exams' | 'quizzes' | 'ca' | 'assignment') => void;
 }
 
 export default function AssessmentTypeToggle({ onTypeChange }: AssessmentTypeToggleProps) {
     const types = [
+        { id: 'all', label: 'All Assessments', icon: Layers },
         { id: 'exams', label: 'Exams', icon: FileText },
         { id: 'quizzes', label: 'Quizzes', icon: ClipboardList },
         { id: 'ca', label: 'CA', icon: PenTool },
         { id: 'assignment', label: 'Assignments', icon: BookOpen },
     ] as const;
 
-    const [active, setActive] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
+    const [active, setActive] = useState<'all' | 'exams' | 'quizzes' | 'ca' | 'assignment'>('all');
 
     return (
         <div className="flex items-center gap-2 w-full sm:w-auto">

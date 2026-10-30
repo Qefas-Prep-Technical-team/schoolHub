@@ -517,12 +517,16 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
 
   if (!exam) return null;
 
+  const mappedPapers = (exam as any).subjectExamPapers.map((link: any) => ({
+    ...link.subjectPaper,
+    examId: link.examId
+  }));
+
   const formattedExam = {
     ...exam,
-    subjectExamPapers: (exam as any).subjectExamPapers.map((link: any) => ({
-      ...link.subjectPaper,
-      examId: link.examId
-    }))
+    subjectExamPapers: mappedPapers,
+    subjectPapers: mappedPapers,
+    totalQuestions: mappedPapers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)
   };
 
   if (excludeCorrectAnswers) {
@@ -871,7 +875,17 @@ export const getSubjectPaperByIdService = async (id: string, user?: any) => {
     where: { id },
     include: {
       exams: {
-        include: { exam: true }
+        include: {
+          exam: {
+            include: {
+              departments: {
+                include: { department: true }
+              },
+              class: true,
+              session: true
+            }
+          }
+        }
       },
       subject: true,
       teacher: true,
@@ -1048,7 +1062,7 @@ export const updateSubjectPaperService = async (paperId: string, data: {
   teacherId?: string;
   category?: string;
 }) => {
-  return prisma.subjectExamPaper.update({
+  const updatedPaper = await prisma.subjectExamPaper.update({
     where: { id: paperId },
     data: {
       title: data.title || undefined,
@@ -1062,7 +1076,49 @@ export const updateSubjectPaperService = async (paperId: string, data: {
       category: data.category as any || undefined,
       updatedAt: new Date(),
     },
+    include: {
+      exams: {
+        include: { exam: true }
+      }
+    }
   });
+
+  // For single paper exams (e.g. CA, QUIZ, ASSIGNMENT, or single-paper mode),
+  // keep the main exam in sync if title, durationMinutes, subjectId, or teacherId changed
+  const SINGLE_PAPER_TYPES = ["QUIZ", "CA", "ASSIGNMENT"];
+  const linkedExams = updatedPaper.exams || [];
+  for (const link of linkedExams) {
+    const ex = link.exam;
+    const isSingle = ex && (
+      SINGLE_PAPER_TYPES.includes((ex as any).category || "") ||
+      SINGLE_PAPER_TYPES.includes((ex as any).type || "") ||
+      (ex as any).mode === "SINGLE_SUBJECT" ||
+      linkedExams.length === 1
+    );
+
+    if (isSingle && ex) {
+      const examSyncData: any = {};
+      if (data.title && data.title !== ex.title) examSyncData.title = data.title;
+      if (data.durationMinutes !== undefined && data.durationMinutes !== ex.durationMinutes) {
+        examSyncData.durationMinutes = data.durationMinutes;
+      }
+      if (data.teacherId !== undefined && data.teacherId !== ex.teacherId) {
+        examSyncData.teacherId = data.teacherId === "" ? null : data.teacherId;
+      }
+      if (data.subjectId !== undefined && data.subjectId !== ex.subjectId) {
+        examSyncData.subjectId = data.subjectId === "" ? null : data.subjectId;
+      }
+
+      if (Object.keys(examSyncData).length > 0) {
+        await prisma.exam.update({
+          where: { id: ex.id },
+          data: examSyncData
+        });
+      }
+    }
+  }
+
+  return updatedPaper;
 };
 
 export const addManualQuestionsToPaperService = async ({
@@ -1706,7 +1762,7 @@ export const updateExamService = async (
     });
   }
 
-  return prisma.exam.update({
+  const updatedExam = await prisma.exam.update({
     where: { id: examId },
     data: updateData,
     include: {
@@ -1717,8 +1773,45 @@ export const updateExamService = async (
       class: true,
       session: true,
       teacher: true,
+      subjectExamPapers: {
+        include: { subjectPaper: true }
+      }
     },
   });
+
+  // For single paper exams, sync changes to the linked subject paper
+  const SINGLE_PAPER_TYPES = ["QUIZ", "CA", "ASSIGNMENT"];
+  const isSingle = (
+    SINGLE_PAPER_TYPES.includes(updatedExam.category || "") ||
+    SINGLE_PAPER_TYPES.includes((updatedExam as any).type || "") ||
+    updatedExam.mode === "SINGLE_SUBJECT" ||
+    (updatedExam.subjectExamPapers && updatedExam.subjectExamPapers.length === 1)
+  );
+
+  if (isSingle && updatedExam.subjectExamPapers && updatedExam.subjectExamPapers.length > 0) {
+    for (const link of updatedExam.subjectExamPapers) {
+      const paper = link.subjectPaper;
+      if (!paper) continue;
+
+      const paperSyncData: any = {};
+      if (data.title && data.title !== paper.title) paperSyncData.title = data.title;
+      if (data.durationMinutes !== undefined && data.durationMinutes !== paper.durationMinutes) {
+        paperSyncData.durationMinutes = data.durationMinutes;
+      }
+      if (data.teacherId !== undefined && data.teacherId !== paper.teacherId) {
+        paperSyncData.teacherId = data.teacherId || null;
+      }
+
+      if (Object.keys(paperSyncData).length > 0) {
+        await prisma.subjectExamPaper.update({
+          where: { id: paper.id },
+          data: paperSyncData
+        });
+      }
+    }
+  }
+
+  return updatedExam;
 };
 
 export const reorderQuestionsService = async (

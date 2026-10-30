@@ -90,19 +90,19 @@ export default function EditPaperModal({
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaperFormValues>({
     resolver: zodResolver(paperSchema) as any,
     defaultValues: {
-      subjectId: paper?.subjectId || "",
-      teacherId: paper?.teacherId || "",
-      title: paper?.title || "",
+      subjectId: paper?.subjectId || exam?.subjectId || "",
+      teacherId: paper?.teacherId || exam?.teacherId || "",
+      title: paper?.title || exam?.title || "",
       instructions: paper?.instructions || "",
       readingContent: paper?.readingContent || "",
-      durationMinutes: paper?.durationMinutes || 60,
+      durationMinutes: paper?.durationMinutes || exam?.durationMinutes || 60,
       creationMode: paper?.creationMode || "MANUAL",
       startDate: formatDateForInput(exam?.startDate) || "",
       endDate: formatDateForInput(exam?.endDate) || "",
       allowImmediateResult: exam?.allowImmediateResult ?? true,
       resultReleaseAt: formatDateForInput(exam?.resultReleaseAt) || "",
       shuffleQuestions: !!exam?.shuffleQuestions,
-      scope: exam?.scope || "SCHOOL",
+      scope: exam?.scope || (exam?.classId ? "CLASS" : "SCHOOL"),
       classId: exam?.classId || "",
       targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
       sessionId: exam?.sessionId || "",
@@ -115,21 +115,21 @@ export default function EditPaperModal({
   const watchReadingContent = watch("readingContent");
 
   useEffect(() => {
-    if (paper) {
+    if (paper || exam) {
       reset({
-        subjectId: paper.subjectId || "",
-        teacherId: paper.teacherId || "",
-        title: paper.title || "",
-        instructions: paper.instructions || "",
-        readingContent: paper.readingContent || "",
-        durationMinutes: paper.durationMinutes || 60,
-        creationMode: paper.creationMode || "MANUAL",
+        subjectId: paper?.subjectId || exam?.subjectId || "",
+        teacherId: paper?.teacherId || exam?.teacherId || "",
+        title: paper?.title || exam?.title || "",
+        instructions: paper?.instructions || "",
+        readingContent: paper?.readingContent || "",
+        durationMinutes: paper?.durationMinutes || exam?.durationMinutes || 60,
+        creationMode: paper?.creationMode || "MANUAL",
         startDate: formatDateForInput(exam?.startDate) || "",
         endDate: formatDateForInput(exam?.endDate) || "",
         allowImmediateResult: exam?.allowImmediateResult ?? true,
         resultReleaseAt: formatDateForInput(exam?.resultReleaseAt) || "",
         shuffleQuestions: !!exam?.shuffleQuestions,
-        scope: exam?.scope || "SCHOOL",
+        scope: exam?.scope || (exam?.classId ? "CLASS" : "SCHOOL"),
         classId: exam?.classId || "",
         targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
         sessionId: exam?.sessionId || "",
@@ -159,6 +159,8 @@ export default function EditPaperModal({
           description: data.examDescription,
           startDate: data.startDate || undefined,
           endDate: data.endDate || undefined,
+          durationMinutes: data.durationMinutes,
+          teacherId: data.teacherId || undefined,
           allowImmediateResult: data.allowImmediateResult,
           resultReleaseAt: !data.allowImmediateResult && data.resultReleaseAt ? data.resultReleaseAt : undefined,
           shuffleQuestions: data.shuffleQuestions,
@@ -171,12 +173,17 @@ export default function EditPaperModal({
       }
     },
     onSuccess: () => {
-      toast.success("Subject paper updated successfully!");
+      toast.success("Settings updated and synchronized successfully!");
       queryClient.invalidateQueries({ queryKey: ["paper", paper.id] });
+      if (exam?.id) {
+        queryClient.invalidateQueries({ queryKey: ["exam", exam.id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["exams"] });
+      queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update paper");
+      toast.error(error.response?.data?.message || "Failed to update settings");
     },
   });
 
@@ -189,10 +196,12 @@ export default function EditPaperModal({
               <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                 <FileText size={20} />
               </div>
-              Edit Paper Settings
+              {isSinglePaperType ? "Edit Assessment & Paper Settings" : "Edit Paper Settings"}
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium pt-1">
-              Refine the subject, timing, and instructions for this paper.
+              {isSinglePaperType
+                ? "This is a single-paper assessment. Changes made here automatically synchronize between the subject paper and the main exam."
+                : "Refine the subject, timing, and instructions for this paper."}
             </DialogDescription>
           </DialogHeader>
         </div>

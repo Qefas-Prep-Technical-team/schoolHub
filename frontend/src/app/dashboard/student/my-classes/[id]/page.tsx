@@ -75,6 +75,9 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
     const classAttempts = attempts.filter((a: any) => a.classId === id || a.exam?.classId === id);
 
     const filteredExams = classExams.filter((exam: any) => {
+      // Students should only see published or ongoing assessments
+      if (exam.status && !['PUBLISHED', 'ONGOING'].includes(exam.status)) return false;
+
       const scope: string = exam.scope || 'CLASS';
       if (scope === 'SCHOOL') return true;
       if (scope === 'CLASS') return true;
@@ -121,7 +124,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         grade: gradeStr,
         type,
         timestamp: end ? end.getTime() : (start ? start.getTime() : 0),
-        link: `/dashboard/student/exams/${exam.id}`,
+        link: `/dashboard/student/exams&quizzes/${exam.id}`,
       };
     });
 

@@ -2,8 +2,8 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useExam, useExamAttempt, useStartExamAttempt } from "@/lib/api/hooks/useExams";
-import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, Lock } from "lucide-react";
-import { format, isAfter } from "date-fns";
+import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, Lock, RefreshCw } from "lucide-react";
+import { format, isAfter, isBefore } from "date-fns";
 import { Button as ShcnButton } from "@/components/ui/button";
 import ExamDetails from '@/app/Exams&Quizzes/exam/[examId]/start/components/ExamDetails';
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
@@ -19,22 +19,62 @@ export default function ExamDetailsPage() {
   const { examId } = useParams();
   const router = useRouter();
   
-  const { data: exam, isLoading: isLoadingExam } = useExam(examId as string);
-  const { data: attempt, isLoading: isLoadingAttempt, isError: isErrorAttempt } = useExamAttempt(examId as string);
+  const { data: exam, isLoading: isLoadingExam, refetch: refetchExam, isFetching: isFetchingExam } = useExam(examId as string);
+  const { data: attempt, isLoading: isLoadingAttempt, isError: isErrorAttempt, refetch: refetchAttempt } = useExamAttempt(examId as string);
   const startAttemptMutation = useStartExamAttempt();
   const [isViewingResult, setIsViewingResult] = useState(false);
+  const [isCheckingAgain, setIsCheckingAgain] = useState(false);
+
+  const papers = useMemo(() => {
+    const rawExam = exam as any;
+    return (rawExam?.subjectPapers || rawExam?.subjectExamPapers || []) as any[];
+  }, [exam]);
+
+  const totalQuestions = useMemo(() => {
+    if (typeof exam?.totalQuestions === "number" && exam.totalQuestions > 0) return exam.totalQuestions;
+    return papers.reduce((sum: number, p: any) => sum + (p.questions?.length || p.totalQuestions || p.questionsCount || 0), 0);
+  }, [exam?.totalQuestions, papers]);
 
   const totalDuration = useMemo(() => {
     if (exam?.durationMinutes && exam.durationMinutes > 0) return exam.durationMinutes;
-    return exam?.subjectPapers?.reduce((sum: number, p: any) => sum + (p.durationMinutes || 0), 0) || 0;
-  }, [exam]);
+    return papers.reduce((sum: number, p: any) => sum + (p.durationMinutes || 0), 0) || 0;
+  }, [exam?.durationMinutes, papers]);
 
   const startDate = useMemo(() => exam?.startDate ? new Date(exam.startDate) : null, [exam?.startDate]);
+  const endDate = useMemo(() => exam?.endDate ? new Date(exam.endDate) : null, [exam?.endDate]);
   const isStarted = useMemo(() => !startDate || isAfter(new Date(), startDate), [startDate]);
+  const isEnded = useMemo(() => !!(endDate && isAfter(new Date(), endDate)), [endDate]);
+
+  // Exam is available if it has started, has not ended, has questions or papers, and is not unpublished/draft
+  const isAvailable = useMemo(() => {
+    if (!exam) return false;
+    if (exam.status && !["PUBLISHED", "ONGOING"].includes(exam.status)) return false;
+    if (!isStarted) return false;
+    if (isEnded) return false;
+    return true;
+  }, [exam, isStarted, isEnded]);
+
+  const handleCheckAgain = async () => {
+    setIsCheckingAgain(true);
+    try {
+      await Promise.all([refetchExam(), refetchAttempt()]);
+      toast.info("Exam status updated!");
+    } catch {
+      toast.error("Failed to recheck exam status.");
+    } finally {
+      setIsCheckingAgain(false);
+    }
+  };
 
   const handleStartAction = () => {
-    if (!isStarted) {
-      toast.warning("The exam hasn't started yet!");
+    if (!isAvailable) {
+      if (!isStarted) {
+        toast.warning("The exam hasn't started yet!");
+      } else if (isEnded) {
+        toast.error("This exam has concluded and is no longer available.");
+      } else {
+        toast.warning("This exam is currently not available.");
+      }
       return;
     }
 
@@ -103,8 +143,8 @@ export default function ExamDetailsPage() {
         <ExamDetails 
           classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
           durationMinutes={totalDuration}
-          subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
-          totalQuestions={exam.subjectPapers?.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0) || 0}
+          subjectName={papers[0]?.subject?.name || papers[0]?.title || "Multiple Subjects"}
+          totalQuestions={totalQuestions}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -115,19 +155,22 @@ export default function ExamDetailsPage() {
                  Exam Structure
               </h2>
               <div className="grid grid-cols-1 gap-4">
-                 {exam.subjectPapers?.map((paper: any) => (
-                  <div key={paper.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
-                     <div className="flex flex-col">
-                        <span className="font-bold">
-                           {paper.title || paper.subject?.name || "Unnamed Paper"}
+                 {papers.map((paper: any) => {
+                   const qCount = paper.questions?.length ?? paper.totalQuestions ?? paper.questionsCount ?? 0;
+                   return (
+                     <div key={paper.id || paper.examId || Math.random()} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
+                        <div className="flex flex-col">
+                           <span className="font-bold">
+                              {paper.title || paper.subject?.name || "Unnamed Paper"}
+                           </span>
+                           <span className="text-xs text-slate-500">{paper.durationMinutes || 0} Minutes</span>
+                        </div>
+                        <span className="text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-lg">
+                           {qCount} Questions
                         </span>
-                        <span className="text-xs text-slate-500">{paper.durationMinutes} Minutes</span>
                      </div>
-                     <span className="text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-lg">
-                        {paper.questions?.length || 0} Questions
-                     </span>
-                  </div>
-                ))}
+                   );
+                 })}
               </div>
            </div>
 
@@ -169,13 +212,13 @@ export default function ExamDetailsPage() {
         </div>
 
         {/* Instructions */}
-        {exam.instructions && (
+        {(exam.instructions || papers[0]?.instructions) && (
           <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-3">
              <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
                 <Info size={16} /> Instructions
              </h3>
              <LaTeXRenderer 
-                content={exam.instructions}
+                content={exam.instructions || papers[0]?.instructions}
                 className="text-slate-700 dark:text-slate-300"
              />
           </div>
@@ -221,27 +264,46 @@ export default function ExamDetailsPage() {
                 )}
              </div>
            ) : (
-             <>
-               <ShcnButton 
-                 size="lg" 
-                 className="h-16 px-16 text-xl font-bold rounded-2xl gap-3 shadow-xl shadow-primary/20 transform transition-all active:scale-95"
-                 disabled={!isStarted || startAttemptMutation.isPending}
-                 onClick={handleStartAction}
-               >
-                  {startAttemptMutation.isPending ? (
-                    <Loader2 className="animate-spin" />
-                  ) : !isStarted ? (
-                    <><Clock /> Exam Starting Soon</>
-                  ) : (
-                    <><PlayCircle /> {attempt?.status === "IN_PROGRESS" ? "Continue Exam" : "Start Examination"}</>
-                  )}
-               </ShcnButton>
-               <p className="text-slate-500 text-sm italic">
+             <div className="flex flex-col items-center space-y-4 w-full max-w-md">
+               <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
+                 <ShcnButton 
+                   size="lg" 
+                   className="h-16 px-10 sm:px-14 text-lg sm:text-xl font-bold rounded-2xl gap-3 shadow-xl shadow-primary/20 transform transition-all active:scale-95 w-full sm:w-auto"
+                   disabled={!isAvailable || startAttemptMutation.isPending}
+                   onClick={handleStartAction}
+                 >
+                    {startAttemptMutation.isPending ? (
+                      <Loader2 className="animate-spin" />
+                    ) : isEnded ? (
+                      <><Clock /> Exam Ended</>
+                    ) : !isStarted ? (
+                      <><Clock /> Exam Starting Soon</>
+                    ) : (
+                      <><PlayCircle /> {attempt?.status === "IN_PROGRESS" ? "Continue Exam" : "Start Examination"}</>
+                    )}
+                 </ShcnButton>
+
+                 {/* Check Again Button */}
+                 <ShcnButton
+                   variant="outline"
+                   size="lg"
+                   className="h-16 px-6 rounded-2xl font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 gap-2 w-full sm:w-auto"
+                   onClick={handleCheckAgain}
+                   disabled={isCheckingAgain || isFetchingExam}
+                 >
+                   <RefreshCw size={18} className={isCheckingAgain || isFetchingExam ? "animate-spin text-primary" : "text-slate-600 dark:text-slate-300"} />
+                   <span>{isCheckingAgain || isFetchingExam ? "Checking..." : "Check Again"}</span>
+                 </ShcnButton>
+               </div>
+
+               <p className="text-slate-500 text-sm italic text-center">
                  {attempt?.status === "IN_PROGRESS" 
-                    ? "Click to resume your session." 
-                    : "Clicking start will begin your official attempt."}
+                    ? "Click to resume your active examination session." 
+                    : !isAvailable
+                    ? "This exam is currently not open. Use 'Check Again' to refresh its status."
+                    : "Clicking start will begin your official examination attempt."}
                </p>
-             </>
+             </div>
            )}
         </div>
       </div>

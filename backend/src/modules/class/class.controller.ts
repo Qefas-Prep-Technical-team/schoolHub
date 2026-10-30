@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ClassScope, UserRole } from "@prisma/client";
+import { ClassScope, UserRole, AssessmentStatus } from "@prisma/client";
 import prisma from "../../config/database";
 import { createNotification } from "../notification/notification.service";
 import { canManageClass } from "./class.permissions";
@@ -308,6 +308,15 @@ export const getSingleClass = async (req: Request, res: Response) => {
           success: false,
           message: "Access denied: You do not have a linked child enrolled in this class",
         });
+      }
+    }
+
+    // For students and parents, strictly hide unpublished/draft exams from the class exams list
+    if (req.user.userType === UserRole.STUDENT || req.user.userType === UserRole.PARENT) {
+      if (Array.isArray(foundClass.exams)) {
+        foundClass.exams = foundClass.exams.filter((e: any) =>
+          e.status === AssessmentStatus.PUBLISHED
+        );
       }
     }
 

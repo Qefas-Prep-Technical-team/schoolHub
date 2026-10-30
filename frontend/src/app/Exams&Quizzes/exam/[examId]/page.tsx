@@ -629,17 +629,17 @@ export default function UnifiedExamPage() {
           <ExamDetails 
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
             durationMinutes={totalDuration}
-            subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
+            subjectName={currentSubjectPapers[0]?.subject?.name || currentSubjectPapers[0]?.title || exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
             totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
           />
 
-          {exam.instructions && (
+          {(exam.instructions || currentSubjectPapers[0]?.instructions) && (
             <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-3">
                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
                   <Info size={16} /> Instructions
                </h3>
                <LaTeXRenderer 
-                  content={exam.instructions}
+                  content={exam.instructions || currentSubjectPapers[0]?.instructions || ""}
                   className="text-slate-700 dark:text-slate-300"
                />
             </div>

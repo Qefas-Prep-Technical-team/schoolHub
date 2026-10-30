@@ -142,6 +142,8 @@ export interface CreateExamDTO {
   shuffleQuestions?: boolean;
   classId?: string;
   departmentIds?: string[];
+  durationMinutes?: number;
+  subjectId?: string;
 }
 
 export interface CreatePaperDTO {

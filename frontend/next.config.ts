@@ -45,6 +45,18 @@ const nextConfig = {
     ],
   },
   transpilePackages: ["@react-pdf/renderer", "@react-pdf/pdfkit", "yoga-layout"],
+  async rewrites() {
+    return [
+      {
+        source: "/dashboard/student/exams/:path*",
+        destination: "/dashboard/student/exams&quizzes/:path*",
+      },
+      {
+        source: "/dashboard/student/exams",
+        destination: "/dashboard/student/exams&quizzes",
+      },
+    ];
+  },
   experimental: {
   },
 };
