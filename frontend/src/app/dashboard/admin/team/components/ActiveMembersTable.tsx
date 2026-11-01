@@ -108,7 +108,22 @@ export default function ActiveMembersTable({ schoolId, searchTerm }: ActiveMembe
         return (
             <div className="p-4 sm:p-6 space-y-3">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-18 rounded-2xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
+                    <div 
+                        key={i} 
+                        className="h-18 rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 animate-pulse flex items-center justify-between p-4"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-2xl bg-slate-300/80 dark:bg-slate-700" />
+                            <div className="space-y-1.5">
+                                <div className="h-4 w-32 rounded-md bg-slate-300/80 dark:bg-slate-700" />
+                                <div className="h-3 w-44 rounded-md bg-slate-200/90 dark:bg-slate-800" />
+                            </div>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-4">
+                            <div className="h-6 w-24 rounded-xl bg-slate-300/70 dark:bg-slate-700" />
+                            <div className="h-4 w-20 rounded-md bg-slate-200/90 dark:bg-slate-800" />
+                        </div>
+                    </div>
                 ))}
             </div>
         )

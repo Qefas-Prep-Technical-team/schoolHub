@@ -36,18 +36,35 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
   const realUpcomingExams = upcomingExams !== undefined
     ? upcomingExams
     : (teacherClassDetail?.upcomingActivities && teacherClassDetail.upcomingActivities.length > 0)
-    ? teacherClassDetail.upcomingActivities.slice(0, 3).map((act: any) => ({
+    ? teacherClassDetail.upcomingActivities.slice(0, 4).map((act: any) => ({
         id: act.id,
+        title: act.title || 'Assessment',
         subject: act.description || teacherClassDetail?.classInfo?.subject || 'Exam',
         date: act.date,
-        type: act.type || 'Exam'
+        type: act.type || 'EXAM',
+        status: act.status || 'upcoming',
+        totalMarks: act.totalMarks,
+        durationMinutes: act.durationMinutes,
       }))
-    : (classData?.exams || []).slice(0, 3).map((e: any) => ({
-        id: e.id,
-        subject: e.title.split(' ')[0], // Best effort for icon match
-        date: new Date(e.createdAt).toLocaleDateString(),
-        type: e.category || 'Exam'
-      }));
+    : (classData?.exams || []).slice(0, 4).map((e: any) => {
+        const resolvedSubject = e.subject?.name 
+          || e.subjectExamPapers?.[0]?.subjectPaper?.subject?.name 
+          || e.title.replace(/exam|quiz|assessment/gi, '').trim() 
+          || 'General';
+        const formattedDate = e.startDate
+          ? new Date(e.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+          : new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        return {
+          id: e.id,
+          title: e.title,
+          subject: resolvedSubject,
+          date: formattedDate,
+          type: e.category || 'EXAM',
+          status: e.status?.toLowerCase() || 'scheduled',
+          totalMarks: e.totalMarks,
+          durationMinutes: e.durationMinutes,
+        };
+      });
 
   const subjectAverageVal = teacherClassDetail?.stats?.averageGrade !== undefined
     ? teacherClassDetail.stats.averageGrade

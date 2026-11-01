@@ -154,7 +154,7 @@ export default function OfflineGradeSheetSyncModal({
       return teacherSubjects.map(ts => ts.name);
     }
 
-    return rawClassSubjects;
+    return [];
   }, [classDetails, isTeacher, teacherSubjects]);
 
   // 4. Selected Subject, Category, and State

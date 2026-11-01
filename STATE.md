@@ -15,7 +15,306 @@
 
 ## Blockers
 
-# Project State: Qefas Hub
+- [x] **Separation of Class Offline Grades and Global Teacher Offline Grades Components & APIs + Strict Assigned Subject Retrieval (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Strict Teacher Assigned Subject Discovery Backend (`teacher-dashboard.service.ts`)**:
+       - In [`getTeacherSubjectsService`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-dashboard.service.ts), removed broad class subject matching (`classes.some.class.teachers...`) which previously caused every subject taught in the entire class to be falsely attributed to the teacher.
+       - Re-scoped retrieval strictly to subjects explicitly assigned to the teacher:
+         - Direct assignment (`Subject.teacherId === teacherId`)
+         - Explicit teacher-subject associations (`TeacherSubject.teacherId === teacherId`)
+         - Timetable period assignments (`TimetablePeriod.teacherId === teacherId`)
+         - Teacher profile focus subjects (`Teacher.subject` comma-separated list).
+    2. **Dedicated Backend API for Class Offline Grades (`/api/v1/teacher/classes/:classId/offline-grades`)**:
+       - Created dedicated service [`backend/src/modules/teacher/teacher-class-offline-grades.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-class-offline-grades.service.ts) with `getTeacherClassOfflineGradesService(teacherId, classId, schoolId, filters)` which:
+         - Validates that the requesting teacher is assigned to the class via any of the 4 vectors (`ClassTeacher`, `TimetablePeriod`, `createdById`, `RelationshipLink`).
+         - Pulls offline grades scoped specifically to `classId`.
+         - Resolves and attaches teacher/creator names.
+       - Created dedicated controller [`backend/src/modules/teacher/teacher-class-offline-grades.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-class-offline-grades.controller.ts) with `getTeacherClassOfflineGrades(req, res)`.
+       - Registered route `GET /api/v1/teacher/classes/:classId/offline-grades` in [`backend/src/modules/teacher/teacher.route.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher.route.ts).
+    3. **Frontend API Separation (`teacherService.ts`)**:
+       - In [`frontend/src/lib/api/services/teacherService.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/teacherService.ts), added `getClassOfflineGrades(classId: string, options?: ...)` targeting the dedicated endpoint.
+    4. **Dedicated Class Offline Grades Component (`TeacherClassOfflineGrades.tsx`)**:
+       - Created [`frontend/src/app/dashboard/teacher/my-classes/[classId]/components/TeacherClassOfflineGrades.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/TeacherClassOfflineGrades.tsx) specifically for the class offline grades tab.
+       - Decoupled from the global admin/teacher `OfflineGradesDashboard`.
+       - Implemented search, subject filtering, date sectioning (chronological headers with count badges), grid & table display, PDF & CSV export, and entry modal editing.
+       - Matches against teacher's explicitly assigned subjects (`teacherSubjectIdSet` & `teacherSubjectNames`) to render the `"My Subject"` emerald badge.
+       - Updated [`ClassDetails.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/ClassDetails.tsx) to render `<TeacherClassOfflineGrades />`.
+    5. **Global Teacher Offline Grades Decoupling (`/dashboard/teacher/offline-grades`)**:
+       - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), confirmed strict reliance on `/api/v1/grade/hub` with teacher scoping.
+       - Confined `teacherScopeSubjectIds` and `teacherSubjectNames` strictly to teacher's actual assigned subjects, avoiding leaking untaught subjects.
+    6. **Verification**:
+       - Frontend type check (`npx tsc --noEmit`) passes with 0 errors.
+       - Backend TypeScript compilation passes with 0 errors.
+
+- [x] **Teacher Offline Grades Multi-Class & Assigned Subject Scoping (`http://localhost:3000/dashboard/teacher/offline-grades`) (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Backend Teacher Scope Alignment (`grade.service.ts` & `grade.controller.ts`)**:
+       - In [`grade.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.controller.ts), updated multi-tenant school validation using `hasActiveSchoolAccess` and direct association check so that teachers teaching across multiple connected schools can query offline grades for their selected/linked school without encountering `403 Forbidden`.
+       - In [`grade.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts) (`getGradeHubService`), resolved subjects across all `ClassSubject` entries attached to assigned classes.
+       - Expanded `teacherScopeConditions` to encompass:
+         - All offline grades in classes assigned to the teacher (`classId: { in: assignedClassIds }`)
+         - All offline grades for subjects assigned to the teacher (`subject: { in: subjectNames, mode: 'insensitive' }`)
+         - Offline grades created/graded directly by the teacher (`teacherId: filters.currentTeacherId`).
+    2. **Frontend Offline Grades Scoping (`OfflineGradesDashboard.tsx`)**:
+       - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), enhanced client-side filtering to ensure offline records from any of the teacher's assigned classes (`teacherClassesData`) or matching assigned subject IDs/names are accepted and rendered.
+    3. **Assigned Subject Tagging ("My Subject" Badge)**:
+       - In [`types.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/types.ts), added `isAssignedSubject?: boolean` to `GradeBatchSummary`.
+       - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), mapped each offline grade batch against `teacherScopeSubjectIds` and `teacherScopeSubjectNames` to set `isAssignedSubject: true`.
+       - In [`OfflineRecordsGrid.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsGrid.tsx) and [`OfflineRecordsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsTable.tsx), added an emerald `"My Subject"` badge with `<BookCheck size={10} />` icon alongside the subject name for all offline grades associated with subjects assigned to the logged-in teacher.
+    4. **Date Sectioning Display**:
+       - Retained chronological date sectioning layout across both Grid and Table/List views in [`OfflineRecordsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsTable.tsx) and [`OfflineRecordsGrid.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsGrid.tsx).
+    5. **Verification**:
+       - Verified frontend TypeScript check (`npx tsc --noEmit` exited code 0).
+
+- [x] **Teacher Multi-Class & Multi-Subject Scoping Across Dashboard (`/dashboard/teacher/records`, `/classes`, `/students`, `/subjects`) (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Multi-Class Assignment Discovery (`teacher-dashboard.service.ts`)**:
+       - In `getTeacherClassesService` and `getTeacherStudentsService`, expanded class assignment resolution beyond just `ClassTeacher` to unify all 4 assignment vectors:
+         - `ClassTeacher`
+         - `TimetablePeriod` (periods taught by the teacher in any class)
+         - `createdById` (classes created by the teacher)
+         - `RelationshipLink` (active `SCHOOL_TEACHER` links associated with specific `classId`)
+       - Ensured all students in any class taught by the teacher are retrieved and displayed in `getTeacherStudentsService`.
+    2. **Multi-Subject Discovery (`getTeacherSubjectsService`)**:
+       - In `getTeacherSubjectsService`, expanded query conditions to include subjects from any of the teacher's assigned classes (`ClassSubject` attached to classes where teacher is assigned).
+    3. **Records Page Scoping (`frontend/src/app/dashboard/teacher/records/page.tsx`)**:
+       - Added `assignedClassIdSet` derived from `teacherClasses` so that all final results from any class assigned to the teacher are captured.
+       - Expanded `assignedSubjectIdSet` and `assignedSubjectNameSet` to automatically gather subjects directly assigned or linked across all assigned classes.
+    4. **Verification**:
+       - Verified backend TypeScript type check (`npx tsc --noEmit` exited code 0).
+       - Verified frontend TypeScript check (`npx tsc --noEmit` exited code 0).
+
+- [x] **Teacher Records & Assignments Date Sectioning Display (`/dashboard/teacher/records` & `/dashboard/teacher/assignments`) (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Teacher Records Date Sectioning (`/dashboard/teacher/records`)**:
+       - Applied the canonical date sectioning pattern in [`frontend/src/app/dashboard/teacher/records/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/records/page.tsx) following [`.agents/skills/date_sectioning_display/SKILL.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/date_sectioning_display/SKILL.md).
+       - In **Subject Final Results Tab**: Computed `groupedSubjectResults` from `res.createdAt || res.updatedAt`. Both Grid View and Table View partition records into chronological date sections (`Today`, `Yesterday`, relative date, and month/year) featuring the emerald accent dot, uppercase section title, and `{count} record(s)` badge.
+       - In **Student Final Results Tab**: Computed `groupedTeacherStudents` partitioned across date groups with emerald dot indicator and count badges.
+    2. **Teacher Course Assignments Date Sectioning (`/dashboard/teacher/assignments`)**:
+       - Applied the date sectioning pattern in [`frontend/src/app/dashboard/teacher/assignments/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/assignments/page.tsx).
+       - Computed `groupedAssignments` based on `createdAt || updatedAt || dueDate`.
+       - In **List View**: Formats each chronological group under the standard date section header with count badge, rendering partitioned `<AssignmentList />` tables.
+       - In **Grid View**: Formats each chronological group under the date section header with count badge, rendering responsive `<AssignmentCard />` grids.
+    3. **Verification**:
+       - Verified frontend build passes cleanly (`npm run build` completed with code 0).
+
+- [x] **Teacher Exams & Quizzes Page Date Sectioning (`/dashboard/teacher/exams&quizzes`) (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Date Sectioning Display**:
+       - Applied canonical `getDateGroupLabel` and date grouping to [`ExamsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx) adhering to [`.agents/skills/date_sectioning_display/SKILL.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/date_sectioning_display/SKILL.md).
+       - In **Grid View**: Assessments, quizzes, and subject papers are partitioned into chronological date sections (`Today`, `Yesterday`, relative dates, and month/year) featuring the emerald accent dot, uppercase section title, and count badges.
+       - In **List / Table View**: Partitioned assessment rows into matching chronological date sections while preserving expandable subject paper sub-tables, continuous row indexing (`#01`, `#02`, etc.), and action triggers.
+
+- [x] **Teacher Grades Page Date Sectioning & Strict Assigned Class/Subject Scoping (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Strict Assigned Subject in Assigned Class Scoping (`http://localhost:3000/dashboard/teacher/grades`)**:
+       - In [`grade.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts) (`getGradeHubService`), updated teacher scoping so that grades returned to a teacher are strictly restricted to:
+         - Created/graded by the teacher (`teacherId: currentTeacherId`), OR
+         - Belong to classes assigned to the teacher (`classId: { in: assignedClassIds }` from `ClassTeacher` or `TimetablePeriod`) AND match subjects assigned to the teacher (`subject: { in: subjectNames, mode: 'insensitive' }`).
+    2. **Date Sectioning Display**:
+       - Implemented the date sectioning pattern in [`GradesTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesTable.tsx) and updated [`types.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/types.tsx) & [`GradesOverview.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx) to pass `createdAt` and `updatedAt`.
+       - Both Table view and Grid view display chronological section headers (`Today`, `Yesterday`, relative dates, month/year) with accent dots and count badges following the `date_sectioning_display` skill.
+
+- [x] **Teacher All-Classes Offline Grades Resolution & Full Tab Date Sectioning (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Global Teacher Offline Grades Workspace (`http://localhost:3000/dashboard/teacher/offline-grades`)**:
+       - Fixed `schoolId` resolution in [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx) by linking with `useDashboardStore` (`selectedSchoolId`), `teacherProfile` (`activeSchoolId`, `primarySchoolId`), and linked schools, preventing unpopulated school context.
+       - In [`grade.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts), expanded teacher scoping when viewing all classes so that subjects from all classes assigned to the teacher (`ClassTeacher`, `ClassSubject`, `TimetablePeriod`) are automatically aggregated.
+       - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), enabled cross-class collection of subject IDs and subject names across all classes in `teacherClassesData` when `activeClassId` is undefined.
+    2. **Date Sectioning Applied Across All Tabs**:
+       - Applied the standard `date_sectioning_display` skill pattern to all views in Offline Grades (Grid & Table), ensuring that whether viewing `All Records`, `Exams`, `CA`, `Assignments`, or `Quizzes/Tests`, items are dynamically sectioned under relative date subheaders with counts.
+
+- [x] **Offline Grades Class Subject Fetching Resolution, Date Sectioning & Skill Creation (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Assigned Subject Scope Resolution (`grade.service.ts`)**:
+       - Expanded teacher scoping in `getGradeHubService` so that when a teacher accesses offline grades in a class (`classId`), the backend checks `ClassSubject` assignments, `TimetablePeriod` schedules in that class, `TeacherSubject`, and focus subjects by both subject name and subject code.
+       - Resolved creator name typing issue in `grade.service.ts` to ensure 100% clean TypeScript strict build.
+    2. **Class Details Offline Grades Subject Context (`ClassDetails.tsx` & `OfflineGradesDashboard.tsx`)**:
+       - Passed `teacherClassDetail` directly from `ClassDetails.tsx` into `<OfflineGradesDashboard />`.
+       - Enhanced subject name matching in `OfflineGradesDashboard.tsx` to include class focus subjects, class teacher subjects, and handle both exact and substring/synonym subject name matches without dropping valid class records.
+    3. **Date Sectioning across Offline Grades Tab (`OfflineRecordsGrid.tsx` & `OfflineRecordsTable.tsx`)**:
+       - Added chronological date grouping (`Today`, `Yesterday`, specific dates e.g. `28 October`, `May 2026`) with themed section subheaders and record count badges across both Grid View and Table View matching the Grades tab.
+    4. **Date Sectioning Skill Created (`.agents/skills/date_sectioning_display/SKILL.md`)**:
+       - Created official reusable skill document defining the rules, principles, date group helper, and markup structures for sectioning lists and grids across Qefas Hub.
+
+- [x] **Date Arrangement Sectioning Across Class Details Grids & Lists (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Frontend-Only Date UI Arrangement**:
+       - Completely reverted all backend fetching changes to their original state (`getTeacherStudentsService` and `getTeacherClassGradesService`).
+       - Formatted date headers to display natural, specific dates (e.g. `Today`, `Yesterday`, `30 May`, `April 2026`).
+    2. **Grades Tab Sectioning (`GradeTable.tsx`)**:
+       - Arranged list rows and student cards into chronological date sections with clean category headers.
+    3. **Assignments Tab Sectioning (`AssignmentTable.tsx`)**:
+       - Partitioned assignments table into date sections based on assignment creation/update dates with subheaders and counts.
+    4. **Exams & Subject Papers Tab Sectioning (`ExamTable.tsx`)**:
+       - Arranged exam records under formatted date headers while keeping expandable subject paper sub-tables intact.
+    5. **Students Tab (`StudentTable.tsx`)**:
+       - Kept clean standard student roster presentation without alteration to original backend student data.
+    6. **Documentation**:
+       - Documented UI specs in [`docs/TEACHER_DASHBOARD.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/TEACHER_DASHBOARD.md).
+
+- [x] **Strict Offline Grades Subject Scoping, Grades Tab Dark Mode Cards, and Assignment Empty State (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Strict Offline Grades Subject Scoping**:
+       - In [`grade.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts) (`getGradeHubService`), removed the broad `{ classId: filters.classId }` clause from teacher scope queries. Teachers now strictly see assessments matching their assigned subjects (`TeacherSubject`, direct `Subject`, and teacher profile focus subjects) or created by them (`teacherId: currentTeacherId`).
+       - In [`teacher-dashboard.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-dashboard.service.ts) (`getTeacherClassGradesService`), consolidated assigned subjects from `TeacherSubject`, `Subject` direct ownership, and teacher profile focus subjects, and strictly filtered class student grades so that only grades for the teacher's assigned subjects are returned.
+       - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx) and [`page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/grades/page.tsx), enforced client-side subject matching against authorized teacher subjects, preventing leakage of unassigned subjects.
+    2. **Grades Tab Statistics Cards Dark Mode Redesign**:
+       - In [`GradeStatistics.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/grades/components/GradeStatistics.tsx), redesigned the 4 metric cards (`Class Average`, `Highest Score`, `Lowest Score`, `Passing Rate`) to look stunning in dark mode:
+         - Uses `bg-white dark:bg-slate-900/90` and `border-slate-200/80 dark:border-slate-800` cards with subtle hover elevation.
+         - Themed icon badges (`bg-indigo-50 dark:bg-indigo-500/15`, `bg-emerald-50 dark:bg-emerald-500/15`, `bg-rose-50 dark:bg-rose-500/15`, `bg-teal-50 dark:bg-teal-500/15`).
+         - Crisp tabular numbers (`text-slate-900 dark:text-white font-black text-2xl sm:text-3xl`).
+    3. **Assignments Tab Empty State**:
+       - In [`AssignmentTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/assignments/components/AssignmentTable.tsx), added a dedicated empty state banner when `assignments.length === 0`:
+         - Displays an `assignment` icon badge.
+         - Clear headline: `"No assignments available at this moment"`.
+         - Helpful description explaining that no assignments are currently posted for the class.
+    4. **Documentation**:
+       - Updated [`docs/TEACHER_DASHBOARD.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/TEACHER_DASHBOARD.md) and logged changes in [`STATE.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/STATE.md).
+
+- [x] **Teacher Offline Assessments Visibility, Date Categorization, Real Creator Attribution, Persistent Draft Fix, and Top Nav Cleanups (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Date Categorization & Sorting**:
+       - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), assessment groups are chronologically sorted in descending order (`createdAt` / `updatedAt`) so that newly recorded marks and current assessments always appear at the top.
+       - Integrated a dedicated **Date Range Filter** (`All Time`, `Recorded Today`, `This Week`, `This Month`, `This Term`) in [`OfflineRecordsToolbar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsToolbar.tsx) and [`OfflineRecordsList.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx).
+       - Added recorded date badges to **Cards Grid View** ([`OfflineRecordsGrid.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsGrid.tsx)) and an explicit **Date** column in **Table View** ([`OfflineRecordsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsTable.tsx)).
+    2. **Real Creator Attribution**:
+       - Updated [`grade.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts) to resolve real creator names across `Teacher` and `Admin` tables (`creatorName`) in `getGradeHubService`, and automatically populate the true `Teacher` record ID on grade entry.
+       - Rendered `"Recorded by: {teacherName || 'Faculty Staff'}"` pill in both card and table layouts.
+    3. **Teacher Assessment Visibility Scoping**:
+       - Fixed teacher scoping in [`grade.service.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts) (`getGradeHubService`) to combine `teacherSubject`, `classTeacher`, and teacher focus subjects, allowing teachers to see assessments created by them, assessments matching their assigned subjects, or assessments for the active class (`filters.classId`).
+       - Enabled `isCurrentClassContext` in [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx).
+    4. **Persistent Grade in Popup / Draft Fix**:
+       - In [`RecordScoreEntryModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), wrapped database grade auto-population in `const shouldCheckExistingDb = Boolean(initialRecord);`, ensuring fresh assessments start completely blank, and clearing draft resets the roster cleanly.
+    5. **Top Nav Search Icon De-duplication**:
+       - In [`TopNavBar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TopNavBar.tsx), eliminated redundant search button instances that collided with the school switcher dropdown button.
+
+  - **Issues & Requirements Resolved**:
+    1. **Teacher Mobile Navigation**:
+       - Fixed header element crowding on mobile screens in [`TopNavBar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/TopNavBar.tsx).
+       - Adjusted [`SchoolSwitcher.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/components/SchoolSwitcher.tsx) truncation (`max-w-[90px] xs:max-w-[120px] sm:max-w-[150px]`) and tightened navbar padding (`px-3 sm:px-4 md:px-6`, `gap-1.5 sm:gap-3`) to prevent horizontal overflow on small devices.
+       - Gracefully hidden QR scanner button on sub-380px viewports (`hidden xs:flex`), preserving hamburger drawer, search, notifications, theme toggle, and profile.
+    2. **Class Details Header Card Redesign**:
+       - Re-architected [`ClassDetails.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/ClassDetails.tsx) on mobile viewports.
+       - Replaced the unformatted wrapping line with a structured, modern layout featuring prominent class initial avatar, Class Name + Section highlight, and a pulsing `Active Cohort` status badge.
+       - Extracted metadata into neat key-value chips: `Code: {classCode}`, `Level: {level}`, `Session: {session}`, `Term: {term}`, and `{count} Scholars Enrolled`.
+       - Split comma-delimited `Focus Subject` lists into individual emerald pill tags (`UTME Government`, `UTME Literature`, `UTME Economics`, `UTME Biology`, `UTME English Language`) paired with the `BookOpen` icon.
+    3. **Real Upcoming Exams Data Synchronization**:
+       - Addressed fake/hardcoded or stale upcoming exams data in `backend/src/modules/teacher/teacher-dashboard.service.ts` (`getTeacherClassDetailService`).
+       - Included `subjectExamPapers` nested relations to resolve genuine subjects for paper-based and multi-subject assessments.
+       - Fixed date filtering logic that previously dropped valid scheduled exams where `startDate` was null or in the past (`e.startDate || e.createdAt > now`). Now orders and extracts real active and scheduled assessments.
+       - Redesigned [`UpcomingExams.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/UpcomingExams.tsx) and updated [`Overview.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/Overview.tsx) to display real exam titles, subject category icons, official category badges (Official Exam, Quiz, CA), formatted dates, duration/marks counters, and a link to view all class assessments.
+    4. **Subsystem Documentation**:
+       - Documented all changes and verification steps in [`docs/TEACHER_DASHBOARD.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/TEACHER_DASHBOARD.md).
+  - **Verification**:
+    - Frontend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Exited 0 with no errors.
+
+- [x] **Offline Grades Pad UI Polish, Auto-Save, and Subsystem Documentation (Saturday, October 31, 2026)**:
+  - **Issues & Requirements Resolved**:
+    1. **Duplicate Action Buttons**: Removed duplicate "Save Draft" and "Publish Grades" buttons from the inner `OfflineGradesHeader` toolbar so actions exclusively reside in the modal top nav.
+    2. **Dynamic Header Title**: Updated `OfflineGradesHeader` to dynamically reflect the user-entered assessment name (`config.assessmentType`) in real-time, defaulting to `"Offline Grades & Assessment Pad"` when empty, without modifying the modal top nav title.
+    3. **Save Draft Persistence**: Validated and ensured draft saving works via `/api/v1/grades/bulk` with `status: "DRAFT"`.
+    4. **Browser Auto-Save (`localStorage`) & Unsaved Draft Recovery**:
+       - Auto-persists work-in-progress score entries, student remarks, and custom assessment settings to `localStorage` under `qefas_offline_grade_draft_{classId}_{userId}` whenever the teacher enters marks.
+       - If the user cancels or closes by mistake, reopening the popup restores their saved inputs so they can continue seamlessly.
+       - Displays an active `"Auto-saved draft"` indicator and a `"Clear Draft"` action button so the teacher can discard the draft and restore a fresh marksheet at any time.
+       - Automatically purges the local draft from `localStorage` once marks are saved or published to the backend.
+    5. **Nav Cancel Button Polish**: Removed the inner 'X' icon from the Cancel button in the modal top nav, and disabled Radix Dialog's duplicate close button (`showCloseButton={false}`).
+    6. **Comprehensive Documentation**:
+       - Updated [`ADMIN_DASHBOARD_ROLES.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/ADMIN_DASHBOARD_ROLES.md) with Section 5 covering recent admin features (responsive loading skeletons, offline pad enhancements).
+       - Created [`TEACHER_DASHBOARD.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/TEACHER_DASHBOARD.md) detailing class management, offline assessment recording, teacher subject scoping invariants, browser draft recovery, and 403 prevention.
+       - Linked the new specification in [`docs/README.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md).
+  - **Verification**:
+    - Frontend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Exited 0 with no errors.
+
+- [x] **Teacher Offline Grade Creation & Subject Isolation Fixes (Saturday, October 31, 2026)**:
+  - **Issues Resolved**:
+    1. **Missing Academic Sessions**: Teachers were not seeing academic sessions in the "Record New Offline Grade" modal on the class details page (`/dashboard/teacher/my-classes/[classId]`).
+    2. **Subject Scoping Leak**: Teachers had access to all class subjects in their dropdown instead of strictly their assigned subjects.
+    3. **403 Forbidden Error on Save/Submit**: When attempting to save draft or publish marks, requests to `/api/v1/grades/bulk` failed with a 403 error.
+  - **Root Cause**:
+    1. In [`ClassDetails.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/ClassDetails.tsx), `<OfflineGradesDashboard />` was embedded without passing `schoolId`. `OfflineGradesDashboard` tried to read `schoolId` off `user` in `auth-store` where teacher accounts do not have top-level `schoolId` populated. This caused `useSessions(schoolId)` to fire with an empty string, returning 0 sessions.
+    2. In [`RecordScoreEntryModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx) and [`OfflineGradeSheetSyncModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradeSheetSyncModal.tsx), when teacher subjects returned empty or did not match the class, the code had a fallback `return rawClassSubjects`, which inadvertently leaked every curriculum subject across the entire class to the teacher.
+    3. In [`authMiddleware.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts), `/grades`, `/sessions`, and `/academic` routes were missing from `allowedPatterns` for teachers whose `schoolId` was not set on the session token, resulting in a 403 `SCHOOL_LINK_REQUIRED`.
+    4. In [`grade.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.controller.ts), `bulkCreateGrades` rejected requests with a strict `userSchoolId !== schoolId` check without verifying if the teacher was authorized to teach in that target school through active class assignments (`ClassTeacher`), subjects (`TeacherSubject`), or relationship links (`RelationshipLink`).
+  - **Fixes Applied**:
+    - **Frontend**:
+      - Updated [`ClassDetails.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/[classId]/components/ClassDetails.tsx) to pass `schoolId={classData?.schoolId}` to `<OfflineGradesDashboard />`.
+      - In [`OfflineGradesDashboard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx):
+        - Accepted `schoolId?: string` prop.
+        - Resolved `effectiveSchoolId` taking `propSchoolId`, or matching `teacherClassesData` schoolId, falling back to user properties.
+        - Passed `schoolId` to `useSessions`, `useSchoolProfile`, `useTeacherSubjects`, `useClasses`, and modal dialogs.
+      - In [`RecordScoreEntryModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx) and [`OfflineGradeSheetSyncModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradeSheetSyncModal.tsx):
+        - Strictly isolated subjects for teachers to only their assigned subjects. If no assigned subjects match, it returns an empty array and displays the dedicated "No assigned subjects for this class" notice rather than leaking all other teacher/class subjects.
+      - **Decomposition**: Extracted [`OfflineRecordsToolbar.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsToolbar.tsx), [`OfflineRecordsGrid.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsGrid.tsx), and [`OfflineRecordsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsTable.tsx) out of `OfflineRecordsList.tsx` to keep files modular and well under the 300–400 line threshold per `.agents/AGENTS.md`.
+    - **Backend**:
+      - In [`authMiddleware.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/middleware/authMiddleware.ts):
+        - Added `/sessions`, `/grades`, and `/academic` to `allowedPatterns` so teachers accessing session lookups or grade recording are never falsely blocked with 403 `SCHOOL_LINK_REQUIRED`.
+      - In [`grade.controller.ts`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.controller.ts):
+        - Enriched authorization check in `bulkCreateGrades` to check whether the teacher is an authorized affiliate of the target school via `ClassTeacher`, `TeacherSubject`, or `RelationshipLink` before applying school boundaries.
+  - **Verification**:
+    - Backend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Exited 0 (`task-3950`).
+    - Frontend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Exited 0 (`task-3968`).
+
+- [x] **Admin Team Dedicated Loading Skeleton (Saturday, October 31, 2026)**:
+  - **Issue Resolved**: The admin team page (`/dashboard/admin/team`) previously used a minimal spinner inside a generic Suspense wrapper, and its subcomponents used faint `bg-slate-100 dark:bg-slate-800/60` skeleton boxes that lacked contrast and visual structure on both light and dark modes.
+  - **Fix Applied**:
+    - **Created Dedicated Route Skeleton [`team/loading.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/loading.tsx)**:
+      - Header title & subtitle skeleton, plus search bar placeholder.
+      - 4 responsive overview stat cards matching Active Members, Pending Requests, School Owner, and Access Level.
+      - Segmented tabs pill container skeleton.
+      - Tabular list container with desktop column header placeholders (Member, Role, Joined Date, Actions) and 5 dual-mode responsive rows (tabular grid on desktop, detailed card layout on mobile).
+      - Tuned contrast tokens (`bg-slate-200/80` and `bg-slate-300/80` on light mode; `dark:bg-slate-800/80` and `dark:bg-slate-700` on dark mode) with crisp border outlines (`border-slate-200/80 dark:border-slate-800`).
+    - **Wired into [`team/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/page.tsx)**:
+      - Replaced raw spinner in `<Suspense fallback={<TeamLoading />}>`.
+      - Rendered `<TeamLoading />` during initial query fetch (`isLoadingAdmins && isLoadingPending`).
+    - **Subcomponent Skeletal Upgrades**:
+      - Updated [`ActiveMembersTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/components/ActiveMembersTable.tsx) and [`PendingRequestsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/team/components/PendingRequestsTable.tsx) to high-contrast structured skeleton items when refetching or loading lists independently.
+  - **Verification**:
+    - Frontend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Exited with code 0 (`task-3346`).
+
+- [x] **School Profile Mobile Banner Display Fix (Saturday, October 31, 2026)**:
+  - **Issue Resolved**: On mobile view, the banner cover on `http://localhost:3000/dashboard/admin/school-profile` was not showing, whereas on desktop it was visible.
+  - **Root Cause**:
+    - The cover image container used fixed `h-56` with default Next.js `<Image fill />` without `sizes` or `unoptimized`. Next.js image optimization or remote asset handling on narrow mobile viewports failed or collapsed, and when falling back to placeholder gradients, missing minimum height definitions and corner radius constraints caused display failure.
+    - Button labels and overlay elements caused clipping on narrow viewport widths.
+  - **Fix Applied**:
+    - In [`school-profile/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/page.tsx):
+      - Updated banner container to `h-44 sm:h-56 md:h-72 w-full relative overflow-hidden rounded-2xl md:rounded-[2rem] bg-slate-900`.
+      - Added `sizes="(max-width: 768px) 100vw, 1600px"`, `className="object-cover object-center"`, and `unoptimized` to `<Image />` so remote CDN/Supabase banner assets render immediately across all mobile viewports without proxy compression failures.
+      - Added `unoptimized` and `sizes="144px"` to the school logo image.
+      - Made the "Edit Cover" button responsive (`px-3 sm:px-4 h-9 sm:h-10` with mobile-compact label) so it cleanly overlays the banner on mobile without collision.
+    - In [`school-profile/loading.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/loading.tsx):
+      - Updated cover skeleton container to `h-44 sm:h-56 md:h-72` with `rounded-2xl md:rounded-[2rem]` to ensure 100% visual parity between loading skeleton and hydrated page on both mobile and desktop.
+  - **Verification**:
+    - Frontend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Exited with code 0 (`task-3281`).
+
+- [x] **School Profile Dedicated Skeleton & Multi-Page Loading Fallback Removal (Saturday, October 31, 2026)**:
+  - **Issue Resolved**: The admin dashboard's root `loading.tsx` was acting as an inheritance fallback in Next.js, causing the main admin dashboard skeleton (with "Today at a glance" and stats) to incorrectly appear when navigating to other admin pages such as `/dashboard/admin/school-profile`.
+  - **Root `loading.tsx` Removal**:
+    - Removed `src/app/dashboard/admin/loading.tsx` from the route segment root so it no longer bleeds into sub-routes.
+    - Extracted the main dashboard skeleton into a dedicated component [`AdminDashboardSkeleton.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/dashboard/AdminDashboardSkeleton.tsx) used solely by the main overview page [`dashboard/admin/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/page.tsx).
+  - **Dedicated School Profile Loading Skeleton**:
+    - Built responsive, high-contrast [`loading.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/loading.tsx) matching the exact page layout:
+      - Cover banner with action button placeholder.
+      - Brand logo box overlapping the cover with responsive title, contact nodes, and student/teacher tags.
+      - 2-column main area on desktop (collapsing to 1 column on mobile): About Institution, Academic Leadership with avatar rows, Digital Capabilities, Governance & Social, and 6-grade academic boundaries matrix.
+      - Right sidebar: Connectivity dispatch card, Operational Stats card, and System Health card.
+      - Tuned contrast tokens (`bg-slate-200/80` and `bg-slate-300/80` on light mode, `dark:bg-slate-800` and `dark:bg-slate-700` on dark mode).
+    - Integrated `<SchoolProfileLoading />` in [`school-profile/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/page.tsx) during query fetching.
+  - **Verification**:
+    - Frontend TypeScript check (`npx tsc --noEmit --skipLibCheck`): Clean exit with code 0 (`task-3145`).
+
+- [x] **Google Login Onboarding Redirection Race Condition Fix (Saturday, October 31, 2026)**:
+  - **Issue Resolved**: Returning registered users logging in via Google previously flashed the `/onboarding` screen for a second before navigating to their dashboard.
+  - **Root Cause**: `(auth)/layout.tsx` was watching `hasCompletedOnboarding` (which initially defaults to `false`) and immediately bouncing authenticated users to `/onboarding` before `/login/callback` completed its destination routing.
+  - **Fix Applied**:
+    - In [`(auth)/layout.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/layout.tsx): Added `p.startsWith("/login/callback")` to the redirect-exempt paths so the callback process is never interrupted by layout redirects.
+    - In [`login/callback/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/callback/page.tsx): Updated destination handling so:
+      - **New users** (`targetDest` starting with `/onboarding`): `setHasCompletedOnboarding(false)` is set, ensuring they see and complete the onboarding tour.
+      - **Returning registered users** (`targetDest` pointing to `/dashboard/...`): `setHasCompletedOnboarding(true)` is immediately set, preventing any flash or redirection to onboarding.
+  - **Verification**:
+    - Frontend TypeScript compilation (`npx tsc --noEmit --skipLibCheck`): Clean exit with code 0 (`task-3017`).
 
 - [x] **Page Controls Redesign (Teacher, Student, Parent), Registry & Admin Modules Tab Removal & Production Build Verification (Friday, October 30, 2026)**:
   - **Removal of Redundant 'Registry' and 'Admin Modules' Tabs**:

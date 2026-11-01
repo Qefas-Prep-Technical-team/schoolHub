@@ -35,10 +35,49 @@ interface ExamsTableProps {
   onDelete?: (exam: Exam) => void;
 }
 
+function getDateGroupLabel(dateVal?: string | Date | null): string {
+  if (!dateVal) return 'Undated & Previous Records';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return 'Undated & Previous Records';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const diffTime = today.getTime() - itemDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays > 1 && diffDays <= 7) {
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+  }
+
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export default function ExamsTable({ exams, activeTab, viewMode = 'list', currentPage = 1, itemsPerPage = 10, mySubjectIds = [], onDelete }: ExamsTableProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [expandedExamIds, setExpandedExamIds] = useState<Set<string>>(new Set());
+
+  const dateGroups = React.useMemo(() => {
+    const map = new Map<string, { exam: Exam; globalIndex: number }[]>();
+    const order: string[] = [];
+
+    exams.forEach((exam, index) => {
+      const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
+      const dateVal = exam.createdAt || (exam as any).updatedAt || (exam as any).startDate;
+      const label = getDateGroupLabel(dateVal);
+      if (!map.has(label)) {
+        map.set(label, []);
+        order.push(label);
+      }
+      map.get(label)!.push({ exam, globalIndex });
+    });
+
+    return order.map((label) => ({ label, items: map.get(label)! }));
+  }, [exams, currentPage, itemsPerPage]);
 
   const getItemType = (exam: any): 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment' => {
     if (exam._tabType) return exam._tabType;
@@ -149,10 +188,24 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
 
   if (viewMode === 'grid') {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pt-2">
-        {exams.map((exam, idx) => {
-          const baseIndex = (currentPage - 1) * itemsPerPage;
-          const numStr = String(baseIndex + idx + 1).padStart(2, '0');
+      <div className="space-y-8 pt-2">
+        {dateGroups.map((section) => (
+          <div key={section.label} className="space-y-4">
+            {/* Section Header */}
+            <div className="flex items-center gap-2.5 px-1 py-1">
+              <div className="size-2 rounded-full bg-emerald-500" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                {section.label}
+              </h4>
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+              </span>
+            </div>
+
+            {/* Grid Container */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {section.items.map(({ exam, globalIndex }, idx) => {
+                const numStr = String(globalIndex).padStart(2, '0');
           const itemType = getItemType(exam);
           const isSubjectPaper = itemType === 'subject-papers';
           const isAssignment = itemType === 'assignment';
@@ -353,11 +406,14 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
           );
         })}
       </div>
+    </div>
+  ))}
+</div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Table Headers (Visual Only) */}
       <div className="hidden lg:flex items-center justify-between px-10 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
         <div className="flex-1 pl-12"># &nbsp;&nbsp;&nbsp; {activeTab === 'subject-papers' ? 'Paper Details' : 'Assessment Details'}</div>
@@ -368,10 +424,24 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
         </div>
       </div>
 
-      <div className="space-y-4 pt-2">
-        {exams.map((exam, idx) => {
-          const baseIndex = (currentPage - 1) * itemsPerPage;
-          const numStr = String(baseIndex + idx + 1).padStart(2, '0');
+      <div className="space-y-8 pt-2">
+        {dateGroups.map((section) => (
+          <div key={section.label} className="space-y-4">
+            {/* Section Header */}
+            <div className="flex items-center gap-2.5 px-1 py-1">
+              <div className="size-2 rounded-full bg-emerald-500" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                {section.label}
+              </h4>
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+              </span>
+            </div>
+
+            {/* List of items in this date group */}
+            <div className="space-y-4">
+              {section.items.map(({ exam, globalIndex }, idx) => {
+                const numStr = String(globalIndex).padStart(2, '0');
           const itemType = getItemType(exam);
           const isSubjectPaper = itemType === 'subject-papers';
           const isAssignment = itemType === 'assignment';
@@ -687,6 +757,9 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
             </motion.div>
           );
         })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -664,19 +664,53 @@ export const getTeacherStudentsService = async (options: {
       }
   }
 
-  // 2. Resolve exactly which classes to pull students from
+  // 2. Resolve exactly which classes to pull students from across all assignment vectors
   let assignedIds: string[] = [];
   if (classId) {
       assignedIds = [classId];
   } else {
-      const classTeachers = await prisma.classTeacher.findMany({
-          where: {
-              teacherId,
-              ...(targetSchoolId ? { class: { schoolId: targetSchoolId } } : {}),
-          },
-          select: { classId: true }
-      });
-      assignedIds = classTeachers.map(ct => ct.classId);
+      const [classTeachers, timetablePeriods, createdClasses, teacherClassLinks] = await Promise.all([
+          prisma.classTeacher.findMany({
+              where: {
+                  teacherId,
+                  ...(targetSchoolId ? { class: { schoolId: targetSchoolId } } : {}),
+              },
+              select: { classId: true }
+          }),
+          prisma.timetablePeriod.findMany({
+              where: {
+                  teacherId,
+                  ...(targetSchoolId ? { class: { schoolId: targetSchoolId } } : {}),
+              },
+              select: { classId: true }
+          }),
+          prisma.class.findMany({
+              where: {
+                  createdById: teacherId,
+                  ...(targetSchoolId ? { schoolId: targetSchoolId } : {}),
+              },
+              select: { id: true }
+          }),
+          prisma.relationshipLink.findMany({
+              where: {
+                  classId: { not: null },
+                  status: 'ACTIVE',
+                  OR: [
+                      { leftEntityId: teacherId, leftEntityType: 'TEACHER' },
+                      { rightEntityId: teacherId, rightEntityType: 'TEACHER' },
+                  ],
+                  ...(targetSchoolId ? { class: { schoolId: targetSchoolId } } : {}),
+              },
+              select: { classId: true }
+          })
+      ]);
+
+      const classIdSet = new Set<string>();
+      classTeachers.forEach(ct => { if (ct.classId) classIdSet.add(ct.classId); });
+      timetablePeriods.forEach(tp => { if (tp.classId) classIdSet.add(tp.classId); });
+      createdClasses.forEach(c => { if (c.id) classIdSet.add(c.id); });
+      teacherClassLinks.forEach(l => { if (l.classId) classIdSet.add(l.classId); });
+      assignedIds = Array.from(classIdSet);
   }
 
   if (assignedIds.length === 0) {
@@ -822,64 +856,106 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
         }
     }
 
-    // 2. Fetch classes from ClassTeacher
-    const classTeachers = await prisma.classTeacher.findMany({
+    // 2. Fetch all classes assigned to teacher across all assignment vectors
+    const [assignedClassTeachers, assignedTimetablePeriods, createdClasses, teacherClassLinks] = await Promise.all([
+        prisma.classTeacher.findMany({
+            where: {
+                teacherId,
+                ...(schoolId ? { class: { schoolId } } : {}),
+            },
+            select: { classId: true }
+        }),
+        prisma.timetablePeriod.findMany({
+            where: {
+                teacherId,
+                ...(schoolId ? { class: { schoolId } } : {}),
+            },
+            select: { classId: true }
+        }),
+        prisma.class.findMany({
+            where: {
+                createdById: teacherId,
+                ...(schoolId ? { schoolId } : {}),
+            },
+            select: { id: true }
+        }),
+        prisma.relationshipLink.findMany({
+            where: {
+                classId: { not: null },
+                status: 'ACTIVE',
+                OR: [
+                    { leftEntityId: teacherId, leftEntityType: 'TEACHER' },
+                    { rightEntityId: teacherId, rightEntityType: 'TEACHER' },
+                ],
+                ...(schoolId ? { class: { schoolId } } : {}),
+            },
+            select: { classId: true }
+        })
+    ]);
+
+    const allAssignedClassIds = new Set<string>();
+    assignedClassTeachers.forEach(ct => { if (ct.classId) allAssignedClassIds.add(ct.classId); });
+    assignedTimetablePeriods.forEach(tp => { if (tp.classId) allAssignedClassIds.add(tp.classId); });
+    createdClasses.forEach(c => { if (c.id) allAssignedClassIds.add(c.id); });
+    teacherClassLinks.forEach(l => { if (l.classId) allAssignedClassIds.add(l.classId); });
+
+    const classIds = Array.from(allAssignedClassIds);
+
+    if (classIds.length === 0) {
+        console.log(`LOG: [getTeacherClassesService] Found 0 classes for teacher ${teacherId}`);
+        return [];
+    }
+
+    const fetchedClasses = await prisma.class.findMany({
         where: {
-            teacherId,
-            ...(schoolId ? { class: { schoolId } } : {}),
+            id: { in: classIds },
+            ...(schoolId ? { schoolId } : {}),
         },
         include: {
-            class: {
+            subjects: {
                 include: {
-                    subjects: {
-                        include: {
-                            subject: true,
-                        }
-                    },
-                    _count: {
-                        select: {
-                            enrollments: true,
-                            exams: {
-                                where: {
-                                    status: 'PUBLISHED',
+                    subject: true,
+                }
+            },
+            _count: {
+                select: {
+                    enrollments: true,
+                    exams: {
+                        where: {
+                            status: 'PUBLISHED',
+                            OR: [
+                                { startDate: null },
+                                { startDate: { lte: new Date() } }
+                            ],
+                            AND: [
+                                {
                                     OR: [
-                                        { startDate: null },
-                                        { startDate: { lte: new Date() } }
-                                    ],
-                                    AND: [
-                                        {
-                                            OR: [
-                                                { endDate: null },
-                                                { endDate: { gte: new Date() } }
-                                            ]
-                                        }
+                                        { endDate: null },
+                                        { endDate: { gte: new Date() } }
                                     ]
                                 }
-                            }
-                        }
-                    },
-                    // Fetch all grades for stats
-                    grades: {
-                        select: {
-                            score: true,
-                            maxMarks: true,
-                        }
-                    },
-                    // Fetch all attendances for stats
-                    attendances: {
-                        select: {
-                            status: true,
+                            ]
                         }
                     }
+                }
+            },
+            // Fetch all grades for stats
+            grades: {
+                select: {
+                    score: true,
+                    maxMarks: true,
+                }
+            },
+            // Fetch all attendances for stats
+            attendances: {
+                select: {
+                    status: true,
                 }
             }
         }
     });
 
-    console.log(`LOG: [getTeacherClassesService] Found ${classTeachers.length} classes`);
-
-    // Fetch active assignments count per class since there is no direct relation to use _count
-    const classIds = classTeachers.map(ct => ct.classId);
+    console.log(`LOG: [getTeacherClassesService] Found ${fetchedClasses.length} classes`);
     const activeAssignments = await prisma.assignment.groupBy({
         by: ['classId'],
         where: {
@@ -904,9 +980,7 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
     const teacherSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
 
     // 3. Map to final format with aggregated stats
-    return classTeachers.map(ct => {
-        const c = ct.class;
-        
+    return fetchedClasses.map(c => {
         // Calculate attendance rate
         const totalAttendance = c.attendances.length;
         const presentCount = c.attendances.filter(a => a.status === 'present').length;
@@ -971,7 +1045,20 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
                         } 
                     },
                     attendances: true,
-                    exams: { include: { subject: true } },
+                    exams: { 
+                        include: { 
+                            subject: true,
+                            subjectExamPapers: {
+                                include: {
+                                    subjectPaper: {
+                                        include: {
+                                            subject: true
+                                        }
+                                    }
+                                }
+                            }
+                        } 
+                    },
                 }
             }
         }
@@ -1078,19 +1165,40 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
         .map((s, idx) => ({ ...s, rank: idx + 1 }));
 
     // 4. Upcoming Activities (Exams/Quizzes) based on relevant exams
-    const upcomingActivities = relevantExams
-        .filter(e => new Date(e.startDate || e.createdAt) > new Date())
-        .map(e => ({
-            id: e.id,
-            title: e.title,
-            type: 'exam',
-            date: new Date(e.startDate || e.createdAt).toLocaleDateString(),
-            description: e.subject?.name || "No Subject",
-            status: 'upcoming',
-            icon: 'description',
-            color: 'red'
-        }))
-        .slice(0, 5);
+    const now = new Date();
+    // Prioritize truly upcoming scheduled exams (startDate >= now or recent within 24h), then latest active exams
+    const sortedExams = [...relevantExams].sort((a, b) => {
+        const dateA = a.startDate ? new Date(a.startDate).getTime() : new Date(a.createdAt).getTime();
+        const dateB = b.startDate ? new Date(b.startDate).getTime() : new Date(b.createdAt).getTime();
+        return dateB - dateA;
+    });
+
+    const upcomingActivities = sortedExams
+        .slice(0, 5)
+        .map(e => {
+            const subjectName = e.subject?.name 
+                || e.subjectExamPapers?.[0]?.subjectPaper?.subject?.name 
+                || e.title.replace(/exam|quiz|assessment/gi, '').trim() 
+                || "General Subject";
+            const examDate = e.startDate 
+                ? new Date(e.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                : new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const isFuture = e.startDate ? new Date(e.startDate) >= now : false;
+
+            return {
+                id: e.id,
+                title: e.title,
+                type: e.category || 'EXAM',
+                date: examDate,
+                rawDate: e.startDate || e.createdAt,
+                description: subjectName,
+                status: isFuture ? 'upcoming' : (e.status === 'PUBLISHED' ? 'active' : 'scheduled'),
+                totalMarks: e.totalMarks || null,
+                durationMinutes: e.durationMinutes || null,
+                icon: 'description',
+                color: 'emerald'
+            };
+        });
 
     // 5. Recent Submissions (Pending Grades or recently graded)
     const recentSubmissions = grades
@@ -1655,21 +1763,31 @@ export const deleteTeacherClassStudentGradeService = async (
  * This checks both direct assignment (Subject.teacherId) and the TeacherSubject relation.
  */
 export const getTeacherSubjectsService = async (teacherId: string, schoolId?: string) => {
+    // 1. Fetch teacher profile for focus subjects
+    const teacherProfile = await prisma.teacher.findUnique({
+        where: { id: teacherId },
+        select: { subject: true }
+    });
+
+    const focusSubjectNames = teacherProfile?.subject 
+        ? teacherProfile.subject.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : [];
+
     const whereClause: any = {
         isArchived: false,
-        OR: []
+        OR: [
+            { teacherId },
+            { teacherSubjects: { some: { teacherId } } },
+            { timetablePeriods: { some: { teacherId } } },
+            ...(focusSubjectNames.length > 0 ? [{ name: { in: focusSubjectNames, mode: 'insensitive' } }] : [])
+        ]
     };
 
     if (schoolId) {
         whereClause.schoolId = schoolId;
-        whereClause.OR = [
-            { teacherId },
-            { teacherSubjects: { some: { teacherId } } },
-            { timetablePeriods: { some: { teacherId } } }
-        ];
     } else {
-        // Personal scope
-        whereClause.scope = 'PERSONAL'; // Ensure we only get personal subjects if no schoolId
+        // Personal scope or unconstrained
+        whereClause.scope = 'PERSONAL';
         whereClause.teacherId = teacherId;
         delete whereClause.OR;
     }

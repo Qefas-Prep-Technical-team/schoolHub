@@ -281,8 +281,9 @@ const GradesOverview: React.FC = () => {
         totalScore: `${percentage.toFixed(1)}%`,
         grade: calculateGrade(score, maxMarks, activeGradingScale) as GradeLetter,
         status: (item.status || 'Graded') as GradeStatus,
-        remarks: item.remarks || '',
-        profilePicture: item.student?.profileImage || item.student?.avatar || ''
+        profilePicture: item.student?.profileImage || item.student?.avatar || '',
+        createdAt: (item as any)?.createdAt,
+        updatedAt: (item as any)?.updatedAt
       };
     });
 

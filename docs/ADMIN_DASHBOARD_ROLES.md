@@ -97,3 +97,27 @@ When a user registers a school institution at `/signup/school`:
 - [x] Verified `verifyEmailCode` returns `adminRole: "SCHOOL_OWNER"` alongside `isSchoolOwner: true`.
 - [x] Verified `useAuthStore` stores `adminRole` and `isSchoolOwner` in normalized user state.
 - [x] Verified `AdminRoleGuard` allows seamless access to `/dashboard/admin/billing` for the registered school owner.
+
+---
+
+## 5. Recent Admin Dashboard Feature Updates
+
+### 5.1 Dark & Light Mode Responsive Loading Skeletons (`/dashboard/admin/team`)
+- **Status**: Completed & Verified.
+- **Context**: The dedicated team page skeleton loader (`frontend/src/app/dashboard/admin/team/loading.tsx`) previously had low contrast and inconsistent visibility across theme switches.
+- **Enhancement**:
+  - Re-architected with theme-aware tokens (`bg-slate-200/80 dark:bg-slate-700/60` and `border-slate-200/80 dark:border-slate-800`).
+  - Added metric cards, status filter pill skeletons, and tabular rows with alternating pulse animations to deliver high visual fidelity in both light and dark modes.
+
+### 5.2 Offline Grades & Assessment Pad Enhancements
+- **Status**: Completed & Verified.
+- **Modal Header Toolbar Cleanup**:
+  - Consolidated duplicate "Save Draft" and "Publish Grades" action buttons so actions only reside in the persistent top modal navigation (`RecordScoreEntryModal.tsx`).
+  - Removed duplicate close controls: hidden redundant Radix `DialogContent` close button (`showCloseButton={false}`) and cleaned the 'Cancel' button styling without inner duplicate icons.
+- **Dynamic Assessment Title Display**:
+  - Dynamically updates the header banner in `OfflineGradesHeader.tsx` to mirror the live user-typed assessment title (`config.assessmentType`) while falling back gracefully to `"Offline Grades & Assessment Pad"`.
+- **Browser Auto-Save & Draft Recovery**:
+  - Auto-persists work-in-progress score entries and assessment metadata to `localStorage` under a user-and-cohort-scoped key (`qefas_offline_grade_draft_{classId}_{userId}`).
+  - Prevents accidental data loss if the modal is canceled or closed prematurely.
+  - Surfaces an active `"Auto-saved draft"` indicator with a dedicated `"Clear Draft"` action button so staff can instantly discard browser storage and start a fresh assessment pad.
+

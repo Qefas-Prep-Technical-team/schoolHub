@@ -24,6 +24,7 @@ export interface SubjectResultItem {
   status: 'PUBLISHED' | 'DRAFT' | string;
   createdById?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface SubjectResultCardProps {

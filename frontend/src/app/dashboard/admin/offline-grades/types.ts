@@ -56,7 +56,11 @@ export interface GradeBatchSummary {
   totalStudents: number;
   gradedStudents: number;
   averageScore: number;
-  status: 'DRAFT' | 'PUBLISHED';
   createdAt: string;
   updatedAt: string;
+  teacherId?: string | null;
+  teacherName?: string | null;
+  teacherCode?: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | string;
+  isAssignedSubject?: boolean;
 }

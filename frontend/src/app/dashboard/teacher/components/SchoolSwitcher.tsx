@@ -84,12 +84,12 @@ export function SchoolSwitcher({ schools, selectedId, onSelect, userId, userImag
           {/* Label */}
           <div className="flex flex-col leading-none min-w-0 text-left">
             <span className={cn(
-              "text-[9px] font-bold uppercase tracking-widest leading-none",
+              "text-[8px] sm:text-[9px] font-bold uppercase tracking-widest leading-none",
               isPersonal ? "text-slate-400 dark:text-slate-500" : "text-emerald-500 dark:text-emerald-400"
             )}>
               {isPersonal ? "Personal" : "My School"}
             </span>
-            <span className="text-[12px] font-black text-slate-800 dark:text-white tracking-tight truncate max-w-[150px] mt-0.5 leading-tight">
+            <span className="text-[11px] sm:text-[12px] font-black text-slate-800 dark:text-white tracking-tight truncate max-w-[90px] xs:max-w-[120px] sm:max-w-[150px] mt-0.5 leading-tight">
               {selectedSchool.name}
             </span>
           </div>

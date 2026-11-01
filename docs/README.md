@@ -18,6 +18,7 @@
 | **Assessments, Exams & Grading** | [`ASSESSMENT_DATA_MODEL.md`](../ASSESSMENT_DATA_MODEL.md) & [`school_grading_system_sync`](../.agents/skills/school_grading_system_sync/SKILL.md) | Assessments data model (exams, tests, quizzes, assignments, offline CA), 9-grade matrix fallback, termly results, and student department scoping. |
 | **Subscriptions, Billing & Paystack** | [`SUBSCRIPTION_AND_BILLING.md`](SUBSCRIPTION_AND_BILLING.md) | Tier enforcement (`FREE`, `BASIC`, `PREMIUM`), Paystack webhooks, trial periods, student quotas, and subscription sweepers. |
 | **Admin Dashboard & Sub-Role RBAC** | [`ADMIN_DASHBOARD_ROLES.md`](ADMIN_DASHBOARD_ROLES.md) | Institutional hierarchy (`SCHOOL_OWNER`, `PRINCIPAL`, `REGISTRAR`, `ACCOUNTANT`), route gating via `AdminRoleGuard`, billing permissions, and self-healing session states. |
+| **Teacher Dashboard & Offline Grades** | [`TEACHER_DASHBOARD.md`](TEACHER_DASHBOARD.md) | Class management, offline assessment pad, teacher subject scoping, browser draft auto-recovery, and academic session resolution. |
 | **Login Flow & Trusted Device Verification** | [`LOGIN_FLOW.md`](LOGIN_FLOW.md) | Dual login pathways (Email/Password & Google SSO), 365-day trusted device cookie caching, database session validation, pre-auth verification redirection, and native location collection. |
 
 ---

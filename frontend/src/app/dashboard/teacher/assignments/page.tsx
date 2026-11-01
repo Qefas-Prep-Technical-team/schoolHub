@@ -19,6 +19,32 @@ import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/Head
 import { PlusCircle, SearchX, BookOpen, AlertTriangle, GraduationCap, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+interface DateGroup<T> {
+    label: string;
+    items: T[];
+}
+
+function getDateGroupLabel(dateVal?: string | Date | null): string {
+    if (!dateVal) return 'Undated & Previous Records';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'Undated & Previous Records';
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const diffTime = today.getTime() - itemDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays > 1 && diffDays <= 7) {
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+    }
+
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 const getNormalizedStatus = (assignment: any): 'published' | 'overdue' | 'due-soon' | 'draft' => {
     const rawStatus = (assignment.status || 'DRAFT').toLowerCase();
     if (rawStatus === 'draft') return 'draft';
@@ -157,6 +183,27 @@ export default function AssignmentsPage() {
         return filteredAssignments.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredAssignments, currentPage, itemsPerPage]);
 
+    // Group paginated assignments by date (createdAt || updatedAt || dueDate)
+    const groupedAssignments = useMemo(() => {
+        const groupsMap = new Map<string, any[]>();
+        const groupOrder: string[] = [];
+
+        paginatedAssignments.forEach((assignment: any) => {
+            const rawDate = assignment.createdAt || assignment.updatedAt || assignment.dueDate;
+            const label = getDateGroupLabel(rawDate);
+            if (!groupsMap.has(label)) {
+                groupsMap.set(label, []);
+                groupOrder.push(label);
+            }
+            groupsMap.get(label)!.push(assignment);
+        });
+
+        return groupOrder.map((label) => ({
+            label,
+            items: groupsMap.get(label)!,
+        }));
+    }, [paginatedAssignments]);
+
     const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage);
 
     const handleSearch = (query: string) => {
@@ -293,27 +340,41 @@ export default function AssignmentsPage() {
                                     initial={{ opacity: 0, scale: 0.98 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.98 }}
-                                    className="pt-2"
+                                    className="pt-2 space-y-6"
                                 >
-                                    <AssignmentList 
-                                        assignments={paginatedAssignments.map((assignment: any) => ({
-                                            ...assignment,
-                                            status: getNormalizedStatus(assignment),
-                                            subject: assignment.subject?.name || "General",
-                                            className: assignment.class?.name || "All Classes",
-                                            dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
-                                            submitted: assignment._count?.submissions || 0,
-                                            totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
-                                            progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
-                                                ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
-                                                : 0
-                                        }))}
-                                        onEdit={(id) => router.push(`/dashboard/teacher/assignments/${id}?edit=true`)}
-                                        onGrade={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
-                                        onDelete={(id) => setAssignmentToDelete(id)}
-                                        onViewDetails={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
-                                        currentUserId={user?.id}
-                                    />
+                                    {groupedAssignments.map((section) => (
+                                        <div key={section.label} className="space-y-3">
+                                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                                <div className="size-2 rounded-full bg-emerald-500" />
+                                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                                    {section.label}
+                                                </h4>
+                                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                                    {section.items.length} {section.items.length === 1 ? 'assignment' : 'assignments'}
+                                                </span>
+                                            </div>
+
+                                            <AssignmentList 
+                                                assignments={section.items.map((assignment: any) => ({
+                                                    ...assignment,
+                                                    status: getNormalizedStatus(assignment),
+                                                    subject: assignment.subject?.name || "General",
+                                                    className: assignment.class?.name || "All Classes",
+                                                    dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
+                                                    submitted: assignment._count?.submissions || 0,
+                                                    totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
+                                                    progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
+                                                        ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
+                                                        : 0
+                                                }))}
+                                                onEdit={(id) => router.push(`/dashboard/teacher/assignments/${id}?edit=true`)}
+                                                onGrade={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
+                                                onDelete={(id) => setAssignmentToDelete(id)}
+                                                onViewDetails={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
+                                                currentUserId={user?.id}
+                                            />
+                                        </div>
+                                    ))}
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -321,29 +382,45 @@ export default function AssignmentsPage() {
                                     initial={{ opacity: 0, scale: 0.98 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.98 }}
-                                    className="grid gap-4 sm:gap-6 pt-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                                    className="pt-2 space-y-6"
                                 >
-                                    {paginatedAssignments.map((assignment: any) => (
-                                        <AssignmentCard
-                                            key={assignment.id}
-                                            assignment={{
-                                                ...assignment,
-                                                status: getNormalizedStatus(assignment),
-                                                subject: assignment.subject?.name || "General",
-                                                className: assignment.class?.name || "All Classes",
-                                                dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
-                                                submitted: assignment._count?.submissions || 0,
-                                                totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
-                                                progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
-                                                    ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
-                                                    : 0
-                                            }}
-                                            onEdit={() => router.push(`/dashboard/teacher/assignments/${assignment.id}?edit=true`)}
-                                            onGrade={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
-                                            onDelete={() => setAssignmentToDelete(assignment.id)}
-                                            onViewDetails={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
-                                            currentUserId={user?.id}
-                                        />
+                                    {groupedAssignments.map((section) => (
+                                        <div key={section.label} className="space-y-3">
+                                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                                <div className="size-2 rounded-full bg-emerald-500" />
+                                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                                    {section.label}
+                                                </h4>
+                                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                                    {section.items.length} {section.items.length === 1 ? 'assignment' : 'assignments'}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                                                {section.items.map((assignment: any) => (
+                                                    <AssignmentCard
+                                                        key={assignment.id}
+                                                        assignment={{
+                                                            ...assignment,
+                                                            status: getNormalizedStatus(assignment),
+                                                            subject: assignment.subject?.name || "General",
+                                                            className: assignment.class?.name || "All Classes",
+                                                            dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
+                                                            submitted: assignment._count?.submissions || 0,
+                                                            totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
+                                                            progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
+                                                                ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
+                                                                : 0
+                                                        }}
+                                                        onEdit={() => router.push(`/dashboard/teacher/assignments/${assignment.id}?edit=true`)}
+                                                        onGrade={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
+                                                        onDelete={() => setAssignmentToDelete(assignment.id)}
+                                                        onViewDetails={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
+                                                        currentUserId={user?.id}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
                                 </motion.div>
                             )

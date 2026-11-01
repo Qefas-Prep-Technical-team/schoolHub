@@ -10,6 +10,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ActiveMembersTable from "./components/ActiveMembersTable"
 import PendingRequestsTable from "./components/PendingRequestsTable"
+import TeamLoading from "./loading"
 import { cn } from "@/lib/utils"
 
 function TeamPageContent() {
@@ -40,6 +41,10 @@ function TeamPageContent() {
     }, [searchParams])
 
     const myRoleLabel = user?.adminRole || user?.role || "Staff"
+
+    if (isLoadingAdmins && isLoadingPending) {
+        return <TeamLoading />
+    }
 
     return (
         <div className="min-h-screen bg-transparent p-3.5 sm:p-6 lg:p-8 font-sans pb-24">
@@ -267,11 +272,7 @@ function TeamPageContent() {
 
 export default function TeamPage() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen p-6 flex items-center justify-center">
-                <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            </div>
-        }>
+        <Suspense fallback={<TeamLoading />}>
             <TeamPageContent />
         </Suspense>
     )

@@ -24,6 +24,51 @@ interface ExamTableProps {
   authorizedSubjectIds?: Set<string>
 }
 
+function getDateGroupLabel(dateVal?: string | Date): string {
+  if (!dateVal) return 'Undated & Previous Assessments';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return 'Undated & Previous Assessments';
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  
+  const diffTime = today.getTime() - itemDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays > 1 && diffDays <= 7) {
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+  }
+  
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+interface DateGroup<T> {
+  label: string;
+  items: T[];
+}
+
+function groupByDate<T>(items: T[], getDateFn: (item: T) => string | Date | undefined): DateGroup<T>[] {
+  const groupsMap = new Map<string, T[]>();
+  const groupOrder: string[] = [];
+
+  items.forEach(item => {
+    const label = getDateGroupLabel(getDateFn(item));
+    if (!groupsMap.has(label)) {
+      groupsMap.set(label, []);
+      groupOrder.push(label);
+    }
+    groupsMap.get(label)!.push(item);
+  });
+
+  return groupOrder.map(label => ({
+    label,
+    items: groupsMap.get(label)!
+  }));
+}
+
 export function ExamTable({
   exams,
   onView,
@@ -63,6 +108,9 @@ export function ExamTable({
     { key: 'actions', label: 'Actions', className: 'text-right' },
   ]
 
+  const dateSections = groupByDate(exams, e => e.createdAt || e.scheduledDate);
+  let runningIndex = startIndex;
+
   return (
     <div className={cn("bg-white dark:bg-emerald-950/60 rounded-2xl border border-slate-200/80 dark:border-emerald-800/50 overflow-hidden shadow-sm mt-4", className)}>
       <div className="overflow-x-auto">
@@ -98,15 +146,32 @@ export function ExamTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {exams.map((exam, idx) => (
-                    <Fragment key={exam.id}>
-                      <tr 
-                        className="border-b border-slate-100 dark:border-emerald-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
-                        onClick={() => onView(exam)}
-                      >
-                      <td className="p-4 text-xs font-black text-slate-300 dark:text-slate-600 text-center">
-                        {startIndex + idx + 1}
-                      </td>
+                  {dateSections.map((section) => (
+                    <Fragment key={section.label}>
+                      <tr className="bg-slate-100/75 dark:bg-emerald-950/90 border-y border-slate-200/80 dark:border-emerald-800/60">
+                        <td colSpan={headers.length} className="py-2.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="size-2 rounded-full bg-emerald-500" />
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                              {section.label}
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-emerald-800/60">
+                              {section.items.length} {section.items.length === 1 ? 'assessment' : 'assessments'}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {section.items.map((exam) => {
+                        const currentRowIdx = ++runningIndex;
+                        return (
+                          <Fragment key={exam.id}>
+                            <tr 
+                              className="border-b border-slate-100 dark:border-emerald-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                              onClick={() => onView(exam)}
+                            >
+                            <td className="p-4 text-xs font-black text-slate-300 dark:text-slate-600 text-center">
+                              {currentRowIdx}
+                            </td>
                       <td className="p-4 text-sm font-bold text-slate-900 dark:text-white">
                         <div className="flex items-center gap-2">
                           {exam.subjectPapers && exam.subjectPapers.length > 0 ? (
@@ -279,8 +344,11 @@ export function ExamTable({
                         </td>
                       </tr>
                     )}
-                    </Fragment>
-                  ))}
+                            </Fragment>
+                          );
+                        })}
+                      </Fragment>
+                    ))}
                 </tbody>
               </>
             )}

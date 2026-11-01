@@ -42,6 +42,32 @@ import { SubjectResultCard, SubjectResultItem } from './components/SubjectResult
 import { RecordsSkeleton } from './components/RecordsSkeleton';
 import { CreateResultDialog } from './components/CreateResultDialog';
 
+interface DateGroup<T> {
+  label: string;
+  items: { item: T; globalIdx: number }[];
+}
+
+function getDateGroupLabel(dateVal?: string | Date | null): string {
+  if (!dateVal) return 'Undated & Previous Records';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return 'Undated & Previous Records';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const diffTime = today.getTime() - itemDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays > 1 && diffDays <= 7) {
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+  }
+
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 function StudentAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
   const initial = name?.trim()?.charAt(0)?.toUpperCase() || 'S';
   if (avatarUrl) {
@@ -129,13 +155,45 @@ export default function RecordsPage() {
     return Array.isArray(teacherSubjectsData) ? teacherSubjectsData : [];
   }, [teacherSubjectsData]);
 
+  const assignedClassIdSet = useMemo(() => {
+    return new Set(teacherClasses.map((c: any) => c.id || c.classId).filter(Boolean));
+  }, [teacherClasses]);
+
   const assignedSubjectIdSet = useMemo(() => {
-    return new Set(teacherAssignedSubjects.map((s: any) => s.id));
-  }, [teacherAssignedSubjects]);
+    const set = new Set<string>();
+    teacherAssignedSubjects.forEach((s: any) => { if (s.id) set.add(s.id); });
+    // Also include subjects attached to any of the teacher's assigned classes
+    teacherClasses.forEach((c: any) => {
+      (c.subjects || []).forEach((cs: any) => {
+        const subId = cs.subjectId || cs.subject?.id || cs.id;
+        if (subId) set.add(subId);
+      });
+    });
+    return set;
+  }, [teacherAssignedSubjects, teacherClasses]);
 
   const assignedSubjectNameSet = useMemo(() => {
-    return new Set(teacherAssignedSubjects.map((s: any) => (s.name || '').trim().toLowerCase()));
-  }, [teacherAssignedSubjects]);
+    const set = new Set<string>();
+    teacherAssignedSubjects.forEach((s: any) => {
+      const name = (s.name || '').trim().toLowerCase();
+      if (name) set.add(name);
+    });
+    // Also include subject names attached to any of the teacher's assigned classes
+    teacherClasses.forEach((c: any) => {
+      (c.subjects || []).forEach((cs: any) => {
+        const name = (cs.subject?.name || cs.name || '').trim().toLowerCase();
+        if (name) set.add(name);
+      });
+      // Handle comma-separated subject summary string on class
+      if (typeof c.subject === 'string') {
+        c.subject.split(',').forEach((subName: string) => {
+          const trimmed = subName.trim().toLowerCase();
+          if (trimmed && trimmed !== 'multiple subjects') set.add(trimmed);
+        });
+      }
+    });
+    return set;
+  }, [teacherAssignedSubjects, teacherClasses]);
 
   // Extract unique departments associated with the teacher's assigned subjects
   const teacherAssignedDepartments = useMemo(() => {
@@ -154,12 +212,13 @@ export default function RecordsPage() {
   const isRecordAssignedToTeacher = React.useCallback(
     (res: SubjectResultItem) => {
       if (res.createdById && res.createdById === user?.id) return true;
+      if (res.classId && assignedClassIdSet.has(res.classId)) return true;
       if (res.subjectId && assignedSubjectIdSet.has(res.subjectId)) return true;
       const name = (res.subject?.name || res.name || '').trim().toLowerCase();
       if (name && assignedSubjectNameSet.has(name)) return true;
       return false;
     },
-    [user?.id, assignedSubjectIdSet, assignedSubjectNameSet]
+    [user?.id, assignedClassIdSet, assignedSubjectIdSet, assignedSubjectNameSet]
   );
 
   // Results Query Hooks
@@ -340,6 +399,49 @@ export default function RecordsPage() {
     const start = (studentPage - 1) * PAGE_SIZE;
     return filteredTeacherStudents.slice(start, start + PAGE_SIZE);
   }, [filteredTeacherStudents, studentPage]);
+
+  // Date Grouping for Subject Final Results
+  const groupedSubjectResults = useMemo(() => {
+    const groupsMap = new Map<string, { item: SubjectResultItem; globalIdx: number }[]>();
+    const groupOrder: string[] = [];
+
+    paginatedSubjectResults.forEach((item, index) => {
+      const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
+      const label = getDateGroupLabel(item.createdAt || item.updatedAt);
+      if (!groupsMap.has(label)) {
+        groupsMap.set(label, []);
+        groupOrder.push(label);
+      }
+      groupsMap.get(label)!.push({ item, globalIdx });
+    });
+
+    return groupOrder.map((label) => ({
+      label,
+      items: groupsMap.get(label)!,
+    }));
+  }, [paginatedSubjectResults, subjectPage]);
+
+  // Date Grouping for Student Final Results
+  const groupedTeacherStudents = useMemo(() => {
+    const groupsMap = new Map<string, { item: TeacherStudentItem; globalIdx: number }[]>();
+    const groupOrder: string[] = [];
+
+    paginatedTeacherStudents.forEach((student, index) => {
+      const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
+      const rawDate = (student as any).createdAt || (student as any).updatedAt || (student as any).enrolledAt;
+      const label = getDateGroupLabel(rawDate);
+      if (!groupsMap.has(label)) {
+        groupsMap.set(label, []);
+        groupOrder.push(label);
+      }
+      groupsMap.get(label)!.push({ item: student, globalIdx });
+    });
+
+    return groupOrder.map((label) => ({
+      label,
+      items: groupsMap.get(label)!,
+    }));
+  }, [paginatedTeacherStudents, studentPage]);
 
   const subjectTotalPages = Math.ceil(filteredSubjectResults.length / PAGE_SIZE) || 1;
   const studentTotalPages = Math.ceil(filteredTeacherStudents.length / PAGE_SIZE) || 1;
@@ -615,133 +717,164 @@ export default function RecordsPage() {
                 )}
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
-                {paginatedSubjectResults.map((item) => (
-                  <SubjectResultCard
-                    key={item.id}
-                    item={item}
-                    currentUserId={user?.id}
-                    isAssigned={isRecordAssignedToTeacher(item)}
-                  />
+              <div className="space-y-6">
+                {groupedSubjectResults.map((section) => (
+                  <div key={section.label} className="space-y-3">
+                    <div className="flex items-center gap-2.5 px-1 py-1">
+                      <div className="size-2 rounded-full bg-emerald-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {section.label}
+                      </h4>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+                      {section.items.map(({ item }) => (
+                        <SubjectResultCard
+                          key={item.id}
+                          item={item}
+                          currentUserId={user?.id}
+                          isAssigned={isRecordAssignedToTeacher(item)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
               /* Table View */
-              <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead>
-                      <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
-                        <th className="px-5 py-3.5 w-12">#</th>
-                        <th className="px-4 py-3.5">Session & Term</th>
-                        <th className="px-4 py-3.5">Class</th>
-                        <th className="px-4 py-3.5">Department</th>
-                        <th className="px-4 py-3.5">Subject</th>
-                        <th className="px-4 py-3.5">Date Saved</th>
-                        <th className="px-4 py-3.5">Status</th>
-                        <th className="px-5 py-3.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
-                      {paginatedSubjectResults.map((res, index) => {
-                        const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
-                        const isOwner = res.createdById === user?.id;
-                        const isAssigned = isRecordAssignedToTeacher(res);
-                        const canEdit = isAssigned || isOwner;
-                        const isPublished = res.status === 'PUBLISHED';
-                        const deptName =
-                          res.department?.name ||
-                          res.subject?.departments?.[0]?.department?.name;
+              <div className="space-y-6">
+                {groupedSubjectResults.map((section) => (
+                  <div key={section.label} className="space-y-2">
+                    <div className="flex items-center gap-2.5 px-1 py-1">
+                      <div className="size-2 rounded-full bg-emerald-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {section.label}
+                      </h4>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                      </span>
+                    </div>
 
-                        return (
-                          <tr
-                            key={res.id}
-                            className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
-                          >
-                            <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
-                            <td className="px-4 py-4">
-                              <span className="block font-bold text-slate-900 dark:text-slate-100">
-                                {res.session?.name || 'Session'}
-                              </span>
-                              <span className="text-xs text-slate-400">{res.term} Term</span>
-                            </td>
-                            <td className="px-4 py-4">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
-                                <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
-                                {res.class?.name || 'Assigned Class'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4">
-                              {deptName ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
-                                  <Building2 className="w-3.5 h-3.5 text-indigo-500" />
-                                  {deptName}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400 italic">None</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900 dark:text-slate-100">
-                                  {res.subject?.name || res.name || 'Subject'}
-                                </span>
-                                {canEdit ? (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                    Assigned
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-slate-400">
-                                    <Lock className="w-2.5 h-2.5" /> Read Only
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-xs text-slate-500">
-                              {new Date(res.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="px-4 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                                  isPublished
-                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40'
-                                    : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40'
-                                }`}
-                              >
-                                {isPublished ? (
-                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                ) : (
-                                  <Clock className="w-3 h-3 text-amber-500" />
-                                )}
-                                {res.status}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-right">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  router.push(
-                                    canEdit
-                                      ? `/dashboard/teacher/records/new?id=${res.id}`
-                                      : `/dashboard/teacher/records/preview?id=${res.id}`
-                                  )
-                                }
-                                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
-                                  canEdit
-                                    ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-500 text-white hover:bg-emerald-600'
-                                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
-                                }`}
-                              >
-                                <span>{canEdit ? 'Edit Sheet' : 'Preview'}</span>
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                    <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm whitespace-nowrap">
+                          <thead>
+                            <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
+                              <th className="px-5 py-3.5 w-12">#</th>
+                              <th className="px-4 py-3.5">Session & Term</th>
+                              <th className="px-4 py-3.5">Class</th>
+                              <th className="px-4 py-3.5">Department</th>
+                              <th className="px-4 py-3.5">Subject</th>
+                              <th className="px-4 py-3.5">Date Saved</th>
+                              <th className="px-4 py-3.5">Status</th>
+                              <th className="px-5 py-3.5 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
+                            {section.items.map(({ item: res, globalIdx }) => {
+                              const isOwner = res.createdById === user?.id;
+                              const isAssigned = isRecordAssignedToTeacher(res);
+                              const canEdit = isAssigned || isOwner;
+                              const isPublished = res.status === 'PUBLISHED';
+                              const deptName =
+                                res.department?.name ||
+                                res.subject?.departments?.[0]?.department?.name;
+
+                              return (
+                                <tr
+                                  key={res.id}
+                                  className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
+                                >
+                                  <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
+                                  <td className="px-4 py-4">
+                                    <span className="block font-bold text-slate-900 dark:text-slate-100">
+                                      {res.session?.name || 'Session'}
+                                    </span>
+                                    <span className="text-xs text-slate-400">{res.term} Term</span>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
+                                      <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+                                      {res.class?.name || 'Assigned Class'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    {deptName ? (
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                                        <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                                        {deptName}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-slate-400 italic">None</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-900 dark:text-slate-100">
+                                        {res.subject?.name || res.name || 'Subject'}
+                                      </span>
+                                      {canEdit ? (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                          Assigned
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-slate-400">
+                                          <Lock className="w-2.5 h-2.5" /> Read Only
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 text-xs text-slate-500">
+                                    {new Date(res.createdAt).toLocaleDateString()}
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                                        isPublished
+                                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40'
+                                          : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40'
+                                      }`}
+                                    >
+                                      {isPublished ? (
+                                        <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                      ) : (
+                                        <Clock className="w-3 h-3 text-amber-500" />
+                                      )}
+                                      {res.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-4 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        router.push(
+                                          canEdit
+                                            ? `/dashboard/teacher/records/new?id=${res.id}`
+                                            : `/dashboard/teacher/records/preview?id=${res.id}`
+                                        )
+                                      }
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                                        canEdit
+                                          ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-500 text-white hover:bg-emerald-600'
+                                          : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                                      }`}
+                                    >
+                                      <span>{canEdit ? 'Edit Sheet' : 'Preview'}</span>
+                                      <ArrowRight className="w-3.5 h-3.5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -788,115 +921,141 @@ export default function RecordsPage() {
                 )}
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
-                {paginatedTeacherStudents.map((res, index) => {
-                  const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
-                  return (
-                    <div
-                      key={res.id}
-                      onClick={() => router.push(`/dashboard/teacher/records/student/${res.id}`)}
-                      className="cursor-pointer bg-white dark:bg-zinc-900/90 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 space-y-3.5 hover:border-emerald-500/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 select-none shrink-0">
-                              #{globalIdx}
-                            </span>
-                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
-                              {res.studentCode || 'No Student ID'}
+              <div className="space-y-6">
+                {groupedTeacherStudents.map((section) => (
+                  <div key={section.label} className="space-y-3">
+                    <div className="flex items-center gap-2.5 px-1 py-1">
+                      <div className="size-2 rounded-full bg-emerald-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {section.label}
+                      </h4>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'student' : 'students'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+                      {section.items.map(({ item: res, globalIdx }) => (
+                        <div
+                          key={res.id}
+                          onClick={() => router.push(`/dashboard/teacher/records/student/${res.id}`)}
+                          className="cursor-pointer bg-white dark:bg-zinc-900/90 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 space-y-3.5 hover:border-emerald-500/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 select-none shrink-0">
+                                  #{globalIdx}
+                                </span>
+                                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+                                  {res.studentCode || 'No Student ID'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 pt-1">
+                              <StudentAvatar name={res.name} avatarUrl={res.avatarUrl} />
+                              <h3
+                                className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 transition-colors"
+                                title={res.name}
+                              >
+                                {res.name}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="bg-slate-50 dark:bg-zinc-800/60 border border-slate-100 dark:border-zinc-800/60 p-2.5 rounded-xl text-center">
+                              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Gender</p>
+                              <p className="font-black text-emerald-600 capitalize">{res.gender || '-'}</p>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-zinc-800/60 border border-slate-100 dark:border-zinc-800/60 p-2.5 rounded-xl text-center">
+                              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
+                              <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{res.grade || '-'}</p>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end items-center">
+                            <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                              View Record
                             </span>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2.5 pt-1">
-                          <StudentAvatar name={res.name} avatarUrl={res.avatarUrl} />
-                          <h3
-                            className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 transition-colors"
-                            title={res.name}
-                          >
-                            {res.name}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-slate-50 dark:bg-zinc-800/60 border border-slate-100 dark:border-zinc-800/60 p-2.5 rounded-xl text-center">
-                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Gender</p>
-                          <p className="font-black text-emerald-600 capitalize">{res.gender || '-'}</p>
-                        </div>
-                        <div className="bg-slate-50 dark:bg-zinc-800/60 border border-slate-100 dark:border-zinc-800/60 p-2.5 rounded-xl text-center">
-                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
-                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{res.grade || '-'}</p>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end items-center">
-                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                          View Record
-                        </span>
-                      </div>
+                      ))}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             ) : (
               /* Table View */
-              <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead>
-                      <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
-                        <th className="px-5 py-3.5 w-12">#</th>
-                        <th className="px-4 py-3.5">STUDENT NAME</th>
-                        <th className="px-4 py-3.5">STUDENT CODE</th>
-                        <th className="px-4 py-3.5">GENDER</th>
-                        <th className="px-4 py-3.5">CLASS</th>
-                        <th className="px-5 py-3.5 text-right">ACTIONS</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
-                      {paginatedTeacherStudents.map((res, index) => {
-                        const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
-                        return (
-                          <tr
-                            key={res.id}
-                            onClick={() => router.push(`/dashboard/teacher/records/student/${res.id}`)}
-                            className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
-                          >
-                            <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
-                            <td className="px-4 py-4 font-bold text-slate-900 dark:text-slate-100">
-                              <div className="flex items-center gap-2.5">
-                                <StudentAvatar name={res.name} avatarUrl={res.avatarUrl} />
-                                <span>{res.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">{res.studentCode || '-'}</td>
-                            <td className="px-4 py-4 capitalize">{res.gender || '-'}</td>
-                            <td className="px-4 py-4">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
-                                <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
-                                {res.grade || '-'}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-right">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/dashboard/teacher/records/student/${res.id}`);
-                                }}
-                                className="px-3 py-1.5 border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
+              <div className="space-y-6">
+                {groupedTeacherStudents.map((section) => (
+                  <div key={section.label} className="space-y-2">
+                    <div className="flex items-center gap-2.5 px-1 py-1">
+                      <div className="size-2 rounded-full bg-emerald-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {section.label}
+                      </h4>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'student' : 'students'}
+                      </span>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-black overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm whitespace-nowrap">
+                          <thead>
+                            <tr className="border-b border-slate-100 dark:border-zinc-800 text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
+                              <th className="px-5 py-3.5 w-12">#</th>
+                              <th className="px-4 py-3.5">STUDENT NAME</th>
+                              <th className="px-4 py-3.5">STUDENT CODE</th>
+                              <th className="px-4 py-3.5">GENDER</th>
+                              <th className="px-4 py-3.5">CLASS</th>
+                              <th className="px-5 py-3.5 text-right">ACTIONS</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium text-slate-600 dark:text-slate-300">
+                            {section.items.map(({ item: res, globalIdx }) => (
+                              <tr
+                                key={res.id}
+                                onClick={() => router.push(`/dashboard/teacher/records/student/${res.id}`)}
+                                className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors group"
                               >
-                                View Record
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                                <td className="px-5 py-4 text-xs text-slate-400 font-bold">{globalIdx}</td>
+                                <td className="px-4 py-4 font-bold text-slate-900 dark:text-slate-100">
+                                  <div className="flex items-center gap-2.5">
+                                    <StudentAvatar name={res.name} avatarUrl={res.avatarUrl} />
+                                    <span>{res.name}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">{res.studentCode || '-'}</td>
+                                <td className="px-4 py-4 capitalize">{res.gender || '-'}</td>
+                                <td className="px-4 py-4">
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-emerald-900/30 text-slate-800 dark:text-emerald-300">
+                                    <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+                                    {res.grade || '-'}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-4 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/dashboard/teacher/records/student/${res.id}`);
+                                    }}
+                                    className="px-3 py-1.5 border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 bg-white dark:bg-zinc-900"
+                                  >
+                                    View Record
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

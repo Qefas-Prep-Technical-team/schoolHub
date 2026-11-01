@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import SchoolProfileLoading from './loading';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolProfile, useSchoolStats, useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { 
@@ -80,27 +81,7 @@ export default function SchoolProfilePage() {
   }, [school?.socialLinks]);
 
   if (schoolLoading || statsLoading) {
-    return (
-      <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 space-y-6">
-        <div className="h-64 w-full bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 animate-pulse shadow-sm" />
-        <div className="flex gap-8 px-6">
-           <div className="size-32 -mt-16 rounded-3xl bg-slate-100 dark:bg-slate-800 animate-pulse shadow-sm border border-slate-50 dark:border-slate-950" />
-           <div className="flex-1 space-y-4 pt-4">
-              <div className="h-8 w-1/3 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
-              <div className="h-4 w-1/4 bg-slate-100 dark:bg-slate-900 rounded-full animate-pulse" />
-           </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-2 space-y-6">
-              <div className="h-64 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm animate-pulse" />
-              <div className="h-96 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm animate-pulse" />
-           </div>
-           <div className="space-y-6">
-              <div className="h-80 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm animate-pulse" />
-           </div>
-        </div>
-      </div>
-    );
+    return <SchoolProfileLoading />;
   }
 
   if (schoolError || statsError) {
@@ -124,29 +105,32 @@ export default function SchoolProfilePage() {
       {/* Hero Section */}
       <section className="relative p-4 md:p-6 lg:p-8 pb-0">
         <div className="w-[95%] max-w-[1600px] mx-auto">
-            <div className="h-56 md:h-72 w-full relative overflow-hidden rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="h-44 sm:h-56 md:h-72 w-full relative overflow-hidden rounded-2xl md:rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 bg-slate-900">
             {school?.bannerImage ? (
                 <Image 
                 src={school.bannerImage} 
-                alt="School Banner" 
+                alt={school.name ? `${school.name} Banner` : "School Banner"} 
                 fill 
-                className="object-cover" 
+                sizes="(max-width: 768px) 100vw, 1600px"
+                className="object-cover object-center" 
                 priority
+                unoptimized
                 />
             ) : (
                 <div className="w-full h-full bg-slate-900 relative">
                 <div className="absolute inset-0 opacity-20" style={{ background: `linear-gradient(45deg, ${primaryColor}, transparent)` }} />
                 </div>
             )}
-            <div className="absolute top-4 right-4 flex gap-3">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex gap-2">
                 <Button 
                     onClick={handleEditProfile}
                     disabled={isEditingProfile}
                     variant="secondary"
-                    className="bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-md rounded-xl h-10 px-4 font-semibold text-xs tracking-wide shadow-sm"
+                    className="bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-md rounded-xl h-9 sm:h-10 px-3 sm:px-4 font-semibold text-xs tracking-wide shadow-sm"
                 >
-                    {isEditingProfile ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Edit3 size={14} className="mr-2" />}
-                    Edit Cover
+                    {isEditingProfile ? <Loader2 size={14} className="mr-1.5 sm:mr-2 animate-spin" /> : <Edit3 size={14} className="mr-1.5 sm:mr-2" />}
+                    <span className="hidden sm:inline">Edit Cover</span>
+                    <span className="sm:hidden">Edit</span>
                 </Button>
             </div>
             </div>
@@ -157,7 +141,14 @@ export default function SchoolProfilePage() {
                 <div className="size-28 md:size-36 rounded-3xl bg-white dark:bg-slate-900 p-2 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0">
                     {school?.logo ? (
                     <div className="relative w-full h-full rounded-2xl overflow-hidden">
-                        <Image src={school.logo} alt={school.name} fill className="object-cover" />
+                        <Image 
+                          src={school.logo} 
+                          alt={school.name || "School Logo"} 
+                          fill 
+                          sizes="144px"
+                          className="object-cover" 
+                          unoptimized
+                        />
                     </div>
                     ) : (
                     <Building2 size={40} className="text-slate-300" />

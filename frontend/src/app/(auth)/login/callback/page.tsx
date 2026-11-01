@@ -203,7 +203,11 @@ export default function GoogleAuthCallback() {
           setTimeout(() => {
             const targetDest = destParam || `/dashboard/${finalRole.replace("_", "-")}`;
             if (targetDest.startsWith('/onboarding')) {
+              // Brand new user registration: route to onboarding and flag onboarding as incomplete
               useAuthStore.getState().setHasCompletedOnboarding(false);
+            } else {
+              // Returning registered user: mark onboarding as completed to prevent flashing onboarding
+              useAuthStore.getState().setHasCompletedOnboarding(true);
             }
             router.replace(targetDest);
           }, 1500);

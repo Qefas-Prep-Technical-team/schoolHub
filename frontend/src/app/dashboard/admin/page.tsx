@@ -5,7 +5,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
-import AdminLoading from './loading';
+import AdminDashboardSkeleton from './components/dashboard/AdminDashboardSkeleton';
 
 // Dashboard Components
 import ExamStatus from './components/dashboard/ExamStatus';
@@ -57,7 +57,7 @@ export default function AdminDashboard() {
   const currentSession = '2025-26';
 
   if (statsLoading || checkingAccess) {
-    return <AdminLoading />;
+    return <AdminDashboardSkeleton />;
   }
 
   return (

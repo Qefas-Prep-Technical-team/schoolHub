@@ -16,6 +16,8 @@ export interface StudentGrade {
   status: GradeStatus;
   remarks?: string;
   profilePicture?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface FilterOption {

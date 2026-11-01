@@ -20,6 +20,8 @@ import {
     updateTeacherSettings,
 } from "./teacher-dashboard.controller";
 
+import { getTeacherClassOfflineGrades } from "./teacher-class-offline-grades.controller";
+
 const router = Router();
 
 // All teacher dashboard routes require authentication
@@ -87,6 +89,13 @@ router.get("/classes/:classId/assignments", getTeacherClassAssignments);
  * @access  Private-Teacher
  */
 router.get("/classes/:classId/grades", getTeacherClassGrades);
+
+/**
+ * @route   GET /api/v1/teacher/classes/:classId/offline-grades
+ * @desc    Get offline grades specifically for a class assigned to the teacher
+ * @access  Private-Teacher
+ */
+router.get("/classes/:classId/offline-grades", getTeacherClassOfflineGrades);
 
 /**
  * @route   PATCH /api/v1/teacher/classes/:classId/grades/student/:studentId

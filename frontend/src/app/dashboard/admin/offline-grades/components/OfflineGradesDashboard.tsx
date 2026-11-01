@@ -13,6 +13,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import OfflineRecordsList from './OfflineRecordsList';
 import RecordScoreEntryModal from './RecordScoreEntryModal';
 import OfflineGradeSheetSyncModal from './OfflineGradeSheetSyncModal';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useTeacherProfile, useTeacherLinkedSchools } from '@/lib/api/hooks/useTeacher';
 import { GradeBatchSummary, OfflineAssessmentCategory } from '../types';
 import { generatePDF } from '@/utils/pdfGenerator';
 
@@ -71,12 +73,16 @@ export function isOfflineGradeRecord(g: any): boolean {
 
 interface OfflineGradesDashboardProps {
   defaultClassId?: string;
+  schoolId?: string;
   hideClassFilter?: boolean;
+  teacherClassDetail?: any;
 }
 
 export default function OfflineGradesDashboard({
   defaultClassId,
+  schoolId: propSchoolId,
   hideClassFilter,
+  teacherClassDetail,
 }: OfflineGradesDashboardProps) {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
@@ -84,17 +90,53 @@ export default function OfflineGradesDashboard({
   const activeClassId = defaultClassId || urlClassId || undefined;
 
   const { user } = useAuthStore();
-  const schoolId =
+  const { selectedSchoolId } = useDashboardStore();
+  const { data: teacherProfile } = useTeacherProfile();
+  const { data: linkedSchoolsData } = useTeacherLinkedSchools();
+
+  const userSchoolId =
     (user as any)?.schoolId ||
     (user as any)?.school?.id ||
     user?.schools?.[0]?.schoolId ||
     (user as any)?.tenantId ||
+    (teacherProfile as any)?.activeSchoolId ||
+    (teacherProfile as any)?.primarySchoolId ||
+    (teacherProfile as any)?.schoolId ||
     '';
-  const { data: schoolProfile } = useSchoolProfile(schoolId);
 
   const isTeacher = user?.userType === 'TEACHER';
-  const { data: teacherSubjectsData } = useTeacherSubjects(isTeacher ? schoolId : undefined);
-  const { data: teacherClassesData } = useTeacherClasses(isTeacher ? schoolId : undefined);
+
+  const baseSchoolId =
+    propSchoolId ||
+    selectedSchoolId ||
+    userSchoolId ||
+    linkedSchoolsData?.[0]?.id ||
+    '';
+
+  const { data: teacherClassesData } = useTeacherClasses(isTeacher ? (baseSchoolId || undefined) : undefined);
+
+  // Matched class school ID if a class is active
+  const matchedClassSchoolId = useMemo(() => {
+    if (!activeClassId || !Array.isArray(teacherClassesData)) return undefined;
+    const match = teacherClassesData.find((c: any) => c.id === activeClassId || c.classId === activeClassId);
+    return match?.schoolId || (match as any)?.school?.id;
+  }, [activeClassId, teacherClassesData]);
+
+  // First linked school fallback if teacher has connected schools
+  const firstLinkedSchoolId = useMemo(() => {
+    if (!Array.isArray(linkedSchoolsData) || linkedSchoolsData.length === 0) return undefined;
+    return linkedSchoolsData[0]?.id;
+  }, [linkedSchoolsData]);
+
+  const schoolId =
+    propSchoolId ||
+    matchedClassSchoolId ||
+    baseSchoolId ||
+    firstLinkedSchoolId ||
+    '';
+
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const { data: teacherSubjectsData } = useTeacherSubjects(isTeacher ? (schoolId || undefined) : undefined);
 
   const teacherSubjectIdSet = useMemo(() => {
     if (!isTeacher || !teacherSubjectsData) return new Set<string>();
@@ -106,43 +148,80 @@ export default function OfflineGradesDashboard({
   }, [isTeacher, teacherSubjectsData]);
 
   const teacherClassSubjectIdSet = useMemo(() => {
-    if (!isTeacher || !activeClassId) return new Set<string>();
+    if (!isTeacher) return new Set<string>();
 
-    const classMatch = Array.isArray(teacherClassesData)
-      ? teacherClassesData.find((c: any) => c.id === activeClassId || c.classId === activeClassId)
-      : null;
+    const ids: string[] = [];
 
-    const classSubjectIds = Array.isArray((classMatch as any)?.teacherSubjectIds)
-      ? (classMatch as any).teacherSubjectIds
-      : Array.isArray((classMatch as any)?.subjects)
-        ? (classMatch as any).subjects
-          .map((s: any) => s?.subjectId || s?.id || s?.subject?.id)
-          .filter(Boolean)
+    if (activeClassId) {
+      const classMatch = Array.isArray(teacherClassesData)
+        ? teacherClassesData.find((c: any) => c.id === activeClassId || c.classId === activeClassId)
+        : null;
+
+      const classSubjectIds = Array.isArray((classMatch as any)?.teacherSubjectIds)
+        ? (classMatch as any).teacherSubjectIds
+        : Array.isArray((classMatch as any)?.subjects)
+          ? (classMatch as any).subjects
+            .map((s: any) => s?.subjectId || s?.id || s?.subject?.id)
+            .filter(Boolean)
+          : [];
+
+      const fallback = Array.isArray((classMatch as any)?.classInfo?.teacherSubjectIds)
+        ? (classMatch as any).classInfo.teacherSubjectIds
         : [];
 
-    const fallback = Array.isArray((classMatch as any)?.classInfo?.teacherSubjectIds)
-      ? (classMatch as any).classInfo.teacherSubjectIds
-      : [];
+      const detailIds = Array.isArray(teacherClassDetail?.classInfo?.teacherSubjectIds)
+        ? teacherClassDetail.classInfo.teacherSubjectIds
+        : [];
 
-    return new Set<string>([...classSubjectIds, ...fallback].map((id) => String(id)).filter(Boolean));
-  }, [activeClassId, isTeacher, teacherClassesData]);
+      ids.push(...classSubjectIds, ...fallback, ...detailIds);
+    } else if (Array.isArray(teacherClassesData)) {
+      // Gather across all classes taught by teacher
+      teacherClassesData.forEach((c: any) => {
+        if (c.subjectId) ids.push(String(c.subjectId));
+        if (Array.isArray(c.teacherSubjectIds)) ids.push(...c.teacherSubjectIds.map(String));
+        if (Array.isArray(c.subjects)) {
+          c.subjects.forEach((s: any) => {
+            const sid = s?.subjectId || s?.id || s?.subject?.id;
+            if (sid) ids.push(String(sid));
+          });
+        }
+      });
+    }
+
+    return new Set<string>(ids.filter(Boolean));
+  }, [activeClassId, isTeacher, teacherClassesData, teacherClassDetail]);
 
   const teacherScopeSubjectIds = useMemo(() => {
     if (!isTeacher) return new Set<string>();
     const set = new Set<string>();
     Array.from(teacherSubjectIdSet).forEach((id) => set.add(String(id)));
-    Array.from(teacherClassSubjectIdSet).forEach((id) => set.add(String(id)));
     return set;
-  }, [isTeacher, teacherSubjectIdSet, teacherClassSubjectIdSet]);
+  }, [isTeacher, teacherSubjectIdSet]);
 
   const teacherSubjectNames = useMemo(() => {
-    if (!isTeacher || !teacherSubjectsData) return null;
-    return new Set(
-      teacherSubjectsData
-        .map((s: any) => (s.name || s.subject?.name || '').trim().toLowerCase())
-        .filter(Boolean)
-    );
-  }, [isTeacher, teacherSubjectsData]);
+    if (!isTeacher) return null;
+    const names = new Set<string>();
+
+    if (Array.isArray(teacherSubjectsData)) {
+      teacherSubjectsData.forEach((s: any) => {
+        const name = (s.name || s.subject?.name || '').trim().toLowerCase();
+        if (name) names.add(name);
+        const code = (s.code || s.subject?.code || '').trim().toLowerCase();
+        if (code) names.add(code);
+      });
+    }
+
+    // Extract focus subject from teacher user profile if available
+    const userSubjectStr = (user as any)?.subject;
+    if (typeof userSubjectStr === 'string' && userSubjectStr) {
+      userSubjectStr.split(',').forEach((sub: string) => {
+        const trimmed = sub.trim().toLowerCase();
+        if (trimmed) names.add(trimmed);
+      });
+    }
+
+    return names;
+  }, [isTeacher, teacherSubjectsData, user]);
 
   const teacherScopeSubjectNames = useMemo(() => {
     if (!isTeacher || !teacherSubjectNames) return new Set<string>();
@@ -190,16 +269,27 @@ export default function OfflineGradesDashboard({
         // If activeClassId is defined, only include matching class
         if (activeClassId && g.classId !== activeClassId) return;
 
-        // If teacher, strictly scope to records created by the teacher or belonging to their assigned subjects.
-        // This applies whether viewing globally or within a specific class tab.
-        if (isTeacher) {
-          const sId = (g.subjectId || g.subject?.id || '').toString();
-          const sName = (g.subject || g.subjectName || '').toString().trim().toLowerCase();
-          const isCreatedByTeacher = g.teacherId && (g.teacherId === user?.id || (user as any)?.teacherId === g.teacherId);
-          const isAssignedSubjectId = Boolean(sId && teacherScopeSubjectIds?.has(sId));
-          const isAssignedSubjectName = Boolean(sName && teacherScopeSubjectNames?.has(sName));
+        // Determine if this grade record matches the teacher's assigned subjects
+        const sId = (g.subjectId || g.subject?.id || g.subjectPaper?.subject?.id || '').toString();
+        const sName = (g.subject || g.subjectName || g.subjectPaper?.subject?.name || '').toString().trim().toLowerCase();
+        const isMatchedSubject = Boolean(
+          (sId && teacherScopeSubjectIds?.has(sId)) ||
+          (sName && (
+            teacherScopeSubjectNames?.has(sName) ||
+            Array.from(teacherScopeSubjectNames || []).some(assignedName => 
+              sName.includes(assignedName) || assignedName.includes(sName)
+            )
+          ))
+        );
 
-          if (!isCreatedByTeacher && !isAssignedSubjectId && !isAssignedSubjectName) {
+        // If teacher, scope to records in teacher's assigned classes, assigned subjects, or created by the teacher
+        if (isTeacher) {
+          const isCreatedByTeacher = g.teacherId && (g.teacherId === user?.id || (user as any)?.teacherId === g.teacherId);
+          const isAssignedClass = Boolean(
+            g.classId && Array.isArray(teacherClassesData) && teacherClassesData.some((c: any) => c.id === g.classId || c.classId === g.classId)
+          );
+
+          if (!isCreatedByTeacher && !isAssignedClass && !isMatchedSubject) {
             return;
           }
         }
@@ -217,12 +307,29 @@ export default function OfflineGradesDashboard({
         const hasScore = g.score !== null && g.score !== undefined && !isNaN(Number(g.score));
         const numScore = hasScore ? Number(g.score) : 0;
 
+        const resolvedTeacherName = g.creatorName || g.teacher?.name || (g.teacherId === user?.id ? (user?.name || 'You') : null);
+
         if (existingGroup) {
           existingGroup.totalStudents += 1;
           if (hasScore) {
             existingGroup.gradedStudents += 1;
             existingGroup._scoreSum = (existingGroup._scoreSum || 0) + numScore;
             existingGroup.averageScore = existingGroup._scoreSum / existingGroup.gradedStudents;
+          }
+          if (!existingGroup.teacherName && resolvedTeacherName) {
+            existingGroup.teacherName = resolvedTeacherName;
+            existingGroup.teacherId = g.teacherId || g.teacher?.id;
+            existingGroup.teacherCode = g.teacher?.teacherCode;
+          }
+          if (isMatchedSubject) {
+            existingGroup.isAssignedSubject = true;
+          }
+          // Preserve latest activity/creation date
+          if (g.createdAt && new Date(g.createdAt) > new Date(existingGroup.createdAt)) {
+            existingGroup.createdAt = g.createdAt;
+          }
+          if (g.updatedAt && new Date(g.updatedAt) > new Date(existingGroup.updatedAt)) {
+            existingGroup.updatedAt = g.updatedAt;
           }
         } else {
           groupMap.set(key, {
@@ -242,12 +349,24 @@ export default function OfflineGradesDashboard({
             releaseDate: g.releaseDate || undefined,
             createdAt: g.createdAt || new Date().toISOString(),
             updatedAt: g.updatedAt || new Date().toISOString(),
+            teacherId: g.teacherId || g.teacher?.id || null,
+            teacherName: resolvedTeacherName,
+            teacherCode: g.teacher?.teacherCode || null,
             _scoreSum: numScore,
+            isAssignedSubject: isMatchedSubject,
           });
         }
       });
 
-      return Array.from(groupMap.values());
+      // Sort by date descending (newest assessment records first)
+      const list = Array.from(groupMap.values());
+      list.sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return timeB - timeA;
+      });
+
+      return list;
     },
     enabled: !!schoolId,
     staleTime: 1000 * 60 * 3,
@@ -323,7 +442,7 @@ export default function OfflineGradesDashboard({
           { label: 'Max Score Marks', value: String(record.maxMarks) },
           { label: 'Graded Students', value: `${record.gradedStudents} students` },
           { label: 'Class Average', value: `${record.averageScore.toFixed(1)} / ${record.maxMarks}` },
-          { label: 'Status', value: record.status },
+          { label: 'Status', value: record.status || 'DRAFT' },
         ],
         tableHeaders: [['Item', 'Subject', 'Class', 'Category', 'Average Score', 'Status']],
         tableData: [[
@@ -332,7 +451,7 @@ export default function OfflineGradesDashboard({
           record.className,
           record.category,
           `${record.averageScore.toFixed(1)} / ${record.maxMarks}`,
-          record.status
+          record.status || 'DRAFT'
         ]],
       });
     } else {

@@ -38,24 +38,129 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
     where.subjectPaperId = null;
   }
 
-  // Teacher scoping: ensure teacher can only see grades for their assigned subjects or created by them
-  if (filters.currentTeacherId && schoolId) {
-    const teacherSubjects = await prisma.teacherSubject.findMany({
+  // Teacher scoping: strictly ensure teacher only sees grades for their assigned subjects or created by them
+  if (filters.currentTeacherId) {
+    const subjectNames: string[] = [];
+
+    // Helper to add unique subject name
+    const addSubjectName = (name?: string | null) => {
+      if (!name) return;
+      const trimmed = name.trim();
+      if (trimmed && !subjectNames.some(existing => existing.toLowerCase() === trimmed.toLowerCase())) {
+        subjectNames.push(trimmed);
+      }
+    };
+
+    // 1. Gather all class IDs assigned to this teacher (ClassTeacher, TimetablePeriod, createdBy, RelationshipLink)
+    const [assignedClassTeachers, assignedTimetablePeriods, createdClasses, teacherClassLinks] = await Promise.all([
+      prisma.classTeacher.findMany({
+        where: { teacherId: filters.currentTeacherId },
+        select: { classId: true }
+      }),
+      prisma.timetablePeriod.findMany({
+        where: { teacherId: filters.currentTeacherId },
+        select: { classId: true }
+      }),
+      prisma.class.findMany({
+        where: { createdById: filters.currentTeacherId },
+        select: { id: true }
+      }),
+      prisma.relationshipLink.findMany({
+        where: {
+          classId: { not: null },
+          status: 'ACTIVE',
+          OR: [
+            { leftEntityId: filters.currentTeacherId, leftEntityType: 'TEACHER' },
+            { rightEntityId: filters.currentTeacherId, rightEntityType: 'TEACHER' },
+          ]
+        },
+        select: { classId: true }
+      })
+    ]);
+
+    const assignedClassIdSet = new Set<string>();
+    assignedClassTeachers.forEach(ct => { if (ct.classId) assignedClassIdSet.add(ct.classId); });
+    assignedTimetablePeriods.forEach(tp => { if (tp.classId) assignedClassIdSet.add(tp.classId); });
+    createdClasses.forEach(c => { if (c.id) assignedClassIdSet.add(c.id); });
+    teacherClassLinks.forEach(l => { if (l.classId) assignedClassIdSet.add(l.classId); });
+    const assignedClassIds = Array.from(assignedClassIdSet);
+
+    // 2. Gather subject names assigned to the teacher across their assigned classes
+    // a) Timetable periods where the teacher teaches in these classes
+    const classPeriods = await prisma.timetablePeriod.findMany({
       where: {
         teacherId: filters.currentTeacherId,
-        ...(schoolId && schoolId !== 'all' ? { schoolId } : {})
+        ...(assignedClassIds.length > 0 ? { classId: { in: assignedClassIds } } : {})
       },
-      include: { subject: { select: { name: true } } }
+      include: { subject: { select: { name: true, code: true } } }
     });
-    const subjectNames = teacherSubjects.map(ts => ts.subject?.name).filter(Boolean) as string[];
+    classPeriods.forEach(cp => {
+      addSubjectName(cp.subject?.name);
+      addSubjectName(cp.subject?.code);
+    });
+
+
+
+    // c) Teacher's directly assigned subjects (TeacherSubject)
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+      where: { teacherId: filters.currentTeacherId },
+      include: { subject: { select: { name: true, code: true } } }
+    });
+    teacherSubjects.forEach(ts => {
+      addSubjectName(ts.subject?.name);
+      addSubjectName(ts.subject?.code);
+    });
+
+    // d) Direct Subject table associations (where teacherId = teacher)
+    const directSubjects = await prisma.subject.findMany({
+      where: {
+        OR: [
+          { teacherId: filters.currentTeacherId },
+          { teacherSubjects: { some: { teacherId: filters.currentTeacherId } } }
+        ]
+      },
+      select: { name: true, code: true }
+    });
+    directSubjects.forEach(ds => {
+      addSubjectName(ds.name);
+      addSubjectName(ds.code);
+    });
+
+    // e) Teacher profile focus subjects
+    const teacherProfile = await prisma.teacher.findUnique({
+      where: { id: filters.currentTeacherId },
+      select: { subject: true }
+    });
+    if (teacherProfile?.subject) {
+      teacherProfile.subject.split(',').forEach(s => {
+        addSubjectName(s);
+      });
+    }
+
+    // Build the teacher scope conditions:
+    // Grades created/graded by this teacher,
+    // OR grades in classes assigned to this teacher,
+    // OR grades for subjects assigned to this teacher.
+    const teacherScopeConditions: Record<string, any>[] = [
+      { teacherId: filters.currentTeacherId }
+    ];
+
+    if (assignedClassIds.length > 0) {
+      teacherScopeConditions.push({
+        classId: { in: assignedClassIds }
+      });
+    }
+
+    if (subjectNames.length > 0) {
+      teacherScopeConditions.push({
+        subject: { in: subjectNames, mode: 'insensitive' as const }
+      });
+    }
 
     where.AND = [
       ...(where.AND || []),
       {
-        OR: [
-          { teacherId: filters.currentTeacherId },
-          ...(subjectNames.length > 0 ? [{ subject: { in: subjectNames, mode: 'insensitive' as const } }] : [])
-        ]
+        OR: teacherScopeConditions
       }
     ];
   }
@@ -84,6 +189,9 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
         },
         subjectPaper: {
           select: { id: true, title: true, subject: { select: { id: true, name: true } } }
+        },
+        teacher: {
+          select: { id: true, name: true, teacherCode: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -91,12 +199,62 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
     prisma.grade.count({ where })
   ]);
 
-  return { grades, total };
+  // Resolve creator names for grades where teacherId is an admin or teacher
+  const unresolvedTeacherIds = Array.from(
+    new Set(
+      grades
+        .filter(g => g.teacherId && !g.teacher)
+        .map(g => g.teacherId as string)
+    )
+  );
+
+  let adminNameMap = new Map<string, string>();
+  let teacherNameMap = new Map<string, string>();
+
+  if (unresolvedTeacherIds.length > 0) {
+    const [admins, teachers] = await Promise.all([
+      prisma.admin.findMany({
+        where: { id: { in: unresolvedTeacherIds } },
+        select: { id: true, name: true }
+      }),
+      prisma.teacher.findMany({
+        where: { id: { in: unresolvedTeacherIds } },
+        select: { id: true, name: true }
+      })
+    ]);
+    admins.forEach(a => adminNameMap.set(a.id, a.name));
+    teachers.forEach(t => teacherNameMap.set(t.id, t.name));
+  }
+
+  const enhancedGrades = grades.map(g => {
+    let resolvedName: string | undefined = g.teacher?.name;
+    if (!resolvedName && g.teacherId) {
+      resolvedName = teacherNameMap.get(g.teacherId) || adminNameMap.get(g.teacherId) || undefined;
+    }
+    return {
+      ...g,
+      creatorName: resolvedName || (g.teacher?.name ?? null)
+    };
+  });
+
+  return { grades: enhancedGrades, total };
 };
 
 export const createGradeEntryService = async (data: any, userId: string, userRole: string) => {
+  let resolvedTeacherId: string | undefined = data.teacherId;
+  if (!resolvedTeacherId && userRole === 'TEACHER' && userId) {
+    const teacherRecord = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: userId }, { email: userId }]
+      },
+      select: { id: true }
+    });
+    resolvedTeacherId = teacherRecord?.id || userId;
+  }
+
   const gradeData = {
     ...data,
+    teacherId: resolvedTeacherId || undefined,
     score: Number(data.score),
     maxMarks: Number(data.maxMarks),
     weight: Number(data.weight || 1.0),
@@ -338,7 +496,16 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
   // Resolve teacher record ID if created by teacher
   let resolvedTeacherId: string | undefined = undefined;
   if (userRole === 'TEACHER' && userId) {
-    resolvedTeacherId = userId;
+    const teacherRecord = await prisma.teacher.findFirst({
+      where: {
+        OR: [
+          { id: userId },
+          { email: userId },
+        ]
+      },
+      select: { id: true }
+    });
+    resolvedTeacherId = teacherRecord?.id || userId;
   }
 
   // Resolve studentName -> studentId if studentId is missing

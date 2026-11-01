@@ -100,11 +100,11 @@ export default function TopNavBar() {
   const firstName = displayName?.split(" ")[0] ?? "Teacher";
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center bg-white/90 dark:bg-neutral-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/5 transition-all duration-500 px-4 md:px-6">
-      <div className="flex items-center justify-between w-full max-w-[1800px] mx-auto gap-3">
+    <header className="sticky top-0 z-30 h-16 flex items-center bg-white/90 dark:bg-neutral-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/5 transition-all duration-500 px-3 sm:px-4 md:px-6">
+      <div className="flex items-center justify-between w-full max-w-[1800px] mx-auto gap-2 sm:gap-3">
 
         {/* ── LEFT: Sidebar toggle + Identity block ────────────────────── */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-start min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-1 justify-start min-w-0">
           {/* Mobile drawer */}
           <TeacherMobileDrawer />
 
@@ -121,7 +121,7 @@ export default function TopNavBar() {
           </div>
         </div>
 
-        {/* ── CENTRE: Optimized Command Search ────────────────────────── */}
+        {/* ── CENTRE: Global Command Search ────────────────────────── */}
         <GlobalCommandSearch
           role="teacher"
           featureFlags={currentFeatures}
@@ -129,11 +129,13 @@ export default function TopNavBar() {
         />
 
         {/* ── RIGHT: Actions + Profile ──────────────────────────────────── */}
-        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          {/* QR button */}
+        <div className="flex items-center gap-1.5 sm:gap-2 justify-end shrink-0">
+
+          {/* QR button (hidden on very narrow screens < 380px to prevent crowding) */}
           <button
             onClick={() => setIsQRModalOpen(true)}
-            className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-600 transition-all border border-slate-200/80 dark:border-white/5 shadow-sm"
+            className="hidden xs:flex items-center justify-center w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-600 transition-all border border-slate-200/80 dark:border-white/5 shadow-2xs"
+            aria-label="Scan QR Code"
           >
             <QrCode className="w-4 h-4 text-emerald-500" />
           </button>
@@ -145,7 +147,7 @@ export default function TopNavBar() {
           <DropdownMenu onOpenChange={setIsProfileOpen}>
             <DropdownMenuTrigger asChild>
               <div
-                className="flex items-center gap-2.5 pl-1 pr-3 py-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-white/10 hover:border-emerald-400/40 hover:shadow-md transition-all duration-300 group shadow-sm ml-1 cursor-pointer"
+                className="flex items-center gap-2 pl-1 pr-2 sm:pr-3 py-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-white/10 hover:border-emerald-400/40 hover:shadow-md transition-all duration-300 group shadow-sm ml-0.5 sm:ml-1 cursor-pointer shrink-0"
               >
                 {/* Avatar */}
                 <div className="relative h-7 w-7 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-500/15 group-hover:ring-emerald-500/40 transition-all duration-300">

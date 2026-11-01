@@ -24,7 +24,7 @@ import ExamsPage from './exams&quizzes/page';
 import GradesPage from './grades/page';
 import TimetablePage from './timetable/page';
 import AttendancePage from './attendance/page';
-import OfflineGradesDashboard from '@/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard';
+import TeacherClassOfflineGrades from './TeacherClassOfflineGrades';
 
 import { TabSkeleton } from './TabSkeleton';
 export default function ClassDetails() {
@@ -100,7 +100,11 @@ export default function ClassDetails() {
       label: 'Offline Grades',
       content: (
         <div className="w-full max-w-full overflow-hidden">
-          <OfflineGradesDashboard defaultClassId={classId} hideClassFilter={true} />
+          <TeacherClassOfflineGrades
+            classId={classId}
+            schoolId={classData?.schoolId}
+            teacherClassDetail={teacherClassDetail}
+          />
         </div>
       )
     },
@@ -145,70 +149,104 @@ export default function ClassDetails() {
       </div>
 
       {/* Full-Width Institutional Page Header Card */}
-      <div className="bg-white dark:bg-emerald-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200/80 dark:border-emerald-800/60 shadow-sm flex flex-col md:flex-row gap-5 md:gap-8 justify-between items-start md:items-center relative overflow-hidden">
+      <div className="bg-white dark:bg-emerald-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200/80 dark:border-emerald-800/60 shadow-sm relative overflow-hidden">
         {/* Ambient Emerald Glow Accent */}
         <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col gap-2 z-10 w-full md:w-auto">
+        <div className="relative z-10 w-full">
           {loading ? (
-            <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
+            <div className="space-y-4">
+              <div className="h-10 w-64 bg-slate-200 dark:bg-emerald-900/40 rounded-xl animate-pulse" />
+              <div className="h-6 w-96 bg-slate-100 dark:bg-emerald-950/40 rounded-lg animate-pulse" />
+            </div>
           ) : (
-            <div className="flex items-center gap-3.5 sm:gap-4">
-              <div className="size-14 sm:size-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl sm:text-2xl border border-emerald-200 dark:border-emerald-800/60 shrink-0 shadow-2xs">
-                {classData?.name?.charAt(0) || "C"}
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-black tracking-tight truncate">
-                  {classData?.name} {classData?.section ? <span className="text-emerald-600 dark:text-emerald-400">({classData.section})</span> : ""}
-                </h1>
-                <div className="text-slate-500 dark:text-slate-400 mt-1.5 font-medium flex items-center gap-2 sm:gap-3 text-xs sm:text-sm flex-wrap">
-                  <span className="flex items-center gap-1.5 shrink-0 font-semibold text-emerald-600 dark:text-emerald-400">
+            <div className="flex flex-col gap-4 sm:gap-5">
+              {/* Primary Header Row: Avatar, Title, Active Status */}
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="size-12 sm:size-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl sm:text-2xl border border-emerald-200 dark:border-emerald-800/60 shrink-0 shadow-2xs">
+                    {classData?.name?.charAt(0) || "C"}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="text-slate-900 dark:text-white text-xl sm:text-2xl md:text-3xl font-black tracking-tight">
+                        {classData?.name} {classData?.section ? <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">({classData.section})</span> : ""}
+                      </h1>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Class Cohort & Academic Overview
+                    </p>
+                  </div>
+                </div>
+
+                {/* Active Cohort status badge */}
+                <div className="flex items-center gap-2 self-start sm:self-center">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 shadow-2xs">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     Active Cohort
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
-                  <span className="font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-bold shrink-0">
-                    Code: {classData?.classCode}
-                  </span>
-                  {classData?.level && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Level: <strong className="text-slate-900 dark:text-white">{classData.level}</strong>
-                      </span>
-                    </>
-                  )}
-                  {displaySession && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Session: <strong className="text-slate-900 dark:text-white">{displaySession}</strong>
-                      </span>
-                    </>
-                  )}
-                  {classData?.term && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Term: <strong className="text-slate-900 dark:text-white">{classData.term}</strong>
-                      </span>
-                    </>
-                  )}
-                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
-                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
-                    {classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0} Scholars Enrolled
-                  </span>
-                  {teacherClassDetail?.classInfo?.subject && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:inline-block" />
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
-                        <BookOpen className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                        Focus Subject: <strong className="text-emerald-800 dark:text-emerald-200">{teacherClassDetail.classInfo.subject}</strong>
-                      </span>
-                    </>
-                  )}
                 </div>
               </div>
+
+              {/* Metadata Badges Grid / Wrap */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-1">
+                {classData?.classCode && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-bold text-xs shadow-2xs">
+                    <span className="text-slate-400 dark:text-slate-500 font-medium">Code:</span>
+                    <span className="font-mono text-slate-900 dark:text-white">{classData.classCode}</span>
+                  </div>
+                )}
+
+                {classData?.level && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-bold text-xs shadow-2xs">
+                    <span className="text-slate-400 dark:text-slate-500 font-medium">Level:</span>
+                    <span className="text-slate-900 dark:text-white">{classData.level}</span>
+                  </div>
+                )}
+
+                {displaySession && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-bold text-xs shadow-2xs">
+                    <span className="text-slate-400 dark:text-slate-500 font-medium">Session:</span>
+                    <span className="text-slate-900 dark:text-white">{displaySession}</span>
+                  </div>
+                )}
+
+                {classData?.term && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-bold text-xs shadow-2xs">
+                    <span className="text-slate-400 dark:text-slate-500 font-medium">Term:</span>
+                    <span className="text-slate-900 dark:text-white">{classData.term}</span>
+                  </div>
+                )}
+
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs shadow-2xs">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <span>{classData?._count?.enrollments ?? classData?.enrollments?.length ?? 0} Scholars Enrolled</span>
+                </div>
+              </div>
+
+              {/* Focus Subjects Container */}
+              {teacherClassDetail?.classInfo?.subject && (
+                <div className="pt-2 border-t border-slate-100 dark:border-emerald-900/40 flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
+                    <BookOpen className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Focus Subject:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {teacherClassDetail.classInfo.subject.split(',').map((sub: string, idx: number) => {
+                      const trimmed = sub.trim();
+                      if (!trimmed) return null;
+                      return (
+                        <span 
+                          key={idx}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-200 font-semibold text-xs transition-colors"
+                        >
+                          {trimmed}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
+import prisma from "../../config/database";
 import * as gradeService from "./grade.service";
 import { handleError } from "../../utils/error-handler";
+import { hasActiveSchoolAccess } from "../../utils/school-access";
 
 export const getGradeHub = async (req: Request, res: Response) => {
   try {
@@ -13,11 +15,36 @@ export const getGradeHub = async (req: Request, res: Response) => {
 
     const queryFilters = { ...req.query };
     if (userRole !== 'SUPER_ADMIN') {
-      // Strictly enforce connected school boundary for all tenants
-      if (userSchoolId && req.query.schoolId && userSchoolId !== req.query.schoolId) {
-        return res.status(403).json({ success: false, message: "You are not authorized to access grades for a different school." });
+      const requestedSchoolId = req.query.schoolId as string | undefined;
+
+      if (userRole === 'TEACHER') {
+        // Teachers can teach across multiple linked schools. Validate active connection
+        if (requestedSchoolId && requestedSchoolId !== 'all') {
+          const hasAccess = await hasActiveSchoolAccess({
+            userId,
+            userType: userRole,
+            schoolId: requestedSchoolId,
+          });
+          const teacher = !hasAccess ? await prisma.teacher.findUnique({
+            where: { id: userId },
+            select: { activeSchoolId: true, primarySchoolId: true }
+          }) : null;
+          const isDirectlyAssociated = teacher?.activeSchoolId === requestedSchoolId || teacher?.primarySchoolId === requestedSchoolId;
+
+          if (!hasAccess && !isDirectlyAssociated) {
+            return res.status(403).json({ success: false, message: "You are not authorized to access grades for a different school." });
+          }
+          targetSchoolId = requestedSchoolId;
+        } else {
+          targetSchoolId = userSchoolId;
+        }
+      } else {
+        // Strictly enforce connected school boundary for other roles
+        if (userSchoolId && requestedSchoolId && userSchoolId !== requestedSchoolId) {
+          return res.status(403).json({ success: false, message: "You are not authorized to access grades for a different school." });
+        }
+        targetSchoolId = userSchoolId || requestedSchoolId;
       }
-      targetSchoolId = userSchoolId || (req.query.schoolId as string);
     }
 
     if (userRole === 'TEACHER') {
@@ -108,9 +135,43 @@ export const bulkCreateGrades = async (req: Request, res: Response) => {
 
     if (userRole !== 'SUPER_ADMIN') {
       if (userSchoolId && schoolId && userSchoolId !== schoolId) {
-        return res.status(403).json({ success: false, message: "You are not authorized to record grades for another school." });
+        // If user is a teacher, verify whether they teach in this target school via ClassTeacher, TeacherSubject, or RelationshipLink
+        let isAuthorizedAffiliate = false;
+        if (userRole === 'TEACHER') {
+          const [hasRel, hasSub, hasClass] = await Promise.all([
+            prisma.relationshipLink.findFirst({
+              where: {
+                schoolId,
+                status: 'ACTIVE',
+                OR: [
+                  { leftEntityId: userId, leftEntityType: 'TEACHER' },
+                  { rightEntityId: userId, rightEntityType: 'TEACHER' },
+                ],
+              },
+              select: { id: true },
+            }),
+            prisma.teacherSubject.findFirst({
+              where: { teacherId: userId, schoolId },
+              select: { id: true },
+            }),
+            prisma.classTeacher.findFirst({
+              where: {
+                teacherId: userId,
+                class: { schoolId },
+              },
+              select: { id: true },
+            }),
+          ]);
+          if (hasRel || hasSub || hasClass) {
+            isAuthorizedAffiliate = true;
+          }
+        }
+
+        if (!isAuthorizedAffiliate) {
+          return res.status(403).json({ success: false, message: "You are not authorized to record grades for another school." });
+        }
       }
-      schoolId = userSchoolId || schoolId;
+      schoolId = schoolId || userSchoolId;
     }
 
     const result = await gradeService.bulkCreateGradesService(schoolId, grades, userId, userRole);

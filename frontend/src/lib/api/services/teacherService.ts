@@ -64,6 +64,17 @@ export const teacherService = {
   },
 
   /**
+   * Get offline grades for a specific class assigned to the teacher
+   */
+  getClassOfflineGrades: async (classId: string, options: { schoolId?: string; subject?: string; category?: string; term?: string } = {}) => {
+    const response = await apiClient.get<{ success: boolean; data: any[]; classInfo?: any; total?: number }>(
+      `/teacher/classes/${classId}/offline-grades`,
+      { params: options }
+    );
+    return response.data;
+  },
+
+  /**
    * Create an assignment
    */
   createAssignment: async (data: any) => {

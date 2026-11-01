@@ -17,7 +17,8 @@ import {
   RotateCcw,
   Loader2,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -192,7 +193,7 @@ export default function RecordScoreEntryModal({
     releaseDate: initialRecord?.releaseDate
       ? new Date(initialRecord.releaseDate).toISOString().slice(0, 16)
       : '',
-    status: initialRecord?.status || 'DRAFT',
+    status: initialRecord?.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
   });
 
   // Track open state and record identity to prevent redundant state resets
@@ -204,6 +205,16 @@ export default function RecordScoreEntryModal({
 
   // Track the original assessment type when editing an existing assessment batch
   const originalAssessmentTypeRef = useRef<string | undefined>(undefined);
+
+  // Local storage auto-draft keys and tracking
+  const [hasLocalDraft, setHasLocalDraft] = useState(false);
+  const isRestoredDraftRef = useRef(false);
+
+  const getDraftStorageKey = useCallback((targetClassId?: string) => {
+    const cId = targetClassId || config.classId || 'default';
+    const uId = user?.id || 'guest';
+    return `qefas_offline_grade_draft_${cId}_${uId}`;
+  }, [config.classId, user?.id]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -224,6 +235,8 @@ export default function RecordScoreEntryModal({
 
       if (initialRecord) {
         originalAssessmentTypeRef.current = initialRecord.assessmentType;
+        setHasLocalDraft(false);
+        isRestoredDraftRef.current = false;
         setConfig({
           classId: initialRecord.classId,
           className: initialRecord.className,
@@ -240,7 +253,7 @@ export default function RecordScoreEntryModal({
           releaseDate: initialRecord.releaseDate
             ? new Date(initialRecord.releaseDate).toISOString().slice(0, 16)
             : '',
-          status: initialRecord.status,
+          status: initialRecord.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
         });
       } else {
         const cat: OfflineAssessmentCategory = defaultCategory || 'CA';
@@ -249,33 +262,68 @@ export default function RecordScoreEntryModal({
           (cat === 'CA' ? 20 : cat === 'QUIZ' ? 10 : cat === 'MIDTERM' ? 40 : 100);
         const targetClass = defaultClassId ? classes.find((c) => c.id === defaultClassId) : null;
 
-        setConfig({
-          classId: defaultClassId || '',
-          className: targetClass?.name
-            ? `${targetClass.name} ${targetClass.section || ''}`.trim()
-            : '',
-          departmentId: 'ALL',
-          departmentName: undefined,
-          subject: defaultSubject || '',
-          category: cat,
-          assessmentType:
-            cat === 'EXAM'
-              ? 'Terminal Exam 1'
-              : cat === 'ASSIGNMENT'
-              ? 'Physical Assignment 1'
-              : cat === 'QUIZ'
-              ? 'Quiz 1'
-              : cat === 'MIDTERM'
-              ? 'Mid-Term Test'
-              : 'Continuous Assessment 1',
-          maxMarks: defaultMax,
-          weight: 1.0,
-          term: currentTerm,
-          sessionId: currentSession?.id || '',
-          sessionName: currentSession?.name || '',
-          releaseDate: '',
-          status: 'DRAFT',
-        });
+        // Check if an unsaved browser draft exists for this class
+        let restoredDraft: { config?: Partial<OfflineGradesBatchConfig>; rosterScores?: Record<string, { score: number | string; remarks?: string }> } | null = null;
+        try {
+          const draftKey = getDraftStorageKey(defaultClassId);
+          const raw = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
+          if (raw) {
+            restoredDraft = JSON.parse(raw);
+          }
+        } catch {
+          // ignore parsing error
+        }
+
+        if (restoredDraft && restoredDraft.config) {
+          setHasLocalDraft(true);
+          isRestoredDraftRef.current = true;
+          setConfig({
+            classId: restoredDraft.config.classId || defaultClassId || '',
+            className: restoredDraft.config.className || (targetClass?.name ? `${targetClass.name} ${targetClass.section || ''}`.trim() : ''),
+            departmentId: restoredDraft.config.departmentId || 'ALL',
+            departmentName: restoredDraft.config.departmentName,
+            subject: restoredDraft.config.subject || defaultSubject || '',
+            category: restoredDraft.config.category || cat,
+            assessmentType: restoredDraft.config.assessmentType || (cat === 'EXAM' ? 'Terminal Exam 1' : 'Continuous Assessment 1'),
+            maxMarks: restoredDraft.config.maxMarks || defaultMax,
+            weight: restoredDraft.config.weight || 1.0,
+            term: restoredDraft.config.term || currentTerm,
+            sessionId: restoredDraft.config.sessionId || currentSession?.id || '',
+            sessionName: restoredDraft.config.sessionName || currentSession?.name || '',
+            releaseDate: restoredDraft.config.releaseDate || '',
+            status: 'DRAFT',
+          });
+        } else {
+          setHasLocalDraft(false);
+          isRestoredDraftRef.current = false;
+          setConfig({
+            classId: defaultClassId || '',
+            className: targetClass?.name
+              ? `${targetClass.name} ${targetClass.section || ''}`.trim()
+              : '',
+            departmentId: 'ALL',
+            departmentName: undefined,
+            subject: defaultSubject || '',
+            category: cat,
+            assessmentType:
+              cat === 'EXAM'
+                ? 'Terminal Exam 1'
+                : cat === 'ASSIGNMENT'
+                ? 'Physical Assignment 1'
+                : cat === 'QUIZ'
+                ? 'Quiz 1'
+                : cat === 'MIDTERM'
+                ? 'Mid-Term Test'
+                : 'Continuous Assessment 1',
+            maxMarks: defaultMax,
+            weight: 1.0,
+            term: currentTerm,
+            sessionId: currentSession?.id || '',
+            sessionName: currentSession?.name || '',
+            releaseDate: '',
+            status: 'DRAFT',
+          });
+        }
       }
     }
   }, [
@@ -443,7 +491,8 @@ export default function RecordScoreEntryModal({
         .filter((s) => !!s.name);
     }
 
-    return rawClassSubjects;
+    // Teacher has no assigned subjects for this class/school - do NOT leak all subjects
+    return [];
   }, [rawClassSubjects, isTeacher, teacherAssignedSubjectIds, teacherAssignedSubjectNames, teacherSubjectsData]);
 
   // Available departments in this class
@@ -643,17 +692,43 @@ export default function RecordScoreEntryModal({
       const existing = existingMap.get(student.id);
       const passedInScore = initialScores?.[student.id];
 
+      // Check if restored browser draft has a score for this student
+      let draftScore: number | string | undefined = undefined;
+      let draftRemarks: string | undefined = undefined;
+      if (!initialRecord && isRestoredDraftRef.current) {
+        try {
+          const draftKey = getDraftStorageKey(config.classId);
+          const raw = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.rosterScores && parsed.rosterScores[student.id]) {
+              draftScore = parsed.rosterScores[student.id].score;
+              draftRemarks = parsed.rosterScores[student.id].remarks;
+            }
+          }
+        } catch {
+          // ignore error
+        }
+      }
+
+      // Only populate from existing database records if we are explicitly editing an existing assessment record (initialRecord)
+      const shouldCheckExistingDb = Boolean(initialRecord);
+
       const scoreVal =
-        passedInScore !== undefined
+        draftScore !== undefined && draftScore !== ''
+          ? draftScore
+          : passedInScore !== undefined
           ? passedInScore.score
-          : existing !== undefined
+          : shouldCheckExistingDb && existing !== undefined
           ? existing.score
           : '';
 
       const remarksVal =
-        passedInScore?.remarks !== undefined
+        draftRemarks !== undefined
+          ? draftRemarks
+          : passedInScore?.remarks !== undefined
           ? passedInScore.remarks
-          : existing?.remarks !== undefined
+          : shouldCheckExistingDb && existing?.remarks !== undefined
           ? existing.remarks
           : '';
 
@@ -685,7 +760,56 @@ export default function RecordScoreEntryModal({
     config.subject,
     initialScores,
     isStudentAssociatedWithSubject,
+    getDraftStorageKey,
   ]);
+
+  // Auto-save draft changes to localStorage when editing a new assessment
+  useEffect(() => {
+    if (!isOpen || initialRecord) return;
+    if (!config.classId || roster.length === 0) return;
+
+    // Check if there are any entered scores or remarks, or a custom assessment title
+    const hasAnyMarks = roster.some((r) => r.score !== '' && r.score !== null && r.score !== undefined);
+    const hasRemarks = roster.some((r) => Boolean(r.remarks?.trim()));
+    const hasCustomTitle = Boolean(config.assessmentType?.trim() && config.assessmentType !== 'Continuous Assessment 1');
+
+    if (hasAnyMarks || hasRemarks || hasCustomTitle) {
+      const scoresMap: Record<string, { score: number | string; remarks?: string }> = {};
+      roster.forEach((r) => {
+        if (r.score !== '' || (r.remarks && r.remarks.trim())) {
+          scoresMap[r.studentId] = { score: r.score, remarks: r.remarks };
+        }
+      });
+
+      const draftPayload = {
+        config,
+        rosterScores: scoresMap,
+        updatedAt: Date.now(),
+      };
+
+      try {
+        const draftKey = getDraftStorageKey(config.classId);
+        localStorage.setItem(draftKey, JSON.stringify(draftPayload));
+        setHasLocalDraft(true);
+      } catch {
+        // quota exceeded or storage disabled
+      }
+    }
+  }, [config, roster, isOpen, initialRecord, getDraftStorageKey]);
+
+  // Clear browser draft and reset roster to a fresh state
+  const handleClearDraft = useCallback(() => {
+    try {
+      const draftKey = getDraftStorageKey(config.classId);
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
+    setHasLocalDraft(false);
+    isRestoredDraftRef.current = false;
+    setRoster((prev) => prev.map((item) => ({ ...item, score: '', remarks: '' })));
+    toast.info('Draft cleared. Loaded a fresh marksheet.');
+  }, [config.classId, getDraftStorageKey]);
 
   // Roster loading condition:
   // Shows full skeleton when class details are loading, or when editing an existing record until scores are synced,
@@ -781,6 +905,15 @@ export default function RecordScoreEntryModal({
       return gradeService.bulkCreateGrades(schoolId, gradesToSubmit);
     },
     onSuccess: (_, targetStatus) => {
+      // Clear localStorage draft upon successful server save
+      try {
+        const draftKey = getDraftStorageKey(config.classId);
+        localStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
+      setHasLocalDraft(false);
+
       toast.success(
         targetStatus === 'PUBLISHED'
           ? 'Marks published and applied to grade sheets successfully!'
@@ -942,7 +1075,7 @@ export default function RecordScoreEntryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[96vw] max-w-7xl 2xl:max-w-[1500px] h-[92vh] max-h-[95vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden">
+      <DialogContent showCloseButton={false} className="w-[96vw] max-w-7xl 2xl:max-w-[1500px] h-[92vh] max-h-[95vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden">
         {/* Hidden Accessibility Header */}
         <DialogHeader className="sr-only">
           <DialogTitle>Record Offline Assessment Scores</DialogTitle>
@@ -979,6 +1112,12 @@ export default function RecordScoreEntryModal({
                     {config.category}
                   </span>
                 )}
+                {hasLocalDraft && !initialRecord && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                    <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Auto-saved draft
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Seamless mark entry, optical scan import, and grade sheet publishing.
@@ -987,6 +1126,20 @@ export default function RecordScoreEntryModal({
           </div>
 
           <div className="flex items-center gap-2">
+            {hasLocalDraft && !initialRecord && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClearDraft}
+                className="h-9 px-3 rounded-xl border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold text-xs gap-1.5 cursor-pointer shadow-xs transition-colors"
+                title="Discard browser saved draft and load a fresh empty marksheet"
+              >
+                <Trash2 size={13} />
+                <span>Clear Draft</span>
+              </Button>
+            )}
+
             <Button
               type="button"
               variant="outline"
@@ -994,7 +1147,6 @@ export default function RecordScoreEntryModal({
               onClick={onClose}
               className="h-9 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 font-bold text-xs sm:text-sm shadow-xs cursor-pointer transition-colors"
             >
-              <X size={15} className="mr-1.5 text-slate-500 dark:text-slate-400" />
               Cancel
             </Button>
             <Button

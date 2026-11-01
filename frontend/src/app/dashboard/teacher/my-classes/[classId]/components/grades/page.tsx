@@ -114,30 +114,31 @@ export default function GradesPage() {
   }, [subjectsData, classDetailData])
 
   const grades: StudentGrade[] = useMemo(() => (data || []).map((g: any) => {
-    let normalizedTotal = g.grades.total || 0;
-    
+    let normalizedTotal = g.grades?.total || 0;
+    const filteredIndividualGrades = (g.individualGrades || []).filter((ig: any) => {
+      if (ig.teacherId && currentTeacherId && ig.teacherId === currentTeacherId) return true;
+      const subName = (ig.subject || '').trim().toLowerCase();
+      if (subName && authorizedSubjects.has(subName)) return true;
+      return false;
+    });
+
     if (g.status === 'graded') {
-      const caScore = g.grades.continuousAssessment?.score || 0;
-      const caTotal = g.grades.continuousAssessment?.total || 0;
-      const examScore = g.grades.exams?.score || 0;
-      const examTotal = g.grades.exams?.total || 0;
+      const earned = filteredIndividualGrades.reduce((sum: number, item: any) => sum + (Number(item.score) || 0), 0);
+      const maxPossible = filteredIndividualGrades.reduce((sum: number, item: any) => sum + (Number(item.maxMarks) || 0), 0);
       
-      const earnedScore = caScore + examScore;
-      const maxPossibleScore = caTotal + examTotal;
-      
-      if (maxPossibleScore > 0) {
-        normalizedTotal = Math.round((earnedScore / maxPossibleScore) * 100);
-      } else if (g.grades.total > 100) {
-        normalizedTotal = g.grades.total;
+      if (maxPossible > 0) {
+        normalizedTotal = Math.round((earned / maxPossible) * 100);
+      } else {
+        const caScore = g.grades.continuousAssessment?.score || 0;
+        const caTotal = g.grades.continuousAssessment?.total || 0;
+        const examScore = g.grades.exams?.score || 0;
+        const examTotal = g.grades.exams?.total || 0;
+        const totalPossible = caTotal + examTotal;
+        if (totalPossible > 0) {
+          normalizedTotal = Math.round(((caScore + examScore) / totalPossible) * 100);
+        }
       }
     }
-
-    const filteredIndividualGrades = (g.individualGrades || []).filter((ig: any) => {
-      if (authorizedSubjects.size === 0) return true;
-      if (ig.teacherId && currentTeacherId && ig.teacherId === currentTeacherId) return true;
-      const subName = (ig.subject || '').toLowerCase();
-      return !subName || subName === 'general' || authorizedSubjects.has(subName);
-    });
 
     return {
       id: g.id,
@@ -149,7 +150,7 @@ export default function GradesPage() {
         ...g.grades,
         total: normalizedTotal,
       },
-      status: g.status,
+      status: filteredIndividualGrades.length > 0 ? (g.status || 'graded') : 'pending',
       lastUpdated: g.lastUpdated ? new Date(g.lastUpdated) : undefined
     };
   }), [data, authorizedSubjects, currentTeacherId])

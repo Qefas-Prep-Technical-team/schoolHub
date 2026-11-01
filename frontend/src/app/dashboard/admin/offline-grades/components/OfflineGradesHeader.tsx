@@ -49,8 +49,8 @@ interface OfflineGradesHeaderProps {
   isTeacher?: boolean;
   isLoadingRoster: boolean;
   isLoadingSubjects?: boolean;
-  isSaving: boolean;
-  onSave: (status: 'DRAFT' | 'PUBLISHED') => void;
+  isSaving?: boolean;
+  onSave?: (status: 'DRAFT' | 'PUBLISHED') => void;
   onOpenCSVModal: () => void;
   onOpenOCRModal: () => void;
   onExportPDF: () => void;
@@ -100,7 +100,7 @@ export default function OfflineGradesHeader({
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                Offline Grades & Assessment Pad
+                {config.assessmentType?.trim() ? config.assessmentType : 'Offline Grades & Assessment Pad'}
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -191,29 +191,6 @@ export default function OfflineGradesHeader({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1" />
-
-          <Button
-            type="button"
-            disabled={isSaving || !config.classId || !config.subject}
-            onClick={() => onSave('DRAFT')}
-            variant="outline"
-            className="h-10 px-4 rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save size={14} />
-            Save Draft
-          </Button>
-
-          <Button
-            type="button"
-            disabled={isSaving || !config.classId || !config.subject}
-            onClick={() => onSave('PUBLISHED')}
-            className={`h-10 px-5 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'} text-white font-bold text-xs gap-1.5 shadow-md dark:shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <CheckCircle2 size={14} />
-            {isSaving ? 'Saving...' : 'Publish Grades'}
-          </Button>
         </div>
       </div>
 
