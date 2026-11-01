@@ -73,7 +73,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         </div>
       </div>
 
-      <div className="w-full h-72">
+      <div className="w-full h-72 sm:h-80 xl:h-96">
         {!hasData ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-850 rounded-full flex items-center justify-center mb-3 text-gray-400">

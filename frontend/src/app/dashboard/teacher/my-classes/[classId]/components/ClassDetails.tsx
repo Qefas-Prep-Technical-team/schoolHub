@@ -143,7 +143,7 @@ export default function ClassDetails() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto min-w-0 space-y-6">
+    <div className="w-full max-w-[1600px] mx-auto min-w-0 space-y-6">
       <div className="mb-2">
         <Breadcrumbs items={breadcrumbItems} />
       </div>
