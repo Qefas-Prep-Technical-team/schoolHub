@@ -15,6 +15,90 @@
 
 ## Blockers
 
+- [x] **Student Exam Smart Routing — Direct Taker Navigation (Sunday, November 1, 2026)**:
+  - **Problem**: Clicking an exam card/row from `/dashboard/student/exams&quizzes` (both grid and table view) or the class detail assessments tab always routed to the preview/details page, giving no direct path to actually start the exam.
+  - **Fix**: Added smart routing in `AssessmentItem.tsx`, `AssessmentList.tsx`, and `my-classes/[id]/page.tsx`:
+    - Live/ongoing exams → `/Exams&Quizzes/exam/[examId]` (exam taker directly)
+    - Upcoming / closed / graded / submitted → `/dashboard/student/exams&quizzes/[examId]` (preview page)
+  - Grid card footer label updated: `"Start Exam"` for live, `"View Details"` for others.
+  - TSC check: exit code 0, 0 new errors.
+
+- [x] **Student Grades & Exams Department Scoping & Offline Results Verification (Sunday, November 1, 2026)**:
+  - **Grades Page Transcript Tab (`/dashboard/student/grades`)**:
+    - Removed `'transcript'` from the active tabs list and `activeTab` union state type (`'exams' | 'assessments' | 'final'`).
+    - Removed the academic transcript tab content panel and container while preserving the header "Export Transcript" PDF action button.
+  - **Exams & Quizzes Department Subject Filter (`/dashboard/student/exams&quizzes`)**:
+    - **Backend (`exam.service.ts` & `assignment.service.ts`)**:
+      - Added department subject scoping: when a student has a department (`student.departmentId`), queries `DepartmentSubject` to resolve all assigned subject IDs.
+      - Exams are filtered server-side to only those matching the department's subjects (`subjectId in deptSubjectIds` or `subjectExamPapers.subjectPaper.subjectId in deptSubjectIds` or general non-subject exams).
+      - Assignments are filtered server-side to only those matching `subjectId in deptSubjectIds`.
+      - If student is NOT in any department (`student.departmentId === null`), all assessments for their class/school are shown.
+    - **Frontend (`student/exams&quizzes/page.tsx`)**:
+      - Updated `allAssessments` mapping to properly resolve `exam.subject?.name` or `subjectPaper.subject?.name`.
+      - Enhanced `filteredAssessments` to check department subjects from `studentProfile.department.subjects` and student class curriculum.
+      - Excludes any assessments not in the student's department subjects when a department is selected, while showing all if no department is selected.
+  - **Offline Grades Student Scoping Confirmed (`/dashboard/student/offline-grades`)**:
+    - Confirmed that offline grades are double-guarded:
+      - Backend endpoint (`GET /academic/grades`) strictly derives `studentId` from JWT token when `userRole === 'STUDENT'` and only returns records where `studentId === req.user.id` and `status === 'PUBLISHED'`.
+      - Frontend [`offline-grades/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/offline-grades/page.tsx) strictly filters with `isOfflineGradeRecord(g)` and `g.studentId === (studentProfile?.id || user?.id)`.
+      - Students can only ever see published offline results created for themselves by teachers or admins.
+
+- [x] **Student My-Classes, Class Banner Buttons, and Exam Department Guard (Sunday, November 1, 2026)**:
+  - **My-Classes Department Badge (`/dashboard/student/my-classes`)**:
+    - Added `hasDeptFilter?: boolean` to the `ClassItem` interface in [`ClassTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassTable.tsx).
+    - Updated [`ClassCard.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassCard.tsx) to show a "Dept. Only" filter pill badge (Filter icon, pink) in the top-right of each card when `hasDeptFilter` is true. Curriculum section label also changes to "Dept. Curriculum" to communicate scoping clearly.
+    - Updated [`ClassTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassTable.tsx) to show a compact "Dept" filter chip next to the subject pill in the "Subject Area" column of the table view.
+    - Subject filtering was already implemented in `my-classes/page.tsx` (`deptSubjectNames` set). The badge now visually communicates the filtering to the student.
+  - **Class Banner Buttons Fix (`/dashboard/student/my-classes/[id]`)**:
+    - Updated [`ClassBanner.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/components/ClassBanner.tsx): Added `teacherEmail?: string` prop. "Contact Instructor" now opens a `mailto:` link pre-filled with the class title as subject when `teacherEmail` is provided. Falls back to scroll-to-teachers if no email exists.
+    - Updated [`my-classes/[id]/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/page.tsx) to pass `classItem!.teachers[0]?.email` to `ClassBanner`.
+    - "Resume Learning" already worked (calls `onMaterialsClick` → `setActiveTab('materials')`). Added `PlayCircle` icon for clarity.
+  - **Exam Department Blocking Guard (`/dashboard/student/exams&quizzes/[examId]`)**:
+    - In [`exams&quizzes/[examId]/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/%5BexamId%5D/page.tsx):
+      - Imported `useStudentProfile` to derive the student's locked department ID.
+      - Added `departmentBlock` useMemo — checks if the exam has explicit department restrictions (`exam.departments[].departmentId`) and if the student's department is not in that list, returns a block reason.
+      - Renders a `ShieldAlert` access-denied screen (with "Go Back" and "View My Exams" buttons) when blocked.
+    - Exam **taking** already happens at `/Exams&Quizzes/exam/[examId]` which uses its own layout with no sidebar or top nav — fully secure.
+
+- [x] **Student Class Assessments Tab — Category Sub-Tabs, Smart Actions, Department Scoping (Sunday, November 1, 2026)**:
+  - **Feature**: Rebuilt [`AssignmentsTable.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/components/AssignmentsTable.tsx) in the student class detail page Assessments tab.
+  - **Category Sub-Tabs**: Added 5 pills — `All`, `CA`, `Quiz / Test`, `Exam`, `Assignment` — each with an item count badge. Selecting a tab filters the list strictly to that assessment category.
+  - **Type Resolution**: `resolveCategory()` maps `exam.category` values (`QUIZ`, `CA`, `Exam`, `Assignment`) to the correct tab bucket.
+  - **Smart Action Buttons**: Action buttons now adapt to the student's state:
+    - `Graded` → `View Result` (emerald, Eye icon, links to exam result page)
+    - `Submitted` → `Submitted` (blue, CheckCircle, links to exam page)
+    - `Upcoming` → `Take` / `Submit` (pink, PlayCircle/Pencil, links to exam or assignment page)
+    - `Overdue` → `View` (rose, AlertCircle)
+    - No link → `Not Available` (disabled)
+  - **Category Icons**: Each assessment type gets a distinct icon and colour (ClipboardCheck/violet for CA, Pencil/sky for Quiz, GraduationCap/pink for Exam, BookOpen/amber for Assignment).
+  - **Department Scoping**: Unchanged — department filtering is done upstream in `page.tsx` before data reaches this component. A `Dept. Scoped` badge is rendered in the header subtitle when `hasDepartment` is true.
+  - **Grid + Table Views**: Both views updated with the new category icon, smart action buttons, and type pill.
+
+- [x] **Student Dashboard — Department Badge in Enrolled Subjects Header (Sunday, November 1, 2026)**:
+
+  - **Change**: In [`frontend/src/app/dashboard/student/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx), updated the "Enrolled Subjects" section heading to display a department pill badge (Building2 icon + department name + code in parentheses) immediately after the section title when the student has their department locked in.
+  - **Behavior**: Badge is only shown when `isDepartmentLocked && (enrolledDeptName || enrolledDeptCode)`. If both name and code exist and differ, the code appears in parentheses after the name.
+  - **Style**: Pink pill badge matching the student dashboard pink theme.
+
+- [x] **Student Dashboard Department Enrolled Subjects Scoping & Academic Profile Lock Modal (`http://localhost:3000/dashboard/student`) (Sunday, November 1, 2026)**:
+
+  - **Issues & Requirements Resolved**:
+    1. **Strict Department Scoping for Enrolled Subjects**:
+       - In [`frontend/src/app/dashboard/student/page.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx), updated the "Enrolled Subjects" horizontal card carousel to inspect whether the student has their department locked in (`studentDepartmentId`).
+       - If a department is locked in, strictly filters the enrolled curriculum subjects to only include subjects mapped to that department via class department relations (`class.departments`) or subject department relations (`subject.departments` / `scope === 'DEPARTMENT'`). Shared cross-cohort subjects (`SCHOOL`, `CLASS`, `GLOBAL`) are preserved.
+       - Synchronized `enrolledSubjectsCount` on the "Active Subjects" metric stat card with the department-filtered count.
+       - Provided an informative empty state notification when no subjects are mapped to the locked department.
+    2. **Academic Profile Lock Completion Modal (`StudentAcademicLockModal.tsx`)**:
+       - Created [`frontend/src/app/dashboard/student/components/StudentAcademicLockModal.tsx`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentAcademicLockModal.tsx) replicating the academic department and grade level locking experience from the settings academic tab (`/dashboard/student/settings?tab=academic`).
+       - If a student has no department OR grade level locked in, the modal automatically prompts them upon loading the student dashboard.
+       - Replicates both cards:
+         - **Department / Faculty Card**: Allows selecting school departments, locking in permanently via `studentService.updateDepartment`, and showing the `Locked In` badge with department code once confirmed.
+         - **Academic Grade Level Card**: Allows selecting school levels, locking in permanently via `studentService.updateLevel`, and showing the `Locked In` badge once confirmed.
+       - Integrated a `"Don't show again"` button (`EyeOff` icon) that stores student-scoped dismissal in `localStorage` under `qefas_student_dismiss_academic_lock_modal_{studentId}`, preventing unwanted popups on subsequent sessions.
+    3. **Subsystem Documentation**:
+       - Created [`docs/STUDENT_DASHBOARD.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/STUDENT_DASHBOARD.md) detailing enrolled subjects department scoping, academic profile locking modal specifications, and dismissal persistence.
+       - Indexed the new subsystem specification in [`docs/README.md`](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md).
+
 - [x] **Separation of Class Offline Grades and Global Teacher Offline Grades Components & APIs + Strict Assigned Subject Retrieval (Saturday, October 31, 2026)**:
   - **Issues & Requirements Resolved**:
     1. **Strict Teacher Assigned Subject Discovery Backend (`teacher-dashboard.service.ts`)**:

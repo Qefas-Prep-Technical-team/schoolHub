@@ -15,7 +15,14 @@ import { StudentClassSelectionModal } from '../components/StudentClassSelectionM
 
 interface SubjectEntry {
   subject?: {
+    id?: string;
     name?: string;
+    departments?: Array<{
+      departmentId?: string;
+      department?: { id?: string; name?: string };
+      id?: string;
+    }>;
+    scope?: string;
   };
 }
 
@@ -78,36 +85,91 @@ export default function StudentClassesPage() {
   const classesList: ClassItem[] = useMemo(() => {
     if (!enrollments || !Array.isArray(enrollments)) return [];
     const colors = ['#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#3b82f6'];
+
+    const studentDeptId: string | null = (studentProfile as any)?.departmentId ||
+      (studentProfile as any)?.department?.id || null;
+
+    // Set of subject names / ids explicitly assigned to the student's department from profile
+    const studentDeptProfileSubjectNames = new Set<string>();
+    const studentDeptProfileSubjectIds = new Set<string>();
+    const profileDeptSubjects = (studentProfile as any)?.department?.subjects;
+    if (Array.isArray(profileDeptSubjects)) {
+      profileDeptSubjects.forEach((ds: any) => {
+        if (ds.subject?.name) studentDeptProfileSubjectNames.add(ds.subject.name);
+        if (ds.subject?.id) studentDeptProfileSubjectIds.add(ds.subject.id);
+        if (ds.subjectId) studentDeptProfileSubjectIds.add(ds.subjectId);
+      });
+    }
+
     return enrollments.map((en, index) => {
       const cls = en.class;
+
+      // Build the set of subject names belonging to the student's assigned department
+      const deptSubjectNames = new Set<string>();
+      if (studentDeptId && cls.subjects) {
+        cls.subjects.forEach((se: SubjectEntry) => {
+          const s = se.subject;
+          if (!s?.name) return;
+
+          // Check if subject belongs to student's department via subject.departments
+          const belongsToDeptRelation = s.departments?.some(
+            (d) =>
+              d.departmentId === studentDeptId ||
+              d.department?.id === studentDeptId ||
+              d.id === studentDeptId
+          );
+
+          // Check if subject matches profile department's subjects
+          const belongsToDeptProfile =
+            studentDeptProfileSubjectNames.has(s.name) ||
+            (s.id && studentDeptProfileSubjectIds.has(s.id));
+
+          if (belongsToDeptRelation || belongsToDeptProfile) {
+            deptSubjectNames.add(s.name);
+          }
+        });
+      }
+
+      // All subject names (unfiltered) for fallback if student has no department
+      const allSubjectNames: string[] = (cls.subjects || []).map((s: SubjectEntry) => s.subject?.name).filter(Boolean) as string[];
+      
+      // When student has an assigned department and department subjects exist for this class, ONLY show department subjects
+      const hasDeptAssigned = Boolean(studentDeptId);
+      const hasDeptSubjects = deptSubjectNames.size > 0;
+      
+      const visibleSubjectNames = (hasDeptAssigned && hasDeptSubjects)
+        ? allSubjectNames.filter((n) => deptSubjectNames.has(n))
+        : allSubjectNames;
+
       return {
         id: cls.id,
         title: cls.name,
-        subject: cls.subjects?.[0]?.subject?.name || 'General Subject',
+        subject: visibleSubjectNames[0] || (hasDeptAssigned ? 'No Department Subjects' : 'General Subject'),
+        subjects: visibleSubjectNames,
         teacher: cls.teachers?.[0]?.teacher?.name || 'Assigned Instructor',
         room: cls.section || 'General Room',
         progress: 0,
         assignmentsDue: 0,
         nextSession: 'TBD',
         days: ['Mon', 'Wed', 'Fri'],
-        description: cls.subjects?.map((s) => s.subject?.name).filter(Boolean).join(', ') || 'Core registered subject.',
+        description: visibleSubjectNames.join(', ') || (hasDeptAssigned ? 'No subjects assigned for your department.' : 'Core registered subject.'),
         color: colors[index % colors.length],
+        hasDeptFilter: hasDeptAssigned && hasDeptSubjects,
       };
     });
-  }, [enrollments]);
+  }, [enrollments, studentProfile]);
 
-  // Count unique subjects across all enrolled classes
+  // Count unique subjects across all enrolled classes (reflecting student's department subjects when available)
   const totalSubjects = useMemo(() => {
-    if (!enrollments || !Array.isArray(enrollments)) return 0;
+    if (!classesList || classesList.length === 0) return 0;
     const subjectNames = new Set<string>();
-    enrollments.forEach((en) => {
-      en.class?.subjects?.forEach((s) => {
-        const name = s.subject?.name;
+    classesList.forEach((cls) => {
+      cls.subjects?.forEach((name) => {
         if (name) subjectNames.add(name);
       });
     });
     return subjectNames.size;
-  }, [enrollments]);
+  }, [classesList]);
 
   // Total marks scored across all exam attempts + standalone grades
   const totalMarks = useMemo(() => {

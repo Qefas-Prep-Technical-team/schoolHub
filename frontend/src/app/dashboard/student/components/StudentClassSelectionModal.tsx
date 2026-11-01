@@ -430,7 +430,7 @@ export function StudentClassSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[95vw] p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl">
+      <DialogContent className="max-w-4xl w-[calc(100vw-1.25rem)] sm:w-[92vw] p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl sm:rounded-3xl shadow-2xl min-w-0">
         <AnimatePresence mode="wait">
           {isSuccessView && requestedClass ? (
             /* ================= Success View with Onboarding Lottie ================= */
@@ -439,38 +439,38 @@ export function StudentClassSelectionModal({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-6"
+              className="p-5 sm:p-12 flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6 w-full min-w-0 overflow-hidden"
             >
               <div className="relative">
-                <div className="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+                <div className="w-28 h-28 sm:w-44 sm:h-44 flex items-center justify-center">
                   <Lottie animationData={SuccessLottie} loop={true} className="w-full h-full" />
                 </div>
               </div>
 
-              <div className="space-y-3 max-w-lg">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
-                  <CheckCircle2 size={14} />
+              <div className="space-y-2 sm:space-y-3 max-w-lg w-full min-w-0">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                  <CheckCircle2 size={13} />
                   Request Sent Successfully
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h3 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight break-words">
                   Class Request Submitted!
                 </h3>
-                <p className="text-slate-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed">
+                <p className="text-slate-600 dark:text-zinc-300 text-xs sm:text-base leading-relaxed break-words">
                   A request to join <span className="font-bold text-pink-600 dark:text-pink-400">{requestedClass.name}</span> has been sent to{" "}
                   <span className="font-bold text-slate-900 dark:text-white">{schoolName}</span>. Once the school administration accepts, you will be allowed in and can start accessing class subjects, timetables, and assessments.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 max-w-md w-full flex items-start gap-3 text-left">
-                <Clock className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={18} />
-                <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+              <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 max-w-md w-full flex items-start gap-2.5 text-left min-w-0">
+                <Clock className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={16} />
+                <p className="text-[11px] sm:text-sm text-amber-800 dark:text-amber-300 break-words">
                   <strong>What happens next?</strong> School administrators or class teachers receive your request instantly. When approved, your enrolled subjects and timetable will update automatically.
                 </p>
               </div>
 
               <Button
                 onClick={handleDismissSuccess}
-                className="w-full sm:w-auto px-8 h-12 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-sm shadow-lg shadow-pink-600/20"
+                className="w-full sm:w-auto px-6 sm:px-8 h-11 sm:h-12 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-pink-600/20"
               >
                 Go to Dashboard
               </Button>
@@ -482,57 +482,43 @@ export function StudentClassSelectionModal({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col max-h-[85vh]"
+              className="flex flex-col max-h-[88vh] sm:max-h-[85vh] w-full min-w-0 overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 p-6 sm:p-8 text-white relative shrink-0">
+              <div className="bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 p-4 sm:p-7 text-white relative shrink-0 w-full min-w-0 overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-                <DialogHeader className="relative z-10 text-left space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                        <SchoolIcon size={14} />
-                        {schoolName}
+                <DialogHeader className="relative z-10 text-left space-y-1.5 sm:space-y-2 pr-7 sm:pr-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1 sm:gap-1.5">
+                      <SchoolIcon size={12} className="sm:w-3.5 sm:h-3.5" />
+                      <span className="max-w-[140px] sm:max-w-none truncate">{schoolName}</span>
+                    </span>
+                    <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-pink-400/30 text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate max-w-[150px] sm:max-w-none">
+                      Welcome, {studentName}
+                    </span>
+                    {isStudentGraduated && (
+                      <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-400/30 border border-amber-300/50 text-amber-100 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                        <GraduationCap size={12} className="text-amber-200" />
+                        Alumnus
                       </span>
-                      <span className="px-3 py-1 rounded-full bg-pink-400/30 text-xs font-bold uppercase tracking-wider">
-                        Welcome, {studentName}
+                    )}
+                    {classStatusCounts.enrolled > 0 && (
+                      <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                        <CheckCircle2 size={12} className="text-emerald-300" />
+                        {classStatusCounts.enrolled} {classStatusCounts.enrolled === 1 ? "Enrolled" : "Enrolled"}
                       </span>
-                      {isStudentGraduated && (
-                        <span className="px-3 py-1 rounded-full bg-amber-400/30 border border-amber-300/50 text-amber-100 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                          <GraduationCap size={13} className="text-amber-200" />
-                          Graduated Scholar (Alumnus)
-                        </span>
-                      )}
-                      {classStatusCounts.enrolled > 0 && (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          <CheckCircle2 size={13} className="text-emerald-300" />
-                          {classStatusCounts.enrolled} {classStatusCounts.enrolled === 1 ? "Class Enrolled" : "Classes Enrolled"}
-                        </span>
-                      )}
-                      {classStatusCounts.graduated > 0 && (
-                        <span className="px-3 py-1 rounded-full bg-purple-500/30 border border-purple-400/40 text-purple-100 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          <GraduationCap size={13} className="text-purple-300" />
-                          {classStatusCounts.graduated} Graduated
-                        </span>
-                      )}
-                      {classStatusCounts.transferred > 0 && (
-                        <span className="px-3 py-1 rounded-full bg-amber-500/30 border border-amber-400/40 text-amber-100 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          <ArrowRightLeft size={13} className="text-amber-300" />
-                          {classStatusCounts.transferred} Transferred
-                        </span>
-                      )}
-                      {classStatusCounts.expelled > 0 && (
-                        <span className="px-3 py-1 rounded-full bg-rose-500/30 border border-rose-400/40 text-rose-100 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          <XCircle size={13} className="text-rose-300" />
-                          {classStatusCounts.expelled} Expelled
-                        </span>
-                      )}
-                    </div>
+                    )}
+                    {classStatusCounts.graduated > 0 && (
+                      <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-purple-500/30 border border-purple-400/40 text-purple-100 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                        <GraduationCap size={12} className="text-purple-300" />
+                        {classStatusCounts.graduated} Graduated
+                      </span>
+                    )}
                   </div>
-                  <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  <DialogTitle className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight text-white pt-1">
                     {isStudentGraduated ? "Alma Mater Classrooms" : "Select Your Classroom"}
                   </DialogTitle>
-                  <DialogDescription className="text-pink-100 text-xs sm:text-sm font-medium max-w-xl">
+                  <DialogDescription className="text-pink-100 text-[11px] sm:text-xs md:text-sm font-medium max-w-xl leading-relaxed">
                     {isStudentGraduated
                       ? `You have graduated from ${schoolName}. You can view the classes and academic streams from your alma mater below.`
                       : "Choose from the classes available at your connected school to request enrollment. Review current students, subjects, and teachers before joining."}
@@ -540,21 +526,21 @@ export function StudentClassSelectionModal({
                 </DialogHeader>
 
                 {/* Search & Filter Bar */}
-                <div className="mt-5 space-y-2.5">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                    <div className="relative flex-1">
+                <div className="mt-4 sm:mt-5 space-y-2.5 w-full min-w-0 max-w-full">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full min-w-0">
+                    <div className="relative flex-1 min-w-0 w-full">
                       <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-200" size={16} />
                       <Input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search classes by name, code, subject, or department..."
-                        className="h-10 sm:h-11 pl-10 rounded-xl bg-white/10 backdrop-blur-md border-white/20 text-white placeholder:text-pink-200 text-xs sm:text-sm focus-visible:ring-white/30"
+                        className="h-10 sm:h-11 pl-10 rounded-xl bg-white/10 backdrop-blur-md border-white/20 text-white placeholder:text-pink-200 text-xs sm:text-sm focus-visible:ring-white/30 w-full"
                       />
                     </div>
                   </div>
 
                   {/* Filter Chips: Enrollment Status & Grade Levels */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full min-w-0 max-w-full no-scrollbar" style={{ scrollbarWidth: "none" }}>
                     <button
                       type="button"
                       onClick={() => setStatusFilter("ALL")}
@@ -694,15 +680,15 @@ export function StudentClassSelectionModal({
               </div>
 
               {/* Class Grid Content */}
-              <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="p-3 sm:p-6 overflow-y-auto flex-1 space-y-3 sm:space-y-4">
                 {isLoadingClasses ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div key={i} className="h-56 rounded-2xl bg-slate-100 dark:bg-zinc-900 animate-pulse border border-slate-200 dark:border-zinc-800" />
+                      <div key={i} className="h-48 sm:h-56 rounded-2xl bg-slate-100 dark:bg-zinc-900 animate-pulse border border-slate-200 dark:border-zinc-800" />
                     ))}
                   </div>
                 ) : !schoolId ? (
-                  <div className="py-12 sm:py-16 text-center space-y-3 bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 p-6">
+                  <div className="py-10 sm:py-16 text-center space-y-3 bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 p-4 sm:p-6">
                     <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
                       <SchoolIcon size={24} />
                     </div>
@@ -724,7 +710,7 @@ export function StudentClassSelectionModal({
                     </Button>
                   </div>
                 ) : filteredClasses.length === 0 ? (
-                  <div className="py-12 sm:py-16 text-center space-y-3 bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 p-6">
+                  <div className="py-10 sm:py-16 text-center space-y-3 bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 p-4 sm:p-6">
                     <div className="w-12 h-12 rounded-2xl bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 flex items-center justify-center mx-auto">
                       <GraduationCap size={24} />
                     </div>
@@ -752,7 +738,7 @@ export function StudentClassSelectionModal({
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full min-w-0">
                     {filteredClasses.map((cls) => {
                       const enrollments = cls.enrollments || [];
                       const studentCount = enrollments.length;
@@ -786,7 +772,7 @@ export function StudentClassSelectionModal({
                         <div
                           key={cls.id}
                           className={cn(
-                            "group border rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 relative overflow-hidden",
+                            "group border rounded-2xl p-3.5 sm:p-5 flex flex-col justify-between transition-all duration-200 relative overflow-hidden w-full min-w-0 max-w-full",
                             isEnrolled && "bg-emerald-50/20 dark:bg-emerald-950/10 border-emerald-300 dark:border-emerald-800/70 hover:border-emerald-400 dark:hover:border-emerald-700 shadow-sm",
                             isExpelled && "bg-rose-50/25 dark:bg-rose-950/15 border-rose-300 dark:border-rose-800/70 hover:border-rose-400 dark:hover:border-rose-700 shadow-sm",
                             isGraduated && "bg-purple-50/25 dark:bg-purple-950/15 border-purple-300 dark:border-purple-800/70 hover:border-purple-400 dark:hover:border-purple-700 shadow-sm",
@@ -795,12 +781,12 @@ export function StudentClassSelectionModal({
                             isNone && "bg-white dark:bg-zinc-900/70 border-slate-200 dark:border-zinc-800 hover:border-pink-300 dark:hover:border-pink-800/60 hover:shadow-lg hover:shadow-pink-500/5"
                           )}
                         >
-                          <div className="space-y-3">
+                          <div className="space-y-2.5 sm:space-y-3">
                             {/* Class Header & Badges */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
+                            <div className="flex items-start justify-between gap-2 min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <span className={cn(
-                                  "inline-block px-2.5 py-0.5 rounded-lg font-mono text-[11px] font-bold tracking-wider uppercase mb-1",
+                                  "inline-block px-2 py-0.5 rounded-md font-mono text-[10px] sm:text-[11px] font-bold tracking-wider uppercase mb-1",
                                   isEnrolled && "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300",
                                   isExpelled && "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300",
                                   isGraduated && "bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300",
@@ -811,7 +797,7 @@ export function StudentClassSelectionModal({
                                   {cls.classCode}
                                 </span>
                                 <h4 className={cn(
-                                  "text-base sm:text-lg font-black line-clamp-1 transition-colors",
+                                  "text-sm sm:text-lg font-black line-clamp-1 transition-colors truncate",
                                   isEnrolled && "text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400",
                                   isExpelled && "text-slate-900 dark:text-white group-hover:text-rose-700 dark:group-hover:text-rose-400",
                                   isGraduated && "text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400",
@@ -822,45 +808,45 @@ export function StudentClassSelectionModal({
                                   {cls.name}
                                 </h4>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                              <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end max-w-[45%] sm:max-w-none">
                                 {cls.level && (
-                                  <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-[10px] font-bold uppercase tracking-wider shrink-0">
+                                  <span className="px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shrink-0">
                                     {cls.level}
                                   </span>
                                 )}
                                 {isLocked && (
-                                  <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
+                                  <span className="px-1.5 sm:px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
                                     <Lock size={10} className="text-amber-600 dark:text-amber-400" />
                                     Locked
                                   </span>
                                 )}
                                 {isEnrolled && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
+                                    <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
                                     Enrolled
                                   </span>
                                 )}
                                 {isGraduated && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <GraduationCap size={12} className="text-purple-600 dark:text-purple-400" />
+                                  <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
+                                    <GraduationCap size={11} className="text-purple-600 dark:text-purple-400" />
                                     Graduated
                                   </span>
                                 )}
                                 {isPromoted && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <TrendingUp size={12} className="text-indigo-600 dark:text-indigo-400" />
+                                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
+                                    <TrendingUp size={11} className="text-indigo-600 dark:text-indigo-400" />
                                     Promoted
                                   </span>
                                 )}
                                 {isTransferred && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <ArrowRightLeft size={12} className="text-amber-600 dark:text-amber-400" />
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
+                                    <ArrowRightLeft size={11} className="text-amber-600 dark:text-amber-400" />
                                     Transferred
                                   </span>
                                 )}
                                 {isExpelled && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <XCircle size={12} className="text-rose-600 dark:text-rose-400" />
+                                  <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
+                                    <XCircle size={11} className="text-rose-600 dark:text-rose-400" />
                                     Expelled
                                   </span>
                                 )}
@@ -868,14 +854,14 @@ export function StudentClassSelectionModal({
                             </div>
 
                             {/* Meta strip: Teacher & Subjects */}
-                            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-zinc-400 pt-1">
+                            <div className="flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs text-slate-500 dark:text-zinc-400 pt-0.5 sm:pt-1">
                               <span className="inline-flex items-center gap-1 font-medium">
-                                <BookOpen size={13} className="text-slate-400" />
+                                <BookOpen size={12} className="text-slate-400" />
                                 {subjectsCount} {subjectsCount === 1 ? "Subject" : "Subjects"}
                               </span>
                               {teacher && (
                                 <span className="inline-flex items-center gap-1 font-medium truncate">
-                                  <GraduationCap size={13} className="text-slate-400 shrink-0" />
+                                  <GraduationCap size={12} className="text-slate-400 shrink-0" />
                                   <span className="truncate">{teacher.name}</span>
                                 </span>
                               )}
@@ -883,16 +869,16 @@ export function StudentClassSelectionModal({
 
                             {/* Enrolled Students Section */}
                             <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80">
-                              <div className="flex items-center justify-between text-xs mb-2">
+                              <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 sm:mb-2">
                                 <span className={cn(
-                                  "font-bold inline-flex items-center gap-1.5",
+                                  "font-bold inline-flex items-center gap-1 sm:gap-1.5",
                                   isEnrolled && "text-emerald-800 dark:text-emerald-300",
                                   isExpelled && "text-rose-800 dark:text-rose-300",
                                   isGraduated && "text-purple-800 dark:text-purple-300",
                                   isTransferred && "text-amber-800 dark:text-amber-300",
                                   isNone && "text-slate-700 dark:text-zinc-300"
                                 )}>
-                                  <Users size={13} className={
+                                  <Users size={12} className={
                                     isEnrolled
                                       ? "text-emerald-600 dark:text-emerald-400"
                                       : isExpelled
@@ -905,15 +891,15 @@ export function StudentClassSelectionModal({
                                   } />
                                   Students in Class
                                 </span>
-                                <span className="font-bold text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
+                                <span className="font-bold text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
                                   {studentCount} {studentCount === 1 ? "student" : "students"}
                                 </span>
                               </div>
 
                               {/* Student Avatars & Names preview */}
                               {studentCount > 0 ? (
-                                <div className="space-y-1.5">
-                                  <div className="flex items-center -space-x-2 overflow-hidden py-1">
+                                <div className="space-y-1">
+                                  <div className="flex items-center -space-x-1.5 sm:-space-x-2 overflow-hidden py-0.5 sm:py-1">
                                     {sortedEnrollments.slice(0, 5).map((e, idx) => {
                                       const st = e.student;
                                       const isMe =
@@ -937,8 +923,8 @@ export function StudentClassSelectionModal({
                                           key={st?.id || idx}
                                           title={isMe ? `${st?.name || "Student"} (You)` : (st?.name || "Student")}
                                           className={cn(
-                                            "w-7 h-7 rounded-full flex items-center justify-center font-bold ring-2 shrink-0 shadow-sm transition-transform",
-                                            isMe ? "text-[8px] z-10 scale-105" : "text-[10px] ring-white dark:ring-zinc-900",
+                                            "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold ring-2 shrink-0 shadow-sm transition-transform",
+                                            isMe ? "text-[7px] sm:text-[8px] z-10 scale-105" : "text-[9px] sm:text-[10px] ring-white dark:ring-zinc-900",
                                             colorClass
                                           )}
                                         >
@@ -947,14 +933,14 @@ export function StudentClassSelectionModal({
                                       );
                                     })}
                                     {studentCount > 5 && (
-                                      <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 flex items-center justify-center text-[10px] font-bold ring-2 ring-white dark:ring-zinc-900 shrink-0">
+                                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 flex items-center justify-center text-[9px] sm:text-[10px] font-bold ring-2 ring-white dark:ring-zinc-900 shrink-0">
                                         +{studentCount - 5}
                                       </div>
                                     )}
                                   </div>
                                   {isEnrolled && (
-                                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <CheckCircle2 size={12} className="shrink-0" />
+                                    <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold line-clamp-1 flex items-center gap-1">
+                                      <CheckCircle2 size={11} className="shrink-0" />
                                       <span>
                                         You are enrolled in this class
                                         {studentCount > 1
@@ -964,31 +950,31 @@ export function StudentClassSelectionModal({
                                     </p>
                                   )}
                                   {isGraduated && (
-                                    <p className="text-[11px] text-purple-600 dark:text-purple-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <GraduationCap size={12} className="shrink-0" />
+                                    <p className="text-[10px] sm:text-[11px] text-purple-600 dark:text-purple-400 font-semibold line-clamp-1 flex items-center gap-1">
+                                      <GraduationCap size={11} className="shrink-0" />
                                       <span>You have graduated from this class (Alumni)</span>
                                     </p>
                                   )}
                                   {isPromoted && (
-                                    <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <TrendingUp size={12} className="shrink-0" />
-                                      <span>You were promoted from this class to a higher level</span>
+                                    <p className="text-[10px] sm:text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold line-clamp-1 flex items-center gap-1">
+                                      <TrendingUp size={11} className="shrink-0" />
+                                      <span>You were promoted from this class</span>
                                     </p>
                                   )}
                                   {isTransferred && (
-                                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <ArrowRightLeft size={12} className="shrink-0" />
+                                    <p className="text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-400 font-semibold line-clamp-1 flex items-center gap-1">
+                                      <ArrowRightLeft size={11} className="shrink-0" />
                                       <span>You were transferred out of this class</span>
                                     </p>
                                   )}
                                   {isExpelled && (
-                                    <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <XCircle size={12} className="shrink-0" />
+                                    <p className="text-[10px] sm:text-[11px] text-rose-600 dark:text-rose-400 font-semibold line-clamp-1 flex items-center gap-1">
+                                      <XCircle size={11} className="shrink-0" />
                                       <span>You have been expelled from this classroom</span>
                                     </p>
                                   )}
                                   {isNone && (
-                                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-1 font-medium">
+                                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-1 font-medium">
                                       {sortedEnrollments
                                         .slice(0, 3)
                                         .map((e) => e.student?.name)
@@ -999,32 +985,12 @@ export function StudentClassSelectionModal({
                                   )}
                                 </div>
                               ) : isEnrolled ? (
-                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold py-1 flex items-center gap-1">
-                                  <CheckCircle2 size={12} className="shrink-0" />
+                                <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold py-1 flex items-center gap-1">
+                                  <CheckCircle2 size={11} className="shrink-0" />
                                   <span>You are currently enrolled in this class</span>
                                 </p>
-                              ) : isGraduated ? (
-                                <p className="text-[11px] text-purple-600 dark:text-purple-400 font-semibold py-1 flex items-center gap-1">
-                                  <GraduationCap size={12} className="shrink-0" />
-                                  <span>You have graduated from this class (Alumni)</span>
-                                </p>
-                              ) : isPromoted ? (
-                                <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold py-1 flex items-center gap-1">
-                                  <TrendingUp size={12} className="shrink-0" />
-                                  <span>You were promoted from this class to a higher level</span>
-                                </p>
-                              ) : isTransferred ? (
-                                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold py-1 flex items-center gap-1">
-                                  <ArrowRightLeft size={12} className="shrink-0" />
-                                  <span>You were transferred out of this class</span>
-                                </p>
-                              ) : isExpelled ? (
-                                <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold py-1 flex items-center gap-1">
-                                  <XCircle size={12} className="shrink-0" />
-                                  <span>You have been expelled from this classroom</span>
-                                </p>
                               ) : (
-                                <p className="text-[11px] text-slate-400 dark:text-zinc-500 italic py-1">
+                                <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-zinc-500 italic py-0.5">
                                   No students enrolled yet. Be the first to join!
                                 </p>
                               )}
@@ -1032,35 +998,35 @@ export function StudentClassSelectionModal({
                           </div>
 
                           {/* Action Button */}
-                          <div className="pt-4 mt-3 border-t border-slate-100 dark:border-zinc-800/80">
+                          <div className="pt-3 sm:pt-4 mt-2 sm:mt-3 border-t border-slate-100 dark:border-zinc-800/80">
                             {isEnrolled ? (
-                              <div className="w-full h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold text-xs shadow-xs">
-                                <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400" />
+                              <div className="w-full h-9 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] sm:text-xs shadow-xs">
+                                <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
                                 <span>Enrolled (Active Member)</span>
                               </div>
                             ) : isGraduated ? (
-                              <div className="w-full h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center gap-2 text-purple-700 dark:text-purple-300 font-bold text-xs shadow-xs">
-                                <GraduationCap size={15} className="text-purple-600 dark:text-purple-400" />
+                              <div className="w-full h-9 sm:h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-purple-700 dark:text-purple-300 font-bold text-[11px] sm:text-xs shadow-xs">
+                                <GraduationCap size={14} className="text-purple-600 dark:text-purple-400" />
                                 <span>Graduated Cohort (Alumni)</span>
                               </div>
                             ) : isPromoted ? (
-                              <div className="w-full h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-xs shadow-xs">
-                                <TrendingUp size={15} className="text-indigo-600 dark:text-indigo-400" />
+                              <div className="w-full h-9 sm:h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] sm:text-xs shadow-xs">
+                                <TrendingUp size={14} className="text-indigo-600 dark:text-indigo-400" />
                                 <span>Promoted (Completed Level)</span>
                               </div>
                             ) : isTransferred ? (
-                              <div className="w-full h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center gap-2 text-amber-700 dark:text-amber-300 font-bold text-xs shadow-xs">
-                                <ArrowRightLeft size={15} className="text-amber-600 dark:text-amber-400" />
+                              <div className="w-full h-9 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-amber-700 dark:text-amber-300 font-bold text-[11px] sm:text-xs shadow-xs">
+                                <ArrowRightLeft size={14} className="text-amber-600 dark:text-amber-400" />
                                 <span>Transferred Out</span>
                               </div>
                             ) : isExpelled ? (
-                              <div className="w-full h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs shadow-xs">
-                                <XCircle size={15} className="text-rose-600 dark:text-rose-400" />
+                              <div className="w-full h-9 sm:h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-rose-700 dark:text-rose-300 font-bold text-[11px] sm:text-xs shadow-xs">
+                                <XCircle size={14} className="text-rose-600 dark:text-rose-400" />
                                 <span>Expelled from Class</span>
                               </div>
                             ) : isPending ? (
-                              <div className="w-full h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-center justify-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs">
-                                <Clock size={14} />
+                              <div className="w-full h-9 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-center justify-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px] sm:text-xs">
+                                <Clock size={13} />
                                 Request Pending Approval
                               </div>
                             ) : isLocked ? (
@@ -1069,26 +1035,26 @@ export function StudentClassSelectionModal({
                                 onClick={() => {
                                   toast.warning(`Cannot Request Join: ${cls.name} (${cls.classCode}) is locked. Enrollment requests are not permitted.`);
                                 }}
-                                className="w-full h-10 rounded-xl bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 font-bold text-xs border border-slate-200 dark:border-zinc-700 shadow-none flex items-center justify-center gap-1.5 cursor-not-allowed transition-colors"
+                                className="w-full h-9 sm:h-10 rounded-xl bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 font-bold text-[11px] sm:text-xs border border-slate-200 dark:border-zinc-700 shadow-none flex items-center justify-center gap-1.5 cursor-not-allowed transition-colors"
                               >
-                                <Lock size={14} className="text-amber-500 shrink-0" />
+                                <Lock size={13} className="text-amber-500 shrink-0" />
                                 <span>Request to Join (Locked)</span>
                               </Button>
                             ) : (
                               <Button
                                 onClick={() => handleJoinClass(cls)}
                                 disabled={isCurrentMutating}
-                                className="w-full h-10 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md shadow-pink-600/10 flex items-center justify-center gap-1.5 group-hover:shadow-pink-600/20 transition-all cursor-pointer"
+                                className="w-full h-9 sm:h-10 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-[11px] sm:text-xs shadow-md shadow-pink-600/10 flex items-center justify-center gap-1.5 group-hover:shadow-pink-600/20 transition-all cursor-pointer"
                               >
                                 {isCurrentMutating ? (
                                   <>
-                                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     <span>Sending Request...</span>
                                   </>
                                 ) : (
                                   <>
                                     <span>Request to Join</span>
-                                    <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                                   </>
                                 )}
                               </Button>
@@ -1102,15 +1068,15 @@ export function StudentClassSelectionModal({
               </div>
 
               {/* Modal Footer info */}
-              <div className="bg-slate-50 dark:bg-zinc-900/60 p-4 px-6 border-t border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400">
-                  <Info size={14} className="text-pink-500 shrink-0" />
-                  <span>Your request will be submitted to school administration for review.</span>
+              <div className="bg-slate-50 dark:bg-zinc-900/60 p-3 sm:p-4 px-4 sm:px-6 border-t border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 shrink-0 w-full min-w-0 max-w-full">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-zinc-400 text-center sm:text-left min-w-0">
+                  <Info size={13} className="text-pink-500 shrink-0 hidden sm:inline" />
+                  <span className="truncate sm:whitespace-normal">Your request will be submitted to school administration for review.</span>
                 </div>
                 <Button
                   variant="ghost"
                   onClick={onClose}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white h-8 sm:h-9"
                 >
                   I&apos;ll decide later
                 </Button>

@@ -59,12 +59,24 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
 
     const isLive = assessment.status === 'open' || assessment.status === 'ongoing';
 
+    // For live/ongoing exams, route directly to the exam taker;
+    // for everything else (upcoming, closed, submitted, graded), show the preview/detail page.
+    const getTargetRoute = () => {
+        if (assessment.type === 'assignment') {
+            return `/dashboard/student/exams&quizzes/${assessment.id}`;
+        }
+        if (isLive) {
+            return `/Exams&Quizzes/exam/${assessment.id}`;
+        }
+        return `/dashboard/student/exams&quizzes/${assessment.id}`;
+    };
+
     return (
         <tr 
             onClick={() => {
                 if (isNavigating) return;
                 setIsNavigating(true);
-                router.push(`/dashboard/student/exams&quizzes/${assessment.id}`);
+                router.push(getTargetRoute());
             }}
             className={cn(
                 "group border-b border-slate-100 dark:border-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors relative cursor-pointer",

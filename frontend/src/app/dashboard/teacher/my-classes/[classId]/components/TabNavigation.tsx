@@ -63,7 +63,7 @@ export default function TabNavigation({
       </div>
 
       {children && (
-        <div className="w-full max-w-full">
+        <div className="w-full max-w-full min-w-0 overflow-hidden">
           {children}
         </div>
       )}

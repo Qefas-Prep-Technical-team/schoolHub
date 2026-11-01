@@ -153,7 +153,15 @@ export const getStudentProfileService = async (studentId: string) => {
   return prisma.student.findUnique({
     where: { id: studentId },
     include: {
-      department: true,
+      department: {
+        include: {
+          subjects: {
+            include: {
+              subject: true,
+            },
+          },
+        },
+      },
       school: true,
       behaviourProfile: true,
       attendances: true,
@@ -163,7 +171,28 @@ export const getStudentProfileService = async (studentId: string) => {
             include: {
               subjects: {
                 include: {
-                  subject: true,
+                  subject: {
+                    include: {
+                      departments: {
+                        include: {
+                          department: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              departments: {
+                include: {
+                  department: {
+                    include: {
+                      subjects: {
+                        include: {
+                          subject: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
               teachers: {

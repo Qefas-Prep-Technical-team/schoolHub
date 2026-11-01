@@ -169,6 +169,16 @@ export const getExamsService = async (filters: {
       targetClassIds = studentClassIds.includes(filters.classId) ? [filters.classId] : [];
     }
 
+    // If student has a department, collect the subject IDs belonging to their department
+    let deptSubjectIds: string[] = [];
+    if (student.departmentId) {
+      const deptSubjects = await prisma.departmentSubject.findMany({
+        where: { departmentId: student.departmentId },
+        select: { subjectId: true },
+      });
+      deptSubjectIds = deptSubjects.map((ds) => ds.subjectId);
+    }
+
     const deptFilter = student.departmentId
       ? {
           OR: [
@@ -177,6 +187,23 @@ export const getExamsService = async (filters: {
           ]
         }
       : { departments: { none: {} } };
+
+    // Subject filter for department:
+    // If student has a department and subjects are assigned to that department,
+    // only show exams for those subjects, or multi-paper exams containing at least one paper in those subjects,
+    // or exams with no subject specified (general / multi-subject exams)
+    const subjectDeptFilter = student.departmentId && deptSubjectIds.length > 0
+      ? {
+          OR: [
+            { subjectId: { in: deptSubjectIds } },
+            { subjectExamPapers: { some: { subjectPaper: { subjectId: { in: deptSubjectIds } } } } },
+            {
+              subjectId: null,
+              subjectExamPapers: { none: {} }
+            }
+          ]
+        }
+      : {};
 
     const orConditions: any[] = [];
 
@@ -187,6 +214,7 @@ export const getExamsService = async (filters: {
       orConditions.push({
         classId: { in: targetClassIds },
         ...deptFilter,
+        ...subjectDeptFilter,
       });
     }
 
@@ -199,6 +227,7 @@ export const getExamsService = async (filters: {
         scope: "SCHOOL",
         classId: null,
         ...deptFilter,
+        ...subjectDeptFilter,
       });
 
       // DEPARTMENT-scope with NO class connected
@@ -207,7 +236,8 @@ export const getExamsService = async (filters: {
           schoolId: resolvedSchoolId,
           scope: "DEPARTMENT",
           classId: null,
-          departments: { some: { departmentId: student.departmentId } }
+          departments: { some: { departmentId: student.departmentId } },
+          ...subjectDeptFilter,
         });
       }
     }

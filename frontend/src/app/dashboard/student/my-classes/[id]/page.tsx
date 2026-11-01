@@ -191,6 +191,10 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
           ? 'Continuous Assessment'
           : 'Exam';
 
+      // All exams route to the dedicated unified exam page (/Exams&Quizzes/exam/[examId]).
+      // That page handles all states: preview, in-progress, submitted, and results.
+      const examLink = `/Exams&Quizzes/exam/${exam.id}`;
+
       return {
         id: idx + 1,
         title: exam.title || `Assessment ${idx + 1}`,
@@ -199,7 +203,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         grade: gradeStr,
         type,
         timestamp: end ? end.getTime() : (start ? start.getTime() : 0),
-        link: `/dashboard/student/exams&quizzes/${exam.id}`,
+        link: examLink,
       };
     });
 
@@ -374,7 +378,11 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         <ClassBanner
           title={classItem!.title}
           description={classItem!.description}
-          onContactClick={() => console.log('Contact')}
+          teacherEmail={classItem!.teachers[0]?.email || undefined}
+          onContactClick={() => {
+            // Fallback if no email: scroll to teachers section
+            document.getElementById('class-teachers-section')?.scrollIntoView({ behavior: 'smooth' });
+          }}
           onMaterialsClick={() => setActiveTab('materials')}
         />
         <ClassStats

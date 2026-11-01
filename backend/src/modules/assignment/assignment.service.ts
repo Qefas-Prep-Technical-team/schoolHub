@@ -39,9 +39,23 @@ export const getStudentAssignmentsService = async (options: {
     return { assignments: [], total: 0, pages: 0 };
   }
 
+  // If student has a department, collect the subject IDs belonging to their department
+  let deptSubjectIds: string[] = [];
+  if (student.departmentId) {
+    const deptSubjects = await prisma.departmentSubject.findMany({
+      where: { departmentId: student.departmentId },
+      select: { subjectId: true },
+    });
+    deptSubjectIds = deptSubjects.map((ds) => ds.subjectId);
+  }
+
   // Get assignments for those classes, filtering by department if applicable
   // Also include school-wide assignments (no class restriction) for the student's school
   const orConditions: any[] = [];
+
+  const subjectDeptFilter = student.departmentId && deptSubjectIds.length > 0
+    ? { subjectId: { in: deptSubjectIds } }
+    : {};
 
   if (classIds.length > 0) {
     // Assignments tied to the student's classes, open to all or their dept
@@ -50,7 +64,8 @@ export const getStudentAssignmentsService = async (options: {
       OR: [
         { departmentId: null },
         { departmentId: student.departmentId }
-      ]
+      ],
+      ...subjectDeptFilter,
     });
   }
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, User, Calendar, ArrowRight, MapPin } from 'lucide-react';
+import { BookOpen, User, Calendar, ArrowRight, MapPin, Building2, Filter } from 'lucide-react';
 import { ClassItem } from './ClassTable';
 
 interface ClassCardProps {
@@ -10,7 +10,10 @@ interface ClassCardProps {
 }
 
 export function ClassCard({ cls }: ClassCardProps) {
-  const subjects = cls.description ? cls.description.split(',').map(s => s.trim()).filter(Boolean) : [];
+  // Use the pre-filtered subjects array if available; fall back to splitting description
+  const subjects = cls.subjects && cls.subjects.length > 0
+    ? cls.subjects
+    : (cls.description ? cls.description.split(',').map(s => s.trim()).filter(Boolean) : []);
 
   return (
     <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group hover:border-pink-500/30 dark:hover:border-pink-500/30">
@@ -24,12 +27,20 @@ export function ClassCard({ cls }: ClassCardProps) {
             <BookOpen className="w-3 h-3" />
             {cls.subject}
           </span>
-          {cls.room && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-900 px-2.5 py-0.5 rounded-lg">
-              <MapPin className="w-3 h-3" />
-              {cls.room}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {cls.hasDeptFilter && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 px-2 py-0.5 rounded-lg border border-pink-100 dark:border-pink-500/20">
+                <Filter className="w-2.5 h-2.5" />
+                Dept. Only
+              </span>
+            )}
+            {cls.room && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-900 px-2.5 py-0.5 rounded-lg">
+                <MapPin className="w-3 h-3" />
+                {cls.room}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Title */}
@@ -48,7 +59,9 @@ export function ClassCard({ cls }: ClassCardProps) {
         {/* Subject Curriculum Tags */}
         {subjects.length > 0 && (
           <div className="mb-4">
-            <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 tracking-wider mb-2">Curriculum Modules</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-500 tracking-wider mb-2">
+              {cls.hasDeptFilter ? 'Dept. Curriculum' : 'Curriculum Modules'}
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {subjects.slice(0, 4).map((sub, i) => (
                 <span 

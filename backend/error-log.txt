@@ -63717,4 +63717,140 @@ Unknown argument `classTeachers`. Available options are marked with ?.
     at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
     at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at getTeacherSubjects (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\teacher\teacher-dashboard.controller.ts:209:22)
+    at getTeacherSubjects (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\teacher\teacher-dashboard.controller.ts:209:22)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:1407:42
+
+  1404 }
+  1405 
+  1406 const features = await withRetry(
+→ 1407     () => prisma.platformFeature.findMany(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:148:22)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:1406:26)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\student\student.service.ts:153:25
+
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\student\student.controller.ts:162:21)PrismaClientKnownRequestError: 
+Invalid `prisma.platformSettings.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\settings\settings.controller.ts:46:33
+
+  43 ];
+  44 const settings = await withRetry(
+  45   () =>
+→ 46     prisma.platformSettings.findMany(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:148:22)
+    at getPublicPlatformSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\settings\settings.controller.ts:44:22)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:351:44
+
+  348 
+  349 if (currentUserType === UserRole.STUDENT) {
+  350   if (schoolId) {
+→ 351     const student = await prisma.student.findUnique(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getClassesService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:351:23)
+    at getClasses (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:214:18)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:373:30
+
+  370 const resolvedId = await resolveSchoolId(schoolId);
+  371 if (!resolvedId) return null;
+  372 
+→ 373 return await prisma.school.findUnique(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolProfileService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.service.ts:373:10)
+    at getSchoolProfile (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\school.controller.ts:217:18)PrismaClientKnownRequestError: 
+Invalid `prisma.examAttempt.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-analytics.service.ts:183:55
+
+  180 const classStudentIds = classEnrollments.map((e) => e.studentId);
+  181 
+  182 // Get total points for ALL students in this class
+→ 183 const allClassAttempts = await prisma.examAttempt.findMany(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentGlobalStatsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-analytics.service.ts:183:30)
+    at getMyGlobalStats (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-analytics.controller.ts:92:18)PrismaClientKnownRequestError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:421:41
+
+  418 };
+  419 
+  420 export const getSingleClassService = async (classId: string) => {
+→ 421   const foundClass = await prisma.class.findUnique(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.service.ts:421:22)
+    at getSingleClass (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\class\class.controller.ts:237:24)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:354:45
+
+  351   });
+  352 }
+  353 
+→ 354 const count = await prisma.notification.count(
+Server has closed the connection.
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUnreadCount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:354:19)

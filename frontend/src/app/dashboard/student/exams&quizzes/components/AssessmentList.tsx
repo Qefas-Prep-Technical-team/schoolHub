@@ -40,10 +40,17 @@ export default function AssessmentList({
                         ? (scoreNum >= 75 ? 'text-emerald-500' : scoreNum >= 50 ? 'text-amber-500' : 'text-rose-500')
                         : 'text-slate-400 dark:text-zinc-500';
 
+                    const isLive = assessment.status === 'open' || assessment.status === 'ongoing';
+                    const cardHref = assessment.type === 'assignment'
+                        ? `/dashboard/student/exams&quizzes/${assessment.id}`
+                        : isLive
+                            ? `/Exams&Quizzes/exam/${assessment.id}`
+                            : `/dashboard/student/exams&quizzes/${assessment.id}`;
+
                     return (
                         <Link
                             key={assessment.id}
-                            href={`/dashboard/student/exams&quizzes/${assessment.id}`}
+                            href={cardHref}
                             className="group flex flex-col justify-between bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-5 shadow-sm hover:border-pink-500/40 hover:shadow-md transition-all active:scale-[0.99]"
                         >
                             <div>
@@ -102,7 +109,7 @@ export default function AssessmentList({
                                     {assessment.date}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 font-bold text-pink-600 dark:text-pink-400 text-xs group-hover:translate-x-0.5 transition-transform">
-                                    Open Assessment
+                                    {isLive ? 'Start Exam' : 'View Details'}
                                     <ArrowRight className="w-3.5 h-3.5" />
                                 </span>
                             </div>

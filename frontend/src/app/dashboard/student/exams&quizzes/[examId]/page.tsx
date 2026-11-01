@@ -2,8 +2,9 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useExam, useExamAttempt, useStartExamAttempt } from "@/lib/api/hooks/useExams";
-import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, Lock, RefreshCw } from "lucide-react";
-import { format, isAfter, isBefore } from "date-fns";
+import { useStudentProfile } from "@/lib/api/hooks/useStudent";
+import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, Lock, RefreshCw, ShieldAlert } from "lucide-react";
+import { format, isAfter } from "date-fns";
 import { Button as ShcnButton } from "@/components/ui/button";
 import ExamDetails from '@/app/Exams&Quizzes/exam/[examId]/start/components/ExamDetails';
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
@@ -20,10 +21,39 @@ export default function ExamDetailsPage() {
   const router = useRouter();
   
   const { data: exam, isLoading: isLoadingExam, refetch: refetchExam, isFetching: isFetchingExam } = useExam(examId as string);
-  const { data: attempt, isLoading: isLoadingAttempt, isError: isErrorAttempt, refetch: refetchAttempt } = useExamAttempt(examId as string);
+  const { data: attempt, isLoading: isLoadingAttempt, refetch: refetchAttempt } = useExamAttempt(examId as string);
+  const { data: studentProfile } = useStudentProfile();
   const startAttemptMutation = useStartExamAttempt();
   const [isViewingResult, setIsViewingResult] = useState(false);
   const [isCheckingAgain, setIsCheckingAgain] = useState(false);
+
+  // ─── Department guard ────────────────────────────────────────────────────────
+  // If the student has a department locked in, ensure this exam's subject belongs
+  // to their department. If it doesn't, block access.
+  const departmentBlock = useMemo(() => {
+    const rawProfile = studentProfile as any;
+    const studentDeptId: string | null = rawProfile?.departmentId || rawProfile?.department?.id || null;
+    if (!studentDeptId || !exam) return null; // No department set — allow all
+
+    const rawExam = exam as any;
+
+    // Build the set of department IDs this exam is explicitly restricted to
+    const examDeptIds: string[] = (rawExam.departments || []).map(
+      (d: any) => d.departmentId || d.department?.id || d.id
+    ).filter(Boolean);
+
+    // If exam has explicit department restrictions and student's dept is not in them, block
+    if (examDeptIds.length > 0 && !examDeptIds.includes(studentDeptId)) {
+      return { reason: 'This assessment is restricted to a specific department/faculty that does not include yours.' };
+    }
+
+    // If scope is DEPARTMENT, also verify
+    if (rawExam.scope === 'DEPARTMENT' && examDeptIds.length > 0 && !examDeptIds.includes(studentDeptId)) {
+      return { reason: 'This assessment is scoped to a department that you are not enrolled in.' };
+    }
+
+    return null; // Access allowed
+  }, [studentProfile, exam]);
 
   const papers = useMemo(() => {
     const rawExam = exam as any;
@@ -115,6 +145,33 @@ export default function ExamDetailsPage() {
       </div>
     );
   }
+
+  // Department access guard — block students trying to take exams outside their assigned department
+  if (departmentBlock) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 px-4 text-center">
+        <div className="w-20 h-20 rounded-full bg-rose-100 dark:bg-rose-500/10 flex items-center justify-center">
+          <ShieldAlert className="w-10 h-10 text-rose-500" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Access Restricted</h2>
+          <p className="text-slate-500 dark:text-zinc-400 max-w-md text-sm leading-relaxed">
+            {departmentBlock.reason}
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <ShcnButton variant="outline" onClick={() => router.back()} className="rounded-xl">
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Go Back
+          </ShcnButton>
+          <ShcnButton onClick={() => router.push('/dashboard/student/exams&quizzes')} className="rounded-xl">
+            View My Exams
+          </ShcnButton>
+        </div>
+      </div>
+    );
+  }
+
 
   const isTaken = attempt?.status === "SUBMITTED" || attempt?.status === "SCORED" || attempt?.status === "EXPIRED";
   const resultsReleased = attempt?.status === "SCORED" && (

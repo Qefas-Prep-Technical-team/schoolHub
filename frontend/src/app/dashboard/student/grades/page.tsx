@@ -175,7 +175,7 @@ export default function StudentGradesPage() {
   const router = useRouter();
   const [expandedExamId, setExpandedExamId] = useState<string | null>(null);
   const [selectedFinalResult, setSelectedFinalResult] = useState<any>(null);
-  const [activeTab, setActiveTab ] = useState<'exams' | 'assessments' | 'transcript' | 'final'>('exams');
+  const [activeTab, setActiveTab ] = useState<'exams' | 'assessments' | 'final'>('exams');
   const [caTab, setCaTab] = useState<'ALL' | 'CA' | 'ASSIGNMENT' | 'TEST/QUIZ' | 'SUBJECT PAPER'>('ALL');
   const [selectedTerm, setSelectedTerm] = useState<string>('ALL');
   const [selectedSession, setSelectedSession] = useState<string>('ALL');
@@ -721,7 +721,7 @@ export default function StudentGradesPage() {
         {/* Tabs and Content Section */}
         <div className="flex flex-col gap-4 sm:gap-6 mt-2">
           <div className="flex gap-1.5 sm:gap-2 bg-white dark:bg-zinc-950/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 w-full sm:w-fit overflow-x-auto shadow-sm" style={{ scrollbarWidth: 'none' }}>
-            {['exams', 'assessments', 'transcript', 'final'].map(tab => (
+            {['exams', 'assessments', 'final'].map(tab => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -1477,74 +1477,7 @@ export default function StudentGradesPage() {
               </div>
             )}
 
-            {activeTab === 'transcript' && transcriptData && (
-              <div className="bg-white dark:bg-zinc-950/80 rounded-3xl p-5 sm:p-8 border border-slate-200/80 dark:border-zinc-800 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex justify-between items-center pb-4 sm:pb-6 border-b border-slate-100 dark:border-zinc-800 mb-6">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Academic Transcript</h2>
-                    <HeaderTooltip content="Comprehensive academic transcript aggregating coursework components, exam performances, and teacher remarks." />
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-pink-50 dark:bg-pink-900/10 p-6 rounded-xl border border-pink-100 dark:border-pink-900/30">
-                    <div><p className="text-xs text-slate-500">Student Name</p><p className="font-semibold text-slate-800 dark:text-white">{transcriptData.student.name}</p></div>
-                    <div><p className="text-xs text-slate-500">Class</p><p className="font-semibold text-slate-800 dark:text-white">{transcriptData.className}</p></div>
-                    <div><p className="text-xs text-slate-500">Total Score</p><p className="font-semibold text-pink-600">{transcriptData.totalScore} / {transcriptData.totalMax}</p></div>
-                    <div><p className="text-xs text-slate-500">Overall Grade</p><p className="font-semibold text-pink-600">{getWAECGradeAndRemark(transcriptData.overallAverage, schoolProfile?.gradingSystem).grade}</p></div>
-                  </div>
-                  
-                  <table className="w-full text-left text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                        <th className="py-3 font-medium">Subject</th>
-                        <th className="py-3 font-medium text-center">Score</th>
-                        <th className="py-3 font-medium text-center">Grade</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {transcriptData.subjects.map((sub, idx) => (
-                        <tr key={idx} className="text-slate-800 dark:text-slate-200">
-                          <td className="py-3 font-semibold">{sub.subjectName}</td>
-                          <td className="py-3 text-center">{sub.totalScore}%</td>
-                          <td className="py-3 text-center">
-                            <span className="px-2 py-1 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded text-xs font-bold inline-block">
-                              {sub.grade}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">Teacher's Remark</p>
-                    <p className="text-sm italic text-slate-700 dark:text-slate-300">"{transcriptData.aiClassTeacherRemark}"</p>
-                  </div>
-                </div>
 
-                <div className="flex gap-4 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    onClick={handleExportTranscript}
-                    disabled={isExportingTranscript}
-                    type="button"
-                    className="w-full md:w-auto px-8 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-bold transition-all flex justify-center items-center gap-2 shadow-md shadow-pink-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isExportingTranscript ? (
-                      <>
-                        <Loader2 size={18} className="animate-spin" />
-                        <span>Preparing Official PDF...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download size={18} />
-                        <span>Export Official Transcript (PDF)</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

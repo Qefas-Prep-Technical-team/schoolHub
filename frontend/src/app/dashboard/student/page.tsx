@@ -10,7 +10,11 @@ import {
   Award,
   ArrowRight,
   GraduationCap,
+  Building2,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { schoolService } from '@/lib/api/services/schoolService';
 import {
   Radar,
   RadarChart,
@@ -30,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { StudentConnectionModal } from './components/StudentConnectionModal';
 import { StudentClassSelectionModal } from './components/StudentClassSelectionModal';
+import { StudentAcademicLockModal, DONT_SHOW_ACADEMIC_LOCK_KEY } from './components/StudentAcademicLockModal';
 import AcademicHistory, { HistoryAttempt } from './components/dashboard/AcademicHistory';
 import PerformanceTrend, { PerformanceAttempt, PerformanceGrade } from './components/dashboard/PerformanceTrend';
 import LatestAssignmentsCard from './components/dashboard/LatestAssignmentsCard';
@@ -75,9 +80,36 @@ interface ClassSubjectItem {
   name?: string;
   category?: string;
   subject?: {
+    id?: string;
     name?: string;
     category?: string;
+    scope?: string;
+    departments?: Array<{
+      id?: string;
+      departmentId?: string;
+      department?: {
+        id?: string;
+        name?: string;
+        code?: string;
+      };
+    }>;
   };
+}
+
+interface DepartmentItem {
+  id: string;
+  name: string;
+  code?: string;
+  departmentId?: string;
+  subjects?: Array<{
+    id?: string;
+    subjectId?: string;
+    subject?: {
+      id?: string;
+      name?: string;
+      code?: string;
+    };
+  }>;
 }
 
 export default function StudentHomeDashboard() {
@@ -90,6 +122,48 @@ export default function StudentHomeDashboard() {
   const { data: publishedResultsData } = useMyPublishedResults();
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
   const [isClassSelectionModalOpen, setIsClassSelectionModalOpen] = useState(false);
+  const [isAcademicLockModalOpen, setIsAcademicLockModalOpen] = useState(false);
+
+  const studentDepartmentId: string | null = (studentProfile as any)?.departmentId || (studentProfile as any)?.department?.id || null;
+  const studentLevel: string | null = (studentProfile as any)?.level || null;
+  const isDepartmentLocked = Boolean(studentDepartmentId || (studentProfile as any)?.department?.name);
+  const isLevelLocked = Boolean(studentLevel);
+
+  const targetSchoolId = studentProfile?.schoolId || (studentProfile as any)?.school?.id;
+
+  // Query school departments adhering to AGENTS.md staleTime rules (10 min)
+  const { data: schoolDepartments = [] } = useQuery<DepartmentItem[]>({
+    queryKey: ['schoolDepartments', targetSchoolId],
+    queryFn: () => schoolService.getDepartments(targetSchoolId!),
+    enabled: !!targetSchoolId,
+    staleTime: 1000 * 60 * 10,
+    retry: 1,
+  });
+
+  const enrolledDeptName =
+    (studentProfile as any)?.department?.name ||
+    schoolDepartments.find((d: DepartmentItem) => d.id === studentDepartmentId || d.departmentId === studentDepartmentId)?.name ||
+    null;
+
+  const enrolledDeptCode =
+    (studentProfile as any)?.department?.code ||
+    schoolDepartments.find((d: DepartmentItem) => d.id === studentDepartmentId || d.departmentId === studentDepartmentId)?.code ||
+    null;
+
+  // If student has no department or level locked in, show academic profile completion popup
+  useEffect(() => {
+    if (isLoadingProfile || !studentProfile) return;
+
+    // Check if dismissed via "Don't show again"
+    const studentId = (studentProfile as any)?.id || "guest";
+    const dismissed = typeof window !== "undefined" && localStorage.getItem(`${DONT_SHOW_ACADEMIC_LOCK_KEY}_${studentId}`) === "true";
+    if (dismissed) return;
+
+    // Show popup if student has no department OR level locked in
+    if (!isDepartmentLocked || !isLevelLocked) {
+      setIsAcademicLockModalOpen(true);
+    }
+  }, [isLoadingProfile, studentProfile, isDepartmentLocked, isLevelLocked]);
 
   const attempts: RawExamAttempt[] = (attemptsData?.attempts as RawExamAttempt[]) || [];
   const standaloneGrades: RawGradeRecord[] = (standaloneGradesData?.grades as RawGradeRecord[]) || [];
@@ -145,7 +219,6 @@ export default function StudentHomeDashboard() {
   }, [publishedResultsData]);
 
   const activeClass = studentProfile?.classes?.[0]?.class;
-  const enrolledSubjectsCount = activeClass?.subjects?.length || 0;
 
   const prefectRole = studentProfile?.prefectRole;
   const hasSeenCelebration = studentProfile?.hasSeenPrefectCelebration ?? true;
@@ -228,7 +301,97 @@ export default function StudentHomeDashboard() {
   // Derived data for UI layout
   const latestAttempt = attempts[0];
   const enrolledSubjectsList = (activeClass?.subjects as ClassSubjectItem[]) || [];
-  const displaySubjects = enrolledSubjectsList.map((sub, i) => ({
+
+  // If the student has their department locked in, strictly filter the enrolled subjects to that department
+  const filteredEnrolledSubjects = useMemo(() => {
+    if (!studentDepartmentId) {
+      return enrolledSubjectsList;
+    }
+
+    // Collect department subject mappings from:
+    // 1) activeClass.departments
+    // 2) activeClass.subjects[].departments
+    // 3) schoolDepartments (retrieved from schoolService)
+    const deptSubjectIds = new Set<string>();
+    const deptSubjectNames = new Set<string>();
+
+    // 1. Check departments on the class
+    ((activeClass as any)?.departments || []).forEach((cd: any) => {
+      const d = cd.department || cd;
+      const dId = d.id || cd.departmentId;
+      if (dId === studentDepartmentId && d.subjects) {
+        d.subjects.forEach((ds: any) => {
+          const s = ds.subject || ds;
+          if (s.id) deptSubjectIds.add(s.id);
+          if (s.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+        });
+      }
+    });
+
+    // 2. Check departments attached to class subjects
+    enrolledSubjectsList.forEach((cs) => {
+      const s = cs.subject || (cs as any);
+      if (s?.departments && Array.isArray(s.departments)) {
+        const belongsToDept = s.departments.some(
+          (d: any) =>
+            d.departmentId === studentDepartmentId ||
+            d.department?.id === studentDepartmentId ||
+            d.id === studentDepartmentId
+        );
+        if (belongsToDept) {
+          if (s.id) deptSubjectIds.add(s.id);
+          if (s.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+        }
+      }
+    });
+
+    // 3. Check school-wide department subjects mapping from schoolDepartments
+    const currentSchoolDept = schoolDepartments.find(
+      (d) => d.id === studentDepartmentId || d.departmentId === studentDepartmentId
+    );
+    if (currentSchoolDept && Array.isArray(currentSchoolDept.subjects)) {
+      currentSchoolDept.subjects.forEach((ds) => {
+        const s = ds.subject || ds;
+        const sId = (s as any).id || (ds as any).subjectId;
+        const sName = (s as any).name;
+        if (sId) deptSubjectIds.add(sId);
+        if (sName) deptSubjectNames.add(String(sName).toLowerCase().trim());
+      });
+    }
+
+    // Filter class subjects
+    const filtered = enrolledSubjectsList.filter((cs) => {
+      const s = cs.subject || (cs as any);
+      const subjectId = s?.id || cs.id;
+      const subjectName = (s?.name || cs.name || "").toLowerCase().trim();
+
+      // If subject explicitly declares DEPARTMENT scope and department attachments
+      if (s?.scope === "DEPARTMENT" && s?.departments && Array.isArray(s.departments)) {
+        return s.departments.some(
+          (d: any) =>
+            d.departmentId === studentDepartmentId ||
+            d.department?.id === studentDepartmentId ||
+            d.id === studentDepartmentId
+        );
+      }
+
+      // Check matched department subject sets
+      if (deptSubjectIds.size > 0 || deptSubjectNames.size > 0) {
+        if (subjectId && deptSubjectIds.has(subjectId)) return true;
+        if (subjectName && deptSubjectNames.has(subjectName)) return true;
+        // If subject belongs to another department, exclude it
+        return false;
+      }
+
+      return true;
+    });
+
+    return filtered;
+  }, [enrolledSubjectsList, studentDepartmentId, activeClass, schoolDepartments]);
+
+  const enrolledSubjectsCount = filteredEnrolledSubjects.length;
+
+  const displaySubjects = filteredEnrolledSubjects.map((sub, i) => ({
     id: sub.id || String(i),
     name: sub.subject?.name || sub.name || "Subject",
     category: sub.subject?.category || sub.category || "GENERAL",
@@ -499,8 +662,19 @@ export default function StudentHomeDashboard() {
 
             {/* Enrolled Subjects Section */}
             <section className="space-y-3 sm:space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Enrolled Subjects</h2>
+                {isDepartmentLocked && (enrolledDeptName || enrolledDeptCode) && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-100 dark:bg-pink-500/20 border border-pink-200 dark:border-pink-500/30">
+                    <Building2 className="w-3 h-3 text-pink-600 dark:text-pink-400 shrink-0" />
+                    <span className="text-xs font-bold text-pink-700 dark:text-pink-300 uppercase tracking-wide">
+                      {enrolledDeptName || enrolledDeptCode}
+                      {enrolledDeptCode && enrolledDeptName && enrolledDeptCode !== enrolledDeptName && (
+                        <span className="font-semibold opacity-70 ml-1">({enrolledDeptCode})</span>
+                      )}
+                    </span>
+                  </div>
+                )}
                 <HeaderTooltip content="Class curriculum subjects assigned to you. Scroll horizontally or click any subject card to inspect enrollment details." />
               </div>
 
@@ -548,7 +722,11 @@ export default function StudentHomeDashboard() {
                   ))
                 ) : (
                   <div className="col-span-full w-full py-10 sm:py-12 text-center bg-slate-50 dark:bg-zinc-900/40 rounded-3xl border border-dashed border-slate-200 dark:border-zinc-800 p-4">
-                    <p className="text-slate-500 dark:text-zinc-400 font-medium text-sm">No subjects enrolled in current class roster.</p>
+                    <p className="text-slate-500 dark:text-zinc-400 font-medium text-sm">
+                      {studentDepartmentId
+                        ? "No curriculum subjects found assigned to your locked-in department."
+                        : "No subjects enrolled in current class roster."}
+                    </p>
                   </div>
                 )}
               </div>
@@ -661,6 +839,12 @@ export default function StudentHomeDashboard() {
         roleName={prefectRole || ''}
         hasSeenCelebration={hasSeenCelebration}
         onAcknowledge={() => {}}
+      />
+
+      <StudentAcademicLockModal
+        isOpen={isAcademicLockModalOpen}
+        onClose={() => setIsAcademicLockModalOpen(false)}
+        profile={studentProfile}
       />
     </div>
   );

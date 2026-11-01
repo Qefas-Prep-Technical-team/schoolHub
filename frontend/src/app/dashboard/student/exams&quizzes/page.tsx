@@ -47,6 +47,8 @@ interface RawExamItem {
   allowImmediateResult?: boolean;
   classId?: string;
   class?: { id: string; name: string; section?: string };
+  subjectId?: string;
+  subject?: { id: string; name: string };
   subjectPapers?: RawSubjectPaper[];
   subjectExamPapers?: (RawSubjectPaper | { subjectPaper?: RawSubjectPaper })[];
   attempts?: RawAttempt[];
@@ -197,10 +199,12 @@ export default function StudentAssessmentsPage() {
                 }
             }
 
+            const examSubjectName = exam.subject?.name || normalizedPapers[0]?.subject?.name || (normalizedPapers.length > 1 ? 'Multiple Subjects' : 'General');
+
             return {
                 id: exam.id,
                 title: exam.title,
-                subject: normalizedPapers[0]?.subject?.name || 'Multiple Subjects',
+                subject: examSubjectName,
                 date: exam.startDate ? new Date(exam.startDate).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -265,10 +269,69 @@ export default function StudentAssessmentsPage() {
         ];
     }, [statsData]);
 
-    // Filter assessments by type, search query, and selected class
+    // Filter assessments by department, type, search query, and selected class
     const filteredAssessments = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
+        const rawProfile = studentProfile as any;
+        const studentDeptId: string | null = rawProfile?.departmentId || rawProfile?.department?.id || null;
+
+        // Build set of subject IDs and subject names associated with student's department
+        const deptSubjectIds = new Set<string>();
+        const deptSubjectNames = new Set<string>();
+
+        // 1. Directly from studentProfile.department.subjects (from backend include)
+        if (rawProfile?.department?.subjects && Array.isArray(rawProfile.department.subjects)) {
+            rawProfile.department.subjects.forEach((ds: any) => {
+                const s = ds.subject || ds;
+                if (s?.id) deptSubjectIds.add(s.id);
+                if (s?.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+            });
+        }
+
+        // 2. Through student classes and curriculum
+        if (studentDeptId && studentProfile?.classes) {
+            studentProfile.classes.forEach((c: any) => {
+                const cls = c.class || c;
+                // Through cls.departments
+                (cls.departments || []).forEach((cd: any) => {
+                    const d = cd.department || cd;
+                    const dId = d.id || cd.departmentId;
+                    if (dId === studentDeptId && d.subjects) {
+                        d.subjects.forEach((ds: any) => {
+                            const s = ds.subject || ds;
+                            if (s?.id) deptSubjectIds.add(s.id);
+                            if (s?.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+                        });
+                    }
+                });
+                // Through cls.subjects
+                (cls.subjects || []).forEach((cs: any) => {
+                    const s = cs.subject || cs;
+                    if (!s) return;
+                    const belongs = s.departments && s.departments.some((d: any) =>
+                        d.departmentId === studentDeptId || d.department?.id === studentDeptId || d.id === studentDeptId
+                    );
+                    if (belongs) {
+                        if (s.id) deptSubjectIds.add(s.id);
+                        if (s.name) deptSubjectNames.add(s.name.toLowerCase().trim());
+                    }
+                });
+            });
+        }
+
+        const isSubjectInDept = (subjName?: string) => {
+            if (!studentDeptId) return true; // No department selected - show all
+            if (deptSubjectNames.size === 0 && deptSubjectIds.size === 0) return true; // No department subjects configured - fallback
+            if (!subjName || subjName === 'Multiple Subjects') return true;
+            return deptSubjectNames.has(subjName.toLowerCase().trim());
+        };
+
         return allAssessments.filter(assessment => {
+            // Department filter: only show assessments attached to student's department
+            if (!isSubjectInDept(assessment.subject)) {
+                return false;
+            }
+
             const matchesType = assessmentType === 'all' 
                 ? true
                 : assessmentType === 'exams' ? assessment.type === 'exam' 
@@ -288,7 +351,7 @@ export default function StudentAssessmentsPage() {
                    assessment.subject.toLowerCase().includes(q) ||
                    (assessment.className && assessment.className.toLowerCase().includes(q));
         });
-    }, [allAssessments, assessmentType, searchQuery, selectedClassId]);
+    }, [allAssessments, assessmentType, searchQuery, selectedClassId, studentProfile]);
 
     if (isLoading) {
         return (

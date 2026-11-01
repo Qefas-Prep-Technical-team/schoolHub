@@ -1,14 +1,24 @@
 import { Button } from '@/components/ui/button';
-import { Mail, BookOpen } from 'lucide-react';
+import { Mail, BookOpen, PlayCircle } from 'lucide-react';
 
 interface ClassBannerProps {
   title: string;
   description: string;
+  teacherEmail?: string;
   onContactClick: () => void;
   onMaterialsClick: () => void;
 }
 
-export default function ClassBanner({ title, description, onContactClick, onMaterialsClick }: ClassBannerProps) {
+export default function ClassBanner({ title, description, teacherEmail, onContactClick, onMaterialsClick }: ClassBannerProps) {
+
+  const handleContact = () => {
+    if (teacherEmail) {
+      window.location.href = `mailto:${teacherEmail}?subject=Question about ${encodeURIComponent(title)}`;
+    } else {
+      onContactClick();
+    }
+  };
+
   return (
     <div className="w-full bg-gradient-to-r from-pink-600 via-rose-600 to-rose-700 dark:from-pink-700 dark:to-rose-800 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 text-white shadow-sm relative overflow-hidden">
       {/* Decorative background blobs */}
@@ -27,12 +37,13 @@ export default function ClassBanner({ title, description, onContactClick, onMate
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4">
           <Button 
             onClick={onMaterialsClick}
-            className="bg-white hover:bg-slate-50 text-pink-600 font-bold rounded-xl px-5 h-10 sm:h-11 shadow-xs text-xs sm:text-sm active:scale-95 transition-all"
+            className="bg-white hover:bg-slate-50 text-pink-600 font-bold rounded-xl px-5 h-10 sm:h-11 shadow-xs text-xs sm:text-sm active:scale-95 transition-all flex items-center gap-2"
           >
+            <PlayCircle className="w-4 h-4" />
             Resume Learning
           </Button>
           <Button 
-            onClick={onContactClick}
+            onClick={handleContact}
             variant="ghost" 
             className="hover:bg-white/10 text-white font-bold rounded-xl px-5 h-10 sm:h-11 flex items-center justify-center gap-2 text-xs sm:text-sm border border-white/20 active:scale-95 transition-all"
           >

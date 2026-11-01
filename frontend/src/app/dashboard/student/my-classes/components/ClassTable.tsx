@@ -4,12 +4,13 @@ import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, User } from 'lucide-react';
+import { ArrowRight, BookOpen, User, Filter } from 'lucide-react';
 
 export interface ClassItem {
   id: string;
   title: string;
-  subject: string;
+  subject: string;    // primary subject (first visible)
+  subjects?: string[]; // all visible dept-filtered subjects
   teacher: string;
   room: string;
   progress: number;
@@ -18,6 +19,7 @@ export interface ClassItem {
   days: string[];
   description: string;
   color: string;
+  hasDeptFilter?: boolean;
 }
 
 interface ClassTableProps {
@@ -97,10 +99,18 @@ export function ClassTable({ isLoading, filteredClasses }: ClassTableProps) {
                   </div>
                 </td>
                 <td className="px-5 py-4">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20">
-                    <BookOpen className="w-3 h-3" />
-                    {cls.subject}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20">
+                      <BookOpen className="w-3 h-3" />
+                      {cls.subject}
+                    </span>
+                    {cls.hasDeptFilter && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 px-1.5 py-0.5 rounded-md border border-pink-100 dark:border-pink-500/20">
+                        <Filter className="w-2.5 h-2.5" />
+                        Dept
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-4 text-slate-600 dark:text-zinc-300">
                   <div className="flex items-center gap-2">
