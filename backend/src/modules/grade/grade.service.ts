@@ -192,6 +192,15 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
         },
         teacher: {
           select: { id: true, name: true, teacherCode: true }
+        },
+        auditLogs: {
+          select: {
+            changedById: true,
+            changedByType: true,
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -199,38 +208,73 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
     prisma.grade.count({ where })
   ]);
 
-  // Resolve creator names for grades where teacherId is an admin or teacher
-  const unresolvedTeacherIds = Array.from(
-    new Set(
-      grades
-        .filter(g => g.teacherId && !g.teacher)
-        .map(g => g.teacherId as string)
-    )
-  );
+  // Resolve creator names for grades where teacherId is an admin or teacher, or from audit logs
+  const unresolvedTeacherIds = new Set<string>();
+  const adminIdsToLookup = new Set<string>();
+
+  grades.forEach(g => {
+    if (g.teacherId && !g.teacher) {
+      unresolvedTeacherIds.add(g.teacherId);
+    }
+    const latestAudit = g.auditLogs?.[0];
+    if (latestAudit?.changedById) {
+      const changerRole = String(latestAudit.changedByType || '').toUpperCase();
+      if (changerRole === 'ADMIN' || changerRole === 'SUPER_ADMIN' || changerRole === 'SCHOOL_OWNER' || changerRole === 'PRINCIPAL' || changerRole === 'REGISTRAR') {
+        adminIdsToLookup.add(latestAudit.changedById);
+      }
+    }
+  });
 
   let adminNameMap = new Map<string, string>();
   let teacherNameMap = new Map<string, string>();
 
-  if (unresolvedTeacherIds.length > 0) {
-    const [admins, teachers] = await Promise.all([
-      prisma.admin.findMany({
-        where: { id: { in: unresolvedTeacherIds } },
-        select: { id: true, name: true }
-      }),
-      prisma.teacher.findMany({
-        where: { id: { in: unresolvedTeacherIds } },
-        select: { id: true, name: true }
-      })
-    ]);
-    admins.forEach(a => adminNameMap.set(a.id, a.name));
-    teachers.forEach(t => teacherNameMap.set(t.id, t.name));
-  }
+  const unresolvedTeacherIdsList = Array.from(unresolvedTeacherIds);
+  const adminIdsList = Array.from(adminIdsToLookup);
+
+  const [adminsFromTeacherId, teachers, auditAdmins] = await Promise.all([
+    unresolvedTeacherIdsList.length > 0
+      ? prisma.admin.findMany({
+          where: { id: { in: unresolvedTeacherIdsList } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([]),
+    unresolvedTeacherIdsList.length > 0
+      ? prisma.teacher.findMany({
+          where: { id: { in: unresolvedTeacherIdsList } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([]),
+    adminIdsList.length > 0
+      ? prisma.admin.findMany({
+          where: { id: { in: adminIdsList } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([])
+  ]);
+
+  adminsFromTeacherId.forEach(a => adminNameMap.set(a.id, a.name));
+  auditAdmins.forEach(a => adminNameMap.set(a.id, a.name));
+  teachers.forEach(t => teacherNameMap.set(t.id, t.name));
 
   const enhancedGrades = grades.map(g => {
     let resolvedName: string | undefined = g.teacher?.name;
-    if (!resolvedName && g.teacherId) {
-      resolvedName = teacherNameMap.get(g.teacherId) || adminNameMap.get(g.teacherId) || undefined;
+    const latestAudit = g.auditLogs?.[0];
+
+    if (latestAudit?.changedById && adminNameMap.has(latestAudit.changedById)) {
+      const adminName = adminNameMap.get(latestAudit.changedById);
+      if (adminName) {
+        resolvedName = `Admin: ${adminName}`;
+      }
     }
+
+    if (!resolvedName && g.teacherId) {
+      if (adminNameMap.has(g.teacherId)) {
+        resolvedName = `Admin: ${adminNameMap.get(g.teacherId)}`;
+      } else {
+        resolvedName = teacherNameMap.get(g.teacherId);
+      }
+    }
+
     return {
       ...g,
       creatorName: resolvedName || (g.teacher?.name ?? null)
@@ -493,7 +537,7 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     'weight', 'remarks', 'releaseDate', 'examId', 'subjectPaperId', 'examAttemptId', 'subjectExamAttemptId'
   ]);
 
-  // Resolve teacher record ID if created by teacher
+  // 1. Resolve teacher record ID if created by teacher
   let resolvedTeacherId: string | undefined = undefined;
   if (userRole === 'TEACHER' && userId) {
     const teacherRecord = await prisma.teacher.findFirst({
@@ -505,7 +549,33 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
       },
       select: { id: true }
     });
-    resolvedTeacherId = teacherRecord?.id || userId;
+    if (teacherRecord) {
+      resolvedTeacherId = teacherRecord.id;
+    }
+  }
+
+  // Collect candidate teacher IDs from payload to validate against Teacher table
+  const candidateTeacherIds = new Set<string>();
+  if (resolvedTeacherId) candidateTeacherIds.add(resolvedTeacherId);
+  grades.forEach((g) => {
+    if (g.teacherId && typeof g.teacherId === 'string' && g.teacherId.trim() !== '') {
+      candidateTeacherIds.add(g.teacherId.trim());
+    }
+  });
+
+  // Query database for genuinely existing teacher IDs
+  const validTeacherIds = new Set<string>();
+  if (candidateTeacherIds.size > 0) {
+    const matchedTeachers = await prisma.teacher.findMany({
+      where: { id: { in: Array.from(candidateTeacherIds) } },
+      select: { id: true },
+    });
+    matchedTeachers.forEach((t) => validTeacherIds.add(t.id));
+  }
+
+  // If resolvedTeacherId isn't actually a Teacher record, reset it to undefined
+  if (resolvedTeacherId && !validTeacherIds.has(resolvedTeacherId)) {
+    resolvedTeacherId = undefined;
   }
 
   // Resolve studentName -> studentId if studentId is missing
@@ -534,9 +604,9 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
         }
       }
 
-      if (!clean.teacherId && resolvedTeacherId) {
-        clean.teacherId = resolvedTeacherId;
-      }
+      // Ensure teacherId strictly exists in the Teacher table (Grade.teacherId is a foreign key)
+      const rawTeacherId = clean.teacherId || resolvedTeacherId;
+      clean.teacherId = (rawTeacherId && validTeacherIds.has(rawTeacherId)) ? rawTeacherId : null;
 
       const resolvedGradeId = g.existingGradeId || g.id || undefined;
 
@@ -620,14 +690,18 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[], u
     validGrades.forEach((g) => {
       const existingGrade = (g.id && existingById.get(g.id)) || existingMap.get(getGradeKey(g));
       if (existingGrade) {
+        const updateTeacherId = g.teacherId || (existingGrade.teacherId && validTeacherIds.has(existingGrade.teacherId) ? existingGrade.teacherId : null);
+
         operations.push(prisma.grade.update({
           where: { id: existingGrade.id },
           data: {
             score: g.score,
             maxMarks: g.maxMarks,
-            teacherId: existingGrade.teacherId || g.teacherId || resolvedTeacherId || undefined,
+            teacherId: updateTeacherId,
             category: g.category || existingGrade.category,
             assessmentType: g.assessmentType || existingGrade.assessmentType,
+            term: g.term || existingGrade.term,
+            sessionId: g.sessionId || existingGrade.sessionId,
             status: g.status,
             releaseDate: g.releaseDate !== undefined ? g.releaseDate : existingGrade.releaseDate,
             remarks: g.remarks !== undefined ? g.remarks : existingGrade.remarks,
@@ -792,4 +866,147 @@ export const deleteGradeService = async (id: string) => {
   }
 
   return deletedGrade;
+};
+
+export const deleteBatchGradeService = async (
+  representativeGradeId: string,
+  criteria?: { classId?: string; subject?: string; assessmentType?: string; category?: string; term?: string }
+) => {
+  // 1. Fetch the target representative grade to identify batch signature
+  let targetGrade = await prisma.grade.findUnique({
+    where: { id: representativeGradeId },
+    select: {
+      id: true,
+      schoolId: true,
+      classId: true,
+      subject: true,
+      assessmentType: true,
+      category: true,
+      term: true,
+      examId: true,
+      subjectPaperId: true,
+      examAttemptId: true,
+      subjectExamAttemptId: true,
+    }
+  });
+
+  // If not found by representativeGradeId directly, fall back to searching by criteria
+  if (!targetGrade && criteria?.classId && criteria?.subject) {
+    targetGrade = await prisma.grade.findFirst({
+      where: {
+        classId: criteria.classId,
+        subject: { equals: criteria.subject, mode: 'insensitive' },
+        ...(criteria.category ? { category: criteria.category as any } : {}),
+        ...(criteria.term ? { term: criteria.term as any } : {}),
+        ...(criteria.assessmentType ? { assessmentType: { equals: criteria.assessmentType, mode: 'insensitive' } } : {}),
+        examAttemptId: null,
+        subjectExamAttemptId: null,
+        examId: null,
+        subjectPaperId: null,
+      },
+      select: {
+        id: true,
+        schoolId: true,
+        classId: true,
+        subject: true,
+        assessmentType: true,
+        category: true,
+        term: true,
+        examId: true,
+        subjectPaperId: true,
+        examAttemptId: true,
+        subjectExamAttemptId: true,
+      }
+    });
+  }
+
+  if (!targetGrade) {
+    throw new Error('Grade batch not found');
+  }
+
+  // Ensure this is an offline grade record
+  if (targetGrade.examAttemptId || targetGrade.subjectExamAttemptId || targetGrade.examId || targetGrade.subjectPaperId) {
+    throw new Error('Cannot delete online exam attempt as offline grade batch');
+  }
+
+  const effectiveClassId = criteria?.classId || targetGrade.classId;
+  const effectiveSubject = criteria?.subject || targetGrade.subject;
+  const effectiveAssessmentType = criteria?.assessmentType || targetGrade.assessmentType;
+  const effectiveCategory = (criteria?.category || targetGrade.category) as any;
+  const effectiveTerm = (criteria?.term || targetGrade.term) as any;
+
+  const whereClause: any = {
+    schoolId: targetGrade.schoolId,
+    examAttemptId: null,
+    subjectExamAttemptId: null,
+    examId: null,
+    subjectPaperId: null,
+  };
+
+  if (effectiveClassId) {
+    whereClause.classId = effectiveClassId;
+  }
+  if (effectiveSubject) {
+    whereClause.subject = { equals: effectiveSubject, mode: 'insensitive' };
+  }
+  if (effectiveCategory) {
+    whereClause.category = effectiveCategory;
+  }
+  if (effectiveTerm) {
+    whereClause.term = effectiveTerm;
+  }
+  if (effectiveAssessmentType) {
+    whereClause.assessmentType = { equals: effectiveAssessmentType, mode: 'insensitive' };
+  } else {
+    // If no assessmentType, ensure match on null or fallback to category
+    whereClause.OR = [
+      { assessmentType: null },
+      { assessmentType: '' },
+      { assessmentType: { equals: `${effectiveCategory} Assessment`, mode: 'insensitive' } }
+    ];
+  }
+
+  // Also include the specific representative grade ID just in case slight casing differences exist
+  const batchGrades = await prisma.grade.findMany({
+    where: {
+      OR: [
+        { id: representativeGradeId },
+        whereClause
+      ]
+    },
+    select: { id: true }
+  });
+
+  const idsToDelete = Array.from(new Set([representativeGradeId, ...batchGrades.map(g => g.id)]));
+
+  // Perform bulk deletion
+  const deleteResult = await prisma.grade.deleteMany({
+    where: {
+      id: { in: idsToDelete }
+    }
+  });
+
+  // Notify school admins about the batch deletion
+  const schoolAdmins = await prisma.schoolAdmin.findMany({
+    where: { schoolId: targetGrade.schoolId },
+    select: { adminId: true }
+  });
+
+  if (schoolAdmins.length > 0) {
+    const title = effectiveAssessmentType || `${effectiveCategory} Assessment`;
+    const notifications = schoolAdmins.map(admin => ({
+      recipientType: 'ADMIN' as const,
+      recipientId: admin.adminId,
+      type: 'GENERAL' as const,
+      title: 'Offline Assessment Marksheet Deleted',
+      message: `Offline assessment marksheet "${title}" for ${effectiveSubject} has been deleted (${deleteResult.count} student grades removed).`,
+      meta: { priority: 'NORMAL' }
+    }));
+
+    await prisma.notification.createMany({
+      data: notifications
+    });
+  }
+
+  return { count: deleteResult.count, deletedIds: idsToDelete };
 };

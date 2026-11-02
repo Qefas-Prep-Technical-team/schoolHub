@@ -10,6 +10,7 @@ router.patch("/bulk/publish", gradeController.bulkPublishGrades);
 
 router.patch("/:id", gradeController.updateGradeScore);
 router.patch("/:id/publish", gradeController.publishGrade);
+router.delete("/batch/:id", gradeController.deleteBatchGrades);
 router.delete("/:id", gradeController.deleteGrade);
 router.post("/ocr", gradeController.processOCR);
 

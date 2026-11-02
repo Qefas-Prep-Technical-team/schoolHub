@@ -1228,7 +1228,11 @@ export const getStudentExamAttemptsService = async (studentId: string, page: num
     prisma.examAttempt.findMany({
       where,
       include: {
-        exam: true,
+        exam: {
+          include: {
+            class: true,
+          },
+        },
         subjectExamAttempts: {
           include: {
             subjectPaper: {

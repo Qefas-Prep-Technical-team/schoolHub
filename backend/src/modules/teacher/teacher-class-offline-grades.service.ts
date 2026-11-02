@@ -115,46 +115,96 @@ export const getTeacherClassOfflineGradesService = async (
       },
       teacher: {
         select: { id: true, name: true, teacherCode: true }
+      },
+      auditLogs: {
+        select: {
+          changedById: true,
+          changedByType: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1
       }
     },
     orderBy: { createdAt: 'desc' }
   });
 
-  // Resolve creator names if teacherId exists but teacher relation is not populated
-  const unresolvedTeacherIds = Array.from(
-    new Set(
-      grades
-        .filter(g => g.teacherId && !g.teacher)
-        .map(g => g.teacherId as string)
-    )
-  );
+  // Resolve creator names for grades where teacherId is an admin or teacher, or from audit logs
+  const unresolvedTeacherIds = new Set<string>();
+  const adminIdsToLookup = new Set<string>();
+
+  grades.forEach(g => {
+    if (g.teacherId && !g.teacher) {
+      unresolvedTeacherIds.add(g.teacherId);
+    }
+    const latestAudit = (g as any).auditLogs?.[0];
+    if (latestAudit?.changedById) {
+      const changerRole = String(latestAudit.changedByType || '').toUpperCase();
+      if (
+        changerRole === 'ADMIN' ||
+        changerRole === 'SUPER_ADMIN' ||
+        changerRole === 'SCHOOL_OWNER' ||
+        changerRole === 'PRINCIPAL' ||
+        changerRole === 'REGISTRAR'
+      ) {
+        adminIdsToLookup.add(latestAudit.changedById);
+      }
+    }
+  });
 
   let adminNameMap = new Map<string, string>();
   let teacherNameMap = new Map<string, string>();
 
-  if (unresolvedTeacherIds.length > 0) {
-    const [admins, teachers] = await Promise.all([
-      prisma.admin.findMany({
-        where: { id: { in: unresolvedTeacherIds } },
-        select: { id: true, name: true }
-      }),
-      prisma.teacher.findMany({
-        where: { id: { in: unresolvedTeacherIds } },
-        select: { id: true, name: true }
-      })
-    ]);
-    admins.forEach(a => adminNameMap.set(a.id, a.name));
-    teachers.forEach(t => teacherNameMap.set(t.id, t.name));
-  }
+  const unresolvedTeacherIdsList = Array.from(unresolvedTeacherIds);
+  const adminIdsList = Array.from(adminIdsToLookup);
+
+  const [adminsFromTeacherId, teachers, auditAdmins] = await Promise.all([
+    unresolvedTeacherIdsList.length > 0
+      ? prisma.admin.findMany({
+          where: { id: { in: unresolvedTeacherIdsList } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([]),
+    unresolvedTeacherIdsList.length > 0
+      ? prisma.teacher.findMany({
+          where: { id: { in: unresolvedTeacherIdsList } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([]),
+    adminIdsList.length > 0
+      ? prisma.admin.findMany({
+          where: { id: { in: adminIdsList } },
+          select: { id: true, name: true }
+        })
+      : Promise.resolve([])
+  ]);
+
+  adminsFromTeacherId.forEach(a => adminNameMap.set(a.id, a.name));
+  auditAdmins.forEach(a => adminNameMap.set(a.id, a.name));
+  teachers.forEach(t => teacherNameMap.set(t.id, t.name));
 
   const enhancedGrades = grades.map(g => {
     let resolvedName: string | undefined = g.teacher?.name;
-    if (!resolvedName && g.teacherId) {
-      resolvedName = teacherNameMap.get(g.teacherId) || adminNameMap.get(g.teacherId);
+    const latestAudit = (g as any).auditLogs?.[0];
+
+    if (latestAudit?.changedById && adminNameMap.has(latestAudit.changedById)) {
+      const adminName = adminNameMap.get(latestAudit.changedById);
+      if (adminName) {
+        resolvedName = `Admin: ${adminName}`;
+      }
     }
+
+    if (!resolvedName && g.teacherId) {
+      if (adminNameMap.has(g.teacherId)) {
+        resolvedName = `Admin: ${adminNameMap.get(g.teacherId)}`;
+      } else {
+        resolvedName = teacherNameMap.get(g.teacherId);
+      }
+    }
+
     return {
       ...g,
-      creatorName: resolvedName || (g.teacherId ? 'Faculty Member' : 'System Generated')
+      creatorName: resolvedName || (g.teacher?.name ?? (g.teacherId ? 'Faculty Member' : 'Admin: Administrator'))
     };
   });
 

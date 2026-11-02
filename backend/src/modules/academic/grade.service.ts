@@ -40,6 +40,7 @@ export const getStudentGradesService = async (studentId: string, page: number = 
             session: true,
           }
         },
+        class: true,
         subjectPaper: true,
         examAttempt: true,
       },
@@ -70,13 +71,13 @@ export const getStudentGradesService = async (studentId: string, page: number = 
           // ignore error
         }
       }
-      // If offline grade has a future release date, mask the score until that release timestamp
-      if (grade.examId === null && grade.releaseDate && new Date(grade.releaseDate) > now) {
+      // If grade has a future release date or is unpublished draft, mask the score until that release timestamp
+      if ((grade.releaseDate && new Date(grade.releaseDate) > now) || grade.status === "DRAFT") {
         return {
           ...grade,
           score: null,
           remarks: "Assessment recorded. Scores are scheduled to unlock on the release date.",
-          status: "SCHEDULED"
+          status: "SCHEDULED" as any
         };
       }
       return grade;
@@ -145,7 +146,91 @@ export const getGradeByIdService = async (id: string) => {
     },
   });
 
-  if (!grade) return null;
+  if (!grade) {
+    // If not found and ID begins with grade-sa- or matches a subject exam attempt ID
+    const saId = id.startsWith('grade-sa-') ? id.replace('grade-sa-', '') : id;
+    const sa = await prisma.subjectExamAttempt.findUnique({
+      where: { id: saId },
+      include: {
+        examAttempt: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                name: true,
+                studentCode: true,
+                gender: true,
+                gradeLevel: true,
+                profileImage: true,
+              },
+            },
+            exam: {
+              include: {
+                class: {
+                  select: {
+                    id: true,
+                    name: true,
+                    section: true,
+                  },
+                },
+                teacher: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                session: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        subjectPaper: {
+          include: {
+            subject: true,
+          },
+        },
+      },
+    });
+
+    if (sa) {
+      const now = new Date();
+      const exam = sa.examAttempt?.exam;
+      const isExamLocked = exam && (!exam.allowImmediateResult && exam.resultReleaseAt && new Date(exam.resultReleaseAt) > now);
+
+      return {
+        id,
+        studentId: sa.examAttempt.studentId,
+        student: sa.examAttempt.student,
+        schoolId: sa.examAttempt.exam.schoolId,
+        teacherId: sa.subjectPaper.teacherId || sa.examAttempt.exam.teacherId,
+        teacher: sa.examAttempt.exam.teacher,
+        classId: sa.examAttempt.exam.classId,
+        class: sa.examAttempt.exam.class,
+        subject: sa.subjectPaper?.subject?.name || 'Subject Paper',
+        assessmentType: sa.examAttempt.exam.category || 'EXAM',
+        score: isExamLocked ? null : sa.score,
+        maxMarks: sa.totalMarks || 100,
+        remarks: isExamLocked ? "Scores are scheduled to unlock on the release date." : `Subject results for ${sa.examAttempt.exam.title}`,
+        status: isExamLocked ? ("SCHEDULED" as any) : (sa.examAttempt.status === 'SUBMITTED' ? 'PUBLISHED' : 'DRAFT'),
+        releaseDate: exam?.resultReleaseAt || null,
+        examId: sa.examAttempt.examId,
+        exam: sa.examAttempt.exam,
+        subjectPaperId: sa.subjectPaperId,
+        subjectPaper: sa.subjectPaper,
+        examAttemptId: sa.examAttemptId,
+        subjectExamAttemptId: sa.id,
+        createdAt: sa.createdAt,
+        updatedAt: sa.updatedAt,
+      };
+    }
+
+    return null;
+  }
 
   if (
     (grade.assessmentType?.toUpperCase() === "ASSIGNMENT" || grade.id.startsWith("grade-assignment-")) &&
@@ -163,6 +248,21 @@ export const getGradeByIdService = async (id: string) => {
     } catch {
       // ignore
     }
+  }
+
+  // If grade has a future release date, is unpublished draft, or linked exam is unreleased, mask score
+  const now = new Date();
+  const isFutureReleaseDate = Boolean(grade.releaseDate && new Date(grade.releaseDate) > now);
+  const isExamLocked = Boolean(grade.exam && (!grade.exam.allowImmediateResult && grade.exam.resultReleaseAt && new Date(grade.exam.resultReleaseAt) > now));
+  const isDraft = grade.status === "DRAFT";
+
+  if (isFutureReleaseDate || isExamLocked || isDraft) {
+    return {
+      ...grade,
+      score: null,
+      remarks: "Assessment recorded. Scores are scheduled to unlock on the release date.",
+      status: "SCHEDULED" as any
+    };
   }
 
   return grade;

@@ -86,6 +86,6 @@ router.get("/teacher-subjects", authenticateToken, getTeacherSubjects);
 router.get("/grades", authenticateToken, getStudentGrades);
 router.get("/grades/leaderboard/:classId", authenticateToken, getClassLeaderboard);
 router.get("/grades/admin", authenticateToken, requireSchoolOwnerPrincipalOrRegistrar, getAllGrades);
-router.get("/grades/:id", authenticateToken, requireSchoolOwnerPrincipalOrRegistrar, getGradeById);
+router.get("/grades/:id", authenticateToken, getGradeById);
 
 export default router;

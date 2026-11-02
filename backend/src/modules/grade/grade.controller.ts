@@ -190,3 +190,14 @@ export const deleteGrade = async (req: Request, res: Response) => {
     return handleError(res, error, "grade.deleteGrade");
   }
 };
+
+export const deleteBatchGrades = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const criteria = req.body;
+    const result = await gradeService.deleteBatchGradeService(id as string, criteria);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    return handleError(res, error, "grade.deleteBatchGrades");
+  }
+};
