@@ -15,13 +15,15 @@ import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { schoolService } from '@/lib/api/services/schoolService';
-import { InfoIcon, Calendar } from 'lucide-react';
+import { InfoIcon, Calendar, Check, Building2 } from 'lucide-react';
+import { apiClient } from '@/lib/api/client';
 
 const examSchema = z.object({
   title: z.string().min(3, "Title is required (min 3 characters)"),
   description: z.string().optional(),
   subjectId: z.string().min(1, "Subject is required"),
   classId: z.string().min(1, "Class is required"),
+  departmentIds: z.array(z.string()).default([]),
   teacherId: z.string().optional(),
   startDate: z.string().optional(),
   resultReleaseAt: z.string().optional(),
@@ -60,13 +62,23 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
     enabled: !!selectedSchoolId,
   });
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ExamFormValues>({
+  const { data: departments = [], isLoading: isLoadingDepartments } = useQuery({
+    queryKey: ['school-departments', selectedSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/departments?schoolId=${selectedSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!selectedSchoolId && !isPersonal,
+  });
+
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema) as any,
     defaultValues: {
       title: '',
       description: '',
       subjectId: '',
       classId: '',
+      departmentIds: [],
       teacherId: '',
       startDate: '',
       resultReleaseAt: '',
@@ -75,6 +87,17 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
     }
   });
 
+  const selectedDepartmentIds = watch("departmentIds") || [];
+
+  const toggleDepartment = (deptId: string) => {
+    const current = watch("departmentIds") || [];
+    if (current.includes(deptId)) {
+      setValue("departmentIds", current.filter(id => id !== deptId));
+    } else {
+      setValue("departmentIds", [...current, deptId]);
+    }
+  };
+
   const mutation = useMutation({
     mutationFn: async (data: ExamFormValues) => {
       // 1. Create the Exam
@@ -82,12 +105,13 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
         ...data,
         category,
         schoolId: isPersonal ? undefined : selectedSchoolId,
-        scope: "SCHOOL", 
+        scope: data.classId ? "CLASS" : "SCHOOL", 
         creationMode: "MANUAL",
         mode: "SINGLE_SUBJECT",
         teacherId: user?.id,
         startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
         resultReleaseAt: data.resultReleaseAt ? new Date(data.resultReleaseAt).toISOString() : undefined,
+        departmentIds: data.departmentIds,
       });
 
       if (!exam?.id) throw new Error('Exam creation failed — no ID returned');
@@ -210,6 +234,59 @@ export default function CreateExamForm({ category, onSuccess }: CreateExamFormPr
         </div>
         {errors.classId && <p className="text-red-500 text-xs">{errors.classId.message}</p>}
       </div>
+
+      {/* Target Departments Selector */}
+      {!isPersonal && departments && departments.length > 0 && (
+        <div className="space-y-2.5 pt-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Building2 size={13} className="text-purple-500" />
+              Target Departments <span className="text-[10px] font-normal text-slate-400">(Optional)</span>
+            </Label>
+            {selectedDepartmentIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setValue("departmentIds", [])}
+                className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
+              >
+                Clear ({selectedDepartmentIds.length})
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
+            {departments.map((d: any) => {
+              const isSelected = selectedDepartmentIds.includes(d.id);
+              return (
+                <div
+                  key={d.id}
+                  onClick={() => toggleDepartment(d.id)}
+                  className={`cursor-pointer group flex items-center gap-2 p-2 rounded-xl border transition-all duration-200 select-none text-left ${
+                    isSelected
+                      ? "bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-700 dark:text-purple-300 shadow-sm"
+                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300"
+                  }`}
+                >
+                  <div
+                    className={`w-3.5 h-3.5 rounded flex items-center justify-center transition-colors shrink-0 ${
+                      isSelected ? "bg-purple-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-transparent"
+                    }`}
+                  >
+                    <Check size={9} strokeWidth={4} />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold truncate leading-tight">{d.name}</span>
+                    {d.code && (
+                      <span className="text-[9px] uppercase font-bold opacity-50 tracking-wider">
+                        {d.code}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

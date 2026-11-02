@@ -3,12 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
-  Upload, PlusCircle, ChevronLeft, ChevronRight,
+  PlusCircle, ChevronLeft, ChevronRight,
   FileText, Clock, Users, BookOpen, Edit2, BarChart3, CalendarClock, Download, FileSpreadsheet,
-  Search, X, CheckCircle2, Award, Calendar, Layers, ArrowUpRight
+  Search, X, Award, Calendar, Layers, LayoutGrid, List, User, Trash2, ChevronDown, CheckSquare, Square, AlertTriangle, Loader2, RefreshCw
 } from 'lucide-react';
 import { AssessmentItem, ExamType } from './components/types';
-import { Info } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
@@ -16,14 +15,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { generatePDF } from '@/utils/pdfGenerator';
 import { useSchoolProfile, useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { examService } from '@/lib/api/services/examService';
+import { teacherService } from '@/lib/api/services/teacherService';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
+import { getDateGroupLabel, groupByDate } from '@/app/dashboard/admin/grades/utils/dateSectioning';
+import { classQueryKeys } from '@/lib/api/hooks/useClasses';
 
 interface ClassExamsPageProps {
   exams?: any[];
   classData?: any;
+  onRefresh?: () => Promise<any> | void;
 }
 
 const PAGE_SIZE = 10;
@@ -65,18 +79,61 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-export default function ClassExamsPage({ exams = [], classData }: ClassExamsPageProps) {
+export default function ClassExamsPage({ exams = [], classData, onRefresh }: ClassExamsPageProps) {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
   const totalStudentsCount = classData?.enrollments?.length || 0;
+  const queryClient = useQueryClient();
   
   const { data: profileData } = useSchoolProfile(classData?.schoolId);
   const { data: settingsData } = useSchoolSettings(classData?.schoolId);
   const schoolProfile = profileData;
   const settings = settingsData;
   const [isExporting, setIsExporting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (onRefresh) {
+        await onRefresh();
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: classQueryKeys.detail(classId) }),
+        queryClient.invalidateQueries({ queryKey: ['class', classId] }),
+        queryClient.invalidateQueries({ queryKey: ['classes'] }),
+        queryClient.invalidateQueries({ queryKey: ['exams'] }),
+        queryClient.invalidateQueries({ queryKey: ['subject-papers'] })
+      ]);
+      toast.success("Exams refreshed");
+    } catch {
+      toast.error("Failed to refresh exams");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+
+  // Deletion state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    item: AssessmentItem | null;
+    mode: 'single' | 'multi';
+    deleteOption: 'all' | 'exam_only' | 'selected_papers';
+    selectedPaperIds: string[];
+    isDeleting: boolean;
+  }>({
+    isOpen: false,
+    item: null,
+    mode: 'single',
+    deleteOption: 'all',
+    selectedPaperIds: [],
+    isDeleting: false,
+  });
 
   const mapStatus = (status: string, startDate?: string, endDate?: string): string => {
     const s = status?.toUpperCase();
@@ -92,21 +149,35 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
   };
 
   const mappedExams: AssessmentItem[] = useMemo(() =>
-    (exams || []).filter(Boolean).map(e => ({
-      id: e.id,
-      title: e.title || 'Untitled',
-      type: (e.category?.toLowerCase() || 'exam') as ExamType,
-      status: mapStatus(e.status, e.startDate, e.endDate),
-      subjectName: e.subject?.name || '\u2014',
-      subjectNames: e.subject?.name ? [e.subject.name] : e.subjectExamPapers?.map((p: any) => p.subjectPaper?.subject?.name).filter(Boolean) || [],
-      totalMarks: e.totalMarks || 0,
-      duration: e.durationMinutes,
-      date: e.startDate || e.createdAt,
-      endDate: e.endDate,
-      totalStudents: totalStudentsCount,
-      completedStudents: e.examAttempts?.filter((a: any) => a.isSubmitted).length || 0,
-      source: 'exam' as const,
-    })),
+    (exams || []).filter(Boolean).map(e => {
+      const papers = (e.subjectExamPapers || []).map((p: any) => ({
+        id: p.subjectPaper?.id || p.id,
+        title: p.subjectPaper?.title || p.subjectPaper?.subject?.name || 'Subject Paper',
+        subjectName: p.subjectPaper?.subject?.name,
+        durationMinutes: p.subjectPaper?.durationMinutes,
+        totalMarks: p.subjectPaper?.totalMarks,
+      }));
+
+      return {
+        id: e.id,
+        title: e.title || 'Untitled',
+        type: (e.category?.toLowerCase() || 'exam') as ExamType,
+        status: mapStatus(e.status, e.startDate, e.endDate),
+        subjectName: e.subject?.name || '—',
+        subjectNames: e.subject?.name ? [e.subject.name] : papers.map((p: any) => p.subjectName).filter(Boolean),
+        totalMarks: e.totalMarks || 0,
+        duration: e.durationMinutes,
+        date: e.startDate || e.createdAt,
+        endDate: e.endDate,
+        totalStudents: totalStudentsCount,
+        completedStudents: e.examAttempts?.filter((a: any) => a.isSubmitted).length || 0,
+        source: 'exam' as const,
+        creatorName: e.teacher?.name || (e.teacher ? `${e.teacher.title || ''} ${e.teacher.name || ''}`.trim() : undefined),
+        creatorEmail: e.teacher?.email,
+        scope: e.scope,
+        papers,
+      };
+    }),
   [exams, totalStudentsCount]);
 
   const mappedAssignments: AssessmentItem[] = useMemo(() =>
@@ -115,21 +186,25 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
       title: a.title || 'Untitled Assignment',
       type: 'assignment' as ExamType,
       status: a.status?.toLowerCase() || 'draft',
-      subjectName: a.subject?.name || '\u2014',
+      subjectName: a.subject?.name || '—',
       totalMarks: a.totalMarks || 0,
       dueDate: a.dueDate,
       date: a.createdAt,
       totalStudents: totalStudentsCount,
       completedStudents: a._count?.submissions || 0,
       source: 'assignment' as const,
+      creatorName: a.teacher?.name || undefined,
+      creatorEmail: a.teacher?.email,
+      scope: a.scope,
+      papers: [],
     })),
   [classData, totalStudentsCount]);
 
   const allAssessments = useMemo(() =>
-    [...mappedExams, ...mappedAssignments].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    ),
-  [mappedExams, mappedAssignments]);
+    [...mappedExams, ...mappedAssignments]
+      .filter(item => !deletedIds.includes(item.id))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  [mappedExams, mappedAssignments, deletedIds]);
 
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -144,30 +219,29 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
       list = list.filter(i => 
         i.title.toLowerCase().includes(q) ||
         i.subjectName.toLowerCase().includes(q) ||
-        (i.subjectNames && i.subjectNames.some(s => s.toLowerCase().includes(q)))
+        (i.subjectNames && i.subjectNames.some(s => s.toLowerCase().includes(q))) ||
+        (i.creatorName && i.creatorName.toLowerCase().includes(q))
       );
     }
     return list;
   }, [allAssessments, typeFilter, statusFilter, searchQuery]);
 
-  // Overall metric calculations
-  const totalSubmissions = useMemo(() => 
-    allAssessments.reduce((acc, curr) => acc + (curr.completedStudents || 0), 0),
-    [allAssessments]
-  );
-  const activeAssessmentsCount = useMemo(() =>
-    allAssessments.filter(a => a.status === 'active' || a.status === 'scheduled').length,
-    [allAssessments]
-  );
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginated = useMemo(() => 
+    filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
+
+  // Group paginated items by date using date_sectioning_display standard
+  const dateGroups = useMemo(() => {
+    return groupByDate(paginated, (item) => item.date);
+  }, [paginated]);
 
   const resetPage = () => setPage(1);
 
   const formatDate = (d?: string) => {
-    if (!d) return '\u2014';
+    if (!d) return '—';
     return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
@@ -187,6 +261,86 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
       acc.push(p);
       return acc;
     }, []);
+
+  // Open deletion modal with smart single vs multi-paper detection
+  const initiateDelete = (item: AssessmentItem) => {
+    const papersCount = item.papers?.length || 0;
+    const isSingle = 
+      item.source === 'assignment' || 
+      item.type === 'ca' || 
+      item.type === 'quiz' || 
+      papersCount <= 1;
+
+    setDeleteDialog({
+      isOpen: true,
+      item,
+      mode: isSingle ? 'single' : 'multi',
+      deleteOption: 'all',
+      selectedPaperIds: item.papers?.map(p => p.id) || [],
+      isDeleting: false,
+    });
+  };
+
+  // Execute deletion
+  const handleConfirmDelete = async () => {
+    const { item, mode, deleteOption, selectedPaperIds } = deleteDialog;
+    if (!item) return;
+
+    setDeleteDialog(prev => ({ ...prev, isDeleting: true }));
+
+    try {
+      if (item.source === 'assignment') {
+        await teacherService.deleteAssignment(item.id, classData?.schoolId);
+        toast.success("Assignment deleted successfully");
+      } else if (mode === 'single') {
+        // Single paper exam, CA, or quiz -> delete both paper and exam
+        await examService.deleteExam(item.id);
+        toast.success("Exam and paper deleted successfully");
+      } else {
+        // Multi-paper exam
+        if (deleteOption === 'all') {
+          // Delete all papers and the exam
+          await examService.deleteExam(item.id);
+          toast.success("Exam and all associated subject papers deleted");
+        } else if (deleteOption === 'exam_only') {
+          // Delete exam shell only (papers remain standalone)
+          await examService.deleteExam(item.id);
+          toast.success("Parent exam deleted. Subject papers remain preserved.");
+        } else if (deleteOption === 'selected_papers') {
+          if (selectedPaperIds.length === 0) {
+            toast.warning("Please select at least one paper to delete");
+            setDeleteDialog(prev => ({ ...prev, isDeleting: false }));
+            return;
+          }
+          for (const paperId of selectedPaperIds) {
+            await examService.deletePaper(item.id, paperId);
+          }
+          toast.success(`${selectedPaperIds.length} paper(s) deleted successfully`);
+        }
+      }
+
+      // Optimistically hide deleted item from view immediately
+      if (deleteOption !== 'selected_papers') {
+        setDeletedIds(prev => [...prev, item.id]);
+      }
+
+      // Invalidate queries to refresh UI
+      if (onRefresh) {
+        await onRefresh();
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: classQueryKeys.detail(classId) }),
+        queryClient.invalidateQueries({ queryKey: ['class', classId] }),
+        queryClient.invalidateQueries({ queryKey: ['classes'] }),
+        queryClient.invalidateQueries({ queryKey: ['exams'] }),
+        queryClient.invalidateQueries({ queryKey: ['subject-papers'] })
+      ]);
+      setDeleteDialog(prev => ({ ...prev, isOpen: false, isDeleting: false }));
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to delete assessment");
+      setDeleteDialog(prev => ({ ...prev, isDeleting: false }));
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6">
@@ -249,12 +403,12 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
               <BookOpen size={18} />
             </div>
             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/40">
-              Continuous
+              Homework
             </span>
           </div>
           <div>
             <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Assignments & CA
+              Assignments
             </span>
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
               {mappedAssignments.length}
@@ -262,41 +416,43 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
           </div>
         </div>
 
-        {/* Metric 4: Active / Scheduled */}
+        {/* Metric 4: Active/Scheduled */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="size-9 sm:size-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-900/40">
-              <CalendarClock size={18} />
+            <div className="size-9 sm:size-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/40">
+              <Award size={18} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/40">
-              Upcoming
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-900/40">
+              Class Cohort
             </span>
           </div>
           <div>
             <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Active / Scheduled
+              Enrolled Students
             </span>
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-              {activeAssessmentsCount}
+              {totalStudentsCount}
             </h3>
           </div>
         </div>
       </div>
 
-      {/* ── Header & Action Controls ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ── Section Title & Action Buttons ──────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-slate-900 dark:text-white text-xl font-black tracking-tight">Assessments Timeline</h2>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              Class Assessments & Examinations
+            </h2>
             <TooltipProvider>
-              <Tooltip delayDuration={300}>
+              <Tooltip>
                 <TooltipTrigger asChild>
-                  <button type="button" className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
-                    <Info size={16} />
+                  <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                    <FileText size={15} />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
-                  Chronicles all individual continuous assessments (assignments, quizzes, and midterm tests) scheduled for this class. Use this timeline to monitor short-term student engagement and identify gaps in recent syllabus comprehension.
+                <TooltipContent className="max-w-xs text-xs font-medium p-3 bg-slate-900 text-white rounded-xl shadow-xl">
+                  Comprehensive assessment portfolio for this class cohort. Track terminal examinations, continuous assessments (CA), tests/quizzes, and assignments.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -307,6 +463,47 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
         </div>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* View Mode Toggle: Table vs Grid */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setViewMode('table')}
+              className={cn(
+                "p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                viewMode === 'table'
+                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              )}
+              title="Table View"
+            >
+              <List size={16} />
+              <span className="hidden sm:inline">Table</span>
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                viewMode === 'grid'
+                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              )}
+              title="Grid View"
+            >
+              <LayoutGrid size={16} />
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+          </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center justify-center gap-1.5 rounded-xl h-10 px-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-all disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            title="Refresh assessments list"
+          >
+            <RefreshCw size={14} className={cn(isRefreshing && "animate-spin text-indigo-600 dark:text-indigo-400")} />
+            <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button disabled={isExporting} className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl h-10 px-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-all disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
@@ -326,12 +523,13 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
                     { label: 'Type Filter', value: typeFilter.toUpperCase() },
                     { label: 'Status Filter', value: statusFilter.toUpperCase() }
                   ],
-                  tableHeaders: [['Title', 'Type', 'Status', 'Subject', 'Marks', 'Duration', 'Date']],
+                  tableHeaders: [['Title', 'Type', 'Status', 'Subject', 'Created By', 'Marks', 'Duration', 'Date']],
                   tableData: filtered.map(e => [
                     e.title,
                     TYPE_META[e.type]?.label || e.type,
                     STATUS_META[e.status]?.label || e.status,
                     e.subjectNames?.join(', ') || e.subjectName || '-',
+                    e.creatorName || 'Faculty Staff',
                     e.totalMarks || '-',
                     formatDuration(e.duration) || '-',
                     formatDate(e.date) || '-'
@@ -350,12 +548,13 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 if (!filtered.length) { toast.warning("No exams to export"); return; }
-                const headers = ['Title', 'Type', 'Status', 'Subject', 'Marks', 'Duration', 'Date'];
+                const headers = ['Title', 'Type', 'Status', 'Subject', 'Created By', 'Marks', 'Duration', 'Date'];
                 const rows = filtered.map(e => [
                   `"${e.title}"`,
                   `"${TYPE_META[e.type]?.label || e.type}"`,
                   `"${STATUS_META[e.status]?.label || e.status}"`,
                   `"${e.subjectNames?.join(', ') || e.subjectName || '-'}"`,
+                  `"${e.creatorName || 'Faculty Staff'}"`,
                   `"${e.totalMarks || '-'}"`,
                   `"${formatDuration(e.duration) || '-'}"`,
                   `"${formatDate(e.date) || '-'}"`
@@ -396,14 +595,14 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
         </div>
       </div>
 
-      {/* ── Search & Filter Pill Controls ───────────────────────────────────── */}
+      {/* ── Search & Filter Controls ────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
         {/* Search Input */}
         <div className="relative w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
           <input
             type="text"
-            placeholder="Search assessments by title or subject..."
+            placeholder="Search assessments by title, subject, or creator..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); resetPage(); }}
             className="w-full h-10 pl-9 pr-8 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400"
@@ -418,7 +617,7 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
           )}
         </div>
 
-        {/* Filter Pill Carousels (Smooth touch scrolling on mobile) */}
+        {/* Filter Pills */}
         <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center sm:justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
           {/* Type Filter */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
@@ -494,229 +693,360 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
           )}
         </div>
       ) : (
-        <>
-          {/* ── Mobile View (< 768px): Dedicated Assessment Cards ──────────────── */}
-          <div className="block md:hidden space-y-3">
-            {paginated.map((item, index) => {
-              const globalIdx = (currentPage - 1) * PAGE_SIZE + index + 1;
-              const completion = item.totalStudents > 0
-                ? Math.round((item.completedStudents / item.totalStudents) * 100) : 0;
-              const durLabel = formatDuration(item.duration);
-              const dateLabel = item.source === 'assignment'
-                ? (item.dueDate ? `Due: ${formatDate(item.dueDate)}` : `Created: ${formatDate(item.date)}`)
-                : `Date: ${formatDate(item.date)}`;
-
-              return (
-                <div 
-                  key={`${item.source}-${item.id}`}
-                  className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 hover:shadow-md transition-shadow"
-                >
-                  {/* Card Header: Numbering, Badges & Points */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-black flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60">
-                        #{globalIdx}
-                      </span>
-                      <TypeBadge type={item.type} />
-                      <StatusBadge status={item.status} />
-                    </div>
-
-                    <span className="text-xs font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md font-mono border border-slate-200/60 dark:border-slate-700/60">
-                      {item.totalMarks > 0 ? `${item.totalMarks} pts` : '—'}
-                    </span>
-                  </div>
-
-                  {/* Title & Subject */}
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug">
-                      {item.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      <BookOpen size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">
-                        {item.subjectNames && item.subjectNames.length > 0 
-                          ? item.subjectNames.join(', ') 
-                          : item.subjectName}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Schedule & Duration Pills */}
-                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
-                    <div className="flex items-center gap-1">
-                      <CalendarClock size={13} className="text-slate-400" />
-                      <span>{dateLabel}</span>
-                    </div>
-                    {durLabel && (
-                      <div className="flex items-center gap-1">
-                        <Clock size={13} className="text-slate-400" />
-                        <span>{durLabel}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Submissions & Progress Bar */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1 text-slate-500 font-medium">
-                        <Users size={13} />
-                        <span>Submitted</span>
-                      </span>
-                      <span className="font-black text-slate-800 dark:text-slate-200">
-                        {item.completedStudents}/{item.totalStudents} <span className="text-[10px] text-slate-400 font-bold">({completion}%)</span>
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-500" 
-                        style={{ width: `${Math.min(100, Math.max(0, completion))}%` }} 
-                      />
-                    </div>
-                  </div>
-
-                  {/* Action Buttons Row */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={() => {
-                        if (item.source === 'exam') router.push(`/dashboard/admin/exams/${item.id}/papers`);
-                        else router.push(`/dashboard/admin/assignments/${item.id}`);
-                      }}
-                      className="flex-1 h-9 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm shadow-indigo-600/20 dark:shadow-none transition-all active:scale-98 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                    >
-                      <Edit2 size={13} />
-                      <span>{item.source === 'exam' ? 'Manage Papers' : 'Edit Assignment'}</span>
-                    </button>
-
-                    {item.source === 'exam' && (
-                      <button
-                        onClick={() => router.push(`/dashboard/admin/exams/${item.id}/results`)}
-                        className="h-9 px-3.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/80 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                        title="View Class Exam Results"
-                      >
-                        <BarChart3 size={14} className="text-blue-500 dark:text-blue-400" />
-                        <span>Results</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ── Desktop View (>= 768px): Structured Table ─────────────────────── */}
-          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-[36px_2.5fr_0.8fr_0.9fr_1fr_0.7fr_1.1fr_70px] gap-x-4 px-6 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
-              {['#', 'Assessment', 'Type', 'Status', 'Subject', 'Marks', 'Date / Schedule', 'Actions'].map((h, i) => (
-                <span key={i} className={cn("text-[11px] font-black uppercase tracking-wider text-slate-400", i === 7 ? "text-right" : "")}>
-                  {h}
+        <div className="space-y-8">
+          {dateGroups.map((section) => (
+            <div key={section.label} className="space-y-4">
+              {/* Section Header per date_sectioning_display standard */}
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className="size-2 rounded-full bg-indigo-500" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'assessment' : 'assessments'}
                 </span>
-              ))}
-            </div>
+              </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {paginated.map((item, index) => {
-                const globalIdx = (currentPage - 1) * PAGE_SIZE + index + 1;
-                const completion = item.totalStudents > 0
-                  ? Math.round((item.completedStudents / item.totalStudents) * 100) : 0;
-                const durLabel = formatDuration(item.duration);
-                const dateLabel = item.source === 'assignment'
-                  ? (item.dueDate ? `Due ${formatDate(item.dueDate)}` : `Created ${formatDate(item.date)}`)
-                  : formatDate(item.date);
+              {/* ── Grid View ────────────────────────────────────────────── */}
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                  {section.items.map((item) => {
+                    const globalIdx = filtered.findIndex(f => f.id === item.id) + 1;
+                    const completion = item.totalStudents > 0
+                      ? Math.round((item.completedStudents / item.totalStudents) * 100) : 0;
+                    const durLabel = formatDuration(item.duration);
+                    const dateLabel = item.source === 'assignment'
+                      ? (item.dueDate ? `Due ${formatDate(item.dueDate)}` : `Created ${formatDate(item.date)}`)
+                      : formatDate(item.date);
+                    const isMultiPaper = (item.papers?.length || 0) > 1;
 
-                return (
-                  <div
-                    key={`${item.source}-${item.id}`}
-                    className="grid grid-cols-[36px_2.5fr_0.8fr_0.9fr_1fr_0.7fr_1.1fr_70px] gap-x-4 items-center px-6 py-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group"
-                  >
-                    {/* Index */}
-                    <div className="text-xs font-black text-slate-400 select-none">
-                      #{globalIdx}
-                    </div>
-
-                    {/* Title & Progress */}
-                    <div className="min-w-0 pr-2">
-                      <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{item.title}</p>
-                      <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
-                        {durLabel && (
-                          <span className="flex items-center gap-1"><Clock size={11} />{durLabel}</span>
-                        )}
-                        <span className="flex items-center gap-1 font-medium">
-                          <Users size={11} />
-                          {item.completedStudents}/{item.totalStudents} ({completion}%)
-                        </span>
-                      </div>
-                      {item.totalStudents > 0 && (
-                        <div className="mt-2 h-1.5 w-32 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all" style={{ width: `${completion}%` }} />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Type */}
-                    <div><TypeBadge type={item.type} /></div>
-
-                    {/* Status */}
-                    <div><StatusBadge status={item.status} /></div>
-
-                    {/* Subject */}
-                    <div className="flex items-center gap-2 min-w-0 overflow-hidden relative">
-                      <BookOpen size={14} className="text-slate-400 shrink-0" />
-                      {item.subjectNames && item.subjectNames.length > 1 ? (
-                        <div className="flex-1 overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)]">
-                          <div className="flex gap-2 animate-subject-slider w-max hover:[animation-play-state:paused] items-center">
-                            {[...item.subjectNames, ...item.subjectNames].map((s, i) => (
-                              <span key={i} className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
-                                {s}
+                    return (
+                      <div
+                        key={`${item.source}-${item.id}`}
+                        className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group space-y-4"
+                      >
+                        {/* Top: Header badges & Points */}
+                        <div>
+                          <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-black flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60">
+                                #{globalIdx}
                               </span>
-                            ))}
+                              <TypeBadge type={item.type} />
+                              <StatusBadge status={item.status} />
+                              {/* Multi-paper tag */}
+                              {isMultiPaper && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                                  <Layers size={10} />
+                                  <span>{item.papers?.length} Papers</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="text-xs font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md font-mono border border-slate-200/60 dark:border-slate-700/60">
+                              {item.totalMarks > 0 ? `${item.totalMarks} pts` : '—'}
+                            </span>
+                          </div>
+
+                          {/* Title */}
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            {item.title}
+                          </h3>
+
+                          {/* Subject & Creator */}
+                          <div className="space-y-1.5 mt-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                              <BookOpen size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                              <span className="font-semibold truncate">
+                                {item.subjectNames && item.subjectNames.length > 0 
+                                  ? item.subjectNames.join(', ') 
+                                  : item.subjectName}
+                              </span>
+                            </div>
+
+                            {/* Creator attribution */}
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400" title={`Created by: ${item.creatorName || 'Faculty Staff'}`}>
+                              <User size={13} className="text-slate-400 shrink-0" />
+                              <span className="font-medium truncate">
+                                By <span className="font-semibold text-slate-700 dark:text-slate-300">{item.creatorName || 'Faculty Staff'}</span>
+                              </span>
+                            </div>
+
+                            {/* Multi-paper dropdown in grid */}
+                            {isMultiPaper && item.papers && item.papers.length > 0 && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="flex items-center gap-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 pt-1 cursor-pointer">
+                                    <span>View {item.papers.length} Papers</span>
+                                    <ChevronDown size={13} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-64 p-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl">
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 py-1">Connected Papers</p>
+                                  {item.papers.map((p, pIdx) => (
+                                    <div
+                                      key={p.id || pIdx}
+                                      onClick={() => router.push(`/dashboard/admin/exams/${item.id}/papers/${p.id}`)}
+                                      className="flex items-center justify-between p-2 rounded-xl text-xs hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer transition-colors"
+                                    >
+                                      <div className="min-w-0 pr-2">
+                                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{p.title}</p>
+                                        <p className="text-[11px] text-slate-400">{p.subjectName || 'Subject'}</p>
+                                      </div>
+                                      <span className="text-[10px] font-bold text-slate-400 shrink-0">{p.totalMarks || 0} pts</span>
+                                    </div>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
-                          {item.subjectNames?.[0] || item.subjectName}
-                        </span>
-                      )}
-                    </div>
 
-                    {/* Marks */}
-                    <div className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">
-                      {item.totalMarks > 0 ? `${item.totalMarks} pts` : '—'}
-                    </div>
+                        {/* Schedule & Progress & Actions */}
+                        <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          {/* Schedule info */}
+                          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-1">
+                              <CalendarClock size={13} className="text-slate-400" />
+                              <span>{dateLabel}</span>
+                            </div>
+                            {durLabel && (
+                              <div className="flex items-center gap-1">
+                                <Clock size={13} className="text-slate-400" />
+                                <span>{durLabel}</span>
+                              </div>
+                            )}
+                          </div>
 
-                    {/* Date */}
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                      <CalendarClock size={13} className="shrink-0 text-slate-400" />
-                      <span className="truncate">{dateLabel}</span>
-                    </div>
+                          {/* Submissions progress bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-500 font-medium flex items-center gap-1">
+                                <Users size={12} />
+                                <span>Submissions</span>
+                              </span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {item.completedStudents}/{item.totalStudents} ({completion}%)
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all" 
+                                style={{ width: `${Math.min(100, Math.max(0, completion))}%` }} 
+                              />
+                            </div>
+                          </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => {
-                          if (item.source === 'exam') router.push(`/dashboard/admin/exams/${item.id}/papers`);
-                          else router.push(`/dashboard/admin/assignments/${item.id}`);
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
-                        title={item.source === 'exam' ? 'Manage Papers' : 'Edit Assignment'}
-                      >
-                        <Edit2 size={15} />
-                      </button>
-                      {item.source === 'exam' && (
-                        <button
-                          onClick={() => router.push(`/dashboard/admin/exams/${item.id}/results`)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                          title="View Exam Results"
-                        >
-                          <BarChart3 size={15} />
-                        </button>
-                      )}
-                    </div>
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              onClick={() => {
+                                if (item.source === 'exam') router.push(`/dashboard/admin/exams/${item.id}/papers`);
+                                else router.push(`/dashboard/admin/assignments/${item.id}`);
+                              }}
+                              className="flex-1 h-9 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm shadow-indigo-600/20 dark:shadow-none transition-all active:scale-98 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                            >
+                              <Edit2 size={13} />
+                              <span>{item.source === 'exam' ? 'Manage Papers' : 'Edit'}</span>
+                            </button>
+
+                            {item.source === 'exam' && (
+                              <button
+                                onClick={() => router.push(`/dashboard/admin/exams/${item.id}/results`)}
+                                className="h-9 px-3.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/80 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                                title="View Class Exam Results"
+                              >
+                                <BarChart3 size={14} className="text-blue-500 dark:text-blue-400" />
+                                <span className="hidden sm:inline">Results</span>
+                              </button>
+                            )}
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => initiateDelete(item)}
+                              className="size-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700/80 transition-colors flex items-center justify-center cursor-pointer shadow-2xs shrink-0"
+                              title="Delete Assessment"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* ── Table View ─────────────────────────────────────────────── */
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                  <div className="grid grid-cols-[36px_2.2fr_0.8fr_0.8fr_1fr_1fr_0.7fr_1fr_95px] gap-x-4 px-6 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
+                    {['#', 'Assessment', 'Type', 'Status', 'Subject', 'Created By', 'Marks', 'Date / Schedule', 'Actions'].map((h, i) => (
+                      <span key={i} className={cn("text-[11px] font-black uppercase tracking-wider text-slate-400", i === 8 ? "text-right" : "")}>
+                        {h}
+                      </span>
+                    ))}
                   </div>
-                );
-              })}
+
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {section.items.map((item) => {
+                      const globalIdx = filtered.findIndex(f => f.id === item.id) + 1;
+                      const completion = item.totalStudents > 0
+                        ? Math.round((item.completedStudents / item.totalStudents) * 100) : 0;
+                      const durLabel = formatDuration(item.duration);
+                      const dateLabel = item.source === 'assignment'
+                        ? (item.dueDate ? `Due ${formatDate(item.dueDate)}` : `Created ${formatDate(item.date)}`)
+                        : formatDate(item.date);
+                      const isMultiPaper = (item.papers?.length || 0) > 1;
+
+                      return (
+                        <div
+                          key={`${item.source}-${item.id}`}
+                          className="grid grid-cols-[36px_2.2fr_0.8fr_0.8fr_1fr_1fr_0.7fr_1fr_95px] gap-x-4 items-center px-6 py-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group"
+                        >
+                          {/* Index */}
+                          <div className="text-xs font-black text-slate-400 select-none">
+                            #{globalIdx}
+                          </div>
+
+                          {/* Title & Progress */}
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{item.title}</p>
+                              {isMultiPaper && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 shrink-0">
+                                  <Layers size={9} />
+                                  <span>Multi-Paper ({item.papers?.length})</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
+                              {durLabel && (
+                                <span className="flex items-center gap-1"><Clock size={11} />{durLabel}</span>
+                              )}
+                              <span className="flex items-center gap-1 font-medium">
+                                <Users size={11} />
+                                {item.completedStudents}/{item.totalStudents} ({completion}%)
+                              </span>
+                            </div>
+                            {item.totalStudents > 0 && (
+                              <div className="mt-2 h-1.5 w-32 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all" style={{ width: `${completion}%` }} />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Type */}
+                          <div><TypeBadge type={item.type} /></div>
+
+                          {/* Status */}
+                          <div><StatusBadge status={item.status} /></div>
+
+                          {/* Subject with multi-paper dropdown */}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 overflow-hidden relative">
+                              <BookOpen size={14} className="text-slate-400 shrink-0" />
+                              {item.subjectNames && item.subjectNames.length > 1 ? (
+                                <div className="flex-1 overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)]">
+                                  <div className="flex gap-2 animate-subject-slider w-max hover:[animation-play-state:paused] items-center">
+                                    {[...item.subjectNames, ...item.subjectNames].map((s, i) => (
+                                      <span key={i} className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
+                                        {s}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                                  {item.subjectNames?.[0] || item.subjectName}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Dropdown to show papers under multi-paper exam */}
+                            {isMultiPaper && item.papers && item.papers.length > 0 && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 mt-1 cursor-pointer">
+                                    <span>{item.papers.length} Papers list</span>
+                                    <ChevronDown size={11} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-64 p-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl">
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 py-1">Subject Papers</p>
+                                  {item.papers.map((p, pIdx) => (
+                                    <div
+                                      key={p.id || pIdx}
+                                      onClick={() => router.push(`/dashboard/admin/exams/${item.id}/papers/${p.id}`)}
+                                      className="flex items-center justify-between p-2 rounded-xl text-xs hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer transition-colors"
+                                    >
+                                      <div className="min-w-0 pr-2">
+                                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{p.title}</p>
+                                        <p className="text-[11px] text-slate-400">{p.subjectName || 'Subject'}</p>
+                                      </div>
+                                      <span className="text-[10px] font-bold text-slate-400 shrink-0">{p.totalMarks || 0} pts</span>
+                                    </div>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+
+                          {/* Created By */}
+                          <div className="flex items-center gap-1.5 min-w-0" title={`Created by: ${item.creatorName || 'Faculty Staff'}`}>
+                            <User size={14} className="text-slate-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                              {item.creatorName || 'Faculty Staff'}
+                            </span>
+                          </div>
+
+                          {/* Marks */}
+                          <div className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">
+                            {item.totalMarks > 0 ? `${item.totalMarks} pts` : '—'}
+                          </div>
+
+                          {/* Date */}
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <CalendarClock size={13} className="shrink-0 text-slate-400" />
+                            <span className="truncate">{dateLabel}</span>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => {
+                                if (item.source === 'exam') router.push(`/dashboard/admin/exams/${item.id}/papers`);
+                                else router.push(`/dashboard/admin/assignments/${item.id}`);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
+                              title={item.source === 'exam' ? 'Manage Papers' : 'Edit Assignment'}
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            {item.source === 'exam' && (
+                              <button
+                                onClick={() => router.push(`/dashboard/admin/exams/${item.id}/results`)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                                title="View Exam Results"
+                              >
+                                <BarChart3 size={15} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => initiateDelete(item)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                              title="Delete Assessment"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </>
+          ))}
+        </div>
       )}
 
       {/* ── Responsive Pagination ───────────────────────────────────────────── */}
@@ -761,6 +1091,187 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
           </div>
         </div>
       )}
+
+      {/* ── Smart Delete Modal (Single-Paper vs Multi-Paper Options) ───────── */}
+      <Dialog 
+        open={deleteDialog.isOpen} 
+        onOpenChange={(open) => !open && !deleteDialog.isDeleting && setDeleteDialog(prev => ({ ...prev, isOpen: false }))}
+      >
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg rounded-3xl border-0 p-0 overflow-hidden shadow-2xl bg-white dark:bg-slate-900">
+          <div className="p-6 bg-rose-50 dark:bg-rose-950/30 border-b border-rose-100 dark:border-rose-900/50 flex items-center gap-3">
+            <div className="size-11 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0">
+              <AlertTriangle className="size-6 text-rose-600" />
+            </div>
+            <div>
+              <DialogTitle className="text-base sm:text-lg font-black text-rose-950 dark:text-rose-100">
+                {deleteDialog.mode === 'single' ? 'Delete Assessment' : 'Delete Multi-Paper Exam'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5">
+                {deleteDialog.mode === 'single'
+                  ? 'Confirm deletion of single-paper assessment'
+                  : 'Select what to delete for this multi-paper assessment'}
+              </DialogDescription>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+              You are about to delete <span className="font-bold text-slate-900 dark:text-white">"{deleteDialog.item?.title}"</span>.
+            </p>
+
+            {deleteDialog.mode === 'single' ? (
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300 space-y-2">
+                <p className="font-semibold text-rose-600 dark:text-rose-400">
+                  ⚠️ This action will permanently remove:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-slate-500 dark:text-slate-400 text-xs">
+                  <li>Both the assessment entry and its connected subject paper</li>
+                  <li>All associated questions and configurations</li>
+                </ul>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Choose Deletion Scope:
+                </p>
+
+                {/* Option 1: Delete all papers and the exam */}
+                <label className={cn(
+                  "flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all",
+                  deleteDialog.deleteOption === 'all'
+                    ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100"
+                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                )}>
+                  <input
+                    type="radio"
+                    name="deleteScope"
+                    checked={deleteDialog.deleteOption === 'all'}
+                    onChange={() => setDeleteDialog(prev => ({ ...prev, deleteOption: 'all' }))}
+                    className="mt-1"
+                  />
+                  <div>
+                    <p className="text-xs font-black">Delete All Connected Papers & Parent Exam</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Completely deletes the exam and all {deleteDialog.item?.papers?.length || 0} associated subject papers.
+                    </p>
+                  </div>
+                </label>
+
+                {/* Option 2: Delete only the exam shell */}
+                <label className={cn(
+                  "flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all",
+                  deleteDialog.deleteOption === 'exam_only'
+                    ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100"
+                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                )}>
+                  <input
+                    type="radio"
+                    name="deleteScope"
+                    checked={deleteDialog.deleteOption === 'exam_only'}
+                    onChange={() => setDeleteDialog(prev => ({ ...prev, deleteOption: 'exam_only' }))}
+                    className="mt-1"
+                  />
+                  <div>
+                    <p className="text-xs font-black">Delete Parent Exam Only</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Removes the parent exam container. The individual subject papers are unlinked and preserved as standalone papers.
+                    </p>
+                  </div>
+                </label>
+
+                {/* Option 3: Select certain papers to delete */}
+                <label className={cn(
+                  "flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all",
+                  deleteDialog.deleteOption === 'selected_papers'
+                    ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100"
+                    : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                )}>
+                  <input
+                    type="radio"
+                    name="deleteScope"
+                    checked={deleteDialog.deleteOption === 'selected_papers'}
+                    onChange={() => setDeleteDialog(prev => ({ ...prev, deleteOption: 'selected_papers' }))}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-xs font-black">Delete Specific Subject Papers Only</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Choose which papers to remove from this exam. The exam itself remains active.
+                    </p>
+
+                    {deleteDialog.deleteOption === 'selected_papers' && (
+                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pt-2 border-t border-slate-200 dark:border-slate-700">
+                        {deleteDialog.item?.papers?.map(paper => {
+                          const isChecked = deleteDialog.selectedPaperIds.includes(paper.id);
+                          return (
+                            <div
+                              key={paper.id}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setDeleteDialog(prev => ({
+                                  ...prev,
+                                  selectedPaperIds: isChecked
+                                    ? prev.selectedPaperIds.filter(id => id !== paper.id)
+                                    : [...prev.selectedPaperIds, paper.id]
+                                }));
+                              }}
+                              className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer"
+                            >
+                              {isChecked ? (
+                                <CheckSquare size={16} className="text-rose-600 shrink-0" />
+                              ) : (
+                                <Square size={16} className="text-slate-400 shrink-0" />
+                              )}
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                {paper.title} ({paper.subjectName || 'Subject'})
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialog(prev => ({ ...prev, isOpen: false }))}
+              disabled={deleteDialog.isDeleting}
+              className="rounded-xl text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteDialog.isDeleting}
+              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 gap-1.5"
+            >
+              {deleteDialog.isDeleting ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 size={13} />
+                  <span>
+                    {deleteDialog.mode === 'single'
+                      ? 'Delete Both'
+                      : deleteDialog.deleteOption === 'selected_papers'
+                      ? `Delete ${deleteDialog.selectedPaperIds.length} Paper(s)`
+                      : 'Confirm Delete'}
+                  </span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

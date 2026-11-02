@@ -1293,7 +1293,31 @@ export const deleteExamAttemptService = async ({
     },
   });
 
-  // Delete the attempt (cascade will handle subject attempts and answers)
+  // Find all subject exam attempts under this exam attempt
+  const subjectAttempts = await prisma.subjectExamAttempt.findMany({
+    where: { examAttemptId: attempt.id },
+    select: { id: true },
+  });
+  const subjectAttemptIds = subjectAttempts.map(sa => sa.id);
+
+  if (subjectAttemptIds.length > 0) {
+    // Delete all answers under these subject attempts
+    await prisma.subjectExamAnswer.deleteMany({
+      where: { subjectExamAttemptId: { in: subjectAttemptIds } },
+    });
+
+    // Delete grades linked to subjectExamAttempts if any
+    await prisma.grade.deleteMany({
+      where: { subjectExamAttemptId: { in: subjectAttemptIds } },
+    });
+
+    // Delete the subject exam attempts
+    await prisma.subjectExamAttempt.deleteMany({
+      where: { id: { in: subjectAttemptIds } },
+    });
+  }
+
+  // Delete the attempt
   return prisma.examAttempt.delete({
     where: { id: attempt.id },
   });

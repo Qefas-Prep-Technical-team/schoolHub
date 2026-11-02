@@ -303,8 +303,11 @@ export const examService = {
     return response.data;
   },
 
-  deleteExam: async (id: string) => {
-    const response = await apiClient.delete(`/exams/${id}`);
+  deleteExam: async (id: string, options?: { deletePapers?: boolean; paperIds?: string[] }) => {
+    const response = await apiClient.delete(`/exams/${id}`, {
+      data: options,
+      params: options?.paperIds ? { paperIds: options.paperIds.join(','), deletePapers: options.deletePapers } : { deletePapers: options?.deletePapers },
+    });
     return response.data;
   },
 

@@ -740,12 +740,23 @@ export const deleteExam = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Exam not found" });
     }
 
+    const deletePapers = req.body?.deletePapers !== undefined 
+      ? Boolean(req.body.deletePapers) 
+      : req.query?.deletePapers !== undefined 
+      ? req.query.deletePapers === "true" 
+      : true;
+    const paperIds = Array.isArray(req.body?.paperIds) 
+      ? req.body.paperIds 
+      : typeof req.query?.paperIds === "string" 
+      ? (req.query.paperIds as string).split(",") 
+      : undefined;
+
     if (user.userType === UserRole.ADMIN) {
       // Admins can delete any exam
     } else if (user.userType === UserRole.TEACHER && exam.teacherId === user.id) {
       // Teachers can delete only their own exams
       // After deletion, notify the school admin
-      await deleteExamService(examId);
+      await deleteExamService(examId, { deletePapers, paperIds });
 
       if (exam.schoolId) {
         const teacherName = exam.teacher?.name || "A teacher";
@@ -771,7 +782,7 @@ export const deleteExam = async (req: Request, res: Response) => {
       });
     }
 
-    await deleteExamService(examId);
+    await deleteExamService(examId, { deletePapers, paperIds });
     return res.status(200).json({
       success: true,
       message: "Exam deleted successfully",

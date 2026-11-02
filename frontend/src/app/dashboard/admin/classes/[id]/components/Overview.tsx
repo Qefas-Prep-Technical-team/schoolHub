@@ -23,12 +23,27 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomin
   // Derived data
   const realUpcomingExams = upcomingExams !== undefined
     ? upcomingExams
-    : (classData?.exams || []).slice(0, 3).map((e: any) => ({
-    id: e.id,
-    subject: e.title.split(' ')[0], // Best effort for icon match
-    date: new Date(e.createdAt).toLocaleDateString(),
-    type: e.category || 'Exam'
-  }));
+    : (classData?.exams || [])
+        .filter((e: any) => e.status !== 'ARCHIVED' && e.status !== 'DRAFT')
+        .slice(0, 5)
+        .map((e: any) => {
+          const subjectName = e.subject?.name || (e.subjectExamPapers?.[0]?.subjectPaper?.subject?.name) || e.title || 'General';
+          const targetDate = e.startDate ? new Date(e.startDate) : (e.endDate ? new Date(e.endDate) : (e.createdAt ? new Date(e.createdAt) : null));
+          const displayDate = targetDate && !isNaN(targetDate.getTime())
+            ? targetDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : 'TBA';
+
+          return {
+            id: e.id,
+            title: e.title || subjectName,
+            subject: subjectName,
+            date: displayDate,
+            type: e.category || e.type || 'EXAM',
+            scope: e.scope || 'CLASS',
+            totalMarks: e.totalMarks,
+            durationMinutes: e.durationMinutes,
+          };
+        });
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">

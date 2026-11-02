@@ -53,6 +53,17 @@ export default function ExamPapersPage() {
     enabled: !!examId,
   });
 
+  // Auto-redirect: If this exam is a single-paper exam or has exactly 1 paper,
+  // immediately navigate directly to the single paper workspace
+  useEffect(() => {
+    if (!isLoadingPapers && papers && papers.length === 1) {
+      const firstPaperId = (papers[0] as any)?.id;
+      if (firstPaperId) {
+        router.replace(`/dashboard/admin/exams/${examId}/papers/${firstPaperId}`);
+      }
+    }
+  }, [papers, isLoadingPapers, examId, router]);
+
   const validateExamMutation = useMutation({
     mutationFn: () => examService.validateExam(examId),
     onSuccess: () => {

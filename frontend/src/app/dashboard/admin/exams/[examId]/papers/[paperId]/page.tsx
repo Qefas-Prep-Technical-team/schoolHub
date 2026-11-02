@@ -6,18 +6,30 @@ import { examService } from "@/lib/api/services/examService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, FileText, Settings, Loader2, Check, Globe } from "lucide-react";
+import { 
+  ChevronLeft, FileText, Settings, Loader2, Check, Globe, Layers, ChevronDown, 
+  Users, Trash2, Clock, CheckCircle2, XCircle, Search, GraduationCap 
+} from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "./components/QuestionManager";
 import ConfirmationModal from "../../../components/ui/ConfirmationModal";
 import ReadingContentModal from "./components/ReadingContentModal";
 import PaperPreviewModal from "./components/PaperPreviewModal";
 import EditPaperModal from "./components/EditPaperModal";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BookOpen, Eye, Settings as SettingsIcon } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { classService } from "@/lib/api/services/classService";
 import { sessionService } from "@/lib/api/services/sessionService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export default function PaperDetailPage() {
   const params = useParams();
@@ -36,6 +48,12 @@ export default function PaperDetailPage() {
     queryKey: ["exam", examId],
     queryFn: () => examService.getExamById(examId),
     enabled: !!examId,
+  });
+
+  const { data: examPapers = [] } = useQuery({
+    queryKey: ["exam-papers", examId],
+    queryFn: () => examService.getExamPapers(examId),
+    enabled: !!examId && examId !== "none",
   });
 
   const queryClient = useQueryClient();
@@ -141,6 +159,20 @@ export default function PaperDetailPage() {
     }
   });
 
+  const deleteExamMutation = useMutation({
+    mutationFn: () => examService.deleteExam(examId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exams"] });
+      queryClient.invalidateQueries({ queryKey: ["exam", examId] });
+      queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
+      router.push("/dashboard/admin/exams");
+      toast.success("Exam and paper deleted successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete exam");
+    }
+  });
+
   const deletePaperMutation = useMutation({
     mutationFn: () => examService.deletePaper(examId, paperId),
     onSuccess: () => {
@@ -151,6 +183,77 @@ export default function PaperDetailPage() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete paper");
+    }
+  });
+
+  // Fetch exam attempts to show student results & allow clearing
+  const { data: rawAttempts = [], isLoading: isLoadingAttempts } = useQuery({
+    queryKey: ["exam-attempts", examId],
+    queryFn: () => examService.getExamAttempts(examId),
+    enabled: !!examId && examId !== "none",
+  });
+
+  // Filter attempts specifically for this paper
+  const attempts = useMemo(() => {
+    if (!Array.isArray(rawAttempts) || rawAttempts.length === 0) {
+      // Fallback to paper.examAttempts if rawAttempts from exam is empty
+      if (paper?.examAttempts && Array.isArray(paper.examAttempts) && paper.examAttempts.length > 0) {
+        return paper.examAttempts.map((item: any) => {
+          const parentAttempt = item.examAttempt || {};
+          const student = parentAttempt.student || item.student || {};
+          return {
+            id: parentAttempt.id || item.id,
+            studentId: parentAttempt.studentId || item.studentId || student.id,
+            student,
+            status: parentAttempt.status || "SCORED",
+            totalScore: item.score ?? parentAttempt.totalScore ?? 0,
+            totalMarks: item.totalMarks || paper.totalMarks || 100,
+            subjectExamAttempts: [item],
+            grades: parentAttempt.grades || paper.grades?.filter((g: any) => g.studentId === student.id) || [],
+            createdAt: item.createdAt || parentAttempt.createdAt,
+            submittedAt: item.submittedAt || parentAttempt.submittedAt,
+          };
+        });
+      }
+      return [];
+    }
+
+    return rawAttempts.filter((a: any) => {
+      const subAttempts = a.subjectExamAttempts || a.subjectAttempts || [];
+      return subAttempts.some((sa: any) => sa.subjectPaperId === paperId);
+    });
+  }, [rawAttempts, paper?.examAttempts, paper?.grades, paper?.totalMarks, paperId]);
+
+  const [attemptsSearch, setAttemptsSearch] = useState("");
+  const [attemptsPage, setAttemptsPage] = useState(1);
+  const ATTEMPTS_PER_PAGE = 10;
+
+  const filteredAttempts = useMemo(() => {
+    if (!attemptsSearch.trim()) return attempts;
+    const q = attemptsSearch.toLowerCase();
+    return attempts.filter((a: any) => {
+      const name = (a.student?.name || "").toLowerCase();
+      const code = (a.student?.studentCode || "").toLowerCase();
+      return name.includes(q) || code.includes(q);
+    });
+  }, [attempts, attemptsSearch]);
+
+  const totalAttemptsPages = Math.ceil(filteredAttempts.length / ATTEMPTS_PER_PAGE);
+  const paginatedAttempts = useMemo(() => {
+    return filteredAttempts.slice((attemptsPage - 1) * ATTEMPTS_PER_PAGE, attemptsPage * ATTEMPTS_PER_PAGE);
+  }, [filteredAttempts, attemptsPage]);
+
+  // Mutation to clear an attempt so the student can retake the exam/paper
+  const deleteAttemptMutation = useMutation({
+    mutationFn: (studentId: string) => examService.deleteExamAttempt(examId, studentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exam-attempts", examId] });
+      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      toast.success("Student record cleared. They can now retake the exam.");
+      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to clear student record");
     }
   });
 
@@ -326,6 +429,47 @@ export default function PaperDetailPage() {
                       <Globe size={9} /> Live
                     </span>
                   )}
+                  {/* Multi-Paper Tag and Papers Dropdown */}
+                  {!isSinglePaperType && examPapers && examPapers.length > 1 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="inline-flex items-center gap-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold border border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 cursor-pointer transition-colors">
+                          <Layers size={10} />
+                          <span>Multi-Paper ({examPapers.length})</span>
+                          <ChevronDown size={10} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-64 p-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 py-1">All Exam Papers</p>
+                        {examPapers.map((p: any, idx: number) => {
+                          const pId = p.id;
+                          const isCurrent = pId === paperId;
+                          return (
+                            <div
+                              key={pId || idx}
+                              onClick={() => {
+                                if (!isCurrent) router.push(`/dashboard/admin/exams/${examId}/papers/${pId}`);
+                              }}
+                              className={cn(
+                                "flex items-center justify-between p-2 rounded-xl text-xs transition-colors",
+                                isCurrent 
+                                  ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold"
+                                  : "hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-slate-800 dark:text-slate-200"
+                              )}
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="truncate font-semibold">{p.title || p.subject?.name || 'Paper'}</p>
+                                <p className="text-[10px] opacity-75">{p.subject?.name || ''}</p>
+                              </div>
+                              {isCurrent && (
+                                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-100 shrink-0">Current</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
                   {paper.totalMarks} marks · {paper.durationMinutes} min
@@ -406,29 +550,289 @@ export default function PaperDetailPage() {
                 variant="ghost"
                 size="sm"
                 className="h-8 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs px-3 font-semibold"
-                onClick={() => openConfirmDialog({
-                  title: "Delete Paper",
-                  description: `Permanently delete "${paper.title}"?`,
-                  variant: "danger",
-                  confirmText: "Delete",
-                  onConfirm: () => deletePaperMutation.mutate()
-                })}
-                disabled={deletePaperMutation.isPending}
+                onClick={() => {
+                  if (isSinglePaperType) {
+                    openConfirmDialog({
+                      title: "Delete Paper & Assessment",
+                      description: `This is a single-paper assessment. Deleting it will permanently delete both "${paper.title}" and the exam "${exam?.title || ''}".`,
+                      variant: "danger",
+                      confirmText: "Delete Paper & Exam",
+                      onConfirm: () => deleteExamMutation.mutate()
+                    });
+                  } else {
+                    openConfirmDialog({
+                      title: "Delete Subject Paper",
+                      description: `Permanently delete paper "${paper.title}" from "${exam?.title || 'Exam'}"? (Other subject papers in this exam will remain untouched).`,
+                      variant: "danger",
+                      confirmText: "Delete This Paper",
+                      onConfirm: () => deletePaperMutation.mutate()
+                    });
+                  }
+                }}
+                disabled={deletePaperMutation.isPending || deleteExamMutation.isPending}
               >
-                {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Delete"}
+                {(deletePaperMutation.isPending || deleteExamMutation.isPending) ? (
+                  <Loader2 className="animate-spin h-3 w-3" />
+                ) : (
+                  "Delete"
+                )}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* ── Question Manager ─────────────────────────────────────────── */}
-        <QuestionManager
-          paperId={paperId}
-          examId={examId}
-          paper={paper}
-        />
-      </main>
+        {/* ── Tabs Navigation: Questions vs Graded / Attempts ───────── */}
+        <Tabs defaultValue="questions" className="w-full space-y-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <TabsList className="p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-800 grid grid-cols-2 w-full sm:w-80">
+              <TabsTrigger
+                value="questions"
+                className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm py-2 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+              >
+                <FileText size={14} className="shrink-0" />
+                <span>Questions</span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 shrink-0">
+                  {paper.questions?.length || 0}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="graded"
+                className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm py-2 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+              >
+                <GraduationCap size={15} className="shrink-0" />
+                <span>Graded</span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+                  {attempts.length}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* Tab 1: Question Manager */}
+          <TabsContent value="questions" className="mt-0 focus-visible:outline-none">
+            <QuestionManager
+              paperId={paperId}
+              examId={examId}
+              paper={paper}
+            />
+          </TabsContent>
+
+          {/* Tab 2: Graded / Student Attempts */}
+          <TabsContent value="graded" className="mt-0 focus-visible:outline-none">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+              {/* Section Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 sm:px-8 py-5 border-b border-slate-100 dark:border-slate-800 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Users size={19} />
+                  </div>
+                  <div>
+                    <h2 className="font-black text-slate-900 dark:text-white text-base leading-tight flex items-center gap-2">
+                      <span>Paper Attempts & Results</span>
+                      {attempts.length > 0 && (
+                        <span className="text-primary text-xs px-2 py-0.5 rounded-full bg-primary/10 font-black">
+                          {attempts.length} {attempts.length === 1 ? "student" : "students"}
+                        </span>
+                      )}
+                    </h2>
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">
+                      All candidates who have attempted &quot;{paper.title}&quot;. Clear their attempt to allow a retake.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Search Bar */}
+                {attempts.length > 0 && (
+                  <div className="relative w-full sm:w-64">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search candidate..."
+                      value={attemptsSearch}
+                      onChange={(e) => {
+                        setAttemptsSearch(e.target.value);
+                        setAttemptsPage(1);
+                      }}
+                      className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Table or Empty State */}
+              {isLoadingAttempts ? (
+                <div className="p-8 space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                  ))}
+                </div>
+              ) : attempts.length === 0 ? (
+                <div className="py-16 px-4 flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-3xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-4 border border-slate-100 dark:border-slate-800">
+                    <Users size={30} />
+                  </div>
+                  <h3 className="font-black text-slate-800 dark:text-slate-200 text-base mb-1">No Student Attempts Yet</h3>
+                  <p className="text-xs font-medium text-slate-400 max-w-sm">
+                    No students have submitted or started an attempt for this subject paper yet. Once students take the paper, their scores and status will appear here.
+                  </p>
+                </div>
+              ) : filteredAttempts.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs font-medium">
+                  No students matched your search &quot;{attemptsSearch}&quot;.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+                        <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Date Recorded</th>
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Score</th>
+                        <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                      {paginatedAttempts.map((attempt: any) => {
+                        // Find this specific subject paper attempt from subAttempts or direct attempt
+                        const subAttempts = attempt.subjectExamAttempts || attempt.subjectAttempts || [];
+                        const paperAttempt = subAttempts.find((sa: any) => sa.subjectPaperId === paperId) || subAttempts[0] || {};
+                        const studentScore = paperAttempt.score ?? attempt.totalScore ?? 0;
+                        const maxMarks = paperAttempt.totalMarks || paper.totalMarks || 100;
+                        const scorePercent = maxMarks > 0 ? Math.round((studentScore / maxMarks) * 100) : 0;
+                        const initials = (attempt.student?.name || "?")
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase();
+
+                        const statusMap: Record<string, string> = {
+                          SCORED: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800",
+                          SUBMITTED: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800",
+                          EXPIRED: "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800",
+                          IN_PROGRESS: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800",
+                        };
+                        const statusCls = statusMap[attempt.status] || statusMap.IN_PROGRESS;
+
+                        return (
+                          <tr key={attempt.id || attempt.studentId} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                            {/* Student Column */}
+                            <td className="px-6 sm:px-8 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-black text-slate-900 dark:text-white truncate">
+                                    {attempt.student?.name || "Student"}
+                                  </p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">
+                                    {attempt.student?.studentCode || attempt.student?.id?.slice(0, 8)}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Status Column */}
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center gap-1 border text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${statusCls}`}>
+                                {attempt.status}
+                              </span>
+                            </td>
+
+                            {/* Date Recorded Column */}
+                            <td className="px-6 py-4">
+                              {attempt.createdAt || attempt.submittedAt ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                    {format(new Date(attempt.submittedAt || attempt.createdAt), "MMM d, yyyy")}
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-slate-400">
+                                    {format(new Date(attempt.submittedAt || attempt.createdAt), "h:mm a")}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                              )}
+                            </td>
+
+                            {/* Paper Score Column */}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-primary">{studentScore}</span>
+                                <span className="text-slate-300 dark:text-slate-700">/</span>
+                                <span className="text-xs font-bold text-slate-400">{maxMarks}</span>
+                                <span className="text-[10px] font-bold text-slate-400">({scorePercent}%)</span>
+                              </div>
+                            </td>
+
+                            {/* Action: Clear Record */}
+                            <td className="px-6 sm:px-8 py-4 text-right">
+                              <div className="flex items-center justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    openConfirmDialog({
+                                      title: "Clear Student Record",
+                                      description: `Delete ${attempt.student?.name || "this student"}'s attempt for "${paper.title}"? This clears their recorded answers and allows them to take the exam again.`,
+                                      variant: "danger",
+                                      confirmText: "Clear & Reset",
+                                      onConfirm: () => deleteAttemptMutation.mutate(attempt.studentId),
+                                    })
+                                  }
+                                  disabled={deleteAttemptMutation.isPending && (deleteAttemptMutation.variables as string) === attempt.studentId}
+                                  className="h-8 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold text-xs flex items-center gap-1.5 transition-all"
+                                  title="Clear record so student can retake"
+                                >
+                                  {deleteAttemptMutation.isPending && (deleteAttemptMutation.variables as string) === attempt.studentId ? (
+                                    <Loader2 className="animate-spin h-3.5 w-3.5" />
+                                  ) : (
+                                    <Trash2 size={13} />
+                                  )}
+                                  <span>Clear</span>
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Pagination */}
+                  {totalAttemptsPages > 1 && (
+                    <div className="px-6 sm:px-8 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAttemptsPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={attemptsPage === 1}
+                        className="rounded-xl font-bold h-8 px-3 text-xs"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-xs font-bold text-slate-400">
+                        Page {attemptsPage} of {totalAttemptsPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAttemptsPage((prev) => Math.min(prev + 1, totalAttemptsPages))}
+                        disabled={attemptsPage === totalAttemptsPages}
+                        className="rounded-xl font-bold h-8 px-3 text-xs"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
 
       <ConfirmationModal
         isOpen={confirmDialog.isOpen}
@@ -438,7 +842,12 @@ export default function PaperDetailPage() {
         description={confirmDialog.description}
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
-        isLoading={unpublishPaperMutation.isPending || deletePaperMutation.isPending}
+        isLoading={
+          unpublishPaperMutation.isPending || 
+          deletePaperMutation.isPending || 
+          deleteExamMutation.isPending || 
+          deleteAttemptMutation.isPending
+        }
       />
 
       <ReadingContentModal

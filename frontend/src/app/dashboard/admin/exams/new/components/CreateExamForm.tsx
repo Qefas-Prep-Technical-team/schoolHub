@@ -304,7 +304,7 @@ export default function CreateExamForm() {
       setExamContext(result.createdExam.id, result.createdExam.schoolId, result.createdExam.sessionId || "");
       if (result.isSingle && result.createdPaper) {
         toast.success(`${typeLabel} and Subject Paper created successfully!`);
-        router.push(`/dashboard/admin/exams/papers/${result.createdPaper.id}`);
+        router.push(`/dashboard/admin/exams/${result.createdExam.id}/papers/${result.createdPaper.id}`);
       } else {
         if (result.paperFailed) {
           toast.warn(`Assessment created, but the default subject paper could not be created.`, { autoClose: 6000 });

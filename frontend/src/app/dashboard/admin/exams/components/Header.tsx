@@ -1,13 +1,44 @@
 'use client';
 
-import { Plus, X, Layers, FileText, Info } from 'lucide-react';
+import { Plus, X, Layers, FileText, Info, Sparkles, Building2 } from 'lucide-react';
 import Button from './ui/Button';
-import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import AdminCreateExamModal from './AdminCreateExamModal';
+import AdminCreatePaperModal from './AdminCreatePaperModal';
 
 export default function Header() {
+    const router = useRouter();
+
+    // Modals state
     const [isExamTypeModalOpen, setIsExamTypeModalOpen] = useState(false);
+    const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+    const [examCategory, setExamCategory] = useState<'EXAM' | 'QUIZ' | 'CA'>('EXAM');
+    const [examMode, setExamMode] = useState<'SINGLE_SUBJECT' | 'COMBINED'>('SINGLE_SUBJECT');
+    const [isPaperModalOpen, setIsPaperModalOpen] = useState(false);
+
+    const handleOpenExamModal = (category: 'EXAM' | 'QUIZ' | 'CA', mode: 'SINGLE_SUBJECT' | 'COMBINED' = 'SINGLE_SUBJECT') => {
+        setExamCategory(category);
+        setExamMode(mode);
+        setIsExamTypeModalOpen(false);
+        setIsExamModalOpen(true);
+    };
+
+    const handleExamSuccess = (examId: string, paperId?: string) => {
+        setIsExamModalOpen(false);
+        if (paperId) {
+            router.push(`/dashboard/admin/exams/${examId}/papers/${paperId}`);
+        } else {
+            router.push(`/dashboard/admin/exams/${examId}/papers`);
+        }
+    };
+
+    const handlePaperSuccess = (paperId: string) => {
+        setIsPaperModalOpen(false);
+        router.push(`/dashboard/admin/exams/papers/${paperId}`);
+    };
 
     return (
         <>
@@ -38,38 +69,44 @@ export default function Header() {
 
                     <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-center gap-3">
                         <Button
-                            variant="secondary"
                             onClick={() => setIsExamTypeModalOpen(true)}
-                            className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-700 rounded-2xl shadow-xl shadow-blue-600/20 hover:-translate-y-1 hover:shadow-2xl active:scale-95 transition-all duration-300 text-[10px] sm:text-xs"
+                            className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-500/80 rounded-2xl shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs cursor-pointer"
                         >
-                            <Plus size={16} strokeWidth={3} />
-                            <span>Create Exam</span>
+                            <Plus size={16} strokeWidth={3} className="text-white" />
+                            <span className="text-white">Create Exam</span>
                         </Button>
 
-                        <Link href="/dashboard/admin/exams/new?category=QUIZ" className="w-full">
-                            <Button variant="secondary" className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-purple-50 dark:bg-purple-900/10 border-2 border-purple-200 dark:border-purple-800 text-purple-600 rounded-2xl shadow-md hover:shadow-lg hover:border-purple-400 dark:hover:border-purple-600 hover:-translate-y-1 active:scale-95 transition-all duration-300 text-[10px] sm:text-xs">
-                                <Plus size={16} strokeWidth={3} />
-                                <span>Create Quiz</span>
-                            </Button>
-                        </Link>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => handleOpenExamModal('QUIZ', 'SINGLE_SUBJECT')}
+                            className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200/80 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800/80 rounded-2xl shadow-sm hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs"
+                        >
+                            <Plus size={16} strokeWidth={3} className="text-purple-600 dark:text-purple-400" />
+                            <span>Create Quiz</span>
+                        </Button>
 
-                        <Link href="/dashboard/admin/exams/new?category=CA" className="w-full">
-                            <Button variant="secondary" className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/10 border-2 border-emerald-200 dark:border-emerald-800 text-emerald-600 rounded-2xl shadow-md hover:shadow-lg hover:border-emerald-400 dark:hover:border-emerald-600 hover:-translate-y-1 active:scale-95 transition-all duration-300 text-[10px] sm:text-xs">
-                                <Plus size={16} strokeWidth={3} />
-                                <span>Create CA</span>
-                            </Button>
-                        </Link>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => handleOpenExamModal('CA', 'SINGLE_SUBJECT')}
+                            className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/80 rounded-2xl shadow-sm hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs"
+                        >
+                            <Plus size={16} strokeWidth={3} className="text-emerald-600 dark:text-emerald-400" />
+                            <span>Create CA</span>
+                        </Button>
 
-                        <Link href="/dashboard/admin/exams/new/paper" className="w-full">
-                            <Button variant="secondary" className="w-full whitespace-nowrap font-black uppercase tracking-widest h-12 px-2 sm:px-6 flex items-center justify-center gap-1.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl shadow-md hover:shadow-lg hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 active:scale-95 transition-all duration-300 text-[10px] sm:text-xs">
-                                <Plus size={16} strokeWidth={3} />
-                                <span>Subject Paper</span>
-                            </Button>
-                        </Link>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setIsPaperModalOpen(true)}
+                            className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 border border-slate-200/90 dark:bg-slate-900 dark:hover:bg-slate-800/90 dark:text-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs"
+                        >
+                            <Plus size={16} strokeWidth={3} className="text-slate-600 dark:text-slate-400" />
+                            <span>Subject Paper</span>
+                        </Button>
                     </div>
                 </div>
             </header>
 
+            {/* Exam Type Selection Modal */}
             {isExamTypeModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2rem] border-2 border-slate-200 dark:border-slate-800 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -78,7 +115,12 @@ export default function Header() {
                             <p className="text-slate-500 dark:text-slate-400 mb-8 text-xs font-bold uppercase tracking-widest">Select the type of exam structure you want to create.</p>
 
                             <div className="flex flex-col gap-4">
-                                <Link href="/dashboard/admin/exams/new?category=EXAM&mode=SINGLE_SUBJECT" className="group" onClick={() => setIsExamTypeModalOpen(false)}>
+                                <div 
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => handleOpenExamModal('EXAM', 'SINGLE_SUBJECT')} 
+                                    className="group cursor-pointer"
+                                >
                                     <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
                                         <div className="p-4 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 shadow-sm group-hover:scale-110 group-hover:-rotate-6 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
                                             <FileText size={28} strokeWidth={2.5} />
@@ -88,9 +130,14 @@ export default function Header() {
                                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">A standard exam focused on one specific subject paper.</p>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
 
-                                <Link href="/dashboard/admin/exams/new?category=EXAM&mode=COMBINED" className="group" onClick={() => setIsExamTypeModalOpen(false)}>
+                                <div 
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => handleOpenExamModal('EXAM', 'COMBINED')} 
+                                    className="group cursor-pointer"
+                                >
                                     <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
                                         <div className="p-4 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 shadow-sm group-hover:scale-110 group-hover:-rotate-6 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                                             <Layers size={28} strokeWidth={2.5} />
@@ -100,7 +147,7 @@ export default function Header() {
                                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">A composite exam containing multiple different subject papers.</p>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             </div>
                         </div>
 
@@ -113,6 +160,42 @@ export default function Header() {
                     </div>
                 </div>
             )}
+
+            {/* In-Page Create Exam / Quiz / CA Dialog */}
+            <Dialog open={isExamModalOpen} onOpenChange={setIsExamModalOpen}>
+                <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-blue-500" />
+                            Create {
+                                examCategory === 'EXAM' 
+                                    ? (examMode === 'COMBINED' ? 'Multi-Paper Exam' : 'Single Paper Exam') 
+                                    : examCategory === 'CA' 
+                                    ? 'Continuous Assessment' 
+                                    : 'Quiz'
+                            }
+                        </DialogTitle>
+                    </DialogHeader>
+                    <AdminCreateExamModal
+                        category={examCategory}
+                        initialMode={examMode}
+                        onSuccess={handleExamSuccess}
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* In-Page Create Subject Paper Dialog */}
+            <Dialog open={isPaperModalOpen} onOpenChange={setIsPaperModalOpen}>
+                <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <Building2 className="w-5 h-5 text-primary" />
+                            Create Standalone Subject Paper
+                        </DialogTitle>
+                    </DialogHeader>
+                    <AdminCreatePaperModal onSuccess={handlePaperSuccess} />
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

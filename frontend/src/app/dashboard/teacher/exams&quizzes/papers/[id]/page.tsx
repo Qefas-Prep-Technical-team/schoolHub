@@ -132,15 +132,30 @@ export default function TeacherPaperDetailPage() {
   });
 
   const deletePaperMutation = useMutation({
-    mutationFn: () => examService.deletePaper(examId, paperId),
+    mutationFn: () => examService.deletePaper(urlExamId || "none", paperId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["exam-papers", examId] });
+      queryClient.invalidateQueries({ queryKey: ["exam-papers"] });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-exams"] });
       router.push(`/dashboard/teacher/exams&quizzes`);
-      toast.success("Subject paper deleted!");
+      toast.success("Subject paper deleted successfully!");
     },
     onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to delete paper");
+    }
+  });
+
+  const deleteExamMutation = useMutation({
+    mutationFn: (targetExamId: string) => examService.deleteExam(targetExamId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exam-papers"] });
+      queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-exams"] });
+      router.push(`/dashboard/teacher/exams&quizzes`);
+      toast.success("Assessment and paper deleted successfully!");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to delete assessment");
     }
   });
 
@@ -669,17 +684,31 @@ export default function TeacherPaperDetailPage() {
               variant="outline" 
               size="sm" 
               className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => openConfirmDialog({
-                title: "Delete Paper",
-                description: `Permanently delete "${paper.title}"?`,
-                variant: "danger",
-                confirmText: "Delete",
-                onConfirm: () => deletePaperMutation.mutate()
-              })}
-              disabled={deletePaperMutation.isPending || isMainExamPublished}
+              onClick={() => {
+                const targetExam = mainExam;
+                const isSingle = isSinglePaperType;
+                if (isSingle && targetExam?.id) {
+                  openConfirmDialog({
+                    title: "Delete Paper & Assessment",
+                    description: `This is a single-paper assessment. Deleting it will permanently delete both "${paper.title}" and the exam "${targetExam.title || ''}".`,
+                    variant: "danger",
+                    confirmText: "Delete Paper & Exam",
+                    onConfirm: () => deleteExamMutation.mutate(targetExam.id)
+                  });
+                } else {
+                  openConfirmDialog({
+                    title: "Delete Subject Paper",
+                    description: `Permanently delete paper "${paper.title}"? Other papers in the main exam will remain untouched.`,
+                    variant: "danger",
+                    confirmText: "Delete This Paper",
+                    onConfirm: () => deletePaperMutation.mutate()
+                  });
+                }
+              }}
+              disabled={deletePaperMutation.isPending || deleteExamMutation.isPending || isMainExamPublished}
               title={isMainExamPublished ? "Cannot delete because the parent exam is published." : ""}
             >
-              {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3 mr-1" /> : null}
+              {(deletePaperMutation.isPending || deleteExamMutation.isPending) ? <Loader2 className="animate-spin h-3 w-3 mr-1" /> : null}
               Delete
             </Button>
 
@@ -842,16 +871,30 @@ export default function TeacherPaperDetailPage() {
               variant="outline" 
               size="sm" 
               className="h-7 rounded-lg text-rose-600 border-rose-200 hover:bg-rose-50 text-[11px] px-2.5 font-bold shrink-0 gap-1 disabled:opacity-50"
-              onClick={() => openConfirmDialog({
-                title: "Delete Paper",
-                description: `Permanently delete "${paper.title}"?`,
-                variant: "danger",
-                confirmText: "Delete",
-                onConfirm: () => deletePaperMutation.mutate()
-              })}
-              disabled={deletePaperMutation.isPending || isMainExamPublished}
+              onClick={() => {
+                const targetExam = mainExam;
+                const isSingle = isSinglePaperType;
+                if (isSingle && targetExam?.id) {
+                  openConfirmDialog({
+                    title: "Delete Paper & Assessment",
+                    description: `This is a single-paper assessment. Deleting it will permanently delete both "${paper.title}" and the exam "${targetExam.title || ''}". This action cannot be undone.`,
+                    variant: "danger",
+                    confirmText: "Delete Paper & Exam",
+                    onConfirm: () => deleteExamMutation.mutate(targetExam.id)
+                  });
+                } else {
+                  openConfirmDialog({
+                    title: "Delete Subject Paper",
+                    description: `Permanently delete paper "${paper.title}"? Other papers in the main exam will remain untouched.`,
+                    variant: "danger",
+                    confirmText: "Delete This Paper",
+                    onConfirm: () => deletePaperMutation.mutate()
+                  });
+                }
+              }}
+              disabled={deletePaperMutation.isPending || deleteExamMutation.isPending || isMainExamPublished}
             >
-              {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3 mr-1" /> : <Trash2 size={11} />}
+              {deletePaperMutation.isPending || deleteExamMutation.isPending ? <Loader2 className="animate-spin h-3 w-3 mr-1" /> : <Trash2 size={11} />}
               Delete
             </Button>
           </div>
@@ -1422,7 +1465,7 @@ export default function TeacherPaperDetailPage() {
         description={confirmDialog.description}
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
-        isLoading={unpublishPaperMutation.isPending || deletePaperMutation.isPending}
+        isLoading={unpublishPaperMutation.isPending || deletePaperMutation.isPending || deleteExamMutation.isPending}
       />
 
       <ReadingContentModal

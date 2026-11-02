@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-toastify";
-import { Loader2, BookOpen, Clock, FileText, UserCircle, Save, Eye, Edit3, Settings } from "lucide-react";
+import { Loader2, BookOpen, Clock, FileText, UserCircle, Save, Eye, Edit3, Settings, Check, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
@@ -50,7 +50,7 @@ const paperSchema = z.object({
   shuffleQuestions: z.boolean().optional(),
   scope: z.enum(["SCHOOL", "CLASS", "DEPARTMENT"]).optional(),
   classId: z.string().optional(),
-  targetDepartmentId: z.string().optional(),
+  departmentIds: z.array(z.string()).default([]),
   sessionId: z.string().optional(),
   term: z.string().optional(),
   examDescription: z.string().optional(),
@@ -130,7 +130,11 @@ export default function EditPaperModal({
 
   const exam = resolvedExam;
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaperFormValues>({
+  const initialDeptIds: string[] = (
+    exam?.departments?.map((d: any) => d.departmentId || d.department?.id || d.id).filter(Boolean) || []
+  );
+
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<PaperFormValues>({
     resolver: zodResolver(paperSchema) as any,
     defaultValues: {
       subjectId: paper?.subjectId || exam?.subjectId || "",
@@ -147,7 +151,7 @@ export default function EditPaperModal({
       shuffleQuestions: !!exam?.shuffleQuestions,
       scope: exam?.scope || (exam?.classId ? "CLASS" : (exam?.departments?.length ? "DEPARTMENT" : "SCHOOL")),
       classId: exam?.classId || "",
-      targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
+      departmentIds: initialDeptIds,
       sessionId: exam?.sessionId || "",
       term: exam?.term || "",
       examDescription: exam?.description || "",
@@ -159,6 +163,9 @@ export default function EditPaperModal({
 
   useEffect(() => {
     if (paper || exam) {
+      const resolvedDepts: string[] = (
+        exam?.departments?.map((d: any) => d.departmentId || d.department?.id || d.id).filter(Boolean) || []
+      );
       reset({
         subjectId: paper?.subjectId || exam?.subjectId || "",
         teacherId: paper?.teacherId || exam?.teacherId || "",
@@ -174,7 +181,7 @@ export default function EditPaperModal({
         shuffleQuestions: !!exam?.shuffleQuestions,
         scope: exam?.scope || (exam?.classId ? "CLASS" : (exam?.departments?.length ? "DEPARTMENT" : "SCHOOL")),
         classId: exam?.classId || "",
-        targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
+        departmentIds: resolvedDepts,
         sessionId: exam?.sessionId || "",
         term: exam?.term || "",
         examDescription: exam?.description || "",
@@ -199,15 +206,16 @@ export default function EditPaperModal({
         resultReleaseAt: !data.allowImmediateResult && data.resultReleaseAt ? data.resultReleaseAt : null,
         scope: data.scope,
         classId: data.scope === "CLASS" ? data.classId : null,
-        departmentIds: data.scope === "DEPARTMENT" && data.targetDepartmentId ? [data.targetDepartmentId] : [],
+        departmentIds: data.departmentIds || [],
         sessionId: data.sessionId || null,
         term: data.term || null,
         examDescription: data.examDescription,
       });
 
-      // 2. If linked exam ID exists, update exam container explicitly too
+      // 2. If single paper type and linked exam ID exists, update exam container explicitly too
+      // For multiple paper exams, the settings modal modifies only this subject paper alone
       const targetExamId = exam?.id;
-      if (targetExamId) {
+      if (isSinglePaperType && targetExamId) {
         await examService.updateExam(targetExamId, {
           title: data.title,
           description: data.examDescription,
@@ -220,7 +228,7 @@ export default function EditPaperModal({
           shuffleQuestions: data.shuffleQuestions,
           scope: data.scope,
           classId: data.scope === "CLASS" ? data.classId : undefined,
-          departmentIds: data.scope === "DEPARTMENT" && data.targetDepartmentId ? [data.targetDepartmentId] : undefined,
+          departmentIds: data.departmentIds || [],
           sessionId: data.sessionId,
           term: data.term,
         });
@@ -390,69 +398,99 @@ export default function EditPaperModal({
                         </select>
                       </div>
 
-                      {watch("scope") === "CLASS" && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-left-2 duration-300">
-                          <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Target Class</Label>
-                            <select
-                              {...register("classId")}
-                              className="w-full h-12 rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                            >
-                              <option value="">Select a class...</option>
-                              {(classes || []).map((c: any) => (
-                                <option key={c.id} value={c.id}>{`${c.name} ${c.section || ""}`.trim()}</option>
-                              ))}
-                            </select>
+                      {/* Multi-Department Selector Component */}
+                      {(() => {
+                        const currentScope = watch("scope");
+                        const selectedDeptIds = watch("departmentIds") || [];
+                        const toggleDept = (deptId: string) => {
+                          const current = watch("departmentIds") || [];
+                          if (current.includes(deptId)) {
+                            setValue("departmentIds", current.filter(id => id !== deptId));
+                          } else {
+                            setValue("departmentIds", [...current, deptId]);
+                          }
+                        };
+
+                        const labelText = currentScope === "DEPARTMENT" 
+                          ? "Target Departments" 
+                          : currentScope === "CLASS"
+                          ? "Target Departments (optional - filter within class)"
+                          : "Target Departments (optional - filter within school)";
+
+                        return (
+                          <div className="space-y-3 pt-2">
+                            {currentScope === "CLASS" && (
+                              <div className="space-y-2 mb-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Target Class</Label>
+                                <select
+                                  {...register("classId")}
+                                  className="w-full h-12 rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                >
+                                  <option value="">Select a class...</option>
+                                  {(classes || []).map((c: any) => (
+                                    <option key={c.id} value={c.id}>{`${c.name} ${c.section || ""}`.trim()}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                                <Building2 size={13} />
+                                {labelText}
+                              </Label>
+                              {selectedDeptIds.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setValue("departmentIds", [])}
+                                  className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
+                                >
+                                  Clear selection ({selectedDeptIds.length})
+                                </button>
+                              )}
+                            </div>
+
+                            {departments && departments.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                                {departments.map((d: any) => {
+                                  const isSelected = selectedDeptIds.includes(d.id);
+                                  return (
+                                    <div
+                                      key={d.id}
+                                      onClick={() => toggleDept(d.id)}
+                                      className={`cursor-pointer group flex items-center gap-2.5 p-2.5 rounded-xl border-2 transition-all duration-200 select-none ${
+                                        isSelected
+                                          ? "bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-700 dark:text-purple-300 shadow-sm"
+                                          : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300"
+                                      }`}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded-md flex items-center justify-center transition-colors shrink-0 ${
+                                          isSelected ? "bg-purple-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-transparent"
+                                        }`}
+                                      >
+                                        <Check size={10} strokeWidth={4} />
+                                      </div>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold truncate leading-tight">{d.name}</span>
+                                        {d.code && (
+                                          <span className="text-[9px] uppercase font-bold opacity-50 tracking-wider">
+                                            {d.code}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800">
+                                No departments configured for this school.
+                              </div>
+                            )}
                           </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-purple-500">
-                              Target Department <span className="text-[9px] lowercase font-normal opacity-70">(optional - filter within class)</span>
-                            </Label>
-                            <select
-                              {...register("targetDepartmentId")}
-                              className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                            >
-                              <option value="">All Departments in Class</option>
-                              {(departments || []).map((d: any) => (
-                                <option key={d.id} value={d.id}>{d.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      {watch("scope") === "DEPARTMENT" && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-purple-500">Target Department</Label>
-                          <select
-                            {...register("targetDepartmentId")}
-                            className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                          >
-                            <option value="">Select a department...</option>
-                            {(departments || []).map((d: any) => (
-                              <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      {watch("scope") === "SCHOOL" && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-purple-500">
-                            Target Department <span className="text-[9px] lowercase font-normal opacity-70">(optional - filter within school)</span>
-                          </Label>
-                          <select
-                            {...register("targetDepartmentId")}
-                            className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
-                          >
-                            <option value="">All Departments</option>
-                            {(departments || []).map((d: any) => (
-                              <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Academic Session</Label>

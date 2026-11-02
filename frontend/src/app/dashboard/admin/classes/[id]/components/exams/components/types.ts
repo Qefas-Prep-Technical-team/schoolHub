@@ -42,6 +42,10 @@ export interface AssessmentItem {
   totalStudents: number;
   completedStudents: number;
   source: 'exam' | 'assignment';
+  creatorName?: string;
+  creatorEmail?: string;
+  scope?: string;
+  papers?: { id: string; title: string; subjectName?: string; durationMinutes?: number; totalMarks?: number }[];
 }
 
 export interface Question {

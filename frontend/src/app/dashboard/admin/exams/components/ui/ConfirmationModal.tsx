@@ -22,6 +22,7 @@ interface ConfirmationModalProps {
   cancelText?: string;
   variant?: "danger" | "warning" | "info";
   isLoading?: boolean;
+  children?: React.ReactNode;
 }
 
 export default function ConfirmationModal({
@@ -34,6 +35,7 @@ export default function ConfirmationModal({
   cancelText = "Cancel",
   variant = "danger",
   isLoading = false,
+  children,
 }: ConfirmationModalProps) {
   const getVariantStyles = () => {
     switch (variant) {
@@ -59,7 +61,7 @@ export default function ConfirmationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <div className="flex items-center gap-4">
             {getIcon()}
@@ -69,6 +71,8 @@ export default function ConfirmationModal({
             {description}
           </DialogDescription>
         </DialogHeader>
+
+        {children}
         <DialogFooter className="mt-6 flex gap-2">
           <Button
             variant="outline"

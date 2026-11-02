@@ -63875,4 +63875,21 @@ Foreign key constraint violated on the constraint: `grades_teacherId_fkey`
     at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)Error: Exam attempt not found
     at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)PrismaClientKnownRequestError: 
+Invalid `prisma.subjectExamPaper.delete()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.service.ts:2048:40
+
+  2045   throw new Error("Cannot delete a paper that has student attempts. Try unpublishing it instead.");
+  2046 }
+  2047 
+→ 2048 return prisma.subjectExamPaper.delete(
+Foreign key constraint violated on the constraint: `exam_subject_papers_subjectPaperId_fkey`
+    at bl.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at bl.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at bl.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at o (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at deleteSubjectPaper (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.controller.ts:714:5)Error: Cannot delete an exam that has student attempts. Try unpublishing it instead.
+    at deleteExamService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.service.ts:2108:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at deleteExam (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam.controller.ts:785:5)

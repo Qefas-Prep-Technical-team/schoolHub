@@ -216,9 +216,9 @@ Date source priority: `exam.createdAt` → `exam.updatedAt` → `exam.startDate`
 | Action | Destination |
 |---|---|
 | **Eye icon (View)** | Preview page (`/exams&quizzes/preview?id=...`) or `/assignments/:id?preview=true` |
-| **Edit icon** | Single paper → `/papers/:paperId`; Multi-paper → `/exams&quizzes/:examId/papers`; Assignment → `/assignments/:id?edit=true` |
+| **Edit icon** | Direct paper route: Single paper → `/papers/:paperId?examId=:examId` (modal targets exam settings); Multi-paper → `/papers/:firstPaperId?examId=:examId&multi=true` (paper-scoped settings); Standalone paper → `/papers/:paperId`; Assignment → `/assignments/:id?edit=true` |
 | **Trash icon** | Confirmation dialog → `DELETE /exams/:id` |
-| **Click on Card/Row** | Same as Edit destination |
+| **Click on Card/Row** | Same as Edit destination (always lands directly on paper workspace) |
 
 #### 2.6.2 Status Badge Colors
 

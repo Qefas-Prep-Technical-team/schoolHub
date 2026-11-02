@@ -13,7 +13,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { ExamsTableSkeleton } from './ExamsSkeleton';
-import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen, LayoutGrid, List, Info, ChevronDown } from 'lucide-react';
+import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen, LayoutGrid, List, Info, ChevronDown, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -58,16 +58,41 @@ export default function ExamsQuizzesOverview() {
   const filterId = (isPersonal || selectedSchoolId === 'all') ? undefined : selectedSchoolId;
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => examService.deleteExam(id),
-    onSuccess: () => {
+    mutationFn: async (item: any) => {
+      const isPaper = item._tabType === 'subject-papers' || item.type === 'subject_paper';
+      const isAssignment = item._tabType === 'assignment' || item.type === 'assignment';
+
+      if (isPaper) {
+        return examService.deletePaper("none", item.id);
+      } else if (isAssignment) {
+        const itemSchoolId = item.schoolId || filterId;
+        return teacherService.deleteAssignment(item.id, itemSchoolId);
+      } else {
+        return examService.deleteExam(item.id);
+      }
+    },
+    onSuccess: (_, variables: any) => {
+      const isPaper = variables?._tabType === 'subject-papers' || variables?.type === 'subject_paper';
+      const isAssignment = variables?._tabType === 'assignment' || variables?.type === 'assignment';
       setExamToDelete(null);
-      toast.success('Assessment deleted successfully.');
+      toast.success(
+        isPaper
+          ? 'Subject paper deleted successfully.'
+          : isAssignment
+          ? 'Assignment deleted successfully.'
+          : 'Assessment deleted successfully.'
+      );
       setIsRefreshing(true);
       queryClient.invalidateQueries({ queryKey: ['teacher-exams'] });
+      queryClient.invalidateQueries({ queryKey: ['subject-papers'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-papers'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, variables: any) => {
+      const isPaper = variables?._tabType === 'subject-papers' || variables?.type === 'subject_paper';
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || 'Failed to delete assessment.');
+      toast.error(
+        err?.response?.data?.message || (isPaper ? 'Failed to delete subject paper.' : 'Failed to delete assessment.')
+      );
     }
   });
 
@@ -722,16 +747,71 @@ export default function ExamsQuizzesOverview() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!examToDelete} onOpenChange={(open) => !open && setExamToDelete(null)}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-2xl p-6 border-0 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Delete Assessment</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-slate-600 dark:text-slate-300">
-              Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-white">{examToDelete?.title || examToDelete?.subject?.name || 'this assessment'}</span>? 
-              This action cannot be undone.
-            </p>
-          </div>
+        <DialogContent className="sm:max-w-lg bg-white dark:bg-slate-900 rounded-2xl p-6 border-0 shadow-2xl">
+          {(() => {
+            const item = examToDelete as any;
+            const isPaper = item?._tabType === 'subject-papers' || item?.type === 'subject_paper';
+            const isAssignment = item?._tabType === 'assignment' || item?.type === 'assignment';
+            const title = item?.title || item?.subject?.name || (isPaper ? 'this subject paper' : isAssignment ? 'this assignment' : 'this assessment');
+            const questionsCount = item?.questions?.length ?? 0;
+            const papersCount = (item?.subjectPapers?.length || item?.exams?.length) ?? 0;
+
+            return (
+              <>
+                <DialogHeader className="pb-2">
+                  <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                      <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    {isPaper ? 'Delete Subject Paper' : isAssignment ? 'Delete Assignment' : 'Delete Assessment'}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  {/* Item Description */}
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Are you sure you want to delete <strong className="text-slate-900 dark:text-white underline underline-offset-2">{title}</strong>?
+                  </p>
+
+                  {/* Warning Callout Box */}
+                  <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-800 dark:text-rose-200 space-y-2">
+                    <p className="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-300">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      Permanent Deletion & Impact Summary
+                    </p>
+                    <ul className="list-disc pl-4 space-y-1 text-rose-700/90 dark:text-rose-300/90 leading-relaxed">
+                      {isPaper && (
+                        <>
+                          <li>All questions ({questionsCount > 0 ? questionsCount : 'all associated'}) inside this subject paper will be permanently removed.</li>
+                          <li>Any draft answers and session configurations tied to this paper will be erased.</li>
+                          <li>If any student has already completed attempts and received grades, the system will protect those records and block deletion.</li>
+                        </>
+                      )}
+                      {isAssignment && (
+                        <>
+                          <li>The assignment tasks, instructions, and student assignment attachments will be deleted.</li>
+                          <li>Students will no longer see this assignment in their submissions portal.</li>
+                        </>
+                      )}
+                      {!isPaper && !isAssignment && (
+                        <>
+                          <li>The exam configuration, timetable slots, and department assignments will be permanently deleted.</li>
+                          {papersCount > 0 && (
+                            <li>All connected subject papers ({papersCount}) and their question banks will be deleted.</li>
+                          )}
+                          <li>Protected guard: If students have already taken this assessment, deletion will be blocked to safeguard student academic history.</li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+
+                  <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 italic">
+                    Note: This action cannot be reversed. If you only want to hide it from students temporarily, consider unpublishing instead.
+                  </p>
+                </div>
+              </>
+            );
+          })()}
           <div className="flex justify-end gap-3 mt-4">
             <button
               onClick={() => setExamToDelete(null)}
@@ -740,7 +820,7 @@ export default function ExamsQuizzesOverview() {
               Cancel
             </button>
             <button
-              onClick={() => examToDelete && deleteMutation.mutate(examToDelete.id)}
+              onClick={() => examToDelete && deleteMutation.mutate(examToDelete)}
               disabled={deleteMutation.isPending || !examToDelete}
               className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer transition-colors"
             >

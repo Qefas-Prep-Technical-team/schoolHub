@@ -107,9 +107,16 @@ export const useUnpublishExam = () => {
 export const useDeleteExam = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => examService.deleteExam(id),
+    mutationFn: (args: string | { id: string; options?: { deletePapers?: boolean; paperIds?: string[] } }) => {
+      if (typeof args === "string") {
+        return examService.deleteExam(args);
+      }
+      return examService.deleteExam(args.id, args.options);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: examKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
+      queryClient.invalidateQueries({ queryKey: ["exams"] });
       toast.success("Exam deleted successfully");
     },
     onError: (error: AxiosError<{ message?: string }>) => {

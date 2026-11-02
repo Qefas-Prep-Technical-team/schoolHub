@@ -2034,8 +2034,13 @@ export const deleteSubjectPaperService = async (subjectPaperId: string) => {
   const paper = await prisma.subjectExamPaper.findUnique({
     where: { id: subjectPaperId },
     include: {
-      questions: true,
+      questions: {
+        include: {
+          answers: true,
+        }
+      },
       examAttempts: true,
+      grades: true,
     }
   });
 
@@ -2045,12 +2050,37 @@ export const deleteSubjectPaperService = async (subjectPaperId: string) => {
     throw new Error("Cannot delete a paper that has student attempts. Try unpublishing it instead.");
   }
 
-  return prisma.subjectExamPaper.delete({
-    where: { id: subjectPaperId },
+  return prisma.$transaction(async (tx) => {
+    // 1. Remove exam links so FK exam_subject_papers_subjectPaperId_fkey is not violated
+    await tx.examSubjectPaper.deleteMany({
+      where: { subjectPaperId },
+    });
+
+    // 2. Remove question answers if any exist
+    const questionIds = paper.questions.map(q => q.id);
+    if (questionIds.length > 0) {
+      await tx.subjectExamAnswer.deleteMany({
+        where: { questionId: { in: questionIds } },
+      });
+      // 3. Remove questions
+      await tx.subjectExamQuestion.deleteMany({
+        where: { subjectPaperId },
+      });
+    }
+
+    // 4. Remove any draft/manual grades referencing this paper
+    await tx.grade.deleteMany({
+      where: { subjectPaperId },
+    });
+
+    // 5. Finally delete the subject paper
+    return tx.subjectExamPaper.delete({
+      where: { id: subjectPaperId },
+    });
   });
 };
 
-export const deleteExamService = async (examId: string) => {
+export const deleteExamService = async (examId: string, options?: { deletePapers?: boolean; paperIds?: string[] }) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
@@ -2058,7 +2088,9 @@ export const deleteExamService = async (examId: string) => {
         include: {
           subjectPaper: {
             include: {
-              examAttempts: true
+              examAttempts: true,
+              exams: true,
+              questions: true,
             }
           }
         }
@@ -2068,7 +2100,7 @@ export const deleteExamService = async (examId: string) => {
 
   if (!exam) throw new Error("Exam not found");
 
-  // Check if any paper in the exam has attempts
+  // Check if any paper in the exam has student attempts
   const hasAttempts = (exam.subjectExamPapers as any[]).some(link => 
     link.subjectPaper.examAttempts && link.subjectPaper.examAttempts.length > 0
   );
@@ -2076,9 +2108,109 @@ export const deleteExamService = async (examId: string) => {
     throw new Error("Cannot delete an exam that has student attempts. Try unpublishing it instead.");
   }
 
-  // Deleting the exam will cascade to subject papers and questions because of Prisma schema (if configured)
-  // Let's ensure a clean deletion via transaction if needed, but Prisma Cascade is usually enough.
-  return prisma.exam.delete({
-    where: { id: examId },
+  const deletePapers = options?.deletePapers ?? true;
+  const targetPaperIds = options?.paperIds;
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Remove exam department connections
+    await tx.examDepartment.deleteMany({
+      where: { examId },
+    });
+
+    // 2. Remove exam subject connections if any
+    await tx.examSubject.deleteMany({
+      where: { examId },
+    });
+
+    // 3. Remove any draft grades linked directly to this exam
+    await tx.grade.deleteMany({
+      where: { examId },
+    });
+
+    // 4. Find all exam attempts for this exam to cascade clean child records
+    const attempts = await tx.examAttempt.findMany({
+      where: { examId },
+      select: { id: true }
+    });
+    const attemptIds = attempts.map(a => a.id);
+
+    if (attemptIds.length > 0) {
+      // Find subject exam attempts under these attempts
+      const subjectAttempts = await tx.subjectExamAttempt.findMany({
+        where: { examAttemptId: { in: attemptIds } },
+        select: { id: true }
+      });
+      const subjectAttemptIds = subjectAttempts.map(sa => sa.id);
+
+      if (subjectAttemptIds.length > 0) {
+        await tx.subjectExamAnswer.deleteMany({
+          where: { subjectExamAttemptId: { in: subjectAttemptIds } },
+        });
+        await tx.grade.deleteMany({
+          where: { subjectExamAttemptId: { in: subjectAttemptIds } },
+        });
+        await tx.subjectExamAttempt.deleteMany({
+          where: { id: { in: subjectAttemptIds } },
+        });
+      }
+
+      await tx.grade.deleteMany({
+        where: { examAttemptId: { in: attemptIds } },
+      });
+
+      await tx.examAttempt.deleteMany({
+        where: { id: { in: attemptIds } },
+      });
+    }
+
+    // 4. Identify papers to delete
+    const papersToDelete: string[] = [];
+    for (const link of exam.subjectExamPapers) {
+      const p = link.subjectPaper;
+      const shouldCheck = !targetPaperIds || targetPaperIds.includes(p.id);
+      if (deletePapers && shouldCheck) {
+        // If this paper is only linked to this exam (or user requested to delete it), clean it up
+        if (p.exams.length <= 1 || targetPaperIds?.includes(p.id)) {
+          papersToDelete.push(p.id);
+        }
+      }
+    }
+
+    // 5. Delete junction links first
+    await tx.examSubjectPaper.deleteMany({
+      where: { examId },
+    });
+
+    // 6. Delete papers and their questions/answers if marked for deletion
+    if (papersToDelete.length > 0) {
+      // Find all questions under these papers
+      const questions = await tx.subjectExamQuestion.findMany({
+        where: { subjectPaperId: { in: papersToDelete } },
+        select: { id: true },
+      });
+      const questionIds = questions.map(q => q.id);
+
+      if (questionIds.length > 0) {
+        await tx.subjectExamAnswer.deleteMany({
+          where: { questionId: { in: questionIds } },
+        });
+        await tx.subjectExamQuestion.deleteMany({
+          where: { subjectPaperId: { in: papersToDelete } },
+        });
+      }
+
+      await tx.grade.deleteMany({
+        where: { subjectPaperId: { in: papersToDelete } },
+      });
+
+      await tx.subjectExamPaper.deleteMany({
+        where: { id: { in: papersToDelete } },
+      });
+    }
+
+    // 7. Finally delete the exam record
+    return tx.exam.delete({
+      where: { id: examId },
+    });
   });
 };

@@ -1,13 +1,12 @@
-'use client';
-
 import SubjectPaperCard from './SubjectPaperCard';
 import { SubjectPaper, PaginationMetadata } from '@/lib/api/services/examService';
 import Pagination from './Pagination';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import ConfirmationModal from './ui/ConfirmationModal';
 import { useDeletePaper } from '@/lib/api/hooks/useExams';
 import { toast } from 'react-toastify';
+import { groupByDate } from '@/app/dashboard/admin/grades/utils/dateSectioning';
 
 interface SubjectPaperGridProps {
     papers: SubjectPaper[];
@@ -20,8 +19,13 @@ export default function SubjectPaperGrid({ papers, pagination, onPageChange, vie
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
     
+    // Group subject papers by date using the canonical date sectioning pattern
+    const dateGroups = useMemo(() => {
+        return groupByDate(papers, (item) => item.createdAt);
+    }, [papers]);
+
     // We don't have a reliable examId context here since this lists all subject papers globally, 
-    // but the hook useDeletePaper requires examId. The backend might allow omitting it if we pass 'none'.
+    // but the hook useDeletePaper requires examId. The backend allows 'none'.
     const deletePaperMutation = useDeletePaper('none');
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +59,8 @@ export default function SubjectPaperGrid({ papers, pagination, onPageChange, vie
         return (pagination.page - 1) * pagination.limit;
     };
 
+    let runningIndex = getBaseIndex();
+
     return (
         <div className="flex flex-col gap-6">
             {selectedIds.length > 0 && viewMode === 'list' && (
@@ -84,46 +90,91 @@ export default function SubjectPaperGrid({ papers, pagination, onPageChange, vie
             />
 
             {viewMode === 'grid' ? (
-                <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {papers.map((paper, index) => (
-                        <SubjectPaperCard key={paper.id} paper={paper} viewMode="grid" index={getBaseIndex() + index} />
+                <div className="space-y-8">
+                    {dateGroups.map((group) => (
+                        <div key={group.label} className="space-y-4">
+                            {/* Standard Date Section Header (Admin Indigo Accent Dot) */}
+                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                <div className="size-2 rounded-full bg-indigo-500" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                    {group.label}
+                                </h4>
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                    {group.items.length} {group.items.length === 1 ? 'paper' : 'papers'}
+                                </span>
+                            </div>
+
+                            <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {group.items.map((paper) => {
+                                    const currentIndex = runningIndex++;
+                                    return (
+                                        <SubjectPaperCard 
+                                            key={paper.id} 
+                                            paper={paper} 
+                                            viewMode="grid" 
+                                            index={currentIndex} 
+                                        />
+                                    );
+                                })}
+                            </section>
+                        </div>
                     ))}
-                </section>
+                </div>
             ) : (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
-                                    <input 
-                                        type="checkbox" 
-                                        className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
-                                        checked={papers.length > 0 && selectedIds.length === papers.length}
-                                        onChange={handleSelectAll}
-                                    />
-                                </th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject Paper</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Target</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Format</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                            {papers.map((paper, index) => (
-                                <SubjectPaperCard 
-                                    key={paper.id} 
-                                    paper={paper} 
-                                    viewMode="list" 
-                                    index={getBaseIndex() + index} 
-                                    isSelected={selectedIds.includes(paper.id)}
-                                    onSelect={(checked) => handleSelectOne(paper.id, checked)}
-                                />
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="space-y-8">
+                    {dateGroups.map((group) => (
+                        <div key={group.label} className="space-y-3">
+                            {/* Standard Date Section Header (Admin Indigo Accent Dot) */}
+                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                <div className="size-2 rounded-full bg-indigo-500" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                    {group.label}
+                                </h4>
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                    {group.items.length} {group.items.length === 1 ? 'paper' : 'papers'}
+                                </span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                                                    checked={papers.length > 0 && selectedIds.length === papers.length}
+                                                    onChange={handleSelectAll}
+                                                />
+                                            </th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject Paper</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Target</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Format</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                                        {group.items.map((paper) => {
+                                            const currentIndex = runningIndex++;
+                                            return (
+                                                <SubjectPaperCard 
+                                                    key={paper.id} 
+                                                    paper={paper} 
+                                                    viewMode="list" 
+                                                    index={currentIndex} 
+                                                    isSelected={selectedIds.includes(paper.id)}
+                                                    onSelect={(checked) => handleSelectOne(paper.id, checked)}
+                                                />
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 

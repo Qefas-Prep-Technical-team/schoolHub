@@ -11,6 +11,338 @@
 
 ### Monday, November 2, 2026
 
+- [x] **Class Details Page (`/dashboard/admin/classes/:id?tab=exams`) — Deletion Persistence & Optimistic Removal Fix**:
+  - **Issue**: Deleting an assessment appeared to succeed with a toast, but the item remained visible or reappeared on the screen.
+  - **Root Causes**:
+    1. **Backend Database Cascade Constraint**: In `deleteExamService` ([exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts)), deleting an `Exam` failed inside the transaction if child records in `examSubject` or `examAttempt` -> `subjectExamAttempt` -> `subjectExamAnswer` still existed without automatic cascade on the Prisma schema.
+    2. **Frontend Cache Synchronization**: The component relied on parent-level props (`exams={(classData as any)?.exams || []}`) which didn't instantly drop the item until the query refetched and re-rendered.
+  - **Fix**:
+    - **Backend Cascade**: Added proactive cascading cleanup in `deleteExamService`: deletes `examDepartment`, `examSubject`, `subjectExamAnswer`, `subjectExamAttempt`, `grade`, and `examAttempt` before deleting `exam`.
+    - **Frontend Optimistic Removal**: Added `deletedIds` state in [ExamsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/exams/ExamsTab.tsx). When an assessment is deleted, its ID is instantly added to `deletedIds` to immediately remove it from view in both the table and grid cards.
+    - Invalidates all associated query keys (`classQueryKeys.detail(classId)`, `['class', classId]`, `['classes']`, `['exams']`, `['subject-papers']`).
+
+
+
+- [x] **Teacher Assessments (`/dashboard/teacher/exams&quizzes`) — Enhanced Deletion Modal & Impact Explanations**:
+  - **Requirement**: Display a clear, contextual explanation of the exact consequences of deleting an item (matching the admin exams page standard).
+  - **Work Done**:
+    - Updated [ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsQuizzesOverview.tsx):
+      - Expanded the delete confirmation dialog with an `AlertTriangle` header badge and a styled red/rose impact callout box.
+      - **Subject Paper**: Clearly informs that all questions and draft answers will be permanently deleted, while noting that existing graded student submissions will protect the paper from accidental deletion.
+      - **Assignment**: Explains that assignment instructions, tasks, and student submission attachments will be removed.
+      - **Composite Exam / Assessment**: Clarifies that exam configuration, slots, departments, and connected subject papers will be deleted, while enforcing the student attempt protection guard.
+      - Added an unpublish advisory if the teacher merely wants to hide the item from students temporarily.
+
+
+- [x] **Admin Exams Banner Card (`/dashboard/admin/exams`) — Creation Popups Setup**:
+  - **Requirement**: On `http://localhost:3000/dashboard/admin/exams`, configure the buttons on the "Ready to manage exams?" banner card to trigger the creation popups rather than navigating to plain URLs:
+    - **Create Exam**: Opens the Single Subject vs. Multiple Subject selection modal, then opens `AdminCreateExamModal`.
+    - **Create Quiz**: Opens `AdminCreateExamModal` preconfigured with `category="QUIZ"`, `initialMode="SINGLE_SUBJECT"`.
+    - **Create CA**: Opens `AdminCreateExamModal` preconfigured with `category="CA"`, `initialMode="SINGLE_SUBJECT"`.
+    - **Subject Paper**: Opens `AdminCreatePaperModal` for standalone subject papers.
+  - **Work Done**:
+    - Updated [StatsCards.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/StatsCards.tsx):
+      - Integrated state controls (`isExamTypeModalOpen`, `isExamModalOpen`, `examCategory`, `examMode`, `isPaperModalOpen`).
+      - Embedded `AdminCreateExamModal` and `AdminCreatePaperModal` dialogs alongside the Exam Type selection modal matching the top Header action pattern.
+      - Replaced raw navigation links with the 4 modal triggers featuring modern icons and responsive styling.
+
+
+- [x] **Teacher Assessments (`/dashboard/teacher/exams&quizzes`) — Subject Paper Deletion Error Fix**:
+  - **Issue**: Attempting to delete a subject paper from the "Subject Papers" tab failed with an error toast `"Exam not found"`.
+  - **Root Cause**: In [ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsQuizzesOverview.tsx), the delete mutation was unconditionally routing all items through `examService.deleteExam(id)` (`DELETE /exams/:id`). For subject papers, passing a paper ID to the exam endpoint looked up `prisma.exam.findUnique({ where: { id: examId } })`, which returned null and responded with 404 `"Exam not found"`.
+  - **Fix**:
+    - Updated `deleteMutation` in `ExamsQuizzesOverview.tsx` to detect item types:
+      - Subject papers (`_tabType === 'subject-papers'` or `type === 'subject_paper'`): calls `examService.deletePaper("none", item.id)` (`DELETE /exams/papers/:paperId`).
+      - Assignments (`_tabType === 'assignment'` or `type === 'assignment'`): calls `teacherService.deleteAssignment(item.id, schoolId)`.
+      - Assessments/Exams: calls `examService.deleteExam(item.id)`.
+    - Customized the confirmation dialog title, description, and success/error toasts to accurately reflect the item being deleted.
+    - Verified TypeScript typechecks with `npx tsc --noEmit` (exit code 0).
+
+
+- [x] **Subject Paper Detail Page (`/dashboard/admin/exams/:examId/papers/:paperId`) — Graded Tab & Attempt Reset**:
+  - **Requirement**:
+    - Add the "Graded" tab to the subject paper detail page showing all students who have attempted the subject paper.
+    - Provide a "Clear" action button on each student's attempt row so admins can reset/clear their record to let them retake the exam/paper (matching the behavior on the exam papers page).
+  - **Work Done**:
+    - **Frontend Tabs & Graded Interface** ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/page.tsx)):
+      - Integrated Shadcn `Tabs`, `TabsList`, `TabsTrigger`, and `TabsContent` to toggle seamlessly between **Questions** (with question count badge) and **Graded** (with attempted candidate count badge).
+      - Added queries for paper attempts (`examService.getExamAttempts(examId)` filtered by `paperId`, with fallback to `paper.examAttempts`).
+      - Built candidate search, pagination, status badges (SCORED, SUBMITTED, IN_PROGRESS, EXPIRED), timestamp formatting, score breakdown (`score / totalMarks` + percentage), and "Clear" action button.
+      - Integrated `deleteAttemptMutation` triggering `examService.deleteExamAttempt(examId, studentId)` with a confirmation modal (`ConfirmationModal`) to remove previous answers and grant the student a clean retake.
+    - **Backend Cascade Deletion Robustness** ([exam-attempt.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-attempt.service.ts)):
+      - Enhanced `deleteExamAttemptService` to explicitly clean up linked student answers (`subjectExamAnswer`), subject attempt records (`subjectExamAttempt`), and grades (`grade`) before deleting `examAttempt`, ensuring safe deletion across database schemas.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/page.tsx`
+    - `backend/src/modules/exam/exam-attempt.service.ts`
+    - `STATE.md`
+
+
+- [x] **Exam Delete Modal: Connected Paper Warnings & Multi-Paper Selection Options**:
+  - **Requirement**:
+    1. In the delete confirmation popup, explicitly inform users that all papers, questions, and candidate answers under the exam will also be permanently deleted.
+    2. For multi-paper exams, allow users to choose what to delete:
+       - Delete entire exam AND all connected subject papers + questions.
+       - Delete the exam and only selected subject papers (with an interactive checkbox list).
+       - Delete the exam shell only, preserving all connected subject papers as standalone papers.
+  - **Work Done**:
+    - **Backend Cascade & Selective Deletion** ([exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts), [exam.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.controller.ts)):
+      - Enhanced `deleteExamService` with transactional cascade cleanup for `examSubjectPaper`, `examDepartment`, `grade`, and optionally `subjectExamQuestion`, `subjectExamAnswer`, and `subjectExamPaper`.
+      - Supports options `{ deletePapers?: boolean; paperIds?: string[] }` passed from controller `req.body`/`req.query`.
+    - **Frontend API Client & Hook** ([examService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/examService.ts), [useExams.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useExams.ts)):
+      - Updated `examService.deleteExam(id, options)` and `useDeleteExam()` hook to accept delete options and invalidate `['exams']`, `examKeys.all`, and `['subject-papers']`.
+    - **Modal UI & Selective Deletion Controls** ([ConfirmationModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/ui/ConfirmationModal.tsx), [AssessmentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AssessmentCard.tsx), [AssessmentGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AssessmentGrid.tsx)):
+      - Added children support to `ConfirmationModal`.
+      - Added prominent permanent deletion warning banner with alert icon.
+      - Single-paper assessments explicitly display the name of the paper that will be removed with its questions and answers.
+      - Multi-paper assessments present an interactive radio selector:
+        - "Delete entire exam AND all X subject papers"
+        - "Delete exam and selected papers only" (with a checklist of connected papers to include or preserve)
+        - "Delete exam shell only (Keep all papers safe)"
+      - Updated bulk delete confirmation in `AssessmentGrid` to also explicitly warn that connected papers and questions will be permanently deleted.
+  - **Affected Files**:
+    - `backend/src/modules/exam/exam.service.ts`
+    - `backend/src/modules/exam/exam.controller.ts`
+    - `frontend/src/lib/api/services/examService.ts`
+    - `frontend/src/lib/api/hooks/useExams.ts`
+    - `frontend/src/app/dashboard/admin/exams/components/ui/ConfirmationModal.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/AssessmentCard.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/AssessmentGrid.tsx`
+    - `STATE.md`
+
+- [x] **Admin Exams Dashboard Fixes (`/dashboard/admin/exams`)**:
+  - **Requirement**:
+    1. Fix the "Create Exam" button text contrast (was displaying white text on white/low contrast background).
+    2. Fix the 3-dot action dropdown menu on the date-sectioned assessment list: the menu on the last item was clipped/hidden by table overflow boundaries, and menu items lacked pointer cursor / click responsiveness.
+    3. In the "Create Assessment" in-page popup modal (`AdminCreateExamModal`), allow selecting departments and multiple departments to attach to the assessment.
+  - **Work Done**:
+    - **Header Button Contrast** ([Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/Header.tsx)):
+      - Removed the conflicting `variant="secondary"` from the "Create Exam" button so the custom blue background (`bg-blue-600 hover:bg-blue-700`) applies cleanly with crisp white text (`text-white`) and matching icon.
+    - **Action Dropdown Clipping & Cursor** ([DropdownMenu.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/ui/DropdownMenu.tsx)):
+      - Migrated from a manually positioned, relative `div` inside an `overflow-hidden` table container to Radix UI's `DropdownMenu` with `<DropdownMenuPortal>`.
+      - Renders menus at `z-[999]` above all table borders, overflow containers, and date sections.
+      - Added explicit `cursor-pointer` to trigger buttons, menu items, and links, ensuring instant feedback and click handling on all items (including the last item in any date group).
+    - **Admin Create Assessment Multi-Department Selection** ([AdminCreateExamModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AdminCreateExamModal.tsx)):
+      - Added `departmentIds: z.array(z.string()).default([])` to `examSchema`.
+      - Integrated department fetching via `/academic/departments?schoolId=${schoolId}`.
+      - Added interactive multi-select department tags/checkboxes with codes and names.
+      - Forwarded `departmentIds` array directly into `examService.createExam` payload.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/exams/components/Header.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/ui/DropdownMenu.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/AdminCreateExamModal.tsx`
+    - `STATE.md`
+
+- [x] **Teacher Exams & Quizzes: Department Attachment, Multi-Department Settings, and Single vs Multi-Paper Deletion**:
+  - **Requirement**:
+    1. On `/dashboard/teacher/exams&quizzes`, in the "Create Assessment" popup (`CreateExamForm`), allow teachers to select and attach departments to the paper/exam.
+    2. On `/dashboard/teacher/exams&quizzes/papers/:paperId?examId=:examId`, in the "Edit Assessment & Paper Settings" popup (`EditPaperModal`), enable selecting multiple departments.
+    3. On `/dashboard/teacher/exams&quizzes/papers/:paperId?examId=:examId`, add delete functionality with single-paper vs multi-paper delete logic:
+       - Single-paper exam: deleting deletes both the paper and the exam shell with confirmation warning.
+       - Multi-paper exam: deleting deletes only that specific paper; teachers cannot delete entire multi-paper exams from this paper page.
+  - **Work Done**:
+    - **Teacher Create Assessment Popup** ([CreateExamForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/CreateExamForm.tsx)):
+      - Added `departmentIds: z.array(z.string()).default([])` to `examSchema`.
+      - Integrated department fetching via `/academic/departments?schoolId=${selectedSchoolId}`.
+      - Added multi-select department tags/checkboxes with codes and names.
+      - Passed `departmentIds` when submitting `examService.createExam`.
+    - **Multi-Department Selection in Settings** ([EditPaperModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/%5BpaperId%5D/components/EditPaperModal.tsx)):
+      - Verified shared `EditPaperModal` supports multi-select departments for both admin and teacher dashboards (`/dashboard/teacher/exams&quizzes/papers/:paperId`).
+    - **Teacher Paper Delete Logic** ([page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/papers/%5Bid%5D/page.tsx)):
+      - Added `deleteExamMutation` using `examService.deleteExam` for single-paper exams.
+      - Wired both desktop and mobile header delete buttons to inspect `isSinglePaperType`:
+        - Single-paper exam -> opens confirmation modal with title `"Delete Paper & Assessment"`, warning that both the paper and the exam will be permanently removed, calling `deleteExamMutation.mutate(targetExam.id)`.
+        - Multi-paper exam -> opens confirmation modal with title `"Delete Subject Paper"`, explaining other papers in the composite exam will remain untouched, calling `deletePaperMutation.mutate()`.
+      - Connected `ConfirmationModal` `isLoading` prop to include `deleteExamMutation.isPending`.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/teacher/exams&quizzes/components/CreateExamForm.tsx`
+    - `frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/EditPaperModal.tsx`
+    - `frontend/src/app/dashboard/teacher/exams&quizzes/papers/[id]/page.tsx`
+    - `STATE.md`
+
+- [x] **Multi-Department Selection in Assessment & Paper Settings (`/dashboard/admin/exams/:examId/papers/:paperId`)**:
+  - **Requirement**: Allow selecting multiple departments to attach an assessment or paper to in "Edit Assessment & Paper Settings", instead of being limited to a single department dropdown.
+  - **Work Done**:
+    - In [EditPaperModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/%5BpaperId%5D/components/EditPaperModal.tsx):
+      - Replaced `targetDepartmentId: z.string().optional()` with `departmentIds: z.array(z.string()).default([])`.
+      - Extracted pre-existing linked department IDs on mount from `exam.departments`.
+      - Replaced the single-select `<select>` dropdown with an interactive multi-select grid with checkboxes, department codes, clear buttons, and scrollable container.
+      - Supported multi-department filtering for `DEPARTMENT`, `CLASS` (optional department filtering within class), and `SCHOOL` scopes.
+      - Forwarded `departmentIds` array to both `examService.updateSubjectPaper` and `examService.updateExam`.
+    - Verified compilation passes with 0 errors via `npx tsc --noEmit`.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/EditPaperModal.tsx`
+    - `STATE.md`
+
+
+- [x] **In-Page Assessment Creation Popups on Admin Exams Dashboard (`/dashboard/admin/exams`)**:
+  - **Requirement**:
+    1. Stop routing away from `/dashboard/admin/exams` to `/dashboard/admin/exams/new?category=...`.
+    2. Eliminate the need for `/dashboard/admin/exams/new?category=EXAM&mode=SINGLE_SUBJECT`.
+    3. Use seamless, proper in-page modal dialog popups (matching the teacher experience at `/dashboard/teacher/exams&quizzes`).
+    4. Provide immediate in-page modals for:
+       - **Create Exam**: Choice between Single Subject Exam and Multi-Paper Exam, or direct modal creation.
+       - **Create Quiz**: In-page modal with category preset to `QUIZ`.
+       - **Create CA**: In-page modal with category preset to `CA`.
+       - **Subject Paper**: In-page modal for standalone paper creation.
+    5. Handle single-paper exams properly:
+       - Single paper exam / quiz / CA routes directly upon creation to `/dashboard/admin/exams/:examId/papers/:paperId`.
+       - Multi-paper exam routes to `/dashboard/admin/exams/:examId/papers`.
+       - Standalone subject paper routes to `/dashboard/admin/exams/papers/:paperId`.
+    6. Ensure all 4 buttons look pristine in both light and dark mode.
+  - **Work Done**:
+    - Created [AdminCreateExamModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AdminCreateExamModal.tsx):
+      - In-dialog form supporting `EXAM`, `QUIZ`, and `CA`.
+      - Allows selecting between `SINGLE_SUBJECT` and `COMBINED` (multi-paper).
+      - Integrates subjects, classes, sessions, teachers, duration, total marks, scheduling, and description.
+      - Automatically creates both the exam shell and the default subject paper for single-paper assessments, returning `{ exam, paper }`.
+    - Created [AdminCreatePaperModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AdminCreatePaperModal.tsx):
+      - In-dialog form for creating standalone subject papers with subject, teacher, title, duration, marks, instructions, and reading comprehension content.
+    - Updated [Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/Header.tsx):
+      - Converted `Create Exam`, `Create Quiz`, `Create CA`, and `Subject Paper` from external page `<Link>` navigations into direct modal triggers.
+      - Maintained pristine visual aesthetics in both light and dark mode for all 4 action buttons.
+      - Connected completion handlers:
+        - Single Paper Exam / Quiz / CA -> navigates directly to `/dashboard/admin/exams/:examId/papers/:paperId`.
+        - Multi-Paper Exam -> navigates directly to `/dashboard/admin/exams/:examId/papers`.
+        - Subject Paper -> navigates directly to `/dashboard/admin/exams/papers/:paperId`.
+    - Verified TypeScript type-check passes with 0 errors via `npx tsc --noEmit`.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/exams/components/AdminCreateExamModal.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/AdminCreatePaperModal.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/Header.tsx`
+    - `STATE.md`
+
+
+- [x] **Admin Exams Dashboard Refinement & Routing Alignment (`/dashboard/admin/exams`)**:
+  - **Requirement**:
+    1. Perfect button styling in light and dark mode for "Create Exam", "Create Quiz", "Create CA", and "Subject Paper".
+    2. Apply `date_sectioning_display` pattern across all tabs (Exams, Quizzes, CAs, Subject Papers).
+    3. Ensure assessment creation redirects properly:
+       - Multiple-paper exam: lands on `/dashboard/admin/exams/:examId/papers` for paper management.
+       - Single-paper exam / quiz / CA: routes directly to `/dashboard/admin/exams/:examId/papers/:paperId`.
+       - Settings on the single-paper page affects the parent exam settings, whereas for multiple-paper exams it affects only that subject paper.
+  - **Work Done**:
+    - In [Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/Header.tsx):
+      - Refined all 4 action buttons with tailored light and dark mode palettes:
+        - `Create Exam`: Primary blue gradient with elevated shadow and crisp borders.
+        - `Create Quiz`: Purple pastel tint in light mode (`bg-purple-50 text-purple-700 border-purple-200/80`) and deep contrast in dark mode (`dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/80`).
+        - `Create CA`: Emerald pastel tint in light mode (`bg-emerald-50 text-emerald-700 border-emerald-200/80`) and deep emerald contrast in dark mode (`dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/80`).
+        - `Subject Paper`: Clean neutral slate (`bg-slate-100 text-slate-800 border-slate-200` to `dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800`).
+    - In [AssessmentGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AssessmentGrid.tsx) & [SubjectPaperGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/SubjectPaperGrid.tsx):
+      - Integrated `groupByDate` to segment all items into chronological date sections (`Today`, `Yesterday`, natural relative dates) across all 4 dashboard tabs (`exams`, `quiz`, `ca`, `papers`).
+      - Rendered uniform date headers featuring the admin indigo accent dot (`size-2 rounded-full bg-indigo-500`) and count badge.
+    - In [CreateExamForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/new/components/CreateExamForm.tsx) & [AssessmentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AssessmentCard.tsx):
+      - Updated single-paper redirection upon creation to navigate directly to `/dashboard/admin/exams/${createdExam.id}/papers/${createdPaper.id}`.
+      - Updated `AssessmentCard` click targets to navigate directly to `/dashboard/admin/exams/:examId/papers/:paperId` for single-paper exams and `/dashboard/admin/exams/:examId/papers` for multiple-paper exams.
+    - In [EditPaperModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/%5BpaperId%5D/components/EditPaperModal.tsx):
+      - Guarded parent exam mutation with `if (isSinglePaperType && targetExamId) { ... }`, ensuring single-paper settings update both the paper and the parent exam shell, while multi-paper settings update the individual paper alone.
+    - In [AssessmentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AssessmentCard.tsx):
+      - Added dynamic structure tags for both Single Paper and Multi-Paper (`Single Paper` blue pill and `Multi-Paper (N)` purple pill).
+      - Added interactive connected papers dropdown in both Table View and Grid View, listing each subject paper with title, subject, duration, and 1-click navigation directly to `/dashboard/admin/exams/:examId/papers/:paperId`.
+      - Enhanced `targetUrl` computation to support multiple backend response schemas (`subjectExamPapers`, `subjectPapers`, `papers`), guaranteeing that clicking any single-paper assessment routes directly to `/dashboard/admin/exams/:examId/papers/:paperId`.
+      - Fixed paper count calculation to check `rawPapers.length`, `totalPapers`, and `_count.subjectExamPapers` so multiple-paper exams accurately show the exact paper count instead of `0`.
+      - Ensured all exam deletions trigger a dedicated `ConfirmationModal` before executing `deleteExamMutation`.
+    - In [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/page.tsx):
+      - Added automatic client-side redirection using `router.replace` when an exam has 1 paper, preventing any intermediate landing on `/papers` and ensuring instant navigation into the single paper workspace.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/exams/components/Header.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/AssessmentGrid.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/SubjectPaperGrid.tsx`
+    - `frontend/src/app/dashboard/admin/exams/components/AssessmentCard.tsx`
+    - `frontend/src/app/dashboard/admin/exams/[examId]/papers/page.tsx`
+    - `frontend/src/app/dashboard/admin/exams/new/components/CreateExamForm.tsx`
+    - `frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/EditPaperModal.tsx`
+    - `STATE.md`
+
+
+- [x] **Smart Assessment Deletion & Multi-Paper Tag/Dropdown Navigation (`/dashboard/admin/classes/[id]?tab=exams` & `/dashboard/admin/exams/[examId]/papers/[paperId]`)**:
+  - **Requirement**:
+    1. Single paper exams, CAs, assignments, and quizzes: delete both the paper and the exam shell together cleanly.
+    2. Multiple-paper exams: display a popup modal offering 3 granular deletion choices:
+       - Delete all connected subject papers AND the parent exam.
+       - Delete only the parent exam (unlinking and preserving subject papers).
+       - Select specific subject papers to delete while preserving the exam.
+    3. On multiple-paper exams: show a `Multi-Paper (N)` tag with a dropdown listing all connected papers and their scores, allowing 1-click navigation.
+    4. Ensure the same setup is configured on the Paper Detail Workspace (`/dashboard/admin/exams/:examId/papers/:paperId`).
+  - **Work Done**:
+    - In [ExamsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/exams/ExamsTab.tsx):
+      - Added direct trash deletion button on every card in Grid View and row in Table View.
+      - Implemented smart `initiateDelete(item)` detecting single-paper types vs multi-paper exams.
+      - Built a dedicated interactive `Dialog` for multi-paper deletion with radio selectors (`Delete All`, `Delete Parent Exam Only`, and checkbox list for `Delete Specific Papers`).
+      - Added `Multi-Paper (N)` pill with `<Layers />` icon and a nested `DropdownMenu` listing all connected subject papers in both Grid and Table perspectives.
+    - In [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/%5BexamId%5D/papers/%5BpaperId%5D/page.tsx):
+      - For single-paper exams (`isSinglePaperType`), the delete button prompts to delete both the paper and the exam and invokes `deleteExamMutation`.
+      - For multi-paper exams, the delete button prompts with paper vs exam context and cleanly deletes the individual paper.
+      - Added `Multi-Paper (N)` pill with a `DropdownMenu` in the top header breadcrumb area showing all papers in the exam with active paper indicators, enabling instant switching between papers.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/classes/[id]/components/exams/ExamsTab.tsx`
+    - `frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/page.tsx`
+    - `frontend/src/app/dashboard/admin/classes/[id]/components/exams/components/types.ts`
+    - `STATE.md`
+
+- [x] **Class Exams Tab Date Sectioning, Creator Attribution, and Grid View Option (`/dashboard/admin/classes/[id]?tab=exams`)**:
+  - **Requirement**:
+    1. Apply the `date_sectioning_display` pattern to the class Exams & Assessments tab.
+    2. Display the name of the author/teacher who created each quiz or assessment.
+    3. Add a Grid View option alongside the Table View.
+  - **Work Done**:
+    - In [types.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/exams/components/types.ts): Added `creatorName`, `creatorEmail`, and `scope` to `AssessmentItem`.
+    - In [ExamsTab.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/exams/ExamsTab.tsx):
+      - Integrated `getDateGroupLabel` and `groupByDate` to group assessments into relative/natural date sections (`Today`, `Yesterday`, natural date labels) with the standard admin indigo dot.
+      - Extracted author information (`e.teacher?.name`) and added a dedicated **"Created By"** column in Table View and an attribution badge (`By <Name>`) in Grid View.
+      - Added a Table/Grid view switcher toggle (`viewMode`) with responsive rendering.
+      - Added creator search filtering support and included "Created By" in the PDF and CSV export formats.
+
+- [x] **Fix Prisma ForeignKey Violation on `exam_subject_papers_subjectPaperId_fkey` in `deleteSubjectPaper`**:
+  - **Issue**: Attempting to delete a `SubjectExamPaper` threw `PrismaClientKnownRequestError: Foreign key constraint violated on the constraint: exam_subject_papers_subjectPaperId_fkey` in `deleteSubjectPaperService` (line 2048) because `ExamSubjectPaper` junction rows referencing the paper still existed.
+  - **Root Cause**: `SubjectExamPaper.delete` did not clean up its dependent link records in `ExamSubjectPaper`, nor question answers or draft grades referencing the `subjectPaperId` prior to deletion.
+  - **Fix**:
+    - In [backend/src/modules/exam/exam.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam.service.ts), wrapped `deleteSubjectPaperService` in a transaction:
+      1. Deleted all `ExamSubjectPaper` link rows referencing `subjectPaperId`.
+      2. Deleted all `SubjectExamAnswer` and `SubjectExamQuestion` records belonging to the paper.
+      3. Deleted any draft/override `Grade` records referencing `subjectPaperId`.
+      4. Safely deleted the `SubjectExamPaper`.
+
+- [x] **Admin Class Overview Upcoming Exams Enhancements (`/dashboard/admin/classes/[id]`)**:
+  - **Requirement**: In the class overview page (`/dashboard/admin/classes/:id`), enhance the "Upcoming Exams" widget to:
+    - Display the assessment **Scope** as a visual tag (`School-Wide`, `Department`, or `Class Only`) with dedicated icons and themed badges.
+    - Render an aesthetic empty state when there are no upcoming exams.
+    - Format and display **real dates** (`startDate`, `endDate`, or `createdAt`) instead of mock dates, filtering out expired/archived assessments and ordering by earliest date.
+  - **Work Done**:
+    - In [UpcomingExams.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/UpcomingExams.tsx):
+      - Rebuilt the widget with modern card styling matching the admin theme (indigo accent, card borders, subject icons).
+      - Added `getScopeBadge(scope)` rendering distinct tags for `SCHOOL` (`School-Wide` in purple), `DEPARTMENT` (`Department` in sky), and `CLASS` (`Class Only` in indigo).
+      - Added category badges (`Exam`, `Quiz`, `CA`), duration badges, and marks badges.
+      - Styled the clean empty state with calendar icon and `"No Upcoming Exams"` messaging when list is empty.
+      - Added direct link button to the full class exams tab (`/dashboard/admin/classes/:id?tab=exams`).
+    - In [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/page.tsx) and [Overview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/Overview.tsx):
+      - Updated `upcomingExams` computation to filter active/future exams (`endDate >= now`), parse actual dates (`startDate` → `endDate` → `createdAt`), format real dates in `DD MMM YYYY`, sort chronologically, and pass `scope`, `totalMarks`, and `durationMinutes`.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/classes/[id]/components/UpcomingExams.tsx`
+    - `frontend/src/app/dashboard/admin/classes/[id]/page.tsx`
+    - `frontend/src/app/dashboard/admin/classes/[id]/components/Overview.tsx`
+    - `STATE.md`
+
+- [x] **Teacher Assessment Direct Paper Routing & Exam Settings Resolution (`/dashboard/teacher/exams&quizzes`)**:
+  - **Requirement**: Single paper exams (and exams with connected papers) should route directly to the paper editing workspace (`/dashboard/teacher/exams&quizzes/papers/:paperId`) rather than routing to the parent exam overview page. For single-paper exams, the main `examId` must be passed in the URL (`?examId=:examId`) so the settings modal on the paper page scopes directly to the main exam. For multi-paper exams, settings remain scoped to the subject paper (`&multi=true`).
+  - **Work Done**:
+    - In [ExamsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx):
+      - Updated `getEditLink` and `getExamDestinationLink`:
+        - Single-paper exam (`papers.length === 1`): routes to `/dashboard/teacher/exams&quizzes/papers/${paperId}?examId=${examId}`.
+        - Multi-paper exam (`papers.length > 1`): routes to `/dashboard/teacher/exams&quizzes/papers/${paperId}?examId=${examId}&multi=true`.
+        - Standalone paper (`itemType === 'subject-papers'`): routes to `/dashboard/teacher/exams&quizzes/papers/${exam.id}`.
+        - Assignments route to `/dashboard/teacher/assignments/${exam.id}?edit=true`.
+    - In [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/papers/%5Bid%5D/page.tsx):
+      - Extracted `examId` and `multi` from `useSearchParams`.
+      - Resolved `mainExam` via `useQuery` fetching `examService.getExamById(urlExamId)` (with fallback to `paper?.exams?.[0]?.exam`).
+      - Derived `isSinglePaperType = isMultiPaper ? false : urlExamId ? true : ...` so `EditPaperModal` targets exam-level settings for single-paper exams and paper-level settings when `multi=true`.
+    - In [docs/ASSESSMENT_SYSTEM.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/ASSESSMENT_SYSTEM.md):
+      - Updated Section 2.6.1 row/card action routing specification.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx`
+    - `frontend/src/app/dashboard/teacher/exams&quizzes/papers/[id]/page.tsx`
+    - `docs/ASSESSMENT_SYSTEM.md`
+    - `STATE.md`
+
 - [x] **Exam Submission Speed Optimization (`/Exams&Quizzes/exam/[examId]`)**:
   - **Issue**: Exam submission was taking too long despite the UI flow functioning correctly.
   - **Root Cause**: `flushAnswersForPaper` iterated sequentially across all questions in the paper (`CHUNK_SIZE = 100`) and awaited `saveAnswerMutation.mutateAsync` sequentially for every single question—even though answers were already saved during the exam as the student clicked options. For a 50-100 question paper, that generated 50-100 sequential HTTP network roundtrips before starting paper submission and attempt scoring.

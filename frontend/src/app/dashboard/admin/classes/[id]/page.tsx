@@ -245,7 +245,7 @@ export default function ClassDetailsPage() {
   const tabParam = searchParams.get('tab');
   const id = params.id as string;
   
-  const { data: classData, isLoading: loading, error } = useSingleClass(id);
+  const { data: classData, isLoading: loading, error, refetch: refetchClass } = useSingleClass(id);
   const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(id);
   const { user } = useAuthStore();
   const activeSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
@@ -300,19 +300,65 @@ export default function ClassDetailsPage() {
   const upcomingExams = React.useMemo(() => {
     if (!classData?.exams || !Array.isArray(classData.exams)) return [];
     
+    const now = new Date();
+
     return classData.exams
-      .filter((e: any) => e.status !== 'ARCHIVED' && e.status !== 'DRAFT')
-      .map((e: any) => ({
-        id: e.id,
-        subject: e.subject?.name || e.title || 'General',
-        date: e.startDate 
-          ? new Date(e.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) 
-          : (e.createdAt 
-              ? new Date(e.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) 
-              : 'TBA'),
-        type: e.type || e.scope || 'Exam',
-      }))
-      .slice(0, 3);
+      .filter((e: any) => {
+        if (!e) return false;
+        if (e.status === 'ARCHIVED' || e.status === 'DRAFT') return false;
+
+        // If endDate exists and has passed, it is no longer upcoming
+        if (e.endDate && new Date(e.endDate) < now) return false;
+
+        return true;
+      })
+      .map((e: any) => {
+        // Resolve subject name
+        const subjectName = 
+          e.subject?.name || 
+          (e.subjectExamPapers?.[0]?.subjectPaper?.subject?.name) || 
+          e.title || 
+          'General';
+
+        // Format real date
+        let displayDate = 'TBA';
+        const targetDate = e.startDate ? new Date(e.startDate) : (e.endDate ? new Date(e.endDate) : null);
+        if (targetDate && !isNaN(targetDate.getTime())) {
+          displayDate = targetDate.toLocaleDateString('en-GB', { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+          });
+        } else if (e.createdAt) {
+          const cDate = new Date(e.createdAt);
+          if (!isNaN(cDate.getTime())) {
+            displayDate = cDate.toLocaleDateString('en-GB', { 
+              day: 'numeric', 
+              month: 'short', 
+              year: 'numeric' 
+            });
+          }
+        }
+
+        return {
+          id: e.id,
+          title: e.title || subjectName,
+          subject: subjectName,
+          date: displayDate,
+          rawDate: targetDate || (e.createdAt ? new Date(e.createdAt) : null),
+          type: e.category || e.type || 'EXAM',
+          scope: e.scope || 'CLASS',
+          status: e.status || 'PUBLISHED',
+          totalMarks: e.totalMarks,
+          durationMinutes: e.durationMinutes,
+        };
+      })
+      .sort((a: any, b: any) => {
+        if (!a.rawDate) return 1;
+        if (!b.rawDate) return -1;
+        return a.rawDate.getTime() - b.rawDate.getTime();
+      })
+      .slice(0, 5);
   }, [classData]);
 
   const breadcrumbItems = [
@@ -350,7 +396,7 @@ export default function ClassDetailsPage() {
     { 
       id: 'exams', 
       label: 'Exams' , 
-      content: <ClassExamsPage exams={(classData as any)?.exams || []} classData={classData} /> 
+      content: <ClassExamsPage exams={(classData as any)?.exams || []} classData={classData} onRefresh={refetchClass} /> 
     },
     { 
       id: 'offline-grades', 
