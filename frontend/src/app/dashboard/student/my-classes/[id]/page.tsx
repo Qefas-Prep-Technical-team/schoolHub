@@ -233,6 +233,10 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
     
     const gradesAsAssessments = classGrades.map((g, idx) => {
       const gDate = g.createdAt ? new Date(g.createdAt) : null;
+      const targetLink = g.id
+        ? `/dashboard/student/grades/view/assessment/${g.id}`
+        : '/dashboard/student/grades';
+
       return {
         id: examsAsAssessments.length + assignmentsAsAssessments.length + idx + 1,
         title: `${g.subject} — ${g.examTitle || 'Assessment'}`,
@@ -241,7 +245,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         grade: `${g.score}/${g.maxMarks}`,
         type: 'CA',
         timestamp: gDate ? gDate.getTime() : 0,
-        link: '#',
+        link: targetLink,
       };
     });
 

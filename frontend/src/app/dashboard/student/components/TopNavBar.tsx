@@ -64,8 +64,8 @@ export default function TopNavBar({
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
-      <div className="flex items-center gap-6 flex-1 justify-start min-w-0">
+    <header className="sticky top-0 z-40 flex h-16 sm:h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-3 sm:px-4 md:px-8 backdrop-blur-xl gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-6 justify-start shrink-0 min-w-0">
         {/* Mobile hamburger */}
         <StudentMobileDrawer />
       </div>
@@ -77,11 +77,11 @@ export default function TopNavBar({
         onOpenQR={() => setIsQRModalOpen(true)}
       />
 
-      <div className="flex items-center justify-end gap-4 flex-1 min-w-0">
+      <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
         {/* Quick Actions / QR Code */}
         <button 
           onClick={() => setIsQRModalOpen(true)}
-          className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+          className="hidden sm:flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
         >
           <QrCode className="w-5 h-5 text-pink-500" />
         </button>

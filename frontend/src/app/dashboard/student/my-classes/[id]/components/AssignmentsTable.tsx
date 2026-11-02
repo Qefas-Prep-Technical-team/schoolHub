@@ -101,6 +101,22 @@ function ActionButton({ assignment }: { assignment: Assignment }) {
   const isUpcoming = assignment.status === 'upcoming';
   const hasLink = !!assignment.link && assignment.link !== '#';
 
+  // If graded, always allow the student to view their result or score
+  if (isGraded) {
+    const targetLink = hasLink ? assignment.link! : '/dashboard/student/grades';
+    return (
+      <Link href={targetLink}>
+        <Button
+          size="sm"
+          className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs gap-1.5 shadow-sm shadow-emerald-600/20"
+        >
+          <Eye size={13} />
+          {assignment.grade ? `View Result (${assignment.grade})` : 'View Result'}
+        </Button>
+      </Link>
+    );
+  }
+
   if (!hasLink) {
     return (
       <Button
@@ -111,20 +127,6 @@ function ActionButton({ assignment }: { assignment: Assignment }) {
       >
         Not Available
       </Button>
-    );
-  }
-
-  if (isGraded) {
-    return (
-      <Link href={assignment.link!}>
-        <Button
-          size="sm"
-          className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs gap-1.5 shadow-sm shadow-emerald-600/20"
-        >
-          <Eye size={13} />
-          View Result
-        </Button>
-      </Link>
     );
   }
 

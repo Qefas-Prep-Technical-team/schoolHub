@@ -8,7 +8,8 @@ import {
   ChevronUp,
   Save,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,8 @@ interface MobileRosterCardViewProps {
   onUpdateScore: (studentId: string, score: string | number) => void;
   onUpdateRemarks: (studentId: string, remarks: string) => void;
   isSaving: boolean;
+  isSavingDraft?: boolean;
+  isPublishing?: boolean;
   onSave: (status: 'DRAFT' | 'PUBLISHED') => void;
 }
 
@@ -34,6 +37,8 @@ export default function MobileRosterCardView({
   onUpdateScore,
   onUpdateRemarks,
   isSaving,
+  isSavingDraft = false,
+  isPublishing = false,
   onSave,
 }: MobileRosterCardViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -239,8 +244,12 @@ export default function MobileRosterCardView({
             variant="outline"
             className="h-11 rounded-xl font-bold text-xs border-slate-300 dark:border-slate-700"
           >
-            <Save size={14} className="mr-1" />
-            Save Draft
+            {isSavingDraft ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <Save size={14} className="mr-1" />
+            )}
+            {isSavingDraft ? 'Saving Draft...' : 'Save Draft'}
           </Button>
           <Button
             type="button"
@@ -248,8 +257,12 @@ export default function MobileRosterCardView({
             onClick={() => onSave('PUBLISHED')}
             className={`h-11 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'} text-white font-bold text-xs shadow-md`}
           >
-            <CheckCircle2 size={14} className="mr-1" />
-            {isSaving ? 'Saving...' : 'Publish All'}
+            {isPublishing ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <CheckCircle2 size={14} className="mr-1" />
+            )}
+            {isPublishing ? 'Publishing...' : 'Publish All'}
           </Button>
         </div>
       </div>

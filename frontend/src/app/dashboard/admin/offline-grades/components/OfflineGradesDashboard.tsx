@@ -306,15 +306,17 @@ export default function OfflineGradesDashboard({
 
         const hasScore = g.score !== null && g.score !== undefined && !isNaN(Number(g.score));
         const numScore = hasScore ? Number(g.score) : 0;
-
-        const resolvedTeacherName = g.creatorName || g.teacher?.name || (g.teacherId === user?.id ? (user?.name || 'You') : null);
+        const isAdminUser = !isTeacher && user?.name;
+        const fallbackAdminName = isAdminUser ? `Admin: ${user.name}` : null;
+        const resolvedTeacherName = g.creatorName || g.teacher?.name || (g.teacherId === user?.id ? (isAdminUser ? fallbackAdminName : (user?.name || 'You')) : fallbackAdminName);
 
         if (existingGroup) {
           existingGroup.totalStudents += 1;
           if (hasScore) {
             existingGroup.gradedStudents += 1;
-            existingGroup._scoreSum = (existingGroup._scoreSum || 0) + numScore;
-            existingGroup.averageScore = existingGroup._scoreSum / existingGroup.gradedStudents;
+            const newScoreSum = (existingGroup._scoreSum || 0) + numScore;
+            existingGroup._scoreSum = newScoreSum;
+            existingGroup.averageScore = newScoreSum / existingGroup.gradedStudents;
           }
           if (!existingGroup.teacherName && resolvedTeacherName) {
             existingGroup.teacherName = resolvedTeacherName;
@@ -416,13 +418,24 @@ export default function OfflineGradesDashboard({
     setIsScoreModalOpen(true);
   };
 
-  const handleDeleteRecord = async (recordId: string) => {
+  const handleDeleteRecord = async (recordId: string, record?: GradeBatchSummary) => {
     try {
-      await gradeService.deleteGrade(recordId);
-      toast.success('Offline assessment record deleted successfully.');
+      const criteria = record ? {
+        classId: record.classId,
+        subject: record.subject,
+        assessmentType: record.assessmentType,
+        category: record.category,
+        term: record.term,
+      } : undefined;
+
+      const res = await gradeService.deleteBatchGrades(recordId, criteria);
+      const count = res?.data?.count || 1;
+      toast.success(`Successfully deleted offline assessment marksheet (${count} student ${count === 1 ? 'grade' : 'grades'} removed).`);
       queryClient.invalidateQueries({ queryKey: ['offline-grades-history'] });
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
+      queryClient.invalidateQueries({ queryKey: ['gradeHub'] });
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to delete offline record.');
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to delete offline record.');
     }
   };
 
@@ -544,6 +557,7 @@ export default function OfflineGradesDashboard({
       {/* Score Entry / Edit Modal */}
       {isScoreModalOpen && (
         <RecordScoreEntryModal
+          key={selectedRecordForEdit ? `edit-${selectedRecordForEdit.id}` : `new-${defaultClassIdForNew || activeClassId || 'empty'}-${Date.now()}`}
           isOpen={isScoreModalOpen}
           onClose={() => {
             setIsScoreModalOpen(false);

@@ -450,11 +450,11 @@ export default function OfflineGradesHeader({
             Term / Semester
           </label>
           <Select
-            value={config.term}
+            value={config.term || 'FIRST'}
             onValueChange={(val: 'FIRST' | 'SECOND' | 'THIRD') => onChangeConfig({ term: val })}
           >
             <SelectTrigger className="h-10 rounded-xl bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white">
-              <SelectValue placeholder="Select Term" />
+              <SelectValue placeholder="First Term" />
             </SelectTrigger>
             <SelectContent className="z-[70] rounded-xl dark:bg-slate-800 dark:border-slate-700">
               <SelectItem value="FIRST" className="text-xs font-semibold cursor-pointer">First Term</SelectItem>

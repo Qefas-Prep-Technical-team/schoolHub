@@ -150,9 +150,13 @@ export default function StudentHomeDashboard() {
     schoolDepartments.find((d: DepartmentItem) => d.id === studentDepartmentId || d.departmentId === studentDepartmentId)?.code ||
     null;
 
-  // If student has no department or level locked in, show academic profile completion popup
+  // If student is connected to a school but has no department or level locked in, show academic profile completion popup
   useEffect(() => {
     if (isLoadingProfile || !studentProfile) return;
+
+    // Only prompt when student is connected to a school
+    const hasSchool = Boolean(targetSchoolId || studentProfile?.schoolId || (studentProfile as any)?.school?.id);
+    if (!hasSchool) return;
 
     // Check if dismissed via "Don't show again"
     const studentId = (studentProfile as any)?.id || "guest";
@@ -163,7 +167,7 @@ export default function StudentHomeDashboard() {
     if (!isDepartmentLocked || !isLevelLocked) {
       setIsAcademicLockModalOpen(true);
     }
-  }, [isLoadingProfile, studentProfile, isDepartmentLocked, isLevelLocked]);
+  }, [isLoadingProfile, studentProfile, targetSchoolId, isDepartmentLocked, isLevelLocked]);
 
   const attempts: RawExamAttempt[] = (attemptsData?.attempts as RawExamAttempt[]) || [];
   const standaloneGrades: RawGradeRecord[] = (standaloneGradesData?.grades as RawGradeRecord[]) || [];

@@ -125,6 +125,11 @@ export const gradeService = {
     return res;
   },
 
+  deleteBatchGrades: async (id: string, criteria?: { classId?: string; subject?: string; assessmentType?: string; category?: string; term?: string }) => {
+    const { data: res } = await apiClient.delete(`/grades/batch/${id}`, { data: criteria });
+    return res;
+  },
+
   processOCR: async (imageUrl: string) => {
     const { data } = await apiClient.post("/grades/ocr", { imageUrl });
     return data.data;

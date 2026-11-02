@@ -64,6 +64,8 @@ export default function UnifiedExamPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const isSubmittingRef = useRef(false);
   const initialAnswersRestoredRef = useRef(false);
+  // Track questions whose answers have not yet been successfully saved to the backend
+  const dirtyAnswerQuestionIdsRef = useRef<Set<string>>(new Set());
 
   // Sequential submission progress state
   const [paperSubmitStates, setPaperSubmitStates] = useState<PaperSubmitState[]>([]);
@@ -79,7 +81,28 @@ export default function UnifiedExamPage() {
   }, [exam]);
 
   const startDate = useMemo(() => exam?.startDate ? new Date(exam.startDate) : null, [exam?.startDate]);
+  const endDate = useMemo(() => exam?.endDate ? new Date(exam.endDate) : null, [exam?.endDate]);
   const isStarted = useMemo(() => !startDate || isAfter(new Date(), startDate), [startDate]);
+
+  // Assessment status: 'live' (active now or to be discussed/taken), 'upcoming' (future), 'ended', or 'submitted'
+  const examStatus = useMemo((): 'live' | 'upcoming' | 'ended' | 'submitted' => {
+    if (attempt?.status === "SUBMITTED" || attempt?.status === "SCORED") return "submitted";
+    const now = new Date();
+    if (startDate && !isAfter(now, startDate)) {
+      return "upcoming";
+    }
+    if (endDate && isAfter(now, endDate)) {
+      return "ended";
+    }
+    return "live";
+  }, [attempt?.status, startDate, endDate]);
+
+  const examStatusLabel = useMemo(() => {
+    if (examStatus === 'live') return 'Live Assessment';
+    if (examStatus === 'upcoming') return 'Upcoming';
+    if (examStatus === 'submitted') return 'Submitted';
+    return 'Ended';
+  }, [examStatus]);
 
   const isReleased = useMemo(() => {
     if (exam?.allowImmediateResult) return true;
@@ -161,29 +184,24 @@ export default function UnifiedExamPage() {
       return;
     }
 
-    // console.log("Saving answer:", {
-    //   examId,
-    //   subjectPaperId: activeSubjectId,
-    //   questionId: activeQuestion.id,
-    //   answer: optionId
-    // });
-
     // Update local state immediately for responsive UI
+    const qId = activeQuestion.id;
     setLocalAnswers(prev => ({
       ...prev,
-      [activeQuestion.id]: optionId
+      [qId]: optionId
     }));
+    dirtyAnswerQuestionIdsRef.current.add(qId);
 
     try {
       await saveAnswerMutation.mutateAsync({
         examId: examId as string,
         data: {
           subjectPaperId: activeSubjectId,
-          questionId: activeQuestion.id,
+          questionId: qId,
           answer: optionId
         }
       });
-      // console.log("Answer saved successfully");
+      dirtyAnswerQuestionIdsRef.current.delete(qId);
     } catch (error: unknown) {
       const axiosError = error as AxiosError<{ message?: string }>;
       console.error("Failed to auto-save answer:", axiosError.response?.data || axiosError.message);
@@ -209,31 +227,35 @@ export default function UnifiedExamPage() {
   };
 
   /**
-   * Flushes all local answers for a given subject paper to the backend.
-   * Processes them in chunks of 100 to avoid oversized payloads.
-   * Each chunk is submitted sequentially — the next chunk only starts
-   * when the previous one completes successfully.
+   * Flushes any unpersisted (dirty) answers for a given subject paper to the backend.
+   * If all answers were already successfully autosaved via handleSelectOption,
+   * this operation executes instantaneously without redundant network roundtrips.
+   * Any pending dirty answers are saved concurrently in parallel.
    */
   const flushAnswersForPaper = useCallback(async (
     paperId: string,
     questionIds: string[]
   ) => {
-    const CHUNK_SIZE = 100;
-    const answersToFlush = questionIds
-      .filter((qId) => localAnswers[qId] !== undefined)
+    // Only flush answers that are dirty/unpersisted
+    const dirtyAnswers = questionIds
+      .filter((qId) => dirtyAnswerQuestionIdsRef.current.has(qId) && localAnswers[qId] !== undefined)
       .map((qId) => ({ questionId: qId, answer: localAnswers[qId] }));
 
-    if (answersToFlush.length === 0) return;
+    if (dirtyAnswers.length === 0) return;
 
-    for (let i = 0; i < answersToFlush.length; i += CHUNK_SIZE) {
-      const chunk = answersToFlush.slice(i, i + CHUNK_SIZE);
-      // Submit each answer in the chunk sequentially
-      for (const { questionId, answer } of chunk) {
-        await saveAnswerMutation.mutateAsync({
-          examId: examId as string,
-          data: { subjectPaperId: paperId, questionId, answer },
-        });
-      }
+    // Save pending dirty answers concurrently in parallel batches
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < dirtyAnswers.length; i += BATCH_SIZE) {
+      const batch = dirtyAnswers.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async ({ questionId, answer }) => {
+          await saveAnswerMutation.mutateAsync({
+            examId: examId as string,
+            data: { subjectPaperId: paperId, questionId, answer },
+          });
+          dirtyAnswerQuestionIdsRef.current.delete(questionId);
+        })
+      );
     }
   }, [examId, localAnswers, saveAnswerMutation]);
 
@@ -463,6 +485,8 @@ export default function UnifiedExamPage() {
             durationMinutes={totalDuration}
             subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
             totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
+            status={examStatus}
+            statusLabel={examStatusLabel}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -675,6 +699,8 @@ export default function UnifiedExamPage() {
             durationMinutes={totalDuration}
             subjectName={currentSubjectPapers[0]?.subject?.name || currentSubjectPapers[0]?.title || exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
             totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
+            status={examStatus}
+            statusLabel={examStatusLabel}
           />
 
           {(exam.instructions || currentSubjectPapers[0]?.instructions) && (

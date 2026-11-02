@@ -9,8 +9,20 @@ import {
   LayoutGrid,
   Sparkles,
   Info,
+  Trash2,
+  Loader2,
+  AlertTriangle,
+  FileEdit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { GradeBatchSummary, OfflineAssessmentCategory } from '../types';
 import OfflineRecordsToolbar from './OfflineRecordsToolbar';
@@ -27,13 +39,13 @@ interface OfflineRecordsListProps {
   gradingSystem?: any[];
   onAddNewRecord: (defaultCategory?: OfflineAssessmentCategory) => void;
   onEditRecord: (record: GradeBatchSummary) => void;
-  onDeleteRecord: (recordId: string) => void;
+  onDeleteRecord: (recordId: string, record?: GradeBatchSummary) => Promise<void> | void;
   onExportPDF: (record?: GradeBatchSummary) => void;
   onExportCSV: (record?: GradeBatchSummary) => void;
   onOpenSyncModal?: () => void;
 }
 
-export type OfflineCategoryTab = 'all' | 'exam' | 'ca' | 'assignment' | 'quiz_test';
+export type OfflineCategoryTab = 'all' | 'exam' | 'ca' | 'assignment' | 'quiz_test' | 'draft';
 
 export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   CA:         { bg: 'bg-blue-50 dark:bg-blue-950/50',     text: 'text-blue-700 dark:text-blue-300',     border: 'border-blue-200 dark:border-blue-800/60' },
@@ -65,6 +77,44 @@ export default function OfflineRecordsList({
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [recordToDelete, setRecordToDelete] = useState<GradeBatchSummary | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleRequestDelete = (recordId: string, record?: GradeBatchSummary) => {
+    const target = record || records.find(r => r.id === recordId) || null;
+    if (target) {
+      setRecordToDelete(target);
+    } else {
+      setRecordToDelete({
+        id: recordId,
+        classId: activeClassId || '',
+        assessmentType: 'Offline Assessment',
+        subject: 'Subject',
+        className: 'Class',
+        category: 'CA',
+        maxMarks: 100,
+        term: 'FIRST',
+        sessionId: '',
+        totalStudents: 0,
+        gradedStudents: 0,
+        averageScore: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'DRAFT',
+      });
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!recordToDelete) return;
+    try {
+      setIsDeleting(true);
+      await onDeleteRecord(recordToDelete.id, recordToDelete);
+      setRecordToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   React.useEffect(() => {
     if (activeClassId) {
@@ -123,6 +173,16 @@ export default function OfflineRecordsList({
       activeText: 'text-white',
       badgeActive: 'bg-white/20 text-white',
     },
+    {
+      id: 'draft' as OfflineCategoryTab,
+      label: 'Pending Drafts',
+      shortLabel: 'Drafts',
+      icon: FileEdit,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      activeBg: 'bg-amber-600',
+      activeText: 'text-white',
+      badgeActive: 'bg-white/20 text-white',
+    },
   ], [isTeacher]);
 
   // Category Counts for Tab Badges
@@ -133,6 +193,7 @@ export default function OfflineRecordsList({
       ca: records.filter(r => r.category === 'CA').length,
       assignment: records.filter(r => r.category === 'ASSIGNMENT').length,
       quiz_test: records.filter(r => r.category === 'QUIZ' || r.category === 'MIDTERM').length,
+      draft: records.filter(r => r.status === 'DRAFT').length,
     };
   }, [records]);
 
@@ -144,6 +205,7 @@ export default function OfflineRecordsList({
       if (activeTab === 'ca' && rec.category !== 'CA') return false;
       if (activeTab === 'assignment' && rec.category !== 'ASSIGNMENT') return false;
       if (activeTab === 'quiz_test' && rec.category !== 'QUIZ' && rec.category !== 'MIDTERM') return false;
+      if (activeTab === 'draft' && rec.status !== 'DRAFT') return false;
 
       // 2. Search filter
       if (searchTerm.trim()) {
@@ -303,16 +365,27 @@ export default function OfflineRecordsList({
 
         {/* Executive KPI Stats Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80">
-          <div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('all');
+              setSelectedStatus('all');
+            }}
+            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'all' && selectedStatus === 'all'
+                ? 'bg-slate-100/80 dark:bg-slate-800/80 ring-1 ring-slate-300 dark:ring-slate-700'
+                : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`}
+          >
             <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Total Offline Records
             </span>
             <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums mt-0.5">
               {totalRecordsCount}
             </p>
-          </div>
+          </button>
 
-          <div>
+          <div className="p-2.5">
             <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Student Marks Recorded
             </span>
@@ -321,23 +394,57 @@ export default function OfflineRecordsList({
             </p>
           </div>
 
-          <div>
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Published Records
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedStatus(selectedStatus === 'PUBLISHED' ? 'all' : 'PUBLISHED');
+            }}
+            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${
+              selectedStatus === 'PUBLISHED'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 ring-1.5 ring-emerald-400 dark:ring-emerald-600'
+                : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`}
+            title="Filter by published records"
+          >
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span>Published Records</span>
+              {selectedStatus === 'PUBLISHED' && (
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
             </span>
             <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
               {publishedCount}
             </p>
-          </div>
+          </button>
 
-          <div>
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Pending Drafts
+          <button
+            type="button"
+            onClick={() => {
+              if (activeTab === 'draft' || selectedStatus === 'DRAFT') {
+                setActiveTab('all');
+                setSelectedStatus('all');
+              } else {
+                setActiveTab('draft');
+                setSelectedStatus('DRAFT');
+              }
+            }}
+            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'draft' || selectedStatus === 'DRAFT'
+                ? 'bg-amber-50 dark:bg-amber-950/40 ring-1.5 ring-amber-400 dark:ring-amber-600'
+                : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`}
+            title="Filter by draft records"
+          >
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span>Pending Drafts</span>
+              {(activeTab === 'draft' || selectedStatus === 'DRAFT') && (
+                <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+              )}
             </span>
             <p className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums mt-0.5">
               {draftCount}
             </p>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -420,7 +527,7 @@ export default function OfflineRecordsList({
           isTeacher={isTeacher}
           gradingSystem={gradingSystem}
           onEditRecord={onEditRecord}
-          onDeleteRecord={onDeleteRecord}
+          onDeleteRecord={handleRequestDelete}
           onExportPDF={onExportPDF}
           onExportCSV={onExportCSV}
         />
@@ -431,8 +538,59 @@ export default function OfflineRecordsList({
           isTeacher={isTeacher}
           gradingSystem={gradingSystem}
           onEditRecord={onEditRecord}
-          onDeleteRecord={onDeleteRecord}
+          onDeleteRecord={handleRequestDelete}
         />
+      )}
+
+      {/* Delete Confirmation Modal with Deleting Progress Indicator */}
+      {recordToDelete && (
+        <Dialog open={!!recordToDelete} onOpenChange={(open) => { if (!open && !isDeleting) setRecordToDelete(null); }}>
+          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="space-y-3">
+              <div className="size-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                <AlertTriangle size={24} />
+              </div>
+              <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+                Delete Offline Marksheet
+              </DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                Are you sure you want to delete <strong className="text-slate-900 dark:text-white">&quot;{recordToDelete.assessmentType}&quot;</strong> ({recordToDelete.subject} • {recordToDelete.className})?
+                <br /><br />
+                This will permanently delete <strong className="text-rose-600 dark:text-rose-400">all {recordToDelete.gradedStudents || recordToDelete.totalStudents || ''} student grades</strong> recorded in this offline marksheet batch so nothing is left behind.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="gap-2 sm:gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isDeleting}
+                onClick={() => setRecordToDelete(null)}
+                className="h-10 px-4 rounded-xl text-xs font-bold border-slate-200 dark:border-slate-700 cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="h-10 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold gap-2 shadow-sm cursor-pointer"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Deleting all grades...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    <span>Delete All Grades</span>
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

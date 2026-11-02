@@ -18,7 +18,7 @@ interface OfflineRecordsGridProps {
   isTeacher?: boolean;
   gradingSystem?: any[];
   onEditRecord: (record: GradeBatchSummary) => void;
-  onDeleteRecord: (recordId: string) => void;
+  onDeleteRecord: (recordId: string, record?: GradeBatchSummary) => void;
   onExportPDF: (record?: GradeBatchSummary) => void;
   onExportCSV: (record?: GradeBatchSummary) => void;
 }
@@ -195,36 +195,50 @@ export default function OfflineRecordsGrid({
                 type="button"
                 size="sm"
                 onClick={() => onEditRecord(rec)}
-                className={`h-9 px-4 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white text-xs font-bold gap-1.5 shadow-sm`}
+                className={`h-9 px-4 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white text-xs font-bold gap-1.5 shadow-sm cursor-pointer`}
               >
                 <Edit2 size={13} />
                 <span>View / Edit Scores</span>
               </Button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <MoreVertical size={16} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 rounded-xl dark:bg-slate-800 dark:border-slate-700">
-                  <DropdownMenuItem onClick={() => onExportPDF(rec)} className="text-xs font-semibold cursor-pointer">
-                    Export as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onExportCSV(rec)} className="text-xs font-semibold cursor-pointer">
-                    Export as CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDeleteRecord(rec.id)}
-                    className="text-xs font-semibold text-rose-600 dark:text-rose-400 cursor-pointer"
-                  >
-                    Delete Record
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onDeleteRecord(rec.id, rec)}
+                  className="size-9 p-0 rounded-xl border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-800 transition-colors cursor-pointer"
+                  title="Delete marksheet record"
+                >
+                  <Trash2 size={15} />
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="size-9 rounded-xl border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="More actions"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 rounded-xl dark:bg-slate-800 dark:border-slate-700">
+                    <DropdownMenuItem onClick={() => onExportPDF(rec)} className="text-xs font-semibold cursor-pointer">
+                      Export as PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onExportCSV(rec)} className="text-xs font-semibold cursor-pointer">
+                      Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteRecord(rec.id, rec)}
+                      className="text-xs font-semibold text-rose-600 dark:text-rose-400 cursor-pointer"
+                    >
+                      Delete Record
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         );

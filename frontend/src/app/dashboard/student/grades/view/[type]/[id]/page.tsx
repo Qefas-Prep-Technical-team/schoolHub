@@ -132,6 +132,8 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
         submittedAt: gradeData.createdAt,
         totalScore: gradeData.score,
         totalMarks: gradeData.maxMarks || 100,
+        status: gradeData.status,
+        releaseDate: gradeData.releaseDate,
         subjects: [{
           subjectName: gradeData.subject || 'Unknown Subject',
           score: gradeData.score,
@@ -317,11 +319,26 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
     </div>
   );
 
-  const scorePercentage = Math.round((result.totalScore / (result.totalMarks || 1)) * 100);
+  const isLocked = Boolean(
+    (gradeData && (gradeData.status === 'SCHEDULED' || gradeData.score == null || (gradeData.releaseDate && new Date(gradeData.releaseDate) > new Date()))) ||
+    (examData && examData.resultReleaseAt && new Date(examData.resultReleaseAt) > new Date())
+  );
+
+  const releaseDateDisplay = (gradeData?.releaseDate || examData?.resultReleaseAt)
+    ? format(new Date(gradeData?.releaseDate || examData?.resultReleaseAt), 'MMM d, yyyy h:mm a')
+    : 'Scheduled Release Date';
+
+  const scorePercentage = (isLocked || result.totalScore == null)
+    ? null
+    : Math.round((result.totalScore / (result.totalMarks || 1)) * 100);
 
   let overallGrade = "F9";
   let gColor = "text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400 border-rose-100 dark:border-rose-900/30";
-  if (scorePercentage >= 75) { overallGrade = "A1"; gColor = "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30"; }
+
+  if (isLocked || scorePercentage === null) {
+    overallGrade = "Locked";
+    gColor = "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-900/30";
+  } else if (scorePercentage >= 75) { overallGrade = "A1"; gColor = "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30"; }
   else if (scorePercentage >= 70) { overallGrade = "B2"; gColor = "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30"; }
   else if (scorePercentage >= 65) { overallGrade = "B3"; gColor = "text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400 border-blue-100 dark:border-blue-900/30"; }
   else if (scorePercentage >= 50) { overallGrade = "C6"; gColor = "text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-400 border-pink-100 dark:border-pink-900/30"; }
@@ -333,7 +350,7 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
   const studentInitial = studentName.charAt(0).toUpperCase();
 
   const handleExportOfficialPDF = async () => {
-    if (!result) return;
+    if (!result || isLocked) return;
     const schoolToVerify = profile?.school || result.school || user?.schools?.[0];
     if (!assertSchoolPayingPlan(schoolToVerify)) {
       return;
@@ -378,9 +395,9 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
         { label: 'Assessment Title', value: result.title || 'Official Assessment' },
         { label: 'Category', value: categoryLabel },
         { label: 'Total Score', value: `${result.totalScore} / ${result.totalMarks || 100}` },
-        { label: 'Percentage', value: `${scorePercentage}%` },
+        { label: 'Percentage', value: scorePercentage !== null ? `${scorePercentage}%` : 'N/A' },
         { label: 'Grade Awarded', value: overallGrade },
-        { label: 'Performance Status', value: scorePercentage >= 60 ? 'Commendable' : scorePercentage >= 50 ? 'Satisfactory' : 'Needs Intervention' },
+        { label: 'Performance Status', value: (scorePercentage ?? 0) >= 60 ? 'Commendable' : (scorePercentage ?? 0) >= 50 ? 'Satisfactory' : 'Needs Intervention' },
       ];
 
       const additionalTables = result.performanceInsight ? [
@@ -426,31 +443,70 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button
               onClick={() => {
+                if (isLocked) return;
                 setIsReviewing(true);
                 router.push(`/dashboard/student/exams&quizzes/${type === 'subject-paper' ? examId : sanitizedId}/review${type === 'subject-paper' ? `?subjectId=${sanitizedId}` : ''}`);
               }}
-              disabled={isReviewing}
+              disabled={isReviewing || isLocked}
               variant="outline"
-              className="flex-1 sm:flex-none h-10 sm:h-9 px-3.5 sm:px-4 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 shadow-xs border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all"
+              className={cn(
+                "flex-1 sm:flex-none h-10 sm:h-9 px-3.5 sm:px-4 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 shadow-xs border border-slate-200 dark:border-slate-800 transition-all",
+                isLocked ? "opacity-60 cursor-not-allowed text-slate-400" : "hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95"
+              )}
             >
-              {isReviewing ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5 text-pink-500" />}
-              <span>Review Answers</span>
+              {isReviewing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : isLocked ? (
+                <Lock className="h-4 w-4 mr-1.5 text-amber-500" />
+              ) : (
+                <Eye className="h-4 w-4 mr-1.5 text-pink-500" />
+              )}
+              <span>{isLocked ? 'Answers Locked' : 'Review Answers'}</span>
             </Button>
 
             <Button
               onClick={handleExportOfficialPDF}
-              disabled={isExportingPDF}
-              className="flex-1 sm:flex-none h-10 sm:h-9 px-3.5 sm:px-4 text-xs font-semibold bg-pink-600 hover:bg-pink-700 text-white rounded-xl border-0 shadow-sm shadow-pink-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              disabled={isExportingPDF || isLocked}
+              className={cn(
+                "flex-1 sm:flex-none h-10 sm:h-9 px-3.5 sm:px-4 text-xs font-semibold rounded-xl border-0 shadow-sm transition-all flex items-center justify-center gap-1.5",
+                isLocked
+                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none"
+                  : "bg-pink-600 hover:bg-pink-700 text-white shadow-pink-600/20 active:scale-95"
+              )}
             >
               {isExportingPDF ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isLocked ? (
+                <Lock className="h-4 w-4 text-amber-500" />
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              <span>{isExportingPDF ? 'Exporting...' : 'Export Official PDF'}</span>
+              <span>{isExportingPDF ? 'Exporting...' : isLocked ? 'PDF Locked' : 'Export Official PDF'}</span>
             </Button>
           </div>
         </div>
+
+        {/* Scheduled / Locked Alert Banner */}
+        {isLocked && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 shadow-xs flex items-start gap-3.5 animate-in fade-in duration-300">
+            <div className="size-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800">
+              <Lock size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-amber-900 dark:text-amber-200 text-sm sm:text-base">
+                  Assessment Results Scheduled & Locked
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                  Pending Release
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300/90 mt-1 leading-relaxed">
+                Your submission has been recorded. The instructor or administration has scheduled the official score and answer review to be unlocked on <span className="font-bold underline decoration-amber-400 underline-offset-2">{releaseDateDisplay}</span>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Profile / Hero Card (Mobile Responsive) */}
         <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
@@ -480,6 +536,12 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                   <Calendar size={13} className="text-pink-500 shrink-0" />
                   <span>{format(new Date(result.submittedAt || new Date()), "MMM d, yyyy")}</span>
                 </span>
+                {isLocked && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-300 text-[11px] font-bold">
+                    <Lock size={12} className="text-amber-500" />
+                    <span>Locked until {releaseDateDisplay}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -506,13 +568,30 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                 <Target size={14} />
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{result.totalScore}</p>
-            <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
-              <span className="text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded">
-                {scorePercentage}%
-              </span>
-              <span className="text-[10px] sm:text-xs font-medium text-slate-400">/ {result.totalMarks} Marks</span>
-            </div>
+            {isLocked ? (
+              <>
+                <p className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tight flex items-center gap-1.5">
+                  <Lock size={20} className="text-amber-500 shrink-0" />
+                  <span>—</span>
+                </p>
+                <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                  <span className="text-[10px] sm:text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/40">
+                    Score Locked
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-medium text-slate-400">/ {result.totalMarks} Marks</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{result.totalScore}</p>
+                <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                  <span className="text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded">
+                    {scorePercentage}%
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-medium text-slate-400">/ {result.totalMarks} Marks</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Class Average */}
@@ -523,7 +602,16 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                 <Users size={14} />
               </div>
             </div>
-            {(() => {
+            {isLocked ? (
+              <>
+                <p className="text-2xl sm:text-3xl font-black text-slate-400 dark:text-slate-500 tracking-tight">
+                  —
+                </p>
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-1 truncate">
+                  <span>Available upon release</span>
+                </p>
+              </>
+            ) : (() => {
               const rawAvg = Number(result.classAverage || 0);
               const avgPercent = result.totalMarks > 0 ? Math.round((rawAvg / result.totalMarks) * 100) : Math.round(rawAvg);
               return (
@@ -548,7 +636,16 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                 <Sparkles size={14} />
               </div>
             </div>
-            {(() => {
+            {isLocked ? (
+              <>
+                <p className="text-2xl sm:text-3xl font-black text-slate-400 dark:text-slate-500 tracking-tight">
+                  —
+                </p>
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 truncate">
+                  Computed on release
+                </p>
+              </>
+            ) : (() => {
               const totalP = Number(result.totalParticipants || 1);
               const pos = Number(result.position || 1);
               const standing = Number(result.globalStanding ?? 0);
@@ -585,12 +682,12 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs font-bold opacity-80 uppercase tracking-wider">Overall Grade</p>
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/40 dark:bg-black/20 flex items-center justify-center shrink-0">
-                <BarChart3 size={14} />
+                {isLocked ? <Lock size={14} /> : <BarChart3 size={14} />}
               </div>
             </div>
             <p className="text-3xl sm:text-4xl font-black tracking-tight">{overallGrade}</p>
             <p className="text-[10px] sm:text-xs font-bold mt-2 pt-1 border-t border-current/20 opacity-90 truncate">
-              {result.velocity > 0 ? `+${result.velocity}% Improvement` : `${result.velocity || 0}% Velocity`}
+              {isLocked ? `Unlocks: ${releaseDateDisplay}` : result.velocity > 0 ? `+${result.velocity}% Improvement` : `${result.velocity || 0}% Velocity`}
             </p>
           </div>
         </div>
@@ -722,8 +819,16 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                   /* ------------------------------------------------------------- */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {filteredSubjects.map((sub, i) => {
-                      const percent = Math.round((sub.score / (sub.totalMarks || 1)) * 100);
-                      const details = getSubjectGradeDetails(sub.score, sub.totalMarks || 100);
+                      const isSubLocked = isLocked || sub.score == null;
+                      const percent = isSubLocked ? null : Math.round((sub.score / (sub.totalMarks || 1)) * 100);
+                      const details = isSubLocked
+                        ? {
+                            grade: "—",
+                            statusText: "Scheduled",
+                            colorClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40",
+                            barColor: "bg-amber-400"
+                          }
+                        : getSubjectGradeDetails(sub.score, sub.totalMarks || 100);
                       const subjectTitle = sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || 'Unknown Subject';
 
                       return (
@@ -758,7 +863,7 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                                 "size-9 rounded-xl flex items-center justify-center font-black text-sm border shrink-0 shadow-xs",
                                 details.colorClass
                               )}>
-                                {details.grade}
+                                {isSubLocked ? <Lock size={14} className="text-amber-500" /> : details.grade}
                               </div>
                             </div>
 
@@ -766,15 +871,23 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                             <div className="space-y-1.5 my-3 py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50">
                               <div className="flex items-baseline justify-between">
                                 <div className="flex items-baseline gap-1">
-                                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                                    {sub.score}
-                                  </span>
-                                  <span className="text-xs font-semibold text-slate-400">
-                                    / {sub.totalMarks || 100}
-                                  </span>
+                                  {isSubLocked ? (
+                                    <span className="text-base sm:text-lg font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                      <Lock size={14} /> Score Locked
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                                        {sub.score}
+                                      </span>
+                                      <span className="text-xs font-semibold text-slate-400">
+                                        / {sub.totalMarks || 100}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
                                 <span className="text-xs font-black text-slate-700 dark:text-slate-300">
-                                  {percent}%
+                                  {isSubLocked ? '—' : `${percent}%`}
                                 </span>
                               </div>
 
@@ -782,7 +895,7 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                               <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                                 <div
                                   className={cn("h-full rounded-full transition-all duration-700", details.barColor)}
-                                  style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+                                  style={{ width: `${isSubLocked ? 0 : Math.min(100, Math.max(0, percent || 0))}%` }}
                                 />
                               </div>
                             </div>
@@ -798,7 +911,7 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                             </span>
 
                             <span className="text-[11px] text-slate-400 font-medium truncate max-w-[140px]">
-                              {sub.remark && sub.remark !== '-' ? sub.remark : 'Evaluated'}
+                              {isSubLocked ? `Unlocks: ${releaseDateDisplay}` : sub.remark && sub.remark !== '-' ? sub.remark : 'Evaluated'}
                             </span>
                           </div>
                         </div>
@@ -823,8 +936,16 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredSubjects.map((sub, i) => {
-                          const percent = Math.round((sub.score / (sub.totalMarks || 1)) * 100);
-                          const details = getSubjectGradeDetails(sub.score, sub.totalMarks || 100);
+                          const isSubLocked = isLocked || sub.score == null;
+                          const percent = isSubLocked ? null : Math.round((sub.score / (sub.totalMarks || 1)) * 100);
+                          const details = isSubLocked
+                            ? {
+                                grade: "—",
+                                statusText: "Scheduled",
+                                colorClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40",
+                                barColor: "bg-amber-400"
+                              }
+                            : getSubjectGradeDetails(sub.score, sub.totalMarks || 100);
                           const subjectTitle = sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || 'Unknown Subject';
 
                           return (
@@ -845,15 +966,23 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                                 </div>
                               </td>
                               <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white text-sm">
-                                {sub.score} <span className="text-slate-400 text-xs font-medium">/ {sub.totalMarks || 100}</span>
+                                {isSubLocked ? (
+                                  <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-xs font-bold">
+                                    <Lock size={13} /> Score Locked
+                                  </span>
+                                ) : (
+                                  <>
+                                    {sub.score} <span className="text-slate-400 text-xs font-medium">/ {sub.totalMarks || 100}</span>
+                                  </>
+                                )}
                               </td>
                               <td className="px-5 py-3.5">
                                 <div className="flex items-center gap-2.5">
-                                  <span className="font-bold text-slate-700 dark:text-slate-300 text-xs w-8">{percent}%</span>
+                                  <span className="font-bold text-slate-700 dark:text-slate-300 text-xs w-8">{isSubLocked ? '—' : `${percent}%`}</span>
                                   <div className="w-24 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                                     <div
                                       className={cn("h-full rounded-full transition-all duration-500", details.barColor)}
-                                      style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+                                      style={{ width: `${isSubLocked ? 0 : Math.min(100, Math.max(0, percent || 0))}%` }}
                                     />
                                   </div>
                                 </div>
@@ -863,7 +992,7 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                                   "inline-flex size-7 rounded-lg items-center justify-center text-xs font-black border",
                                   details.colorClass
                                 )}>
-                                  {details.grade}
+                                  {isSubLocked ? <Lock size={12} className="text-amber-500" /> : details.grade}
                                 </span>
                               </td>
                               <td className="px-5 py-3.5 text-right">

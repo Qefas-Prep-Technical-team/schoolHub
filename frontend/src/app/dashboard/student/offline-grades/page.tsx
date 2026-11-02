@@ -34,9 +34,12 @@ import { OfflineAssessmentCategory } from '@/app/dashboard/admin/offline-grades/
 import { generatePDF } from '@/utils/pdfGenerator';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import Pagination from '@/components/ui/Pagination';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getGradeEvaluation } from '@/utils/gradingSystem';
+import { groupByDate } from '../grades/utils/dateSectioning';
+import { useClasses } from '@/lib/api/hooks/useClasses';
 
 function getCategoryBadge(category: OfflineAssessmentCategory) {
   switch (category) {
@@ -95,28 +98,17 @@ export default function StudentOfflineGradesPage() {
   const [selectedTerm, setSelectedTerm] = useState<string>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedSubject, setSelectedSubject] = useState<string>('ALL');
+  const [selectedClassId, setSelectedClassId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
 
-  // Auto-select active session & term on initial load
+  // Initialize session and term selectors to 'ALL' by default so all recorded grades display immediately.
+  // When sessions load, if user has not chosen a session, keep 'ALL' as the primary inclusive view.
   React.useEffect(() => {
-    if (sessionsData && Array.isArray(sessionsData) && sessionsData.length > 0 && selectedSessionId === 'ALL') {
-      const activeSession = sessionsData.find(
-        (s: any) => s.isCurrent === true || s.isActive === true || s.status === 'ACTIVE'
-      ) || sessionsData[0];
-
-      if (activeSession) {
-        setSelectedSessionId(activeSession.id);
-        const term = activeSession.currentTerm || activeSession.term;
-        if (term) {
-          const upper = term.toUpperCase();
-          if (upper.includes('FIRST') || upper === 'TERM1' || upper === '1') setSelectedTerm('FIRST');
-          else if (upper.includes('SECOND') || upper === 'TERM2' || upper === '2') setSelectedTerm('SECOND');
-          else if (upper.includes('THIRD') || upper === 'TERM3' || upper === '3') setSelectedTerm('THIRD');
-        }
-      }
-    }
-  }, [sessionsData, selectedSessionId]);
+    // Keep 'ALL' as default so all grades are immediately visible across sessions/terms.
+  }, [sessionsData]);
 
   // Extract strictly the student's own offline grades
   const allOfflineGrades = useMemo(() => {
@@ -140,6 +132,33 @@ export default function StudentOfflineGradesPage() {
         };
       });
   }, [gradesResponse, studentProfile?.id, user?.id]);
+
+  // Unique classes list for filter dropdown
+  const { data: schoolClassesRes } = useClasses(schoolId);
+  const schoolClasses = schoolClassesRes?.classes || (Array.isArray(schoolClassesRes) ? schoolClassesRes : []);
+
+  const availableClasses = useMemo(() => {
+    const classMap = new Map<string, string>();
+    if (studentProfile?.classes && Array.isArray(studentProfile.classes)) {
+      studentProfile.classes.forEach((item: any) => {
+        const c = item.class || item;
+        if (c?.id && c?.name) classMap.set(c.id, c.name);
+      });
+    }
+    allOfflineGrades.forEach((g: any) => {
+      const cId = g.classId || g.class?.id;
+      const cName = g.class?.name || g.className;
+      if (cId && cName) {
+        classMap.set(cId, cName);
+      }
+    });
+    if (Array.isArray(schoolClasses) && schoolClasses.length > 0 && classMap.size === 0) {
+      schoolClasses.forEach((c: any) => {
+        if (c.id && c.name) classMap.set(c.id, c.name);
+      });
+    }
+    return Array.from(classMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [studentProfile, allOfflineGrades, schoolClasses]);
 
   // Unique subjects list for filter dropdown
   const subjectList = useMemo(() => {
@@ -166,7 +185,15 @@ export default function StudentOfflineGradesPage() {
         }
       }
 
-      // 3. Category Filter
+      // 3. Class Filter
+      if (selectedClassId !== 'ALL') {
+        const itemClassId = g.classId || g.class?.id;
+        if (itemClassId !== selectedClassId) {
+          return false;
+        }
+      }
+
+      // 4. Category Filter
       if (selectedCategory === 'RELEASED') {
         if (!g.isReleased) return false;
       } else if (selectedCategory === 'COMING_SOON') {
@@ -176,12 +203,12 @@ export default function StudentOfflineGradesPage() {
         if (cat !== selectedCategory) return false;
       }
 
-      // 4. Subject Filter
+      // 5. Subject Filter
       if (selectedSubject !== 'ALL' && g.subject?.trim().toLowerCase() !== selectedSubject.toLowerCase()) {
         return false;
       }
 
-      // 5. Search Query
+      // 6. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const subjectMatch = (g.subject || '').toLowerCase().includes(q);
@@ -194,7 +221,19 @@ export default function StudentOfflineGradesPage() {
 
       return true;
     });
-  }, [allOfflineGrades, selectedSessionId, selectedTerm, selectedCategory, selectedSubject, searchQuery]);
+  }, [allOfflineGrades, selectedSessionId, selectedTerm, selectedClassId, selectedCategory, selectedSubject, searchQuery]);
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredGrades.length / itemsPerPage);
+  const paginatedGrades = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredGrades.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredGrades, currentPage, itemsPerPage]);
+
+  // Group paginated items by date using date_sectioning_display standard
+  const groupedOfflineGrades = useMemo(() => {
+    return groupByDate(paginatedGrades, (g: any) => g.createdAt);
+  }, [paginatedGrades]);
 
   // KPI Computations
   const stats = useMemo(() => {
@@ -329,12 +368,29 @@ export default function StudentOfflineGradesPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Class Selector */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+            <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
+            <select
+              value={selectedClassId}
+              onChange={(e) => { setSelectedClassId(e.target.value); setCurrentPage(1); }}
+              className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2 max-w-[140px] truncate"
+            >
+              <option value="ALL" className="dark:bg-slate-900">All Classes</option>
+              {availableClasses.map((cls) => (
+                <option key={cls.id} value={cls.id} className="dark:bg-slate-900">
+                  {cls.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Session Selector */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
             <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
             <select
               value={selectedSessionId}
-              onChange={(e) => setSelectedSessionId(e.target.value)}
+              onChange={(e) => { setSelectedSessionId(e.target.value); setCurrentPage(1); }}
               className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
             >
               <option value="ALL" className="dark:bg-slate-900">All Sessions</option>
@@ -351,7 +407,7 @@ export default function StudentOfflineGradesPage() {
             <Clock className="w-4 h-4 text-slate-400 shrink-0" />
             <select
               value={selectedTerm}
-              onChange={(e) => setSelectedTerm(e.target.value)}
+              onChange={(e) => { setSelectedTerm(e.target.value); setCurrentPage(1); }}
               className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
             >
               <option value="ALL" className="dark:bg-slate-900">All Terms</option>
@@ -501,13 +557,28 @@ export default function StudentOfflineGradesPage() {
             />
           </div>
 
+          {/* Class Filter Dropdown */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+            <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <select
+              value={selectedClassId}
+              onChange={(e) => { setSelectedClassId(e.target.value); setCurrentPage(1); }}
+              className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[130px] truncate"
+            >
+              <option value="ALL" className="dark:bg-slate-900">All Classes</option>
+              {availableClasses.map((cls) => (
+                <option key={cls.id} value={cls.id} className="dark:bg-slate-900">{cls.name}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Subject Filter Dropdown */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
             <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
               value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[150px] truncate"
+              onChange={(e) => { setSelectedSubject(e.target.value); setCurrentPage(1); }}
+              className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[130px] truncate"
             >
               <option value="ALL" className="dark:bg-slate-900">All Subjects</option>
               {subjectList.map((sub) => (
@@ -593,150 +664,23 @@ export default function StudentOfflineGradesPage() {
           )}
         </div>
       ) : viewMode === 'grid' ? (
-        /* Grid Cards View */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 w-full">
-          {filteredGrades.map((g: any) => {
-            const cat = normalizeOfflineCategory(g.category, g.assessmentType);
-            const badge = getCategoryBadge(cat);
-            const isComingSoon = g.isComingSoon;
-            const score = isComingSoon ? null : (Number(g.score) || 0);
-            const maxMarks = Number(g.maxMarks) || 100;
-            const pct = (score !== null && maxMarks > 0) ? Math.round((score / maxMarks) * 100) : 0;
-            const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
-            const recordedDate = g.createdAt ? format(new Date(g.createdAt), 'MMM d, yyyy') : null;
-            const releaseDateFormatted = g.releaseDate ? format(new Date(g.releaseDate), "MMM d, yyyy • h:mm a") : null;
-
-            return (
-              <div
-                key={g.id}
-                className={cn(
-                  "bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden",
-                  isComingSoon 
-                    ? "border-amber-200/80 dark:border-amber-800/40 bg-gradient-to-b from-amber-50/20 to-transparent" 
-                    : "border-slate-200/80 dark:border-slate-800"
-                )}
-              >
-                <div>
-                  {/* Category Pill and Status / Grade Pill */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className={cn("px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border", badge.className)}>
-                      {badge.shortLabel}
-                    </span>
-
-                    {isComingSoon ? (
-                      <span className="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider border bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                        Coming Soon
-                      </span>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <span className={cn("px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider border", gradeInfo?.bg, gradeInfo?.color)}>
-                          {gradeInfo?.grade} • {gradeInfo?.remark}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-0.5">
-                          <CheckCircle2 className="w-2.5 h-2.5" /> Released
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Subject and Assessment Title */}
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
-                    {g.subject}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 font-medium">
-                    {g.assessmentType || `${badge.label}`}
-                  </p>
-
-                  {/* Score Area: Released State vs Coming Soon State */}
-                  {isComingSoon ? (
-                    /* Coming Soon State */
-                    <div className="mt-4 p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-dashed border-amber-200 dark:border-amber-800/60">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                          <Lock className="w-3.5 h-3.5" /> Score Locked
-                        </span>
-                        <span className="text-xs font-semibold text-slate-400">Total Marks: {maxMarks}</span>
-                      </div>
-                      <div className="w-full bg-amber-200/60 dark:bg-amber-900/40 h-2 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full w-2/3 animate-pulse" />
-                      </div>
-                      <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 mt-2.5 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>Unlocks on {releaseDateFormatted || 'Scheduled Release Date'}</span>
-                      </p>
-                    </div>
-                  ) : (
-                    /* Released State */
-                    <div className="mt-4 p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800/80">
-                      <div className="flex items-baseline justify-between mb-1.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Score Obtained</span>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-black text-slate-900 dark:text-white">{score}</span>
-                          <span className="text-xs font-semibold text-slate-400">/ {maxMarks}</span>
-                          <span className="ml-1 text-xs font-bold text-pink-600 dark:text-pink-400">({pct}%)</span>
-                        </div>
-                      </div>
-                      {/* Progress Bar */}
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all duration-500",
-                            pct >= 70 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-rose-500"
-                          )}
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Teacher Feedback / Remarks */}
-                  {g.remarks && (
-                    <div className="mt-3 text-xs bg-slate-50/60 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 italic line-clamp-2">
-                      &ldquo;{g.remarks}&rdquo;
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer Meta */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {g.term ? `${g.term} Term` : 'Class Term'}
-                  </span>
-                  <span>
-                    {isComingSoon ? (
-                      <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Scheduled
-                      </span>
-                    ) : (
-                      recordedDate ? `Recorded ${recordedDate}` : 'Official Record'
-                    )}
-                  </span>
-                </div>
+        /* Grid Cards View with Date Sectioning */
+        <div className="space-y-6 w-full">
+          {groupedOfflineGrades.map((section) => (
+            <div key={section.label} className="space-y-3">
+              {/* Date Section Header */}
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className="size-2 rounded-full bg-pink-500" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'assessment' : 'assessments'}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Tabular View adhering to list_grid_design skill */
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm w-full">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Assessment Name</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Category</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Score / Max</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">% Score</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status / WAEC Grade</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Teacher Remarks</th>
-                  <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Date / Release</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {filteredGrades.map((g: any) => {
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 w-full">
+                {section.items.map((g: any) => {
                   const cat = normalizeOfflineCategory(g.category, g.assessmentType);
                   const badge = getCategoryBadge(cat);
                   const isComingSoon = g.isComingSoon;
@@ -744,89 +688,284 @@ export default function StudentOfflineGradesPage() {
                   const maxMarks = Number(g.maxMarks) || 100;
                   const pct = (score !== null && maxMarks > 0) ? Math.round((score / maxMarks) * 100) : 0;
                   const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
-                  const recordedDate = g.createdAt ? format(new Date(g.createdAt), 'MMM d, yyyy') : 'N/A';
-                  const releaseDateFormatted = g.releaseDate ? format(new Date(g.releaseDate), 'MMM d, yyyy') : null;
+                  const recordedDate = g.createdAt ? format(new Date(g.createdAt), 'MMM d, yyyy') : null;
+                  const releaseDateFormatted = g.releaseDate ? format(new Date(g.releaseDate), "MMM d, yyyy • h:mm a") : null;
 
                   return (
-                    <tr
+                    <div
                       key={g.id}
                       className={cn(
-                        "border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors",
-                        isComingSoon && "bg-amber-50/10 dark:bg-amber-950/10"
+                        "bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden",
+                        isComingSoon 
+                          ? "border-amber-200/80 dark:border-amber-800/40 bg-gradient-to-b from-amber-50/20 to-transparent" 
+                          : "border-slate-200/80 dark:border-slate-800"
                       )}
                     >
-                      <td className="p-4 font-bold text-xs text-slate-900 dark:text-white">
-                        {g.subject}
-                      </td>
-                      <td className="p-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {g.assessmentType || `${badge.label}`}
-                      </td>
-                      <td className="p-4">
-                        <span className={cn("px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border", badge.className)}>
-                          {badge.shortLabel}
-                        </span>
-                      </td>
-                      <td className="p-4 text-xs font-black text-slate-900 dark:text-white text-right">
-                        {isComingSoon ? (
-                          <span className="text-slate-400 flex items-center justify-end gap-1 font-semibold">
-                            <Lock className="w-3 h-3 text-amber-500" /> — / {maxMarks}
+                      <div>
+                        {/* Category Pill and Status / Grade Pill */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <span className={cn("px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border", badge.className)}>
+                            {badge.shortLabel}
                           </span>
-                        ) : (
-                          <>
-                            {score} <span className="font-normal text-slate-400">/ {maxMarks}</span>
-                          </>
-                        )}
-                      </td>
-                      <td className="p-4 text-center">
-                        {isComingSoon ? (
-                          <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                            Coming Soon
-                          </span>
-                        ) : (
-                          <span className={cn(
-                            "px-2 py-0.5 rounded-md text-xs font-black",
-                            pct >= 70 ? "text-emerald-600 dark:text-emerald-400" : pct >= 50 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
-                          )}>
-                            {pct}%
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        {isComingSoon ? (
-                          <span className="px-2 py-0.5 rounded-md text-[11px] font-bold border border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 flex items-center gap-1 w-fit">
-                            <Clock className="w-3 h-3 text-amber-500" /> Pending Release
-                          </span>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <span className={cn("px-2 py-0.5 rounded-md text-[11px] font-bold border", gradeInfo?.bg, gradeInfo?.color)}>
-                              {gradeInfo?.grade} ({gradeInfo?.remark})
+
+                          {isComingSoon ? (
+                            <span className="px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider border bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                              Coming Soon
                             </span>
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                              Released
-                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn("px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider border", gradeInfo?.bg, gradeInfo?.color)}>
+                                {gradeInfo?.grade} • {gradeInfo?.remark}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-0.5">
+                                <CheckCircle2 className="w-2.5 h-2.5" /> Released
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Subject and Assessment Title */}
+                        <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                          {g.subject}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 font-medium">
+                          {g.assessmentType || `${badge.label}`}
+                          {g.class?.name && ` • ${g.class.name}`}
+                        </p>
+
+                        {/* Score Area: Released State vs Coming Soon / Locked State */}
+                        {isComingSoon ? (
+                          /* Coming Soon / Locked State */
+                          <div className="mt-4 p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-dashed border-amber-200/80 dark:border-amber-800/60">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Score Locked
+                              </span>
+                              <span className="text-xs font-semibold text-slate-400">Total Marks: {maxMarks}</span>
+                            </div>
+                            {/* Neutral Scheduled / Locked Progress Strip (Does NOT indicate or reveal student grade) */}
+                            <div className="w-full bg-amber-200/50 dark:bg-amber-900/40 h-2 rounded-full overflow-hidden relative">
+                              <div className="h-full bg-amber-400/80 dark:bg-amber-500/80 rounded-full w-full opacity-60 animate-pulse" />
+                            </div>
+                            <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 mt-2.5 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              <span>Unlocks on {releaseDateFormatted || 'Scheduled Release Date'}</span>
+                            </p>
+                          </div>
+                        ) : (
+                          /* Released State */
+                          <div className="mt-4 p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                            <div className="flex items-baseline justify-between mb-1.5">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Score Obtained</span>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-lg font-black text-slate-900 dark:text-white">{score}</span>
+                                <span className="text-xs font-semibold text-slate-400">/ {maxMarks}</span>
+                                <span className="ml-1 text-xs font-bold text-pink-600 dark:text-pink-400">({pct}%)</span>
+                              </div>
+                            </div>
+                            {/* Progress Bar */}
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-500",
+                                  pct >= 70 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-rose-500"
+                                )}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
+                              />
+                            </div>
                           </div>
                         )}
-                      </td>
-                      <td className="p-4 text-xs text-slate-500 dark:text-slate-400 max-w-[200px] truncate italic">
-                        {g.remarks || '—'}
-                      </td>
-                      <td className="p-4 text-[11px] font-medium text-right whitespace-nowrap">
-                        {isComingSoon ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center justify-end gap-1">
-                            <Clock className="w-3 h-3" /> Unlocks {releaseDateFormatted || 'Soon'}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">
-                            {recordedDate}
-                          </span>
+
+                        {/* Teacher Feedback / Remarks */}
+                        {g.remarks && (
+                          <div className="mt-3 text-xs bg-slate-50/60 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 italic line-clamp-2">
+                            &ldquo;{g.remarks}&rdquo;
+                          </div>
                         )}
-                      </td>
-                    </tr>
+                      </div>
+
+                      {/* Footer Meta */}
+                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {g.term ? `${g.term} Term` : 'Class Term'}
+                        </span>
+                        <span>
+                          {isComingSoon ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Scheduled
+                            </span>
+                          ) : (
+                            recordedDate ? `Recorded ${recordedDate}` : 'Official Record'
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="pt-4 flex justify-center border-t border-slate-100 dark:border-slate-800">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredGrades.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                theme="pink"
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Tabular View with Date Sectioning adhering to date_sectioning_display skill */
+        <div className="space-y-6 w-full">
+          {groupedOfflineGrades.map((section) => (
+            <div key={section.label} className="space-y-2">
+              {/* Date Section Header */}
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className="size-2 rounded-full bg-pink-500" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'assessment' : 'assessments'}
+                </span>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm w-full">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Assessment Name</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Class</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Category</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Score / Max</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">% Score</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status / WAEC Grade</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Teacher Remarks</th>
+                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Date / Release</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {section.items.map((g: any) => {
+                        const cat = normalizeOfflineCategory(g.category, g.assessmentType);
+                        const badge = getCategoryBadge(cat);
+                        const isComingSoon = g.isComingSoon;
+                        const score = isComingSoon ? null : (Number(g.score) || 0);
+                        const maxMarks = Number(g.maxMarks) || 100;
+                        const pct = (score !== null && maxMarks > 0) ? Math.round((score / maxMarks) * 100) : 0;
+                        const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
+                        const recordedDate = g.createdAt ? format(new Date(g.createdAt), 'MMM d, yyyy') : 'N/A';
+                        const releaseDateFormatted = g.releaseDate ? format(new Date(g.releaseDate), 'MMM d, yyyy') : null;
+
+                        return (
+                          <tr
+                            key={g.id}
+                            className={cn(
+                              "border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors",
+                              isComingSoon && "bg-amber-50/10 dark:bg-amber-950/10"
+                            )}
+                          >
+                            <td className="p-4 font-bold text-xs text-slate-900 dark:text-white">
+                              {g.subject}
+                            </td>
+                            <td className="p-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              {g.assessmentType || `${badge.label}`}
+                            </td>
+                            <td className="p-4 text-xs font-medium text-slate-600 dark:text-slate-300">
+                              {g.class?.name || g.className || '—'}
+                            </td>
+                            <td className="p-4">
+                              <span className={cn("px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border", badge.className)}>
+                                {badge.shortLabel}
+                              </span>
+                            </td>
+                            <td className="p-4 text-xs font-black text-slate-900 dark:text-white text-right">
+                              {isComingSoon ? (
+                                <span className="text-slate-400 flex items-center justify-end gap-1 font-semibold">
+                                  <Lock className="w-3 h-3 text-amber-500" /> — / {maxMarks}
+                                </span>
+                              ) : (
+                                <>
+                                  {score} <span className="font-normal text-slate-400">/ {maxMarks}</span>
+                                </>
+                              )}
+                            </td>
+                            <td className="p-4 text-center">
+                              {isComingSoon ? (
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                  Coming Soon
+                                </span>
+                              ) : (
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded-md text-xs font-black",
+                                  pct >= 70 ? "text-emerald-600 dark:text-emerald-400" : pct >= 50 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
+                                )}>
+                                  {pct}%
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              {isComingSoon ? (
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-bold border border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 flex items-center gap-1 w-fit">
+                                  <Clock className="w-3 h-3 text-amber-500" /> Pending Release
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <span className={cn("px-2 py-0.5 rounded-md text-[11px] font-bold border", gradeInfo?.bg, gradeInfo?.color)}>
+                                    {gradeInfo?.grade} ({gradeInfo?.remark})
+                                  </span>
+                                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                    Released
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-4 text-xs text-slate-500 dark:text-slate-400 max-w-[200px] truncate italic">
+                              {g.remarks || '—'}
+                            </td>
+                            <td className="p-4 text-[11px] font-medium text-right whitespace-nowrap">
+                              {isComingSoon ? (
+                                <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center justify-end gap-1">
+                                  <Clock className="w-3 h-3" /> Unlocks {releaseDateFormatted || 'Soon'}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">
+                                  {recordedDate}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="pt-4 flex justify-center border-t border-slate-100 dark:border-slate-800">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredGrades.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                theme="pink"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

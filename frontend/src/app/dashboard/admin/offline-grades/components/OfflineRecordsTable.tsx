@@ -12,7 +12,7 @@ interface OfflineRecordsTableProps {
   isTeacher?: boolean;
   gradingSystem?: any[];
   onEditRecord: (record: GradeBatchSummary) => void;
-  onDeleteRecord: (recordId: string) => void;
+  onDeleteRecord: (recordId: string, record?: GradeBatchSummary) => void;
 }
 
 function getDateGroupLabel(dateVal?: string | Date): string {
@@ -177,7 +177,7 @@ export default function OfflineRecordsTable({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        onClick={() => onDeleteRecord(rec.id)}
+                        onClick={() => onDeleteRecord(rec.id, rec)}
                         className="size-8 p-0 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                       >
                         <Trash2 size={14} />

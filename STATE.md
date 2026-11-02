@@ -7,6 +7,267 @@
 - Exam submission redesign — chunked, sequential per-paper submission with progress modal.
 - Monitor production environment telemetry logs.
 
+## Blockers
+
+### Monday, November 2, 2026
+
+- [x] **Exam Submission Speed Optimization (`/Exams&Quizzes/exam/[examId]`)**:
+  - **Issue**: Exam submission was taking too long despite the UI flow functioning correctly.
+  - **Root Cause**: `flushAnswersForPaper` iterated sequentially across all questions in the paper (`CHUNK_SIZE = 100`) and awaited `saveAnswerMutation.mutateAsync` sequentially for every single question—even though answers were already saved during the exam as the student clicked options. For a 50-100 question paper, that generated 50-100 sequential HTTP network roundtrips before starting paper submission and attempt scoring.
+  - **Solution**:
+    - Introduced `dirtyAnswerQuestionIdsRef` to track newly modified answers.
+    - When `handleSelectOption` saves an answer to the backend, it removes the question ID from `dirtyAnswerQuestionIdsRef`.
+    - `flushAnswersForPaper` now filters to dirty questions only (`dirtyAnswerQuestionIdsRef.current.has(qId)`). If all answers were already auto-saved, flushing finishes instantaneously (0 network delay). If any unpersisted answers exist, they are dispatched in parallel batches (`Promise.all`) instead of a slow sequential waterfall.
+
+- [x] **Assessment Status Computation & Badge Display (`/Exams&Quizzes/exam/[examId]`)**:
+  - **Issue**: Ensure assessment status accurately shows `Live Assessment` if active / to be taken, `Upcoming` if in the future, or `Submitted`/`Ended`.
+  - **Solution**:
+    - Added an `examStatus` memo:
+      - If attempt status is `SUBMITTED` or `SCORED` -> `'submitted'`.
+      - If `startDate` is in the future (`now < startDate`) -> `'upcoming'`.
+      - If `endDate` is in the past (`now > endDate`) -> `'ended'`.
+      - Otherwise -> `'live'`.
+    - Updated `ExamDetails.tsx` to support optional `status` and `statusLabel` props with vibrant badges (pulsing emerald dot for live, amber badge for upcoming, blue badge for submitted, slate badge for ended).
+    - Passed `status={examStatus}` and `statusLabel={examStatusLabel}` to `ExamDetails` in both Details (preview) mode and Taker mode.
+
+- [x] **Student Top Nav Mobile Search & Theme Toggle Overlay Fix (`/dashboard/student`)**:
+  - **Issue**: On mobile screens, the search trigger icon was overlaying the dark/light mode toggle.
+  - **Root Cause**: `TopNavBar.tsx` had two `flex-1` outer siblings with `justify-between` and `gap-6` without constraining shrinks. On mobile (< 450px), the search trigger button and the right-hand action container were compressed against each other.
+  - **Solution**:
+    - Updated `TopNavBar.tsx` header classes to `h-16 sm:h-20 gap-2 sm:gap-4 px-3 sm:px-4 md:px-8`.
+    - Applied `shrink-0` to the left mobile drawer container and the right actions container (`flex items-center justify-end gap-2 sm:gap-3 shrink-0`).
+    - Standardized icon button dimensions (`w-10 h-10 sm:w-11 sm:h-11`) to prevent layout clipping and eliminate overlapping.
+
+- [x] **Student Class Assessments Results Action Button & Score Preview (`/dashboard/student/my-classes/[id]`)**:
+  - **Issue**: On the class page assessments tab, results were showing but the action button displayed a disabled `"Not Available"` button instead of letting students view their results or see their scores.
+  - **Root Cause**:
+    - In `my-classes/[id]/page.tsx`, `gradesAsAssessments` hardcoded `link: '#'`.
+    - In `AssignmentsTable.tsx`, `ActionButton` checked `const hasLink = !!assignment.link && assignment.link !== '#'`. If `!hasLink`, it disabled the button with `"Not Available"`.
+  - **Solution**:
+    - In [my-classes/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/page.tsx), mapped `gradesAsAssessments` link to `/dashboard/student/grades/view/assessment/${g.id}` (fallback `/dashboard/student/grades`).
+    - In [AssignmentsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/%5Bid%5D/components/AssignmentsTable.tsx), updated `ActionButton`: if an assessment is `graded`, it always enables viewing the result (routing to `assignment.link` or `/dashboard/student/grades`), showing `"View Result (score/max)"` or `"View Result"` rather than a disabled `"Not Available"` button.
+
+- [x] **Teacher Class Offline Grades Admin Author Attribution & Term Loading Fixes (`/dashboard/teacher/my-classes/[classId]`)**:
+  - **Issue 1: Admin Published Grades Showing "Recorded by: System Generated"**:
+    - **Root Cause**: In [backend/src/modules/teacher/teacher-class-offline-grades.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/teacher/teacher-class-offline-grades.service.ts), `getTeacherClassOfflineGradesService` only looked up `Grade.teacherId` in `prisma.teacher` and `prisma.admin`. When an admin creates or publishes offline grades, `Grade.teacherId` is `null` (since admins are in `prisma.admin`, not `prisma.teacher`), causing `creatorName` to fall back to `"System Generated"`.
+    - **Fix**: Included `auditLogs` (retrieving the latest changer and role) in the query and matched `changedById` against `prisma.admin`. If published or modified by an administrator, `creatorName` is resolved to `"Admin: <Admin Name>"`.
+  - **Issue 2: Offline Grade Popup Term Not Loading / Hard to Publish**:
+    - **Root Cause**:
+      1. In [frontend/src/app/dashboard/teacher/my-classes/[classId]/components/TeacherClassOfflineGrades.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/%5BclassId%5D/components/TeacherClassOfflineGrades.tsx), `sessions={[]}` was hardcoded as an empty array when invoking `RecordScoreEntryModal`, so no academic sessions were passed to the modal.
+      2. When sessions was empty or not yet loaded, `config.term` could default to undefined, leaving the term Select trigger blank without a fallback.
+      3. In `bulkCreateGradesService`, `prisma.grade.update` did not include `term` or `sessionId` in update operations.
+    - **Fix**:
+      1. Added `useSessions(effectiveSchoolId)` to `TeacherClassOfflineGrades.tsx` and passed the fetched sessions array along with a dynamic key (`key={selectedRecordForEdit ? ... : ...}`) to `RecordScoreEntryModal`.
+      2. In [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx), set `value={config.term || 'FIRST'}` and placeholder `"First Term"` on the Term select trigger so the term is never empty or blocked.
+      3. In [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), ensured `resolvedTerm = config.term || currentTerm || 'FIRST'` and `resolvedSessionId = config.sessionId || currentSession?.id || undefined` are always populated when submitting marks.
+      4. In [backend/src/modules/grade/grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts), updated `bulkCreateGradesService` to update `term` and `sessionId` on existing grades during bulk sync.
+
+- [x] **Offline Grades Modal Draft vs Publish Button Loading State Isolation (`/dashboard/admin/offline-grades`)**:
+  - **Identified Problem**: When clicking either "Save Draft" or "Publish Marks" in `RecordScoreEntryModal`, both buttons showed active `<Loader2 />` spinners simultaneously because both buttons checked the shared `saveMutation.isPending` flag.
+  - **Solution**:
+    - In [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx):
+      - Derived granular loading states:
+        ```ts
+        const isSavingDraft = saveMutation.isPending && saveMutation.variables === 'DRAFT';
+        const isPublishing = saveMutation.isPending && saveMutation.variables === 'PUBLISHED';
+        ```
+      - Updated the desktop and mobile action buttons so only the button corresponding to the initiated action shows the loading spinner and label (`Saving Draft...` or `Publishing...`), while both remain appropriately disabled during mutation processing.
+    - In [MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx): Added `isSavingDraft` and `isPublishing` props to separate the mobile "Save Draft" and "Publish All" loading indicators.
+
+- [x] **Student Academic Lock Modal School Connection Guard (`/dashboard/student`)**:
+  - **Identified Problem**: Newly registered students without a locked department/level were being prompted with the "Complete Your Academic Profile" popup (`StudentAcademicLockModal`) immediately upon arriving at the dashboard, even when they had not yet connected or linked to any school.
+  - **Solution**:
+    - In [frontend/src/app/dashboard/student/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx): Updated the `useEffect` that triggers `setIsAcademicLockModalOpen(true)` to strictly check that the student is connected to a school (`targetSchoolId || studentProfile?.schoolId || studentProfile?.school?.id`). If no school is connected, the modal is not opened.
+    - In [frontend/src/app/dashboard/student/components/StudentAcademicLockModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/StudentAcademicLockModal.tsx): Added a defensive return guard (`if (!hasSchool) return null;`) ensuring the modal never mounts or renders if the student has no connected school.
+
+- [x] **Unreleased / Scheduled Grade Score Leak Fix (`/dashboard/student/grades/view/assessment/[id]`)**:
+  - **Identified Problem**:
+    - Visiting a student's assessment result view page (e.g. `http://localhost:3000/dashboard/student/grades/view/assessment/12902e45-7b12-43a9-ba9b-428c36498382`) was revealing unreleased scores for assessments whose `releaseDate` was in the future (`2026-11-30`).
+    - When single assessment queries returned unmasked data or null scores, the frontend was either exposing the unreleased marks or computing `null / 100` as `0%` and assigning a false `F9 (Fail)` grade with failure badges.
+  - **Backend Score Masking & Privacy (`backend/src/modules/academic/grade.service.ts`)**:
+    - In `getGradeByIdService`: added strict guards for unreleased assessments (`releaseDate && new Date(releaseDate) > now`), draft grades (`status === 'DRAFT'`), and unreleased subject exam attempts (`!allowImmediateResult && resultReleaseAt > now`).
+    - When locked, scores are masked to `null`, status is set to `'SCHEDULED'`, and remarks are set to `"Assessment recorded. Scores are scheduled to unlock on the release date."`.
+    - In `getStudentGradesService`: verified that unreleased and draft offline/assessment grades are consistently masked.
+  - **Frontend UI & Privacy Protection (`frontend/src/app/dashboard/student/grades/view/[type]/[id]/page.tsx`)**:
+    - Added comprehensive `isLocked` detection covering `gradeData` (`score == null`, `status === 'SCHEDULED'`, `releaseDate > now`) and `examData` (`resultReleaseAt > now`).
+    - Added an aesthetic scheduled release alert banner displaying the exact release timestamp and informing the student that results will unlock then.
+    - Updated the **Total Score** stat card to display an amber `Score Locked` (`— / maxMarks`) state instead of `0%` or raw marks.
+    - Updated the **Overall Grade** card to show `Locked` with amber styling instead of `F9` / `Fail`.
+    - Disabled **Review Answers** and **Export Official PDF** actions with lock icons and explanatory labels (`Answers Locked`, `PDF Locked`).
+    - Updated **Subject Results** (both Responsive Grid and Table perspectives) to display `Score Locked` and `Scheduled` badges instead of 0% progress bars or fail grades.
+  - **Frontend Main Grades List (`frontend/src/app/dashboard/student/grades/page.tsx`)**:
+    - Verified and updated assessment cards and table rows to display amber `Score Locked` pills with lock icons when unreleased.
+
+- [x] **Offline Grades Admin Attributed Name Fix (`/dashboard/admin/offline-grades`)**:
+  - **Identified Root Cause**:
+    1. When an administrator creates or publishes offline grades, `Grade.teacherId` is set to `null` because administrators do not exist in the `Teacher` table.
+    2. Previously, `getGradeHubService` only attempted to resolve `creatorName` by looking up non-null `teacherId` values in the `teachers` and `admins` tables. For grades with `teacherId === null`, `creatorName` was `null`.
+    3. The frontend fell back to `'Faculty Staff'`.
+  - **Backend Solution**:
+    - In [backend/src/modules/grade/grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts), `getGradeHubService` now includes `auditLogs` (retrieving the latest changer and role).
+    - If `changedByType` was an admin role (`ADMIN`, `SUPER_ADMIN`, `SCHOOL_OWNER`, `PRINCIPAL`, `REGISTRAR`), it resolves the administrator's full name from `prisma.admin` and attributes the grade as `"Admin: <Admin Name>"`.
+  - **Frontend Solution**:
+    - In [frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx), properly resolved admin names: if recorded or modified by an administrator, it labels the marksheet as `Admin: <Admin Name>` rather than defaulting to generic `'Faculty Staff'`.
+
+
+- [x] **Student Offline Grades Locked Score Privacy & Display Fixes (`/dashboard/student/offline-grades`)**:
+  - **Backend Score Masking & Data Leak Prevention**:
+    - In [backend/src/modules/academic/grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/grade.service.ts), verified that `getStudentGradesService` strictly masks scores to `null`, masks remarks to `"Assessment recorded. Scores are scheduled to unlock on the release date."`, and sets status to `"SCHEDULED"` whenever an offline grade has a future `releaseDate`.
+    - Extended the same strict masking to single grade queries in `getGradeByIdService` so locked grades and drafts never leak student scores over the API under any circumstances.
+  - **Card Loading / Progress Bar Neutralization**:
+    - In [frontend/src/app/dashboard/student/offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/offline-grades/page.tsx), removed any partial-width progress bar representation (`w-2/3`) on locked / coming soon cards that could be mistaken for or visually mimic a student's score.
+    - Replaced with a full-width, neutral scheduled/pending shimmer strip (`opacity-60`, `w-full`) with a lock icon and unambiguous `"Score Locked"` indicator.
+  - **Inclusive Default View Across Terms & Sessions**:
+    - Initialized session and term selectors to `'ALL'` so all recorded offline assessments display immediately upon navigating to the page without requiring manual filter resets.
+
+- [x] **Offline Grades Fixes & Enhancements (`/dashboard/admin/offline-grades`)**:
+  - **Fixed Blank Scores When Re-editing an Offline Grade**:
+    - **Root Cause**:
+      1. When `RecordScoreEntryModal` was closed and reopened on the same marksheet without a hard browser refresh, `prevModalStateRef.current.recordId` remained pointing to the same `record.id`.
+      2. The effect that populates roster scores checked `initialRecord?.id !== prevRecordId`, which evaluated to `false`, skipping re-population.
+      3. `hasSyncedGrades` remained `true` from the previous session, preventing grades from synchronizing.
+      4. `RecordScoreEntryModal` had no unique React `key` in `OfflineGradesDashboard.tsx`, so React retained stale modal state across subsequent openings.
+      5. Save handler was invalidating query key `['gradeHub']` instead of `['grades']`, leaving `useGradeHub` stale in TanStack Query cache.
+    - **Fix**:
+      1. Added dynamic unique key to `RecordScoreEntryModal`: `key={selectedRecordForEdit ? ... : ...}` in [OfflineGradesDashboard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx).
+      2. In [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), reset `prevModalStateRef.current` and `setHasSyncedGrades(false)` whenever `!isOpen`.
+      3. Added `isOpen` to the sync reset dependency array so every opening fresh-syncs.
+      4. Invalidated `['grades']` root key upon saving/publishing marks.
+  - **Draft Management & Dedicated Draft Tab**:
+    - Made the **"Pending Drafts"** card in the Executive KPI Stats Strip interactive, allowing 1-click toggling of draft records.
+    - Added dedicated **"Pending Drafts"** category tab with an amber badge to [OfflineRecordsList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx).
+    - Ensured `Save as Draft` correctly persists draft state (`status: 'DRAFT'`) and `Publish Marks` updates the batch to published (`status: 'PUBLISHED'`).
+  - **Direct Delete Button on Cards & Rows**:
+    - Added a prominent direct delete button (`Trash2`) on grid cards in [OfflineRecordsGrid.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsGrid.tsx) next to "View / Edit Scores".
+    - Connected directly to the safe batch deletion confirmation modal with spinner indicator.
+
+- [x] **Student Grades & Offline Grades Enhancements (`/dashboard/student/grades` & `/dashboard/student/offline-grades`)**:
+  - **Class Filter Added**:
+    - Added Class Filter dropdown across all tabs on [offline-grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/offline-grades/page.tsx) (both in top view action bar and secondary filter bar).
+    - Added Class Filter dropdown on [grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx) in the header controls bar next to Session and Term filters.
+    - Class lists dynamically populated from student's enrolled classes (`profile.classes`), attempts, grades, and school classes.
+  - **Date Sectioning & 10 Per Page Pagination**:
+    - Created [dateSectioning.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/utils/dateSectioning.ts) helper implementing the `date_sectioning_display` skill standard (`Today`, `Yesterday`, natural relative dates with the student pink accent dot).
+    - Sectioned both Grid and Table views on both pages by date.
+    - Standardized pagination to strictly 10 items per page (`itemsPerPage = 10`) across all assessment tabs on both pages.
+  - **Removed Final Result Grade Tab**:
+    - Completely removed the `"Final Result Grades"` tab, state, modals, and tab button from [grades/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/grades/page.tsx).
+  - **Fixed "Result Unavailable" on Assessment Results (`/dashboard/student/grades/view/assessment/grade-sa-...`)**:
+    - **Root Cause**:
+      1. Endpoint `GET /api/v1/academic/grades/:id` was guarded by `requireSchoolOwnerPrincipalOrRegistrar`, rejecting student requests with `403 Forbidden`.
+      2. The ID `grade-sa-de46079b-71de-4022-b754-2d69f4de9256` represents a synthetic subject exam attempt ID (`grade-sa-{subjectExamAttemptId}`). Standalone grade queries for this ID returned null without resolving the underlying attempt.
+    - **Fix**:
+      1. Allowed authenticated students on `GET /api/v1/academic/grades/:id` in [academic.route.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/academic.route.ts).
+      2. In [grade.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/grade.service.ts), added fallback lookup for `grade-sa-` prefixes to resolve the `SubjectExamAttempt` with questions, class, student, and exam information.
+  - **Verification**: `npx tsc --noEmit` on both backend and frontend completed with 0 errors.
+
+- [x] **Verify & Harden Offline Marksheet Batch Deletion for Admin (`/dashboard/admin/offline-grades`)**:
+  - **Work Done**:
+    - Verified the complete end-to-end deletion flow in `/dashboard/admin/offline-grades`.
+    - Modal confirmation (`Dialog` in `OfflineRecordsList.tsx`) displays the assessment title, subject, cohort name, and count of all student grades to be removed.
+    - Delete button shows a live spinner with `"Deleting all grades..."` and prevents duplicate clicks (`disabled={isDeleting}`).
+    - Enhanced [deleteBatchGradeService](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/grade/grade.service.ts) to gracefully locate the offline assessment batch by `classId` and `subject` signature even if an individual grade ID in the batch was modified or synthetic.
+    - Cascades deletion across all student records in that assessment batch and clears linked `GradeAuditLog` rows via DB cascade.
+    - Automatically invalidates `offline-grades-history`, `grades`, and `gradeHub` query caches upon deletion.
+  - **Affected Files**:
+    - `backend/src/modules/grade/grade.service.ts`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx`
+  - **Verification**: `npx tsc --noEmit` verified with 0 errors across backend and frontend.
+
+- [x] **Remove "Final Term Results" Tab from Admin Grades Page (`/dashboard/admin/grades`)**:
+  - **Work Done**:
+    - Removed the `"final"` tab (`"Final Term Results"`) from the category tabs navigation bar in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/page.tsx).
+    - Removed the `final` tab view rendering section and cleaned up its import and category count references.
+    - Updated `activeTab` type union to `'exams' | 'standalone' | 'papers' | 'ca' | 'assignment' | 'test'`.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/grades/page.tsx`
+  - **Verification**: `npx tsc --noEmit` verified with 0 errors.
+
+- [x] **Fix Prisma ForeignKey Violation on `grades_teacherId_fkey` in `grade.bulkCreateGrades`**:
+  - **Problem**: When an Admin or non-teacher user saved marks or published assessments (e.g., from the Record Score Entry Modal in Offline Grades), the client supplied the current admin's `user.id` into `teacherId`. In Prisma's schema, `Grade.teacherId` is a strict foreign key relation to the `teachers` table (`@relation(fields: [teacherId], references: [id])`). When inserting grades via `prisma.grade.create`, PostgreSQL threw `Foreign key constraint violated on the constraint: grades_teacherId_fkey`.
+  - **Fix**:
+    - **Backend (`grade.service.ts`)**:
+      - Updated `bulkCreateGradesService` to gather all candidate teacher IDs provided in the payload and query the database (`prisma.teacher.findMany`) to produce a verified set of real teacher IDs.
+      - If `clean.teacherId` or `resolvedTeacherId` does not exist in the `Teacher` table (e.g., an Admin or Principal ID), it is safely sanitized to `null`.
+      - In grade updates, guarded `updateTeacherId` to only set a verified teacher ID or `null`.
+    - **Frontend (`RecordScoreEntryModal.tsx`)**:
+      - Guarded `teacherId` so that `user.id` is only passed if the user's role is genuinely `TEACHER`. Non-teacher roles (e.g. Admins) leave `teacherId` undefined.
+  - **Affected Files**:
+    - `backend/src/modules/grade/grade.service.ts`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx`
+  - **Verification**: Type checks and safety validations passing.
+
+- [x] **Admin Grades Page Pagination Standardized to 10 per Page (`/dashboard/admin/grades`)**:
+  - **Work Done**: Updated pagination across all tabs and drilldown levels in the Admin Grades page to display 10 items per page (`itemsPerPage = 10`):
+    - `ExamGradesFlow` (Terminal Exams, Continuous Assessments, Quizzes/Tests): Updated from 6 to 10 per page.
+    - `ExamStudentsView` (Student attempts drilldown level 2): Updated from 6 to 10 per page.
+    - `DetailedStudentResult` (Student exam result subject list drilldown level 3): Updated from 5 to 10 per page.
+    - `SubjectPapersView` (Subject Exam Papers directory): Updated from 6 to 10 per page.
+    - `GradeHub` (Standalone Grades & Assignments directories): Updated from 6 to 10 per page.
+    - `FinalResultsTab` (Final Term/Session Results): Verified existing 10 per page pagination.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/grades/page.tsx`
+    - `frontend/src/app/dashboard/admin/grades/components/GradeHub.tsx`
+  - **Verification**: `npx tsc --noEmit` on `frontend/` passed with exit code 0 (zero errors).
+  - **Problem**: In `/dashboard/teacher/my-classes/[classId]` (Offline Grades tab), clicking "Delete Record" deleted a single grade silently without a confirmation modal or deleting indicator, leaving all other student grades recorded in that offline assessment batch orphaned in the database.
+  - **Fix**:
+    - **Backend (`DELETE /api/v1/grades/batch/:id`)**: Added `deleteBatchGradeService` and registered `DELETE /grades/batch/:id` in `grade.route.ts` and `grade.controller.ts`. Looks up the offline assessment batch by signature (`schoolId`, `classId`, `subject`, `assessmentType`, `category`, `term`), verifies no online exam attempts are deleted, removes all corresponding student grades via `prisma.grade.deleteMany`, and sends a consolidated notification to school administrators.
+    - **Frontend API Client (`gradeService.ts`)**: Added `deleteBatchGrades(id, criteria)` supporting batch signature params.
+    - **Confirmation Modal & Indicator (`OfflineRecordsList.tsx`)**: Added a dedicated `Dialog` confirmation modal displaying the assessment title, subject, class cohort, and student grade count with a warning that all student grades in the batch will be removed. Added loading state with spinning `Loader2` indicator (`"Deleting all grades..."`) and disabled buttons during deletion.
+    - **Teacher Class & Admin Integration**: Updated `TeacherClassOfflineGrades.tsx` and `OfflineGradesDashboard.tsx` to pass the batch criteria into `deleteBatchGrades` and invalidate queries (`teacher-class-offline-grades`, `offline-grades-history`, `grades`, `gradeHub`) upon completion.
+  - **Affected Files**:
+    - `backend/src/modules/grade/grade.service.ts`
+    - `backend/src/modules/grade/grade.controller.ts`
+    - `backend/src/modules/grade/grade.route.ts`
+    - `frontend/src/lib/api/services/gradeService.ts`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsList.tsx`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsGrid.tsx`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/OfflineRecordsTable.tsx`
+    - `frontend/src/app/dashboard/teacher/my-classes/[classId]/components/TeacherClassOfflineGrades.tsx`
+    - `frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard.tsx`
+  - **Verification**: `npx tsc --noEmit` on both `backend/` and `frontend/` passed with exit code 0 (zero errors).
+  - **Work Done**: Overhauled the Admin Grades & Assessments page to adopt the modern, clean design system of `/dashboard/admin/offline-grades`.
+  - **Transformations**:
+    - **Breadcrumbs Navigation**: Clean hierarchical navigation (`Dashboard > Academics > Grades & Assessments`) with micro-icons and hover states.
+    - **Executive Hero Banner Card**: Standardized hero card (`bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 p-5 sm:p-7 md:p-8`) with top-right glowing gradient accent (`bg-indigo-500/10 blur-3xl`), icon box (`size-14 sm:size-16 rounded-2xl bg-indigo-50 border-indigo-200/80`), bold tracking-tight heading, contextual tooltip, and header action buttons.
+    - **Integrated Executive KPI Stats Strip**: Replaced duplicate bento analytics with an integrated 4-column KPI strip directly inside the hero banner (`Total Formal Exams`, `Active Subject Papers`, `Student Submissions`, `Institutional Mean`).
+    - **Category Tabs Strip**: Horizontal pill strip (`bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 border border-slate-200/80`) with category icons, solid active highlights, and dynamic record count badges (`categoryCounts`).
+    - **Toolbar & View Switcher**: Standardized search and filter toolbars to 40px height (`h-10 rounded-xl bg-slate-50 border-slate-200`) with compact 32px view switchers (`h-8 w-8 rounded-lg`).
+    - **Grid Cards**: Converted all grid cards (`ExamGradesFlow`, `SubjectPapersView`, `GradeHub`, and `FinalResultsTab`) to the clean `rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md` card format with category chips, status pills, 2-column info grids, and clean action footers.
+  - **Affected Files**:
+    - `frontend/src/app/dashboard/admin/grades/page.tsx`
+    - `frontend/src/app/dashboard/admin/grades/components/GradeHub.tsx`
+    - `frontend/src/app/dashboard/admin/grades/components/FinalResultsTab.tsx`
+  - **Verification**: `npx tsc --noEmit` passed with exit code 0 (zero errors).
+
+- [x] **Admin Grades Page Date Sectioning Display (`/dashboard/admin/grades`)**:
+  - **Work Done**: Applied the `date_sectioning_display` skill pattern to the Admin Grades page across all view modes (table/list and grid) and assessment category tabs.
+  - **Component Updates**:
+    - `frontend/src/app/dashboard/admin/grades/utils/dateSectioning.ts`: Created shared date sectioning helper (`getDateGroupLabel`, `groupByDate`) providing standard relative/natural date grouping (`Today`, `Yesterday`, past 7 days: `day month`, older: `day month year`, fallback: `Undated & Previous Records`).
+    - `frontend/src/app/dashboard/admin/grades/page.tsx` (`ExamGradesFlow`): Integrated date sectioning for exams, continuous assessments, and tests in both list and grid views, displaying the canonical admin indigo accent dot (`size-2 rounded-full bg-indigo-500`), section title, record counter badge, and proper pagination global indexing.
+    - `frontend/src/app/dashboard/admin/grades/page.tsx` (`SubjectPapersView`): Added date sectioning for subject exam papers across list and grid layouts.
+    - `frontend/src/app/dashboard/admin/grades/components/GradeHub.tsx`: Added date sectioning for standalone grades and homework/assignment submissions across list (with per-section multi-select tables) and grid views.
+    - `frontend/src/app/dashboard/admin/grades/components/FinalResultsTab.tsx`: Added date sectioning for published final term/session results in list and grid views.
+  - **Verification**: `npx tsc --noEmit` passed with exit code 0 (zero errors).
+
+- [x] **Assessment System Documentation — All User Types (Monday, November 2, 2026)**:
+  - **Work Done**: Created comprehensive assessment system specification at [`docs/ASSESSMENT_SYSTEM.md`](docs/ASSESSMENT_SYSTEM.md).
+  - **Coverage**:
+    - Section 1: Assessment DB models (`Exam`, `Assignment`, `SubjectExamPaper`), `ExamCategory`/`scope`/`status` enums.
+    - Section 2 (Teacher): Full breakdown of `/dashboard/teacher/exams&quizzes` — page layout, 6 category tabs, data fetching strategy, client-side filters, teacher subject scoping rules, creation forms (Exam/CA/Quiz, Assignment, Subject Paper), ExamsTable date-sectioning, row/card actions, routing destinations, status badge colors, "Mine" badge, PDF/CSV export, and all 9 sub-routes.
+    - Section 3 (Student): Department scoping (backend), smart routing (live → exam taker, others → preview), department block guard, class assessments tab sub-tabs and smart action buttons.
+    - Section 4 (Admin): Class Exams tab, category mapping, historical bug record (2026-10-06 `category` field missing from Prisma select).
+    - Section 5 (Parent): Indirect assessment visibility via child profile and `StudentSubjectTermResult`.
+    - Section 6: 6 cross-cutting invariants enforced across all user types.
+    - Section 7: API reference table (11 endpoints).
+    - Section 8: Change log.
+    - Section 9: 13-item verification checklist.
+  - **Files Created**: [`docs/ASSESSMENT_SYSTEM.md`](docs/ASSESSMENT_SYSTEM.md)
+  - **Files Updated**: [`docs/README.md`](docs/README.md) — added `ASSESSMENT_SYSTEM.md` row to the core architecture specifications table.
+  - **Files Read (source analysis)**: `ExamsQuizzesOverview.tsx`, `ExamsTable.tsx`, `PageHeader.tsx`, `FilterChips.tsx`, `CreateExamForm.tsx`, `CreateAssignmentForm.tsx`, `CreatePaperForm.tsx`, `ASSESSMENT_DATA_MODEL.md`, `TEACHER_DASHBOARD.md`.
+
+
 ## Upcoming / Planning
 
 - Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).

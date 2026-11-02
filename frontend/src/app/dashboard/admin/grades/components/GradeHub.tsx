@@ -65,6 +65,7 @@ import GradeUploadInstructionsModal from './GradeUploadInstructionsModal';
 import GradeOCRModal from './GradeOCRModal';
 import GradeEditModal from './GradeEditModal';
 import Pagination from './Pagination';
+import { groupByDate } from '../utils/dateSectioning';
 
 interface GradeHubProps {
   grades: any[];
@@ -78,7 +79,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // Set to 6 to stay premium and consistent
+  const itemsPerPage = 10;
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
@@ -252,6 +253,16 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
     currentPage * itemsPerPage
   );
 
+  const gradeGroups = React.useMemo(() => {
+    return groupByDate<{ grade: any; globalIndex: number }>(
+      paginatedGrades.map((grade: any, idx: number) => ({
+        grade,
+        globalIndex: (currentPage - 1) * itemsPerPage + idx + 1,
+      })),
+      (item) => item.grade?.createdAt || item.grade?.updatedAt
+    );
+  }, [paginatedGrades, currentPage, itemsPerPage]);
+
   const { institutionalMean, publishedCount, draftCount, publishedPercentage, draftPercentage } = React.useMemo(() => {
     if (!safeGrades.length) return { institutionalMean: 0, publishedCount: 0, draftCount: 0, publishedPercentage: 0, draftPercentage: 0 };
     
@@ -274,11 +285,11 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Dynamic Filters & Search Panel */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 w-full">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Text Search */}
-          <div className="relative group flex-1 w-full max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" style={{ color: searchTerm ? primaryColor : undefined } as any} />
+          <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <Input 
                   type="text" 
                   placeholder="Search students, subjects, categories..."
@@ -287,20 +298,19 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                   }}
-                  className="w-full pl-12 h-12 bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 transition-all font-bold"
-                  style={{ '--tw-ring-color': `${primaryColor}20`, borderColor: searchTerm ? primaryColor : undefined } as any}
+                  className="pl-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-xs font-medium"
               />
           </div>
 
           {/* Filters Group */}
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Assessment/Exam Type Filter */}
-            <div className="flex-1 min-w-[140px] sm:w-40 sm:flex-none">
+            <div className="w-full sm:w-36">
               <Select value={selectedType} onValueChange={(val) => { setSelectedType(val); setCurrentPage(1); }}>
-                <SelectTrigger className="h-12 w-full rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 font-medium text-xs">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
+                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
                   <SelectItem value="all">All Types</SelectItem>
                   {uniqueTypes.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -310,12 +320,12 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
             </div>
 
             {/* Subject Filter */}
-            <div className="flex-1 min-w-[140px] sm:w-40 sm:flex-none">
+            <div className="w-full sm:w-36">
               <Select value={selectedSubject} onValueChange={(val) => { setSelectedSubject(val); setCurrentPage(1); }}>
-                <SelectTrigger className="h-12 w-full rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 font-medium text-xs">
                   <SelectValue placeholder="All Subjects" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
+                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
                   <SelectItem value="all">All Subjects</SelectItem>
                   {uniqueSubjects.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -325,12 +335,12 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
             </div>
 
             {/* Class Filter */}
-            <div className="flex-1 min-w-[140px] sm:w-40 sm:flex-none">
+            <div className="w-full sm:w-36">
               <Select value={selectedClass} onValueChange={(val) => { setSelectedClass(val); setCurrentPage(1); }}>
-                <SelectTrigger className="h-12 w-full rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectTrigger className="h-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 font-medium text-xs">
                   <SelectValue placeholder="All Classes" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
+                <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
                   <SelectItem value="all">All Classes</SelectItem>
                   {classes.map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>
@@ -339,60 +349,52 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
               </Select>
             </div>
           </div>
-        </div>
 
-        {/* Layout Switcher & Action Buttons */}
-        <div className="flex flex-wrap items-center gap-4 self-start lg:self-center">
-          <div className="flex bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-inner">
-            <button 
-              onClick={() => setViewMode('grid')}
-              className={cn("size-10 rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
-              style={{ color: viewMode === 'grid' ? primaryColor : undefined }}
-            >
-              <LayoutGrid size={18} strokeWidth={3} />
-            </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              className={cn("size-10 rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
-              style={{ color: viewMode === 'list' ? primaryColor : undefined }}
-            >
-              <List size={18} strokeWidth={3} />
-            </button>
-          </div>
+          {/* Actions & View Switcher */}
+          <div className="flex items-center gap-2 self-end lg:self-center">
+            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-xs text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-xs text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}
+              >
+                <List size={15} />
+              </button>
+            </div>
 
-          <div className="flex items-center gap-2">
             <Button 
               onClick={handleOpenOCR}
               variant="outline" 
-              className="relative rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center group cursor-pointer"
-              style={hasOCRAccess ? { color: primaryColor, borderColor: `${primaryColor}40`, backgroundColor: `${primaryColor}10` } : {}}
+              className="relative rounded-xl h-10 w-10 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:bg-slate-50 transition-all flex items-center justify-center group cursor-pointer"
               title={hasOCRAccess ? 'AI Vision Grade Scanner' : 'Upgrade to unlock AI Vision Scanner'}
             >
               {hasOCRAccess ? (
-                <Camera size={18} />
+                <Camera size={16} className="text-indigo-600 dark:text-indigo-400" />
               ) : (
                 <>
-                  <Camera size={18} className="text-slate-400" />
-                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-amber-400 border-2 border-white dark:border-slate-900 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M12 1C8.676 1 6 3.676 6 7v2H4v14h16V9h-2V7c0-3.324-2.676-6-6-6zm0 2c2.276 0 4 1.724 4 4v2H8V7c0-2.276 1.724-4 4-4zm0 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
-                  </span>
+                  <Camera size={16} className="text-slate-400" />
+                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-400 border-2 border-white dark:border-slate-900" />
                 </>
               )}
             </Button>
             <Button 
               onClick={handleOpenUploadModal}
               variant="outline" 
-              className="rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center"
+              className="rounded-xl h-10 w-10 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:bg-slate-50 transition-all flex items-center justify-center cursor-pointer"
               title="Batch Upload"
             >
-              <FileUp size={18} />
+              <FileUp size={16} />
             </Button>
             <Button 
               onClick={() => setIsEntryModalOpen(true)}
-              className="rounded-xl h-12 px-6 font-black uppercase tracking-widest hover:opacity-90 shadow-lg active:scale-95 transition-all text-white whitespace-nowrap text-xs"
-              style={{ backgroundColor: primaryColor, boxShadow: `0 10px 15px -3px ${primaryColor}40` }}
+              className="rounded-xl h-10 px-4 font-bold bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
             >
-              <Plus size={18} className="mr-1.5" /> Create
+              <Plus size={15} /> <span>Record Grade</span>
             </Button>
           </div>
         </div>
@@ -505,247 +507,314 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         </div>
       ) : viewMode === 'grid' ? (
         /* Grid Layout Mode */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {paginatedGrades.map((grade: any) => {
-            const percent = Math.round((grade.score / grade.maxMarks) * 100);
-            
-            const isPassed = percent >= 50;
-            const theme = isPassed ? {
-                border: 'border-emerald-500/20 hover:border-emerald-500/50',
-                bg: 'bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20',
-                textHighlight: 'text-emerald-600 dark:text-emerald-400',
-                iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
-                progress: 'bg-emerald-500',
-                accentColor: 'bg-emerald-500'
-            } : {
-                border: 'border-amber-500/20 hover:border-amber-500/50',
-                bg: 'bg-gradient-to-br from-white to-amber-50 dark:from-slate-900 dark:to-amber-950/20',
-                textHighlight: 'text-amber-600 dark:text-amber-400',
-                iconBg: 'bg-amber-500 text-white shadow-amber-500/30',
-                progress: 'bg-amber-500',
-                accentColor: 'bg-amber-500'
-            };
-
-            return (
-              <div 
-                key={grade.id} 
-                onClick={() => handleGradeClick(grade)}
-                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 cursor-pointer rounded-3xl border ${theme.border} ${theme.bg} min-h-[260px] flex flex-col justify-between`}
-              >
-                <div className={`absolute top-0 left-0 w-full h-1.5 ${theme.accentColor}`} />
-                <div className="p-7 relative z-10 flex flex-col h-full justify-between">
-                    <div>
-                        <div className="flex justify-between items-start mb-6">
-                            <div className={`p-3.5 rounded-2xl shadow-lg transition-transform duration-500 group-hover:-rotate-6 ${theme.iconBg}`}>
-                                <FileText className="h-6 w-6" strokeWidth={2.5} />
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                                {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
-                                    <span className="px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                        Published
-                                    </span>
-                                ) : (
-                                    <span className="px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                        Draft
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 className={`font-black text-2xl mb-1 text-slate-900 dark:text-white line-clamp-1 transition-colors group-hover:${theme.textHighlight}`}>
-                                {grade.student?.name}
-                            </h3>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">
-                                Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}{grade.class?.section || ''}
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-y-4 mt-2">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Subject</span>
-                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                    <span className="truncate">{grade.subject}</span>
-                                </div>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Type</span>
-                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                    <span className="truncate">{(grade.assessmentType && grade.assessmentType !== 'NULL' ? grade.assessmentType : grade.category) || 'Assessment'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-5 border-t border-slate-200 dark:border-white/10 mt-6">
-                        <div className="space-y-1.5 flex-1 pr-4">
-                            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none flex items-baseline">
-                                {grade.score}<span className="text-xs text-slate-400 ml-1">/{grade.maxMarks}</span>
-                            </span>
-                            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div 
-                                    className={`h-full rounded-full ${theme.progress}`} 
-                                    style={{ width: `${percent}%` }} 
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary transition-all" onClick={(e) => e.stopPropagation()}>
-                                  <MoreVertical size={18} />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
-                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
-                                  <Edit size={14} /> Edit Grade
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}>
-                                  <Eye size={14} /> View Details
-                                </DropdownMenuItem>
-                                {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
-                                  <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
-                                    <Send size={14} /> Publish Now
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
-                                  <Trash2 size={14} /> Delete Record
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                </div>
+        <div className="space-y-8">
+          {gradeGroups.map((section) => (
+            <div key={section.label} className="space-y-4">
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className="size-2 rounded-full bg-indigo-500" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                </span>
               </div>
-            );
-          })}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {section.items.map(({ grade }) => {
+                  const percent = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : 0;
+                  const isPublished = grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId;
+
+                  return (
+                    <div 
+                      key={grade.id} 
+                      onClick={() => handleGradeClick(grade)}
+                      className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex flex-col justify-between group cursor-pointer"
+                    >
+                      <div>
+                        {/* Card Header: Type Pill & Status Badge */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/80">
+                            {(grade.assessmentType && grade.assessmentType !== 'NULL' ? grade.assessmentType : grade.category) || 'Assessment'}
+                          </span>
+
+                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                isPublished
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                              }`}
+                            >
+                              <span className={`size-1.5 rounded-full ${isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                              {isPublished ? 'Published' : 'Draft'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Student Name & Class */}
+                        <h3 className="font-bold text-slate-900 dark:text-white text-base truncate mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {grade.student?.name}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">
+                            {grade.subject}
+                          </span>
+                          <span>•</span>
+                          <span className="truncate">Lvl {grade.student?.gradeLevel}</span>
+                          <span>•</span>
+                          <span className="truncate">{grade.class?.name || 'Class'}{grade.class?.section || ''}</span>
+                        </div>
+
+                        {/* Student Code Badge if available */}
+                        {grade.student?.studentCode && (
+                          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-3 px-2.5 py-1 rounded-lg bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800">
+                            <span className="text-slate-400 dark:text-slate-500 font-normal">Student Code:</span>
+                            <span className="font-mono font-bold text-slate-700 dark:text-slate-300 truncate uppercase">
+                              {grade.student.studentCode}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Score & Progress Metrics Card */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2 mb-4">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500 font-medium">Recorded Score:</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900 dark:text-white tabular-nums">
+                                {grade.score} / {grade.maxMarks} ({percent}%)
+                              </span>
+                              {grade.grade && (
+                                <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-black border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800">
+                                  {grade.grade}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-indigo-600 h-full rounded-full transition-all"
+                              style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                            <span>Passing: <strong>{Math.round(grade.maxMarks * 0.5)}</strong> pts</span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Term: {grade.term || '1'}</span>
+                              {grade.createdAt && (
+                                <>
+                                  <span>•</span>
+                                  <span title={new Date(grade.createdAt).toLocaleString()}>
+                                    {new Date(grade.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Actions Footer */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}
+                          className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold gap-1.5 shadow-sm"
+                        >
+                          <Edit size={13} />
+                          <span>Edit Grade</span>
+                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}
+                            className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical size={16} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
+                              <DropdownMenuItem className="rounded-xl font-bold text-xs py-2.5 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
+                                <Edit size={14} /> Edit Grade
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="rounded-xl font-bold text-xs py-2.5 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}>
+                                <Eye size={14} /> View Details
+                              </DropdownMenuItem>
+                              {!isPublished && (
+                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-2.5 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
+                                  <Send size={14} /> Publish Now
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem className="rounded-xl font-bold text-xs py-2.5 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
+                                <Trash2 size={14} /> Delete Record
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         /* Unified List View (matches SubjectPapersView) */
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                    <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
-                            <input 
-                                type="checkbox" 
-                                className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
-                                checked={safeGrades.length > 0 && selectedIds.length === safeGrades.length}
-                                onChange={handleSelectAll}
-                            />
-                        </th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-40">Code</th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject / Type</th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                    {paginatedGrades.map((grade: any, index: number) => {
-                        const percent = Math.round((grade.score / grade.maxMarks) * 100);
-                        const isSelected = selectedIds.includes(grade.id);
-                        
-                        return (
-                            <tr 
-                                key={grade.id}
-                                onClick={() => handleGradeClick(grade)}
-                                className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all relative cursor-pointer"
-                            >
-                                <td className="p-4 text-center relative z-10" onClick={(e) => e.stopPropagation()}>
-                                    <input 
-                                        type="checkbox" 
-                                        className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
-                                        checked={isSelected}
-                                        onChange={(e) => handleSelectOne(grade.id, e.target.checked)}
-                                    />
-                                </td>
-                                <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
-                                    {index + 1 + (currentPage - 1) * itemsPerPage}
-                                </td>
-                                <td className="p-4 text-xs font-bold text-slate-600 dark:text-slate-300 relative z-10 uppercase tracking-wider">
-                                    {grade.student?.studentCode || 'N/A'}
-                                </td>
-                                <td className="p-4 relative">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs shrink-0">
-                                            {grade.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
+        <div className="space-y-6">
+          {gradeGroups.map((section) => (
+            <div key={section.label} className="space-y-3">
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className="size-2 rounded-full bg-indigo-500" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                </span>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
+                                <input 
+                                    type="checkbox" 
+                                    className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                                    checked={safeGrades.length > 0 && selectedIds.length === safeGrades.length}
+                                    onChange={handleSelectAll}
+                                />
+                            </th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-40">Code</th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject / Type</th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                        {section.items.map(({ grade, globalIndex }) => {
+                            const percent = Math.round((grade.score / grade.maxMarks) * 100);
+                            const isSelected = selectedIds.includes(grade.id);
+                            
+                            return (
+                                <tr 
+                                    key={grade.id}
+                                    onClick={() => handleGradeClick(grade)}
+                                    className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all relative cursor-pointer"
+                                >
+                                    <td className="p-4 text-center relative z-10" onClick={(e) => e.stopPropagation()}>
+                                        <input 
+                                            type="checkbox" 
+                                            className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                                            checked={isSelected}
+                                            onChange={(e) => handleSelectOne(grade.id, e.target.checked)}
+                                        />
+                                    </td>
+                                    <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                        #{globalIndex}
+                                    </td>
+                                    <td className="p-4 text-xs font-bold text-slate-600 dark:text-slate-300 relative z-10 uppercase tracking-wider">
+                                        {grade.student?.studentCode || 'N/A'}
+                                    </td>
+                                    <td className="p-4 relative">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs shrink-0">
+                                                {grade.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                    {grade.student?.name}
+                                                </h3>
+                                                <p className="text-xs text-slate-500 font-medium truncate">
+                                                    Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                                                {grade.student?.name}
-                                            </h3>
-                                            <p className="text-xs text-slate-500 font-medium truncate">
-                                                Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}
-                                            </p>
+                                    </td>
+                                    <td className="p-4 relative">
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate">{grade.subject}</span>
+                                            <span className="text-xs text-slate-400 font-medium truncate">{(grade.assessmentType && grade.assessmentType !== 'NULL' ? grade.assessmentType : grade.category) || 'General'}</span>
                                         </div>
-                                    </div>
-                                </td>
-                                <td className="p-4 relative">
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate">{grade.subject}</span>
-                                        <span className="text-xs text-slate-400 font-medium truncate">{(grade.assessmentType && grade.assessmentType !== 'NULL' ? grade.assessmentType : grade.category) || 'General'}</span>
-                                    </div>
-                                </td>
-                                <td className="p-4 relative">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">
-                                            {grade.score}<span className="text-[10px] text-slate-400 font-medium ml-0.5">/{grade.maxMarks}</span>
-                                        </span>
-                                    </div>
-                                </td>
-                                <td className="p-4 relative">
-                                    {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
-                                        <div className="flex items-center gap-1.5">
-                                           <div className="size-2 rounded-full bg-emerald-500" />
-                                           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Published</span>
+                                    </td>
+                                    <td className="p-4 relative">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm font-black text-slate-900 dark:text-white whitespace-nowrap">
+                                                {grade.score}<span className="text-[10px] text-slate-400 font-medium ml-0.5">/{grade.maxMarks}</span>
+                                            </span>
                                         </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1.5">
-                                           <div className="size-2 rounded-full bg-amber-500" />
-                                           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Draft</span>
-                                        </div>
-                                    )}
-                                </td>
-                                <td className="p-4 relative text-center" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button variant="ghost" className="h-8 px-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 hover:text-primary transition-all" onClick={(e) => handleGradeClick(grade, e)}>
-                                            Details
-                                        </Button>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary transition-all">
-                                                    <MoreVertical size={14} />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
-                                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}>
-                                                    <Eye size={14} /> View Details
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
-                                                    <Edit size={14} /> Edit
-                                                </DropdownMenuItem>
-                                                {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
-                                                    <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
-                                                        <Send size={14} /> Publish
+                                    </td>
+                                    <td className="p-4 relative">
+                                        {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
+                                            <div className="flex items-center gap-1.5">
+                                               <div className="size-2 rounded-full bg-emerald-500" />
+                                               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Published</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5">
+                                               <div className="size-2 rounded-full bg-amber-500" />
+                                               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Draft</span>
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="p-4 relative text-center" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" className="h-8 px-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 hover:text-primary transition-all" onClick={(e) => handleGradeClick(grade, e)}>
+                                                Details
+                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary transition-all">
+                                                        <MoreVertical size={14} />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
+                                                    <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); handleGradeClick(grade); }}>
+                                                        <Eye size={14} /> View Details
                                                     </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
-                                                    <Trash2 size={14} /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-          </div>
+                                                    <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
+                                                        <Edit size={14} /> Edit
+                                                    </DropdownMenuItem>
+                                                    {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
+                                                        <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
+                                                            <Send size={14} /> Publish
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
+                                                        <Trash2 size={14} /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Sliding Pagination Control */}

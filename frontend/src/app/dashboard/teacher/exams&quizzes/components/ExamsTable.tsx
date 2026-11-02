@@ -167,23 +167,28 @@ export default function ExamsTable({ exams, activeTab, viewMode = 'list', curren
     if (itemType === 'assignment') return `/dashboard/teacher/assignments/${exam.id}?edit=true`;
 
     const papers: any[] = (exam as any).subjectExamPapers || [];
+    const examId = exam.id;
 
+    // Single-paper exam: go directly to the paper page, pass examId so
+    // the settings modal targets the exam-level settings (not just paper).
     if (papers.length === 1) {
-      // paper.id is already the SubjectPaper ID (backend spreads ...subjectPaper)
-      const paperId = papers[0].id;
-      if (paperId) return `/dashboard/teacher/exams&quizzes/papers/${paperId}`;
+      const paperId = papers[0].id || papers[0].subjectPaper?.id;
+      if (paperId) return `/dashboard/teacher/exams&quizzes/papers/${paperId}?examId=${examId}`;
     }
 
-    // 0 papers → go to the exam's papers management page to add one
-    // 2+ papers → go to the exam's papers list
-    return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
+    // Multi-paper exam: go to the first paper page; settings will be paper-scoped.
+    if (papers.length > 1) {
+      const paperId = papers[0].id || papers[0].subjectPaper?.id;
+      if (paperId) return `/dashboard/teacher/exams&quizzes/papers/${paperId}?examId=${examId}&multi=true`;
+    }
+
+    // 0 papers — nowhere to navigate to a paper yet; fall back to exam overview
+    return `/dashboard/teacher/exams&quizzes?nopapers=${examId}`;
   };
 
   const getExamDestinationLink = (exam: any) => {
-    const itemType = getItemType(exam);
-    if (itemType === 'subject-papers') return `/dashboard/teacher/exams&quizzes/papers/${exam.id}`;
-    if (itemType === 'assignment') return `/dashboard/teacher/assignments/${exam.id}`;
-    return `/dashboard/teacher/exams&quizzes/${exam.id}/papers`;
+    // Card click uses the same logic as the edit button — always land on the paper page.
+    return getEditLink(exam);
   };
 
   if (viewMode === 'grid') {

@@ -176,6 +176,10 @@ export function StudentAcademicLockModal({
     onClose();
   };
 
+  if (!hasSchool) {
+    return null;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl sm:max-w-3xl rounded-3xl bg-white dark:bg-zinc-950 border border-slate-200/80 dark:border-zinc-800 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">

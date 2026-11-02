@@ -68,11 +68,11 @@ import { downloadIndividualResultsAsZip } from './utils/batchPDFDownloader';
 import InstitutionReportModal from './components/InstitutionReportModal';
 import GradeHub from './components/GradeHub';
 import Pagination from './components/Pagination';
-import FinalResultsTab from './components/FinalResultsTab';
 import { useGradeHub } from '@/lib/api/hooks/useGrades';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { groupByDate } from './utils/dateSectioning';
 
 export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
@@ -84,7 +84,7 @@ export default function AdminGradesDashboard() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedPaperId, setSelectedPaperId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers' | 'ca' | 'assignment' | 'test' | 'final'>('exams');
+  const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers' | 'ca' | 'assignment' | 'test'>('exams');
   const [searchTerm, setSearchTerm] = useState('');
   const [isInstitutionReportModalOpen, setIsInstitutionReportModalOpen] = useState(false);
 
@@ -168,435 +168,283 @@ export default function AdminGradesDashboard() {
     if (uniqueCats.length > 0) console.log('[GradeCategories]', uniqueCats);
   }, [standaloneGrades]);
 
+  const categoryCounts = useMemo(() => {
+    const safeGrades = Array.isArray(standaloneGrades) ? standaloneGrades : (standaloneGrades as any)?.data || [];
+    return {
+      exams: exams?.length || 0,
+      ca: safeGrades.filter((g: any) => {
+        const type = ((g.assessmentType && g.assessmentType !== 'NULL' ? g.assessmentType : g.category) || '').toUpperCase();
+        return type === 'CA' || type === 'MIDTERM' || type.includes('CONTINUOUS');
+      }).length,
+      assignment: safeGrades.filter((g: any) => {
+        const type = ((g.assessmentType && g.assessmentType !== 'NULL' ? g.assessmentType : g.category) || '').toUpperCase();
+        return type === 'ASSIGNMENT' || type.includes('PROJECT') || type.includes('HOMEWORK') || type.includes('CLASSWORK');
+      }).length,
+      test: safeGrades.filter((g: any) => {
+        const type = ((g.assessmentType && g.assessmentType !== 'NULL' ? g.assessmentType : g.category) || '').toUpperCase();
+        return type === 'QUIZ' || type === 'TEST' || type.includes('QUIZ') || type.includes('TEST');
+      }).length,
+      papers: subjectPapers?.length || 0,
+      standalone: safeGrades.length,
+    };
+  }, [exams, standaloneGrades, subjectPapers]);
+
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 pb-20 font-sans">
-      <div className="w-[95%] max-w-[1600px] mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="pb-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div className="space-y-1.5">
-              <div className="flex items-center text-xs text-slate-500 font-medium">
-                <span>Admin</span>
-                <ChevronRight size={14} className="mx-1.5 text-slate-400" />
-                <span className="text-slate-900 dark:text-white">Grades</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white">
-                  Grades
+    <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 p-3.5 sm:p-6 lg:p-8 w-full sm:w-[95%] mx-auto space-y-6">
+      {/* Breadcrumb Navigation */}
+      <nav aria-label="Breadcrumb" className="mb-1 sm:mb-2">
+        <ol className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 flex-wrap">
+          <li className="flex items-center gap-1.5">
+            <button
+              onClick={() => router.push('/dashboard/admin')}
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <GraduationCap size={14} className="text-slate-400" />
+              <span>Dashboard</span>
+            </button>
+          </li>
+          <li>
+            <ChevronRight size={13} className="text-slate-400" />
+          </li>
+          <li>
+            <span className="text-slate-500 dark:text-slate-400">Academics</span>
+          </li>
+          <li>
+            <ChevronRight size={13} className="text-slate-400" />
+          </li>
+          <li className="text-slate-900 dark:text-white font-bold flex items-center gap-1">
+            <Trophy size={13} className="text-indigo-600 dark:text-indigo-400" />
+            <span>Grades & Assessments</span>
+          </li>
+        </ol>
+      </nav>
+
+      {/* Executive Hero Banner Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        {/* Glow Accent */}
+        <div className="absolute top-0 right-0 -mt-14 -mr-14 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="size-14 sm:size-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 border flex items-center justify-center shrink-0 shadow-sm">
+              <Trophy className="size-7 sm:size-8" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Academic Grades & Performance
                 </h1>
                 <TooltipProvider>
                   <Tooltip delayDuration={300}>
                     <TooltipTrigger asChild>
-                      <button type="button" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 focus:outline-none transition-colors mt-1">
-                        <Info size={24} />
+                      <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                        <Info size={16} />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                      Detailed grade summaries, student results, and overall academic progress tracking.
+                    <TooltipContent side="right" className="max-w-xs text-xs z-50">
+                      Comprehensive institutional performance tracking across examinations, continuous assessments, homework assignments, and term finals.
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <p className="text-sm text-slate-500">
-                Detailed grade summaries, student results, and overall progress tracking.
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-2xl">
+                Browse, monitor, and analyze student marks across all subjects, classes, and assessment formats with real-time grading metrics.
               </p>
             </div>
-            
-            <div className="flex items-center gap-4">
-                <Button 
-                  onClick={() => setIsInstitutionReportModalOpen(true)}
-                  className="h-10 px-4 rounded-xl font-medium gap-2 text-sm shadow-sm hover:shadow-md transition-all text-white border-0"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <Download size={16} />
-                  <span>School Report</span>
-                </Button>
-            </div>
           </div>
-        </header>
 
-        {/* Overview Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            {/* Card 1: Total Exams */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="size-10 sm:size-11 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 group-hover:scale-105 transition-transform">
-                        <Trophy size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            Recorded
-                        </span>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
-                                        <Info size={14} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The total number of formal examinations recorded across the school.
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
-                        Total Exams
-                    </span>
-                    <div className="flex items-baseline justify-between mt-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {isLoadingExams ? (
-                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                            ) : (
-                                exams?.length || 0
-                            )}
-                        </h3>
-                        <div className="flex gap-1 items-end h-6">
-                            <div className="w-1 h-3 bg-blue-200 dark:bg-blue-900/60 rounded-full" />
-                            <div className="w-1 h-4 bg-blue-300 dark:bg-blue-800 rounded-full" />
-                            <div className="w-1 h-6 bg-blue-500 rounded-full" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Card 2: Subject Papers */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="size-10 sm:size-11 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40 group-hover:scale-105 transition-transform">
-                        <Layers size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            Papers
-                        </span>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
-                                        <Info size={14} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The total number of subject test and examination papers recorded.
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
-                        Subject Papers
-                    </span>
-                    <div className="flex items-baseline justify-between mt-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {isLoadingPapers ? (
-                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                            ) : (
-                                subjectPapers?.length || 0
-                            )}
-                        </h3>
-                        <div className="flex gap-1 items-end h-6">
-                            <div className="w-1 h-2.5 bg-purple-200 dark:bg-purple-900/60 rounded-full" />
-                            <div className="w-1 h-5 bg-purple-300 dark:bg-purple-800 rounded-full" />
-                            <div className="w-1 h-6 bg-purple-500 rounded-full" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Card 3: Graded Students */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="size-10 sm:size-11 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-900/40 group-hover:scale-105 transition-transform">
-                        <Users size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            Attempts
-                        </span>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
-                                        <Info size={14} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The total number of exam submissions and graded student attempts.
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
-                        Students Graded
-                    </span>
-                    <div className="flex items-baseline justify-between mt-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {isLoadingExams ? (
-                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                            ) : (
-                                totalAttemptsCount
-                            )}
-                        </h3>
-                        <div className="flex gap-1 items-end h-6">
-                            <div className="w-1 h-3.5 bg-rose-200 dark:bg-rose-900/60 rounded-full" />
-                            <div className="w-1 h-5 bg-rose-300 dark:bg-rose-800 rounded-full" />
-                            <div className="w-1 h-6 bg-rose-500 rounded-full" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Card 4: Average Score */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between group">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="size-10 sm:size-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40 group-hover:scale-105 transition-transform">
-                        <Award size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            Overall Mean
-                        </span>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none">
-                                        <Info size={14} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-xs leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                                    The global average percentage score computed across all evaluated students.
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide uppercase">
-                        Average Score
-                    </span>
-                    <div className="flex items-baseline justify-between mt-1">
-                        <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {isLoadingExams ? (
-                                <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                            ) : (
-                                `${globalScoreAverage}%`
-                            )}
-                        </h3>
-                        <div className="flex gap-1 items-end h-6">
-                            <div className="w-1 h-3 bg-emerald-200 dark:bg-emerald-900/60 rounded-full" />
-                            <div className="w-1 h-4 bg-emerald-300 dark:bg-emerald-800 rounded-full" />
-                            <div className="w-1 h-6 bg-emerald-500 rounded-full" />
-                        </div>
-                    </div>
-                </div>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsInstitutionReportModalOpen(true)}
+              className="h-11 px-4 sm:px-5 rounded-xl border border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-bold text-xs sm:text-sm gap-2 shadow-xs cursor-pointer"
+            >
+              <Download size={16} className="text-indigo-600 dark:text-indigo-400" />
+              <span>Institutional School Report</span>
+            </Button>
+          </div>
         </div>
 
+        {/* Executive KPI Stats Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80">
+          <div>
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Total Formal Exams
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums mt-0.5">
+              {isLoadingExams ? '—' : exams?.length || 0}
+            </p>
+          </div>
 
-        {/* Operational Control Tabs */}
-        <div className="mb-6 lg:mb-8 bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                {[
-                  { id: 'exams', label: 'Exams', icon: Trophy },
-                  { id: 'ca', label: 'Continuous Assessments', icon: CheckCircle2 },
-                  { id: 'assignment', label: 'Assignments', icon: BookOpen },
-                  { id: 'test', label: 'Quizzes / Tests', icon: FileText },
-                  { id: 'papers', label: 'Papers', icon: Layers },
-                  { id: 'standalone', label: 'All Grades', icon: Award },
-                  { id: 'final', label: 'Final Results', icon: BarChart3 },
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={cn(
-                        "flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all whitespace-nowrap rounded-xl",
-                        isActive
-                          ? "text-white shadow-sm shadow-blue-500/20"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                      )}
-                      style={{ backgroundColor: isActive ? primaryColor : 'transparent' }}
-                    >
-                      <Icon size={15} className={isActive ? "text-white" : "text-slate-400"} />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-            </div>
+          <div>
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Active Subject Papers
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums mt-0.5">
+              {isLoadingPapers ? '—' : subjectPapers?.length || 0}
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Student Submissions
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 tabular-nums mt-0.5">
+              {isLoadingExams ? '—' : totalAttemptsCount}
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Institutional Mean
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
+              {isLoadingExams ? '—' : `${globalScoreAverage}%`}
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Category Tabs Strip */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'exams', label: 'Terminal Exams', shortLabel: 'Exams', icon: Trophy, activeBg: 'bg-rose-600', activeText: 'text-white', iconColor: 'text-rose-600 dark:text-rose-400' },
+            { id: 'ca', label: 'Continuous Assessment', shortLabel: 'CA', icon: CheckCircle2, activeBg: 'bg-blue-600', activeText: 'text-white', iconColor: 'text-blue-600 dark:text-blue-400' },
+            { id: 'assignment', label: 'Assignments', shortLabel: 'Assignments', icon: BookOpen, activeBg: 'bg-emerald-600', activeText: 'text-white', iconColor: 'text-emerald-600 dark:text-emerald-400' },
+            { id: 'test', label: 'Quizzes / Tests', shortLabel: 'Quizzes / Tests', icon: FileText, activeBg: 'bg-amber-600', activeText: 'text-white', iconColor: 'text-amber-600 dark:text-amber-400' },
+            { id: 'papers', label: 'Subject Papers', shortLabel: 'Papers', icon: Layers, activeBg: 'bg-purple-600', activeText: 'text-white', iconColor: 'text-purple-600 dark:text-purple-400' },
+            { id: 'standalone', label: 'All Grades Directory', shortLabel: 'All Grades', icon: Award, activeBg: 'bg-indigo-600', activeText: 'text-white', iconColor: 'text-indigo-600 dark:text-indigo-400' },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const count = categoryCounts[tab.id as keyof typeof categoryCounts] || 0;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`
+                  flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap cursor-pointer shrink-0
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+                  ${isActive 
+                    ? `${tab.activeBg} ${tab.activeText} shadow-md shadow-indigo-600/20 dark:shadow-none` 
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                  }
+                `}
+              >
+                <Icon size={16} className={isActive ? 'text-white' : tab.iconColor} />
+                <span>{tab.label}</span>
+                {count > 0 && (
+                  <span
+                    className={`
+                      px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black tabular-nums transition-colors
+                      ${isActive 
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                      }
+                    `}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
         {/* Dynamic Content Terminal */}
         <AnimatePresence mode="wait">
           {activeTab === 'exams' ? (
             <motion.section 
               key="exams"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-6"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
-                    <Trophy size={24} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Exams</h2>
-                      <TooltipProvider>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
-                              <Info size={16} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                            Overview of all formal examinations.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="text-xs lg:text-sm font-medium text-slate-500">Overview of all formal examinations.</p>
-                  </div>
+              {selectedExamId && (
+                <div className="flex items-center justify-between">
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleBackToExams} 
+                    className="h-10 px-4 rounded-xl font-bold text-xs gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 cursor-pointer"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back to All Exams</span>
+                  </Button>
                 </div>
-                {selectedExamId && (
-                   <Button variant="ghost" onClick={handleBackToExams} className="h-10 px-4 sm:h-14 sm:px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                      <ArrowLeft size={16} strokeWidth={3} />
-                      All Exams
-                   </Button>
-                )}
-              </div>
+              )}
               
-              <div className="bg-white dark:bg-slate-900/50 rounded-2xl lg:rounded-[4rem] border border-slate-100 dark:border-white/5 p-3 sm:p-6 lg:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none min-h-[400px] lg:min-h-[600px] overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: primaryColor, opacity: 0.2 }} />
-                <ExamGradesFlow 
-                  exams={exams || []} 
-                  selectedExamId={selectedExamId}
-                  setSelectedExamId={setSelectedExamId}
-                  selectedStudentId={selectedStudentId}
-                  setSelectedStudentId={setSelectedStudentId}
-                  selectedPaperId={selectedPaperId}
-                  setSelectedPaperId={setSelectedPaperId}
-                  onBackToExams={handleBackToExams}
-                  onBackToStudents={handleBackToStudents}
-                  isLoading={isLoadingExams}
-                  school={school}
-                  primaryColor={primaryColor}
-                  schoolId={schoolId}
-                />
-              </div>
+              <ExamGradesFlow 
+                exams={exams || []} 
+                selectedExamId={selectedExamId}
+                setSelectedExamId={setSelectedExamId}
+                selectedStudentId={selectedStudentId}
+                setSelectedStudentId={setSelectedStudentId}
+                selectedPaperId={selectedPaperId}
+                setSelectedPaperId={setSelectedPaperId}
+                onBackToExams={handleBackToExams}
+                onBackToStudents={handleBackToStudents}
+                isLoading={isLoadingExams}
+                school={school}
+                primaryColor={primaryColor}
+                schoolId={schoolId}
+              />
             </motion.section>
           ) : ['ca', 'test'].includes(activeTab) ? (
             <motion.section 
               key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-6"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
-                    <FileText size={24} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                        {activeTab === 'ca' ? 'Continuous Assessments' : 
-                         'Quizzes & Tests'}
-                      </h2>
-                      <TooltipProvider>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
-                              <Info size={16} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                            {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 'Overview of quizzes and tests.'}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="text-xs lg:text-sm font-medium text-slate-500">
-                      {activeTab === 'ca' ? 'Overview of all Continuous Assessments.' : 
-                       'Overview of quizzes and tests.'}
-                    </p>
-                  </div>
+              {selectedExamId && (
+                <div className="flex items-center justify-between">
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleBackToExams} 
+                    className="h-10 px-4 rounded-xl font-bold text-xs gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 cursor-pointer"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back</span>
+                  </Button>
                 </div>
-                {selectedExamId && (
-                   <Button variant="ghost" onClick={handleBackToExams} className="h-10 px-4 sm:h-14 sm:px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                      <ArrowLeft size={16} strokeWidth={3} />
-                      Back
-                   </Button>
-                )}
-              </div>
+              )}
               
-              <div className="bg-white dark:bg-slate-900/50 rounded-2xl lg:rounded-[4rem] border border-slate-100 dark:border-white/5 p-3 sm:p-6 lg:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none min-h-[400px] lg:min-h-[600px] overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: primaryColor, opacity: 0.2 }} />
-                <ExamGradesFlow 
-                  activeTab={activeTab}
-                  exams={exams || []} 
-                  selectedExamId={selectedExamId}
-                  setSelectedExamId={setSelectedExamId}
-                  selectedStudentId={selectedStudentId}
-                  setSelectedStudentId={setSelectedStudentId}
-                  selectedPaperId={selectedPaperId}
-                  setSelectedPaperId={setSelectedPaperId}
-                  onBackToExams={handleBackToExams}
-                  onBackToStudents={handleBackToStudents}
-                  isLoading={isLoadingExams}
-                  school={school}
-                  primaryColor={primaryColor}
-                  schoolId={schoolId}
-                />
-              </div>
+              <ExamGradesFlow 
+                activeTab={activeTab}
+                exams={exams || []} 
+                selectedExamId={selectedExamId}
+                setSelectedExamId={setSelectedExamId}
+                selectedStudentId={selectedStudentId}
+                setSelectedStudentId={setSelectedStudentId}
+                selectedPaperId={selectedPaperId}
+                setSelectedPaperId={setSelectedPaperId}
+                onBackToExams={handleBackToExams}
+                onBackToStudents={handleBackToStudents}
+                isLoading={isLoadingExams}
+                school={school}
+                primaryColor={primaryColor}
+                schoolId={schoolId}
+              />
             </motion.section>
           ) : ['standalone', 'assignment'].includes(activeTab) ? (
             <motion.section 
               key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-6"
             >
-              <div className="flex items-center gap-4">
-                <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
-                  <FileText size={24} />
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                        {activeTab === 'assignment' ? 'Assignments' : 'All Student Grades'}
-                      </h2>
-                      <TooltipProvider>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
-                              <Info size={16} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                            {activeTab === 'assignment' ? 'Comprehensive record of all individual assignment grades and scores.' : 'Comprehensive record of all individual grades and scores.'}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  <p className="text-sm font-medium text-slate-500">
-                    {activeTab === 'assignment' ? 'Comprehensive record of all individual assignment grades and scores.' : 'Comprehensive record of all individual grades and scores.'}
-                  </p>
-                </div>
-              </div>
-              
               <GradeHub 
                 grades={filteredGradesForHub} 
                 isLoading={isLoadingGrades} 
@@ -609,74 +457,15 @@ export default function AdminGradesDashboard() {
                 }}
               />
             </motion.section>
-          ) : activeTab === 'final' ? (
-            <motion.section 
-              key="final"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
-                  <TrendingUp size={24} />
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                        Final Student Results
-                      </h2>
-                      <TooltipProvider>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
-                              <Info size={16} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                            Overall performance aggregates and final end-of-term results for each student.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  <p className="text-sm font-medium text-slate-500">
-                    Comprehensive final result summaries across the institution
-                  </p>
-                </div>
-              </div>
-              <FinalResultsTab schoolId={schoolId} primaryColor={primaryColor} />
-            </motion.section>
           ) : (
             <motion.section 
               key="papers"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-6"
             >
-               <div className="flex items-center gap-4">
-                <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
-                  <BarChart3 size={24} />
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Subject Papers</h2>
-                      <TooltipProvider>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-slate-400 hover:text-blue-500 focus:outline-none ml-1">
-                              <Info size={16} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                            Review results for specific subject papers.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  <p className="text-sm font-medium text-slate-500">Review results for specific subject papers.</p>
-                </div>
-              </div>
 
               <SubjectPapersView 
                 papers={subjectPapers || []} 
@@ -688,7 +477,6 @@ export default function AdminGradesDashboard() {
             </motion.section>
           )}
         </AnimatePresence>
-      </div>
 
       <InstitutionReportModal 
         isOpen={isInstitutionReportModalOpen} 
@@ -722,7 +510,7 @@ function ExamGradesFlow({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
 
   // Default to grid on mobile
   useEffect(() => {
@@ -762,6 +550,16 @@ function ExamGradesFlow({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const examGroups = useMemo(() => {
+    return groupByDate<{ exam: any; globalIndex: number }>(
+      paginatedExams.map((exam: any, idx: number) => ({
+        exam,
+        globalIndex: (currentPage - 1) * itemsPerPage + idx + 1,
+      })),
+      (item) => item.exam?.createdAt || item.exam?.updatedAt || item.exam?.startDate
+    );
+  }, [paginatedExams, currentPage, itemsPerPage]);
 
   const { totalAttempts, totalQuestions, totalPapers } = useMemo(() => {
     let attempts = 0;
@@ -972,187 +770,189 @@ function ExamGradesFlow({
            <p className="text-sm font-medium text-slate-500">No exams found matching your criteria.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {viewMode === 'list' ? (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Exam Details</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Papers</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Questions</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Students</th>
-                                <th className="p-4 w-12"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                            {paginatedExams.map((exam: any, index: number) => (
-                                <tr 
-                                    key={exam.id} 
-                                    onClick={() => setSelectedExamId(exam.id)}
-                                    className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer"
-                                >
-                                    <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
-                                        #{index + 1 + (currentPage - 1) * itemsPerPage}
-                                    </td>
-                                    <td className="p-4 relative">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
-                                                <Trophy size={18} strokeWidth={2.5} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                                                    {exam.title}
-                                                </h3>
-                                                <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                                                    <span>{exam.category || 'General'}</span>
-                                                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                                    <span>Class {exam.class?.name || "Global"}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 relative text-center">
-                                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam.totalPapers || 0}</span>
-                                    </td>
-                                    <td className="p-4 relative text-center">
-                                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam.totalQuestions || 0}</span>
-                                    </td>
-                                    <td className="p-4 relative text-center">
-                                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam._count?.examAttempts || 0}</span>
-                                    </td>
-                                    <td className="p-4 relative text-center">
-                                        <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
-                                            <ChevronRight size={18} />
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="space-y-6">
+                    {examGroups.map((section) => (
+                        <div key={section.label} className="space-y-3">
+                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                <div className="size-2 rounded-full bg-indigo-500" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                    {section.label}
+                                </h4>
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                    {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                                </span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Exam Details</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Papers</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Questions</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Students</th>
+                                            <th className="p-4 w-12"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                                        {section.items.map(({ exam, globalIndex }) => (
+                                            <tr 
+                                                key={exam.id} 
+                                                onClick={() => setSelectedExamId(exam.id)}
+                                                className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer"
+                                            >
+                                                <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                                    #{globalIndex}
+                                                </td>
+                                                <td className="p-4 relative">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
+                                                            <Trophy size={18} strokeWidth={2.5} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                                {exam.title}
+                                                            </h3>
+                                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                                                                <span>{exam.category || 'General'}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                                                <span>Class {exam.class?.name || "Global"}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam.totalPapers || 0}</span>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam.totalQuestions || 0}</span>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{exam._count?.examAttempts || 0}</span>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                                                        <ChevronRight size={18} />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                    {paginatedExams.map((exam: any, index: number) => {
-                        const isQuiz = exam.category === 'QUIZ';
-                        const isCA = (exam.category as string) === 'CA';
-                        const isExam = !isQuiz && !isCA;
+                <div className="space-y-8">
+                    {examGroups.map((section) => (
+                        <div key={section.label} className="space-y-4">
+                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                <div className="size-2 rounded-full bg-indigo-500" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                    {section.label}
+                                </h4>
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                    {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                                </span>
+                            </div>
 
-                        const theme = isQuiz ? {
-                            border: 'border-orange-500/20 hover:border-orange-500/50',
-                            bg: 'bg-gradient-to-br from-white to-orange-50 dark:from-slate-900 dark:to-orange-950/20',
-                            iconBg: 'bg-orange-500 text-white shadow-orange-500/30',
-                            textHighlight: 'text-orange-600 dark:text-orange-400',
-                            statusBg: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-                            icon: PenTool,
-                            accentHover: 'group-hover:bg-orange-500 group-hover:text-white'
-                        } : isCA ? {
-                            border: 'border-emerald-500/20 hover:border-emerald-500/50',
-                            bg: 'bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20',
-                            iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
-                            textHighlight: 'text-emerald-600 dark:text-emerald-400',
-                            statusBg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                            icon: BookOpen,
-                            accentHover: 'group-hover:bg-emerald-500 group-hover:text-white'
-                        } : {
-                            border: 'border-blue-500/20 hover:border-blue-500/50',
-                            bg: 'bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20',
-                            iconBg: 'bg-blue-600 text-white shadow-blue-600/30',
-                            textHighlight: 'text-blue-600 dark:text-blue-400',
-                            statusBg: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                            icon: FileText,
-                            accentHover: 'group-hover:bg-blue-600 group-hover:text-white'
-                        };
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                                {section.items.map(({ exam }, index: number) => {
+                                    const isQuiz = exam.category === 'QUIZ';
+                                    const isCA = (exam.category as string) === 'CA';
+                                    const isExam = !isQuiz && !isCA;
 
-                        const Icon = theme.icon;
+                                    const theme = isQuiz ? {
+                                        border: 'border-orange-500/20 hover:border-orange-500/50',
+                                        bg: 'bg-gradient-to-br from-white to-orange-50 dark:from-slate-900 dark:to-orange-950/20',
+                                        iconBg: 'bg-orange-500 text-white shadow-orange-500/30',
+                                        textHighlight: 'text-orange-600 dark:text-orange-400',
+                                        statusBg: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                                        icon: PenTool,
+                                        accentHover: 'group-hover:bg-orange-500 group-hover:text-white'
+                                    } : isCA ? {
+                                        border: 'border-emerald-500/20 hover:border-emerald-500/50',
+                                        bg: 'bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20',
+                                        iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
+                                        textHighlight: 'text-emerald-600 dark:text-emerald-400',
+                                        statusBg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+                                        icon: BookOpen,
+                                        accentHover: 'group-hover:bg-emerald-500 group-hover:text-white'
+                                    } : {
+                                        border: 'border-blue-500/20 hover:border-blue-500/50',
+                                        bg: 'bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20',
+                                        iconBg: 'bg-blue-600 text-white shadow-blue-600/30',
+                                        textHighlight: 'text-blue-600 dark:text-blue-400',
+                                        statusBg: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                                        icon: FileText,
+                                        accentHover: 'group-hover:bg-blue-600 group-hover:text-white'
+                                    };
 
-                        return (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                key={exam.id} 
-                                onClick={() => setSelectedExamId(exam.id)}
-                                className="group relative overflow-hidden transition-all duration-300 cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1" 
-                            >
-                                <div className={`relative rounded-3xl border ${theme.border} ${theme.bg} overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 h-full w-full group`}>
-                                    <div className={`h-1.5 w-full ${theme.iconBg} absolute top-0 left-0`} />
-                                    <div className="p-7 relative z-10">
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className={`p-3.5 rounded-2xl shadow-lg ${theme.iconBg} transition-transform duration-500 group-hover:rotate-6`}>
-                                                <Icon className="h-6 w-6" strokeWidth={2.5} />
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-3">
-                                                <span className={`px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full ${theme.statusBg}`}>
-                                                    {exam.status || "UNKNOWN"}
-                                                </span>
-                                            </div>
-                                        </div>
+                                    const Icon = theme.icon;
 
-                                        <div>
-                                            <h3 className={`font-black text-2xl mb-2 text-slate-900 dark:text-white line-clamp-1 transition-colors group-hover:${theme.textHighlight}`}>
-                                                {exam.title}
-                                            </h3>
-                                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 line-clamp-2 h-10">
-                                                {exam.description || "No description provided."}
-                                            </p>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-y-4 mt-6">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Scope</span>
-                                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                    <School className={`h-4 w-4 ${theme.textHighlight}`} />
-                                                    <span className="truncate">{exam.scope?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "Internal"}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mode</span>
-                                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                    <Laptop className={`h-4 w-4 ${theme.textHighlight}`} />
-                                                    <span className="truncate">{exam.mode?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "Cbt"}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col col-span-2 border-t border-slate-200 dark:border-white/10 pt-4 mt-2">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Departments</span>
-                                                {exam.departments && exam.departments.length > 0 ? (
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {exam.departments.map((d: any) => (
-                                                            <span key={d.department?.id} className={`text-[10px] px-2 py-1 rounded-md border font-bold uppercase tracking-wider ${theme.statusBg} border-transparent`}>
-                                                                {d.department?.name}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded-md font-bold uppercase tracking-widest inline-block">
-                                                        General Assessment
+                                    return (
+                                        <div 
+                                            key={exam.id} 
+                                            onClick={() => setSelectedExamId(exam.id)}
+                                            className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex flex-col justify-between group cursor-pointer relative overflow-hidden`}
+                                        >
+                                            <div>
+                                                {/* Header: Category & Status */}
+                                                <div className="flex items-center justify-between gap-2 mb-3">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${theme.statusBg}`}>
+                                                        {exam.category || 'EXAM'}
                                                     </span>
-                                                )}
-                                            </div>
-                                        </div>
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                        {exam.status || "PUBLISHED"}
+                                                    </span>
+                                                </div>
 
-                                        <div className="flex justify-between items-end mt-8 pt-5 border-t border-slate-200 dark:border-white/10 pointer-events-none">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Created</span>
-                                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                    <Calendar className="h-3.5 w-3.5" />
-                                                    {exam.createdAt ? format(new Date(exam.createdAt), 'MMM d, yyyy') : "N/A"}
+                                                {/* Title & Description */}
+                                                <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                    {exam.title}
+                                                </h3>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 mb-4">
+                                                    {exam.description || "Comprehensive examination assessment record."}
+                                                </p>
+
+                                                {/* Details Grid */}
+                                                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 mb-4">
+                                                    <div>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Class / Scope</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300 truncate block mt-0.5">
+                                                            {exam.class?.name ? `Class ${exam.class.name}` : exam.scope?.replace('_', ' ') || "Global"}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Papers / Questions</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300 block mt-0.5">
+                                                            {exam.totalPapers || 0} papers • {exam.totalQuestions || 0} qs
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 ${theme.accentHover} transition-all duration-300`}>
-                                                <ArrowRight className="h-5 w-5" />
+
+                                            {/* Footer */}
+                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400">
+                                                <div className="flex items-center gap-1.5 font-medium">
+                                                    <Calendar size={13} />
+                                                    <span>{exam.createdAt ? format(new Date(exam.createdAt), 'MMM d, yyyy') : "N/A"}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1 font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
+                                                    <span>View Results</span>
+                                                    <ChevronRight size={14} />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    })}
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
             {filteredExams.length > 0 && (
@@ -1192,7 +992,7 @@ function ExamStudentList({
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
 
   const handleBatchDownloadZip = async () => {
     if (!attempts || attempts.length === 0) return;
@@ -1622,7 +1422,7 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: hasPerformanceAccess } = useFeatureAccess('aiInsights', school?.id || schoolId);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const [circleSize, setCircleSize] = useState(320);
   const [strokeWidth, setStrokeWidth] = useState(28);
 
@@ -1905,11 +1705,12 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
  * Subject Papers View - Level 1 for Papers
  */
 function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, schoolId }: any) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isNavigating, setIsNavigating] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
 
   // Default to grid on mobile
   useEffect(() => {
@@ -1950,6 +1751,16 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const paperGroups = useMemo(() => {
+    return groupByDate<{ paper: any; globalIndex: number }>(
+      paginatedPapers.map((paper: any, idx: number) => ({
+        paper,
+        globalIndex: (currentPage - 1) * itemsPerPage + idx + 1,
+      })),
+      (item) => item.paper?.createdAt || item.paper?.updatedAt
+    );
+  }, [paginatedPapers, currentPage, itemsPerPage]);
 
   const { totalAttempts, totalQuestions } = useMemo(() => {
     let attempts = 0;
@@ -2141,181 +1952,183 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, sch
                  <p className="text-sm font-medium text-slate-500">No Papers Found</p>
               </div>
             ) : (
-                viewMode === 'list' ? (
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Details</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Linked Exam</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Subject</th>
-                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Questions</th>
-                                    <th className="p-4 w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                                {paginatedPapers.map((paper: any, index: number) => (
-                                    <tr 
-                                        key={paper.id}
-                                        onClick={() => {
-                                            setIsNavigating(paper.id);
-                                            onSelectPaper(paper.exams?.[0]?.examId || 'none', paper.id);
-                                        }}
-                                        className={cn(
-                                            "group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer",
-                                            isNavigating === paper.id ? "opacity-70 pointer-events-none" : ""
-                                        )}
-                                    >
-                                        <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
-                                            #{index + 1 + (currentPage - 1) * itemsPerPage}
-                                        </td>
-                                        <td className="p-4 relative">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-bold text-lg text-slate-500 group-hover:text-primary transition-colors shrink-0">
-                                                    {paper.subject?.name?.charAt(0) || 'P'}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                                                        {paper.title}
-                                                    </h3>
-                                                    <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
-                                                        {paper.subject?.name || 'Unassigned'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 relative text-center">
-                                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                                                {paper.exams?.[0]?.exam?.title || 'Standalone'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 relative text-center">
-                                            <span className="text-sm font-semibold text-slate-900 dark:text-white">{paper.subject?.name || 'Unassigned'}</span>
-                                        </td>
-                                        <td className="p-4 relative text-center">
-                                            <span className="text-sm font-semibold text-slate-900 dark:text-white">{paper.questions?.length || 0}</span>
-                                        </td>
-                                        <td className="p-4 relative text-center">
-                                            <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
-                                                {isNavigating === paper.id ? (
-                                                    <Loader2 className="animate-spin h-4 w-4" />
-                                                ) : (
-                                                    <ChevronRight className="h-5 w-5" />
+        <div className="space-y-8">
+            {viewMode === 'list' ? (
+                <div className="space-y-6">
+                    {paperGroups.map((section) => (
+                        <div key={section.label} className="space-y-3">
+                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                <div className="size-2 rounded-full bg-indigo-500" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                    {section.label}
+                                </h4>
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                    {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                                </span>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Details</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Linked Exam</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Subject</th>
+                                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Questions</th>
+                                            <th className="p-4 w-12"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                                        {section.items.map(({ paper, globalIndex }) => (
+                                            <tr 
+                                                key={paper.id}
+                                                onClick={() => {
+                                                    setIsNavigating(paper.id);
+                                                    onSelectPaper(paper.exams?.[0]?.examId || 'none', paper.id);
+                                                }}
+                                                className={cn(
+                                                    "group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative cursor-pointer",
+                                                    isNavigating === paper.id ? "opacity-70 pointer-events-none" : ""
                                                 )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {paginatedPapers.map((paper: any, index: number) => {
-                        const getStatusStyles = (status: string) => {
-                          switch (status) {
-                            case 'DRAFT': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-                            case 'REVIEW': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
-                            case 'APPROVED': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
-                            case 'REJECTED': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
-                            case 'PUBLISHED': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
-                            default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-                          }
-                        };
-                        const statusStyle = getStatusStyles(paper.status || 'PUBLISHED');
+                                            >
+                                                <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
+                                                    #{globalIndex}
+                                                </td>
+                                                <td className="p-4 relative">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-bold text-lg text-slate-500 group-hover:text-primary transition-colors shrink-0">
+                                                            {paper.subject?.name?.charAt(0) || 'P'}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                                {paper.title}
+                                                            </h3>
+                                                            <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                                                                {paper.subject?.name || 'Unassigned'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                                        {paper.exams?.[0]?.exam?.title || 'Standalone'}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{paper.subject?.name || 'Unassigned'}</span>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{paper.questions?.length || 0}</span>
+                                                </td>
+                                                <td className="p-4 relative text-center">
+                                                    <div className="h-8 w-8 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                                                        {isNavigating === paper.id ? (
+                                                            <Loader2 className="animate-spin h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronRight className="h-5 w-5" />
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-8">
+                    {paperGroups.map((section) => (
+                        <div key={section.label} className="space-y-4">
+                            <div className="flex items-center gap-2.5 px-1 py-1">
+                                <div className="size-2 rounded-full bg-indigo-500" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                    {section.label}
+                                </h4>
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                    {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                                </span>
+                            </div>
 
-                        return (
-                            <div className="relative rounded-3xl border border-purple-500/20 bg-gradient-to-br from-white to-purple-50 dark:from-slate-900 dark:to-purple-950/20 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-purple-500/50 hover:-translate-y-1.5 h-full w-full group">
-                                <div className="h-1.5 w-full bg-purple-500 absolute top-0 left-0" />
-                                <div className="p-7 relative z-10">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="p-3.5 rounded-2xl shadow-lg bg-purple-600 text-white shadow-purple-600/30 transition-transform duration-500 group-hover:-rotate-6">
-                                            <Layers className="h-6 w-6" strokeWidth={2.5} />
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-3">
-                                            <span className={`px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full ${statusStyle}`}>
-                                                {paper.status || 'PUBLISHED'}
-                                            </span>
-                                        </div>
-                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {section.items.map(({ paper }, index: number) => {
+                                    const getStatusStyles = (status: string) => {
+                                        switch (status) {
+                                            case 'DRAFT': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                                            case 'REVIEW': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+                                            case 'APPROVED': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+                                            case 'REJECTED': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+                                            case 'PUBLISHED': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+                                            default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                                        }
+                                    };
+                                    const statusStyle = getStatusStyles(paper.status || 'PUBLISHED');
 
-                                    <div>
-                                        <h3 className="font-black text-2xl mb-2 text-slate-900 dark:text-white line-clamp-1 transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
-                                            {paper.title || `${paper.subject?.name} Paper`}
-                                        </h3>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-y-4 mt-6">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Subject</span>
-                                            <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                <BookOpen className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                                <span className="truncate">{paper.subject?.name || 'Unknown'}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Teacher</span>
-                                            <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                                <span className="truncate">{paper.teacher?.name || 'Unassigned'}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col col-span-2 border-t border-slate-200 dark:border-white/10 pt-4 mt-2">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Linked Exams</span>
-                                            {paper.exams && paper.exams.length > 0 ? (
-                                                <div className="flex items-center text-sm font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-3 py-2 rounded-xl">
-                                                    <Calendar className="h-4 w-4 mr-2" />
-                                                    <span className="truncate">
-                                                        {paper.exams.length === 1 
-                                                        ? paper.exams[0].exam?.title
-                                                        : `${paper.exams[0].exam?.title} (+${paper.exams.length - 1} more)`
-                                                        }
+                                    return (
+                                        <div 
+                                            key={paper.id} 
+                                            onClick={() => router.push(`/dashboard/admin/exams/papers/${paper.id}`)}
+                                            className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between group cursor-pointer relative overflow-hidden"
+                                        >
+                                            <div>
+                                                {/* Header: Category & Status */}
+                                                <div className="flex items-center justify-between gap-2 mb-3">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                                                        PAPER
+                                                    </span>
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusStyle}`}>
+                                                        {paper.status || 'PUBLISHED'}
                                                     </span>
                                                 </div>
-                                            ) : (
-                                                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded-md font-bold uppercase tracking-widest inline-block">
-                                                    Standalone Paper
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
 
-                                    <div className="flex justify-between items-end mt-8 pt-5 border-t border-slate-200 dark:border-white/10 pointer-events-none">
-                                        <div className="flex gap-6">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</span>
-                                                <div className="flex items-center gap-1.5 text-lg font-black text-slate-700 dark:text-slate-300">
-                                                    {paper.durationMinutes || 0}<span className="text-sm font-medium text-slate-400">m</span>
+                                                {/* Title & Subject */}
+                                                <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                                    {paper.title || `${paper.subject?.name} Paper`}
+                                                </h3>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-1 mb-4">
+                                                    Teacher: <span className="font-semibold text-slate-700 dark:text-slate-300">{paper.teacher?.name || 'Faculty Staff'}</span>
+                                                </p>
+
+                                                {/* Details Grid */}
+                                                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 mb-4">
+                                                    <div>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Subject</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300 truncate block mt-0.5">
+                                                            {paper.subject?.name || 'Unassigned'}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Marks & Time</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300 block mt-0.5">
+                                                            {paper.totalMarks || 0} pts • {paper.durationMinutes || 0}m
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 my-auto" />
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</span>
-                                                <div className="flex items-center gap-1.5 text-lg font-black text-slate-700 dark:text-slate-300">
-                                                    {paper.totalMarks || 0}<span className="text-sm font-medium text-slate-400">pts</span>
+
+                                            {/* Footer */}
+                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400">
+                                                <div className="flex items-center gap-1.5 font-medium truncate max-w-[170px]">
+                                                    <BookOpen size={13} className="text-slate-400 shrink-0" />
+                                                    <span className="truncate">{paper.exams?.[0]?.exam?.title || 'Standalone Paper'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1 font-bold text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform shrink-0">
+                                                    <span>View Paper</span>
+                                                    <ChevronRight size={14} />
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
-                                            {isNavigating === paper.id ? (
-                                                <Loader2 className="animate-spin h-5 w-5" />
-                                            ) : (
-                                                <ArrowRight className="h-5 w-5" />
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                    );
+                                })}
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
-                )
             )}
+        </div>
+          )}
           {filteredPapers.length > 0 && (
               <Pagination 
                 currentPage={currentPage}

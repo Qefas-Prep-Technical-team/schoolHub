@@ -26,6 +26,7 @@ const EMPTY_ARRAY: unknown[] = [];
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
 import { useSchoolDepartments, useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
+import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useGradeHub } from '@/lib/api/hooks/useGrades';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { gradeService } from '@/lib/api/services/gradeService';
@@ -135,14 +136,26 @@ export default function RecordScoreEntryModal({
     return getEffectiveGradingSystem((gradingSystem as any[]) || schoolProfile?.gradingSystem);
   }, [gradingSystem, schoolProfile?.gradingSystem]);
 
+  // Fallback fetch sessions directly if prop sessions is empty
+  const { data: fallbackSessionsData } = useSessions(schoolId);
+  const effectiveSessions = useMemo((): SessionItem[] => {
+    if (Array.isArray(sessions) && sessions.length > 0) {
+      return sessions;
+    }
+    const list = Array.isArray(fallbackSessionsData?.data)
+      ? fallbackSessionsData.data
+      : (Array.isArray(fallbackSessionsData) ? fallbackSessionsData : []);
+    return list as SessionItem[];
+  }, [sessions, fallbackSessionsData]);
+
   // 1. Auto-select current active session and term
   const currentSession = useMemo(() => {
     return (
-      sessions.find(
+      effectiveSessions.find(
         (s) => s.isCurrent === true || s.isActive === true || s.status === 'ACTIVE'
-      ) || sessions[0]
+      ) || effectiveSessions[0]
     );
-  }, [sessions]);
+  }, [effectiveSessions]);
 
   const currentTerm = useMemo((): 'FIRST' | 'SECOND' | 'THIRD' => {
     const raw = currentSession?.currentTerm || currentSession?.term;
@@ -218,7 +231,12 @@ export default function RecordScoreEntryModal({
 
   useEffect(() => {
     if (!isOpen) {
-      prevModalStateRef.current.isOpen = false;
+      prevModalStateRef.current = {
+        isOpen: false,
+        recordId: undefined,
+        classId: undefined,
+      };
+      setHasSyncedGrades(false);
       return;
     }
 
@@ -620,10 +638,12 @@ export default function RecordScoreEntryModal({
     limit: 1000,
   });
 
-  // Reset sync tracking when active configuration or initialRecord changes
+  // Reset sync tracking when active configuration or initialRecord changes or modal opens
   useEffect(() => {
-    setHasSyncedGrades(false);
-  }, [config.classId, config.subject, config.assessmentType, initialRecord?.id]);
+    if (isOpen) {
+      setHasSyncedGrades(false);
+    }
+  }, [isOpen, config.classId, config.subject, config.assessmentType, initialRecord?.id]);
 
   // Construct initial roster from enrollments and sync existing grades / initialScores
   useEffect(() => {
@@ -874,7 +894,11 @@ export default function RecordScoreEntryModal({
       if (!config.subject) {
         throw new Error('Please specify the curriculum subject');
       }
-      const teacherId = (user as any)?.teacherId || (user as any)?.id || undefined;
+      const isTeacherRole = (user as any)?.role === 'TEACHER' || (user as any)?.userType === 'TEACHER';
+      const teacherId = (user as any)?.teacherId || (isTeacherRole ? (user as any)?.id : undefined);
+
+      const resolvedTerm = config.term || currentTerm || 'FIRST';
+      const resolvedSessionId = config.sessionId || currentSession?.id || undefined;
 
       const gradesToSubmit = roster
         .filter((r) => r.score !== '' && r.score !== null && r.score !== undefined)
@@ -891,8 +915,8 @@ export default function RecordScoreEntryModal({
           score: Number(r.score),
           maxMarks: config.maxMarks,
           weight: config.weight,
-          term: config.term,
-          sessionId: config.sessionId,
+          term: resolvedTerm,
+          sessionId: resolvedSessionId,
           releaseDate: config.releaseDate ? new Date(config.releaseDate).toISOString() : null,
           status: targetStatus,
           remarks: r.remarks || undefined,
@@ -921,7 +945,7 @@ export default function RecordScoreEntryModal({
       );
       queryClient.invalidateQueries({ queryKey: ['admin-grades'] });
       queryClient.invalidateQueries({ queryKey: ['offline-grades-history'] });
-      queryClient.invalidateQueries({ queryKey: ['gradeHub'] });
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
       onSavedSuccess();
       onClose();
     },
@@ -930,6 +954,9 @@ export default function RecordScoreEntryModal({
       toast.error(msg);
     },
   });
+
+  const isSavingDraft = saveMutation.isPending && saveMutation.variables === 'DRAFT';
+  const isPublishing = saveMutation.isPending && saveMutation.variables === 'PUBLISHED';
 
   // Calculate live statistics
   const stats = useMemo(() => {
@@ -1156,12 +1183,12 @@ export default function RecordScoreEntryModal({
               variant="outline"
               className="rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
             >
-              {saveMutation.isPending ? (
+              {isSavingDraft ? (
                 <Loader2 size={16} className="animate-spin mr-1.5" />
               ) : (
                 <Save size={16} className="mr-1.5" />
               )}
-              Save Draft
+              {isSavingDraft ? 'Saving Draft...' : 'Save Draft'}
             </Button>
             <Button
               size="sm"
@@ -1173,12 +1200,12 @@ export default function RecordScoreEntryModal({
                   : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
               }`}
             >
-              {saveMutation.isPending ? (
+              {isPublishing ? (
                 <Loader2 size={16} className="animate-spin mr-1.5" />
               ) : (
                 <CheckCircle2 size={16} className="mr-1.5" />
               )}
-              Publish Marks
+              {isPublishing ? 'Publishing...' : 'Publish Marks'}
             </Button>
           </div>
         </div>
@@ -1192,7 +1219,7 @@ export default function RecordScoreEntryModal({
             classes={classes}
             departments={availableDepartments}
             subjects={classSubjects}
-            sessions={sessions}
+            sessions={effectiveSessions}
             isTeacher={isTeacher}
             isLoadingRoster={isRosterLoading}
             isLoadingSubjects={isLoadingTeacherSubjects || isLoadingClassDetails}
@@ -1373,6 +1400,8 @@ export default function RecordScoreEntryModal({
                   onUpdateScore={handleUpdateScore}
                   onUpdateRemarks={handleUpdateRemarks}
                   isSaving={saveMutation.isPending}
+                  isSavingDraft={isSavingDraft}
+                  isPublishing={isPublishing}
                   onSave={(status) => saveMutation.mutate(status)}
                 />
               </div>

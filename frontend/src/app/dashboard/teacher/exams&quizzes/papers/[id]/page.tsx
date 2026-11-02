@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { examService } from "@/lib/api/services/examService";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -66,6 +66,10 @@ export default function TeacherPaperDetailPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const paperId = params.id as string;
+  const searchParams = useSearchParams();
+  const urlExamId = searchParams.get('examId') || null;
+  // multi=true means this paper belongs to a multi-subject exam — settings stay paper-scoped
+  const isMultiPaper = searchParams.get('multi') === 'true';
   const examId = "none";
 
   const { data: paperData, isLoading: isLoadingPaper, isError: isErrorPaper } = useQuery({
@@ -257,17 +261,45 @@ export default function TeacherPaperDetailPage() {
     e.exam?.status === "PUBLISHED" || e.exam?.status === "ONGOING" || e.exam?.status === "COMPLETED"
   );
 
-  // Single-paper types (e.g. CA, QUIZ, ASSIGNMENT, or single subject exams)
+  // -----------------------------------------------------------------------
+  // Exam context: prefer the urlExamId query param over what's on the paper.
+  // This allows the routing layer to explicitly tell us which exam this paper
+  // belongs to, so the settings modal can target the correct exam.
+  // -----------------------------------------------------------------------
+  const { data: urlExamData } = useQuery({
+    queryKey: ["exam", urlExamId],
+    queryFn: () => examService.getExamById(urlExamId!),
+    enabled: !!urlExamId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // mainExam: prefer the URL-resolved exam (more authoritative), fall back to paper.exams[]
+  const mainExam = (urlExamData as any) || paper?.exams?.[0]?.exam || null;
+
+  // isSinglePaperType:
+  //   - false when multi=true in URL (multi-subject exam → settings are paper-scoped)
+  //   - true when examId is present without multi flag (single-subject → settings are exam-scoped)
+  //   - fall back to the existing paper-based heuristic
   const SINGLE_PAPER_TYPES = ['QUIZ', 'CA', 'ASSIGNMENT'];
-  const mainExam = paper?.exams?.[0]?.exam || null;
-  const isSinglePaperType = !!(
-    (paper as any)?.category && SINGLE_PAPER_TYPES.includes((paper as any).category)
-  ) || !!(
-    mainExam && (
-      SINGLE_PAPER_TYPES.includes((mainExam as any).category || (mainExam as any).type || '') ||
-      (mainExam as any).mode === 'SINGLE_SUBJECT'
-    )
-  );
+  const isSinglePaperType: boolean = isMultiPaper
+    ? false
+    : urlExamId
+    ? true
+    : !!(
+        (paper as any)?.category &&
+        SINGLE_PAPER_TYPES.includes((paper as any).category)
+      ) ||
+      !!(
+        mainExam &&
+        (
+          SINGLE_PAPER_TYPES.includes(
+            (mainExam as any).category ||
+              (mainExam as any).type ||
+              ''
+          ) ||
+          (mainExam as any).mode === 'SINGLE_SUBJECT'
+        )
+      );
 
   const effectiveSchoolId = paperSchoolId || fallbackSchoolId;
 

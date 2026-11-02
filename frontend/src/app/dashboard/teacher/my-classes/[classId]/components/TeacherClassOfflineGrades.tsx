@@ -5,7 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useTeacherProfile, useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { isOfflineGradeRecord, normalizeOfflineCategory } from '@/app/dashboard/admin/offline-grades/components/OfflineGradesDashboard';
 import OfflineRecordsList from '@/app/dashboard/admin/offline-grades/components/OfflineRecordsList';
 import RecordScoreEntryModal from '@/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal';
@@ -27,15 +29,23 @@ export default function TeacherClassOfflineGrades({
 }: TeacherClassOfflineGradesProps) {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const { selectedSchoolId } = useDashboardStore();
   const { data: teacherProfile } = useTeacherProfile();
+
+  const currentTeacherId = (user as any)?.id as string | undefined;
+  const storeSchoolId = selectedSchoolId && selectedSchoolId !== currentTeacherId ? selectedSchoolId : undefined;
 
   const userSchoolId =
     (user as any)?.schoolId ||
     (user as any)?.school?.id ||
     user?.schools?.[0]?.schoolId ||
+    (teacherProfile as any)?.activeSchoolId ||
+    (teacherProfile as any)?.primarySchoolId ||
+    (teacherProfile as any)?.school?.id ||
+    teacherClassDetail?.classInfo?.schoolId ||
     '';
 
-  const effectiveSchoolId = propSchoolId || userSchoolId;
+  const effectiveSchoolId = propSchoolId || storeSchoolId || userSchoolId;
   const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   // Fetch subjects strictly assigned to this teacher
@@ -200,14 +210,25 @@ export default function TeacherClassOfflineGrades({
     setIsScoreModalOpen(true);
   };
 
-  const handleDeleteRecord = async (recordId: string) => {
+  const handleDeleteRecord = async (recordId: string, record?: GradeBatchSummary) => {
     try {
-      await gradeService.deleteGrade(recordId);
-      toast.success('Offline assessment record deleted successfully.');
+      const criteria = record ? {
+        classId: record.classId || classId,
+        subject: record.subject,
+        assessmentType: record.assessmentType,
+        category: record.category,
+        term: record.term,
+      } : { classId };
+
+      const res = await gradeService.deleteBatchGrades(recordId, criteria);
+      const count = res?.data?.count || 1;
+      toast.success(`Successfully deleted offline assessment marksheet (${count} student ${count === 1 ? 'grade' : 'grades'} removed).`);
       queryClient.invalidateQueries({ queryKey: ['teacher-class-offline-grades', classId] });
       queryClient.invalidateQueries({ queryKey: ['offline-grades-history'] });
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
+      queryClient.invalidateQueries({ queryKey: ['gradeHub'] });
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to delete offline record.');
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to delete offline record.');
     }
   };
 
@@ -281,6 +302,12 @@ export default function TeacherClassOfflineGrades({
     }];
   }, [classId, teacherClassDetail, effectiveSchoolId]);
 
+  // Fetch academic sessions for the school
+  const { data: sessionsData } = useSessions(effectiveSchoolId);
+  const sessions = useMemo(() => {
+    return Array.isArray(sessionsData?.data) ? sessionsData.data : (Array.isArray(sessionsData) ? sessionsData : []);
+  }, [sessionsData]);
+
   return (
     <div className="w-full max-w-full space-y-6">
       <OfflineRecordsList
@@ -300,6 +327,7 @@ export default function TeacherClassOfflineGrades({
 
       {isScoreModalOpen && (
         <RecordScoreEntryModal
+          key={selectedRecordForEdit ? `edit_${selectedRecordForEdit.id}` : `new_${defaultCategoryForNew || 'cat'}_${classId}`}
           isOpen={isScoreModalOpen}
           onClose={() => {
             setIsScoreModalOpen(false);
@@ -318,7 +346,7 @@ export default function TeacherClassOfflineGrades({
           schoolId={effectiveSchoolId}
           gradingSystem={schoolProfile?.gradingSystem}
           classes={classItem}
-          sessions={[]}
+          sessions={sessions}
           initialRecord={selectedRecordForEdit}
           defaultClassId={classId}
           defaultCategory={defaultCategoryForNew}
