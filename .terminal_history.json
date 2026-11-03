@@ -3,31 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "git push origin",
-      "timestamp": 1785931105891,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "eas build --platform android --profile preview",
-      "timestamp": 1785937014472,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_r7wa3o.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_r7wa3o.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1786007909851,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_z1l947.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_z1l947.ps1\" -ErrorAction SilentlyContinue",
-      "timestamp": 1786007909895,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; if (!(Test-Path \"Mobile\\assets\\images\\splash.png\")) { Copy-Item -Path \"Mobile\\assets\\images\\splash-icon.png\" -Destination \"Mobile\\assets\\images\\splash.png\" }",
-      "timestamp": 1786007910828,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
       "command": "npm start",
       "timestamp": 1786010342984,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\Mobile"
@@ -2501,7 +2476,32 @@
       "command": "npm run dev",
       "timestamp": 1793620565368,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_5afge.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_5afge.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793679462228,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_k0u3as.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_k0u3as.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793679474554,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_gfx1dc.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_gfx1dc.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793679474582,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_oin5r3.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_oin5r3.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793679483699,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_mkvtok.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_mkvtok.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1793693779632,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
     }
   ],
-  "lastUpdated": 1793620565368
+  "lastUpdated": 1793693779633
 }

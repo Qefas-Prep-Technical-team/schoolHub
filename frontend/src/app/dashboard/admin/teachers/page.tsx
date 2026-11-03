@@ -89,7 +89,24 @@ export default function ManageTeachersPage() {
 
     const teachersList = useMemo(() => {
         if (!teachersData || !Array.isArray(teachersData)) return []
-        return teachersData.map((t: any) => ({
+
+        const validTeachers = teachersData.filter((teacher: any) => {
+            const schoolIds = new Set([
+                teacher?.primarySchoolId,
+                teacher?.activeSchoolId,
+                teacher?.currentSchoolId,
+                teacher?.schoolId,
+                teacher?.school?.id,
+                teacher?.currentSchool?.id,
+                teacher?.primarySchool?.id,
+                ...(teacher?.teacherSubjects ?? []).map((ts: any) => ts?.schoolId).filter(Boolean),
+                ...(teacher?.classTeachers ?? []).map((ct: any) => ct?.class?.schoolId).filter(Boolean),
+            ].filter(Boolean));
+
+            return schoolIds.has(schoolId);
+        })
+
+        return validTeachers.map((t: any) => ({
             id: t.id,
             teacherCode: t.teacherCode,
             code: t.teacherCode,
@@ -102,7 +119,7 @@ export default function ManageTeachersPage() {
             primarySchoolId: t.primarySchoolId,
             profileImage: t.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
         }))
-    }, [teachersData])
+    }, [schoolId, teachersData])
 
     const filteredTeachers = useMemo(() => {
         return teachersList.filter(teacher =>

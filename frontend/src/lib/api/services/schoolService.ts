@@ -90,7 +90,25 @@ export const schoolService = {
 
   getTeachers: async (schoolId: string) => {
     const response = await apiClient.get(`/schools/${schoolId}/teachers`);
-    return response.data.data ?? [];
+    const teachers = response.data.data ?? [];
+
+    if (!Array.isArray(teachers)) return [];
+
+    return teachers.filter((teacher: any) => {
+      const schoolMatch = [
+        teacher?.primarySchoolId,
+        teacher?.activeSchoolId,
+        teacher?.currentSchoolId,
+        teacher?.schoolId,
+        teacher?.school?.id,
+        teacher?.currentSchool?.id,
+        teacher?.primarySchool?.id,
+        ...(teacher?.teacherSubjects ?? []).map((ts: any) => ts?.schoolId).filter(Boolean),
+        ...(teacher?.classTeachers ?? []).map((ct: any) => ct?.class?.schoolId).filter(Boolean),
+      ].filter(Boolean);
+
+      return schoolMatch.includes(schoolId);
+    });
   },
 
   getStudents: async (schoolId: string, params?: Record<string, unknown>) => {

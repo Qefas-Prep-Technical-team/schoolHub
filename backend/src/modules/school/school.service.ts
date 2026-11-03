@@ -58,6 +58,8 @@ export const getSchoolTeachersService = async (schoolId: string) => {
         { id: { in: linkedTeacherIds } },
         { primarySchoolId: resolvedId },
         { activeSchoolId: resolvedId },
+        { schoolId: resolvedId },
+        { currentSchoolId: resolvedId },
       ],
     },
     select: {
@@ -70,6 +72,9 @@ export const getSchoolTeachersService = async (schoolId: string) => {
       role: true,
       gender: true,
       primarySchoolId: true,
+      activeSchoolId: true,
+      currentSchoolId: true,
+      schoolId: true,
       isClaimed: true,
       teacherSubjects: {
         include: { subject: true }
