@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Calendar, CheckCircle, FileText, AlertCircle, ChevronRight, Zap , Info} from 'lucide-react';
+import { Clock, Calendar, CheckCircle, FileText, AlertCircle, ChevronRight, Zap, Info } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useState } from 'react';
 
@@ -25,8 +25,8 @@ interface Exam {
 export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  
-  const { data: examsData, isLoading } = useExams({ schoolId });
+
+  const { data: examsData, isLoading } = useExams({ schoolId, limit: 5 });
 
   const exams: Exam[] = (examsData || []).slice(0, 5).map((e: any) => {
     let status: Exam['status'] = 'upcoming';
@@ -85,7 +85,7 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-      
+
       <div className="p-6 pb-4 flex justify-between items-center border-b border-slate-100 dark:border-slate-800">
         <div>
           <h3 className="text-base font-semibold text-slate-800 dark:text-white flex items-center gap-2">
@@ -106,12 +106,12 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
       <div className="flex-1 space-y-2 p-4 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
           </div>
         ) : exams.length === 0 ? (
           <div className="py-12 flex flex-col items-center justify-center text-center">
             <div className="h-12 w-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
-               <FileText size={24} />
+              <FileText size={24} />
             </div>
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">No active exams</p>
             <p className="text-xs text-slate-500">
@@ -140,22 +140,22 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
                       {exam.title}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                       <span className="text-[10px] text-slate-500 truncate max-w-[120px]">
-                          {exam.subject}
-                       </span>
-                       <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                       <span className="text-[10px] font-semibold" style={{ color: primaryColor }}>
-                          {exam.grade}
-                       </span>
+                      <span className="text-[10px] text-slate-500 truncate max-w-[120px]">
+                        {exam.subject}
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                      <span className="text-[10px] font-semibold" style={{ color: primaryColor }}>
+                        {exam.grade}
+                      </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-right shrink-0">
-                  <div 
+                  <div
                     className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-semibold",
-                        !statusConfig.customColor && statusConfig.color
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-semibold",
+                      !statusConfig.customColor && statusConfig.color
                     )}
                     style={statusConfig.customColor ? { backgroundColor: `${statusConfig.customColor}15`, color: statusConfig.customColor, borderColor: `${statusConfig.customColor}30` } : {}}
                   >

@@ -10,7 +10,7 @@ export interface StatCard {
   label: string;
   value: string;
   icon: string;
-  link:string;
+  link: string;
   trend?: {
     value: string;
     color: "green" | "red";
@@ -30,7 +30,9 @@ export interface Assessment {
   date: string;
   startDate?: Date;
   endDate?: Date;
+  createdAt?: Date;
   score: string | null;
+  scorePercentage?: number | null;
   status: "coming soon" | "open" | "closed" | "ongoing" | "graded" | "submitted" | "missing";
   type: "exam" | "quiz" | "ca" | "assignment";
   durationMinutes?: number;

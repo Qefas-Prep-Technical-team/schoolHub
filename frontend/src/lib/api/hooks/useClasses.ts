@@ -199,13 +199,13 @@ export const useReplicateTimetable = (classId: string) => {
 export const useUpdateClass = (id: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { 
-      name?: string; 
-      section?: string; 
+    mutationFn: (data: {
+      name?: string;
+      section?: string;
       term?: string;
       session?: string;
       level?: string;
-      teacherIds?: string[]; 
+      teacherIds?: string[];
       departmentIds?: string[];
       studentIds?: string[];
     }) =>
@@ -217,6 +217,22 @@ export const useUpdateClass = (id: string) => {
     },
     onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update class");
+    },
+  });
+};
+
+export const useChangeClassStatus = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (status: "PENDING" | "ACTIVE" | "REJECTED" | "ARCHIVED") =>
+      classService.changeClassStatus(id, status),
+    onSuccess: (updatedClass) => {
+      queryClient.setQueryData(classQueryKeys.detail(id), updatedClass);
+      queryClient.invalidateQueries({ queryKey: classQueryKeys.list() });
+      toast.success("Class status updated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to update class status");
     },
   });
 };

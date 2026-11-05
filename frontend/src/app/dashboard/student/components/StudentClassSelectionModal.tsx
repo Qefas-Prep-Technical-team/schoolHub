@@ -1,102 +1,19 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  GraduationCap,
-  Users,
-  BookOpen,
-  Search,
-  CheckCircle2,
-  XCircle,
-  ArrowRightLeft,
-  ShieldAlert,
-  Clock,
-  ArrowRight,
-  School as SchoolIcon,
-  Info,
-  Link2,
-  TrendingUp,
-  Lock,
-} from "lucide-react";
+import { GraduationCap, School as SchoolIcon, Link2, Info } from "lucide-react";
 import { useClasses, useRequestToJoinClass } from "@/lib/api/hooks/useClasses";
 import { useLinkRequests } from "@/lib/api/hooks/useLinks";
 import { useStudentProfile } from "@/lib/api/hooks/useStudent";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import SuccessLottie from "@/lotties/Success.json";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "react-toastify";
-
-// Dynamically import Lottie for SSR safety
-const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
-
-export type StudentClassStatus = "ENROLLED" | "EXPELLED" | "GRADUATED" | "TRANSFERRED" | "PROMOTED" | "NONE";
-
-export interface EnrolledStudentItem {
-  id: string;
-  name: string;
-  studentCode?: string;
-  gender?: string;
-  status?: string;
-}
-
-export interface ClassItem {
-  id: string;
-  name: string;
-  classCode: string;
-  level?: string;
-  section?: string;
-  schoolId?: string;
-  status?: string;
-  isLocked?: boolean;
-  locked?: boolean;
-  isArchived?: boolean;
-  teachers?: Array<{
-    teacher?: {
-      id: string;
-      name: string;
-      email?: string;
-      bannerImage?: string;
-    };
-  }>;
-  subjects?: Array<{
-    subject?: {
-      id: string;
-      name: string;
-      code?: string;
-      category?: string;
-    };
-  }>;
-  departments?: Array<{
-    department?: {
-      id: string;
-      name: string;
-    };
-  }>;
-  enrollments?: Array<{
-    student?: EnrolledStudentItem;
-  }>;
-}
-
-interface RawClassEnrollment {
-  id?: string;
-  classCode?: string;
-  class?: {
-    id?: string;
-    classCode?: string;
-    [key: string]: unknown;
-  };
-}
+import { ClassItem, RawClassEnrollment, StudentClassStatus } from "./class-selection/types";
+import { ClassSelectionHeader } from "./class-selection/ClassSelectionHeader";
+import { ClassCardItem } from "./class-selection/ClassCardItem";
+import { ClassSelectionSuccessView } from "./class-selection/ClassSelectionSuccessView";
 
 export interface StudentClassSelectionModalProps {
   isOpen: boolean;
@@ -106,16 +23,6 @@ export interface StudentClassSelectionModalProps {
   studentName?: string;
   onConnectSchoolClick?: () => void;
 }
-
-const AVATAR_COLORS = [
-  "bg-pink-500 text-white",
-  "bg-indigo-500 text-white",
-  "bg-emerald-500 text-white",
-  "bg-amber-500 text-white",
-  "bg-purple-500 text-white",
-  "bg-rose-500 text-white",
-  "bg-cyan-500 text-white",
-];
 
 export function StudentClassSelectionModal({
   isOpen,
@@ -127,10 +34,18 @@ export function StudentClassSelectionModal({
 }: StudentClassSelectionModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "AVAILABLE" | "ENROLLED" | "GRADUATED" | "PROMOTED" | "EXPELLED" | "TRANSFERRED">("ALL");
+  const [statusFilter, setStatusFilter] = useState<
+    | "ALL"
+    | "AVAILABLE"
+    | "ENROLLED"
+    | "GRADUATED"
+    | "PROMOTED"
+    | "EXPELLED"
+    | "TRANSFERRED"
+    | "LOCKED"
+  >("ALL");
   const [requestedClass, setRequestedClass] = useState<ClassItem | null>(null);
   const [isSuccessView, setIsSuccessView] = useState(false);
-  const [requestNote, setRequestNote] = useState("");
   const [localPendingCodes, setLocalPendingCodes] = useState<Set<string>>(new Set());
 
   // Current authenticated user & profile
@@ -148,6 +63,13 @@ export function StudentClassSelectionModal({
     studentProfile?.graduationStatus?.toUpperCase() === "GRADUATED"
   );
 
+  const studentLevel = (
+    studentProfile?.level ||
+    (studentProfile as unknown as { gradeLevel?: string })?.gradeLevel ||
+    (userRecord?.level as string) ||
+    ""
+  ).trim();
+
   // Fetch current student's personal enrollments list
   const { data: myEnrolledClassesRaw } = useClasses();
 
@@ -155,7 +77,6 @@ export function StudentClassSelectionModal({
   const { data: rawClasses = [], isLoading: isLoadingClasses } = useClasses(schoolId);
   const classesList: ClassItem[] = useMemo(() => {
     if (!Array.isArray(rawClasses)) return [];
-    // If returned items are wrapped in enrollment objects, extract `.class`
     return (rawClasses as RawClassEnrollment[]).map((item) =>
       item?.class ? (item.class as unknown as ClassItem) : (item as unknown as ClassItem)
     );
@@ -169,16 +90,14 @@ export function StudentClassSelectionModal({
     const ids = new Set<string>();
     const codes = new Set<string>();
 
-    // 1. From studentProfile.classes
     if (studentProfile?.classes && Array.isArray(studentProfile.classes)) {
       studentProfile.classes.forEach((item) => {
         const c = item?.class;
         if (c?.id) ids.add(String(c.id));
-        if (c?.name) codes.add(String(c.name)); // name fallback if classCode not on nested
+        if (c?.name) codes.add(String(c.name));
       });
     }
 
-    // 2. From myEnrolledClassesRaw (GET /classes without schoolId)
     if (myEnrolledClassesRaw && Array.isArray(myEnrolledClassesRaw)) {
       (myEnrolledClassesRaw as RawClassEnrollment[]).forEach((item) => {
         const c = item?.class || item;
@@ -191,25 +110,44 @@ export function StudentClassSelectionModal({
   }, [studentProfile, myEnrolledClassesRaw]);
 
   // Helper to determine if a class is locked against new join requests
-  const isClassLocked = useMemo(() => {
-    return (cls: ClassItem): boolean => {
-      if (cls.isLocked || cls.locked || cls.isArchived) return true;
-      const s = String(cls.status || "").toUpperCase();
-      if (s === "LOCKED" || s === "ARCHIVED" || s === "CLOSED" || s === "REJECTED" || s === "INACTIVE") {
-        return true;
+  const getClassLockInfo = useMemo(() => {
+    return (cls: ClassItem): { isLocked: boolean; reason: string | null } => {
+      // 1. Explicit lock flags on class
+      if (cls.isLocked || cls.locked) {
+        return { isLocked: true, reason: "Locked by school administration" };
       }
-      return false;
+      const s = String(cls.status || "").toUpperCase();
+      if (s === "ARCHIVED" || cls.isArchived) {
+        return { isLocked: true, reason: "Archived" };
+      }
+      if (s === "LOCKED" || s === "CLOSED" || s === "REJECTED" || s === "INACTIVE") {
+        return { isLocked: true, reason: s };
+      }
+
+      // 2. Student has graduated from this school
+      if (isStudentGraduated) {
+        return { isLocked: true, reason: "Graduated Alumni" };
+      }
+
+      // 3. Level mismatch check
+      if (cls.level && studentLevel) {
+        const cLvl = cls.level.trim().toLowerCase();
+        const sLvl = studentLevel.toLowerCase();
+        if (cLvl !== sLvl) {
+          return {
+            isLocked: true,
+            reason: `Level Mismatch (${cls.level} vs your ${studentLevel})`,
+          };
+        }
+      }
+
+      return { isLocked: false, reason: null };
     };
-  }, []);
+  }, [isStudentGraduated, studentLevel]);
 
   // Comprehensive resolver for the student's status with respect to a class
   const getStudentClassStatus = useMemo(() => {
     return (cls: ClassItem): StudentClassStatus => {
-      // 0. If user has graduated from this school, all classes in their alma mater show as GRADUATED
-      if (isStudentGraduated) {
-        return "GRADUATED";
-      }
-
       // 1. Check if the current student is actively enrolled via profile or roster
       const isEnrolledInProfile =
         Boolean(cls.id && enrolledIdentifiers.ids.has(cls.id)) ||
@@ -225,7 +163,11 @@ export function StudentClassSelectionModal({
 
       const rosterStatus = String(rosterItem?.student?.status || "").toUpperCase();
 
-      // If active member in profile or active roster
+      // If user is graduated from school and was part of this class, they graduated from THIS class
+      if (isStudentGraduated && (isEnrolledInProfile || rosterItem)) {
+        return "GRADUATED";
+      }
+
       if (isEnrolledInProfile || (rosterItem && (!rosterStatus || rosterStatus === "ACTIVE"))) {
         return "ENROLLED";
       }
@@ -257,50 +199,19 @@ export function StudentClassSelectionModal({
           Boolean(meta?.className && cls.name && meta.className.toLowerCase() === cls.name.toLowerCase()) ||
           Boolean(h.description && cls.name && h.description.toLowerCase().includes(cls.name.toLowerCase()));
 
-        // Student was PROMOTED out of this class
-        if (h.eventType === "PROMOTED" && isFromThisClass) {
-          return "PROMOTED";
-        }
-
-        // Student was TRANSFERRED out of this class
-        if (h.eventType === "TRANSFERRED" && (isFromThisClass || isDirectClassMatch)) {
-          return "TRANSFERRED";
-        }
-
-        // Student GRADUATED from this class
-        if (h.eventType === "GRADUATED" && (isDirectClassMatch || (isStudentGraduated && meta?.classId === cls.id))) {
-          return "GRADUATED";
-        }
-
-        // Student was EXPELLED from this class
-        if (h.eventType === "EXPELLED" && isDirectClassMatch) {
-          return "EXPELLED";
-        }
+        if (h.eventType === "PROMOTED" && isFromThisClass) return "PROMOTED";
+        if (h.eventType === "TRANSFERRED" && (isFromThisClass || isDirectClassMatch)) return "TRANSFERRED";
+        if (h.eventType === "GRADUATED" && isDirectClassMatch) return "GRADUATED";
+        if (h.eventType === "EXPELLED" && isDirectClassMatch) return "EXPELLED";
       }
 
-      // 3. Fallback check for explicit statuses on roster item
       if (rosterStatus === "EXPELLED") return "EXPELLED";
       if (rosterStatus === "GRADUATED") return "GRADUATED";
       if (rosterStatus === "TRANSFERRED") return "TRANSFERRED";
 
-      // Class is available to join
       return "NONE";
     };
-  }, [
-    enrolledIdentifiers,
-    currentStudentId,
-    currentStudentCode,
-    studentProfile,
-    isStudentGraduated,
-  ]);
-
-  // Helper to determine if a class has already been joined by the student
-  const isClassAlreadyJoined = useMemo(() => {
-    return (cls: ClassItem): boolean => {
-      const status = getStudentClassStatus(cls);
-      return status !== "NONE";
-    };
-  }, [getStudentClassStatus]);
+  }, [enrolledIdentifiers, currentStudentId, currentStudentCode, studentProfile, isStudentGraduated]);
 
   // Aggregate counts by student status across classes
   const classStatusCounts = useMemo(() => {
@@ -310,21 +221,27 @@ export function StudentClassSelectionModal({
     let promoted = 0;
     let expelled = 0;
     let transferred = 0;
+    let locked = 0;
 
     classesList.forEach((c) => {
       const status = getStudentClassStatus(c);
+      const lockInfo = getClassLockInfo(c);
+
       if (status === "ENROLLED") enrolled++;
       else if (status === "GRADUATED") graduated++;
       else if (status === "PROMOTED") promoted++;
       else if (status === "EXPELLED") expelled++;
       else if (status === "TRANSFERRED") transferred++;
-      else available++;
+      else {
+        if (lockInfo.isLocked) locked++;
+        else available++;
+      }
     });
 
-    return { enrolled, available, graduated, promoted, expelled, transferred };
-  }, [classesList, getStudentClassStatus]);
+    return { enrolled, available, graduated, promoted, expelled, transferred, locked };
+  }, [classesList, getStudentClassStatus, getClassLockInfo]);
 
-  // Fetch pending link requests for this student to detect already-requested classes
+  // Fetch pending link requests for this student
   const { data: pendingRequestsData } = useLinkRequests(
     { status: "PENDING", category: "classroom" },
     { enabled: isOpen }
@@ -347,7 +264,7 @@ export function StudentClassSelectionModal({
 
   const joinMutation = useRequestToJoinClass();
 
-  // Extract distinct levels for filter chips from the active classes
+  // Extract distinct levels
   const availableLevels = useMemo(() => {
     const levels = new Set<string>();
     classesList.forEach((c) => {
@@ -366,20 +283,19 @@ export function StudentClassSelectionModal({
         c.classCode.toLowerCase().includes(q) ||
         (c.level && c.level.toLowerCase().includes(q)) ||
         (c.departments &&
-          c.departments.some((d) =>
-            d.department?.name.toLowerCase().includes(q)
-          )) ||
+          c.departments.some((d) => d.department?.name.toLowerCase().includes(q))) ||
         (c.subjects &&
-          c.subjects.some((s) =>
-            s.subject?.name.toLowerCase().includes(q)
-          ));
+          c.subjects.some((s) => s.subject?.name.toLowerCase().includes(q)));
 
       const matchesLevel = selectedLevel === "ALL" || c.level === selectedLevel;
 
       const status = getStudentClassStatus(c);
+      const lockInfo = getClassLockInfo(c);
+
       const matchesStatus =
         statusFilter === "ALL" ||
-        (statusFilter === "AVAILABLE" && status === "NONE") ||
+        (statusFilter === "AVAILABLE" && status === "NONE" && !lockInfo.isLocked) ||
+        (statusFilter === "LOCKED" && status === "NONE" && lockInfo.isLocked) ||
         (statusFilter === "ENROLLED" && status === "ENROLLED") ||
         (statusFilter === "GRADUATED" && status === "GRADUATED") ||
         (statusFilter === "PROMOTED" && status === "PROMOTED") ||
@@ -388,16 +304,14 @@ export function StudentClassSelectionModal({
 
       return matchesSearch && matchesLevel && matchesStatus;
     });
-  }, [classesList, searchQuery, selectedLevel, statusFilter, getStudentClassStatus]);
+  }, [classesList, searchQuery, selectedLevel, statusFilter, getStudentClassStatus, getClassLockInfo]);
 
   const handleJoinClass = (cls: ClassItem) => {
-    if (isStudentGraduated) {
-      toast.warning(`Enrollment Closed: You have graduated from ${schoolName}. Graduated scholars cannot request to join active classrooms.`);
-      return;
-    }
-
-    if (isClassLocked(cls)) {
-      toast.warning(`Classroom Locked: ${cls.name} (${cls.classCode}) is locked by school administration. Enrollment requests cannot be submitted.`);
+    const lockInfo = getClassLockInfo(cls);
+    if (lockInfo.isLocked) {
+      toast.warning(
+        `Class Locked (${lockInfo.reason || "Restricted"}): Enrollment requests are not permitted for ${cls.name}.`
+      );
       return;
     }
 
@@ -406,7 +320,7 @@ export function StudentClassSelectionModal({
     joinMutation.mutate(
       {
         classCode: cls.classCode,
-        note: requestNote || `Student requested to join class via student portal`,
+        note: `Student requested to join class via student portal`,
       },
       {
         onSuccess: () => {
@@ -422,6 +336,12 @@ export function StudentClassSelectionModal({
     );
   };
 
+  const handleLockedClick = (cls: ClassItem, reason?: string | null) => {
+    toast.warning(
+      `Cannot Request Join: ${cls.name} (${cls.classCode}) is locked${reason ? ` due to ${reason}` : ""}. Enrollment requests are not permitted.`
+    );
+  };
+
   const handleDismissSuccess = () => {
     setIsSuccessView(false);
     setRequestedClass(null);
@@ -430,261 +350,46 @@ export function StudentClassSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[calc(100vw-1.25rem)] sm:w-[92vw] p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl sm:rounded-3xl shadow-2xl min-w-0">
+      <DialogContent className="max-w-6xl w-[calc(100vw-1.25rem)] sm:w-[95vw] lg:w-[90vw] xl:max-w-6xl p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl sm:rounded-3xl shadow-2xl min-w-0">
         <AnimatePresence mode="wait">
           {isSuccessView && requestedClass ? (
-            /* ================= Success View with Onboarding Lottie ================= */
-            <motion.div
-              key="success-step"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="p-5 sm:p-12 flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6 w-full min-w-0 overflow-hidden"
-            >
-              <div className="relative">
-                <div className="w-28 h-28 sm:w-44 sm:h-44 flex items-center justify-center">
-                  <Lottie animationData={SuccessLottie} loop={true} className="w-full h-full" />
-                </div>
-              </div>
-
-              <div className="space-y-2 sm:space-y-3 max-w-lg w-full min-w-0">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-                  <CheckCircle2 size={13} />
-                  Request Sent Successfully
-                </div>
-                <h3 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight break-words">
-                  Class Request Submitted!
-                </h3>
-                <p className="text-slate-600 dark:text-zinc-300 text-xs sm:text-base leading-relaxed break-words">
-                  A request to join <span className="font-bold text-pink-600 dark:text-pink-400">{requestedClass.name}</span> has been sent to{" "}
-                  <span className="font-bold text-slate-900 dark:text-white">{schoolName}</span>. Once the school administration accepts, you will be allowed in and can start accessing class subjects, timetables, and assessments.
-                </p>
-              </div>
-
-              <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 max-w-md w-full flex items-start gap-2.5 text-left min-w-0">
-                <Clock className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={16} />
-                <p className="text-[11px] sm:text-sm text-amber-800 dark:text-amber-300 break-words">
-                  <strong>What happens next?</strong> School administrators or class teachers receive your request instantly. When approved, your enrolled subjects and timetable will update automatically.
-                </p>
-              </div>
-
-              <Button
-                onClick={handleDismissSuccess}
-                className="w-full sm:w-auto px-6 sm:px-8 h-11 sm:h-12 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-pink-600/20"
-              >
-                Go to Dashboard
-              </Button>
-            </motion.div>
+            <ClassSelectionSuccessView
+              requestedClass={requestedClass}
+              schoolName={schoolName}
+              onDismiss={handleDismissSuccess}
+            />
           ) : (
-            /* ================= Class Grid View ================= */
             <motion.div
               key="grid-step"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col max-h-[88vh] sm:max-h-[85vh] w-full min-w-0 overflow-hidden"
+              className="flex flex-col max-h-[90vh] sm:max-h-[88vh] w-full min-w-0 overflow-hidden"
             >
-              {/* Modal Header */}
-              <div className="bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 p-4 sm:p-7 text-white relative shrink-0 w-full min-w-0 overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-                <DialogHeader className="relative z-10 text-left space-y-1.5 sm:space-y-2 pr-7 sm:pr-0">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1 sm:gap-1.5">
-                      <SchoolIcon size={12} className="sm:w-3.5 sm:h-3.5" />
-                      <span className="max-w-[140px] sm:max-w-none truncate">{schoolName}</span>
-                    </span>
-                    <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-pink-400/30 text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate max-w-[150px] sm:max-w-none">
-                      Welcome, {studentName}
-                    </span>
-                    {isStudentGraduated && (
-                      <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-400/30 border border-amber-300/50 text-amber-100 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <GraduationCap size={12} className="text-amber-200" />
-                        Alumnus
-                      </span>
-                    )}
-                    {classStatusCounts.enrolled > 0 && (
-                      <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                        <CheckCircle2 size={12} className="text-emerald-300" />
-                        {classStatusCounts.enrolled} {classStatusCounts.enrolled === 1 ? "Enrolled" : "Enrolled"}
-                      </span>
-                    )}
-                    {classStatusCounts.graduated > 0 && (
-                      <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-purple-500/30 border border-purple-400/40 text-purple-100 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                        <GraduationCap size={12} className="text-purple-300" />
-                        {classStatusCounts.graduated} Graduated
-                      </span>
-                    )}
-                  </div>
-                  <DialogTitle className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight text-white pt-1">
-                    {isStudentGraduated ? "Alma Mater Classrooms" : "Select Your Classroom"}
-                  </DialogTitle>
-                  <DialogDescription className="text-pink-100 text-[11px] sm:text-xs md:text-sm font-medium max-w-xl leading-relaxed">
-                    {isStudentGraduated
-                      ? `You have graduated from ${schoolName}. You can view the classes and academic streams from your alma mater below.`
-                      : "Choose from the classes available at your connected school to request enrollment. Review current students, subjects, and teachers before joining."}
-                  </DialogDescription>
-                </DialogHeader>
-
-                {/* Search & Filter Bar */}
-                <div className="mt-4 sm:mt-5 space-y-2.5 w-full min-w-0 max-w-full">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full min-w-0">
-                    <div className="relative flex-1 min-w-0 w-full">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-200" size={16} />
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search classes by name, code, subject, or department..."
-                        className="h-10 sm:h-11 pl-10 rounded-xl bg-white/10 backdrop-blur-md border-white/20 text-white placeholder:text-pink-200 text-xs sm:text-sm focus-visible:ring-white/30 w-full"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Filter Chips: Enrollment Status & Grade Levels */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full min-w-0 max-w-full no-scrollbar" style={{ scrollbarWidth: "none" }}>
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter("ALL")}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                        statusFilter === "ALL"
-                          ? "bg-white text-pink-700 shadow-sm"
-                          : "bg-white/15 text-white hover:bg-white/25"
-                      )}
-                    >
-                      All ({classesList.length})
-                    </button>
-                    {!isStudentGraduated && classStatusCounts.available > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStatusFilter("AVAILABLE")}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                          statusFilter === "AVAILABLE"
-                            ? "bg-white text-pink-700 shadow-sm"
-                            : "bg-white/15 text-white hover:bg-white/25"
-                        )}
-                      >
-                        Available to Join ({classStatusCounts.available})
-                      </button>
-                    )}
-                    {classStatusCounts.enrolled > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStatusFilter("ENROLLED")}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1",
-                          statusFilter === "ENROLLED"
-                            ? "bg-emerald-500 text-white shadow-sm"
-                            : "bg-emerald-500/25 text-emerald-100 hover:bg-emerald-500/40"
-                        )}
-                      >
-                        <CheckCircle2 size={12} />
-                        Enrolled ({classStatusCounts.enrolled})
-                      </button>
-                    )}
-                    {classStatusCounts.graduated > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStatusFilter("GRADUATED")}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1",
-                          statusFilter === "GRADUATED"
-                            ? "bg-purple-500 text-white shadow-sm"
-                            : "bg-purple-500/25 text-purple-100 hover:bg-purple-500/40"
-                        )}
-                      >
-                        <GraduationCap size={12} />
-                        Graduated ({classStatusCounts.graduated})
-                      </button>
-                    )}
-                    {classStatusCounts.promoted > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStatusFilter("PROMOTED")}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1",
-                          statusFilter === "PROMOTED"
-                            ? "bg-indigo-500 text-white shadow-sm"
-                            : "bg-indigo-500/25 text-indigo-100 hover:bg-indigo-500/40"
-                        )}
-                      >
-                        <TrendingUp size={12} />
-                        Promoted ({classStatusCounts.promoted})
-                      </button>
-                    )}
-                    {classStatusCounts.transferred > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStatusFilter("TRANSFERRED")}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1",
-                          statusFilter === "TRANSFERRED"
-                            ? "bg-amber-500 text-white shadow-sm"
-                            : "bg-amber-500/25 text-amber-100 hover:bg-amber-500/40"
-                        )}
-                      >
-                        <ArrowRightLeft size={12} />
-                        Transferred ({classStatusCounts.transferred})
-                      </button>
-                    )}
-                    {classStatusCounts.expelled > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setStatusFilter("EXPELLED")}
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1",
-                          statusFilter === "EXPELLED"
-                            ? "bg-rose-500 text-white shadow-sm"
-                            : "bg-rose-500/25 text-rose-100 hover:bg-rose-500/40"
-                        )}
-                      >
-                        <XCircle size={12} />
-                        Expelled ({classStatusCounts.expelled})
-                      </button>
-                    )}
-
-                    {availableLevels.length > 0 && (
-                      <>
-                        <div className="h-4 w-px bg-white/20 mx-1 shrink-0" />
-                        <button
-                          type="button"
-                          onClick={() => setSelectedLevel("ALL")}
-                          className={cn(
-                            "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                            selectedLevel === "ALL"
-                              ? "bg-white text-pink-700 shadow-sm"
-                              : "bg-white/10 text-white hover:bg-white/20"
-                          )}
-                        >
-                          All Levels
-                        </button>
-                        {availableLevels.map((lvl) => (
-                          <button
-                            key={lvl}
-                            type="button"
-                            onClick={() => setSelectedLevel(selectedLevel === lvl ? "ALL" : lvl)}
-                            className={cn(
-                              "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap",
-                              selectedLevel === lvl
-                                ? "bg-white text-pink-700 shadow-sm"
-                                : "bg-white/10 text-white hover:bg-white/20"
-                            )}
-                          >
-                            {lvl}
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ClassSelectionHeader
+                schoolName={schoolName}
+                studentName={studentName}
+                isStudentGraduated={isStudentGraduated}
+                classStatusCounts={classStatusCounts}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                selectedLevel={selectedLevel}
+                setSelectedLevel={setSelectedLevel}
+                availableLevels={availableLevels}
+                totalClassesCount={classesList.length}
+              />
 
               {/* Class Grid Content */}
-              <div className="p-3 sm:p-6 overflow-y-auto flex-1 space-y-3 sm:space-y-4">
+              <div className="p-4 sm:p-6 md:p-7 overflow-y-auto flex-1 space-y-4">
                 {isLoadingClasses ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div key={i} className="h-48 sm:h-56 rounded-2xl bg-slate-100 dark:bg-zinc-900 animate-pulse border border-slate-200 dark:border-zinc-800" />
+                      <div
+                        key={i}
+                        className="h-52 sm:h-60 rounded-2xl bg-slate-100 dark:bg-zinc-900 animate-pulse border border-slate-200 dark:border-zinc-800"
+                      />
                     ))}
                   </div>
                 ) : !schoolId ? (
@@ -715,352 +420,52 @@ export function StudentClassSelectionModal({
                       <GraduationCap size={24} />
                     </div>
                     <h4 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                      {classesList.length === 0 ? "No Active Classes Available" : "No Matching Classes Found"}
+                      {classesList.length === 0
+                        ? "No Active Classes Available"
+                        : "No Matching Classes Found"}
                     </h4>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
                       {classesList.length === 0
-                        ? `Your connected school (${schoolName}) has not registered any active class streams yet. Please check back soon or contact your school administrator.`
-                        : "Try adjusting your search query, status, or level filters to find your classroom."}
+                        ? "Your school hasn't published any active classrooms yet."
+                        : "Try adjusting your search query, status, or level filters to see available classrooms."}
                     </p>
-                    {classesList.length > 0 && (
+                    {(searchQuery || selectedLevel !== "ALL" || statusFilter !== "ALL") && (
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => {
                           setSearchQuery("");
                           setSelectedLevel("ALL");
                           setStatusFilter("ALL");
                         }}
-                        className="rounded-xl mt-2 text-xs font-bold"
+                        className="rounded-xl mt-2 text-xs font-bold cursor-pointer"
                       >
                         Reset Filters
                       </Button>
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 w-full min-w-0">
                     {filteredClasses.map((cls) => {
-                      const enrollments = cls.enrollments || [];
-                      const studentCount = enrollments.length;
-                      const subjectsCount = cls.subjects?.length || 0;
-                      const teacher = cls.teachers?.[0]?.teacher;
                       const studentClassStatus = getStudentClassStatus(cls);
-                      const isEnrolled = studentClassStatus === "ENROLLED";
-                      const isExpelled = studentClassStatus === "EXPELLED";
-                      const isGraduated = studentClassStatus === "GRADUATED";
-                      const isPromoted = studentClassStatus === "PROMOTED";
-                      const isTransferred = studentClassStatus === "TRANSFERRED";
-                      const isNone = studentClassStatus === "NONE";
                       const isPending = pendingClassCodes.has(cls.classCode);
-                      const isCurrentMutating = joinMutation.isPending && requestedClass?.id === cls.id;
-                      const isLocked = isClassLocked(cls);
-
-                      // Sort enrollments so current student's avatar is displayed first
-                      const sortedEnrollments = [...enrollments].sort((a, b) => {
-                        const aIsMe =
-                          Boolean(currentStudentId && a.student?.id === currentStudentId) ||
-                          Boolean(currentStudentCode && a.student?.studentCode === currentStudentCode);
-                        const bIsMe =
-                          Boolean(currentStudentId && b.student?.id === currentStudentId) ||
-                          Boolean(currentStudentCode && b.student?.studentCode === currentStudentCode);
-                        if (aIsMe && !bIsMe) return -1;
-                        if (!aIsMe && bIsMe) return 1;
-                        return 0;
-                      });
+                      const isCurrentMutating =
+                        joinMutation.isPending && requestedClass?.id === cls.id;
+                      const lockInfo = getClassLockInfo(cls);
 
                       return (
-                        <div
+                        <ClassCardItem
                           key={cls.id}
-                          className={cn(
-                            "group border rounded-2xl p-3.5 sm:p-5 flex flex-col justify-between transition-all duration-200 relative overflow-hidden w-full min-w-0 max-w-full",
-                            isEnrolled && "bg-emerald-50/20 dark:bg-emerald-950/10 border-emerald-300 dark:border-emerald-800/70 hover:border-emerald-400 dark:hover:border-emerald-700 shadow-sm",
-                            isExpelled && "bg-rose-50/25 dark:bg-rose-950/15 border-rose-300 dark:border-rose-800/70 hover:border-rose-400 dark:hover:border-rose-700 shadow-sm",
-                            isGraduated && "bg-purple-50/25 dark:bg-purple-950/15 border-purple-300 dark:border-purple-800/70 hover:border-purple-400 dark:hover:border-purple-700 shadow-sm",
-                            isPromoted && "bg-indigo-50/25 dark:bg-indigo-950/15 border-indigo-300 dark:border-indigo-800/70 hover:border-indigo-400 dark:hover:border-indigo-700 shadow-sm",
-                            isTransferred && "bg-amber-50/25 dark:bg-amber-950/15 border-amber-300 dark:border-amber-800/70 hover:border-amber-400 dark:hover:border-amber-700 shadow-sm",
-                            isNone && "bg-white dark:bg-zinc-900/70 border-slate-200 dark:border-zinc-800 hover:border-pink-300 dark:hover:border-pink-800/60 hover:shadow-lg hover:shadow-pink-500/5"
-                          )}
-                        >
-                          <div className="space-y-2.5 sm:space-y-3">
-                            {/* Class Header & Badges */}
-                            <div className="flex items-start justify-between gap-2 min-w-0">
-                              <div className="min-w-0 flex-1">
-                                <span className={cn(
-                                  "inline-block px-2 py-0.5 rounded-md font-mono text-[10px] sm:text-[11px] font-bold tracking-wider uppercase mb-1",
-                                  isEnrolled && "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300",
-                                  isExpelled && "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300",
-                                  isGraduated && "bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300",
-                                  isPromoted && "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300",
-                                  isTransferred && "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300",
-                                  isNone && "bg-pink-50 dark:bg-pink-500/10 text-pink-700 dark:text-pink-300"
-                                )}>
-                                  {cls.classCode}
-                                </span>
-                                <h4 className={cn(
-                                  "text-sm sm:text-lg font-black line-clamp-1 transition-colors truncate",
-                                  isEnrolled && "text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400",
-                                  isExpelled && "text-slate-900 dark:text-white group-hover:text-rose-700 dark:group-hover:text-rose-400",
-                                  isGraduated && "text-slate-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400",
-                                  isPromoted && "text-slate-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400",
-                                  isTransferred && "text-slate-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400",
-                                  isNone && "text-slate-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400"
-                                )}>
-                                  {cls.name}
-                                </h4>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end max-w-[45%] sm:max-w-none">
-                                {cls.level && (
-                                  <span className="px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shrink-0">
-                                    {cls.level}
-                                  </span>
-                                )}
-                                {isLocked && (
-                                  <span className="px-1.5 sm:px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
-                                    <Lock size={10} className="text-amber-600 dark:text-amber-400" />
-                                    Locked
-                                  </span>
-                                )}
-                                {isEnrolled && (
-                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
-                                    Enrolled
-                                  </span>
-                                )}
-                                {isGraduated && (
-                                  <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <GraduationCap size={11} className="text-purple-600 dark:text-purple-400" />
-                                    Graduated
-                                  </span>
-                                )}
-                                {isPromoted && (
-                                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <TrendingUp size={11} className="text-indigo-600 dark:text-indigo-400" />
-                                    Promoted
-                                  </span>
-                                )}
-                                {isTransferred && (
-                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <ArrowRightLeft size={11} className="text-amber-600 dark:text-amber-400" />
-                                    Transferred
-                                  </span>
-                                )}
-                                {isExpelled && (
-                                  <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
-                                    <XCircle size={11} className="text-rose-600 dark:text-rose-400" />
-                                    Expelled
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Meta strip: Teacher & Subjects */}
-                            <div className="flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs text-slate-500 dark:text-zinc-400 pt-0.5 sm:pt-1">
-                              <span className="inline-flex items-center gap-1 font-medium">
-                                <BookOpen size={12} className="text-slate-400" />
-                                {subjectsCount} {subjectsCount === 1 ? "Subject" : "Subjects"}
-                              </span>
-                              {teacher && (
-                                <span className="inline-flex items-center gap-1 font-medium truncate">
-                                  <GraduationCap size={12} className="text-slate-400 shrink-0" />
-                                  <span className="truncate">{teacher.name}</span>
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Enrolled Students Section */}
-                            <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80">
-                              <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 sm:mb-2">
-                                <span className={cn(
-                                  "font-bold inline-flex items-center gap-1 sm:gap-1.5",
-                                  isEnrolled && "text-emerald-800 dark:text-emerald-300",
-                                  isExpelled && "text-rose-800 dark:text-rose-300",
-                                  isGraduated && "text-purple-800 dark:text-purple-300",
-                                  isTransferred && "text-amber-800 dark:text-amber-300",
-                                  isNone && "text-slate-700 dark:text-zinc-300"
-                                )}>
-                                  <Users size={12} className={
-                                    isEnrolled
-                                      ? "text-emerald-600 dark:text-emerald-400"
-                                      : isExpelled
-                                      ? "text-rose-600 dark:text-rose-400"
-                                      : isGraduated
-                                      ? "text-purple-600 dark:text-purple-400"
-                                      : isTransferred
-                                      ? "text-amber-600 dark:text-amber-400"
-                                      : "text-pink-600 dark:text-pink-400"
-                                  } />
-                                  Students in Class
-                                </span>
-                                <span className="font-bold text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
-                                  {studentCount} {studentCount === 1 ? "student" : "students"}
-                                </span>
-                              </div>
-
-                              {/* Student Avatars & Names preview */}
-                              {studentCount > 0 ? (
-                                <div className="space-y-1">
-                                  <div className="flex items-center -space-x-1.5 sm:-space-x-2 overflow-hidden py-0.5 sm:py-1">
-                                    {sortedEnrollments.slice(0, 5).map((e, idx) => {
-                                      const st = e.student;
-                                      const isMe =
-                                        Boolean(currentStudentId && st?.id === currentStudentId) ||
-                                        Boolean(currentStudentCode && st?.studentCode === currentStudentCode);
-                                      const initial = isMe ? "YOU" : (st?.name?.charAt(0).toUpperCase() || "S");
-                                      let colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-                                      if (isMe) {
-                                        if (isExpelled) {
-                                          colorClass = "bg-rose-600 text-white ring-2 ring-rose-400";
-                                        } else if (isGraduated) {
-                                          colorClass = "bg-purple-600 text-white ring-2 ring-purple-400";
-                                        } else if (isTransferred) {
-                                          colorClass = "bg-amber-600 text-white ring-2 ring-amber-400";
-                                        } else {
-                                          colorClass = "bg-emerald-600 text-white ring-2 ring-emerald-400";
-                                        }
-                                      }
-                                      return (
-                                        <div
-                                          key={st?.id || idx}
-                                          title={isMe ? `${st?.name || "Student"} (You)` : (st?.name || "Student")}
-                                          className={cn(
-                                            "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold ring-2 shrink-0 shadow-sm transition-transform",
-                                            isMe ? "text-[7px] sm:text-[8px] z-10 scale-105" : "text-[9px] sm:text-[10px] ring-white dark:ring-zinc-900",
-                                            colorClass
-                                          )}
-                                        >
-                                          {initial}
-                                        </div>
-                                      );
-                                    })}
-                                    {studentCount > 5 && (
-                                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 flex items-center justify-center text-[9px] sm:text-[10px] font-bold ring-2 ring-white dark:ring-zinc-900 shrink-0">
-                                        +{studentCount - 5}
-                                      </div>
-                                    )}
-                                  </div>
-                                  {isEnrolled && (
-                                    <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <CheckCircle2 size={11} className="shrink-0" />
-                                      <span>
-                                        You are enrolled in this class
-                                        {studentCount > 1
-                                          ? ` with ${studentCount - 1} other ${studentCount - 1 === 1 ? "student" : "students"}`
-                                          : ""}
-                                      </span>
-                                    </p>
-                                  )}
-                                  {isGraduated && (
-                                    <p className="text-[10px] sm:text-[11px] text-purple-600 dark:text-purple-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <GraduationCap size={11} className="shrink-0" />
-                                      <span>You have graduated from this class (Alumni)</span>
-                                    </p>
-                                  )}
-                                  {isPromoted && (
-                                    <p className="text-[10px] sm:text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <TrendingUp size={11} className="shrink-0" />
-                                      <span>You were promoted from this class</span>
-                                    </p>
-                                  )}
-                                  {isTransferred && (
-                                    <p className="text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <ArrowRightLeft size={11} className="shrink-0" />
-                                      <span>You were transferred out of this class</span>
-                                    </p>
-                                  )}
-                                  {isExpelled && (
-                                    <p className="text-[10px] sm:text-[11px] text-rose-600 dark:text-rose-400 font-semibold line-clamp-1 flex items-center gap-1">
-                                      <XCircle size={11} className="shrink-0" />
-                                      <span>You have been expelled from this classroom</span>
-                                    </p>
-                                  )}
-                                  {isNone && (
-                                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-1 font-medium">
-                                      {sortedEnrollments
-                                        .slice(0, 3)
-                                        .map((e) => e.student?.name)
-                                        .filter(Boolean)
-                                        .join(", ")}
-                                      {studentCount > 3 && `, and ${studentCount - 3} others`}
-                                    </p>
-                                  )}
-                                </div>
-                              ) : isEnrolled ? (
-                                <p className="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold py-1 flex items-center gap-1">
-                                  <CheckCircle2 size={11} className="shrink-0" />
-                                  <span>You are currently enrolled in this class</span>
-                                </p>
-                              ) : (
-                                <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-zinc-500 italic py-0.5">
-                                  No students enrolled yet. Be the first to join!
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Action Button */}
-                          <div className="pt-3 sm:pt-4 mt-2 sm:mt-3 border-t border-slate-100 dark:border-zinc-800/80">
-                            {isEnrolled ? (
-                              <div className="w-full h-9 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] sm:text-xs shadow-xs">
-                                <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
-                                <span>Enrolled (Active Member)</span>
-                              </div>
-                            ) : isGraduated ? (
-                              <div className="w-full h-9 sm:h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-purple-700 dark:text-purple-300 font-bold text-[11px] sm:text-xs shadow-xs">
-                                <GraduationCap size={14} className="text-purple-600 dark:text-purple-400" />
-                                <span>Graduated Cohort (Alumni)</span>
-                              </div>
-                            ) : isPromoted ? (
-                              <div className="w-full h-9 sm:h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] sm:text-xs shadow-xs">
-                                <TrendingUp size={14} className="text-indigo-600 dark:text-indigo-400" />
-                                <span>Promoted (Completed Level)</span>
-                              </div>
-                            ) : isTransferred ? (
-                              <div className="w-full h-9 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-amber-700 dark:text-amber-300 font-bold text-[11px] sm:text-xs shadow-xs">
-                                <ArrowRightLeft size={14} className="text-amber-600 dark:text-amber-400" />
-                                <span>Transferred Out</span>
-                              </div>
-                            ) : isExpelled ? (
-                              <div className="w-full h-9 sm:h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center gap-1.5 sm:gap-2 text-rose-700 dark:text-rose-300 font-bold text-[11px] sm:text-xs shadow-xs">
-                                <XCircle size={14} className="text-rose-600 dark:text-rose-400" />
-                                <span>Expelled from Class</span>
-                              </div>
-                            ) : isPending ? (
-                              <div className="w-full h-9 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-center justify-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px] sm:text-xs">
-                                <Clock size={13} />
-                                Request Pending Approval
-                              </div>
-                            ) : isLocked ? (
-                              <Button
-                                type="button"
-                                onClick={() => {
-                                  toast.warning(`Cannot Request Join: ${cls.name} (${cls.classCode}) is locked. Enrollment requests are not permitted.`);
-                                }}
-                                className="w-full h-9 sm:h-10 rounded-xl bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 font-bold text-[11px] sm:text-xs border border-slate-200 dark:border-zinc-700 shadow-none flex items-center justify-center gap-1.5 cursor-not-allowed transition-colors"
-                              >
-                                <Lock size={13} className="text-amber-500 shrink-0" />
-                                <span>Request to Join (Locked)</span>
-                              </Button>
-                            ) : (
-                              <Button
-                                onClick={() => handleJoinClass(cls)}
-                                disabled={isCurrentMutating}
-                                className="w-full h-9 sm:h-10 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-[11px] sm:text-xs shadow-md shadow-pink-600/10 flex items-center justify-center gap-1.5 group-hover:shadow-pink-600/20 transition-all cursor-pointer"
-                              >
-                                {isCurrentMutating ? (
-                                  <>
-                                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    <span>Sending Request...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>Request to Join</span>
-                                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
+                          cls={cls}
+                          studentClassStatus={studentClassStatus}
+                          isPending={isPending}
+                          isLocked={lockInfo.isLocked}
+                          lockReason={lockInfo.reason}
+                          isCurrentMutating={isCurrentMutating}
+                          currentStudentId={currentStudentId}
+                          currentStudentCode={currentStudentCode}
+                          onJoinClick={handleJoinClass}
+                          onLockedClick={handleLockedClick}
+                        />
                       );
                     })}
                   </div>
@@ -1071,12 +476,14 @@ export function StudentClassSelectionModal({
               <div className="bg-slate-50 dark:bg-zinc-900/60 p-3 sm:p-4 px-4 sm:px-6 border-t border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 shrink-0 w-full min-w-0 max-w-full">
                 <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-zinc-400 text-center sm:text-left min-w-0">
                   <Info size={13} className="text-pink-500 shrink-0 hidden sm:inline" />
-                  <span className="truncate sm:whitespace-normal">Your request will be submitted to school administration for review.</span>
+                  <span className="truncate sm:whitespace-normal">
+                    Your request will be submitted to school administration for review.
+                  </span>
                 </div>
                 <Button
                   variant="ghost"
                   onClick={onClose}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white h-8 sm:h-9"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white h-8 sm:h-9 cursor-pointer"
                 >
                   I&apos;ll decide later
                 </Button>
@@ -1088,3 +495,4 @@ export function StudentClassSelectionModal({
     </Dialog>
   );
 }
+export default StudentClassSelectionModal;

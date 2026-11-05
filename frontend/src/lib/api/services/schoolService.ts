@@ -83,8 +83,12 @@ export const schoolService = {
     return response.data.data ?? null;
   },
 
-  getPerformanceAnalysis: async (schoolId: string): Promise<PerformanceAnalysis> => {
-    const response = await apiClient.get(`/schools/${schoolId}/performance-analysis`);
+  getPerformanceAnalysis: async (
+    schoolId: string,
+  ): Promise<PerformanceAnalysis> => {
+    const response = await apiClient.get(
+      `/schools/${schoolId}/performance-analysis`,
+    );
     return response.data.data ?? null;
   },
 
@@ -103,8 +107,12 @@ export const schoolService = {
         teacher?.school?.id,
         teacher?.currentSchool?.id,
         teacher?.primarySchool?.id,
-        ...(teacher?.teacherSubjects ?? []).map((ts: any) => ts?.schoolId).filter(Boolean),
-        ...(teacher?.classTeachers ?? []).map((ct: any) => ct?.class?.schoolId).filter(Boolean),
+        ...(teacher?.teacherSubjects ?? [])
+          .map((ts: any) => ts?.schoolId)
+          .filter(Boolean),
+        ...(teacher?.classTeachers ?? [])
+          .map((ct: any) => ct?.class?.schoolId)
+          .filter(Boolean),
       ].filter(Boolean);
 
       return schoolMatch.includes(schoolId);
@@ -112,7 +120,9 @@ export const schoolService = {
   },
 
   getStudents: async (schoolId: string, params?: Record<string, unknown>) => {
-    const response = await apiClient.get(`/schools/${schoolId}/students`, { params });
+    const response = await apiClient.get(`/schools/${schoolId}/students`, {
+      params,
+    });
     return response.data.data ?? [];
   },
 
@@ -122,7 +132,10 @@ export const schoolService = {
   },
 
   updateProfile: async (schoolId: string, data: Record<string, unknown>) => {
-    const response = await apiClient.patch(`/schools/${schoolId}/profile`, data);
+    const response = await apiClient.patch(
+      `/schools/${schoolId}/profile`,
+      data,
+    );
     return response.data.data ?? null;
   },
 
@@ -132,58 +145,94 @@ export const schoolService = {
   },
 
   updateSettings: async (schoolId: string, data: Record<string, unknown>) => {
-    const response = await apiClient.patch(`/schools/${schoolId}/settings`, data);
+    const response = await apiClient.patch(
+      `/schools/${schoolId}/settings`,
+      data,
+    );
     return response.data.data ?? null;
   },
 
   getDashboardSummary: async (schoolId: string): Promise<DashboardSummary> => {
-    const response = await apiClient.get(`/schools/${schoolId}/dashboard-summary`);
+    const response = await apiClient.get(
+      `/schools/${schoolId}/dashboard-summary`,
+    );
     return response.data.data ?? null;
   },
 
-  getBilling: async (schoolId: string, params?: { page?: number; limit?: number }): Promise<SchoolBilling> => {
-    const response = await apiClient.get(`/schools/${schoolId}/billing`, { params });
+  getBilling: async (
+    schoolId: string,
+    params?: { page?: number; limit?: number },
+  ): Promise<SchoolBilling> => {
+    const response = await apiClient.get(`/schools/${schoolId}/billing`, {
+      params,
+    });
     return response.data.data ?? null;
   },
-  
+
   getLandingPage: async (schoolId: string) => {
     const response = await apiClient.get(`/schools/${schoolId}/landing-page`);
     return response.data.data ?? null;
   },
 
   getLandingPageBySubdomain: async (subdomain: string) => {
-    const response = await apiClient.get(`/schools/subdomain/${subdomain}/landing-page`);
+    const response = await apiClient.get(
+      `/schools/subdomain/${subdomain}/landing-page`,
+    );
     return response.data.data ?? null;
   },
 
-  updateLandingPage: async (schoolId: string, data: Record<string, unknown>) => {
-    const response = await apiClient.patch(`/schools/${schoolId}/landing-page`, data);
+  updateLandingPage: async (
+    schoolId: string,
+    data: Record<string, unknown>,
+  ) => {
+    const response = await apiClient.patch(
+      `/schools/${schoolId}/landing-page`,
+      data,
+    );
     return response.data.data ?? null;
   },
 
-  getTodayAttendance: async (schoolId: string, date?: string): Promise<ClassTodayAttendance[]> => {
+  getTodayAttendance: async (
+    schoolId: string,
+    date?: string,
+  ): Promise<ClassTodayAttendance[]> => {
     const params = date ? { date } : undefined;
-    const response = await apiClient.get(`/schools/${schoolId}/today-attendance`, { params });
+    const response = await apiClient.get(
+      `/schools/${schoolId}/today-attendance`,
+      { params },
+    );
     return response.data.data ?? [];
   },
 
   getSubjects: async (schoolId?: string) => {
-    const response = await apiClient.get(`/academic/subjects`, { params: { schoolId } });
+    const response = await apiClient.get(`/academic/subjects`, {
+      params: { schoolId },
+    });
     return response.data.data ?? [];
   },
 
   getDepartments: async (schoolId: string) => {
-    const response = await apiClient.get(`/academic/departments`, { params: { schoolId } });
+    const response = await apiClient.get(`/academic/departments`, {
+      params: { schoolId },
+    });
     return response.data.data ?? [];
   },
 
   submitInquiry: async (subdomain: string, data: Record<string, unknown>) => {
-    const response = await apiClient.post(`/schools/subdomain/${subdomain}/inquiry`, data);
+    const response = await apiClient.post(
+      `/schools/subdomain/${subdomain}/inquiry`,
+      data,
+    );
     return response.data ?? null;
   },
 
-  getInquiries: async (schoolId: string, params?: { page?: number; limit?: number }) => {
-    const response = await apiClient.get(`/schools/${schoolId}/inquiries`, { params });
+  getInquiries: async (
+    schoolId: string,
+    params?: { page?: number; limit?: number },
+  ) => {
+    const response = await apiClient.get(`/schools/${schoolId}/inquiries`, {
+      params,
+    });
     return response.data ?? null;
   },
 };

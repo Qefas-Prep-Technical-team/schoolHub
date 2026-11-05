@@ -1,21 +1,21 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { 
-  FileSpreadsheet, 
-  Search, 
-  Filter, 
-  Download, 
-  Trophy, 
-  Award, 
-  TrendingUp, 
-  CheckCircle2, 
-  BookOpen, 
-  Calendar, 
-  Clock, 
-  LayoutGrid, 
-  List, 
-  ArrowUpDown, 
+import {
+  FileSpreadsheet,
+  Search,
+  Filter,
+  Download,
+  Trophy,
+  Award,
+  TrendingUp,
+  CheckCircle2,
+  BookOpen,
+  Calendar,
+  Clock,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
   HelpCircle,
   Sparkles,
   ExternalLink,
@@ -85,10 +85,17 @@ function getCategoryBadge(category: OfflineAssessmentCategory) {
 export default function StudentOfflineGradesPage() {
   const { user } = useAuthStore();
   const { data: studentProfile } = useStudentProfile();
-  const schoolId = studentProfile?.schoolId || user?.schools?.[0]?.schoolId || '';
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    studentProfile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
   const { data: sessionsRes, isLoading: isLoadingSessions } = useSessions(schoolId);
   const sessionsData = sessionsRes?.data || (Array.isArray(sessionsRes) ? sessionsRes : []);
   const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
 
   // Fetch all grades for current student (1000 limit)
   const { data: gradesResponse, isLoading: isLoadingGrades } = useGrades(undefined, { limit: 1000 });
@@ -292,8 +299,8 @@ export default function StudentOfflineGradesPage() {
   const handleExportPDF = () => {
     if (filteredGrades.length === 0) return;
 
-    const sessionObj = Array.isArray(sessionsData) 
-      ? sessionsData.find((s: any) => s.id === selectedSessionId) 
+    const sessionObj = Array.isArray(sessionsData)
+      ? sessionsData.find((s: any) => s.id === selectedSessionId)
       : null;
     const sessionName = sessionObj?.name || 'All Sessions';
     const termLabel = selectedTerm !== 'ALL' ? `${selectedTerm} Term` : 'All Terms';
@@ -318,9 +325,9 @@ export default function StudentOfflineGradesPage() {
         const score = g.isComingSoon ? '—' : String(Number(g.score) || 0);
         const max = String(Number(g.maxMarks) || 100);
         const pct = g.isComingSoon ? 'Pending' : `${Math.round(((Number(g.score) || 0) / (Number(g.maxMarks) || 100)) * 100)}%`;
-        const gradeInfo = g.isComingSoon ? null : getGradeEvaluation(Number(pct.replace('%', '')), schoolProfile?.gradingSystem);
-        const statusOrGrade = g.isComingSoon 
-          ? `Coming Soon (${g.releaseDate ? format(new Date(g.releaseDate), 'MMM d, yyyy') : 'Scheduled'})` 
+        const gradeInfo = g.isComingSoon ? null : getGradeEvaluation(Number(pct.replace('%', '')), customGradingSystem);
+        const statusOrGrade = g.isComingSoon
+          ? `Coming Soon (${g.releaseDate ? format(new Date(g.releaseDate), 'MMM d, yyyy') : 'Scheduled'})`
           : `${gradeInfo?.grade} (${gradeInfo?.remark})`;
 
         return [
@@ -466,9 +473,22 @@ export default function StudentOfflineGradesPage() {
               {stats.averagePercent}%
               <span className="text-xs font-bold text-slate-400">released average</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Grade Tier: <span className="font-bold text-slate-700 dark:text-slate-200">{getGradeEvaluation(stats.averagePercent, schoolProfile?.gradingSystem).remark}</span>
-            </p>
+            {stats.averagePercent > 0 ? (() => {
+              const evalResult = getGradeEvaluation(stats.averagePercent, customGradingSystem);
+              return (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                  Grade Tier:
+                  <span className={cn("px-1.5 py-0.2 rounded text-[10px] font-black border uppercase shadow-2xs", evalResult.bg, evalResult.color)}>
+                    {evalResult.grade}
+                  </span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">({evalResult.remark})</span>
+                </p>
+              );
+            })() : (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Grade Tier: <span className="font-bold text-slate-700 dark:text-slate-200">—</span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -528,10 +548,10 @@ export default function StudentOfflineGradesPage() {
               {c.count !== undefined && (
                 <span className={cn(
                   "px-1.5 py-0.2 rounded-full text-[10px] font-black",
-                  isActive 
-                    ? "bg-white/20 text-white" 
-                    : c.key === 'COMING_SOON' 
-                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" 
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : c.key === 'COMING_SOON'
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
                       : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
                 )}>
                   {c.count}
@@ -687,7 +707,7 @@ export default function StudentOfflineGradesPage() {
                   const score = isComingSoon ? null : (Number(g.score) || 0);
                   const maxMarks = Number(g.maxMarks) || 100;
                   const pct = (score !== null && maxMarks > 0) ? Math.round((score / maxMarks) * 100) : 0;
-                  const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
+                  const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, customGradingSystem) : null;
                   const recordedDate = g.createdAt ? format(new Date(g.createdAt), 'MMM d, yyyy') : null;
                   const releaseDateFormatted = g.releaseDate ? format(new Date(g.releaseDate), "MMM d, yyyy • h:mm a") : null;
 
@@ -696,8 +716,8 @@ export default function StudentOfflineGradesPage() {
                       key={g.id}
                       className={cn(
                         "bg-white dark:bg-slate-900 rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden",
-                        isComingSoon 
-                          ? "border-amber-200/80 dark:border-amber-800/40 bg-gradient-to-b from-amber-50/20 to-transparent" 
+                        isComingSoon
+                          ? "border-amber-200/80 dark:border-amber-800/40 bg-gradient-to-b from-amber-50/20 to-transparent"
                           : "border-slate-200/80 dark:border-slate-800"
                       )}
                     >
@@ -862,7 +882,7 @@ export default function StudentOfflineGradesPage() {
                         const score = isComingSoon ? null : (Number(g.score) || 0);
                         const maxMarks = Number(g.maxMarks) || 100;
                         const pct = (score !== null && maxMarks > 0) ? Math.round((score / maxMarks) * 100) : 0;
-                        const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
+                        const gradeInfo = !isComingSoon ? getGradeEvaluation(pct, customGradingSystem) : null;
                         const recordedDate = g.createdAt ? format(new Date(g.createdAt), 'MMM d, yyyy') : 'N/A';
                         const releaseDateFormatted = g.releaseDate ? format(new Date(g.releaseDate), 'MMM d, yyyy') : null;
 

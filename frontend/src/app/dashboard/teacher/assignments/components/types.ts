@@ -12,6 +12,9 @@ export interface Assignment {
   submitted?: number;
   totalStudents?: number;
   progress?: number;
+  maxScore?: number;
+  gradedCount?: number;
+  averageScorePct?: number | null;
   classes?:string[];
   instructions?:string;
   creator?: { id: string; name: string; profileImage?: string };
@@ -26,6 +29,7 @@ export interface AssignmentCardProps {
   onDelete?: (id: string) => void;
   onViewDetails?: (id: string) => void;
   currentUserId?: string;
+  gradingSystem?: any[] | null;
 }
 
 export interface PaginationProps {

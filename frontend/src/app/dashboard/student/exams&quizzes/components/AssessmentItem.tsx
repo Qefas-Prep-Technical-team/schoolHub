@@ -6,20 +6,22 @@ import { Clock, BookOpen, ChevronRight, Activity, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getGradeEvaluation, GradingRule } from "@/utils/gradingSystem";
 
 interface AssessmentItemProps {
     assessment: Assessment;
     index: number;
+    gradingSystem?: GradingRule[] | null;
 }
 
-export default function AssessmentItem({ assessment, index }: AssessmentItemProps) {
+export default function AssessmentItem({ assessment, index, gradingSystem }: AssessmentItemProps) {
     const [timeLeftStr, setTimeLeftStr] = useState<string | null>(null);
     const [isNavigating, setIsNavigating] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         if (assessment.status !== 'coming soon' && assessment.status !== 'open' && assessment.status !== 'ongoing') return;
-        
+
         const updateTimer = () => {
             const now = new Date();
             const start = assessment.startDate ? new Date(assessment.startDate) : null;
@@ -49,13 +51,14 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
         return () => clearInterval(interval);
     }, [assessment]);
 
-    const getScoreColor = (score: string | null) => {
-        if (!score) return 'text-slate-400 dark:text-zinc-500';
-        const scoreNum = parseInt(score.replace('%', ''), 10);
-        if (scoreNum >= 75) return 'text-emerald-500 font-black';
-        if (scoreNum >= 50) return 'text-amber-500 font-black';
-        return 'text-rose-500 font-black';
-    };
+    const scoreNum = assessment.scorePercentage != null
+        ? assessment.scorePercentage
+        : assessment.score
+            ? parseInt(assessment.score.replace('%', ''), 10)
+            : null;
+    const gradeEval = scoreNum != null && !isNaN(scoreNum)
+        ? getGradeEvaluation(scoreNum, gradingSystem)
+        : null;
 
     const isLive = assessment.status === 'open' || assessment.status === 'ongoing';
 
@@ -72,7 +75,7 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
     };
 
     return (
-        <tr 
+        <tr
             onClick={() => {
                 if (isNavigating) return;
                 setIsNavigating(true);
@@ -133,15 +136,26 @@ export default function AssessmentItem({ assessment, index }: AssessmentItemProp
                 </span>
             </td>
             <td className="p-4 text-center">
-                <span className={`text-xs sm:text-sm ${getScoreColor(assessment.score)}`}>
-                    {assessment.score || '-'}
-                </span>
+                {gradeEval ? (
+                    <div className="inline-flex items-center gap-1.5">
+                        <span className={`text-xs sm:text-sm font-black ${gradeEval.color}`}>
+                            {assessment.score || `${scoreNum}%`}
+                        </span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase border ${gradeEval.color} ${gradeEval.bg}`}>
+                            {gradeEval.grade}
+                        </span>
+                    </div>
+                ) : (
+                    <span className="text-xs sm:text-sm text-slate-400 dark:text-zinc-500">
+                        {assessment.score || '-'}
+                    </span>
+                )}
             </td>
             <td className="p-4">
                 <Badge variant={assessment.status} size="sm">
-                    {assessment.status === 'open' ? 'Live Now' : 
-                    assessment.status === 'coming soon' ? 'Coming Soon' :
-                    assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                    {assessment.status === 'open' ? 'Live Now' :
+                        assessment.status === 'coming soon' ? 'Coming Soon' :
+                            assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
                 </Badge>
             </td>
             <td className="p-4 text-center">

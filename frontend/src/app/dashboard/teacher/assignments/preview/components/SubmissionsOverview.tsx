@@ -4,18 +4,21 @@ import Link from "next/link";
 import Button from "../../components/ui/Button";
 import { SubmissionsOverviewT } from "./types";
 import ProgressBar from "./ui/ProgressBar";
+import { computeGradePill } from "@/utils/gradingSystem";
 
 
 interface SubmissionsOverviewProps {
     overview: SubmissionsOverviewT
     onGradeSubmissions?: () => void;
     onExportSubmissions?: () => void;
+    gradingSystem?: any[] | null;
 }
 
 export default function SubmissionsOverview({
     overview,
     onGradeSubmissions,
-    onExportSubmissions
+    onExportSubmissions,
+    gradingSystem
 }: SubmissionsOverviewProps) {
     const percentageGraded = overview.totalStudents > 0
         ? (overview.graded / overview.totalStudents) * 100
@@ -42,11 +45,24 @@ export default function SubmissionsOverview({
 
             {overview.averageScore !== null && (
                 <div className="mb-6 p-3 bg-emerald-100/50 dark:bg-emerald-800/30 rounded-lg">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center gap-2">
                         <span className="text-sm text-emerald-700 dark:text-emerald-300">Average Score</span>
-                        <span className="text-lg font-bold text-emerald-900 dark:text-emerald-100">
-                            {overview.averageScore.toFixed(1)} / 100
-                        </span>
+                        <div className="flex items-center gap-2">
+                            {(() => {
+                                const pill = computeGradePill(overview.averageScore, gradingSystem);
+                                return (
+                                    <span
+                                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}
+                                        title={pill.remark || pill.label}
+                                    >
+                                        {pill.label}
+                                    </span>
+                                );
+                            })()}
+                            <span className="text-lg font-bold text-emerald-900 dark:text-emerald-100">
+                                {overview.averageScore.toFixed(1)} / 100
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}

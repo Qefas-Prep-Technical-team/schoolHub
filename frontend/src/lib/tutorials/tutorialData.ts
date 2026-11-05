@@ -1,3 +1,5 @@
+import { platformClient } from "@/lib/api/platformClient";
+
 export type UserRoleCategory = "ALL" | "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
 
 export interface TutorialStep {
@@ -10,7 +12,7 @@ export interface TutorialItem {
   id: string;
   title: string;
   summary: string;
-  role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
+  role: "ALL" | "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
   category: "Setup" | "Academics" | "Assessments" | "Billing" | "Communication" | "General";
   duration: string;
   videoUrl: string;
@@ -118,325 +120,281 @@ Assign qualified subject instructors and form masters:
     title: "Managing Student Rosters & Direct Invitation Links",
     summary: "Master student admissions, generating auto-linking invitation links, QR codes, and tracking student claims.",
     role: "ADMIN",
-    category: "Setup",
-    duration: "5:15",
-    videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/Student Management.png",
-    difficulty: "Beginner",
-    steps: [
-      {
-        title: "Generate School & Class Invite Links",
-        description: "Navigate to Dashboard -> Linking & Invitations to view your school's universal join link (e.g. /join/school/sch-qef-896440) and printable QR code poster.",
-        tips: "Print the generated QR code poster and display it on your school notice board for easy student registration."
-      },
-      {
-        title: "Review & Approve Connection Requests",
-        description: "Check the 'Pending Requests' tab to verify students claiming affiliation with your school. Click 'Approve' to instantly activate their platform records.",
-        tips: "You can batch-approve verified students or reject unrecognized requests with a single click."
-      },
-      {
-        title: "Assign Approved Students to Classes",
-        description: "Select students from the master directory and enroll them into their designated classes and arms.",
-        tips: "Enrolling a student automatically assigns their subject timetable and exam rosters."
-      }
-    ],
-    keyTakeaways: [
-      "Sharing seamless join links and printable QR codes",
-      "Batch review and verification of student requests",
-      "Assigning classes and student arms in bulk",
-      "Tracking student quota limits and active enrolments"
-    ]
-  },
-  {
-    id: "admin-billing-plans",
-    title: "School Billing, Subscription Quotas & Automated Invoices",
-    summary: "Understand how student quota limits work, upgrade plans with Paystack or Flutterwave, and manage invoice payments.",
-    role: "ADMIN",
-    category: "Billing",
+    category: "Academics",
     duration: "4:45",
     videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/Automated Reporting.png",
+    thumbnail: "/image/Student Management.png",
+    featured: false,
     difficulty: "Intermediate",
     steps: [
       {
-        title: "Monitor Active Quotas in Billing Console",
-        description: "Visit Dashboard -> Billing to inspect your active plan, current student and teacher headcounts, and remaining quota capacity.",
-        tips: "Automatic notifications are sent when your student roster reaches 90% capacity."
+        title: "Generate School Admission Link",
+        description: "Open the Student Directory, click 'Enroll Students' -> 'Generate Direct School Link'.",
+        tips: "Links can be generated per class arm or globally for the entire institution."
       },
       {
-        title: "Upgrade Plan or Add Student Add-ons",
-        description: "Click 'Change Plan' to select higher tiers or apply promo and discount coupons during checkout.",
-        tips: "All invoices and transaction receipts can be downloaded as official PDFs with unique tax reference numbers."
+        title: "Share QR Code or Direct URL",
+        description: "Distribute the generated joining QR code to students and parents during enrollment or orientation.",
+        tips: "When an existing student signs in via this link, their account is instantly matched with zero manual approval delays."
+      },
+      {
+        title: "Review Verification Requests",
+        description: "Approve pending links under 'Linking Management' for any applicants requiring identity validation.",
+        tips: "Check national student identification codes or admission numbers before confirming links."
       }
     ],
     keyTakeaways: [
-      "Real-time quota monitoring and usage enforcement",
-      "Seamless checkout via local and international gateways",
-      "100% coupon activation and itemized receipts"
+      "Zero-friction student onboarding via dynamic URL tokens",
+      "Class-specific QR code handouts for orientation days",
+      "Real-time roster synchronization across web and mobile"
+    ],
+    faqs: [
+      {
+        q: "What happens if a student loses their admission code?",
+        a: "Admins can re-issue or view the student's unique admission code directly from the Student Directory profile modal."
+      }
+    ],
+    richTextGuide: `# Student Admissions & Institutional Roster Masterclass
+
+Efficient student enrollment is the cornerstone of a streamlined academic year.
+
+### Link Distribution Workflow:
+1. Generate the tokenized link: $\\text{URL} = \\text{https://qefashub.com/link/accept?token=} \\tau$
+2. Provide candidate admission verification threshold:
+   $$\\text{Match Ratio} = \\frac{\\text{Verified Credentials}}{\\text{Total Admission Attributes}} \\ge 1.0$$
+3. Confirm instantaneous class roster ingestion.`
+  },
+  {
+    id: "admin-broadsheet-export",
+    title: "Generating Institutional Broadsheets & Terminal Reports",
+    summary: "Compile continuous assessments, exam results, conduct ratings, and export certified PDF broadsheets.",
+    role: "ADMIN",
+    category: "Assessments",
+    duration: "7:10",
+    videoUrl: "/videos/hero video.mp4",
+    thumbnail: "/image/Automated Reporting.png",
+    featured: true,
+    difficulty: "Advanced",
+    steps: [
+      {
+        title: "Lock Continuous Assessments",
+        description: "Ensure all subject teachers have submitted their term CA scores and that the exam committee has approved outstanding marks.",
+        tips: "Use the 'Pending Submissions' filter on the Assessment Overview page to identify lagging subject entries."
+      },
+      {
+        title: "Review Cumulative Broadsheet",
+        description: "Open 'Terminal Reports' -> 'Broadsheet Matrix' to view subject-by-subject grades, averages, and class position rankings.",
+        tips: "Our standard 9-tier institutional grading engine automatically computes cumulative averages across all core subjects."
+      },
+      {
+        title: "Export Official PDF Dossiers",
+        description: "Click 'Export Certified PDF' to produce print-ready student report cards bearing digital signatures, QR authenticity seals, and school headers.",
+        tips: "Export in batch mode to generate a combined multi-page document for entire graduation sets."
+      }
+    ],
+    keyTakeaways: [
+      "Automated grade aggregation and rank sorting",
+      "Tamper-proof QR verification code on every report card",
+      "Bulk export formatted specifically for A4 standard printing"
     ]
   },
 
   // --- TEACHER TUTORIALS ---
   {
-    id: "teacher-exams-assessments",
-    title: "Setting Up Exams, Quizzes & Continuous Assessments (CA)",
-    summary: "Comprehensive guide for teachers to create multi-section exams, multiple choice questions, theory tests, and automated grading.",
+    id: "teacher-grade-entry",
+    title: "Continuous Assessment Logging & Marksheet Sync",
+    summary: "Record test, quiz, project, and terminal exam marks seamlessly, including offline spreadsheet synchronization.",
     role: "TEACHER",
     category: "Assessments",
-    duration: "7:10",
-    videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/videoThumbnail.jpg",
-    featured: true,
-    difficulty: "Intermediate",
-    steps: [
-      {
-        title: "Create Assessment or Quiz Paper",
-        description: "From the Teacher Dashboard, go to 'Exams & Quizzes' -> 'Create Exam'. Specify Subject, Class, Assessment Type (Exam, Test 1, Test 2, Quiz), and Duration.",
-        tips: "Continuous assessment weighting (e.g. 40% CA + 60% Exam) is automatically computed by the system."
-      },
-      {
-        title: "Add Questions (Objective, Theory, LaTeX Math)",
-        description: "Use the question builder to add multiple-choice options with answer keys, rich mathematical formulas, images, and essay questions.",
-        tips: "Objective questions are auto-graded by the platform the moment a student completes submission."
-      },
-      {
-        title: "Publish and Schedule Release Time",
-        description: "Set the start time window. Students enrolled in the class will receive instant notifications and see the assessment on their dashboard.",
-        tips: "You can randomize question order to minimize cheating in physical or remote computer-based tests."
-      }
-    ],
-    keyTakeaways: [
-      "Creating CBT exams and continuous assessment tests",
-      "Automated instant grading for objective questions",
-      "LaTeX math support and rich text formatting",
-      "Anti-cheating question shuffling and time limits"
-    ],
-    faqs: [
-      {
-        q: "Can students retake exams?",
-        a: "By default, exams allow 1 submission, but teachers can grant an extra attempt from the student submission review panel."
-      }
-    ],
-    richTextGuide: `# CBT Assessment Design & Mathematical Question Authoring
-
-This guide equips teachers with best practices for compiling modern computer-based assessments on Qefas Hub.
-
----
-
-### Mathematical & Scientific Formula Syntax
-Qefas Hub features native LaTeX support for all STEM subjects:
-
-1. **Inline Mathematical Expressions**:
-   Wrap equations inside single dollar signs:
-   - Quadratic root formula: $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$
-   - Kinetic energy theorem: $E_k = \\frac{1}{2}mv^2$
-
-2. **Block / Displayed Equations**:
-   Wrap large expressions in double dollar signs:
-   $$\\int_{a}^{b} f(x)\\,dx = F(b) - F(a)$$
-
-3. **Chemical Reactions & Subscripts**:
-   - Combustion of glucose: $\\text{C}_6\\text{H}_{12}\\text{O}_6 + 6\\text{O}_2 \\longrightarrow 6\\text{CO}_2 + 6\\text{H}_2\\text{O}$
-
----
-
-### Step-by-Step Scoring Distribution Matrix
-Ensure your continuous assessment balances continuous tasks with summative terminal assessments:
-
-- **Weekly Diagnostic Quizzes**: 10%
-- **Mid-Term Practical Laboratory / Project**: 15%
-- **Continuous Assessment Test 1 & 2**: 15%
-- **Terminal Examination Paper**: 60%
-
-> **Proctored Integrity Guard**:
-> Enabling 'Randomize Questions' and 'Fullscreen Lock' prevents unauthorized tab switching during examination sittings.`
-  },
-  {
-    id: "teacher-gradebook-records",
-    title: "Gradebook Management, Report Cards & Termly Records",
-    summary: "Step-by-step tutorial on compiling term results, recording offline scores, generating broadsheets, and approving report cards.",
-    role: "TEACHER",
-    category: "Academics",
-    duration: "5:50",
-    videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/attendanceTracking.jpg",
-    difficulty: "Intermediate",
-    steps: [
-      {
-        title: "Open the Class Gradebook",
-        description: "Navigate to 'Gradebook' -> select your Class and Subject to see a broadsheet view of all enrolled students with their continuous assessment scores.",
-        tips: "You can enter scores directly into table cells with auto-save enabled."
-      },
-      {
-        title: "Record Offline Grades & Practical Scores",
-        description: "Use the 'Offline Grades' feature to input manual classroom projects, laboratory practicals, or assignment marks.",
-        tips: "Use Excel import to upload broadsheets if your school calculates scores externally."
-      },
-      {
-        title: "Generate and Approve Terminal Report Cards",
-        description: "Review total aggregate marks, grade distribution, class rank positions, and submit teacher remarks for parents to view.",
-        tips: "Once approved, parents receive automated SMS and email notifications that report cards are ready."
-      }
-    ],
-    keyTakeaways: [
-      "Broadsheet spreadsheet interface with auto-save",
-      "Offline and practical assessment integration",
-      "One-click terminal report card generation with remarks",
-      "Student performance rankings and analytics"
-    ]
-  },
-  {
-    id: "teacher-attendance-tracking",
-    title: "Daily Attendance Tracking & Student Absence Alerts",
-    summary: "Record student attendance in under 30 seconds with smart bulk toggles, late-arrival markers, and automated parent alerts.",
-    role: "TEACHER",
-    category: "Academics",
-    duration: "3:40",
-    videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/Attendance Tracking.png",
-    difficulty: "Beginner",
-    steps: [
-      {
-        title: "Launch Daily Register",
-        description: "Go to Teacher Dashboard -> 'My Classes' -> select active class -> 'Attendance Register'. The current date is pre-selected.",
-        tips: "All students are marked 'Present' by default so you only need to mark absentees or late arrivals."
-      },
-      {
-        title: "Toggle Status & Add Absence Notes",
-        description: "Tap on individual student statuses to toggle Present, Absent, Excused, or Late. Add brief notes if an excuse note was provided.",
-        tips: "Parents can view real-time attendance trends on their dedicated portal."
-      }
-    ],
-    keyTakeaways: [
-      "Instant 30-second classroom roll call",
-      "Automated attendance percentages calculation",
-      "Immediate alert notifications to linked parents"
-    ]
-  },
-
-  // --- STUDENT TUTORIALS ---
-  {
-    id: "student-portal-guide",
-    title: "Student Portal Walkthrough: Classes, Timetable & Homework",
-    summary: "Discover how students access their daily class timetable, download study materials, and submit homework assignments online.",
-    role: "STUDENT",
-    category: "Academics",
-    duration: "4:30",
-    videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/Student Management.png",
-    difficulty: "Beginner",
-    steps: [
-      {
-        title: "View Enrolled Classes & Subjects",
-        description: "Log in to the Student Portal. Your dashboard displays today's schedule, current classes, and upcoming deadlines.",
-        tips: "Bookmark your student portal on your mobile browser home screen for quick daily access."
-      },
-      {
-        title: "Complete & Submit Homework Assignments",
-        description: "Click on 'Assignments' -> choose an active task -> type your answer or upload PDF/photo of handwritten work -> click 'Submit Assignment'.",
-        tips: "Always check the deadline counter to ensure on-time submissions and avoid late penalties."
-      },
-      {
-        title: "Track Grades & Teacher Feedback",
-        description: "Once your teacher grades your work, check 'Graded Assignments' to review score breakdowns, comments, and corrections.",
-        tips: "Reviewing teacher comments helps identify areas for revision before major exams."
-      }
-    ],
-    keyTakeaways: [
-      "Accessing daily schedules and lesson resources",
-      "Uploading homework assignments seamlessly",
-      "Reviewing grades and personalized teacher feedback"
-    ]
-  },
-  {
-    id: "student-online-exams",
-    title: "Taking Computer-Based Tests (CBT) & Viewing Results",
-    summary: "How to take timed exams on Qefas Hub, navigate questions, save answers, and review your performance breakdown.",
-    role: "STUDENT",
-    category: "Assessments",
-    duration: "5:00",
-    videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/videoThumbnail.jpg",
-    difficulty: "Beginner",
-    steps: [
-      {
-        title: "Join Scheduled Assessment",
-        description: "Go to 'Exams & Quizzes' -> click 'Start Assessment'. Carefully read instructions and rules regarding time limit.",
-        tips: "Ensure a stable internet connection before starting the timer."
-      },
-      {
-        title: "Question Navigation & Auto-Save",
-        description: "Answers are saved immediately upon selection. Use the Question Palette on the right to jump between questions or flag items for review.",
-        tips: "Flagged questions display a distinct yellow ring so you can return to them before final submission."
-      },
-      {
-        title: "Submit and View Instant Score",
-        description: "Click 'Submit Exam' -> confirm your submission. Your score for objective sections is computed and displayed immediately.",
-        tips: "You can view detailed question-by-question explanations after your teacher publishes results."
-      }
-    ],
-    keyTakeaways: [
-      "Real-time timer and auto-save mechanisms",
-      "Interactive question palette with review flags",
-      "Instant score calculations and performance graphs"
-    ]
-  },
-
-  // --- PARENT TUTORIALS ---
-  {
-    id: "parent-portal-guide",
-    title: "Parent Gateway: Linking Children, Tracking Grades & Attendance",
-    summary: "Learn how parents can connect multiple children to a single account, monitor academic progress, and verify attendance records.",
-    role: "PARENT",
-    category: "Communication",
-    duration: "4:15",
+    duration: "5:30",
     videoUrl: "/videos/hero video.mp4",
     thumbnail: "/image/Automated Reporting.png",
     featured: true,
     difficulty: "Beginner",
     steps: [
       {
-        title: "Link Child with Unique Student Code",
-        description: "From the Parent Dashboard, click 'Add Child' -> enter the student code provided by the school (e.g. STU-94821) -> submit link request.",
-        tips: "You can link multiple children attending different schools all under your single parent profile."
+        title: "Select Class & Subject Roster",
+        description: "From your Teacher Dashboard, navigate to 'Grades' and select the assigned class and subject.",
+        tips: "Only classes where you have been designated as the primary subject instructor will appear."
       },
       {
-        title: "Monitor Academic Grades & Report Cards",
-        description: "Click on your child's profile to view their continuous assessment scores, homework completion rates, and terminal report cards.",
-        tips: "Download official PDF report cards signed with digital school validation."
+        title: "Input Scores in the Assessment Matrix",
+        description: "Type marks directly into test, project, or exam columns. The interface calculates percentage totals live as you type.",
+        tips: "Pressing the Tab or Down Arrow key advances instantly to the next student row for ultra-fast grade entry."
       },
       {
-        title: "Check Attendance & Punctuality Records",
-        description: "Inspect the monthly attendance calendar to verify days present, excused absences, or late arrivals.",
-        tips: "Receive immediate push or email alerts whenever an absence is registered."
+        title: "Download Offline Spreadsheet for Remote Work",
+        description: "Traveling or experiencing slow internet? Click 'Export Blank Template' to input grades in Excel and re-upload anytime.",
+        tips: "Never modify the student code column in Excel to prevent synchronization mismatch errors."
       }
     ],
     keyTakeaways: [
-      "Multi-child management from one centralized portal",
-      "Instant access to verified terminal report cards",
-      "Real-time attendance calendars and alerts"
+      "Keyboard-optimized score logging workflow",
+      "Offline spreadsheet import & auto-conflict resolution",
+      "Real-time weighted score and letter grade computation"
     ]
   },
   {
-    id: "parent-fee-payments",
-    title: "School Fees, Online Payments & Official Receipts",
-    summary: "How to view itemized school tuition statements, pay fees securely with cards or mobile transfer, and print instant receipts.",
-    role: "PARENT",
-    category: "Billing",
-    duration: "3:50",
+    id: "teacher-attendance-rollcall",
+    title: "Daily Attendance Tracking & Real-Time Parent Alerts",
+    summary: "Take morning and subject roll calls in under two minutes with automated SMS/email alerts to parents for unexcused absences.",
+    role: "TEACHER",
+    category: "Academics",
+    duration: "3:40",
     videoUrl: "/videos/hero video.mp4",
-    thumbnail: "/image/backgroundSchool2.jpg",
+    thumbnail: "/image/Attendance Tracking.png",
+    featured: false,
     difficulty: "Beginner",
     steps: [
       {
-        title: "Access Invoices & Tuition Statements",
-        description: "Navigate to 'Billing & Payments' to view outstanding tuition, uniforms, bus services, and examination fees.",
-        tips: "Invoices clearly indicate breakdown items and payment due dates."
+        title: "Open Daily Attendance Roster",
+        description: "Click 'Attendance' -> 'Daily Roll Call' on your Teacher Dashboard.",
+        tips: "Defaults to today's date and the current active morning lecture period."
       },
       {
-        title: "Pay Dues Securely Online",
-        description: "Click 'Pay Now' to complete payment via debit card, direct bank transfer, or USSD.",
-        tips: "Online transactions are processed through bank-grade encrypted channels."
+        title: "Use One-Tap Quick Mark",
+        description: "Click 'Mark All Present', then tap individual student avatars to toggle between Absent, Late, or Excused.",
+        tips: "Clicking 'Excused' opens a quick prompt to type medical or travel excuses."
+      },
+      {
+        title: "Submit & Dispatch Alerts",
+        description: "Hit 'Save Attendance Record'. Parents of absent students are notified instantly through their linked mobile apps.",
+        tips: "Review weekly trend charts to detect chronic absenteeism patterns early."
+      }
+    ],
+    keyTakeaways: [
+      "Single-tap mass presence marking",
+      "Instant push alerts to parents of unexcused absences",
+      "Automated attendance percentages on end-of-term broadsheets"
+    ]
+  },
+
+  // --- STUDENT TUTORIALS ---
+  {
+    id: "student-exam-taking",
+    title: "Taking Computer-Based Exams & Real-Time Reviews",
+    summary: "Navigate online tests, flag questions for review, monitor the countdown timer, and submit with full score transparency.",
+    role: "STUDENT",
+    category: "Assessments",
+    duration: "4:15",
+    videoUrl: "/videos/hero video.mp4",
+    thumbnail: "/image/backgroundSchool2.jpg",
+    featured: true,
+    difficulty: "Beginner",
+    steps: [
+      {
+        title: "Access Upcoming Assessment",
+        description: "Open your Student Portal, select 'Exams & Quizzes', and verify the test schedule, duration, and instructions.",
+        tips: "Ensure your device battery is charged and you have a steady internet connection before starting."
+      },
+      {
+        title: "Answer Questions & Flag Items",
+        description: "Select choices or write essay responses. Use the question palette on the right to jump directly between question numbers.",
+        tips: "Questions marked with a yellow flag indicate you intended to double-check your answer before final submission."
+      },
+      {
+        title: "Review & Final Submission",
+        description: "Check the review screen for any unanswered questions, then click 'Confirm & Submit Exam'.",
+        tips: "If the countdown timer reaches zero, your answers are automatically sealed and submitted safely."
+      }
+    ],
+    keyTakeaways: [
+      "Auto-save mechanism prevents lost answers during network flickers",
+      "Visual question palette flags answered and pending questions",
+      "Instant objective score summaries upon examiner approval"
+    ]
+  },
+  {
+    id: "student-transcript-request",
+    title: "Requesting Official Certified Transcripts",
+    summary: "How students and alumni can order certified digital transcripts, pay processing fees, and download sealed PDF credentials.",
+    role: "STUDENT",
+    category: "Billing",
+    duration: "5:00",
+    videoUrl: "/videos/hero video.mp4",
+    thumbnail: "/image/Student Management.png",
+    featured: false,
+    difficulty: "Intermediate",
+    steps: [
+      {
+        title: "Navigate to Digital Credentials",
+        description: "From your Student Portal sidebar, click 'Academic Records' -> 'Request Official Transcript'.",
+        tips: "Graduated alumni can access this service using their permanent student registration code."
+      },
+      {
+        title: "Select Delivery Destination & Purpose",
+        description: "Specify whether the document is for University Admissions, Employment, or Personal Archival.",
+        tips: "You can enter destination university admissions email addresses for direct institutional forwarding."
+      },
+      {
+        title: "Pay Processing Fee & Track Status",
+        description: "Complete checkout via secure online card payment. Track admin review and cryptographic sealing live.",
+        tips: "Each delivered transcript includes an encrypted QR validation seal that universities can scan for instant verification."
+      }
+    ],
+    keyTakeaways: [
+      "Self-service official transcript ordering",
+      "Instant electronic delivery upon admin sign-off",
+      "Tamper-evident verification link on every document"
+    ]
+  },
+
+  // --- PARENT TUTORIALS ---
+  {
+    id: "parent-child-monitoring",
+    title: "Connecting with Your Child & Monitoring Real-Time Academic Progress",
+    summary: "Link your parent account to your child's profile, monitor live exam scores, track attendance, and inspect teacher remarks.",
+    role: "PARENT",
+    category: "Academics",
+    duration: "4:50",
+    videoUrl: "/videos/hero video.mp4",
+    thumbnail: "/image/backgroundSchool.jpg",
+    featured: true,
+    difficulty: "Beginner",
+    steps: [
+      {
+        title: "Request Parent-Child Link",
+        description: "In your Parent Portal, click 'Link Child', input your child's unique admission code and birth date.",
+        tips: "Your child's admission code is printed on their school badge or admission letter."
+      },
+      {
+        title: "Verify Linking Approval",
+        description: "Once the school or student verifies the link request, your parent dashboard unlocks their full academic dossier.",
+        tips: "Multiple children in different classes or different schools can be monitored under one single parent login."
+      },
+      {
+        title: "Inspect Performance & Report Cards",
+        description: "View real-time continuous assessment test scores, attendance ratios, and download signed terminal reports.",
+        tips: "Set up push notifications to receive instant alerts whenever a teacher posts new assessment results."
+      }
+    ],
+    keyTakeaways: [
+      "Single unified login for all children across multiple schools",
+      "Real-time grade alerts as soon as teachers grade assessments",
+      "Direct mobile viewing of attendance check-ins and absences"
+    ]
+  },
+  {
+    id: "parent-tuition-payment",
+    title: "Paying Tuition Fees & Generating Instant Tax Receipts",
+    summary: "Review fee schedules, choose flexible installment plans, make card or bank transfer payments, and download certified receipts.",
+    role: "PARENT",
+    category: "Billing",
+    duration: "3:30",
+    videoUrl: "/videos/hero video.mp4",
+    thumbnail: "/image/videoThumbnail.jpg",
+    featured: false,
+    difficulty: "Beginner",
+    steps: [
+      {
+        title: "Access Fee Invoices",
+        description: "Open 'Fees & Billing' on your Parent Dashboard to view current term invoices and payment deadlines.",
+        tips: "Early payment discounts and multi-sibling concessions are automatically calculated."
+      },
+      {
+        title: "Choose Payment Method",
+        description: "Select full payment or configured installment milestones, then proceed through the Flutterwave/Paystack secure checkout.",
+        tips: "Cards, USSD, and direct bank transfers are supported with zero convenience surcharges."
       },
       {
         title: "Download Official Payment Receipt",
@@ -452,14 +410,25 @@ Ensure your continuous assessment balances continuous tasks with summative termi
   }
 ];
 
+// In-memory cache for ultra-fast client responsiveness
+let memoryCachedTutorials: TutorialItem[] | null = null;
+
+/**
+ * Synchronous getter: Returns memory cache, localStorage fallback, or INITIAL_TUTORIALS.
+ */
 export function getStoredTutorials(): TutorialItem[] {
+  if (memoryCachedTutorials && memoryCachedTutorials.length > 0) {
+    return memoryCachedTutorials;
+  }
   if (typeof window === "undefined") return INITIAL_TUTORIALS;
   try {
     const raw = localStorage.getItem(TUTORIALS_STORAGE_KEY);
-    if (!raw) return INITIAL_TUTORIALS;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryCachedTutorials = parsed;
+        return parsed;
+      }
     }
   } catch (err) {
     console.error("Failed to load stored tutorials", err);
@@ -467,23 +436,169 @@ export function getStoredTutorials(): TutorialItem[] {
   return INITIAL_TUTORIALS;
 }
 
-export function saveStoredTutorials(tutorials: TutorialItem[]): void {
-  if (typeof window === "undefined") return;
+/**
+ * Fetch real tutorials directly from the backend database.
+ * Syncs the local cache and triggers reactive UI update events.
+ */
+export async function fetchTutorialsFromDatabase(): Promise<TutorialItem[]> {
   try {
-    localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(tutorials));
-    window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: tutorials }));
+    const res = await platformClient.get<{ success: boolean; data: TutorialItem[] }>("/platform/tutorials");
+    if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      const dbTutorials = res.data.data;
+      memoryCachedTutorials = dbTutorials;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(dbTutorials));
+          window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: dbTutorials }));
+        } catch { }
+      }
+      return dbTutorials;
+    }
   } catch (err) {
-    console.error("Failed to save tutorials", err);
+    console.warn("Failed to fetch tutorials from database, using cached/default catalog:", err);
   }
+  return getStoredTutorials();
 }
 
-export function resetStoredTutorials(): TutorialItem[] {
-  if (typeof window === "undefined") return INITIAL_TUTORIALS;
+/**
+ * Fetch a single tutorial by ID from the database or fallback catalog.
+ */
+export async function fetchTutorialByIdFromDatabase(id: string): Promise<TutorialItem | null> {
   try {
-    localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(INITIAL_TUTORIALS));
-    window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: INITIAL_TUTORIALS }));
+    const res = await platformClient.get<{ success: boolean; data: TutorialItem }>(`/platform/tutorials/${id}`);
+    if (res.data?.success && res.data.data) {
+      return res.data.data;
+    }
+  } catch {
+    // Fall back to local catalog
+  }
+  const all = getStoredTutorials();
+  return all.find((t) => t.id === id) || null;
+}
+
+/**
+ * Persist tutorials to the database and update local storage/events.
+ */
+export async function saveStoredTutorials(tutorials: TutorialItem[]): Promise<TutorialItem[]> {
+  memoryCachedTutorials = tutorials;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(tutorials));
+      window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: tutorials }));
+    } catch (err) {
+      console.error("Failed to save tutorials to localStorage", err);
+    }
+  }
+
+  try {
+    const res = await platformClient.post<{ success: boolean; data: TutorialItem[] }>("/platform/tutorials", {
+      tutorials,
+    });
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      return res.data.data;
+    }
   } catch (err) {
-    console.error("Failed to reset tutorials", err);
+    console.error("Failed to save tutorials to database:", err);
+    throw err;
+  }
+  return tutorials;
+}
+
+/**
+ * Upsert a single tutorial into the database.
+ */
+export async function upsertSingleTutorialToDatabase(tutorial: TutorialItem): Promise<TutorialItem[]> {
+  const current = getStoredTutorials();
+  const existingIndex = current.findIndex((t) => t.id === tutorial.id);
+  let optimisticList: TutorialItem[];
+  if (existingIndex >= 0) {
+    optimisticList = [...current];
+    optimisticList[existingIndex] = tutorial;
+  } else {
+    optimisticList = [tutorial, ...current];
+  }
+  memoryCachedTutorials = optimisticList;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(optimisticList));
+      window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: optimisticList }));
+    } catch { }
+  }
+
+  try {
+    const res = await platformClient.post<{ success: boolean; data: TutorialItem[] }>("/platform/tutorials/upsert", tutorial);
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      memoryCachedTutorials = res.data.data;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(res.data.data));
+          window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: res.data.data }));
+        } catch { }
+      }
+      return res.data.data;
+    }
+  } catch (err) {
+    console.error("Failed to upsert tutorial to database:", err);
+    throw err;
+  }
+  return optimisticList;
+}
+
+/**
+ * Delete a tutorial by ID from the database.
+ */
+export async function deleteTutorialFromDatabase(id: string): Promise<TutorialItem[]> {
+  const current = getStoredTutorials();
+  const filtered = current.filter((t) => t.id !== id);
+  memoryCachedTutorials = filtered;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(filtered));
+      window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: filtered }));
+    } catch { }
+  }
+
+  try {
+    const res = await platformClient.delete<{ success: boolean; data: TutorialItem[] }>(`/platform/tutorials/${id}`);
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      memoryCachedTutorials = res.data.data;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(res.data.data));
+          window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: res.data.data }));
+        } catch { }
+      }
+      return res.data.data;
+    }
+  } catch (err) {
+    console.error("Failed to delete tutorial from database:", err);
+    throw err;
+  }
+  return filtered;
+}
+
+/**
+ * Reset database and local catalog to defaults.
+ */
+export async function resetStoredTutorials(): Promise<TutorialItem[]> {
+  memoryCachedTutorials = INITIAL_TUTORIALS;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TUTORIALS_STORAGE_KEY, JSON.stringify(INITIAL_TUTORIALS));
+      window.dispatchEvent(new CustomEvent("qefas_tutorials_updated", { detail: INITIAL_TUTORIALS }));
+    } catch (err) {
+      console.error("Failed to reset tutorials", err);
+    }
+  }
+
+  try {
+    const res = await platformClient.post<{ success: boolean; data: TutorialItem[] }>("/platform/tutorials/reset");
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      memoryCachedTutorials = res.data.data;
+      return res.data.data;
+    }
+  } catch (err) {
+    console.error("Failed to reset tutorials on database:", err);
   }
   return INITIAL_TUTORIALS;
 }

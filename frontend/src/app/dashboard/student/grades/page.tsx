@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, Fragment } from 'react';
-import { 
-  ChevronRight, 
+import {
+  ChevronRight,
   ArrowLeft,
-  Trophy, 
+  Trophy,
   FileText,
   GraduationCap,
   Download,
@@ -176,7 +176,7 @@ const getAssignmentStatusText = (status: Assignment['status'], dueDate: string) 
 export default function StudentGradesPage() {
   const router = useRouter();
   const [expandedExamId, setExpandedExamId] = useState<string | null>(null);
-  const [activeTab, setActiveTab ] = useState<'exams' | 'assessments'>('exams');
+  const [activeTab, setActiveTab] = useState<'exams' | 'assessments'>('exams');
   const [caTab, setCaTab] = useState<'ALL' | 'CA' | 'ASSIGNMENT' | 'TEST/QUIZ' | 'SUBJECT PAPER'>('ALL');
   const [selectedTerm, setSelectedTerm] = useState<string>('ALL');
   const [selectedSession, setSelectedSession] = useState<string>('ALL');
@@ -196,13 +196,20 @@ export default function StudentGradesPage() {
       setViewMode('grid');
     }
   }, []);
-  
+
   const { user } = useAuthStore();
 
   // Data fetching
   const { data: profile } = useStudentProfile();
-  const schoolId = profile?.schoolId || user?.schools?.[0]?.schoolId || '';
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    profile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
   const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
   const { data: sessionsRes, isLoading: isLoadingSessions } = useSessions(schoolId);
   const sessions = sessionsRes?.data || (Array.isArray(sessionsRes) ? sessionsRes : []);
   const { data: schoolClassesRes } = useClasses(schoolId);
@@ -283,7 +290,7 @@ export default function StudentGradesPage() {
     return filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [allGrades, selectedTerm, selectedSession, selectedClassId]);
 
-  
+
   const paginatedAttempts = useMemo(() => {
     const startIndex = (examsPage - 1) * itemsPerPage;
     return filteredAllAttempts.slice(startIndex, startIndex + itemsPerPage);
@@ -315,9 +322,9 @@ export default function StudentGradesPage() {
     if (caTab === 'SUBJECT PAPER') return type === 'SUBJECT PAPER' || type === 'PAPER' || type === 'SUBJECT_PAPER' || !!g.subjectPaperId;
     return type === caTab.toUpperCase();
   });
-  const gradePagination = { 
-    total: gradesFilteredForTab.length, 
-    totalPages: Math.ceil(gradesFilteredForTab.length / itemsPerPage) 
+  const gradePagination = {
+    total: gradesFilteredForTab.length,
+    totalPages: Math.ceil(gradesFilteredForTab.length / itemsPerPage)
   };
 
   const paginatedAssignments = useMemo(() => {
@@ -421,9 +428,9 @@ export default function StudentGradesPage() {
       }
       const score = grade.score || 0;
       const maxMarks = grade.maxMarks || 0;
-      
+
       const type = (grade.assessmentType || grade.category || '').toUpperCase();
-      
+
       if (type === 'EXAM') {
         subjectsMap[sName].examScore += score;
         subjectsMap[sName].examMax += maxMarks;
@@ -503,14 +510,14 @@ export default function StudentGradesPage() {
 
     let totalScoreSum = 0;
     const totalMaxSum = subjects.length * 100;
-    
+
     subjects.forEach((s) => {
       totalScoreSum += s.totalScore;
     });
 
     const overallAverage = subjects.length > 0 ? Math.round(totalScoreSum / subjects.length) : 0;
     const gpa = (overallAverage / 25).toFixed(1);
-    
+
     const aiClassTeacherRemark = generateAIClassTeacherRemark(user.name, overallAverage);
     const aiGeneralRemark = generateAIPrincipalRemark(user.name, overallAverage);
 
@@ -542,8 +549,8 @@ export default function StudentGradesPage() {
   const calculateCumulativeAvg = () => {
     const examPercents = filteredAllAttempts.map((a: Record<string, any>) => (a.totalScore / (a.totalMarks || 1)) * 100);
     const standalonePercents = filteredAllGrades.map((g: Record<string, any>) => (g.score / (g.maxMarks || 1)) * 100);
-    const allPercents = [...examPercents, ...standalonePercents];  
-    if (allPercents.length === 0) return "0.0"; 
+    const allPercents = [...examPercents, ...standalonePercents];
+    if (allPercents.length === 0) return "0.0";
     const avg = allPercents.reduce((acc, curr) => acc + (curr || 0), 0) / allPercents.length;
     return (avg / 25).toFixed(1); // Rough conversion to 4.0 scale
   };
@@ -617,10 +624,10 @@ export default function StudentGradesPage() {
 
   // selectedExamId logic removed to use dedicated route
 
-    return (
+  return (
     <div className="w-full space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6">
       <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8">
-        
+
         {/* Top Summary Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -668,7 +675,7 @@ export default function StudentGradesPage() {
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
-                  
+
                   {/* Term Dropdown Select */}
                   <div className="relative flex-1 sm:w-36">
                     <select
@@ -723,7 +730,7 @@ export default function StudentGradesPage() {
             </div>
           </div>
 
-          <div 
+          <div
             onClick={() => setIsLeaderboardOpen(true)}
             className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 shadow-md shadow-rose-500/20 flex flex-col justify-between text-white cursor-pointer hover:shadow-lg transition-all active:scale-[0.99]"
           >
@@ -764,14 +771,14 @@ export default function StudentGradesPage() {
         <div className="flex flex-col gap-4 sm:gap-6 mt-2">
           <div className="flex gap-1.5 sm:gap-2 bg-white dark:bg-zinc-950/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 w-full sm:w-fit overflow-x-auto shadow-sm" style={{ scrollbarWidth: 'none' }}>
             {(['exams', 'assessments'] as const).map(tab => (
-              <button 
+              <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 type="button"
                 className={cn(
-                  "px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold capitalize transition-all whitespace-nowrap flex-1 sm:flex-none", 
-                  activeTab === tab 
-                    ? "bg-pink-600 text-white shadow-md shadow-pink-500/20" 
+                  "px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold capitalize transition-all whitespace-nowrap flex-1 sm:flex-none",
+                  activeTab === tab
+                    ? "bg-pink-600 text-white shadow-md shadow-pink-500/20"
                     : "text-slate-500 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50 dark:hover:bg-zinc-900"
                 )}
               >
@@ -792,11 +799,10 @@ export default function StudentGradesPage() {
                     <button
                       onClick={() => setViewMode('grid')}
                       type="button"
-                      className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${
-                        viewMode === 'grid'
+                      className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid'
                           ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
                           : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
-                      }`}
+                        }`}
                       title="Grid View"
                       aria-label="Grid View"
                     >
@@ -805,11 +811,10 @@ export default function StudentGradesPage() {
                     <button
                       onClick={() => setViewMode('table')}
                       type="button"
-                      className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${
-                        viewMode === 'table'
+                      className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'table'
                           ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
                           : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
-                      }`}
+                        }`}
                       title="Table View"
                       aria-label="Table View"
                     >
@@ -817,7 +822,7 @@ export default function StudentGradesPage() {
                     </button>
                   </div>
                 </div>
-                
+
                 {viewMode === 'grid' ? (
                   <div className="flex-1 p-4 sm:p-6">
                     {isLoadingAttempts ? (
@@ -845,12 +850,11 @@ export default function StudentGradesPage() {
                               {section.items.map((attempt: Record<string, any>) => {
                                 const overallIndex = attempts.indexOf(attempt);
                                 const scorePercent = Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100);
-                                let grade = "C"; let color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; 
-                                if (scorePercent >= 75) { grade = "A"; color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
-                                else if (scorePercent >= 65) { grade = "B"; color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
-                                else if (scorePercent < 50) { grade = "F"; color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                                const evalResult = getGradeEvaluation(scorePercent, customGradingSystem);
+                                const grade = evalResult.grade;
+                                const color = cn(evalResult.color, evalResult.bg);
                                 return (
-                                  <div 
+                                  <div
                                     key={attempt.id}
                                     onClick={() => router.push(`/dashboard/student/grades/view/exam/${attempt.examId}`)}
                                     className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
@@ -940,10 +944,9 @@ export default function StudentGradesPage() {
                                   {section.items.map((attempt: Record<string, any>) => {
                                     const overallIndex = attempts.indexOf(attempt);
                                     const scorePercent = Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100);
-                                    let grade = "C"; let color = "text-pink-600 bg-pink-50 dark:bg-pink-900/30 dark:text-pink-400"; 
-                                    if (scorePercent >= 75) { grade = "A"; color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"; }
-                                    else if (scorePercent >= 65) { grade = "B"; color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"; }
-                                    else if (scorePercent < 50) { grade = "F"; color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"; }
+                                    const evalResult = getGradeEvaluation(scorePercent, customGradingSystem);
+                                    const grade = evalResult.grade;
+                                    const color = cn(evalResult.color, evalResult.bg);
                                     const isExpanded = expandedExamId === attempt.examId;
                                     return (
                                       <React.Fragment key={attempt.id}>
@@ -1041,7 +1044,7 @@ export default function StudentGradesPage() {
                   <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
                     <div className="flex gap-1 bg-slate-50 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-800 overflow-x-auto max-w-full">
                       {['ALL', 'CA', 'ASSIGNMENT', 'TEST/QUIZ', 'SUBJECT PAPER'].map(tab => (
-                        <button 
+                        <button
                           key={tab} onClick={() => { setCaTab(tab as any); setGradesPage(1); }}
                           type="button"
                           className={cn("px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap", caTab === tab ? "bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm" : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200")}
@@ -1055,11 +1058,10 @@ export default function StudentGradesPage() {
                       <button
                         onClick={() => setViewMode('grid')}
                         type="button"
-                        className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${
-                          viewMode === 'grid'
+                        className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid'
                             ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
                             : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
-                        }`}
+                          }`}
                         title="Grid View"
                         aria-label="Grid View"
                       >
@@ -1068,11 +1070,10 @@ export default function StudentGradesPage() {
                       <button
                         onClick={() => setViewMode('table')}
                         type="button"
-                        className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${
-                          viewMode === 'table'
+                        className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'table'
                             ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
                             : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
-                        }`}
+                          }`}
                         title="List View"
                         aria-label="List View"
                       >
@@ -1081,7 +1082,7 @@ export default function StudentGradesPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto max-h-[500px] p-4 sm:p-6">
                   {caTab === 'ASSIGNMENT' ? (
                     isLoadingAssignments ? (
@@ -1120,8 +1121,8 @@ export default function StudentGradesPage() {
                                 const isSubmitted = assignment.status === 'submitted';
 
                                 return (
-                                  <div 
-                                    key={assignment.id} 
+                                  <div
+                                    key={assignment.id}
                                     onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
                                     className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
                                   >
@@ -1219,8 +1220,8 @@ export default function StudentGradesPage() {
                                 const isGraded = assignment.status === 'graded';
 
                                 return (
-                                  <div 
-                                    key={assignment.id} 
+                                  <div
+                                    key={assignment.id}
                                     onClick={() => router.push(`/dashboard/student/assignments/${assignment.id}`)}
                                     className="p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors group cursor-pointer gap-3 rounded-xl"
                                   >
@@ -1249,7 +1250,7 @@ export default function StudentGradesPage() {
                                         </div>
                                       </div>
                                     </div>
-                                    
+
                                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                                       <span className={cn("text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border", statusStyle)}>
                                         {statusText}
@@ -1296,8 +1297,8 @@ export default function StudentGradesPage() {
                               const { title, subtitle } = getAssessmentDisplayTitle(grade);
 
                               return (
-                                <div 
-                                  key={grade.id} 
+                                <div
+                                  key={grade.id}
                                   onClick={() => router.push(`/dashboard/student/grades/view/assessment/${grade.id}`)}
                                   className="bg-slate-50/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 transition-all cursor-pointer rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/40 group active:scale-[0.99]"
                                 >
@@ -1332,27 +1333,37 @@ export default function StudentGradesPage() {
                                       </span>
                                     </div>
 
-                                      <div className="flex items-center justify-between py-2 px-3 my-2 bg-white dark:bg-zinc-800/80 rounded-xl border border-slate-100 dark:border-zinc-700/60">
-                                        <span className="text-xs font-semibold text-slate-400">Score</span>
-                                        <div className="flex items-center gap-2">
-                                          {grade.score == null || grade.status === 'SCHEDULED' || (grade.releaseDate && new Date(grade.releaseDate) > new Date()) ? (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50">
-                                              <Lock size={12} />
-                                              <span>Score Locked</span>
-                                            </span>
-                                          ) : (
-                                            <>
-                                              <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{grade.score} <span className="text-xs text-slate-400">/ {grade.maxMarks}</span></span>
-                                              {percent != null && (
-                                                <span className="text-xs font-black px-2 py-0.5 rounded bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400">
-                                                  {percent}%
-                                                </span>
-                                              )}
-                                            </>
-                                          )}
-                                        </div>
+                                    <div className="flex items-center justify-between py-2 px-3 my-2 bg-white dark:bg-zinc-800/80 rounded-xl border border-slate-100 dark:border-zinc-700/60">
+                                      <span className="text-xs font-semibold text-slate-400">Score</span>
+                                      <div className="flex items-center gap-2">
+                                        {grade.score == null || grade.status === 'SCHEDULED' || (grade.releaseDate && new Date(grade.releaseDate) > new Date()) ? (
+                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50">
+                                            <Lock size={12} />
+                                            <span>Score Locked</span>
+                                          </span>
+                                        ) : (
+                                          <>
+                                            <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{grade.score} <span className="text-xs text-slate-400">/ {grade.maxMarks}</span></span>
+                                            {percent != null && (() => {
+                                              const evalResult = getGradeEvaluation(percent, customGradingSystem);
+                                              return (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs font-black px-2 py-0.5 rounded bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400">
+                                                    {percent}%
+                                                  </span>
+                                                  {evalResult.grade && (
+                                                    <span className={cn("text-[10px] font-black px-1.5 py-0.5 rounded border uppercase shadow-2xs", evalResult.bg, evalResult.color)}>
+                                                      {evalResult.grade}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+                                          </>
+                                        )}
                                       </div>
                                     </div>
+                                  </div>
 
                                   <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800/80 text-xs">
                                     <span className="text-[11px] font-medium text-slate-400 truncate max-w-[150px]">
@@ -1388,6 +1399,7 @@ export default function StudentGradesPage() {
                             {section.items.map((grade: any, itemIdx: number) => {
                               const overallIndex = standaloneGrades.findIndex((g: any) => g.id === grade.id);
                               const displayIndex = overallIndex !== -1 ? overallIndex : itemIdx;
+                              const percent = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : null;
                               const { title, subtitle } = getAssessmentDisplayTitle(grade);
 
                               return (
@@ -1423,7 +1435,26 @@ export default function StudentGradesPage() {
                                         <span>Score Locked</span>
                                       </span>
                                     ) : (
-                                      <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg">{grade.score} <span className="text-xs sm:text-sm text-slate-400 font-medium">/ {grade.maxMarks}</span></div>
+                                      <div className="flex flex-col items-end">
+                                        <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg">
+                                          {grade.score} <span className="text-xs sm:text-sm text-slate-400 font-medium">/ {grade.maxMarks}</span>
+                                        </div>
+                                        {percent != null && (() => {
+                                          const evalResult = getGradeEvaluation(percent, customGradingSystem);
+                                          return (
+                                            <div className="flex items-center gap-1 mt-0.5">
+                                              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                {percent}%
+                                              </span>
+                                              {evalResult.grade && (
+                                                <span className={cn("text-[9px] font-black px-1.5 py-0.2 rounded border uppercase shadow-2xs", evalResult.bg, evalResult.color)}>
+                                                  {evalResult.grade}
+                                                </span>
+                                              )}
+                                            </div>
+                                          );
+                                        })()}
+                                      </div>
                                     )}
                                     <span className="block mt-1 px-2.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold uppercase bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 shadow-sm">
                                       {grade.subjectPaperId ? 'SUBJECT PAPER' : (grade.assessmentType || 'TEST')}
@@ -1454,7 +1485,7 @@ export default function StudentGradesPage() {
               </div>
             )}
 
-            
+
           </div>
         </div>
       </div>
@@ -1485,7 +1516,7 @@ export default function StudentGradesPage() {
                 </div>
               ))}
             </div>
-            <button 
+            <button
               onClick={() => setIsLeaderboardOpen(false)}
               className="mt-5 w-full py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 font-bold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors"
             >

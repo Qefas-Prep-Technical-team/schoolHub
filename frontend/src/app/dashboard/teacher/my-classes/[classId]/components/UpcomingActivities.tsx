@@ -1,5 +1,6 @@
 import { Calendar, ArrowRight, Clock, CheckCircle2, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { groupByDate } from '../../../utils/dateSectioning';
 
 interface Activity {
   id: string;
@@ -50,8 +51,14 @@ export default function UpcomingActivities({ activities, onViewAll }: UpcomingAc
         </button>
       </div>
 
-      <div className="space-y-3">
-        {activities.map((activity, idx) => (
+      <div className="space-y-5">
+        {groupByDate(activities, (a) => a.date).map((section) => (
+          <div key={section.label} className="space-y-3">
+            <div className="flex items-center gap-2.5 px-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{section.label}</span>
+              <span className="h-px flex-1 bg-slate-100 dark:bg-emerald-900/40" />
+            </div>
+            {section.items.map((activity, idx) => (
           <motion.div
             key={activity.id}
             initial={{ opacity: 0, y: 10 }}
@@ -85,6 +92,8 @@ export default function UpcomingActivities({ activities, onViewAll }: UpcomingAc
                <ArrowRight size={16} strokeWidth={3} />
             </button>
           </motion.div>
+            ))}
+          </div>
         ))}
       </div>
 

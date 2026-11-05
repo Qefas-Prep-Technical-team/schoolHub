@@ -1,25 +1,27 @@
 import React from 'react';
-import { 
-  TestTube2, 
-  Calculator, 
-  Globe, 
-  Calendar, 
-  Clock, 
-  Award, 
-  FileText, 
-  BookOpen, 
+import {
+  TestTube2,
+  Calculator,
+  Globe,
+  Calendar,
+  Clock,
+  Award,
+  FileText,
+  BookOpen,
   Sparkles,
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { groupByDate } from '../../../utils/dateSectioning';
 
 export interface ExamItem {
   id: string;
   title?: string;
   subject: string;
   date: string;
+  rawDate?: string | null;
   type: string;
   status?: string;
   totalMarks?: number | null;
@@ -110,64 +112,72 @@ const UpcomingExams: React.FC<UpcomingExamsProps> = ({ exams }) => {
 
         {/* Exams List */}
         <div className="flex flex-col gap-3">
-          {exams.map((exam) => {
-            const badge = getCategoryBadge(exam.type);
-            const displayTitle = exam.title || exam.subject || 'Class Assessment';
-            
-            return (
-              <div 
-                key={exam.id} 
-                className="group p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-emerald-950/30 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/30 border border-slate-200/70 dark:border-emerald-800/40 transition-all duration-200 flex flex-col gap-2.5"
-              >
-                {/* Top line: Icon + Title + Category */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-9 rounded-xl bg-white dark:bg-emerald-900/50 border border-slate-200/80 dark:border-emerald-700/50 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                      {getSubjectIcon(exam.subject)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        {displayTitle}
-                      </p>
-                      <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 truncate">
-                        {exam.subject}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className={cn(
-                    "text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 whitespace-nowrap",
-                    badge.style
-                  )}>
-                    {badge.label}
-                  </span>
-                </div>
-
-                {/* Bottom line: Date + Optional Duration / Marks */}
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/50 dark:border-emerald-900/40 font-medium">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-slate-400 dark:text-slate-500" />
-                    <span>{exam.date}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
-                    {exam.durationMinutes && (
-                      <span className="flex items-center gap-1 font-semibold">
-                        <Clock className="size-3" />
-                        {exam.durationMinutes}m
-                      </span>
-                    )}
-                    {exam.totalMarks && (
-                      <span className="flex items-center gap-1 font-semibold">
-                        <Award className="size-3 text-amber-500" />
-                        {exam.totalMarks} pts
-                      </span>
-                    )}
-                  </div>
-                </div>
+          {groupByDate(exams, (e) => e.rawDate || e.date).map((group) => (
+            <div key={group.label} className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{group.label}</span>
+                <span className="h-px flex-1 bg-slate-100 dark:bg-emerald-900/40" />
               </div>
-            );
-          })}
+              {group.items.map((exam) => {
+                const badge = getCategoryBadge(exam.type);
+                const displayTitle = exam.title || exam.subject || 'Class Assessment';
+
+                return (
+                  <div
+                    key={exam.id}
+                    className="group p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-emerald-950/30 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/30 border border-slate-200/70 dark:border-emerald-800/40 transition-all duration-200 flex flex-col gap-2.5"
+                  >
+                    {/* Top line: Icon + Title + Category */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="size-9 rounded-xl bg-white dark:bg-emerald-900/50 border border-slate-200/80 dark:border-emerald-700/50 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                          {getSubjectIcon(exam.subject)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            {displayTitle}
+                          </p>
+                          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+                            {exam.subject}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 whitespace-nowrap",
+                        badge.style
+                      )}>
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    {/* Bottom line: Date + Optional Duration / Marks */}
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/50 dark:border-emerald-900/40 font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="size-3.5 text-slate-400 dark:text-slate-500" />
+                        <span>{exam.date}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
+                        {exam.durationMinutes && (
+                          <span className="flex items-center gap-1 font-semibold">
+                            <Clock className="size-3" />
+                            {exam.durationMinutes}m
+                          </span>
+                        )}
+                        {exam.totalMarks && (
+                          <span className="flex items-center gap-1 font-semibold">
+                            <Award className="size-3 text-amber-500" />
+                            {exam.totalMarks} pts
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

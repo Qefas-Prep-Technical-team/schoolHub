@@ -1,6 +1,7 @@
 import { Trophy, TrendingUp, Award, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { getGradeEvaluation, type GradingTier } from '@/utils/gradingSystem';
 
 interface Student {
   id: string;
@@ -14,9 +15,10 @@ interface Student {
 interface TopPerformingStudentsProps {
   students: Student[];
   onViewAll: () => void;
+  gradingSystem?: GradingTier[];
 }
 
-export default function TopPerformingStudents({ students, onViewAll }: TopPerformingStudentsProps) {
+export default function TopPerformingStudents({ students, onViewAll, gradingSystem }: TopPerformingStudentsProps) {
   const getRankStyle = (rank: number) => {
     switch (rank) {
       case 1:
@@ -84,10 +86,18 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
               </div>
             </div>
 
-            <div className="flex flex-col items-end relative z-10">
+            <div className="flex flex-col items-end gap-1 relative z-10">
               <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter drop-shadow-sm group-hover:scale-110 transition-transform origin-right">
                 {student.score}%
               </div>
+              {(() => {
+                const ev = getGradeEvaluation(student.score, gradingSystem);
+                return (
+                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${ev.bg} ${ev.color}`}>
+                    {ev.grade} • {ev.remark}
+                  </span>
+                );
+              })()}
             </div>
           </motion.div>
         ))}

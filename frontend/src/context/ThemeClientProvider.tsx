@@ -7,7 +7,13 @@ import { useMemo, useEffect, useState } from 'react';
 
 export function ThemeClientProvider({ children }: { children: React.ReactNode }) {
     return (
-        <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+        <NextThemesProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            enableColorScheme={false}
+            storageKey="qefas-theme"
+        >
             <MuiWrapper>{children}</MuiWrapper>
         </NextThemesProvider>
     );

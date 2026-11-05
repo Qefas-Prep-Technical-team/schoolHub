@@ -9,6 +9,110 @@
 
 ## Blockers
 
+  - **Student Class Assessments: Date Sectioning Display Integration (date_sectioning_display)**:
+    - Integrated date_sectioning_display skill into the student class details Assessments tab (/dashboard/student/my-classes/[id] -> AssignmentsTable.tsx).
+    - Enriched combined assessments payload in page.tsx with canonical awDate and 	imestamp parsed from exams (endDate / startDate / createdAt), assignments (dueDate / createdAt), and standalone CA grades (createdAt).
+    - Implemented groupByDate to render temporal section headers (Today, Yesterday, relative recent dates, or formatted dates) with student pink accent indicators (g-pink-500), uppercase labels, and record counts.
+    - Supported across both Grid and Table view modes (desktop tables and mobile cards) while seamlessly preserving pagination, search, category sub-tabs (All, CA, Quiz/Test, Exam, Assignment), and status filters.
+
+
+  - **Class Materials Hub: Fixed Previews & Role-Based Admin Theme Color Alignment**:
+    - **1. PDF & Video Previews Fixed (MaterialsLayout.tsx)**:
+      - Updated the PDF viewer to use the Google Docs embed streaming proxy (https://docs.google.com/viewer?url=...&embedded=true), bypassing browser X-Frame-Options blocks for cross-origin PDF viewing. Added direct full-screen tab fallback and one-click download buttons.
+      - Fixed video playback: resolved both direct uploaded video files (.mp4, .webm, .mov with HTML5 <video controls>) and streaming video links (YouTube shorts, standard URLs, youtu.be, and Vimeo embed players) so videos play seamlessly in the popup modal.
+    - **2. Admin Theme Alignment**:
+      - Introduced dynamic role theme token resolution (getThemeTokens(role)).
+      - On admin screens (/dashboard/admin/classes/[id]), all buttons, badges, accent dots, hover outlines, and sub-tab pills now render in the official **Indigo** admin theme (g-indigo-600, 	ext-indigo-600, order-indigo-600, g-indigo-50), while student screens maintain their distinct **Pink** theme.
+
+  - **Enhanced Class Materials: File Preview, Uploading, Pagination & Date Sectioning Display Pattern**:
+    - **1. File Preview Enhancements**:
+      - Fixed file preview modal in MaterialsLayout.tsx to handle PDF document rendering (iframe embed), HTML5 videos & YouTube embed players, image display with full zoom, reading passage viewers, and direct download links.
+    - **2. Upload Class Material Modal (UploadMaterialModal.tsx)**:
+      - Added an interactive **Upload Material** modal supporting direct file uploads (PDFs, Word documents, PowerPoint, images up to 25MB via imageService.proxyUploadToBunny), YouTube/Vimeo video links, and web reference links with instant quota tracking and cache invalidation.
+    - **3. Pagination Support**:
+      - Added clean pagination controls (12 items per page with Prev/Next, current page indicator, and total count).
+    - **4. Date Sectioning Display Skill (date_sectioning_display)**:
+      - Applied groupByDate to group material cards chronologically into structured sections (Today, Yesterday, relative recent dates, and formatted historical dates) with role-themed accent indicators in MaterialsList.tsx.
+
+  - **Class Materials Hub & Direct File Sub-Tabs Feature (Student & Admin Class Portals)**:
+    - **Direct File Extraction & Assessment Association**:
+      - Exploded files, attachments, reading passages, worksheets, diagrams, and reference links directly into first-class material cards rather than forcing students/admins to sift through exam preview screens.
+      - Tagged every material card with its origin assessment/assignment (e.g., Associated Assessment: Mathematics First Term Examination), author, and upload date.
+    - **Sub-Tab Navigation (MaterialsLayout.tsx & FoldersSidebar.tsx)**:
+      - Added quick sub-tabs: **All Resources**, **Files Only** (filters exclusively for direct downloadables/media), **Assignments**, **Exams**, **Continuous Assessment**, and **Quizzes / Tests** with live count badges.
+    - **Admin Class Materials Tab Integration (/dashboard/admin/classes/[id])**:
+      - Created ClassMaterialsTab.tsx and registered a **Materials** tab in the class tabs navbar on dmin/classes/[id]/page.tsx, giving administrators full visibility into all learning files, question diagrams, and resources uploaded for the class.
+
+  - **Applied school_grading_system_sync on Student Class Details Page (/dashboard/student/my-classes/[id])**:
+    - **Dynamic School Grading Integration**: In my-classes/[id]/page.tsx, dynamically resolved connected school ID via classData.schoolId, studentProfile.schoolId, or user.schools and hooked into useSchoolProfile(schoolId) to fetch schoolProfile?.gradingSystem.
+    - **Accurate Academic Evaluation**: Replaced hardcoded grade branch checks (vg >= 75 ? 'A' : ...) with getGradeEvaluation(averagePercentage, customGradingSystem) using the centralized utility rontend/src/utils/gradingSystem.ts (strict fallback to the default 9-grade matrix).
+    - **Enhanced Grade Card Badge (ClassStats.tsx)**: Upgraded the  Current Grade stat card with dynamic letter grade, academic remark (e.g. VERY GOOD, CREDIT, PASS), matching color/background badge tokens, and percentage score display.
+    - **Synchronized Assessment Score Badges (AssignmentsTable.tsx)**: In the table and grid assessment views, parsed student scores (85/100, 45/50, etc.) and rendered institutional letter grade pill badges (A+, A, B, C, etc.) alongside the numeric score evaluated dynamically against the school's configured scale.
+
+  - **Refined Graduated vs. Locked Class Resolution in Student Join Modal**:
+    - Previously, when an alumnus opened the Join Class popup, all classrooms in the alma mater were broadly flagged as GRADUATED.
+    - Updated getStudentClassStatus in StudentClassSelectionModal.tsx so only the class(es) the student was enrolled in or had graduation lifecycle event records for are tagged as Graduated (Alumni).
+    - Other classrooms in the school that the student was not part of now correctly evaluate to status === 'NONE' and show as **Class Locked (Graduated Alumni)**, keeping the alumnus from requesting to join other classes while ensuring only the exact graduated classroom carries the graduation tag.
+
+- [x] **Student Join Class Modal & Admin Class Lock Features (<300 Line Decomposition & Strict Level/Alumni Safeguards)**:
+  - **1. Student Graduated & Alumni Tagging**: Classes from which a student has graduated are tagged with a purple Graduated (Alumni) badge, disabling re-enrollment and displaying graduation context.
+  - **2. Class Lock & Status Safeguards**: Locked classes (status: 'ARCHIVED' | 'LOCKED' | isLocked) display with an amber lock badge, explaining that new enrollments are closed by school administration.
+  - **3. Student Level vs. Class Level Mismatch Locking**: Students whose current academic level does not match a class's level will see the class locked (Level Mismatch), preventing cross-level join requests on both the UI and backend service (equestToJoinClassService).
+  - **4. Admin Class Lock / Unlock Toggle (/dashboard/admin/classes/[id])**: Added an interactive Lock / Unlock Class toggle button to ClassDetailsHeader, wired to useChangeClassStatus(id) which safely transitions the class between ACTIVE and ARCHIVED, immediately locking/unlocking student join requests.
+  - **5. Clean Modularization (<300 Lines)**: Decomposed StudentClassSelectionModal.tsx (previously 1090 lines) into ClassSelectionHeader, ClassCardItem, ClassSelectionSuccessView, and 	ypes.ts. Decomposed classes/[id]/page.tsx (previously 630 lines) into ClassDetailsHeader, AssignedTeachersModal, and TabSkeleton. All files are strictly typed and verified with 0 TypeScript errors.
+
+- [x] **Student Transcript Price & Signatures Blurring Fixes (`/dashboard/student/transcript`)**:
+  - **Eliminated Default ₦5,000 Price Flash**: Updated `useStudentTranscriptData.ts` and `useTranscriptActions.ts` to keep `isFeeLoading = true` and `transcriptFee = 0` / `effectiveFee = 0` until school settings/profile queries finish resolving.
+  - **Pricing Indicator Propagation**: Propagated `isFeeLoading` across `TranscriptAcademicPage`, `TranscriptBehavioralPage`, `TranscriptTermCourseCard`, `TranscriptClearanceBanners`, `TranscriptAuditSidebar`, and `TranscriptSignaturesFooter` so action buttons and banners show `loading...` instead of prematurely rendering `₦5,000`.
+  - **Enhanced Signature Blur & Overlay**: Significantly increased blur on `TranscriptSignaturesFooter` when locked (`blur-[8px] sm:blur-[10px]`, `opacity-20`, and added a central frosted glass locked overlay pill) to make the registrar seal, signatures, and endorsement lines barely visible until institutional clearance is completed.
+
+
+### Tuesday, November 3, 2026
+
+- [x] **School Profile & Edit Page (/dashboard/admin/school-profile, /dashboard/admin/school-profile/edit) — Sub-Role RBAC, Multi-Tenant & Financial Data Leak Fixes, and <300-Line Modular Decomposition**:
+  - **1. Sub-Role Access Control (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, ACCOUNTANT, SUPPORT)**:
+    - Enforced sub-role route protection in rontend/src/components/auth/FeatureGuard.tsx using canAdminRoleAccessFeature(adminRole, featureKey) so restricted sub-roles (REGISTRAR, ACCOUNTANT, SUPPORT) cannot bypass the sidebar by typing /dashboard/admin/school-profile or /dashboard/admin/school-profile/edit directly in the URL.
+    - Enforced backend sub-role authorization on PATCH /schools/:schoolId/profile in school-profile-billing.controller.ts via alidateAdminSubRoleAccess(req, schoolId, ["SCHOOL_OWNER", "PRINCIPAL"]) and enriched eq.user.adminRole in uthMiddleware.ts.
+  - **2. Multi-Tenant & Sensitive Data Leak Fixes**:
+    - **School Financial & Internal Quota Leak (school-profile.service.ts)**: getSchoolProfileService previously returned all columns of School (exposing ccountName, ccountNumber, ankName, paystackCustomerCode, paystackSubaccountCode, percentageCharge, and internal quota overrides to any caller). Replaced with SAFE_SCHOOL_PROFILE_SELECT and redacted admin emails/images when called by non-admin roles (TEACHER/STUDENT).
+    - **School Profile Mass-Assignment Vulnerability (school-profile.service.ts)**: updateSchoolProfileService previously passed raw eq.body directly into prisma.school.update({ data }), allowing a caller to overwrite plan, subscriptionStatus, maxStudentsOverride, storageUsedBytes, or Paystack subaccount codes. Whitelisted only the editable profile fields (UpdateSchoolProfileInput).
+    - **Cross-Tenant Upload Quota & File Deletion Fix (upload.controller.ts)**: Validated eq.body.schoolId against alidateSchoolAccess(req, candidate) and resolved 	enantId -> canonical school UUID via esolveSchoolId across proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, deleteFileByUrl, getUploadHistory, and cleanupUnusedImages.
+  - **3. <300-Line Modular File Decompositions**:
+    - Decomposed rontend/src/app/dashboard/admin/school-profile/page.tsx (675 -> 130 lines) into SchoolProfileHero.tsx (231), SchoolProfileOverviewColumn.tsx (241), SchoolProfileAcademicColumn.tsx (162), and SchoolProfileSidebar.tsx (266).
+    - Decomposed rontend/src/app/dashboard/admin/school-profile/edit/page.tsx (530 -> 211 lines) into EditIdentityConnectivitySection.tsx (208) and EditGovernanceAcademicSection.tsx (262).
+    - Decomposed ackend/src/modules/upload/upload.service.ts (460 -> 3 lines barrel) into unny-upload.service.ts (209), s3-upload.service.ts (136), and ile-record.service.ts (120), with upload.controller.ts at 245 lines and school-profile.service.ts at 253 lines.
+
+- [x] **Admin Dashboard (/dashboard/admin) — Full RBAC Sub-Role Audit, Multi-Tenant Data Leak Hardening & <300-Line Modular Decomposition**:
+  - **1. Admin Sub-Role Access Control (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, ACCOUNTANT, SUPPORT)**:
+    - Extracted shared RBAC helper canAdminRoleAccessFeature in rontend/src/app/dashboard/admin/components/adminFeatureFlags.ts.
+    - Gated AdminFinanceCard (canViewFinance) and UsageLimitsCard (canViewBilling) in rontend/src/app/dashboard/admin/page.tsx so restricted roles (PRINCIPAL, REGISTRAR, SUPPORT) do not see or fire unauthorized finance/subscription requests.
+    - Filtered QuickActions.tsx and AdminBottomNav.tsx by canAdminRoleAccessFeature(adminRole, featureKey).
+    - Updated rontend/src/hooks/useProtectedRoute.ts so only SCHOOL_OWNER (or legacy primary admins without a restricted sub-role) is redirected to /select-plan when hasSelectedPlan === false.
+    - Fixed DashboardCharts.tsx (stats?.students ?? stats?.totalStudents ?? 0) and passed limit: 5 in ExamStatus.tsx.
+    - Standardized TanStack Query staleTime and replaced 30s polling with 2-5 min intervals in useSchool.ts and useNotifications.ts.
+  - **2. Multi-Tenant & Entity Data Leak Fixes (Backend)**:
+    - **School Member Filters (school-member-filters.service.ts)**: Added getActiveSchoolTeacherFilter and getActiveSchoolStudentFilter excluding PENDING, REJECTED, CANCELLED, EXPIRED, and DISCONNECTED links so unapproved or disconnected teachers/students cannot leak into school stats or rosters via stale primarySchoolId/ctiveSchoolId/originalSchoolId.
+    - **School Members (school-members.service.ts)**: Scoped 	eacherSubjects, classTeachers, and classes to schoolId: resolvedId so a teacher's or student's classes in other schools or personal workspace classes are never exposed to the school admin.
+    - **School Dashboard & Profile (school-dashboard.service.ts, school-profile.service.ts, school-access.service.ts)**: Enforced alidateAdminSchoolAccess (ADMIN/SUPER_ADMIN) on admin-only school endpoints, scoped unassignedTeachers to the current school's classes, and sanitized Prisma selects on dmin and 	eacher relations so password hashes and 2FA secrets are never returned.
+    - **Exam List IDOR (exam-list.controller.ts, exam.service.ts)**: Enforced alidateSchoolAccess for school admins on GET /exams, blocked isPersonal and unscoped cross-tenant queries for admins, verified parentChildLink when parents query vailableForStudentId, and replaced include: { teacher: true } with safe teacher field selects.
+    - **Class Announcement IDOR & Password Leak (class-dashboard.controller.ts, class.service.ts)**: Enforced canManageClass on POST /classes/:id/announcements, resolved schoolId/	enantId in getClassesService, and sanitized 	eacher/student selects (SAFE_TEACHER_SELECT, SAFE_STUDENT_SELECT).
+    - **Notification Priority & School Admin Delete (
+otification-query.service.ts)**: Added priority filter support (HIGH priority alerts on /dashboard/admin) and allowed school admins to dismiss SCHOOL-scoped notifications for their school.
+    - **Finance Analytics (inance.controller.ts)**: Verified ADMIN/SUPER_ADMIN role and resolved schoolId/	enantId before calling alidateSchoolAccess.
+  - **3. <300-Line Modular File Decompositions (Frontend & Backend)**:
+    - Decomposed pp-sidebar.tsx (450 -> 241 lines) into dminFeatureFlags.ts (121), dminNavConfig.ts (167), and AdminSidebarFooter.tsx (123).
+    - Decomposed AdminWeeklyReportModal.tsx (385 -> 223 lines) into exportWeeklyReportPdf.ts (144) and WeeklyReportBody.tsx (177).
+    - Decomposed AdminAnnouncementModal.tsx (313 -> 241 lines) into AnnouncementAudienceFields.tsx (144).
+    - Decomposed inanceService.ts (377 -> 276 lines) into inance.types.ts (95) and useExams.ts (308 -> 244 lines) into useExamAttempts.ts (123).
+    - Decomposed school.controller.ts (567 -> 1 line barrel) into school-dashboard.controller.ts (219), school-profile-billing.controller.ts (160), and school-landing-inquiry.controller.ts (141).
+    - Decomposed school.service.ts (979 -> 38 lines barrel) into 8 focused services under ackend/src/modules/school/services/ (all 71–242 lines).
+    - Decomposed 
+otification.controller.ts (398 -> 120 lines) into 
+otification-query.service.ts (266) and 
+otification-enrich.service.ts (230).
+    - Decomposed quota.service.ts (385 -> 2 lines barrel) into school-quota.service.ts (281) and user-quota.service.ts (288).
+    - Extracted exam-list.controller.ts (144 lines) and class-dashboard.controller.ts (70 lines).
+
 ### Monday, November 2, 2026
 
 - [x] **Class Details Page (`/dashboard/admin/classes/:id?tab=exams`) — Deletion Persistence & Optimistic Removal Fix**:
@@ -607,6 +711,52 @@
 - Register `https://your-domain.com/api/v1/payment/webhook` in Paystack Dashboard → Settings → API Keys & Webhooks.
 
 ## Blockers
+
+### Tuesday, November 3, 2026
+
+- [x] **School Profile & Edit Page (/dashboard/admin/school-profile, /dashboard/admin/school-profile/edit) — Sub-Role RBAC, Multi-Tenant & Financial Data Leak Fixes, and <300-Line Modular Decomposition**:
+  - **1. Sub-Role Access Control (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, ACCOUNTANT, SUPPORT)**:
+    - Enforced sub-role route protection in rontend/src/components/auth/FeatureGuard.tsx using canAdminRoleAccessFeature(adminRole, featureKey) so restricted sub-roles (REGISTRAR, ACCOUNTANT, SUPPORT) cannot bypass the sidebar by typing /dashboard/admin/school-profile or /dashboard/admin/school-profile/edit directly in the URL.
+    - Enforced backend sub-role authorization on PATCH /schools/:schoolId/profile in school-profile-billing.controller.ts via alidateAdminSubRoleAccess(req, schoolId, ["SCHOOL_OWNER", "PRINCIPAL"]) and enriched eq.user.adminRole in uthMiddleware.ts.
+  - **2. Multi-Tenant & Sensitive Data Leak Fixes**:
+    - **School Financial & Internal Quota Leak (school-profile.service.ts)**: getSchoolProfileService previously returned all columns of School (exposing ccountName, ccountNumber, ankName, paystackCustomerCode, paystackSubaccountCode, percentageCharge, and internal quota overrides to any caller). Replaced with SAFE_SCHOOL_PROFILE_SELECT and redacted admin emails/images when called by non-admin roles (TEACHER/STUDENT).
+    - **School Profile Mass-Assignment Vulnerability (school-profile.service.ts)**: updateSchoolProfileService previously passed raw eq.body directly into prisma.school.update({ data }), allowing a caller to overwrite plan, subscriptionStatus, maxStudentsOverride, storageUsedBytes, or Paystack subaccount codes. Whitelisted only the editable profile fields (UpdateSchoolProfileInput).
+    - **Cross-Tenant Upload Quota & File Deletion Fix (upload.controller.ts)**: Validated eq.body.schoolId against alidateSchoolAccess(req, candidate) and resolved 	enantId -> canonical school UUID via esolveSchoolId across proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, deleteFileByUrl, getUploadHistory, and cleanupUnusedImages.
+  - **3. <300-Line Modular File Decompositions**:
+    - Decomposed rontend/src/app/dashboard/admin/school-profile/page.tsx (675 -> 130 lines) into SchoolProfileHero.tsx (231), SchoolProfileOverviewColumn.tsx (241), SchoolProfileAcademicColumn.tsx (162), and SchoolProfileSidebar.tsx (266).
+    - Decomposed rontend/src/app/dashboard/admin/school-profile/edit/page.tsx (530 -> 211 lines) into EditIdentityConnectivitySection.tsx (208) and EditGovernanceAcademicSection.tsx (262).
+    - Decomposed ackend/src/modules/upload/upload.service.ts (460 -> 3 lines barrel) into unny-upload.service.ts (209), s3-upload.service.ts (136), and ile-record.service.ts (120), with upload.controller.ts at 245 lines and school-profile.service.ts at 253 lines.
+
+- [x] **Admin Dashboard (/dashboard/admin) — Full RBAC Sub-Role Audit, Multi-Tenant Data Leak Hardening & <300-Line Modular Decomposition**:
+  - **1. Admin Sub-Role Access Control (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, ACCOUNTANT, SUPPORT)**:
+    - Extracted shared RBAC helper canAdminRoleAccessFeature in rontend/src/app/dashboard/admin/components/adminFeatureFlags.ts.
+    - Gated AdminFinanceCard (canViewFinance) and UsageLimitsCard (canViewBilling) in rontend/src/app/dashboard/admin/page.tsx so restricted roles (PRINCIPAL, REGISTRAR, SUPPORT) do not see or fire unauthorized finance/subscription requests.
+    - Filtered QuickActions.tsx and AdminBottomNav.tsx by canAdminRoleAccessFeature(adminRole, featureKey).
+    - Updated rontend/src/hooks/useProtectedRoute.ts so only SCHOOL_OWNER (or legacy primary admins without a restricted sub-role) is redirected to /select-plan when hasSelectedPlan === false.
+    - Fixed DashboardCharts.tsx (stats?.students ?? stats?.totalStudents ?? 0) and passed limit: 5 in ExamStatus.tsx.
+    - Standardized TanStack Query staleTime and replaced 30s polling with 2-5 min intervals in useSchool.ts and useNotifications.ts.
+  - **2. Multi-Tenant & Entity Data Leak Fixes (Backend)**:
+    - **School Member Filters (school-member-filters.service.ts)**: Added getActiveSchoolTeacherFilter and getActiveSchoolStudentFilter excluding PENDING, REJECTED, CANCELLED, EXPIRED, and DISCONNECTED links so unapproved or disconnected teachers/students cannot leak into school stats or rosters via stale primarySchoolId/ctiveSchoolId/originalSchoolId.
+    - **School Members (school-members.service.ts)**: Scoped 	eacherSubjects, classTeachers, and classes to schoolId: resolvedId so a teacher's or student's classes in other schools or personal workspace classes are never exposed to the school admin.
+    - **School Dashboard & Profile (school-dashboard.service.ts, school-profile.service.ts, school-access.service.ts)**: Enforced alidateAdminSchoolAccess (ADMIN/SUPER_ADMIN) on admin-only school endpoints, scoped unassignedTeachers to the current school's classes, and sanitized Prisma selects on dmin and 	eacher relations so password hashes and 2FA secrets are never returned.
+    - **Exam List IDOR (exam-list.controller.ts, exam.service.ts)**: Enforced alidateSchoolAccess for school admins on GET /exams, blocked isPersonal and unscoped cross-tenant queries for admins, verified parentChildLink when parents query vailableForStudentId, and replaced include: { teacher: true } with safe teacher field selects.
+    - **Class Announcement IDOR & Password Leak (class-dashboard.controller.ts, class.service.ts)**: Enforced canManageClass on POST /classes/:id/announcements, resolved schoolId/	enantId in getClassesService, and sanitized 	eacher/student selects (SAFE_TEACHER_SELECT, SAFE_STUDENT_SELECT).
+    - **Notification Priority & School Admin Delete (
+otification-query.service.ts)**: Added priority filter support (HIGH priority alerts on /dashboard/admin) and allowed school admins to dismiss SCHOOL-scoped notifications for their school.
+    - **Finance Analytics (inance.controller.ts)**: Verified ADMIN/SUPER_ADMIN role and resolved schoolId/	enantId before calling alidateSchoolAccess.
+  - **3. <300-Line Modular File Decompositions (Frontend & Backend)**:
+    - Decomposed pp-sidebar.tsx (450 -> 241 lines) into dminFeatureFlags.ts (121), dminNavConfig.ts (167), and AdminSidebarFooter.tsx (123).
+    - Decomposed AdminWeeklyReportModal.tsx (385 -> 223 lines) into exportWeeklyReportPdf.ts (144) and WeeklyReportBody.tsx (177).
+    - Decomposed AdminAnnouncementModal.tsx (313 -> 241 lines) into AnnouncementAudienceFields.tsx (144).
+    - Decomposed inanceService.ts (377 -> 276 lines) into inance.types.ts (95) and useExams.ts (308 -> 244 lines) into useExamAttempts.ts (123).
+    - Decomposed school.controller.ts (567 -> 1 line barrel) into school-dashboard.controller.ts (219), school-profile-billing.controller.ts (160), and school-landing-inquiry.controller.ts (141).
+    - Decomposed school.service.ts (979 -> 38 lines barrel) into 8 focused services under ackend/src/modules/school/services/ (all 71–242 lines).
+    - Decomposed 
+otification.controller.ts (398 -> 120 lines) into 
+otification-query.service.ts (266) and 
+otification-enrich.service.ts (230).
+    - Decomposed quota.service.ts (385 -> 2 lines barrel) into school-quota.service.ts (281) and user-quota.service.ts (288).
+    - Extracted exam-list.controller.ts (144 lines) and class-dashboard.controller.ts (70 lines).
 
 - [x] **Student Exam Smart Routing — Direct Taker Navigation (Sunday, November 1, 2026)**:
   - **Problem**: Clicking an exam card/row from `/dashboard/student/exams&quizzes` (both grid and table view) or the class detail assessments tab always routed to the preview/details page, giving no direct path to actually start the exam.
@@ -6613,4 +6763,257 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
     - [x] Added mobile-responsive 2-column (mobile) / 4-column (desktop) metric stat cards (Total Subjects, Class Cohorts, Institutional Core, Departments).
     - [x] Refined `SubjectCard.tsx` with mobile-responsive padding (`p-4 sm:p-6`), permanent touch action visibility, and mobile course code badge in List view.
     - [x] Implemented dark mode pure-black loading skeletons (`dark:bg-black`, `dark:border-zinc-800`, `dark:bg-zinc-900`) with zero white glare.
+
+
+### Tuesday, November 3, 2026
+- [x] **Finance & Admin Transactions Architecture Hardening & Statement Export (/dashboard/admin/transactions)**:
+    - [x] Verified and enforced strict tenant isolation across backend billing endpoints (GET /schools/:schoolId/billing and TransactionHistory), ensuring no admin or school can access billing records belonging to another school.
+    - [x] Created frontend/src/app/dashboard/admin/transactions/components/BillingStatementModal.tsx (190 lines) providing institutional statement generation with date period selection (All, 30 days, 90 days, This year) and print formatting.
+    - [x] Added statement print and CSV export controls to frontend/src/app/dashboard/admin/transactions/page.tsx (287 lines, strictly <300 lines).
+- [x] **School Fee Payments Ledger & Date Sectioning Display (/dashboard/admin/payments)**:
+    - [x] Applied date_sectioning_display skill with frontend/src/utils/dateSectioning.ts (groupByDate and getDateGroupLabel) grouping fee collections chronologically ('Today', 'Yesterday', 7-day windows, and localized full dates).
+    - [x] Decomposed /dashboard/admin/payments into small, functional components strictly adhering to the <300 lines rule:
+        - useAdminPayments.ts (220 lines): Centralized hook with filtering, date sectioning, CSV download, and statement triggers.
+        - PaymentsHeaderAndStats.tsx (168 lines): KPI summary metrics, bank account link badge, statement and CSV triggers.
+        - PaymentsTableSection.tsx (141 lines): Sectioned date groups with status badges, record badges, and receipt actions.
+        - PaymentsFilterCard.tsx (145 lines): Filter bar (status, category, search) and paginated container.
+        - PaymentReceiptModal.tsx (101 lines): Individual payment receipt modal with print styling.
+        - StatementPrintModal.tsx (206 lines): School fee collections statement modal with period filter and print calculation.
+        - page.tsx (88 lines): High-level orchestrator view.
+    - [x] Re-factored backend finance services (finance-bank.service.ts, finance-ledger.service.ts, finance-payments.service.ts, finance-transcript.service.ts) so all backend finance modules strictly comply with the <300 lines limit.
+    - [x] Verified TypeScript typechecking for backend (0 errors) and frontend finance modules.
+
+- [x] **Date Sectioning & Pagination Implementation (Admin Transactions & Finance)**:
+    - [x] Applied date_sectioning_display skill on http://localhost:3000/dashboard/admin/transactions with groupByDate and chronological groups ('Today', 'Yesterday', 7-day relative, full dates).
+    - [x] Extracted sectioned table and receipt modal to frontend/src/app/dashboard/admin/transactions/components/TransactionsSectionedTable.tsx (282 lines, strictly < 300 lines) with complete pagination controls.
+    - [x] Refactored frontend/src/app/dashboard/admin/transactions/page.tsx to 282 lines (strictly < 300 lines).
+    - [x] Integrated date_sectioning_display on http://localhost:3000/dashboard/admin/finance under FinanceTransactionsTab.tsx (174 lines, strictly < 300 lines) with pagination and clear date section headers.
+- [x] **Student Transcript Session Dropdown & Payment Flow Hardening (/dashboard/student/transcript)**:
+    - [x] Fixed empty session dropdown in TranscriptClearanceModals.tsx by integrating useSessions(schoolId) in useStudentTranscriptData.ts, merging configured school sessions with exam sessions so students always have sessions available to select.
+    - [x] Streamlined the transcript view: user can seamlessly filter by Session & Term, view Academic (Page 1) or Behavioral (Page 2) without duplicate clutter.
+    - [x] Verified Flutterwave checkout initiation and 30-day verified clearance pass generation via financeService.verifyPayment().
+    - [x] Maintained strict tenant isolation, preventing unauthorized grade or billing leakage across schools.
+
+- [x] **Transcript Payment Foreign Key Constraint Fix (`finance-transcript.service.ts`)**:
+    - [x] Resolved `Foreign key constraint violated on the constraint: payments_parentId_fkey` (`P2003`). In the Prisma schema, `payments.parentId` strictly references `parents.id`. When a student pays directly and is not yet linked to a parent record, passing an empty string or unlinked ID failed the constraint.
+    - [x] Implemented canonical resolved payer fallback in `backend/src/modules/finance/services/finance-transcript.service.ts`, finding or creating a valid direct scholar payer record tied to the institution (matching `finance-ledger.service.ts`).
+    - [x] Ensured `finance-transcript.service.ts` remains strictly `< 300` lines (293 lines).
+    - [x] Verified backend TypeScript check (`./backend/node_modules/.bin/tsc -p backend/tsconfig.json --noEmit`) completed with 0 errors.
+
+
+- [x] **Zero-Data Transcript Payment Prevention & Security Safeguard**:
+    - [x] Backend safeguard in `backend/src/modules/finance/services/finance-transcript.service.ts`:
+        - Checks `prisma.studentSubjectTermResult.count({ where: { studentId, schoolId, status: 'PUBLISHED', ...scope } })`.
+        - If no published academic records exist for the selected session and term, payment initiation is blocked with an explicit error: `"No published academic records exist for the selected period. Graduated scholars cannot pay for unrecorded or empty terms."`
+    - [x] Frontend safeguard in `TranscriptClearanceModals.tsx`:
+        - Evaluates `results` against the selected session and term.
+        - If 0 records exist for the chosen scope, shows an alert (`ClearanceScopeStatusCard.tsx`) explaining that clearance payment is disabled because no official grades are published for that term, and disables the checkout button (`"No Records to Clear"`).
+    - [x] Component Decomposition (< 300 lines rule):
+        - `TranscriptClearanceModals.tsx`: 277 lines
+        - `ClearanceTermSelector.tsx`: 47 lines
+        - `ClearanceScopeStatusCard.tsx`: 63 lines
+        - `TranscriptRestoreModal.tsx`: 67 lines
+        - `finance-transcript.service.ts`: 266 lines
+        - `finance-transcript-token.service.ts`: 82 lines
+    - [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+
+- [x] **Transcript Payment Beneficiary & Post-Payment Session Continuity Fix**:
+    - [x] **Where the money goes**:
+        - In `backend/src/modules/finance/services/finance-transcript.service.ts`, payment initiation queries the school's active bank settlement account (`prisma.school.findUnique` with `settlementAccounts: { where: { isDefault: true } }` and fallback to `active` Flutterwave / Paystack subaccount).
+        - Passes `subaccountCode` in the Flutterwave initialization payload (`subaccounts: [{ id: subaccountCode }]`).
+        - The funds go directly into the **connected school's verified bank account** (with Qefas platform split if configured), not a generic or unlinked account.
+    - [x] **Fixed student getting logged out after Flutterwave return**:
+        - When Flutterwave redirects back across external domains (from `api.flutterwave.com` to `localhost:3000`), third-party referrer cookies can be delayed in Edge runtime inspection.
+        - Next.js edge `frontend/src/middleware.ts` previously redirected any `/dashboard` request without a raw `token` cookie straight to `/login?redirect=...`, stripping the payment context before client-side hydration or token restoration could run.
+        - Updated `middleware.ts` to recognize payment callback parameters (`tx_ref`, `reference`, `transaction_id`, `payment`, `pass`), allowing the page to mount, verify the payment with Flutterwave, mint the 30-day clearance pass, and keep the scholar logged in.
+    - [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+
+- [x] **Transcript Clean-Up, Downloadable Records in Sidebar & Double-Page Lock**:
+    - [x] **Eliminated visual overload & double transcript stack**:
+        - Defaulted active view to `"page1"` (`Page 1: Academic Records`) instead of rendering both templates stacked on top of each other.
+        - Students can seamlessly switch between **Page 1: Academic** and **Page 2: Conduct & Remarks** via the top switcher without duplicate letterheads or visual clutter.
+    - [x] **Enforced Lock on Both Pages**:
+        - Page 1 locks course score tables, CGPA/GPA values, and cumulative cards when unpaid clearance is required.
+        - Page 2 locks behavioral traits, psychomotor scores, and principal/teacher remarks with a dedicated session clearance lock card.
+    - [x] **Available Downloadable Records on the Right Sidebar**:
+        - Created `frontend/src/app/dashboard/student/transcript/components/TranscriptAvailableRecordsSection.tsx` (97 lines).
+        - Displays every published terminal score sheet with course counts, clear "Unlocked" vs "Unlock" badges, and direct triggers to initiate clearance.
+    - [x] **Collapsed Non-Critical Telemetry into Dropdowns**:
+        - In `TranscriptAuditSidebar.tsx` (reduced from 329 to 245 lines), moved the verbose transcript hash, certified signatories list, and guardian/scholar download metrics into collapsible accordion sections (`Signatories & Ref Details` and `Download Telemetry`).
+    - [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+
+- [x] **Universal Clearance Lock Across All Transcript Pages**:
+    - [x] **Fixed clearance gate leak on Page 1 (Academic Records)**:
+        - Previously, `TranscriptAcademicPage.tsx` evaluated `!hasAnyUnlockedTerm && recentClearancePayments.length === 0` to display the `TranscriptTierPaywallCard`. If `results.length === 0` or if a partial check evaluated to true, it fell through to render the empty scores state rather than the official Clearance Lock.
+        - Updated the condition to strictly check `requiresPayment && !isCurrentViewUnlocked`.
+        - Fixed `isCurrentViewUnlocked` in `useTranscriptClearance.ts` so that when clearance is required, if results are empty or the chosen scope does not hold an active verified 30-day token pass, `isCurrentViewUnlocked` strictly evaluates to `false`.
+    - [x] **Result**:
+        - When unpaid clearance is required, **both Page 1 (Academic Records) and Page 2 (Conduct & Remarks)** display the prominent Clearance Lock and masked state.
+        - Unauthenticated or uncleared students cannot view scores, grades, or terminal data until verified clearance payment is completed.
+    - [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+### Wednesday, November 4, 2026
+- [x] Redesigned Console Billing and Pricing page (http://localhost:3000/console/billing/pricing) with modern card architecture and modular component structure.
+- [x] Extracted PricingPlanCard.tsx with dynamic monthly/yearly rate display, automated 20% annual savings calculation, structured quota metrics, and feature matrix.
+- [x] Added interactive category selector (Schools, Teachers, Parents, Students) with live plan counters.
+- [x] Added instant plan search bar and tier filter pills (All / Paid / Free).
+- [x] Included Paywall Enforcement toggle with state indication and System Manifest Sync banner.
+### Wednesday, November 4, 2026 (Fix: PricingPlanCard Export)
+- [x] Added export default PricingPlanCard and exported SubscriptionPlanData in PricingPlanCard.tsx resolving Next.js Turbopack build error: 'Export default doesn''t exist in target module'.
+### Wednesday, November 4, 2026 (Transcript Delivery Email Activation)
+- [x] Connected and activated 'Transcript Delivery & Link' email template in Console Email Templates (rontend/src/app/(internal-console)/console/email-templates/page.tsx).
+- [x] Created sendTranscriptDeliveryEmail in ackend/src/modules/auth/auth.service.ts using the standardized uildEmail wrapper with metadata dockets, cryptographic verification explanation, and direct verification URL.
+- [x] Wired sendTranscriptDeliveryEmail into sendTranscriptPassEmailService in ackend/src/modules/finance/services/finance-transcript.service.ts so scholars automatically receive the branded email with direct access token upon transcript clearance fee payment.
+- [x] Connected test trigger in ackend/src/modules/platform/email/email.controller.ts so administrators can preview and send live test emails from the console.
+### Wednesday, November 4, 2026 (Transcript Payment Success & School Email Version)
+- [x] Activated and connected Transcript Payment Success (Student) in Console Email Templates (rontend/src/app/(internal-console)/console/email-templates/page.tsx) with status Functional.
+- [x] Added new Transcript Payment Received (School) email template in console for institutional administrators and finance staff (id:  school-transcript-payment, status Functional).
+- [x] Created sendTranscriptPaymentSuccessEmail and sendSchoolTranscriptPaymentReceivedEmail in ackend/src/modules/auth/auth.service.ts with branded receipts, matriculation docket numbers, academic scopes, and direct finance/transcript console links.
+- [x] Wired both student and school email dispatches into erifyPaymentService in ackend/src/modules/finance/services/finance-payments.service.ts upon successful clearance settlement.
+- [x] Connected both test triggers in ackend/src/modules/platform/email/email.controller.ts under /api/platform/email/test.
+### Wednesday, November 4, 2026 (Fix Building2 import in email-templates)
+- [x] Fixed Runtime ReferenceError (Building2 is not defined) in rontend/src/app/(internal-console)/console/email-templates/page.tsx by adding Building2 to the lucide-react import statement.
+
+### Wednesday, November 4, 2026 (Student Graduation Email Activation & Template Audits)
+- [x] Implemented `sendStudentGraduationEmail` in `backend/src/modules/auth/auth.service.ts` matching the valedictory honours roll template with graduate credentials, cumulative GPA / standing, certificate docket, exit date, and permanent alumni vault link.
+- [x] Connected graduation email dispatch directly into `exitStudentService` in `backend/src/modules/student/student.service.ts` whenever an administrator marks a student as `GRADUATED` (individually or in batch exit).
+- [x] Wired live test trigger for `student-graduating` into `backend/src/modules/platform/email/email.controller.ts` for previewing and sending test graduation emails from the console.
+- [x] Audited and updated all functional email templates in `frontend/src/app/(internal-console)/console/email-templates/page.tsx`, tagging each working template with `badge: "Functional"` and `isFunctional: true`.
+- [x] Fixed `onOpenClearanceModal` type prop in `TranscriptBehavioralPage.tsx`. Verified 0 TypeScript errors across backend and frontend.
+
+### Wednesday, November 4, 2026 (School Accepts Teacher & Parent Graduation Email)
+- [x] Implemented `sendSchoolAcceptTeacherEmail` in `backend/src/modules/auth/auth.service.ts` with faculty appointment details (Staff Name, Staff ID/Code, Academic Department, Assigned Subject, Allocated Classes, and direct portal link).
+- [x] Connected `sendSchoolAcceptTeacherEmail` to `respondToLinkRequestService` in `backend/src/modules/link/link.respond.service.ts` whenever an administrator accepts a teacher's link request or vice versa (`linkType === "SCHOOL_TEACHER"`).
+- [x] Implemented `sendParentGraduationEmail` in `backend/src/modules/auth/auth.service.ts` with graduate honours dossier, parent acknowledgment, cumulative GPA / standing, and digital archive vault access.
+- [x] Connected `sendParentGraduationEmail` in `backend/src/modules/student/student.service.ts` (`exitStudentService`) to automatically dispatch to all linked parents when a student is graduated.
+- [x] Added `parent-graduation` template to Console Email Templates (`frontend/src/app/(internal-console)/console/email-templates/page.tsx`) and updated `school-accept-teacher` status to `Functional`.
+- [x] Added backend test routes in `backend/src/modules/platform/email/email.controller.ts` for both `school-accept-teacher` and `parent-graduation`.
+- [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+
+### Wednesday, November 4, 2026 (School Accepts Student Email Activation)
+- [x] Implemented `sendSchoolAcceptStudentEmail` in `backend/src/modules/auth/auth.service.ts` featuring the Enrollment Record (Student Full Name, Admission/Registration Number, Class Placement, Academic Session, Form Master, House/Division, and Resumption Date) with student portal login link.
+- [x] Connected `sendSchoolAcceptStudentEmail` to `respondToLinkRequestService` in `backend/src/modules/link/link.respond.service.ts` whenever an administrator accepts a student link request or school-to-student admission (`linkType === "SCHOOL_STUDENT"`).
+- [x] Added `school-accept-student` test trigger in `backend/src/modules/platform/email/email.controller.ts` for previewing and test dispatches from the console.
+- [x] Tagged `school-accept-student` as `badge: "Functional"` and `isFunctional: true` in `frontend/src/app/(internal-console)/console/email-templates/page.tsx`.
+- [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+
+### Wednesday, November 4, 2026 (Parent-Child Link Accepted Email Activation)
+- [x] Implemented `sendParentStudentLinkAcceptedEmail` in `backend/src/modules/auth/auth.service.ts` with customized messaging for both PARENT and STUDENT recipients (Linked Account Roster, Student Matric / Reg No, Class & Arm, Institution, Relationship, and Delegated Permissions).
+- [x] Connected `sendParentStudentLinkAcceptedEmail` to `respondToLinkRequestService` in `backend/src/modules/link/link.respond.service.ts` whenever an administrator or user approves a parent-student connection request (`linkType === "PARENT_STUDENT"`), dispatching to **both** the Parent and the Student.
+- [x] Added `parent-child-link-accepted` (and role-specific variants) test triggers in `backend/src/modules/platform/email/email.controller.ts` for previewing and test dispatches from the console.
+- [x] Tagged `parent-child-link-accepted` as `badge: "Functional"` and `isFunctional: true` in `frontend/src/app/(internal-console)/console/email-templates/page.tsx`.
+- [x] Verified full TypeScript compilation: backend (0 errors) and frontend (0 errors).
+
+
+### Wednesday, November 4, 2026
+- [x] Implemented student suspension and graduation lifecycle email notifications in exitStudentService (ackend/src/modules/student/student.service.ts).
+- [x] Connected test trigger for student-suspension in ackend/src/modules/platform/email/email.controller.ts.
+- [x] Tagged student-suspension as Functional in rontend/src/app/(internal-console)/console/email-templates/page.tsx.
+
+
+### Wednesday, November 4, 2026 (Tutorials Database Alignment)
+- [x] Connected Tutorials to database persistence via ackend/src/modules/platform/tutorials (Service, Controller, Route, Zod Schemas).
+- [x] Wired /api/platform/tutorials to public and console routes in backend.
+- [x] Replaced localStorage-only mock data with database synchronization in rontend/src/lib/tutorials/tutorialData.ts.
+- [x] Synchronized http://localhost:3000/console/tutorials with the database and aligned with http://localhost:3000/tutorials and detail views.
+- [x] Added interactive delete loading spinner (isDeleting, Loader2, disabled states) to the tutorial delete confirmation modal on /console/tutorials.
+- [x] Added ALL (All Roles / Universal) option to the Target User Role dropdown on /console/tutorials and updated filtering across public and console pages.
+- [x] Enabled dual-mode (Visual Form + JSON Mode) for Section 4 (Quick Step-by-Step Checklist) in /console/tutorials with live JSON syntax validation and auto-sync on save.
+- [x] Enabled dual-mode (Visual Form + JSON Mode + JSON File Upload) for Section 5 (Core Learning Takeaways) and Section 4 (Step-by-Step Checklist) in /console/tutorials.
+- [x] Added dynamic loading states (Loader2, spinning indicators, disabled states) to both the top and bottom Save Tutorial buttons on /console/tutorials.
+- [x] Resolved HTML hydration error (<div> cannot be a descendant of <p>) across /console/teachers, /console/students, and /console/parents by replacing <p> wrapping <Skeleton> with <div>.
+- [x] Handled asynchronous fee loading on /dashboard/student/transcript so clearance unlock banners, buttons, top bar, modals, and signature footers display loading... while school transcript pricing is loading.
+
+
+### Thursday, November 5, 2026 (Class Materials Security, LaTeX Math Rendering & Theming)
+- [x] Restructured class materials upload security: explicitly set `canUpload={false}` on Student Class Materials page (`frontend/src/app/dashboard/student/my-classes/[id]/components/materials/page.tsx`). Students can only view, preview, and download study resources.
+- [x] Secured `MaterialsLayout.tsx`: Upload button and `UploadMaterialModal` component only mount and render if `canUpload={true}` and the user is authenticated as staff/admin.
+- [x] Integrated `LaTeXRenderer` into the Instructions & Notes preview section in `MaterialsLayout.tsx` so formulas, KaTeX mathematics, and formatted markdown render seamlessly.
+- [x] Enforced clean role-based theming: Indigo theme tokens for Admin Class Materials (`dashboard/admin/classes/[id]`) and Pink theme tokens for Student Class Materials (`dashboard/student/my-classes/[id]`).
+- [x] Verified full TypeScript compilation: `cd frontend; npx tsc --noEmit` passed with 0 errors.
+
+
+### Thursday, November 5, 2026 (Universal Reading & Reference Content Modal, Formula Scroll Constraints & AI Passage Clean Up)
+- [x] Generalized heading & description in ReadingContentModal: Rebranded from "Reading Comprehension Content" to "Reading & Reference Content", with universal helper text supporting reading passages, science experiment setups, case studies, mathematics contexts, and multidisciplinary references.
+- [x] Resolved popup off-screen growth when switching to Formula (Math) mode:
+  - Constrained dialog content with `max-h-[90vh] flex flex-col` and scrollable inner body (`overflow-y-auto min-h-0`).
+  - Constrained editor height with dual-pane layout (`min-w-0`, fixed height editor & live KaTeX preview with independent scrolling).
+  - Constrained right-column Formula Palette with `max-h-[560px] overflow-y-auto` so voluminous formula groups stay firmly in view without breaking viewport boundaries.
+- [x] Built AI Clean Up backend feature (`POST /api/exams/ai/cleanup-passage`):
+  - Protected with `authenticateToken`, `requireFeatureAccess("aiInsights")`, and teacher/admin role guard.
+  - Enforced daily AI rate limits via `AiLimiterService`.
+  - Implemented `cleanupAndFormatPassageText` in `backend/src/modules/exam/exam-ai.service.ts` to clean line breaks, OCR glitches, and apply standard KaTeX LaTeX math delimiters (`$...$`, `$$...$$`).
+- [x] Wired frontend AI Clean Up button with tier check:
+  - Added `cleanupPassageWithAi` in `frontend/src/lib/api/services/examService.ts`.
+  - Used `useFeatureAccess("aiInsights", schoolId)` in `ReadingContentModal.tsx` so the AI Clean Up button displays only for schools subscribed to the AI feature tier.
+  - Added loading indicator and instant content update with live preview.
+- [x] Verified zero TypeScript errors across both backend and frontend (`npx tsc --noEmit` passed on both).
+
+
+### Thursday, November 5, 2026 (Exam Graded Tab Date Sectioning & Offline Attempt Auto-Submission)
+- [x] Integrated `date_sectioning_display` skill into Exam Paper Graded / Attempts Tab:
+  - Computed natural relative date groupings using `groupByDate` and `getDateGroupLabel` (`Today`, `Yesterday`, day month, day month year).
+  - Designed clean date section headers with indigo role indicator dot (`size-2 rounded-full bg-indigo-500`), section title, and record count badge.
+  - Rendered responsive individual tables per date group with student details, status badges, timestamp, score, and clear action.
+- [x] Implemented Multi-Tier Auto-Submission for Logged-Out / Disconnected Students:
+  - **Proactive Retrieval Sweep**: Updated `getExamAttemptsService` (`exam-attempt.service.ts`) and `getSubjectPaperByIdService` (`exam.service.ts`) to immediately detect any attempt whose `expiresAt <= now` and status is `IN_PROGRESS`, automatically scoring and transitioning it to `SCORED` before returning data to teachers or administrators.
+  - **Background Cron Sweeper**: Added a 2-minute recurring job in `backend/src/scripts/cron.ts` that queries all `IN_PROGRESS` attempts whose `expiresAt` has passed and invokes `autoSubmitExpiredAttemptService`, ensuring quizzes and exams submit themselves even if the candidate closed their browser, logged out, or disconnected permanently.
+- [x] Verified full TypeScript compilation: `cd backend; npx tsc --noEmit` and `cd frontend; npx tsc --noEmit` both passed with 0 errors.
+
+
+### Thursday, November 5, 2026 (AI Reading/Reference Clean Up Prompt Guard & Blank Preservation)
+- [x] Hardened AI system prompt in `backend/src/modules/exam/exam-ai.service.ts` (`cleanupAndFormatPassageText`):
+  - **Explicit Non-Solving Rule**: Instructed model NEVER to solve problems, calculate results, or answer questions. All exercises, numbered problems, or comprehension queries remain unanswered for candidates.
+  - **Fill-in-the-Gap Blank Preservation**: Enforced that all blanks, blanks in brackets, and missing clauses remain as blank underscore dashes (e.g. `________`, `____ [1] ____`), strictly preventing the AI from guessing or filling in the correct answers.
+  - **Fencing Sanitizer**: Added post-processing cleanup to strip any inadvertent markdown code block wrappers (```markdown ... ```).
+  - Set `temperature: 0.1` for maximum fidelity and zero hallucination.
+- [x] Verified full backend TypeScript build (`npx tsc --noEmit` exited with code 0).
+
+### Thursday, November 5, 2026
+- [x] Set List/Table view mode as default on student termly result view page (http://localhost:3000/dashboard/student/result/termly/view).
+- [x] Redesigned score sheet table container, header (#, Subject & Code, Assignment, CA/Quiz, Exam, Total, Grade, Standing), search filter, and styling to match http://localhost:3000/dashboard/admin/records/new.
+- [x] Verified zero tsc errors (npx tsc --noEmit passed with code 0).
+- [x] Separated CA and Quiz columns on student termly result view (Assignment, Quiz/Test, CA, Exam, Total) across table, grid cards, and PDF export.
+- [x] Applied school_grading_system_sync to student transcript page (http://localhost:3000/dashboard/student/transcript), harmonizing school resolution, letter grades, points, remarks, badges, CGPA grading, and PDF export with connected school custom grading system.
+- [x] Applied date_sectioning_display and school_grading_system_sync to student Exams & Quizzes hub (http://localhost:3000/dashboard/student/exams&quizzes) and sub-pages (upcoming-assessment, completed, result).
+- [x] Verified zero compiler errors with npx tsc --noEmit.
+
+### Thursday, November 5, 2026 (Teacher Dashboard Skills Integration: date_sectioning_display & school_grading_system_sync)
+- [x] Applied date_sectioning_display skill to Teacher Dashboard (http://localhost:3000/dashboard/teacher):
+  - Created shared date helper at frontend/src/app/dashboard/teacher/utils/dateSectioning.ts (groupByDate, getDateGroupLabel with Today, Yesterday, day month, day month year).
+  - Updated RecentPersonalActivity.tsx to section activities and events into clean, responsive date blocks with calendar icon badges and event counters.
+  - Updated AssignmentsExams.tsx to section recent assessments and due dates into structured date groups.
+- [x] Applied school_grading_system_sync skill to Teacher Dashboard:
+  - Updated backend/src/modules/teacher/teacher-dashboard.service.ts to query and return the connected school's configured grading system.
+  - Fixed Prisma model field resolution (using valid schoolEmail instead of email).
+  - Updated DashboardPage.tsx to receive schoolGradingSystem and forward gradingSystem to StudentPerformanceWidget.
+  - Updated StudentPerformanceWidget.tsx to evaluate top student scores using getGradeEvaluation(student.average, gradingSystem) with dynamic tier remarks, colors, and badge styling.
+  - Synced Class Distribution with active grading system tiers.
+- [x] Verified full TypeScript compilation: frontend tsc and backend tsc passed with 0 errors.
+
+
+### Thursday, November 5, 2026 — Teacher Student Profile (`/dashboard/teacher/students/[studentId]`)
+- [x] Fixed `School record not found for ID: "default-tenant-id"`: `getSchoolSettingsService` now returns `null` for placeholder/unknown IDs; `useSchoolSettings` disabled for `default-tenant-id`/`personal` (+ 10 min staleTime).
+- [x] Page resolves `schoolId` from the student's connected school (student.schoolId → school.id → class.schoolId → teacher schools), and the class from the class enrolled in that school.
+- [x] Timetable tab: replaced mock `ScheduleGrid`/`WeekControls` and hardcoded "Advanced Mathematics / Dr. Sarah Jenkins" dialog with new `components/timetable/StudentTimetable.tsx` using `useClassTimetable(classId)` (real slots, subjects, rooms, teachers, breaks, period dialog, empty/error states).
+- [x] Academic tab: `school_grading_system_sync` applied — paper badges, exam aggregates and standalone status use `getGradeEvaluation(…, school.gradingSystem)` instead of Pass/Critical.
+
+
+### Thursday, November 5, 2026 — Teacher Class Details (`/dashboard/teacher/my-classes/[classId]`)
+- [x] Applied `date_sectioning_display` across all class tabs & overview widgets:
+  - `BehaviourAlert.tsx` & `ClassDetails.tsx`: Added `createdAt` and grouped behaviour alerts under relative date headers (`Today`, `Yesterday`, `12 October`, etc.).
+  - `UpcomingExams.tsx` & `Overview.tsx`: Preserved `rawDate` (`startDate || createdAt`) and grouped upcoming class exams/assessments by date.
+  - `StudentTable.tsx`, `student/page.tsx`, & `teacher-dashboard.service.ts`: Exposed `enrolledAt`/`createdAt` and `scorePercent` in `getTeacherStudentsService`, and sectioned the class student roster by enrollment/creation date in both List and Grid views.
+  - `RecentSubmissions.tsx` & `UpcomingActivities.tsx`: Added date sectioning headers to submission and deadline lists.
+- [x] Applied `school_grading_system_sync` across all class tabs & overview widgets:
+  - `StudentTable.tsx`: Replaced hardcoded `High/Medium/Low` performance badge with the school's configured `getGradeEvaluation` badge (`grade • remark`) whenever a score or `lastExam` ratio is available, and appended the evaluated letter grade to `Last Exam` in Grid view.
+  - `GradeTable.tsx`: Added `computeGradePill(pct, gradingSystem)` badge next to individual score rows (`score / maxMarks`) in List view and student drill-down.
+  - `GradeStatistics.tsx`: Added `getGradeEvaluation` badges (`grade • remark`) next to Class Average, Highest Score, and Lowest Score cards.
+  - `GradeDistributionChart.tsx`: Replaced hardcoded `A-F` color map with `getGradeColorAndBg(grade)` to support 9-tier (`A1-F9`) and custom school grading scales.
+  - `TopPerformingStudents.tsx`, `RecentSubmissions.tsx`, `ClassStats.tsx`, `MyClassesPage.tsx`, `ClassCard.tsx`, & `ClassList.tsx`: Synced all score and class average displays with `getGradeEvaluation(..., schoolProfile?.gradingSystem)`.
+\r
+- [x] **Teacher Assignments Page & Sub-pages — Date Sectioning & School Grading System Sync (/dashboard/teacher/assignments)**:\r
+  - **Backend (ackend/src/modules/assignment/assignment.service.ts)**: Enriched getTeacherAssignmentsService to compute and return gradedCount and verageScorePct per assignment from graded submissions so list/grid items can evaluate class average performance.\r
+  - **Main Assignments Page (rontend/src/app/dashboard/teacher/assignments/page.tsx, AssignmentList.tsx, AssignmentCard.tsx, 	ypes.ts)**: Replaced inline date grouping with shared groupByDate (date_sectioning_display), defaulted desktop view to 'list' (with mobile fallback to 'grid'), maintained continuous row indices (startIndex) across date sections in AssignmentList, fetched connected school's gradingSystem via useSchoolProfile (guarding against 'default-tenant-id' / 'personal'), and displayed evaluated computeGradePill badges on assignment rows and cards when graded submissions exist.\r
+  - **Assignment Details & Submissions Tracker (rontend/src/app/dashboard/admin/assignments/[id]/components/SubmissionList.tsx, SubmissionReviewModal.tsx)**: Sectioned submissions by submittedAt || createdAt using groupByDate across both desktop table and mobile card views (date_sectioning_display), added a class average score + computeGradePill badge to the tracker header, included Grade and Remark columns in CSV/PDF exports, and added a live computeGradePill badge next to the score display in SubmissionReviewModal.\r
+  - **Preview, Bulk Grading, Analytics & Grading Form (preview/[id]/page.tsx, StudentSubmissionsTable.tsx, SubmissionsOverview.tsx, ulk-grading/[id]/page.tsx, StudentGradingTable.tsx, GradingStats.tsx, nalytics/page.tsx, StatsCards.tsx, StudentList.tsx, preview-assignment/components/GradingForm.tsx)**: Applied groupByDate to StudentSubmissionsTable, StudentGradingTable, and StudentList, and synced SubmissionsOverview, GradingStats, StatsCards, StudentList, and GradingForm with the connected school's gradingSystem via computeGradePill.\r
 

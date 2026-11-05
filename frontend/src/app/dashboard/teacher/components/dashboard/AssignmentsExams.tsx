@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { ArrowRight, FileText, ClipboardList, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowRight, FileText, ClipboardList, Clock, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { HeaderTooltip } from './HeaderTooltip';
+import { getDateGroupLabel, groupByDate } from '../../utils/dateSectioning';
 
 interface Assignment {
   id: string;
@@ -24,10 +25,16 @@ export default function AssignmentsExams({ assignments, onViewAll }: Assignments
   const itemsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(assignments.length / itemsPerPage));
   
-  const currentItems = assignments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const currentItems = useMemo(() => {
+    return assignments.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [assignments, currentPage, itemsPerPage]);
+
+  const dateGroups = useMemo(() => {
+    return groupByDate(currentItems, (item) => item.dueDate);
+  }, [currentItems]);
 
   const getStatusColor = (status: Assignment['status']) => {
     switch (status) {
@@ -82,55 +89,76 @@ export default function AssignmentsExams({ assignments, onViewAll }: Assignments
         </button>
       </div>
 
-      <div className="space-y-3 sm:space-y-4 flex-1">
-        {currentItems.map((assignment, idx) => (
-          <motion.div
-            key={assignment.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="flex items-center p-3 sm:p-5 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl sm:rounded-[1.5rem] border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/30 hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-xl transition-all duration-500 group"
-          >
-            {/* Icon */}
-            <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 shadow-sm transition-all duration-500 shrink-0`}>
-              {assignment.icon === 'assignment' ? <FileText size={18} className="sm:w-[22px] sm:h-[22px]" /> : <ClipboardList size={18} className="sm:w-[22px] sm:h-[22px]" />}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 ml-3 sm:ml-5 min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                 <p className="font-black text-slate-900 dark:text-slate-100 text-sm sm:text-base tracking-tight leading-tight truncate">
-                  {assignment.title}
-                </p>
-                <span className={`px-1.5 sm:px-2 py-0.5 text-[7px] sm:text-[8px] font-black uppercase tracking-widest rounded-full border shrink-0 ${getStatusColor(assignment.status)}`}>
-                  {getStatusText(assignment.status)}
+      <div className="space-y-4 flex-1">
+        {assignments.length > 0 ? (
+          dateGroups.map((group, groupIdx) => (
+            <div key={group.label} className="space-y-2.5">
+              {/* Date Section Header */}
+              <div className="flex items-center gap-2 pt-1 pb-0.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
+                  <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  {group.label}
+                </span>
+                <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800/80" />
+                <span className="text-[10px] font-semibold text-slate-400">
+                  {group.items.length} {group.items.length === 1 ? 'assessment' : 'assessments'}
                 </span>
               </div>
-              
-              <div className="flex items-center gap-2 sm:gap-3">
-                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight truncate">
-                  {assignment.description}
-                </p>
-                {assignment.dueDate && (
-                  <>
-                    <span className="text-slate-200 dark:text-slate-800">|</span>
-                    <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-emerald-600/70 dark:text-emerald-400/70 uppercase shrink-0">
-                      <Clock size={10} className="sm:w-[11px] sm:h-[11px]" />
-                      {new Date(assignment.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+
+              {/* Assessment items */}
+              <div className="space-y-2 sm:space-y-3">
+                {group.items.map((assignment, idx) => (
+                  <motion.div
+                    key={assignment.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (groupIdx * 2 + idx) * 0.04 }}
+                    className="flex items-center p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl sm:rounded-[1.5rem] border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/30 hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-xl transition-all duration-500 group"
+                  >
+                    {/* Icon */}
+                    <div className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 shadow-sm transition-all duration-500 shrink-0`}>
+                      {assignment.icon === 'assignment' ? <FileText size={18} className="sm:w-5 sm:h-5" /> : <ClipboardList size={18} className="sm:w-5 sm:h-5" />}
                     </div>
-                  </>
-                )}
+
+                    {/* Content */}
+                    <div className="flex-1 ml-3 sm:ml-4 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                        <p className="font-black text-slate-900 dark:text-slate-100 text-sm sm:text-base tracking-tight leading-tight truncate">
+                          {assignment.title}
+                        </p>
+                        <span className={`px-1.5 sm:px-2 py-0.5 text-[7px] sm:text-[8px] font-black uppercase tracking-widest rounded-full border shrink-0 ${getStatusColor(assignment.status)}`}>
+                          {getStatusText(assignment.status)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight truncate">
+                          {assignment.description}
+                        </p>
+                        {assignment.dueDate && (
+                          <>
+                            <span className="text-slate-200 dark:text-slate-800">|</span>
+                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-emerald-600/70 dark:text-emerald-400/70 uppercase shrink-0">
+                              <Clock size={10} className="sm:w-[11px] sm:h-[11px]" />
+                              {new Date(assignment.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action */}
+                    <div className="ml-2 sm:ml-4 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                      <button className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:scale-110 active:scale-95 transition-all">
+                        <ArrowRight size={14} className="sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
-
-            {/* Action */}
-            <div className="ml-2 sm:ml-4 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-               <button className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:scale-110 active:scale-95 transition-all">
-                 <ArrowRight size={14} className="sm:w-[18px] sm:h-[18px]" />
-               </button>
-            </div>
-          </motion.div>
-        ))}
+          ))
+        ) : null}
       </div>
 
       {assignments.length > itemsPerPage && (

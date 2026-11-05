@@ -1,12 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { examService, CreateExamDTO, CreatePaperDTO } from "../services/examService";
+import {
+  examService,
+  CreateExamDTO,
+  CreatePaperDTO,
+} from "../services/examService";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
 
 export const examKeys = {
   all: ["exams"] as const,
   lists: () => [...examKeys.all, "list"] as const,
-  list: (filters: Record<string, unknown>) => [...examKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) =>
+    [...examKeys.lists(), filters] as const,
   details: () => [...examKeys.all, "detail"] as const,
   detail: (id: string) => [...examKeys.details(), id] as const,
   papers: (id: string) => [...examKeys.detail(id), "papers"] as const,
@@ -16,6 +21,7 @@ export const useExams = (filters?: Record<string, unknown>) => {
   return useQuery({
     queryKey: examKeys.list(filters || {}),
     queryFn: () => examService.getExams(filters),
+    staleTime: 1000 * 60 * 2,
     refetchOnWindowFocus: true,
   });
 };
@@ -24,6 +30,7 @@ export const useExamsPaginated = (filters?: Record<string, unknown>) => {
   return useQuery({
     queryKey: [...examKeys.list(filters || {}), "paginated"],
     queryFn: () => examService.getExamsPaginated(filters),
+    staleTime: 1000 * 60 * 2,
     refetchOnWindowFocus: true,
   });
 };
@@ -33,6 +40,7 @@ export const useExam = (id: string) => {
     queryKey: examKeys.detail(id),
     queryFn: () => examService.getExamById(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 2,
     retry: false,
   });
 };
@@ -42,9 +50,9 @@ export const useExamPapers = (examId: string) => {
     queryKey: examKeys.papers(examId),
     queryFn: () => examService.getExamPapers(examId),
     enabled: !!examId,
+    staleTime: 1000 * 60 * 2,
   });
 };
-
 
 export const useCreateExam = () => {
   const queryClient = useQueryClient();
@@ -63,13 +71,16 @@ export const useCreateExam = () => {
 export const useCreatePaper = (examId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreatePaperDTO) => examService.createSubjectPaper(examId, data),
+    mutationFn: (data: CreatePaperDTO) =>
+      examService.createSubjectPaper(examId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
       toast.success("Subject paper created successfully");
     },
     onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to create subject paper");
+      toast.error(
+        error.response?.data?.message || "Failed to create subject paper",
+      );
     },
   });
 };
@@ -107,7 +118,14 @@ export const useUnpublishExam = () => {
 export const useDeleteExam = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (args: string | { id: string; options?: { deletePapers?: boolean; paperIds?: string[] } }) => {
+    mutationFn: (
+      args:
+        | string
+        | {
+          id: string;
+          options?: { deletePapers?: boolean; paperIds?: string[] };
+        },
+    ) => {
       if (typeof args === "string") {
         return examService.deleteExam(args);
       }
@@ -128,7 +146,8 @@ export const useDeleteExam = () => {
 export const useUnpublishPaper = (examId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (paperId: string) => examService.unpublishPaper(examId, paperId),
+    mutationFn: (paperId: string) =>
+      examService.unpublishPaper(examId, paperId),
     onSuccess: (_, paperId) => {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
@@ -154,148 +173,52 @@ export const useDeletePaper = (examId: string) => {
   });
 };
 
-export const useExamAttempt = (examId: string) => {
-  return useQuery({
-    queryKey: [...examKeys.detail(examId), "attempt"],
-    queryFn: async () => {
-      try {
-        return await examService.getExamAttempt(examId);
-      } catch (error) {
-        const err = error as AxiosError;
-        if (err.response?.status === 404) {
-          return null; // Return null if no attempt exists
-        }
-        throw error;
-      }
-    },
-    enabled: !!examId,
-    retry: false,
-  });
-};
-
-export const useExamAttempts = (examId: string) => {
-  return useQuery({
-    queryKey: [...examKeys.detail(examId), "attempts"],
-    queryFn: () => examService.getExamAttempts(examId),
-    enabled: !!examId,
-  });
-};
-
-export const useStartExamAttempt = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (examId: string) => {
-      const { getDeviceId } = require('@/lib/utils/device');
-      return examService.startExamAttempt(examId, { deviceId: getDeviceId() });
-    },
-    onSuccess: (_, examId) => {
-      queryClient.invalidateQueries({ queryKey: [...examKeys.detail(examId), "attempt"] });
-      toast.success("Exam started! Good luck.");
-    },
-    onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to start exam");
-    },
-  });
-};
-
-export const useExamReview = (examId: string, studentId?: string) => {
-  return useQuery({
-    queryKey: [...examKeys.detail(examId), "review", studentId || "me"],
-    queryFn: () => examService.getExamReview(examId, studentId),
-    enabled: !!examId,
-    retry: false,
-  });
-};
-
-export const useSaveAnswer = () => {
-  return useMutation({
-    mutationFn: (params: { examId: string, data: { subjectPaperId: string, questionId: string, answer: string } }) => 
-      examService.saveAnswer(params.examId, params.data),
-  });
-};
-
-export const useSubmitAttempt = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (examId: string) => examService.submitAttempt(examId),
-    onSuccess: (_, examId) => {
-      queryClient.invalidateQueries({ queryKey: [...examKeys.detail(examId), "attempt"] });
-      toast.success("Exam submitted successfully!", { toastId: "exam-submit-success" });
-    },
-    onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to submit exam");
-    },
-  });
-};
-
-// Submits a single subject paper attempt (idempotent).
-// No global toasts — the SubmissionProgressModal handles all visual feedback.
-export const useSubmitSubjectPaper = () => {
-  return useMutation({
-    mutationFn: (params: { examId: string; paperId: string }) =>
-      examService.submitSubjectPaperAttempt(params.examId, params.paperId),
-  });
-};
-
-
-export const useExamResult = (examId: string, studentId?: string) => {
-  return useQuery({
-    queryKey: [...examKeys.detail(examId), "result", studentId || "me"],
-    queryFn: () => examService.getExamResult(examId, studentId || ""),
-    enabled: !!examId,
-    staleTime: 1000 * 60 * 2,
-    retry: 1,
-  });
-};
-
-export const useStudentExamAttempts = (params?: { page?: number; limit?: number }) => {
-  return useQuery({
-    queryKey: ["my-attempts", params],
-    queryFn: () => examService.getMyExamAttempts(params),
-  });
-};
-
-export const useStudentStats = () => {
-  return useQuery({
-    queryKey: ["my-stats"],
-    queryFn: () => examService.getMyStats(),
-  });
-};
-
 export const useSubjectPapers = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["subject-papers", params],
     queryFn: () => examService.getSubjectPapers(params),
+    staleTime: 1000 * 60 * 2,
   });
 };
 
-export const useSubjectPapersPaginated = (filters?: Record<string, unknown>) => {
+export const useSubjectPapersPaginated = (
+  filters?: Record<string, unknown>,
+) => {
   return useQuery({
     queryKey: ["subject-papers", "paginated", filters],
     queryFn: () => examService.getSubjectPapersPaginated(filters),
+    staleTime: 1000 * 60 * 2,
   });
 };
 
 export const useLinkPaperToExam = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (params: { paperId: string, examId: string }) => 
+    mutationFn: (params: { paperId: string; examId: string }) =>
       examService.linkSubjectPaperToExam(params.paperId, params.examId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["exam-papers", variables.examId] });
-      queryClient.invalidateQueries({ queryKey: examKeys.papers(variables.examId) });
+      queryClient.invalidateQueries({
+        queryKey: ["exam-papers", variables.examId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: examKeys.papers(variables.examId),
+      });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       toast.success("Subject paper linked successfully");
     },
     onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to link subject paper");
+      toast.error(
+        error.response?.data?.message || "Failed to link subject paper",
+      );
     },
   });
 };
+
 export const useUnlinkPaper = (examId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (paperId: string) => examService.unlinkSubjectPaper(paperId, examId),
+    mutationFn: (paperId: string) =>
+      examService.unlinkSubjectPaper(paperId, examId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
@@ -306,3 +229,16 @@ export const useUnlinkPaper = (examId: string) => {
     },
   });
 };
+
+export {
+  useExamAttempt,
+  useExamAttempts,
+  useStartExamAttempt,
+  useExamReview,
+  useSaveAnswer,
+  useSubmitAttempt,
+  useSubmitSubjectPaper,
+  useExamResult,
+  useStudentExamAttempts,
+  useStudentStats,
+} from "./useExamAttempts";

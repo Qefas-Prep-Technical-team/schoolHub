@@ -150,7 +150,8 @@ export const useSchoolSettings = (schoolId: string) => {
   return useQuery({
     queryKey: [...schoolQueryKeys.all, "settings", schoolId],
     queryFn: () => schoolService.getSettings(schoolId),
-    enabled: !!schoolId,
+    enabled: !!schoolId && schoolId !== "default-tenant-id" && schoolId !== "personal",
+    staleTime: 1000 * 60 * 10,
   });
 };
 
@@ -177,7 +178,9 @@ export const useSchoolDashboardSummary = (schoolId: string) => {
     queryKey: schoolQueryKeys.dashboardSummary(schoolId),
     queryFn: () => schoolService.getDashboardSummary(schoolId),
     enabled: !!schoolId,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 1000 * 60 * 5,
+    // Poll staff/institutional summary every 5 minutes per AGENTS.md Section 2.2
+    refetchInterval: 1000 * 60 * 5,
   });
 };
 

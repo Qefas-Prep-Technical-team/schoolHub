@@ -22,14 +22,14 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
   const schoolId = user?.schools?.[0]?.schoolId;
   const { data: settings } = useSchoolSettings(schoolId!);
   const primaryColor = settings?.themeColor || '#2563eb';
-  
+
   const queryClient = useQueryClient();
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["school-teachers-invitations", schoolId, searchTerm, page],
-    queryFn: () => adminService.getSchoolTeachers(schoolId!, { page, limit: 10, search: searchTerm, isClaimed: "false" }),
+    queryFn: () => adminService.getSchoolTeachers(schoolId!, { page, limit: 10, search: searchTerm, isClaimed: false }),
     enabled: !!schoolId,
   });
 
@@ -86,7 +86,7 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
                     <td className="p-5">
                       <div className="flex items-center gap-4">
                         <div className="size-10 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                           <User size={20} />
+                          <User size={20} />
                         </div>
                         <div>
                           <p className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[200px]">{teacher.name}</p>
@@ -101,7 +101,7 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
                       </div>
                     </td>
                     <td className="p-5 text-right">
-                      <Button 
+                      <Button
                         onClick={() => handleOpenInviteDialog(teacher)}
                         style={{ backgroundColor: primaryColor }}
                         className="h-9 px-5 rounded-xl text-white font-semibold text-xs hover:opacity-90 transition-opacity border-none shadow-sm flex items-center whitespace-nowrap shrink-0"
@@ -132,7 +132,7 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
                     <p className="text-xs font-medium text-slate-500 truncate">{teacher.teacherCode || 'UNASSIGNED'}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700/50">
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                     <Mail size={14} className="text-slate-400 shrink-0" />
@@ -141,7 +141,7 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
                 </div>
 
                 <div className="mt-auto pt-4">
-                  <Button 
+                  <Button
                     onClick={() => handleOpenInviteDialog(teacher)}
                     style={{ backgroundColor: primaryColor }}
                     className="w-full h-9 rounded-xl text-white font-semibold text-xs hover:opacity-90 transition-opacity border-none shadow-sm flex items-center justify-center shrink-0"
@@ -173,7 +173,7 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
           <p className="text-xs font-semibold text-slate-500">
             Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 10 + 1} - {Math.min(page * 10, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> teachers
           </p>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -184,7 +184,7 @@ export default function TeacherInvitationsTable({ searchTerm, page, onPageChange
             >
               <ChevronLeft size={16} />
             </Button>
-            
+
             <Button
               variant="outline"
               size="icon"

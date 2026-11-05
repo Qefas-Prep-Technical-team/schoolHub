@@ -22,15 +22,16 @@ interface GradingFormProps {
   schoolId?: string;
 }
 
-export default function GradingForm({ 
-  assignment, 
-  initialData = {}, 
+export default function GradingForm({
+  assignment,
+  initialData = {},
   onSubmit,
   schoolId
 }: GradingFormProps) {
   const { selectedSchoolId } = useDashboardStore();
   const { user } = useAuthStore();
-  const effectiveSchoolId = schoolId || selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const rawSchoolId = schoolId || selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const effectiveSchoolId = rawSchoolId === 'default-tenant-id' || rawSchoolId === 'personal' ? '' : rawSchoolId;
   const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   const [formData, setFormData] = useState<GradingFormData>({
@@ -106,7 +107,7 @@ export default function GradingForm({
             helperText={`Out of ${assignment.maxScore} points`}
             className="w-32"
           />
-          
+
           {formData.score > 0 && (
             <div className="mt-3 flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -117,7 +118,7 @@ export default function GradingForm({
                   {calculatePercentage()}%
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-600 dark:text-slate-300">
                   Grade:

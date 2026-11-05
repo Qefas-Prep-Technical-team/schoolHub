@@ -23,13 +23,15 @@ import {
 } from 'recharts'
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
+import { StudentTimetable } from './components/timetable/StudentTimetable'
+import { getGradeEvaluation } from '@/utils/gradingSystem'
 import { ExitStudentModal } from '../../../admin/students/components/ExitStudentModal'
 import { StudentHistoryTimeline } from '../../../admin/students/components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import { toast } from 'react-toastify'
-import { 
-    useStudentBehaviourProfile, 
-    useUpdateStudentBehaviourProfile 
+import {
+    useStudentBehaviourProfile,
+    useUpdateStudentBehaviourProfile
 } from '@/lib/api/hooks/useStudent'
 import {
     useClassBehaviourAlerts,
@@ -56,7 +58,7 @@ const STRENGTH_ICONS: Record<string, React.ElementType> = {
     Activity: Activity
 }
 
-// ─── Helper Components ───────────────────────────────────────────────────────
+// â”€â”€â”€ Helper Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; value: string; icon: React.ElementType; themeColor: string }) {
     return (
@@ -67,7 +69,7 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
             </div>
             <div className="space-y-1 min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-                <p className="text-[15px] font-semibold text-slate-900 dark:text-white break-words">{value || '—'}</p>
+                <p className="text-[15px] font-semibold text-slate-900 dark:text-white break-words">{value || 'â€”'}</p>
             </div>
         </div>
     )
@@ -108,287 +110,7 @@ function StatBadge({ label, value, icon: Icon, themeColor, trend }: { label: str
     )
 }
 
-function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate: Date, onPrev: () => void, onNext: () => void, themeColor: string }) {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
-    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-    const label = `${format(weekStart, 'MMM dd')} - ${format(weekEnd, 'MMM dd, yyyy')}`
-
-    return (
-        <div className="flex items-center gap-1.5 sm:gap-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-1 sm:p-1.5 shadow-sm">
-            <button 
-                type="button"
-                onClick={onPrev}
-                className="size-8 sm:size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
-                title="Previous Week"
-            >
-                <ChevronLeft size={18} />
-            </button>
-            <div className="px-2 sm:px-4 text-center">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Week</p>
-                <p className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight whitespace-nowrap">{label}</p>
-            </div>
-            <button 
-                type="button"
-                onClick={onNext}
-                className="size-8 sm:size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-emerald-900/30 transition-all shadow-sm active:scale-90"
-                title="Next Week"
-            >
-                <ChevronRight size={18} />
-            </button>
-        </div>
-    )
-}
-
-function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: { 
-    type: 'attendance' | 'timetable', 
-    themeColor: string,
-    onCellClick: (day: string, hour: string) => void,
-    currentDate: Date
-}) {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day, i) => ({
-        full: day,
-        short: day.slice(0, 3),
-        date: format(addDays(weekStart, i), 'dd'),
-        month: format(addDays(weekStart, i), 'MMM')
-    }));
-    const HOURS = ['7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM'];
-
-    const [selectedMobileDay, setSelectedMobileDay] = useState(0);
-    const [mobileViewMode, setMobileViewMode] = useState<'daily' | 'matrix'>('daily');
-
-    const getTimetableSession = (dIdx: number, hIdx: number) => {
-        if (hIdx % 3 === 0 && dIdx !== 2) {
-            return { subject: 'Mathematics', room: 'RM 204', teacher: 'Lead Teacher', color: themeColor };
-        } else if ((hIdx + dIdx) % 5 === 0) {
-            return { subject: 'English', room: 'LAB 1', teacher: 'Faculty', color: '#6366f1' };
-        } else if ((hIdx + dIdx) % 4 === 0) {
-            return { subject: 'Science', room: 'Room 102', teacher: 'Dept Instructor', color: '#06b6d4' };
-        }
-        return null;
-    };
-
-    return (
-        <div className="space-y-4 sm:space-y-6">
-            {/* Legend for Attendance */}
-            {type === 'attendance' && (
-                <div className="flex flex-wrap gap-4 sm:gap-6 px-1">
-                    <div className="flex items-center gap-2">
-                        <div className="size-2.5 sm:size-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/20" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Present</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="size-2.5 sm:size-3 rounded-full bg-amber-400 shadow-sm shadow-amber-400/20" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Late</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="size-2.5 sm:size-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/20" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Absent</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="size-2.5 sm:size-3 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Unrecorded</span>
-                    </div>
-                </div>
-            )}
-
-            {/* Mobile View Toggle & Day Pills (Visible on mobile/tablet screens < 768px) */}
-            <div className="md:hidden space-y-3">
-                <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-emerald-950/40 p-1.5 rounded-xl border border-slate-200/80 dark:border-white/10">
-                    <button
-                        type="button"
-                        onClick={() => setMobileViewMode('daily')}
-                        className={cn(
-                            "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all",
-                            mobileViewMode === 'daily'
-                                ? "bg-white dark:bg-emerald-900/50 text-slate-900 dark:text-white shadow-xs"
-                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                        )}
-                    >
-                        Daily View
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMobileViewMode('matrix')}
-                        className={cn(
-                            "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all",
-                            mobileViewMode === 'matrix'
-                                ? "bg-white dark:bg-emerald-900/50 text-slate-900 dark:text-white shadow-xs"
-                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                        )}
-                    >
-                        Weekly Matrix
-                    </button>
-                </div>
-
-                {mobileViewMode === 'daily' && (
-                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
-                        {DAYS.map((day, idx) => {
-                            const isSelected = selectedMobileDay === idx;
-                            return (
-                                <button
-                                    key={day.full}
-                                    type="button"
-                                    onClick={() => setSelectedMobileDay(idx)}
-                                    className={cn(
-                                        "flex-1 min-w-[60px] py-2 px-2.5 rounded-xl flex flex-col items-center justify-center transition-all border shrink-0",
-                                        isSelected
-                                            ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                                            : "bg-slate-50 dark:bg-emerald-950/40 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
-                                    )}
-                                >
-                                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{day.short}</span>
-                                    <span className="text-sm font-black mt-0.5">{day.date}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-
-            {/* Mobile Daily Card View */}
-            {mobileViewMode === 'daily' && (
-                <div className="md:hidden space-y-2.5">
-                    {HOURS.map((hour, hIdx) => {
-                        const day = DAYS[selectedMobileDay];
-                        const session = getTimetableSession(selectedMobileDay, hIdx);
-                        const isPast = selectedMobileDay < 3 || (selectedMobileDay === 3 && hIdx < 5);
-                        const statusChance = ((selectedMobileDay + 1) * (hIdx + 3)) % 10 / 10;
-
-                        return (
-                            <div
-                                key={`mobile-${day.full}-${hour}`}
-                                onClick={() => onCellClick(day.full, hour)}
-                                className={cn(
-                                    "p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all cursor-pointer shadow-xs",
-                                    session 
-                                        ? "bg-white dark:bg-emerald-950/60 border-slate-200 dark:border-emerald-800/60 hover:border-emerald-500" 
-                                        : "bg-slate-50/60 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 opacity-80"
-                                )}
-                            >
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-14 sm:w-16 text-center py-1.5 px-2 rounded-lg bg-slate-100 dark:bg-white/5 text-[11px] font-bold font-mono text-slate-600 dark:text-slate-300 shrink-0">
-                                        {hour}
-                                    </div>
-                                    <div className="min-w-0">
-                                        {type === 'timetable' ? (
-                                            session ? (
-                                                <div>
-                                                    <p className="text-xs font-black text-slate-900 dark:text-white truncate">
-                                                        {session.subject}
-                                                    </p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                                                        {session.room} · {session.teacher}
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <p className="text-[11px] font-medium text-slate-400 italic">
-                                                    Free / Self Study
-                                                </p>
-                                            )
-                                        ) : (
-                                            <div>
-                                                <p className="text-xs font-black text-slate-900 dark:text-white">
-                                                    {day.full} Session
-                                                </p>
-                                                <p className="text-[10px] font-bold uppercase tracking-wider mt-0.5">
-                                                    {isPast ? (
-                                                        statusChance > 0.2 ? (
-                                                            <span className="text-emerald-500">Present</span>
-                                                        ) : statusChance > 0.05 ? (
-                                                            <span className="text-amber-500">Late</span>
-                                                        ) : (
-                                                            <span className="text-rose-500">Absent</span>
-                                                        )
-                                                    ) : (
-                                                        <span className="text-slate-400">Scheduled</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Matrix Table (Always on desktop, and on mobile when mobileViewMode === 'matrix') */}
-            <div className={cn(
-                "overflow-x-auto custom-scrollbar pb-4",
-                mobileViewMode === 'daily' ? "hidden md:block" : "block"
-            )}>
-                <div className="min-w-[1000px]">
-                    <div className="grid grid-cols-[140px_repeat(12,1fr)] gap-2 sm:gap-3">
-                        {/* Empty corner */}
-                        <div className="h-10 sm:h-12" />
-                        
-                        {/* Time Headers */}
-                        {HOURS.map(hour => (
-                            <div key={hour} className="h-10 sm:h-12 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                                {hour}
-                            </div>
-                        ))}
-
-                        {/* Day Rows */}
-                        {DAYS.map((day, dIdx) => (
-                            <div key={day.full} className="contents group/row">
-                                <div className="h-16 sm:h-20 flex flex-col justify-center px-4 sm:px-6 bg-slate-50/50 dark:bg-white/[0.01] rounded-2xl border border-transparent group-hover/row:border-slate-200 dark:group-hover/row:border-white/10 transition-all">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{day.short}</span>
-                                    <span className="text-[13px] sm:text-[14px] font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">{day.date}</span>
-                                </div>
-                                
-                                {HOURS.map((hour, hIdx) => {
-                                    const session = getTimetableSession(dIdx, hIdx);
-                                    const isPast = dIdx < 3 || (dIdx === 3 && hIdx < 5);
-                                    const statusChance = ((dIdx + 1) * (hIdx + 3)) % 10 / 10;
-                                    
-                                    return (
-                                        <div 
-                                            key={`${day.full}-${hour}`} 
-                                            onClick={() => onCellClick(day.full, hour)}
-                                            className="h-16 sm:h-20 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 group hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-0.5"
-                                        >
-                                            {type === 'attendance' ? (
-                                                isPast ? (
-                                                    statusChance > 0.2 ? (
-                                                        <div className="size-3.5 sm:size-4 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/20" />
-                                                    ) : statusChance > 0.05 ? (
-                                                        <div className="size-3.5 sm:size-4 rounded-full bg-amber-400 shadow-sm shadow-amber-400/20" />
-                                                    ) : (
-                                                        <div className="size-3.5 sm:size-4 rounded-full bg-rose-500 shadow-sm shadow-rose-500/20" />
-                                                    )
-                                                ) : (
-                                                    <div className="size-1.5 rounded-full bg-slate-200 dark:bg-white/10" />
-                                                )
-                                            ) : (
-                                                session ? (
-                                                    <div className="text-center px-1">
-                                                        <p className="text-[9px] font-black uppercase tracking-tighter leading-none" style={{ color: session.color }}>
-                                                            {session.subject}
-                                                        </p>
-                                                        <p className="text-[7px] font-bold text-slate-400 uppercase mt-0.5">
-                                                            {session.room}
-                                                        </p>
-                                                    </div>
-                                                ) : null
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const TABS = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -404,15 +126,24 @@ export default function StudentProfilePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user } = useAuthStore()
-    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
     const studentId = typeof params.studentId === 'string' ? params.studentId : Array.isArray(params.studentId) ? params.studentId[0] : ''
 
-    // ── Queries ──────────────────────────────────────────────────────────────
+    // â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: student, isLoading: isStudentLoading, error: studentError } = useQuery({
         queryKey: ['student-details', studentId],
         queryFn: () => studentService.getStudentById(studentId),
         enabled: !!studentId
     })
+
+    // Resolve the student's connected school first; never fall back to placeholder tenant IDs.
+    const isRealSchoolId = (id?: string | null): id is string => !!id && id !== 'default-tenant-id' && id !== 'personal'
+    const schoolId = [
+        student?.schoolId,
+        student?.school?.id,
+        (student?.classes?.[0]?.class as { schoolId?: string } | undefined)?.schoolId,
+        user?.schools?.[0]?.schoolId,
+        user?.tenantId,
+    ].find(isRealSchoolId) || ''
 
     const { data: gradesData, isLoading: isGradesLoading } = useQuery({
         queryKey: ['student-grades', studentId],
@@ -433,12 +164,13 @@ export default function StudentProfilePage() {
     })
 
     const { data: settings } = useSchoolSettings(schoolId)
+    const gradingSystem = ((student?.school as { gradingSystem?: unknown[] | null } | undefined)?.gradingSystem) ?? null
     const primaryColor = '#10b981' // Force Emerald 500 for Teacher Dashboard
 
     const tabParam = searchParams.get('tab')
     const [activeTab, setActiveTab] = useState(tabParam || 'overview')
     const [academicSubTab, setAcademicSubTab] = useState<'exams' | 'papers'>('exams')
-    
+
     useEffect(() => {
         if (tabParam) {
             setActiveTab(tabParam)
@@ -446,11 +178,9 @@ export default function StudentProfilePage() {
     }, [tabParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
     const [isExitModalOpen, setIsExitModalOpen] = useState(false)
-    const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
-    const [scheduleDate, setScheduleDate] = useState(new Date())
 
-    // ── Behaviour Queries & Mutations ─────────────────────────────────────────
-    const behaviorStudentClass = student?.classes?.[0]?.class
+    // â”€â”€ Behaviour Queries & Mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const behaviorStudentClass = (student?.classes?.find((c) => !schoolId || (c.class as { schoolId?: string } | undefined)?.schoolId === schoolId) || student?.classes?.[0])?.class
     const classId = behaviorStudentClass?.id || ''
 
     const { data: behaviourProfile, isLoading: isBehaviourProfileLoading } = useStudentBehaviourProfile(studentId)
@@ -461,7 +191,7 @@ export default function StudentProfilePage() {
     const updateBehaviourAlertMutation = useUpdateBehaviourAlert(classId)
     const deleteBehaviourAlertMutation = useDeleteBehaviourAlert(classId)
 
-    // ── Behaviour Dialog States ─────────────────────────────────────────────
+    // â”€â”€ Behaviour Dialog States â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
     const [isLogAlertOpen, setIsLogAlertOpen] = useState(false)
     const [isEditAlertOpen, setIsEditAlertOpen] = useState(false)
@@ -471,7 +201,7 @@ export default function StudentProfilePage() {
     // Form states for profile edit
     const [conductScore, setConductScore] = useState<number>(100)
     const [strengths, setStrengths] = useState<{ name: string; description: string; icon: string }[]>([])
-    
+
     // Form states for adding a new strength (inside edit profile modal)
     const [newStrengthName, setNewStrengthName] = useState('')
     const [newStrengthDesc, setNewStrengthDesc] = useState('')
@@ -591,7 +321,7 @@ export default function StudentProfilePage() {
 
     const isBehaviourLoading = isBehaviourProfileLoading || isAlertsLoading
 
-    // ── Pagination State ─────────────────────────────────────────────────────
+    // â”€â”€ Pagination State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [examsPage, setExamsPage] = useState(1);
     const [papersPage, setPapersPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
@@ -617,9 +347,9 @@ export default function StudentProfilePage() {
         activeAlertsPage * ALERTS_PER_PAGE
     ) || [];
 
-    // ── Data Transformation ──────────────────────────────────────────────────
+    // â”€â”€ Data Transformation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const grades = gradesData?.grades || []
-    
+
     const { examSections, standalonePapers, totalExams, totalPapers } = useMemo(() => {
         const sectionsMap: Record<string, any> = {};
         const standalone: any[] = [];
@@ -629,10 +359,10 @@ export default function StudentProfilePage() {
                 // Group by Exam (Transcript-style)
                 const subjectName = g.subject?.toLowerCase() || '';
                 const examTitle = g.exam.title?.toLowerCase() || '';
-                const isTotalRecord = subjectName.includes('(total)') || 
-                                     subjectName === examTitle || 
-                                     g.assessmentType === 'TOTAL';
-                
+                const isTotalRecord = subjectName.includes('(total)') ||
+                    subjectName === examTitle ||
+                    g.assessmentType === 'TOTAL';
+
                 if (isTotalRecord) return;
 
                 const examId = g.examId || g.exam.title;
@@ -656,25 +386,25 @@ export default function StudentProfilePage() {
             }
         });
 
-        const sortedSections = Object.values(sectionsMap).sort((a: any, b: any) => 
+        const sortedSections = Object.values(sectionsMap).sort((a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
-        const sortedStandalone = standalone.sort((a, b) => 
+        const sortedStandalone = standalone.sort((a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
-        return { 
-            examSections: sortedSections, 
+        return {
+            examSections: sortedSections,
             standalonePapers: sortedStandalone,
             totalExams: sortedSections.length,
             totalPapers: sortedStandalone.length
         };
     }, [grades]);
-    
+
     const performanceStats = useMemo(() => {
         if (!grades.length) return { avg: 0, highest: 0, total: 0, subjectData: [], trendData: [] }
-        
+
         const total = grades.length
         const sum = grades.reduce((acc, g) => acc + (g.score / g.maxMarks) * 100, 0)
         const avg = Math.round(sum / total)
@@ -720,15 +450,15 @@ export default function StudentProfilePage() {
         const presentCount = attendanceData.filter((a: any) => a.status === 'present').length
         const total = attendanceData.length
         const rate = Math.round((presentCount / total) * 100)
-        
+
         let trend = 'Stable'
         if (rate >= 95) trend = 'Excellent'
         else if (rate <= 75) trend = 'Needs Attention'
-        
+
         return { rate, trend }
     }, [attendanceData])
 
-    // ── Loading & Errors ─────────────────────────────────────────────────────
+    // â”€â”€ Loading & Errors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (isStudentLoading) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-transparent flex flex-col items-center justify-center gap-4">
@@ -755,8 +485,9 @@ export default function StudentProfilePage() {
     const studentCode = student.studentCode || 'UNASSIGNED'
     const gender = student.gender || 'Not specified'
     const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'Not specified'
-    const studentClass = student.classes?.[0]?.class
-    const classNameLabel = studentClass ? `${studentClass.name} ${studentClass.section || ''}` : 'Unassigned Class'
+    const studentClass = behaviorStudentClass
+    const classNameLabel = studentClass ? `${studentClass.name} ${studentClass.section || ''}`.trim() : 'Unassigned Class'
+    const connectedSchoolName = student.school?.name || settings?.schoolName || 'Connected School'
     const department = student.department?.name || 'General'
     const avatar = student.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
     const isVerified = !!student.verified
@@ -794,7 +525,7 @@ export default function StudentProfilePage() {
     return (
         <div className="min-h-screen bg-[#f8fafc] dark:bg-transparent transition-colors duration-500 pb-20">
 
-            {/* ── Top Actions ──────────────────────────────────────────────────── */}
+            {/* â”€â”€ Top Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="w-full px-4 sm:px-6 lg:px-12 pt-6 flex justify-between items-center">
                 <button
                     onClick={() => router.back()}
@@ -804,12 +535,12 @@ export default function StudentProfilePage() {
                 </button>
             </div>
 
-            {/* ── Profile Header (Skillery Style Hero) ─────────────────────── */}
+            {/* â”€â”€ Profile Header (Skillery Style Hero) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="w-full px-4 sm:px-6 lg:px-12 mt-4 sm:mt-6">
                 <div className="rounded-2xl sm:rounded-[2rem] overflow-hidden relative p-5 sm:p-8 md:p-12 shadow-xl shadow-emerald-500/10 border border-slate-100 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800">
                     <div className="absolute inset-0 opacity-20"
                         style={{ backgroundImage: 'radial-gradient(circle at 100% 0%, white 0%, transparent 50%)' }} />
-                    
+
                     <div className="relative z-20 flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-start md:items-center">
                         {/* Avatar */}
                         <div className="size-20 sm:size-24 md:size-32 rounded-full bg-white p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-lg border border-white/20">
@@ -827,7 +558,7 @@ export default function StudentProfilePage() {
                                         {name}
                                     </h1>
                                     <p className="text-xs sm:text-sm md:text-base font-medium text-white/80">
-                                        {classNameLabel} · {department}
+                                        {classNameLabel} Â· {department}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-1">
                                         <span className="flex items-center gap-1.5 text-xs font-semibold text-white/90 bg-black/10 px-2.5 sm:px-3 py-1 rounded-lg backdrop-blur-sm">
@@ -858,7 +589,7 @@ export default function StudentProfilePage() {
                 </div>
             </div>
 
-            {/* ── Tabs (Verlof Style) ─────────────────────────────────────── */}
+            {/* â”€â”€ Tabs (Verlof Style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-8">
                 <div className="flex gap-2 sm:gap-6 overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-emerald-800/50 pb-1">
                     {TABS.map(tab => {
@@ -883,26 +614,26 @@ export default function StudentProfilePage() {
                 </div>
             </div>
 
-            {/* ── Overview Tab ─────────────────────────────────────────────── */}
+            {/* â”€â”€ Overview Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === 'overview' && (
                 <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 pb-20">
 
                     <div className="lg:col-span-2 space-y-6 md:space-y-10">
                         {/* Summary Metrics */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <StatBadge 
-                                label="Academic Average" 
-                                value={`${performanceStats.avg}%`} 
-                                icon={Star} 
-                                themeColor={primaryColor} 
-                                trend={performanceStats.trendValue} 
+                            <StatBadge
+                                label="Academic Average"
+                                value={`${performanceStats.avg}%`}
+                                icon={Star}
+                                themeColor={primaryColor}
+                                trend={performanceStats.trendValue}
                             />
-                            <StatBadge 
-                                label="Attendance Rate" 
-                                value={`${attendanceStats.rate}%`} 
-                                icon={Activity} 
-                                themeColor="#10b981" 
-                                trend={attendanceStats.trend} 
+                            <StatBadge
+                                label="Attendance Rate"
+                                value={`${attendanceStats.rate}%`}
+                                icon={Activity}
+                                themeColor="#10b981"
+                                trend={attendanceStats.trend}
                             />
                         </div>
 
@@ -927,29 +658,29 @@ export default function StudentProfilePage() {
                         </SectionCard>
                     </div>
 
-                    {/* ── Sidebar ──────────────────────────────────────────── */}
+                    {/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                     <div className="space-y-6 md:space-y-10">
 
                         {/* Quick Actions */}
                         <SectionCard title="Quick Actions">
-                             <div className="space-y-3">
+                            <div className="space-y-3">
                                 {[
-                                    { 
-                                        label: 'Log Behaviour', 
-                                        icon: ShieldAlert, 
-                                        onClick: () => { 
-                                            setActiveTab('behaviour'); 
+                                    {
+                                        label: 'Log Behaviour',
+                                        icon: ShieldAlert,
+                                        onClick: () => {
+                                            setActiveTab('behaviour');
                                             if (classId) {
-                                                setIsLogAlertOpen(true); 
+                                                setIsLogAlertOpen(true);
                                             } else {
-                                                toast.error('Student is not enrolled in a class.'); 
+                                                toast.error('Student is not enrolled in a class.');
                                             }
-                                        } 
+                                        }
                                     },
                                     { label: 'Attendance Entry', icon: Calendar, onClick: () => toast.info('Attendance entry is coming soon.') },
                                 ].map((act, i) => (
-                                    <button 
-                                        key={i} 
+                                    <button
+                                        key={i}
                                         onClick={act.onClick}
                                         className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/5 transition-all group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
                                     >
@@ -960,7 +691,7 @@ export default function StudentProfilePage() {
                                         <ChevronRight size={14} className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 ))}
-                             </div>
+                            </div>
                         </SectionCard>
 
                         {/* Guardian Details */}
@@ -994,10 +725,10 @@ export default function StudentProfilePage() {
                 </main>
             )}
 
-            {/* ── History Tab ─────────────────────────────────────────────── */}
+            {/* â”€â”€ History Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === 'history' && (
                 <main className="w-full px-4 md:px-12 mt-10 pb-20 space-y-10">
-                    
+
                     {/* Connected Schools Section */}
                     <SectionCard title="Connected Schools">
                         {isHistoryLoading || isStudentLoading ? (
@@ -1019,7 +750,7 @@ export default function StudentProfilePage() {
                                         schoolMap.set(student.school.id, { id: student.school.id, name: student.school.name });
                                     }
                                     const schools = Array.from(schoolMap.values());
-                                    
+
                                     if (schools.length === 0) {
                                         return (
                                             <div className="col-span-full py-10 text-center space-y-3 border border-dashed border-slate-200 dark:border-emerald-800/50 rounded-[1.5rem]">
@@ -1062,7 +793,7 @@ export default function StudentProfilePage() {
                 </main>
             )}
 
-            {/* ── Behaviour Tab ────────────────────────────────────────────── */}
+            {/* â”€â”€ Behaviour Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === 'behaviour' && isBehaviourLoading && (
                 <main className="w-full px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
                     <div className="space-y-6">
@@ -1095,7 +826,7 @@ export default function StudentProfilePage() {
                 <main className="w-full px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
                     {/* Left Panel: Score and Strengths */}
                     <div className="space-y-6">
-                        <SectionCard 
+                        <SectionCard
                             title="Conduct Standing"
                             headerAction={
                                 <button
@@ -1214,7 +945,7 @@ export default function StudentProfilePage() {
                             </div>
                         </SectionCard>
 
-                        <SectionCard 
+                        <SectionCard
                             title="Core Strengths"
                             headerAction={
                                 <button
@@ -1234,7 +965,7 @@ export default function StudentProfilePage() {
                                                 return (
                                                     <div key={index} className="flex gap-4 p-5 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 items-start">
                                                         <div className="size-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
-                                                             style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                                                            style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                                             <Icon size={16} />
                                                         </div>
                                                         <div>
@@ -1252,7 +983,7 @@ export default function StudentProfilePage() {
                                                     Page {activeStrengthsPage} of {totalStrengthsPages}
                                                 </p>
                                                 <div className="flex gap-1.5">
-                                                    <button 
+                                                    <button
                                                         type="button"
                                                         onClick={() => setStrengthsPage(p => Math.max(1, p - 1))}
                                                         disabled={activeStrengthsPage === 1}
@@ -1260,7 +991,7 @@ export default function StudentProfilePage() {
                                                     >
                                                         Prev
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         type="button"
                                                         onClick={() => setStrengthsPage(p => Math.min(totalStrengthsPages, p + 1))}
                                                         disabled={activeStrengthsPage === totalStrengthsPages}
@@ -1290,7 +1021,7 @@ export default function StudentProfilePage() {
 
                     {/* Right Panel: Timeline */}
                     <div className="lg:col-span-2 space-y-6">
-                        <SectionCard 
+                        <SectionCard
                             title="Conduct Timeline"
                             headerAction={
                                 <button
@@ -1320,8 +1051,8 @@ export default function StudentProfilePage() {
                                                 <div className="absolute left-[11px] top-7 bottom-0 w-0.5 bg-slate-100 dark:bg-emerald-900/40 group-last:hidden" />
                                                 <div className={cn(
                                                     "absolute left-0 top-1.5 size-6 rounded-full border-4 flex items-center justify-center bg-white dark:bg-emerald-950",
-                                                    alert.type === 'DANGER' 
-                                                        ? "border-rose-500 text-rose-500" 
+                                                    alert.type === 'DANGER'
+                                                        ? "border-rose-500 text-rose-500"
                                                         : "border-amber-400 text-amber-400"
                                                 )}>
                                                     <div className={cn("size-1.5 rounded-full", alert.type === 'DANGER' ? "bg-rose-500" : "bg-amber-400")} />
@@ -1331,8 +1062,8 @@ export default function StudentProfilePage() {
                                                         <div>
                                                             <span className={cn(
                                                                 "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md",
-                                                                alert.type === 'DANGER' 
-                                                                    ? "bg-rose-500/10 text-rose-500" 
+                                                                alert.type === 'DANGER'
+                                                                    ? "bg-rose-500/10 text-rose-500"
                                                                     : "bg-amber-500/10 text-amber-500"
                                                             )}>
                                                                 {alert.type}
@@ -1340,13 +1071,13 @@ export default function StudentProfilePage() {
                                                             <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mt-2">{alert.title}</h4>
                                                         </div>
                                                         <div className="flex items-center gap-1">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleOpenEditAlert(alert)}
                                                                 className="size-8 rounded-lg hover:bg-slate-200 dark:hover:bg-emerald-900/30 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
                                                             >
                                                                 <Edit2 size={12} />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => { setSelectedAlert(alert); setIsDeleteAlertOpen(true); }}
                                                                 className="size-8 rounded-lg hover:bg-slate-200 dark:hover:bg-rose-950/30 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors"
                                                             >
@@ -1359,7 +1090,7 @@ export default function StudentProfilePage() {
                                                     )}
                                                     <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold pt-2 border-t border-slate-100 dark:border-white/5">
                                                         <span>By {alert.reporter?.fullName || alert.reporter?.name || 'Administrator'}</span>
-                                                        <span>{format(new Date(alert.createdAt), 'MMM dd, yyyy · hh:mm a')}</span>
+                                                        <span>{format(new Date(alert.createdAt), 'MMM dd, yyyy Â· hh:mm a')}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1372,7 +1103,7 @@ export default function StudentProfilePage() {
                                                 Page {activeAlertsPage} of {totalAlertsPages}
                                             </p>
                                             <div className="flex gap-2">
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => setBehaviourPage(p => Math.max(1, p - 1))}
                                                     disabled={activeAlertsPage === 1}
@@ -1380,7 +1111,7 @@ export default function StudentProfilePage() {
                                                 >
                                                     Prev
                                                 </button>
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => setBehaviourPage(p => Math.min(totalAlertsPages, p + 1))}
                                                     disabled={activeAlertsPage === totalAlertsPages}
@@ -1408,13 +1139,13 @@ export default function StudentProfilePage() {
                 </main>
             )}
 
-            {/* ── Academic Tab ─────────────────────────────────────────────── */}
+            {/* â”€â”€ Academic Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === 'academic' && (
                 <main className="w-full px-4 md:px-12 mt-10 pb-20 space-y-10">
-                    
+
                     {/* Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        
+
                         {/* Radar Chart: Subject Mastery */}
                         <SectionCard title="Performance by Subject">
                             <div className="h-[400px] w-full">
@@ -1451,8 +1182,8 @@ export default function StudentProfilePage() {
                                         <AreaChart data={performanceStats.trendData}>
                                             <defs>
                                                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3}/>
-                                                    <stop offset="95%" stopColor={primaryColor} stopOpacity={0}/>
+                                                    <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor={primaryColor} stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#94a3b811" vertical={false} />
@@ -1474,7 +1205,7 @@ export default function StudentProfilePage() {
 
                     {/* Recent Grades Table */}
                     {/* Recent Grades Table */}
-                    <SectionCard 
+                    <SectionCard
                         title="Recent Grades"
                         headerAction={
                             <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
@@ -1482,8 +1213,8 @@ export default function StudentProfilePage() {
                                     onClick={() => setAcademicSubTab('exams')}
                                     className={cn(
                                         "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                        academicSubTab === 'exams' 
-                                            ? "bg-white dark:bg-emerald-900/40 text-slate-900 dark:text-white shadow-sm" 
+                                        academicSubTab === 'exams'
+                                            ? "bg-white dark:bg-emerald-900/40 text-slate-900 dark:text-white shadow-sm"
                                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -1493,8 +1224,8 @@ export default function StudentProfilePage() {
                                     onClick={() => setAcademicSubTab('papers')}
                                     className={cn(
                                         "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                        academicSubTab === 'papers' 
-                                            ? "bg-white dark:bg-emerald-900/40 text-slate-900 dark:text-white shadow-sm" 
+                                        academicSubTab === 'papers'
+                                            ? "bg-white dark:bg-emerald-900/40 text-slate-900 dark:text-white shadow-sm"
                                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -1517,7 +1248,7 @@ export default function StudentProfilePage() {
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="text-sm font-black text-slate-900 dark:text-white">{Math.round((section.totalScore / section.totalMax) * 100)}%</p>
-                                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Aggregate</p>
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Aggregate Â· {getGradeEvaluation(section.totalMax ? (section.totalScore / section.totalMax) * 100 : 0, gradingSystem).grade}</p>
                                                         </div>
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1529,7 +1260,10 @@ export default function StudentProfilePage() {
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-xs font-black text-slate-900 dark:text-white">{paper.score}/{paper.maxMarks}</p>
-                                                                    <p className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest">Graded</p>
+                                                                    {(() => {
+                                                                        const ev = getGradeEvaluation(paper.maxMarks ? (paper.score / paper.maxMarks) * 100 : 0, gradingSystem)
+                                                                        return <p className={cn("text-[8px] font-black uppercase tracking-widest", ev.color)}>{ev.grade} â€¢ {ev.remark}</p>
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -1545,14 +1279,14 @@ export default function StudentProfilePage() {
                                                     Page {examsPage} of {Math.ceil(totalExams / ITEMS_PER_PAGE)}
                                                 </p>
                                                 <div className="flex gap-2">
-                                                    <button 
+                                                    <button
                                                         onClick={() => setExamsPage(p => Math.max(1, p - 1))}
                                                         disabled={examsPage === 1}
                                                         className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
                                                     >
                                                         Prev
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => setExamsPage(p => Math.min(Math.ceil(totalExams / ITEMS_PER_PAGE), p + 1))}
                                                         disabled={examsPage === Math.ceil(totalExams / ITEMS_PER_PAGE)}
                                                         className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1596,25 +1330,25 @@ export default function StudentProfilePage() {
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-sm font-black text-slate-900 dark:text-white">{grade.score}/{grade.maxMarks}</span>
                                                             <div className="h-1.5 w-16 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden hidden sm:block">
-                                                                <div 
-                                                                    className="h-full rounded-full" 
-                                                                    style={{ 
-                                                                        width: `${(grade.score/grade.maxMarks)*100}%`,
-                                                                        backgroundColor: (grade.score/grade.maxMarks)*100 > 70 ? '#10b981' : (grade.score/grade.maxMarks)*100 > 40 ? primaryColor : '#ef4444'
-                                                                    }} 
+                                                                <div
+                                                                    className="h-full rounded-full"
+                                                                    style={{
+                                                                        width: `${(grade.score / grade.maxMarks) * 100}%`,
+                                                                        backgroundColor: (grade.score / grade.maxMarks) * 100 > 70 ? '#10b981' : (grade.score / grade.maxMarks) * 100 > 40 ? primaryColor : '#ef4444'
+                                                                    }}
                                                                 />
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="py-5 px-4">
-                                                        <span className={cn(
-                                                            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border",
-                                                            (grade.score/grade.maxMarks)*100 > 50 
-                                                                ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                                                                : "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
-                                                        )}>
-                                                            {(grade.score/grade.maxMarks)*100 > 50 ? 'Pass' : 'Critical'}
-                                                        </span>
+                                                        {(() => {
+                                                            const ev = getGradeEvaluation(grade.maxMarks ? (grade.score / grade.maxMarks) * 100 : 0, gradingSystem)
+                                                            return (
+                                                                <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest whitespace-nowrap", ev.color, ev.bg)}>
+                                                                    {ev.grade} â€¢ {ev.remark}
+                                                                </span>
+                                                            )
+                                                        })()}
                                                     </td>
                                                     <td className="py-5 px-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                                         {new Date(grade.createdAt).toLocaleDateString()}
@@ -1639,14 +1373,14 @@ export default function StudentProfilePage() {
                                             Page {papersPage} of {Math.ceil(totalPapers / ITEMS_PER_PAGE)}
                                         </p>
                                         <div className="flex gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => setPapersPage(p => Math.max(1, p - 1))}
                                                 disabled={papersPage === 1}
                                                 className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
                                             >
                                                 Prev
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setPapersPage(p => Math.min(Math.ceil(totalPapers / ITEMS_PER_PAGE), p + 1))}
                                                 disabled={papersPage === Math.ceil(totalPapers / ITEMS_PER_PAGE)}
                                                 className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1662,48 +1396,29 @@ export default function StudentProfilePage() {
                 </main>
             )}
 
-            {/* ── Attendance Tab ─────────────────────────────────────────────── */}
+            {/* â”€â”€ Attendance Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === 'attendance' && (
                 <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 pb-20">
-                     <AttendanceCalendar 
-                        studentId={studentId} 
-                        themeColor={primaryColor} 
+                    <AttendanceCalendar
+                        studentId={studentId}
+                        themeColor={primaryColor}
                         student={student}
                         classId={classId}
                     />
                 </main>
             )}
 
-            {/* ── Time Table Tab ────────────────────────────────────────────── */}
+            {/* â”€â”€ Time Table Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             {activeTab === 'timetable' && (
                 <main className="w-full px-4 sm:px-6 lg:px-12 mt-6 sm:mt-10 pb-20">
-                     <SectionCard 
-                        title="Weekly Schedule"
-                        headerAction={
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                                <WeekControls 
-                                    currentDate={scheduleDate}
-                                    onPrev={() => setScheduleDate(d => addWeeks(d, -1))}
-                                    onNext={() => setScheduleDate(d => addWeeks(d, 1))}
-                                    themeColor={primaryColor}
-                                />
-                                <button 
-                                    type="button"
-                                    onClick={() => toast.info('Schedule PDF export is being prepared.')}
-                                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
-                                >
-                                    Download PDF
-                                </button>
-                            </div>
-                        }
-                    >
-                        <ScheduleGrid 
-                            type="timetable" 
-                            themeColor={primaryColor} 
-                            onCellClick={(day, hour) => setSelectedScheduleCell({ day, hour, type: 'timetable' })}
-                            currentDate={scheduleDate}
+                    <SectionCard title="Weekly Class Timetable">
+                        <StudentTimetable
+                            classId={classId}
+                            classNameLabel={classNameLabel}
+                            schoolName={connectedSchoolName}
+                            themeColor={primaryColor}
                         />
-                     </SectionCard>
+                    </SectionCard>
                 </main>
             )}
 
@@ -1720,104 +1435,13 @@ export default function StudentProfilePage() {
                 primaryColor={primaryColor}
             />
 
-            <Dialog open={!!selectedScheduleCell} onOpenChange={() => setSelectedScheduleCell(null)}>
-                <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 bg-white dark:bg-emerald-950/90 border border-slate-200 dark:border-emerald-800/60 shadow-3xl">
-                    <DialogHeader className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
-                                style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
-                                {selectedScheduleCell?.type === 'attendance' ? <UserCheck size={28} /> : <BookOpen size={28} />}
-                            </div>
-                            <div className="text-left">
-                                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                                    {selectedScheduleCell?.type === 'attendance' ? 'Attendance Details' : 'Class Session'}
-                                </DialogTitle>
-                                <DialogDescription className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    {selectedScheduleCell?.day} · {selectedScheduleCell?.hour}
-                                </DialogDescription>
-                            </div>
-                        </div>
-                    </DialogHeader>
 
-                    <div className="mt-8 space-y-6">
-                        {selectedScheduleCell?.type === 'attendance' ? (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                                        <p className="text-sm font-black text-emerald-500 uppercase">Present</p>
-                                    </div>
-                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Check-in</p>
-                                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase">08:05 AM</p>
-                                    </div>
-                                </div>
-                                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-8 rounded-full bg-slate-200 dark:bg-emerald-900/40 overflow-hidden">
-                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Admin`} alt="Admin" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Logged by Admin</p>
-                                            <p className="text-[8px] font-bold text-slate-400 uppercase">Institutional Registry</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium italic">
-                                        "Automated biometric verification completed at main gate terminal."
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                <div className="p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest" style={{ color: primaryColor }}>Course Module</p>
-                                        <span className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-[8px] font-black uppercase tracking-widest" style={{ color: primaryColor, backgroundColor: `${primaryColor}15` }}>Core Subject</span>
-                                    </div>
-                                    <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Advanced Mathematics</h4>
-                                    <div className="grid grid-cols-2 gap-4 pt-2">
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                                            <MapPin size={14} className="text-slate-400" /> Building B, RM 402
-                                        </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                                            <Clock size={14} className="text-slate-400" /> 60 Minutes
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                                    <div className="size-10 rounded-xl bg-slate-200 dark:bg-emerald-900/40 overflow-hidden shrink-0">
-                                        <img src={`https://api.dicebear.com/7.x/initials/svg?seed=Teacher`} alt="Teacher" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Dr. Sarah Jenkins</p>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Lead Instructor</p>
-                                    </div>
-                                    <button className="size-10 rounded-xl bg-white dark:bg-emerald-900/40 shadow-sm flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
-                                        <Mail size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="mt-8">
-                        <button 
-                            onClick={() => setSelectedScheduleCell(null)}
-                            className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
-                        >
-                            Dismiss Record
-                        </button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* ── Edit Behaviour Profile Modal ────────────────────────────── */}
+            {/* â”€â”€ Edit Behaviour Profile Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
                 <DialogContent className="max-w-lg rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl overflow-y-auto max-h-[85vh] custom-scrollbar">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 <Award size={28} />
                             </div>
@@ -1934,14 +1558,14 @@ export default function StudentProfilePage() {
 
                         {/* Save Button */}
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsEditProfileOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={updateBehaviourProfileMutation.isPending}
                                 className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -1954,12 +1578,12 @@ export default function StudentProfilePage() {
                 </DialogContent>
             </Dialog>
 
-            {/* ── Log Behaviour Alert Modal ─────────────────────────────── */}
+            {/* â”€â”€ Log Behaviour Alert Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <Dialog open={isLogAlertOpen} onOpenChange={setIsLogAlertOpen}>
                 <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 <ShieldAlert size={28} />
                             </div>
@@ -2035,14 +1659,14 @@ export default function StudentProfilePage() {
 
                         {/* Actions */}
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsLogAlertOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={createBehaviourAlertMutation.isPending}
                                 className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -2055,12 +1679,12 @@ export default function StudentProfilePage() {
                 </DialogContent>
             </Dialog>
 
-            {/* ── Edit Behaviour Alert Modal ─────────────────────────────── */}
+            {/* â”€â”€ Edit Behaviour Alert Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <Dialog open={isEditAlertOpen} onOpenChange={setIsEditAlertOpen}>
                 <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 <Edit2 size={28} />
                             </div>
@@ -2136,14 +1760,14 @@ export default function StudentProfilePage() {
 
                         {/* Actions */}
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsEditAlertOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={updateBehaviourAlertMutation.isPending}
                                 className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -2156,7 +1780,7 @@ export default function StudentProfilePage() {
                 </DialogContent>
             </Dialog>
 
-            {/* ── Remove Behaviour Alert Modal ───────────────────────────── */}
+            {/* â”€â”€ Remove Behaviour Alert Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <Dialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-emerald-950/60 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
@@ -2181,13 +1805,13 @@ export default function StudentProfilePage() {
                         </p>
 
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 onClick={() => setIsDeleteAlertOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/40 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 onClick={handleDeleteAlert}
                                 disabled={deleteBehaviourAlertMutation.isPending}
                                 className="flex-1 h-12 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -2199,7 +1823,7 @@ export default function StudentProfilePage() {
                 </DialogContent>
             </Dialog>
 
-            {/* ── Exit Student Modal ───────────────────────────────────────────── */}
+            {/* â”€â”€ Exit Student Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <ExitStudentModal
                 isOpen={isExitModalOpen}
                 onClose={() => setIsExitModalOpen(false)}

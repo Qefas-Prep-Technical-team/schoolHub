@@ -208,7 +208,18 @@ export function GradeTable({
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 dark:text-white">
                             {row.item.score !== undefined ? (
-                              <span className="font-medium">{row.item.score} / {row.item.maxMarks}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{row.item.score} / {row.item.maxMarks}</span>
+                                {row.item.maxMarks > 0 && (() => {
+                                  const pct = Math.round((Number(row.item.score) / Number(row.item.maxMarks)) * 100);
+                                  const pill = computeGradePill(pct, gradingSystem);
+                                  return (
+                                    <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider", pill.bg, pill.color)}>
+                                      {pill.label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             ) : (
                               <span className="text-gray-400">- / {row.item.maxMarks}</span>
                             )}

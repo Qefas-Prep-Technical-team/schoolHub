@@ -7,18 +7,23 @@ import FilterChips from './components/FilterChips';
 import ViewToggle from './components/ViewToggle';
 import { Assignment } from './components/types';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
+import { groupByDate } from '@/utils/dateSectioning';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import StatsCards from './analytics/components/StatsCards';
 import PerformanceChart from './analytics/components/PerformanceChart';
 import SuggestedImprovements from './analytics/components/SuggestedImprovements';
-import { 
-  BarChart3, 
-  BookOpen, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  FileText, 
+import {
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  FileText,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
@@ -45,14 +50,28 @@ const parseGradeToPercentage = (gradeStr: string | null | undefined, maxMarks?: 
   if (maxMarks && maxMarks > 0) {
     return Math.round((parsed / maxMarks) * 100);
   }
-  
+
   return parsed;
 };
 
 export default function AssignmentsPage() {
   const { data: assignmentsData, isLoading } = useStudentAssignments({ limit: 100 });
   const assignments: Assignment[] = assignmentsData?.assignments || [];
-  
+
+  const { user } = useAuthStore();
+  const { data: studentProfile } = useStudentProfile();
+
+  // Resolve connected school profile for customized institutional grading scale
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    studentProfile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
@@ -102,6 +121,7 @@ export default function AssignmentsPage() {
       }
     });
     const avgGrade = gradeCount > 0 ? Math.round(gradeSum / gradeCount) : 0;
+    const avgGradeEval = avgGrade > 0 ? getGradeEvaluation(avgGrade, customGradingSystem) : null;
 
     return {
       stats: [
@@ -119,8 +139,8 @@ export default function AssignmentsPage() {
         },
         {
           title: 'Average Assignment Grade',
-          value: avgGrade > 0 ? `${avgGrade}%` : 'N/A',
-          change: 'From graded assignments',
+          value: avgGrade > 0 ? (avgGradeEval?.grade ? `${avgGrade}% (${avgGradeEval.grade})` : `${avgGrade}%`) : 'N/A',
+          change: avgGradeEval?.remark ? `${avgGradeEval.remark} • School Matrix` : 'From graded assignments',
           changeType: 'positive' as const,
         },
         {
@@ -132,12 +152,13 @@ export default function AssignmentsPage() {
       ],
       total,
       avgGrade,
+      avgGradeEval,
       overdueCount: overdue.length,
       pendingCount: pending.length,
       gradedCount: graded.length,
       submittedCount: submitted.length,
     };
-  }, [assignments]);
+  }, [assignments, customGradingSystem]);
 
   const computedImprovements = useMemo(() => {
     const list = [];
@@ -230,25 +251,25 @@ export default function AssignmentsPage() {
   const filteredAssignments = useMemo(() => {
     return assignments.filter(assignment => {
       // Search filter
-      const matchesSearch = searchQuery === '' || 
+      const matchesSearch = searchQuery === '' ||
         assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (assignment.subject || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (assignment.instructor || '').toLowerCase().includes(searchQuery.toLowerCase());
 
       // Subject filter
-      const matchesSubject = selectedSubject === 'All Subjects' || 
+      const matchesSubject = selectedSubject === 'All Subjects' ||
         (assignment.subject || 'General') === selectedSubject;
 
       // Status filter
-      const matchesStatus = selectedStatus === 'All Statuses' || 
+      const matchesStatus = selectedStatus === 'All Statuses' ||
         assignment.status.toLowerCase() === selectedStatus.toLowerCase();
 
       // Due date filter
-      const matchesDueDate = selectedDueDate === 'All Dates' || 
+      const matchesDueDate = selectedDueDate === 'All Dates' ||
         (selectedDueDate === 'Overdue' && assignment.status === 'overdue');
 
       // Department filter
-      const matchesDepartment = selectedDepartment === 'All Departments' || 
+      const matchesDepartment = selectedDepartment === 'All Departments' ||
         ((assignment as any).department || 'Whole Class') === selectedDepartment;
 
       return matchesSearch && matchesSubject && matchesStatus && matchesDueDate && matchesDepartment;
@@ -260,10 +281,10 @@ export default function AssignmentsPage() {
     setCurrentPage(1);
   }, [searchQuery, selectedSubject, selectedStatus, selectedDueDate, selectedDepartment]);
 
-  const isAnyFilterActive = searchQuery !== '' || 
-    selectedSubject !== 'All Subjects' || 
-    selectedStatus !== 'All Statuses' || 
-    selectedDueDate !== 'All Dates' || 
+  const isAnyFilterActive = searchQuery !== '' ||
+    selectedSubject !== 'All Subjects' ||
+    selectedStatus !== 'All Statuses' ||
+    selectedDueDate !== 'All Dates' ||
     selectedDepartment !== 'All Departments';
 
   const resetAllFilters = () => {
@@ -282,9 +303,14 @@ export default function AssignmentsPage() {
     safeCurrentPage * ITEMS_PER_PAGE
   );
 
+  // Group paginated assignments using date_sectioning_display pattern
+  const groupedSections = useMemo(() => {
+    return groupByDate(paginatedAssignments, (a) => a.dueDate || a.submissionDate || a.createdAt);
+  }, [paginatedAssignments]);
+
   return (
     <div className="w-full space-y-5 sm:space-y-6 font-sans">
-      
+
       {/* Top Banner / Heading */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
@@ -343,7 +369,7 @@ export default function AssignmentsPage() {
               </span>
               {computedStats.avgGrade > 0 && (
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  ({computedStats.avgGrade}% avg)
+                  ({computedStats.avgGrade}% {computedStats.avgGradeEval?.grade ? `• ${computedStats.avgGradeEval.grade}` : 'avg'})
                 </span>
               )}
             </div>
@@ -367,22 +393,20 @@ export default function AssignmentsPage() {
 
         {/* Card 4: Overdue */}
         <div className="rounded-2xl bg-white dark:bg-slate-900/60 p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-          <div className={`flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl ${
-            computedStats.overdueCount > 0 
-              ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 animate-pulse' 
+          <div className={`flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl ${computedStats.overdueCount > 0
+              ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 animate-pulse'
               : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-          }`}>
+            }`}>
             <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <div className="min-w-0">
             <p className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
               Overdue Tasks
             </p>
-            <p className={`text-lg sm:text-2xl font-black ${
-              computedStats.overdueCount > 0 
-                ? 'text-rose-600 dark:text-rose-400' 
+            <p className={`text-lg sm:text-2xl font-black ${computedStats.overdueCount > 0
+                ? 'text-rose-600 dark:text-rose-400'
                 : 'text-slate-900 dark:text-white'
-            }`}>
+              }`}>
               {computedStats.overdueCount}
             </p>
           </div>
@@ -391,11 +415,11 @@ export default function AssignmentsPage() {
 
       {/* Filter and Search Bar Section */}
       <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 space-y-3.5 shadow-sm">
-        
+
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search bar */}
           <div className="flex-1 min-w-[240px]">
-            <SearchBar 
+            <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search by title, subject, or instructor..."
@@ -407,7 +431,7 @@ export default function AssignmentsPage() {
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 md:hidden">
               Display Mode:
             </span>
-            <ViewToggle 
+            <ViewToggle
               value={viewMode}
               onChange={setViewMode}
             />
@@ -457,17 +481,15 @@ export default function AssignmentsPage() {
 
       {/* Main Content Area */}
       {isLoading ? (
-        <div className={`grid gap-3.5 sm:gap-4 md:gap-5 ${
-          viewMode === 'grid' 
-            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+        <div className={`grid gap-3.5 sm:gap-4 md:gap-5 ${viewMode === 'grid'
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'grid-cols-1'
-        }`}>
+          }`}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton 
-              key={i} 
-              className={`rounded-2xl border border-slate-200 dark:border-slate-800 ${
-                viewMode === 'grid' ? 'h-56' : 'h-24'
-              }`} 
+            <Skeleton
+              key={i}
+              className={`rounded-2xl border border-slate-200 dark:border-slate-800 ${viewMode === 'grid' ? 'h-56' : 'h-24'
+                }`}
             />
           ))}
         </div>
@@ -480,7 +502,7 @@ export default function AssignmentsPage() {
             No assignments found
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6 leading-relaxed">
-            {isAnyFilterActive 
+            {isAnyFilterActive
               ? "No assignments match your active search or filter criteria. Try resetting filters."
               : "You have no active assignments right now. Check back later when your teachers post coursework."}
           </p>
@@ -496,18 +518,37 @@ export default function AssignmentsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className={`grid gap-3.5 sm:gap-4 md:gap-5 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1'
-          }`}>
-            {paginatedAssignments.map((assignment, index) => (
-              <AssignmentCard
-                key={assignment.id}
-                assignment={assignment}
-                viewMode={viewMode}
-                index={index + 1 + (safeCurrentPage - 1) * ITEMS_PER_PAGE}
-              />
+          {/* Chronological Date-Sectioned Display */}
+          <div className="space-y-6">
+            {groupedSections.map((section) => (
+              <div key={section.label} className="space-y-3">
+                {/* Section Header */}
+                <div className="flex items-center gap-2.5 px-1 py-1">
+                  <div className="size-2 rounded-full bg-pink-500" />
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                    {section.label}
+                  </h4>
+                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                    {section.items.length} {section.items.length === 1 ? 'task' : 'tasks'}
+                  </span>
+                </div>
+
+                {/* Section Items Grid / List */}
+                <div className={`grid gap-3.5 sm:gap-4 md:gap-5 ${viewMode === 'grid'
+                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                    : 'grid-cols-1'
+                  }`}>
+                  {section.items.map((assignment, index) => (
+                    <AssignmentCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      viewMode={viewMode}
+                      index={index + 1 + (safeCurrentPage - 1) * ITEMS_PER_PAGE}
+                      customGradingSystem={customGradingSystem}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
@@ -535,11 +576,10 @@ export default function AssignmentsPage() {
                     <button
                       key={idx}
                       onClick={() => setCurrentPage(idx + 1)}
-                      className={`h-9 min-w-[36px] px-2 rounded-xl text-xs font-bold transition-all ${
-                        safeCurrentPage === idx + 1
+                      className={`h-9 min-w-[36px] px-2 rounded-xl text-xs font-bold transition-all ${safeCurrentPage === idx + 1
                           ? "bg-pink-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      }`}
+                        }`}
                     >
                       {idx + 1}
                     </button>

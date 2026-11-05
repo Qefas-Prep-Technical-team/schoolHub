@@ -13,8 +13,23 @@ import {
     assessments as initialAssessments,
 } from './components/data';
 import { Assessment } from './components/types';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 export default function Home() {
+    const { data: studentProfile } = useStudentProfile();
+    const { user } = useAuthStore();
+    const userRecord = user as Record<string, unknown> | null | undefined;
+    const schoolId =
+        studentProfile?.schoolId ||
+        user?.schools?.[0]?.schoolId ||
+        (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+        user?.tenantId ||
+        '';
+    const { data: schoolProfile } = useSchoolProfile(schoolId);
+    const customGradingSystem = schoolProfile?.gradingSystem;
+
     const [assessments] = useState<Assessment[]>(initialAssessments);
     const [filters, setFilters] = useState({
         type: 'all',
@@ -107,6 +122,7 @@ export default function Home() {
                         <AssessmentGrid
                             assessments={filteredAssessments}
                             onAssessmentClick={handleAssessmentClick}
+                            gradingSystem={customGradingSystem}
                         />
                     </div>
                 </main>

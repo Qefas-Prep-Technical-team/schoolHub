@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
-import { Lock , Info} from 'lucide-react';
+import { Lock, Info } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -23,8 +23,8 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
     const [timeRange, setTimeRange] = useState('Week');
 
     const attendanceData = useMemo(() => {
-        const total = stats?.totalStudents || 0;
-        
+        const total = stats?.students ?? stats?.totalStudents ?? 0;
+
         if (total === 0) {
             return [
                 { day: 'Mon', present: 0, absent: 0 },
@@ -36,14 +36,14 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
         }
 
         const basePresent = Math.floor(total * 0.9);
-        
+
         // Helper to ensure values stay within 0 and total
         const getValues = (fluctuationPercent: number) => {
             const present = Math.min(total, Math.max(0, Math.floor(total * fluctuationPercent)));
             const absent = total - present;
             return { present, absent };
         };
-        
+
         if (timeRange === 'Month') {
             return [
                 { day: 'Week 1', ...getValues(0.85) },
@@ -52,7 +52,7 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                 { day: 'Week 4', ...getValues(0.95) },
             ];
         }
-        
+
         if (timeRange === 'Term') {
             return [
                 { day: 'Month 1', ...getValues(0.88) },
@@ -99,20 +99,20 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <div className="flex items-center gap-2">
-                        <h3 className="text-base font-semibold text-slate-800 dark:text-white">Student Attendance Overview</h3>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
-                                        <Info size={16} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
-                                    Visualizes daily attendance patterns across the school over recent weeks. Use this to quickly spot downward trends or anomalies in student turnout.
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
+                            <h3 className="text-base font-semibold text-slate-800 dark:text-white">Student Attendance Overview</h3>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                            <Info size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                        Visualizes daily attendance patterns across the school over recent weeks. Use this to quickly spot downward trends or anomalies in student turnout.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <p className="text-xs text-slate-500">Daily present vs absent across all grades</p>
                     </div>
                     <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-1 self-start">
@@ -122,8 +122,8 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                                 onClick={() => setTimeRange(range)}
                                 className={cn(
                                     "px-4 py-1.5 text-xs font-medium rounded-full transition-all",
-                                    timeRange === range 
-                                        ? "text-white shadow-sm" 
+                                    timeRange === range
+                                        ? "text-white shadow-sm"
                                         : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                                 )}
                                 style={timeRange === range ? { backgroundColor: primaryColor } : {}}
@@ -150,7 +150,7 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color, #f1f5f9)" />
                             <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} dy={10} />
                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                            <RechartsTooltip 
+                            <RechartsTooltip
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                                 cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
                             />
@@ -169,20 +169,20 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                             <Lock className="w-5 h-5 text-slate-400" />
                         </div>
                         <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-slate-800 dark:text-white">AI Performance Insights</h3>
-                        <TooltipProvider>
-                            <Tooltip delayDuration={300}>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
-                                        <Info size={16} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
-                                    Analyzes current academic data to surface automated, data-driven recommendations and predictions regarding school-wide educational health.
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
+                            <h3 className="text-sm font-bold text-slate-800 dark:text-white">AI Performance Insights</h3>
+                            <TooltipProvider>
+                                <Tooltip delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                        <button type="button" className="text-slate-400 hover:text-primary transition-colors focus:outline-none">
+                                            <Info size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-none shadow-xl">
+                                        Analyzes current academic data to surface automated, data-driven recommendations and predictions regarding school-wide educational health.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <p className="text-xs text-slate-500">Upgrade your subscription to unlock deep AI-driven academic analytics.</p>
                         <button className="px-5 py-2 text-white text-xs font-semibold rounded-full transition-colors mt-2" style={{ backgroundColor: primaryColor }}>
                             Upgrade Plan
@@ -228,7 +228,7 @@ export default function DashboardCharts({ stats, analysis, hasPerformanceAccess,
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <RechartsTooltip 
+                                    <RechartsTooltip
                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                                     />
                                 </PieChart>

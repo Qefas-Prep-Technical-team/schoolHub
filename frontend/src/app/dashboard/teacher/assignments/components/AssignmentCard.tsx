@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Assignment, AssignmentCardProps } from './types';
 import { motion } from 'framer-motion';
 import { Edit, GraduationCap as Grading, Trash2, Calendar, FileText, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 export default function AssignmentCard({
     assignment,
@@ -11,7 +12,8 @@ export default function AssignmentCard({
     onGrade,
     onDelete,
     onViewDetails,
-    currentUserId
+    currentUserId,
+    gradingSystem
 }: AssignmentCardProps) {
 
     const getStatusStyles = (status: Assignment['status']) => {
@@ -83,9 +85,24 @@ export default function AssignmentCard({
                             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Submissions</span>
                             {assignment.progress === 100 && <CheckCircle2 size={12} className="text-emerald-500" />}
                         </div>
-                        <span className="text-sm font-black text-slate-900 dark:text-slate-100 italic">
-                            {assignment.submitted} / {assignment.totalStudents}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            {typeof assignment.averageScorePct === 'number' && (
+                                (() => {
+                                    const pill = computeGradePill(assignment.averageScorePct, gradingSystem);
+                                    return (
+                                        <span
+                                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${pill.bg} ${pill.color}`}
+                                            title={`Class Avg: ${assignment.averageScorePct}% — ${pill.remark || pill.label}`}
+                                        >
+                                            Avg: {assignment.averageScorePct}% ({pill.label})
+                                        </span>
+                                    );
+                                })()
+                            )}
+                            <span className="text-sm font-black text-slate-900 dark:text-slate-100 italic">
+                                {assignment.submitted} / {assignment.totalStudents}
+                            </span>
+                        </div>
                     </div>
                     <div className="relative h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div

@@ -43,11 +43,10 @@ export function middleware(req: NextRequest) {
     }
   } else {
     // Check for staging/preview apex environments first
-    // e.g. myschool.staging.qefas.com  →  subdomain = "myschool"
     const matchedStagingApex = STAGING_APEX_SUFFIXES.find(apex => host === apex || host.endsWith(`.${apex}`));
     if (matchedStagingApex) {
-      const withoutApex = host.slice(0, host.length - matchedStagingApex.length - 1); // strip ".staging.qefas.com"
-      subdomain = withoutApex; // e.g. "myschool"
+      const withoutApex = host.slice(0, host.length - matchedStagingApex.length - 1);
+      subdomain = withoutApex;
     } else {
       // Normal production: subdomain.qefas.com
       const parts = host.split(".");
@@ -64,7 +63,7 @@ export function middleware(req: NextRequest) {
     subdomain = subdomain.substring(4);
   }
 
-  // 3. Exclude main domain and system subdomains (but NOT school tenants on staging)
+  // 3. Exclude main domain and system subdomains
   if (!subdomain || SYSTEM_SUBDOMAINS.has(subdomain)) {
     return NextResponse.next();
   }
@@ -84,26 +83,32 @@ export function middleware(req: NextRequest) {
     "/auth"
   ];
 
-  const isSystemPath = systemPaths.some(path => 
+  const isSystemPath = systemPaths.some(path =>
     url.pathname === path || url.pathname.startsWith(`${path}/`)
   );
 
   if (isSystemPath) {
     if (url.pathname.startsWith("/dashboard")) {
       const token = req.cookies.get("token")?.value;
-      
-      if (!token) {
+      const isPaymentCallback =
+        url.searchParams.has("tx_ref") ||
+        url.searchParams.has("reference") ||
+        url.searchParams.has("transaction_id") ||
+        url.searchParams.has("payment") ||
+        url.searchParams.has("pass");
+
+      if (!token && !isPaymentCallback) {
         const loginUrl = new URL("/login", req.url);
-        loginUrl.searchParams.set("redirect", url.pathname);
+        loginUrl.searchParams.set("redirect", `${url.pathname}${url.search}`);
         return NextResponse.redirect(loginUrl);
       }
 
-      if (url.pathname.startsWith("/dashboard/teacher")) {
+      if (url.pathname.startsWith("/dashboard/teacher") && token) {
         try {
           const payloadBase64 = token.split(".")[1];
           const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
           const decodedPayload = JSON.parse(atob(base64));
-          
+
           if (decodedPayload.userType !== "TEACHER") {
             return NextResponse.redirect(new URL("/unauthorized", req.url));
           }

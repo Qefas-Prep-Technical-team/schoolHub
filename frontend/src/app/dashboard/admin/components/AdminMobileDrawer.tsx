@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -6,11 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Menu,
-  School,
   ChevronRight,
   User2,
   LogOut,
-  type LucideIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -18,37 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
-import { ADMIN_FEATURE_FLAGS, type AdminFeatureFlagKey, type AdminRole, ROLE_NAV_PERMISSIONS } from "./adminFeatureFlags";
-import { adminMenuItems } from "./app-sidebar";
+import { type AdminRole } from "./adminFeatureFlags";
+import { SECTION_TITLES, buildAdminMenuSections, type AdminMenuItem } from "./adminNavConfig";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
 
-const SECTION_TITLES = {
-  core: "Core Management",
-  academics: "Academics",
-  administration: "Administration",
-  communication: "Communication",
-  advanced: "Advanced Tools",
-  settings: "Settings",
-} as const;
-
-interface AdminMenuItem {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  featureKey: AdminFeatureFlagKey;
-  section?: keyof typeof SECTION_TITLES;
-}
-
-
-
 export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
-  
+
   const user = useAuthStore((state) => state.user);
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: school } = useSchoolProfile(schoolId);
@@ -56,66 +34,20 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
   const { data: publicPlatformSettings } = usePublicPlatformSettings();
 
   const sections = React.useMemo(() => {
-        if (isFeaturesLoading) return {};
-        const currentFeatures = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
-        const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
-
-        let customVisibility: Record<string, boolean> = {};
-        try {
-            if (publicPlatformSettings?.admin_pages_visibility) {
-                customVisibility = JSON.parse(publicPlatformSettings.admin_pages_visibility as string);
-            }
-        } catch {}
-
-        let customRolePermissions: Record<string, AdminRole[]> = {};
-        try {
-            if (publicPlatformSettings?.admin_role_permissions) {
-                customRolePermissions = JSON.parse(publicPlatformSettings.admin_role_permissions as string);
-            }
-        } catch {}
-
-        const filtered = adminMenuItems.filter(item => {
-            if (customVisibility[item.featureKey] === false) return false;
-
-            if (item.featureKey === 'finance') {
-                if (customVisibility['finance'] === false) return false;
-            } else {
-                const isExplicitlyVisible = customVisibility[item.featureKey] === true;
-                if (!isExplicitlyVisible && !(currentFeatures as Record<string, boolean>)[item.featureKey]) return false;
-            }
-
-            if (customRolePermissions[item.featureKey]) {
-                const allowedCustom = customRolePermissions[item.featureKey];
-                if (adminRole && !allowedCustom.includes(adminRole)) {
-                    if (adminRole !== 'SCHOOL_OWNER' && adminRole !== 'SUPER_ADMIN') {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            if (adminRole === 'SCHOOL_OWNER' || adminRole === 'ADMIN' || adminRole === 'SUPER_ADMIN' || !adminRole) return true;
-            
-            const allowedRoles = ROLE_NAV_PERMISSIONS[item.featureKey as AdminFeatureFlagKey];
-            if (!allowedRoles) return true;
-            return !!adminRole && allowedRoles.includes(adminRole);
-        });
-
-        return {
-            core: filtered.filter(item => item.section === 'core'),
-            academics: filtered.filter(item => item.section === 'academics'),
-            administration: filtered.filter(item => item.section === 'administration'),
-            communication: filtered.filter(item => item.section === 'communication'),
-            advanced: filtered.filter(item => item.section === 'advanced'),
-            settings: filtered.filter(item => item.section === 'settings'),
-        };
+    if (isFeaturesLoading) return null;
+    const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
+    return buildAdminMenuSections({
+      dynamicFeatures: dynamicFeatures as Record<string, boolean> | undefined,
+      publicPlatformSettings: publicPlatformSettings as Record<string, unknown> | undefined,
+      adminRole,
+    });
   }, [dynamicFeatures, isFeaturesLoading, publicPlatformSettings, user?.adminRole, user?.role]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           aria-label="Open mobile navigation menu"
           className="size-11 sm:size-12 rounded-2xl md:hidden flex items-center justify-center border-slate-200/90 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 hover:bg-orange-50 dark:hover:bg-orange-950/30 hover:border-orange-500/40 text-slate-700 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-400 transition-all shadow-xs active:scale-95 shrink-0"
         >
@@ -128,7 +60,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
         {/* Header */}
         <div className="px-6 py-8 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
           <Link href="/?view=landing" onClick={() => setOpen(false)} className="flex items-center gap-4 group/logo">
-            <div 
+            <div
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500"
               style={{ boxShadow: `0 4px 6px -1px ${primaryColor}15` }}
             >
@@ -145,7 +77,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
 
         {/* Menu */}
         <div className="flex-1 overflow-y-auto px-4 py-6 bg-white dark:bg-slate-950">
-          {Object.entries(sections).map(([key, items]) => {
+          {sections && Object.entries(sections).map(([key, items]) => {
             if (!items.length) return null;
             const sectionKey = key as keyof typeof SECTION_TITLES;
 
@@ -156,7 +88,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
                 </div>
 
                 <div className="space-y-2">
-                  {items.map((item: any) => {
+                  {items.map((item: AdminMenuItem) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
 
@@ -167,8 +99,8 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
                         onClick={() => setOpen(false)}
                         className={cn(
                           "flex items-center gap-4 rounded-xl px-4 py-4 transition-all duration-200 border border-transparent",
-                          isActive 
-                            ? "bg-primary/10 text-primary border-primary/20" 
+                          isActive
+                            ? "bg-primary/10 text-primary border-primary/20"
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         )}
                         style={isActive ? { boxShadow: `0 4px 6px -1px ${primaryColor}20` } : {}}
@@ -187,7 +119,7 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
 
         {/* Footer */}
         <div className="px-6 py-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
-          <div 
+          <div
             className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 transition-all"
             style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}
           >
@@ -217,4 +149,3 @@ export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?:
     </Sheet>
   );
 }
-

@@ -3,13 +3,13 @@
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
-import { useSchoolSettings } from "@/lib/api/hooks/useSchool"
 import { useSchoolAdmins, usePendingAdmins } from "@/lib/api/hooks/useAdmin"
 import { Shield, Users, Clock, Search, Info, Crown, X, UserCheck } from "lucide-react"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ActiveMembersTable from "./components/ActiveMembersTable"
 import PendingRequestsTable from "./components/PendingRequestsTable"
+import type { AdminMember } from "./components/teamRoleConfig"
 import TeamLoading from "./loading"
 import { cn } from "@/lib/utils"
 
@@ -18,15 +18,14 @@ function TeamPageContent() {
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ""
     const searchParams = useSearchParams()
 
-    const { data: settings } = useSchoolSettings(schoolId)
     const { data: adminsData, isLoading: isLoadingAdmins } = useSchoolAdmins(schoolId)
     const { data: pendingData, isLoading: isLoadingPending } = usePendingAdmins(schoolId)
-    const primaryColor = settings?.themeColor || "#2563eb"
 
-    const activeCount: number = adminsData?.data?.length || 0
+    const membersList = (adminsData?.data || []) as AdminMember[]
+    const activeCount: number = membersList.length
     const pendingCount: number = pendingData?.data?.length || 0
-    const owner = adminsData?.data?.find(
-        (m: any) => m.role === "SCHOOL_OWNER" || m.adminRole === "SCHOOL_OWNER"
+    const owner = membersList.find(
+        (m) => m.role === "SCHOOL_OWNER" || m.adminRole === "SCHOOL_OWNER"
     )
 
     const [searchTerm, setSearchTerm] = useState("")

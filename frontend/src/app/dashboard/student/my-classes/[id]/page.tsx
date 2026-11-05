@@ -3,13 +3,15 @@
 import { use, useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
-import { TabPanel } from 'react-tabs';
 
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 import { useStudentProfile, useStudentAttendance } from '@/lib/api/hooks/useStudent';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 import ClassHeader from './components/ClassHeader';
 import Breadcrumbs from './components/Breadcrumbs';
@@ -31,12 +33,25 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   const { id } = use(params);
   const [activeTab, setActiveTab] = useState<'assessments' | 'materials' | 'timetable' | 'attendance' | 'discussions'>('assessments');
 
+  const { user } = useAuthStore();
   const { data: classData, isLoading, isError } = useSingleClass(id);
   const { data: attemptsData } = useStudentExamAttempts();
   const { data: standaloneGradesData } = useGrades();
   const { data: studentProfile } = useStudentProfile();
   const { data: attendanceData } = useStudentAttendance((studentProfile as any)?.id || '');
   const { data: assignmentsData } = useStudentAssignments({ limit: 100 });
+
+  // Resolve connected school profile for customized institutional grading scale
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    classData?.schoolId ||
+    studentProfile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
 
   const attempts = attemptsData?.attempts || [];
   const standaloneGrades = standaloneGradesData?.grades || [];
@@ -76,7 +91,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
       (classData.subjects || []).forEach((cs: any) => {
         const s = cs.subject || cs;
         if (s.departments && Array.isArray(s.departments)) {
-          const belongsToDept = s.departments.some((d: any) => 
+          const belongsToDept = s.departments.some((d: any) =>
             (d.departmentId === studentDepartmentId) || (d.department?.id === studentDepartmentId) || (d.id === studentDepartmentId)
           );
           if (belongsToDept) {
@@ -185,8 +200,8 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         : undefined;
 
       // Do NOT show "Subject Paper". Use real assessment category: Test (Quiz), Continuous Assessment, or Exam
-      const type = exam.category === 'QUIZ' 
-        ? 'Test (Quiz)' 
+      const type = exam.category === 'QUIZ'
+        ? 'Test (Quiz)'
         : exam.category === 'CA'
           ? 'Continuous Assessment'
           : 'Exam';
@@ -202,7 +217,8 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         status,
         grade: gradeStr,
         type,
-        timestamp: end ? end.getTime() : (start ? start.getTime() : 0),
+        timestamp: end ? end.getTime() : (start ? start.getTime() : (exam.createdAt ? new Date(exam.createdAt).getTime() : 0)),
+        rawDate: end || start || exam.createdAt || null,
         link: examLink,
       };
     });
@@ -217,7 +233,8 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         status: a.status as 'graded' | 'submitted' | 'upcoming' | 'overdue',
         grade: a.grade || undefined,
         type: 'Assignment',
-        timestamp: dueDateVal ? dueDateVal.getTime() : 0,
+        timestamp: dueDateVal ? dueDateVal.getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0),
+        rawDate: dueDateVal || a.createdAt || null,
         link: `/dashboard/student/assignments/${a.id}`,
       };
     });
@@ -230,7 +247,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
       if (hasDepartment && !isSubjectInStudentDept(g.subjectId, g.subject)) return false;
       return true;
     });
-    
+
     const gradesAsAssessments = classGrades.map((g, idx) => {
       const gDate = g.createdAt ? new Date(g.createdAt) : null;
       const targetLink = g.id
@@ -245,6 +262,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
         grade: `${g.score}/${g.maxMarks}`,
         type: 'CA',
         timestamp: gDate ? gDate.getTime() : 0,
+        rawDate: gDate || null,
         link: targetLink,
       };
     });
@@ -300,13 +318,18 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
     });
 
     let gradeLabel = 'N/A';
+    let gradeRemark = '';
+    let gradeColor = '';
+    let gradeBg = '';
+    let averagePercentage: number | null = null;
+
     if (gradedCount > 0) {
-      const avg = totalScoreSum / gradedCount;
-      if (avg >= 75) gradeLabel = 'A';
-      else if (avg >= 60) gradeLabel = 'B';
-      else if (avg >= 50) gradeLabel = 'C';
-      else if (avg >= 45) gradeLabel = 'D';
-      else gradeLabel = 'F';
+      averagePercentage = Math.round(totalScoreSum / gradedCount);
+      const evalResult = getGradeEvaluation(averagePercentage, customGradingSystem);
+      gradeLabel = evalResult.grade;
+      gradeRemark = evalResult.remark;
+      gradeColor = evalResult.color;
+      gradeBg = evalResult.bg;
     }
 
     // ─── Real Last Activity calculation ─────────────────────────────────────────
@@ -361,11 +384,15 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
           total: assignmentsTotal,
         },
         grade: gradeLabel,
+        gradeRemark,
+        gradeColor,
+        gradeBg,
+        averagePercentage,
         lastActivity,
       },
       assessments: combinedAssessments,
     };
-  }, [classData, attempts, standaloneGrades, id, studentDepartmentId, studentDepartmentName, hasDepartment, attendanceData, assignmentsData]);
+  }, [classData, attempts, standaloneGrades, id, studentDepartmentId, studentDepartmentName, hasDepartment, attendanceData, assignmentsData, customGradingSystem]);
 
   if (isLoading) return <LoadingState />;
   if (isError || (!isLoading && !classItem)) {
@@ -393,30 +420,27 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
           attendance={classItem!.stats.attendance}
           assignments={classItem!.stats.assignments}
           grade={classItem!.stats.grade}
+          gradeRemark={classItem!.stats.gradeRemark}
+          gradeColor={classItem!.stats.gradeColor}
+          gradeBg={classItem!.stats.gradeBg}
+          averagePercentage={classItem!.stats.averagePercentage}
           lastActivity={classItem!.stats.lastActivity}
         />
       </div>
 
       <div className="pt-2">
         <ClassTabs activeTab={activeTab} onTabChange={setActiveTab}>
-          <TabPanel>
+          {activeTab === 'assessments' && (
             <AssignmentsTable
               assignments={classItem!.assessments}
               hasDepartment={hasDepartment}
+              gradingSystem={customGradingSystem}
             />
-          </TabPanel>
-          <TabPanel>
-            <MaterialsPage />
-          </TabPanel>
-          <TabPanel>
-            <TimetablePage />
-          </TabPanel>
-          <TabPanel>
-            <AttendancePage />
-          </TabPanel>
-          <TabPanel>
-            <DiscussionsPage />
-          </TabPanel>
+          )}
+          {activeTab === 'materials' && <MaterialsPage />}
+          {activeTab === 'timetable' && <TimetablePage />}
+          {activeTab === 'attendance' && <AttendancePage />}
+          {activeTab === 'discussions' && <DiscussionsPage />}
         </ClassTabs>
       </div>
     </div>

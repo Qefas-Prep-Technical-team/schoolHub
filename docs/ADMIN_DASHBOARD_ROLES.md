@@ -121,3 +121,32 @@ When a user registers a school institution at `/signup/school`:
   - Prevents accidental data loss if the modal is canceled or closed prematurely.
   - Surfaces an active `"Auto-saved draft"` indicator with a dedicated `"Clear Draft"` action button so staff can instantly discard browser storage and start a fresh assessment pad.
 
+### 5.3 Admin Overview (`/dashboard/admin`) Sub-Role RBAC, Multi-Tenant Security & Modular Decomposition
+- **Status**: Completed & Verified (November 3, 2026).
+- **Sub-Role Access Control on `/dashboard/admin`**:
+  - Added `canAdminRoleAccessFeature(adminRole, featureKey)` in `adminFeatureFlags.ts`.
+  - Gated `AdminFinanceCard` (`finance` permission) and `UsageLimitsCard` (`billing` permission) on `frontend/src/app/dashboard/admin/page.tsx` so financial revenue, settlement vault status, and plan upgrade widgets are only rendered and queried for `SCHOOL_OWNER`, `ACCOUNTANT`, `ADMIN`, and `SUPER_ADMIN` (preventing unauthorized API calls and restricted links for `PRINCIPAL`, `REGISTRAR`, and `SUPPORT`).
+  - Updated `QuickActions.tsx` and `AdminBottomNav.tsx` to filter shortcuts and mobile bottom navigation tabs by the current admin's sub-role (`ROLE_NAV_PERMISSIONS`).
+  - Updated `useProtectedRoute.ts` so secondary admins (`PRINCIPAL`, `REGISTRAR`, `SUPPORT`) are not redirected to `/select-plan`.
+- **Multi-Tenant & Entity Data Leak Fixes**:
+  - **`GET /api/exams` (`controllers/exam-list.controller.ts` & `exam.service.ts`)**: Enforced `validateSchoolAccess` for school admins, forbade `isPersonal` or unscoped queries for admins, verified `parentChildLink` when parents pass `availableForStudentId`, and sanitized all `teacher` selects so password hashes are never returned.
+  - **`POST /api/classes/:id/announcement` & `GET /api/classes` (`controllers/class-dashboard.controller.ts` & `class.service.ts`)**: Added `canManageClass` authorization check before broadcasting class announcements, resolved `schoolId` (UUID or `tenantId`), and sanitized `teacher`/`student` selects to strip sensitive fields.
+  - **School Endpoints & Active Link Filtering (`modules/school/services/*` & `controllers/*`)**: Restricted admin-only school endpoints with `validateAdminSchoolAccess`, sanitized `admin` and `teacher` selects in `getSchoolProfileService` and `getDashboardRecentActivityService`, and filtered `getSchoolTeachersService`, `getSchoolStudentsService`, `getSchoolStatsService`, `getDashboardRecentActivityService`, and `getSchoolUsageService` to exclude `PENDING`, `REJECTED`, or `DISCONNECTED` link requests and scope `unassignedTeachers` to classes within the current school.
+- **Modular File Decomposition (<300 lines)**:
+  - Decomposed `app-sidebar.tsx` (194 lines), `AdminWeeklyReportModal.tsx` (175 lines), `AdminAnnouncementModal.tsx` (191 lines), `financeService.ts` (248 lines), `useExams.ts` (226 lines), `school.controller.ts` (2 lines + controllers <240 lines), `school.service.ts` (40 lines + services <290 lines), `notification.controller.ts` (95 lines + service 292 lines), and `quota.service.ts` (3 lines + services <260 lines).
+
+### 5.4 Admin Team Governance (`/dashboard/admin/team`) Multi-Tenant Isolation, Sub-Role RBAC & Modular Decomposition
+- **Status**: Completed & Verified (November 3, 2026).
+- **Sub-Role & Route Security (`backend/src/modules/admin/admin.route.ts` & `admin.middleware.ts`)**:
+  - Added `requireSchoolOwnerOrPrincipal` middleware to `GET /api/v1/admin/team` (previously only `requireAdmin`, which allowed `REGISTRAR`, `ACCOUNTANT`, and `SUPPORT` sub-roles to query the full school admin team list via API despite being blocked in the UI).
+  - Hardened `loadAndValidateAdmin` in `admin.middleware.ts` to resolve `req.params.schoolId`, `req.query.schoolId`, or `req.body.schoolId` (by UUID or `tenantId`) against the caller's active `schoolAdmins` records and reject unauthorized cross-school requests with `403 Forbidden`, preventing multi-school context confusion and blocking `schoolId: undefined` queries.
+- **Unauthenticated Enumeration & Cross-Tenant Leak Fixes (`services/admin-team.service.ts`, `services/admin-team-members.service.ts`)**:
+  - **Public Status Endpoint (`GET /api/v1/admin/admin-status/:email`)**: Previously returned internal admin UUIDs, names, and full `schoolAdmins` arrays with school IDs/names to unauthenticated callers. Now strips internal IDs and school directory details for unauthenticated requests, returning only `{ email, status, verified, adminRole }`.
+  - **Mandatory `schoolId` Guard**: All team queries and mutations (`getSchoolAdminsService`, `getPendingAdminsService`, `approveAdminService`, `rejectAdminService`, `updateAdminRoleService`, `transferOwnershipService`, `removeAdminService`) strictly require a verified non-empty `schoolId` so Prisma `where: { schoolId }` never evaluates with `undefined`.
+  - **Session Revocation on Rejection/Removal**: `rejectAdminService` and `removeAdminService` deactivate the `schoolAdmin` association (`active: false`) and invalidate active `refreshToken` rows (`isValid: false`) in a single database transaction.
+- **Modular File Decomposition (<300 lines)**:
+  - **Frontend (`frontend/src/app/dashboard/admin/team/`)**: Decomposed `ActiveMembersTable.tsx` (473 -> 282 lines) and `PendingRequestsTable.tsx` (410 -> 258 lines) by extracting `teamRoleConfig.ts` (98 lines), `ActiveMemberDialogs.tsx` (136 lines), and `PendingRequestDialogs.tsx` (187 lines), with `page.tsx` at 278 lines.
+  - **Backend (`backend/src/modules/admin/`)**: Decomposed team handlers out of `admin.controller.ts` (1493 -> 1089 lines) into `controllers/admin-team.controller.ts` (296 lines), `services/admin-team.service.ts` (266 lines), `services/admin-team-members.service.ts` (186 lines), and `schemas/admin-team.schemas.ts` (39 lines), with `admin.middleware.ts` at 292 lines.
+
+
+

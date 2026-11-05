@@ -5,8 +5,8 @@ import { useParams } from 'next/navigation';
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
 import { format } from 'date-fns';
-import { notFound } from 'next/navigation';
 import MaterialsLayout from './components/MaterialsLayout';
+import { MaterialCard } from './components/types';
 
 interface AssignmentResource {
   id: string;
@@ -41,6 +41,17 @@ interface ExamResource {
   teacherName?: string | null;
   subject?: { name?: string } | null;
   createdAt?: string;
+  subjectExamPapers?: Array<{
+    subjectPaper?: {
+      id?: string;
+      title?: string;
+      instructions?: string;
+      readingContent?: string;
+      images?: string[];
+      imageLabels?: string[];
+      subject?: { name?: string };
+    };
+  }>;
 }
 
 /** Detect file type from a URL string */
@@ -52,10 +63,6 @@ function detectFileType(url: string): 'pdf' | 'video' | 'image' | 'document' {
   return 'document';
 }
 
-/**
- * Derive the cleanest possible human-readable name from a URL.
- * Strips common storage prefixes like timestamps (e.g. "1749225348234-") and UUIDs.
- */
 function cleanFilename(url: string, fallbackLabel: string): string {
   try {
     const u = new URL(url);
@@ -84,15 +91,15 @@ function cleanFilename(url: string, fallbackLabel: string): string {
 export default function MaterialsPage() {
   const { id } = useParams() as { id: string };
 
-  const { data: classData, isLoading: classLoading, isError: classError } = useSingleClass(id);
-  const { data: assignmentsData, isLoading: assignmentsLoading } = useStudentAssignments({ limit: 200 });
+  const { data: classData, isLoading: classLoading, refetch: refetchClass } = useSingleClass(id);
+  const { data: assignmentsData, isLoading: assignmentsLoading, refetch: refetchAssignments } = useStudentAssignments({ limit: 200 });
 
   const materialCards = useMemo(() => {
     if (!classData) return [];
 
     const defaultTeacherName = classData.teachers?.[0]?.teacher?.name || 'Class Teacher';
 
-    // 1. Collect and merge assignments from both useSingleClass and useStudentAssignments
+    // 1. Collect assignments
     const assignmentsFromClass: AssignmentResource[] = classData.assignments || [];
     const assignmentsFromHook: AssignmentResource[] = (assignmentsData?.assignments || []).filter(
       (a: { classId?: string }) => a.classId === id
@@ -106,126 +113,49 @@ export default function MaterialsPage() {
     });
     const classAssignments = Array.from(mergedAssignmentMap.values());
 
-    // Helper: resolve accurate teacher / creator name for an assignment
     const resolveAssignmentTeacher = (a: AssignmentResource): string => {
-      const directName =
-        a.teacher?.name ||
-        a.instructor?.name ||
-        a.creator?.name ||
-        a.teacherName;
-      if (directName && typeof directName === 'string' && directName.trim()) {
-        return directName.trim();
-      }
-
-      // Check class teacher roster by teacherId
-      if (a.teacherId && classData.teachers) {
-        interface ClassTeacherItem {
-          teacherId?: string;
-          teacher?: { id?: string; name?: string };
-        }
-        const match = (classData.teachers as ClassTeacherItem[]).find(
-          (t) => t.teacherId === a.teacherId || t.teacher?.id === a.teacherId
-        );
-        if (match?.teacher?.name) return match.teacher.name;
-      }
-
-      // Check subject teacher in class
-      if (a.subjectId && classData.subjects) {
-        interface ClassSubjectItem {
-          subjectId?: string;
-          subject?: {
-            id?: string;
-            name?: string;
-            teacher?: { name?: string };
-            teacherSubjects?: Array<{ teacher?: { name?: string } }>;
-          };
-        }
-        const subMatch = (classData.subjects as ClassSubjectItem[]).find(
-          (s) => s.subjectId === a.subjectId || s.subject?.id === a.subjectId
-        );
-        if (subMatch?.subject?.teacher?.name) return subMatch.subject.teacher.name;
-        if (subMatch?.subject?.teacherSubjects?.[0]?.teacher?.name) {
-          return subMatch.subject.teacherSubjects[0].teacher.name;
-        }
-      }
-
-      return defaultTeacherName;
+      return a.teacher?.name || a.instructor?.name || a.creator?.name || a.teacherName || defaultTeacherName;
     };
 
-    // Helper: resolve teacher / creator name for an assessment (exam/quiz/test)
     const resolveExamTeacher = (exam: ExamResource): string => {
-      const directName =
-        exam.teacher?.name ||
-        exam.creator?.name ||
-        exam.teacherName;
-      if (directName && typeof directName === 'string' && directName.trim()) {
-        return directName.trim();
-      }
-
-      if (exam.teacherId && classData.teachers) {
-        interface ClassTeacherItem {
-          teacherId?: string;
-          teacher?: { id?: string; name?: string };
-        }
-        const match = (classData.teachers as ClassTeacherItem[]).find(
-          (t) => t.teacherId === exam.teacherId || t.teacher?.id === exam.teacherId
-        );
-        if (match?.teacher?.name) return match.teacher.name;
-      }
-
-      if (exam.subject?.name && classData.subjects) {
-        interface ClassSubjectItem {
-          subject?: {
-            name?: string;
-            teacher?: { name?: string };
-          };
-        }
-        const subMatch = (classData.subjects as ClassSubjectItem[]).find(
-          (s) => s.subject?.name?.toLowerCase() === exam.subject?.name?.toLowerCase()
-        );
-        if (subMatch?.subject?.teacher?.name) return subMatch.subject.teacher.name;
-      }
-
-      return defaultTeacherName;
+      return exam.teacher?.name || exam.creator?.name || exam.teacherName || defaultTeacherName;
     };
 
-    const cards: Array<{
-      id: string;
-      title: string;
-      assignmentTitle?: string;
-      folder: string;
-      teacher: string;
-      uploadDate: string;
-      description: string;
-      type: 'pdf' | 'video' | 'image' | 'document';
-      attachmentUrl: string | null;
-      videoUrl: string | null;
-      referenceUrl: string | null;
-      link?: string;
-      examId?: string;
-    }> = [];
+    const cards: MaterialCard[] = [];
 
-    // ── 1. Explode Assignment Resources ─────────────────────────────────────
+    // ── 1. Explode Assignment Direct Files & Media ───────────────────────────
     classAssignments.forEach((a) => {
       const uploadDate = a.createdAt ? format(new Date(a.createdAt), 'MMM d, yyyy') : 'Unknown date';
+      const rawDate = a.createdAt ? new Date(a.createdAt) : null;
       const teacher = resolveAssignmentTeacher(a);
+      const subjectName = typeof a.subject === 'object' ? a.subject?.name : a.subject;
+
       const sharedBase = {
         folder: 'Assignments',
         teacher,
         uploadDate,
+        rawDate,
         description: a.instructions || 'No additional instructions provided.',
         assignmentTitle: a.title,
+        assessmentName: a.title,
+        sourceType: 'ASSIGNMENT' as const,
+        sourceTitle: a.title,
+        subjectName,
+        assignmentId: a.id,
+        link: `/dashboard/student/assignments/${a.id}`,
       };
 
       if (a.attachmentUrl) {
         cards.push({
           ...sharedBase,
           id: `assignment-${a.id}-attachment`,
-          title: cleanFilename(a.attachmentUrl, a.title),
+          title: cleanFilename(a.attachmentUrl, `${a.title} Attachment`),
           type: detectFileType(a.attachmentUrl),
           attachmentUrl: a.attachmentUrl,
           videoUrl: null,
           referenceUrl: null,
+          isFile: true,
+          fileExtension: a.attachmentUrl.split('.').pop()?.toUpperCase() || 'FILE',
         });
       }
 
@@ -238,6 +168,8 @@ export default function MaterialsPage() {
           attachmentUrl: null,
           videoUrl: a.videoUrl,
           referenceUrl: null,
+          isFile: true,
+          fileExtension: 'VIDEO',
         });
       }
 
@@ -250,32 +182,90 @@ export default function MaterialsPage() {
           attachmentUrl: null,
           videoUrl: null,
           referenceUrl: a.referenceUrl,
+          isFile: false,
+          fileExtension: 'LINK',
         });
       }
     });
 
-    // ── 2. Add Class Assessment / Exam Cards ────────────────────────────────
+    // ── 2. Explode Exam Files, Question Sheets & Reading Content ─────────────
     const classExams: ExamResource[] = classData.exams || [];
     classExams.forEach((exam) => {
       const uploadDate = exam.createdAt ? format(new Date(exam.createdAt), 'MMM d, yyyy') : 'Unknown date';
+      const rawDate = exam.createdAt ? new Date(exam.createdAt) : null;
       const teacher = resolveExamTeacher(exam);
 
       let folder = 'Exams';
+      let sourceType: 'EXAM' | 'QUIZ' | 'CA' = 'EXAM';
       const cat = (exam.category || '').toUpperCase();
       const titleLower = (exam.title || '').toLowerCase();
+
       if (cat === 'QUIZ' || titleLower.includes('quiz')) {
         folder = 'Test (Quiz)';
-      } else if (cat === 'TEST' || titleLower.includes('ca') || titleLower.includes('test')) {
+        sourceType = 'QUIZ';
+      } else if (cat === 'CA' || cat === 'TEST' || titleLower.includes('ca') || titleLower.includes('test')) {
         folder = 'CA';
+        sourceType = 'CA';
       }
 
-      cards.push({
-        id: `exam-${exam.id}`,
-        title: exam.title,
-        assignmentTitle: exam.subject?.name ? `${exam.subject.name} Assessment` : 'Class Assessment',
+      const examBase = {
         folder,
         teacher,
         uploadDate,
+        rawDate,
+        assessmentName: exam.title,
+        sourceType,
+        sourceTitle: exam.title,
+        subjectName: exam.subject?.name || undefined,
+        examId: exam.id,
+        link: `/Exams&Quizzes/exam/${exam.id}`,
+      };
+
+      // Extract subject exam paper image attachments and reading passages
+      (exam.subjectExamPapers || []).forEach((sep, paperIdx) => {
+        const paper = sep.subjectPaper;
+        if (!paper) return;
+
+        // Reading Content Document
+        if (paper.readingContent && paper.readingContent.trim()) {
+          cards.push({
+            ...examBase,
+            id: `exam-${exam.id}-paper-${paper.id || paperIdx}-reading`,
+            title: `${paper.title || exam.title} — Reading Passage`,
+            description: paper.readingContent,
+            type: 'document',
+            attachmentUrl: null,
+            videoUrl: null,
+            referenceUrl: null,
+            isFile: true,
+            fileExtension: 'DOC',
+          });
+        }
+
+        // Image attachments / diagram sheets
+        (paper.images || []).forEach((imgUrl, imgIdx) => {
+          if (!imgUrl) return;
+          const label = paper.imageLabels?.[imgIdx] || `Diagram / Reference ${imgIdx + 1}`;
+          cards.push({
+            ...examBase,
+            id: `exam-${exam.id}-paper-${paper.id || paperIdx}-img-${imgIdx}`,
+            title: `${paper.title || exam.title} — ${label}`,
+            description: `Diagram and question reference material for ${exam.title}.`,
+            type: 'image',
+            attachmentUrl: imgUrl,
+            videoUrl: null,
+            referenceUrl: null,
+            isFile: true,
+            fileExtension: imgUrl.split('.').pop()?.toUpperCase() || 'IMG',
+          });
+        });
+      });
+
+      // Also register the exam paper itself as an assessment resource
+      cards.push({
+        ...examBase,
+        id: `exam-${exam.id}-core`,
+        title: exam.title,
         description:
           exam.instructions ||
           exam.description ||
@@ -284,8 +274,8 @@ export default function MaterialsPage() {
         attachmentUrl: null,
         videoUrl: null,
         referenceUrl: null,
-        link: `/dashboard/student/exams&quizzes/${exam.id}`,
-        examId: exam.id,
+        isFile: false,
+        fileExtension: 'PAPER',
       });
     });
 
@@ -294,43 +284,32 @@ export default function MaterialsPage() {
 
   if (classLoading || assignmentsLoading) {
     return (
-      <div className="w-full py-4 animate-pulse">
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/4 mb-8"></div>
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="w-full lg:w-64 space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
-            ))}
-          </div>
-          <div className="flex-1 space-y-6">
-            <div className="flex justify-between">
-              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl w-64"></div>
-              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl w-24"></div>
-            </div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl w-full"></div>
-              ))}
-            </div>
-          </div>
+      <div className="w-full py-6 animate-pulse space-y-4">
+        <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/4" />
+        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/2" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-44 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800" />
+          ))}
         </div>
       </div>
     );
   }
 
-  if (classError || !classData) {
-    notFound();
-    return null;
-  }
-
   return (
-    <div className="w-full bg-background-light dark:bg-background-dark py-4">
-      <MaterialsLayout
-        materials={materialCards}
-        className={classData.name}
-        description={`Study materials, assignments, and assessment resources for ${classData.name}.`}
-      />
-    </div>
+    <MaterialsLayout
+      materials={materialCards}
+      className={classData?.name || 'Classroom'}
+      description={classData?.description || 'Class study resources, files, and assessment attachments.'}
+      classId={id}
+      schoolId={classData?.schoolId}
+      subjects={classData?.subjects || []}
+      canUpload={false}
+      accentRole="student"
+      onRefresh={() => {
+        refetchClass();
+        refetchAssignments();
+      }}
+    />
   );
 }

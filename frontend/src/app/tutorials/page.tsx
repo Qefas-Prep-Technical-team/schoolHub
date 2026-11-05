@@ -38,7 +38,8 @@ import {
   TutorialStep,
   UserRoleCategory,
   INITIAL_TUTORIALS,
-  getStoredTutorials
+  getStoredTutorials,
+  fetchTutorialsFromDatabase
 } from "@/lib/tutorials/tutorialData";
 
 export default function TutorialsPage() {
@@ -48,9 +49,20 @@ export default function TutorialsPage() {
   const [activeTutorial, setActiveTutorial] = useState<TutorialItem | null>(null);
   const [activeTabMode, setActiveTabMode] = useState<"video" | "guide">("video");
 
-  // Sync with localStorage catalog and console updates
+  // Sync with database catalog and live updates
   useEffect(() => {
     setTutorials(getStoredTutorials());
+
+    // Fetch authoritative tutorial catalog from database
+    fetchTutorialsFromDatabase()
+      .then((dbData) => {
+        if (dbData && dbData.length > 0) {
+          setTutorials(dbData);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not sync tutorials from database:", err);
+      });
 
     const handleUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<TutorialItem[]>;
@@ -73,7 +85,7 @@ export default function TutorialsPage() {
   // Filter tutorials by role & search query
   const filteredTutorials = useMemo(() => {
     return tutorials.filter((item) => {
-      const matchesRole = selectedRole === "ALL" || item.role === selectedRole;
+      const matchesRole = selectedRole === "ALL" || item.role === "ALL" || item.role === selectedRole;
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -88,7 +100,7 @@ export default function TutorialsPage() {
 
   // Featured tutorial (first featured or first in list)
   const featuredTutorial = useMemo(() => {
-    return tutorials.find(t => t.featured && (selectedRole === "ALL" || t.role === selectedRole)) || filteredTutorials[0];
+    return tutorials.find(t => t.featured && (selectedRole === "ALL" || t.role === "ALL" || t.role === selectedRole)) || filteredTutorials[0];
   }, [tutorials, selectedRole, filteredTutorials]);
 
   const getRoleTheme = (role: string) => {
@@ -280,7 +292,7 @@ export default function TutorialsPage() {
                 <div className="w-full lg:w-1/2 flex flex-col justify-center space-y-3 sm:space-y-4">
                   <div className="flex items-center gap-2">
                     <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full ${getRoleTheme(featuredTutorial.role).bg} ${getRoleTheme(featuredTutorial.role).text} border ${getRoleTheme(featuredTutorial.role).border}`}>
-                      {featuredTutorial.role === "ADMIN" ? "School Admin" : featuredTutorial.role.charAt(0) + featuredTutorial.role.slice(1).toLowerCase()}
+                      {featuredTutorial.role === "ALL" ? "All Roles" : featuredTutorial.role === "ADMIN" ? "School Admin" : featuredTutorial.role.charAt(0) + featuredTutorial.role.slice(1).toLowerCase()}
                     </span>
                     <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                       • {featuredTutorial.category}
@@ -406,7 +418,7 @@ export default function TutorialsPage() {
                       <div>
                         <div className="flex items-center justify-between mb-2.5">
                           <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${theme.bg} ${theme.text} border ${theme.border}`}>
-                            {item.role === "ADMIN" ? "School Admin" : item.role.charAt(0) + item.role.slice(1).toLowerCase()}
+                            {item.role === "ALL" ? "All Roles" : item.role === "ADMIN" ? "School Admin" : item.role.charAt(0) + item.role.slice(1).toLowerCase()}
                           </span>
                           <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                             {item.category}
@@ -549,7 +561,7 @@ export default function TutorialsPage() {
               <div className="p-4 sm:p-8 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${getRoleTheme(activeTutorial.role).bg} ${getRoleTheme(activeTutorial.role).text} border ${getRoleTheme(activeTutorial.role).border}`}>
-                    {activeTutorial.role === "ADMIN" ? "School Admin" : activeTutorial.role.charAt(0) + activeTutorial.role.slice(1).toLowerCase()}
+                    {activeTutorial.role === "ALL" ? "All Roles" : activeTutorial.role === "ADMIN" ? "School Admin" : activeTutorial.role.charAt(0) + activeTutorial.role.slice(1).toLowerCase()}
                   </span>
                   <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                     • {activeTutorial.category} • {activeTutorial.duration}

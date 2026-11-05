@@ -2,29 +2,34 @@
 
 import { Assessment } from './types';
 import Card from './ui/Card';
-import StatusIndicator from './ui/StatusIndicator';
 import Button from './ui/Button';
 import { BarChart } from 'lucide-react';
+import { getGradeEvaluation, GradingRule } from '@/utils/gradingSystem';
 
 interface AssessmentCardProps {
     assessment: Assessment;
     onClick?: (assessment: Assessment) => void;
+    gradingSystem?: GradingRule[] | null;
 }
 
-export default function AssessmentCard({ assessment, onClick }: AssessmentCardProps) {
+export default function AssessmentCard({ assessment, onClick, gradingSystem }: AssessmentCardProps) {
     const handleViewBreakdown = () => {
         onClick?.(assessment);
     };
 
+    const evalResult = getGradeEvaluation(assessment.score.percentage, gradingSystem);
+
     return (
         <Card className="flex flex-col">
             <div className="p-5">
-                {/* Header with subject and status */}
+                {/* Header with subject and dynamic school grading badge */}
                 <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         {assessment.subject}
                     </p>
-                    <StatusIndicator status={assessment.status} />
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black uppercase border ${evalResult.color} ${evalResult.bg}`}>
+                        Grade {evalResult.grade} • {evalResult.remark}
+                    </span>
                 </div>
 
                 {/* Assessment Title */}

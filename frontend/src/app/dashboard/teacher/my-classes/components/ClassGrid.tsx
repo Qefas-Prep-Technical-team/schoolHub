@@ -1,16 +1,18 @@
 import ClassCard from "./ClassCard";
 import { Class } from "./type";
+import { type GradingTier } from "@/utils/gradingSystem";
 
 interface ClassGridProps {
     classes: Class[];
     onClassClick: (classId: string) => void;
+    gradingSystem?: GradingTier[];
 }
 
-export default function ClassGrid({ classes, onClassClick }: ClassGridProps) {
+export default function ClassGrid({ classes, onClassClick, gradingSystem }: ClassGridProps) {
     if (classes.length === 0) {
         return (
             <div className="text-center py-20 px-6">
-                 <div className="w-20 h-20 bg-slate-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-slate-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
                     <span className="material-symbols-outlined text-4xl text-slate-300">search_off</span>
                 </div>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Search Result Null</h3>
@@ -26,6 +28,7 @@ export default function ClassGrid({ classes, onClassClick }: ClassGridProps) {
                     <ClassCard
                         classData={cls}
                         onClick={() => onClassClick(cls.id)}
+                        gradingSystem={gradingSystem}
                     />
                 </div>
             ))}

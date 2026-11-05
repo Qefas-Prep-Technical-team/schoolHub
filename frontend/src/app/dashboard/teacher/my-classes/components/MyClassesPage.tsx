@@ -14,6 +14,7 @@ import ViewToggle, { ViewType } from './ViewToggle';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { ClassesSkeleton } from './ClassesSkeleton';
 import { Users, GraduationCap, ClipboardList, CheckSquare, Sparkles } from 'lucide-react';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
@@ -38,13 +39,17 @@ export default function MyClassesPage() {
     });
 
     const isPersonal = selectedSchoolId === user?.id;
+    const effectiveSchoolId = !isPersonal && selectedSchoolId
+        ? selectedSchoolId
+        : ((user as any)?.schools?.[0]?.schoolId || (user as any)?.schoolId || (user as any)?.school?.id || '');
+    const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
     const { data: classes = [], isLoading } = useQuery({
         queryKey: ['teacher-classes', selectedSchoolId],
         queryFn: async () => {
             const filterId = isPersonal ? undefined : selectedSchoolId;
-            const data = await teacherService.getClasses({ 
-                schoolId: filterId || undefined 
+            const data = await teacherService.getClasses({
+                schoolId: filterId || undefined
             });
             return data as Class[];
         }
@@ -103,8 +108,8 @@ export default function MyClassesPage() {
     };
 
     const totalStudents = filteredClasses.reduce((sum, cls) => sum + (cls.studentCount || 0), 0);
-    const avgAttendance = filteredClasses.length > 0 
-        ? Math.round(filteredClasses.reduce((sum, cls) => sum + (cls.attendance || 0), 0) / filteredClasses.length) 
+    const avgAttendance = filteredClasses.length > 0
+        ? Math.round(filteredClasses.reduce((sum, cls) => sum + (cls.attendance || 0), 0) / filteredClasses.length)
         : 0;
     const pendingItems = filteredClasses.reduce((sum, cls) => sum + (cls.assignments || 0) + (cls.exams || 0), 0);
 
@@ -113,48 +118,48 @@ export default function MyClassesPage() {
             <div className="w-full space-y-6 sm:space-y-8">
                 <PageHeader
                     title="Academic Registry"
-                    description={isPersonal 
-                        ? "Managing coursework delivery across your entire institutional network." 
+                    description={isPersonal
+                        ? "Managing coursework delivery across your entire institutional network."
                         : `Course modules currently assigned at ${selectedSchoolName}.`}
                     isPersonal={isPersonal}
                 />
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-                    <StatCard 
-                        label="Active Modules" 
-                        value={filteredClasses.length} 
-                        icon={GraduationCap} 
+                    <StatCard
+                        label="Active Modules"
+                        value={filteredClasses.length}
+                        icon={GraduationCap}
                         color="text-emerald-500"
                         bgColor="bg-emerald-500/10"
                         tooltip="Counts all active classrooms and cohort sections currently assigned to you for teaching. Use this to track your total section load and quickly confirm your assigned curriculum coverage."
                     />
-                    <StatCard 
-                        label="Enrolled Scholars" 
-                        value={totalStudents.toLocaleString()} 
-                        icon={Users} 
+                    <StatCard
+                        label="Enrolled Scholars"
+                        value={totalStudents.toLocaleString()}
+                        icon={Users}
                         color="text-emerald-500"
                         bgColor="bg-emerald-500/10"
                         tooltip="Aggregates total enrolled students across all your active classes. Use this to verify roster completeness and understand your cumulative student reach."
                     />
-                    <StatCard 
-                        label="Avg. Session Attendance" 
-                        value={`${avgAttendance}%`} 
-                        icon={CheckSquare} 
+                    <StatCard
+                        label="Avg. Session Attendance"
+                        value={`${avgAttendance}%`}
+                        icon={CheckSquare}
                         color="text-emerald-500"
                         bgColor="bg-emerald-500/10"
                         tooltip="Computes average daily student attendance across your assigned classes. Use this metric to track classroom engagement and identify cohorts that may need attendance follow-ups."
                     />
-                    <StatCard 
-                        label="Pending Assessments" 
-                        value={pendingItems} 
-                        icon={ClipboardList} 
+                    <StatCard
+                        label="Pending Assessments"
+                        value={pendingItems}
+                        icon={ClipboardList}
                         color="text-rose-500"
                         bgColor="bg-rose-500/10"
                         tooltip="Tallies all active assignments and examinations that are awaiting grading or review. Use this to prioritize your upcoming grading backlog before report cards and grade deadlines."
                     />
                 </div>
 
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-4 sm:p-6 bg-white dark:bg-emerald-950/60 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm"
@@ -204,9 +209,9 @@ export default function MyClassesPage() {
                                 exit={{ opacity: 0, y: -20 }}
                             >
                                 {viewType === 'List View' ? (
-                                    <ClassList classes={filteredClasses} onClassClick={handleClassClick} />
+                                    <ClassList classes={filteredClasses} onClassClick={handleClassClick} gradingSystem={schoolProfile?.gradingSystem} />
                                 ) : (
-                                    <ClassGrid classes={filteredClasses} onClassClick={handleClassClick} />
+                                    <ClassGrid classes={filteredClasses} onClassClick={handleClassClick} gradingSystem={schoolProfile?.gradingSystem} />
                                 )}
                             </motion.div>
                         ) : (
@@ -215,8 +220,8 @@ export default function MyClassesPage() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                             >
-                                <EmptyState 
-                                    onResetFilters={handleClearFilters} 
+                                <EmptyState
+                                    onResetFilters={handleClearFilters}
                                     hasActiveFilters={Boolean(filters.academicYear || filters.term || filters.level || filters.class || filters.subject)}
                                     totalClasses={classes.length}
                                 />
@@ -229,23 +234,23 @@ export default function MyClassesPage() {
     );
 }
 
-function StatCard({ 
-    label, 
-    value, 
-    icon: Icon, 
-    color, 
-    bgColor, 
-    tooltip 
-}: { 
-    label: string; 
-    value: string | number; 
-    icon: React.ElementType; 
-    color: string; 
-    bgColor: string; 
-    tooltip: string; 
+function StatCard({
+    label,
+    value,
+    icon: Icon,
+    color,
+    bgColor,
+    tooltip
+}: {
+    label: string;
+    value: string | number;
+    icon: React.ElementType;
+    color: string;
+    bgColor: string;
+    tooltip: string;
 }) {
     return (
-        <motion.div 
+        <motion.div
             whileHover={{ y: -2, scale: 1.01 }}
             className="p-3 sm:p-5 md:p-6 bg-white dark:bg-emerald-950/60 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
         >

@@ -6,9 +6,9 @@ import { examService } from "@/lib/api/services/examService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { 
-  ChevronLeft, FileText, Settings, Loader2, Check, Globe, Layers, ChevronDown, 
-  Users, Trash2, Clock, CheckCircle2, XCircle, Search, GraduationCap 
+import {
+  ChevronLeft, FileText, Settings, Loader2, Check, Globe, Layers, ChevronDown,
+  Users, Trash2, Clock, CheckCircle2, XCircle, Search, GraduationCap
 } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "./components/QuestionManager";
@@ -23,6 +23,7 @@ import { classService } from "@/lib/api/services/classService";
 import { sessionService } from "@/lib/api/services/sessionService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { getDateGroupLabel, groupByDate } from "@/app/dashboard/student/my-classes/[id]/components/materials/utils/dateSectioning";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -243,6 +244,11 @@ export default function PaperDetailPage() {
     return filteredAttempts.slice((attemptsPage - 1) * ATTEMPTS_PER_PAGE, attemptsPage * ATTEMPTS_PER_PAGE);
   }, [filteredAttempts, attemptsPage]);
 
+  // Group paginated attempts by date using date_sectioning_display skill
+  const groupedAttempts = useMemo(() => {
+    return groupByDate(paginatedAttempts, (attempt: any) => attempt.submittedAt || attempt.createdAt);
+  }, [paginatedAttempts]);
+
   // Mutation to clear an attempt so the student can retake the exam/paper
   const deleteAttemptMutation = useMutation({
     mutationFn: (studentId: string) => examService.deleteExamAttempt(examId, studentId),
@@ -274,7 +280,7 @@ export default function PaperDetailPage() {
     isOpen: false,
     title: "",
     description: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
     variant: "danger",
     confirmText: "Confirm",
   });
@@ -452,7 +458,7 @@ export default function PaperDetailPage() {
                               }}
                               className={cn(
                                 "flex items-center justify-between p-2 rounded-xl text-xs transition-colors",
-                                isCurrent 
+                                isCurrent
                                   ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold"
                                   : "hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-slate-800 dark:text-slate-200"
                               )}
@@ -681,129 +687,147 @@ export default function PaperDetailPage() {
                   No students matched your search &quot;{attemptsSearch}&quot;.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
-                        <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Date Recorded</th>
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Score</th>
-                        <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                      {paginatedAttempts.map((attempt: any) => {
-                        // Find this specific subject paper attempt from subAttempts or direct attempt
-                        const subAttempts = attempt.subjectExamAttempts || attempt.subjectAttempts || [];
-                        const paperAttempt = subAttempts.find((sa: any) => sa.subjectPaperId === paperId) || subAttempts[0] || {};
-                        const studentScore = paperAttempt.score ?? attempt.totalScore ?? 0;
-                        const maxMarks = paperAttempt.totalMarks || paper.totalMarks || 100;
-                        const scorePercent = maxMarks > 0 ? Math.round((studentScore / maxMarks) * 100) : 0;
-                        const initials = (attempt.student?.name || "?")
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase();
+                <div className="p-6 sm:p-8 space-y-6">
+                  {groupedAttempts.map((section) => (
+                    <div key={section.label} className="space-y-3">
+                      {/* Section Header adhering to date_sectioning_display skill */}
+                      <div className="flex items-center gap-2.5 px-1 py-1">
+                        <div className="size-2 rounded-full bg-indigo-500 shadow-xs" />
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                          {section.label}
+                        </h4>
+                        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                          {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                        </span>
+                      </div>
 
-                        const statusMap: Record<string, string> = {
-                          SCORED: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800",
-                          SUBMITTED: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800",
-                          EXPIRED: "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800",
-                          IN_PROGRESS: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800",
-                        };
-                        const statusCls = statusMap[attempt.status] || statusMap.IN_PROGRESS;
+                      {/* Section Table Container */}
+                      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
+                              <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
+                              <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                              <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Time Recorded</th>
+                              <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Score</th>
+                              <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {section.items.map((attempt: any) => {
+                              // Find this specific subject paper attempt from subAttempts or direct attempt
+                              const subAttempts = attempt.subjectExamAttempts || attempt.subjectAttempts || [];
+                              const paperAttempt = subAttempts.find((sa: any) => sa.subjectPaperId === paperId) || subAttempts[0] || {};
+                              const studentScore = paperAttempt.score ?? attempt.totalScore ?? 0;
+                              const maxMarks = paperAttempt.totalMarks || paper.totalMarks || 100;
+                              const scorePercent = maxMarks > 0 ? Math.round((studentScore / maxMarks) * 100) : 0;
+                              const initials = (attempt.student?.name || "?")
+                                .split(" ")
+                                .map((n: string) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase();
 
-                        return (
-                          <tr key={attempt.id || attempt.studentId} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                            {/* Student Column */}
-                            <td className="px-6 sm:px-8 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
-                                  {initials}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-black text-slate-900 dark:text-white truncate">
-                                    {attempt.student?.name || "Student"}
-                                  </p>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">
-                                    {attempt.student?.studentCode || attempt.student?.id?.slice(0, 8)}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
+                              const statusMap: Record<string, string> = {
+                                SCORED: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800",
+                                SUBMITTED: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800",
+                                EXPIRED: "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800",
+                                IN_PROGRESS: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800",
+                              };
+                              const statusCls = statusMap[attempt.status] || statusMap.IN_PROGRESS;
 
-                            {/* Status Column */}
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center gap-1 border text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${statusCls}`}>
-                                {attempt.status}
-                              </span>
-                            </td>
+                              return (
+                                <tr key={attempt.id || attempt.studentId} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                  {/* Student Column */}
+                                  <td className="px-6 sm:px-8 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
+                                        {initials}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-black text-slate-900 dark:text-white truncate">
+                                          {attempt.student?.name || "Student"}
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">
+                                          {attempt.student?.studentCode || attempt.student?.id?.slice(0, 8)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </td>
 
-                            {/* Date Recorded Column */}
-                            <td className="px-6 py-4">
-                              {attempt.createdAt || attempt.submittedAt ? (
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                                    {format(new Date(attempt.submittedAt || attempt.createdAt), "MMM d, yyyy")}
-                                  </span>
-                                  <span className="text-[10px] font-semibold text-slate-400">
-                                    {format(new Date(attempt.submittedAt || attempt.createdAt), "h:mm a")}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">—</span>
-                              )}
-                            </td>
+                                  {/* Status Column */}
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center gap-1 border text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${statusCls}`}>
+                                      {attempt.status}
+                                    </span>
+                                  </td>
 
-                            {/* Paper Score Column */}
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-black text-primary">{studentScore}</span>
-                                <span className="text-slate-300 dark:text-slate-700">/</span>
-                                <span className="text-xs font-bold text-slate-400">{maxMarks}</span>
-                                <span className="text-[10px] font-bold text-slate-400">({scorePercent}%)</span>
-                              </div>
-                            </td>
+                                  {/* Time Recorded Column */}
+                                  <td className="px-6 py-4">
+                                    {attempt.createdAt || attempt.submittedAt ? (
+                                      <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                          {format(new Date(attempt.submittedAt || attempt.createdAt), "MMM d, yyyy")}
+                                        </span>
+                                        <span className="text-[10px] font-semibold text-slate-400">
+                                          {format(new Date(attempt.submittedAt || attempt.createdAt), "h:mm a")}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                                    )}
+                                  </td>
 
-                            {/* Action: Clear Record */}
-                            <td className="px-6 sm:px-8 py-4 text-right">
-                              <div className="flex items-center justify-end">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    openConfirmDialog({
-                                      title: "Clear Student Record",
-                                      description: `Delete ${attempt.student?.name || "this student"}'s attempt for "${paper.title}"? This clears their recorded answers and allows them to take the exam again.`,
-                                      variant: "danger",
-                                      confirmText: "Clear & Reset",
-                                      onConfirm: () => deleteAttemptMutation.mutate(attempt.studentId),
-                                    })
-                                  }
-                                  disabled={deleteAttemptMutation.isPending && (deleteAttemptMutation.variables as string) === attempt.studentId}
-                                  className="h-8 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold text-xs flex items-center gap-1.5 transition-all"
-                                  title="Clear record so student can retake"
-                                >
-                                  {deleteAttemptMutation.isPending && (deleteAttemptMutation.variables as string) === attempt.studentId ? (
-                                    <Loader2 className="animate-spin h-3.5 w-3.5" />
-                                  ) : (
-                                    <Trash2 size={13} />
-                                  )}
-                                  <span>Clear</span>
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                  {/* Paper Score Column */}
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-black text-primary">{studentScore}</span>
+                                      <span className="text-slate-300 dark:text-slate-700">/</span>
+                                      <span className="text-xs font-bold text-slate-400">{maxMarks}</span>
+                                      <span className="text-[10px] font-bold text-slate-400">({scorePercent}%)</span>
+                                    </div>
+                                  </td>
+
+                                  {/* Action: Clear Record */}
+                                  <td className="px-6 sm:px-8 py-4 text-right">
+                                    <div className="flex items-center justify-end">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          openConfirmDialog({
+                                            title: "Clear Student Record",
+                                            description: `Delete ${attempt.student?.name || "this student"}'s attempt for "${paper.title}"? This clears their recorded answers and allows them to take the exam again.`,
+                                            variant: "danger",
+                                            confirmText: "Clear & Reset",
+                                            onConfirm: () => deleteAttemptMutation.mutate(attempt.studentId),
+                                          })
+                                        }
+                                        disabled={deleteAttemptMutation.isPending && (deleteAttemptMutation.variables as string) === attempt.studentId}
+                                        className="h-8 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                                        title="Clear record so student can retake"
+                                      >
+                                        {deleteAttemptMutation.isPending && (deleteAttemptMutation.variables as string) === attempt.studentId ? (
+                                          <Loader2 className="animate-spin h-3.5 w-3.5" />
+                                        ) : (
+                                          <Trash2 size={13} />
+                                        )}
+                                        <span>Clear</span>
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
 
                   {/* Pagination */}
                   {totalAttemptsPages > 1 && (
-                    <div className="px-6 sm:px-8 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="pt-2 flex items-center justify-between">
                       <Button
                         variant="outline"
                         size="sm"
@@ -843,9 +867,9 @@ export default function PaperDetailPage() {
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
         isLoading={
-          unpublishPaperMutation.isPending || 
-          deletePaperMutation.isPending || 
-          deleteExamMutation.isPending || 
+          unpublishPaperMutation.isPending ||
+          deletePaperMutation.isPending ||
+          deleteExamMutation.isPending ||
           deleteAttemptMutation.isPending
         }
       />
@@ -857,6 +881,8 @@ export default function PaperDetailPage() {
         initialContent={paper.readingContent}
         initialImages={paper.images}
         initialLabels={paper.imageLabels}
+        schoolId={activeSchoolId}
+        subjectName={paper.subject?.name || exam?.title}
       />
 
       <PaperPreviewModal

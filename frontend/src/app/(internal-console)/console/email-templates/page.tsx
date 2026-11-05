@@ -2,29 +2,30 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { 
-    Mail, 
-    ArrowRight, 
-    CheckCircle2, 
-    ShieldAlert, 
-    CreditCard, 
-    Ticket, 
-    KeyRound, 
-    UserPlus, 
-    Smartphone, 
-    Loader2, 
-    UserX, 
-    UserMinus, 
-    ShieldCheck,
-    GraduationCap,
-    Award,
-    FileText,
-    FileCheck,
-    Users,
-    AlertTriangle,
-    ArrowRightLeft,
-    UserCheck,
-    Receipt
+import {
+  Mail,
+  ArrowRight,
+  CheckCircle2,
+  ShieldAlert,
+  CreditCard,
+  Ticket,
+  KeyRound,
+  UserPlus,
+  Smartphone,
+  Loader2,
+  UserX,
+  UserMinus,
+  ShieldCheck,
+  GraduationCap,
+  Award,
+  FileText,
+  FileCheck,
+  Users,
+  AlertTriangle,
+  ArrowRightLeft,
+  UserCheck,
+  Receipt,
+  Building2
 } from "lucide-react"
 import { platformClient } from "@/lib/api/platformClient";
 import { toast } from "react-toastify";
@@ -49,15 +50,15 @@ type EmailIllustration =
   | 'new-device';
 
 const illustrationMap: Record<EmailIllustration, { src: string; bg: string; alt: string }> = {
-  verification:     { src: `/email/hero-verification.png`,    bg: '#eef0fc', alt: 'Email Verification' },
-  success:          { src: `/email/hero-success.png`,         bg: '#ecfdf5', alt: 'Account Ready' },
-  security:         { src: `/email/hero-security.png`,        bg: '#fffbeb', alt: 'Security Alert' },
-  payment:          { src: `/email/hero-payment.png`,         bg: '#eff6ff', alt: 'Payment Confirmed' },
-  'payment-failed': { src: `/email/hero-payment-failed.png`,  bg: '#fef2f2', alt: 'Payment Failed' },
-  invite:           { src: `/email/hero-invite.png`,          bg: '#f5f3ff', alt: "You're Invited" },
-  reset:            { src: `/email/hero-reset.png`,           bg: '#f0fdf4', alt: 'Password Reset' },
-  'device-code':    { src: `/email/verification-code-new-device.png`, bg: '#f8fafc', alt: 'Verification Code' },
-  'new-device':     { src: `/email/new-Device-verified.png`,          bg: '#eef0fc', alt: 'New Device Verified' },
+  verification: { src: `/email/hero-verification.png`, bg: '#eef0fc', alt: 'Email Verification' },
+  success: { src: `/email/hero-success.png`, bg: '#ecfdf5', alt: 'Account Ready' },
+  security: { src: `/email/hero-security.png`, bg: '#fffbeb', alt: 'Security Alert' },
+  payment: { src: `/email/hero-payment.png`, bg: '#eff6ff', alt: 'Payment Confirmed' },
+  'payment-failed': { src: `/email/hero-payment-failed.png`, bg: '#fef2f2', alt: 'Payment Failed' },
+  invite: { src: `/email/hero-invite.png`, bg: '#f5f3ff', alt: "You're Invited" },
+  reset: { src: `/email/hero-reset.png`, bg: '#f0fdf4', alt: 'Password Reset' },
+  'device-code': { src: `/email/verification-code-new-device.png`, bg: '#f8fafc', alt: 'Verification Code' },
+  'new-device': { src: `/email/new-Device-verified.png`, bg: '#eef0fc', alt: 'New Device Verified' },
 };
 
 function buildEmail(options: {
@@ -184,10 +185,10 @@ function otpBox(code: string, expiryMinutes = 10): string {
 
 function infoCard(message: string, type: 'info' | 'success' | 'warning' | 'danger' = 'info'): string {
   const styles = {
-    info:    { bg: '#eff6ff', border: '#bfdbfe', color: '#1e40af', icon: 'ℹ️' },
+    info: { bg: '#eff6ff', border: '#bfdbfe', color: '#1e40af', icon: 'ℹ️' },
     success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#065f46', icon: '✅' },
     warning: { bg: '#fffbeb', border: '#fde68a', color: '#92400e', icon: '⚠️' },
-    danger:  { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', icon: '🚨' },
+    danger: { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', icon: '🚨' },
   };
   const s = styles[type];
   return `<div style="background:${s.bg};border:1px solid ${s.border};border-radius:12px;padding:14px 16px;margin-bottom:20px;">
@@ -211,9 +212,9 @@ const templates = [
     title: "School Accepts Student",
     icon: GraduationCap,
     color: "text-blue-600",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'success',
       body: `
@@ -255,9 +256,9 @@ const templates = [
     title: "School Accepts Teacher",
     icon: UserCheck,
     color: "text-emerald-600",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'invite',
       body: `
@@ -299,9 +300,9 @@ const templates = [
     title: "Student Graduation",
     icon: Award,
     color: "text-purple-600",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'success',
       body: `
@@ -337,15 +338,60 @@ const templates = [
     })
   },
 
+  // --- 3b. Student Graduation (Parent) ---
+  {
+    id: "parent-graduation",
+    title: "Student Graduation (Parent)",
+    icon: Award,
+    color: "text-purple-600",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
+    generate: () => buildEmail({
+      illustration: 'success',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Congratulations on Jane's Graduation!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Chief Robert Doe & Guardians,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">The Board of Trustees, Principal, and Faculty of <strong>Springfield High School</strong> extend our warmest congratulations to you and your family on <strong>Jane Doe</strong>'s distinguished secondary graduation.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Graduate Honours Dossier</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Graduate Scholar', 'Jane Doe')}
+            ${receiptRow('Parent / Guardian', 'Chief Robert Doe')}
+            ${receiptRow('Student Reg No', 'SCH-2020-0491')}
+            ${receiptRow('Graduating Class', 'Class of 2026')}
+            ${receiptRow('Academic Standing', 'First Class Distinction', true)}
+            ${receiptRow('Cumulative GPA', '4.85 / 5.00', true)}
+            ${receiptRow('Valedictory Certificate ID', 'CERT-QEF-2026-9942')}
+            ${receiptRow('Graduation Date', 'July 25, 2026')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Permanent Digital Records:</strong> Your child\'s complete academic broadsheets, verified transcripts, and certificates are securely sealed in the Qefas Hub Vault for direct verification by universities and scholarship boards.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Access Parent Portal →', 'http://localhost:3000/login', '#7c3aed')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          We celebrate your partnership and dedication in supporting Jane Doe throughout their academic journey. We wish them continuous success in all future pursuits!
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">With warmest regards and best wishes from the faculty and administration of Springfield High School.</p>
+      `
+    })
+  },
+
   // --- 4. Successful Payment of Transcript ---
   {
     id: "transcript-payment-success",
-    title: "Transcript Payment Success",
+    title: "Transcript Payment Success (Student)",
     icon: CreditCard,
     color: "text-emerald-500",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'payment',
       body: `
@@ -377,15 +423,55 @@ const templates = [
     })
   },
 
+  // --- 4b. Transcript Clearance Fee Received (School Notification) ---
+  {
+    id: "school-transcript-payment",
+    title: "Transcript Payment Received (School)",
+    icon: Building2,
+    color: "text-blue-600",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
+    generate: () => buildEmail({
+      illustration: 'payment',
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Transcript Clearance Fee Confirmed</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Administration & Records Office,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">A student has successfully completed their transcript clearance payment. The transaction has settled into your configured school disbursement ledger.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Institutional Clearance Record</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Name', 'Jane Doe')}
+            ${receiptRow('Student Code / Matric', 'SCH-2026-0891')}
+            ${receiptRow('Fee Paid', '₦15,000.00', true)}
+            ${receiptRow('Transaction Ref', 'TRX-TRN-98412-QEF')}
+            ${receiptRow('Academic Scope', '2025/2026 Academic Session • All Terms')}
+            ${receiptRow('Settlement Channel', 'Card (Paystack Split Settlement)')}
+            ${receiptRow('Confirmed At', 'Oct 29, 2026, 08:30 AM')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Automatic Clearance:</strong> The student has received their authenticated 30-Day Transcript Access Pass. Their academic records docket has been unlocked for preview and download.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Open Finance & Transcript Console ➔', 'http://localhost:3000/dashboard/admin/finance?tab=transcripts', '#4f46e5')}
+        </div>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">You can view and audit all incoming transcript clearance fees under the <strong>Finance & Billing</strong> section of the Admin Console.</p>
+      `
+    })
+  },
+
   // --- 5. Transcript Receipt and Link to Transcript ---
   {
     id: "transcript-receipt-link",
     title: "Transcript Delivery & Link",
     icon: FileCheck,
     color: "text-indigo-600",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'success',
       body: `
@@ -428,9 +514,9 @@ const templates = [
     title: "Parent-Child Link Accepted",
     icon: Users,
     color: "text-teal-600",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'invite',
       body: `
@@ -472,9 +558,9 @@ const templates = [
     title: "Student Suspension Notice",
     icon: AlertTriangle,
     color: "text-rose-600",
-    badge: "Not Functional",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    isFunctional: false,
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'security',
       body: `
@@ -562,8 +648,9 @@ const templates = [
     title: "Account Deactivation Request",
     icon: UserMinus,
     color: "text-amber-500",
-    badge: "Compliance",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'reset',
       body: `
@@ -607,8 +694,9 @@ const templates = [
     title: "Account Deactivation Confirmation",
     icon: UserX,
     color: "text-rose-500",
-    badge: "Security",
-    badgeColor: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'security',
       body: `
@@ -652,6 +740,9 @@ const templates = [
     title: "Email Verification",
     icon: CheckCircle2,
     color: "text-blue-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'verification',
       body: `
@@ -666,6 +757,9 @@ const templates = [
     title: "Email Verified",
     icon: CheckCircle2,
     color: "text-emerald-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'success',
       body: `
@@ -682,6 +776,9 @@ const templates = [
     title: "Welcome Email",
     icon: Mail,
     color: "text-green-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'success',
       body: `
@@ -730,6 +827,9 @@ const templates = [
     title: "Admin Registration Request",
     icon: UserPlus,
     color: "text-indigo-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'invite',
       body: `
@@ -754,6 +854,9 @@ const templates = [
     title: "Admin Account Approved",
     icon: CheckCircle2,
     color: "text-emerald-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'success',
       body: `
@@ -774,6 +877,9 @@ const templates = [
     title: "Admin Account Rejected",
     icon: ShieldAlert,
     color: "text-red-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'security',
       body: `
@@ -793,6 +899,9 @@ const templates = [
     title: "Payment Receipt",
     icon: CreditCard,
     color: "text-blue-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'payment',
       body: `
@@ -817,6 +926,9 @@ const templates = [
     title: "Payment Failed",
     icon: ShieldAlert,
     color: "text-red-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'payment-failed',
       body: `
@@ -841,6 +953,9 @@ const templates = [
     title: "Password Reset",
     icon: KeyRound,
     color: "text-slate-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'reset',
       body: `
@@ -860,6 +975,9 @@ const templates = [
     title: "New Device Login",
     icon: Smartphone,
     color: "text-amber-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'new-device',
       body: `
@@ -883,6 +1001,9 @@ const templates = [
     title: "Device Verification",
     icon: ShieldAlert,
     color: "text-indigo-500",
+    badge: "Functional",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    isFunctional: true,
     generate: () => buildEmail({
       illustration: 'device-code',
       body: `
@@ -913,140 +1034,139 @@ const templates = [
 ];
 
 function EmailTemplatesContent() {
-    const searchParams = useSearchParams();
-    const queryTemplate = searchParams?.get("template");
+  const searchParams = useSearchParams();
+  const queryTemplate = searchParams?.get("template");
 
-    const [selectedTemplate, setSelectedTemplate] = useState<string>(() => {
-        if (queryTemplate && templates.some(t => t.id === queryTemplate)) {
-            return queryTemplate;
-        }
-        return templates[0].id;
-    });
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(() => {
+    if (queryTemplate && templates.some(t => t.id === queryTemplate)) {
+      return queryTemplate;
+    }
+    return templates[0].id;
+  });
 
-    useEffect(() => {
-        if (queryTemplate && templates.some(t => t.id === queryTemplate)) {
-            setSelectedTemplate(queryTemplate);
-        }
-    }, [queryTemplate]);
+  useEffect(() => {
+    if (queryTemplate && templates.some(t => t.id === queryTemplate)) {
+      setSelectedTemplate(queryTemplate);
+    }
+  }, [queryTemplate]);
 
-    const activeTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
-    const [isSending, setIsSending] = useState(false)
+  const activeTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
+  const [isSending, setIsSending] = useState(false)
 
-    const handleSendTestEmail = async () => {
-        if ((activeTemplate as any).isFunctional === false) {
-            toast.info(`"${activeTemplate?.title}" is tagged as Not Functional (Preview Only). Backend API trigger is not yet connected.`);
-            return;
-        }
-
-        const testEmail = prompt(`Enter the email address to receive the "${activeTemplate?.title}" template test:`, "");
-        if (!testEmail) return;
-
-        setIsSending(true);
-        try {
-            await platformClient.post("/platform/email/test", {
-                templateId: activeTemplate?.id,
-                email: testEmail
-            });
-            toast.success("Test email sent successfully!");
-        } catch (error: any) {
-            toast.error(error?.response?.data?.error || "Failed to send test email");
-        } finally {
-            setIsSending(false);
-        }
+  const handleSendTestEmail = async () => {
+    if ((activeTemplate as any).isFunctional === false) {
+      toast.info(`"${activeTemplate?.title}" is tagged as Not Functional (Preview Only). Backend API trigger is not yet connected.`);
+      return;
     }
 
-    return (
-        <div className="space-y-6 pb-20">
-            <div>
-                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Email Templates</h1>
-                <p className="text-slate-500 font-medium mt-1">Preview system automated email designs, telemetry fields, and content.</p>
-            </div>
+    const testEmail = prompt(`Enter the email address to receive the "${activeTemplate?.title}" template test:`, "");
+    if (!testEmail) return;
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Sidebar Navigation */}
-                <div className="lg:col-span-1 space-y-2">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-2 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-                        {templates.map((template) => {
-                            const Icon = template.icon
-                            const isActive = selectedTemplate === template.id
+    setIsSending(true);
+    try {
+      await platformClient.post("/platform/email/test", {
+        templateId: activeTemplate?.id,
+        email: testEmail
+      });
+      toast.success("Test email sent successfully!");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || "Failed to send test email");
+    } finally {
+      setIsSending(false);
+    }
+  }
 
-                            return (
-                                <button
-                                    key={template.id}
-                                    onClick={() => setSelectedTemplate(template.id)}
-                                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all ${
-                                        isActive 
-                                            ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold shadow-sm" 
-                                            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium"
-                                    }`}
-                                >
-                                    <Icon size={18} className={isActive ? "text-indigo-600 dark:text-indigo-400 shrink-0" : `${template.color} shrink-0`} />
-                                    <span className="text-sm truncate flex-1">{template.title}</span>
-                                    {(template as any).badge && (
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${(template as any).badgeColor || "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                                            {(template as any).badge}
-                                        </span>
-                                    )}
-                                    {isActive && <ArrowRight size={14} className="ml-1 opacity-60 shrink-0" />}
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
+  return (
+    <div className="space-y-6 pb-20">
+      <div>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Email Templates</h1>
+        <p className="text-slate-500 font-medium mt-1">Preview system automated email designs, telemetry fields, and content.</p>
+      </div>
 
-                {/* Preview Area */}
-                <div className="lg:col-span-3">
-                    <div className="bg-slate-100 dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner h-[850px] flex flex-col">
-                        <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2 justify-between">
-                            <div className="flex gap-1.5 w-20">
-                                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                            </div>
-                            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-md px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono flex-1 max-w-md justify-center truncate mx-4 border border-slate-200 dark:border-slate-700">
-                                <span className="text-slate-400">Preview:</span>
-                                <span className="font-bold">{activeTemplate?.title}</span>
-                            </div>
-                            <div className="flex justify-end min-w-28">
-                                {(activeTemplate as any).isFunctional === false ? (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 text-xs font-bold shadow-sm whitespace-nowrap">
-                                        <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
-                                        <span>Not Functional</span>
-                                    </div>
-                                ) : (
-                                    <button 
-                                        onClick={handleSendTestEmail}
-                                        disabled={isSending}
-                                        className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isSending ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
-                                        Send Test
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex-1 bg-[#f0f2f8] p-4 relative">
-                            {/* Isolated iframe for email rendering */}
-                            {activeTemplate && (
-                                <iframe
-                                    key={activeTemplate.id}
-                                    srcDoc={activeTemplate.generate()}
-                                    className="w-full h-full bg-transparent border-0 rounded-xl"
-                                    title={activeTemplate.title}
-                                />
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar Navigation */}
+        <div className="lg:col-span-1 space-y-2">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-2 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            {templates.map((template) => {
+              const Icon = template.icon
+              const isActive = selectedTemplate === template.id
+
+              return (
+                <button
+                  key={template.id}
+                  onClick={() => setSelectedTemplate(template.id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all ${isActive
+                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold shadow-sm"
+                    : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium"
+                    }`}
+                >
+                  <Icon size={18} className={isActive ? "text-indigo-600 dark:text-indigo-400 shrink-0" : `${template.color} shrink-0`} />
+                  <span className="text-sm truncate flex-1">{template.title}</span>
+                  {(template as any).badge && (
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${(template as any).badgeColor || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                      {(template as any).badge}
+                    </span>
+                  )}
+                  {isActive && <ArrowRight size={14} className="ml-1 opacity-60 shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
         </div>
-    )
+
+        {/* Preview Area */}
+        <div className="lg:col-span-3">
+          <div className="bg-slate-100 dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner h-[850px] flex flex-col">
+            <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2 justify-between">
+              <div className="flex gap-1.5 w-20">
+                <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-md px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono flex-1 max-w-md justify-center truncate mx-4 border border-slate-200 dark:border-slate-700">
+                <span className="text-slate-400">Preview:</span>
+                <span className="font-bold">{activeTemplate?.title}</span>
+              </div>
+              <div className="flex justify-end min-w-28">
+                {(activeTemplate as any).isFunctional === false ? (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 text-xs font-bold shadow-sm whitespace-nowrap">
+                    <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Not Functional</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSendTestEmail}
+                    disabled={isSending}
+                    className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSending ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
+                    Send Test
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 bg-[#f0f2f8] p-4 relative">
+              {/* Isolated iframe for email rendering */}
+              {activeTemplate && (
+                <iframe
+                  key={activeTemplate.id}
+                  srcDoc={activeTemplate.generate()}
+                  className="w-full h-full bg-transparent border-0 rounded-xl"
+                  title={activeTemplate.title}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function EmailTemplatesPage() {
-    return (
-        <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading email templates preview...</div>}>
-            <EmailTemplatesContent />
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading email templates preview...</div>}>
+      <EmailTemplatesContent />
+    </Suspense>
+  );
 }

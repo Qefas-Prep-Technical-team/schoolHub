@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import TransactionHistory from "@/components/dashboard/TransactionHistory";
 import { useSchoolBilling } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import AdminTransactionsLoading from "./loading";
+import { BillingStatementModal, BillingTransaction } from "./components/BillingStatementModal";
+import { TransactionsSectionedTable, TransactionItem } from "./components/TransactionsSectionedTable";
+import { groupByDate } from "@/utils/dateSectioning";
 import {
   ChevronLeft,
   History,
@@ -12,9 +14,9 @@ import {
   CreditCard,
   Wallet,
   Download,
-  Filter,
   Search,
   RefreshCw,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +41,7 @@ export default function AdminTransactionsPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [isStatementOpen, setIsStatementOpen] = useState(false);
 
   const { data: billingData, isLoading, refetch, isRefetching } = useSchoolBilling(
     schoolId as string,
@@ -48,8 +51,8 @@ export default function AdminTransactionsPage() {
     }
   );
 
-  const rawTransactions = useMemo(() => {
-    return billingData?.transactions || [];
+  const rawTransactions = useMemo((): TransactionItem[] => {
+    return (billingData?.transactions as unknown as TransactionItem[]) || [];
   }, [billingData]);
 
   const filteredTransactions = useMemo(() => {
@@ -69,16 +72,24 @@ export default function AdminTransactionsPage() {
     });
   }, [rawTransactions, searchQuery, statusFilter]);
 
+  const dateGroups = useMemo(() => {
+    return groupByDate(filteredTransactions, (t) => t.createdAt || t.date);
+  }, [filteredTransactions]);
+
+  const totalPages = Math.ceil(
+    (billingData?.totalTransactions || filteredTransactions.length) / ITEMS_PER_PAGE
+  ) || 1;
+
   // Aggregate stats
   const totalVolume = useMemo(() => {
     return rawTransactions
-      .filter((t) => t.status === "SUCCESS" || t.status === "completed")
+      .filter((t) => t.status?.toUpperCase() === "SUCCESS" || t.status?.toLowerCase() === "completed")
       .reduce((sum, t) => sum + Number(t.amount || 0), 0);
   }, [rawTransactions]);
 
   const successCount = useMemo(() => {
     return rawTransactions.filter(
-      (t) => t.status === "SUCCESS" || t.status === "completed"
+      (t) => t.status?.toUpperCase() === "SUCCESS" || t.status?.toLowerCase() === "completed"
     ).length;
   }, [rawTransactions]);
 
@@ -158,6 +169,14 @@ export default function AdminTransactionsPage() {
           >
             <Download size={14} />
             Export CSV
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => setIsStatementOpen(true)}
+            className="h-11 px-4 rounded-xl font-bold text-xs gap-2 shadow-sm"
+          >
+            <Printer size={14} />
+            Print Statement
           </Button>
         </div>
       </div>
@@ -254,13 +273,22 @@ export default function AdminTransactionsPage() {
         </div>
       </div>
 
-      {/* Ledger Table */}
-      <TransactionHistory
-        items={filteredTransactions}
-        totalItems={filteredTransactions.length}
+      {/* Date-Sectioned Ledger Table with Pagination */}
+      <TransactionsSectionedTable
+        dateGroups={dateGroups}
+        totalCount={filteredTransactions.length}
         currentPage={currentPage}
-        itemsPerPage={ITEMS_PER_PAGE}
+        totalPages={totalPages}
         onPageChange={setCurrentPage}
+      />
+
+      {/* Official Billing Statement Modal */}
+      <BillingStatementModal
+        open={isStatementOpen}
+        onOpenChange={setIsStatementOpen}
+        transactions={rawTransactions as unknown as BillingTransaction[]}
+        schoolName={user?.schools?.[0]?.name || "Institutional School"}
+        planName={billingData?.subscription?.plan || user?.plan || "Institutional Plan"}
       />
     </div>
   );

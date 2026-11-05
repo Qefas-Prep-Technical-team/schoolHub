@@ -22,12 +22,16 @@ import DashboardCharts from './components/dashboard/DashboardCharts';
 import AdminAnnouncementModal, { ClassItem } from './components/dashboard/AdminAnnouncementModal';
 import AdminWeeklyReportModal from './components/dashboard/AdminWeeklyReportModal';
 import AdminFinanceCard from './components/dashboard/AdminFinanceCard';
+import { AdminRole, canAdminRoleAccessFeature } from './components/adminFeatureFlags';
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const schoolName = user?.schools?.[0]?.name || user?.name || 'Future Academy';
   const userName = user?.name || 'Admin';
+  const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
+  const canViewFinance = canAdminRoleAccessFeature(adminRole, 'finance');
+  const canViewBilling = canAdminRoleAccessFeature(adminRole, 'billing');
 
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [isWeeklyReportOpen, setIsWeeklyReportOpen] = useState(false);
@@ -38,12 +42,12 @@ export default function AdminDashboard() {
 
   const classesList: ClassItem[] = Array.isArray(rawClasses)
     ? rawClasses.map((c: { id: string; name: string; section?: string; _count?: { enrollments?: number }; studentCount?: number; classCode?: string }) => ({
-        id: c.id,
-        name: c.name,
-        section: c.section,
-        studentCount: c._count?.enrollments || c.studentCount || 0,
-        classCode: c.classCode,
-      }))
+      id: c.id,
+      name: c.name,
+      section: c.section,
+      studentCount: c._count?.enrollments || c.studentCount || 0,
+      classCode: c.classCode,
+    }))
     : [];
   const { data: settings } = useSchoolSettings(schoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
@@ -76,31 +80,31 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Hero Banner */}
           <div className="lg:col-span-2 relative overflow-hidden rounded-[2rem] bg-slate-900 shadow-sm">
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center opacity-60 mix-blend-overlay"
               style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')" }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
-            
+
             <div className="relative z-10 p-8 h-full flex flex-col justify-end min-h-[280px]">
               <div className="inline-flex items-center bg-white/20 backdrop-blur-md rounded-full px-3 py-1 mb-4 w-fit">
                 <span className="text-xs font-semibold text-white tracking-wide">{currentTerm} • {currentSession}</span>
               </div>
-              
+
               <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Welcome back to {schoolName}</h2>
               <p className="text-slate-200 text-sm max-w-xl mb-6 leading-relaxed">
                 {analysis?.insight || "System running smoothly. All services are fully operational."}
               </p>
-              
+
               <div className="flex items-center gap-3">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsWeeklyReportOpen(true)}
                   className="bg-white text-slate-900 hover:bg-slate-50 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
                 >
                   View weekly report
                 </button>
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsAnnouncementOpen(true)}
                   className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-full text-sm font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95"
@@ -129,11 +133,11 @@ export default function AdminDashboard() {
             <StaffInsights primaryColor={primaryColor} />
             <RecentActivity primaryColor={primaryColor} />
           </div>
-          
+
           {/* Right Column (Sidebar Features) */}
           <div className="lg:col-span-4 space-y-6">
-            <AdminFinanceCard schoolId={schoolId} primaryColor={primaryColor} />
-            <UsageLimitsCard primaryColor={primaryColor} />
+            {canViewFinance && <AdminFinanceCard schoolId={schoolId} primaryColor={primaryColor} />}
+            {canViewBilling && <UsageLimitsCard primaryColor={primaryColor} />}
             <QuickActions primaryColor={primaryColor} />
             <AlertsPanel primaryColor={primaryColor} />
           </div>

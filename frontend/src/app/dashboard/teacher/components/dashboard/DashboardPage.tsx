@@ -24,11 +24,11 @@ import { useNotifications } from '@/lib/api/hooks/useNotifications';
 import { resolveNotificationSender } from '@/lib/utils/notificationSender';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { 
-  Sparkles, 
-  Plus, 
-  Calendar, 
-  Settings, 
+import {
+  Sparkles,
+  Plus,
+  Calendar,
+  Settings,
   Share2,
   LayoutGrid,
   FileCheck2,
@@ -52,6 +52,7 @@ export default function DashboardPage() {
     topStudents: [],
     distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
   });
+  const [schoolGradingSystem, setSchoolGradingSystem] = useState<any[] | null>(null);
   const [recentExams, setRecentExams] = useState<any[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<any[]>([]);
   const [isAnnounceModalOpen, setIsAnnounceModalOpen] = useState(false);
@@ -85,8 +86,9 @@ export default function DashboardPage() {
       setError(null);
       const filterId = isPersonal ? undefined : selectedSchoolId;
       const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
-      
+
       if (dashboardData) {
+        setSchoolGradingSystem(dashboardData.schoolGradingSystem || null);
         setStats({
           ...dashboardData.stats,
           session: dashboardData.stats?.session || "Session Not Set",
@@ -213,7 +215,7 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white dark:bg-black p-10 rounded-[2.5rem] border border-slate-100 dark:border-zinc-900 shadow-2xl dark:shadow-none max-w-md text-center space-y-6"
@@ -227,8 +229,8 @@ export default function DashboardPage() {
               {error}
             </p>
           </div>
-          <Button 
-            onClick={() => loadInitialData()} 
+          <Button
+            onClick={() => loadInitialData()}
             className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-slate-800 text-white font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 dark:shadow-none hover:scale-[1.02] transition-transform"
           >
             Reconnect Dashboard
@@ -243,9 +245,9 @@ export default function DashboardPage() {
       <main className="p-4 sm:p-6 md:p-8">
         <div className="max-w-[1600px] mx-auto">
           {/* Header Section */}
-          <TeacherHero 
-            selectedSchoolName={selectedSchoolName} 
-            isPersonal={isPersonal} 
+          <TeacherHero
+            selectedSchoolName={selectedSchoolName}
+            isPersonal={isPersonal}
             totalClasses={stats.totalClasses}
             sessionName={stats.session}
             classNames={stats.classNames}
@@ -348,18 +350,18 @@ export default function DashboardPage() {
 
               {/* Bento Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mt-6 sm:mt-8">
-                
+
                 {/* Assignments & Exams (8 Cols) */}
                 <div className="lg:col-span-8">
-                  <AssignmentsExams   
-                    assignments={dashboardAssignments as any} 
+                  <AssignmentsExams
+                    assignments={dashboardAssignments as any}
                     onViewAll={() => router.push('/dashboard/teacher/exams&quizzes')}
                   />
                 </div>
 
                 {/* Daily Schedule (4 Cols) */}
                 <div className="lg:col-span-4 flex flex-col gap-4 sm:gap-6">
-                  <UsageLimitsCard 
+                  <UsageLimitsCard
                     role="TEACHER"
                     title="Teaching Quota"
                     description="Personal teaching metrics synchronized with school resources."
@@ -376,7 +378,10 @@ export default function DashboardPage() {
 
                 {/* Student Performance (4 Cols) */}
                 <div className="lg:col-span-4">
-                  <StudentPerformanceWidget performanceMetrics={performanceMetrics} />
+                  <StudentPerformanceWidget
+                    performanceMetrics={performanceMetrics}
+                    gradingSystem={schoolGradingSystem || (user as any)?.school?.gradingSystem || (user as any)?.schools?.[0]?.gradingSystem}
+                  />
                 </div>
 
                 {/* Personal Feed (8 Cols) */}
@@ -392,45 +397,45 @@ export default function DashboardPage() {
                         <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                         <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest text-primary">Quick Tools</h3>
                       </div>
-                      <HeaderTooltip 
-                        content="Shortcuts to your most frequent daily teacher workflows. Use these buttons to instantly enter new grades or export curriculum performance reports without navigating through nested menus." 
-                        size={14} 
+                      <HeaderTooltip
+                        content="Shortcuts to your most frequent daily teacher workflows. Use these buttons to instantly enter new grades or export curriculum performance reports without navigating through nested menus."
+                        size={14}
                       />
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-                      <QuickTool 
-                        icon={Plus} 
-                        label="Grade" 
-                        sub="New Entry" 
-                        color="bg-emerald-500" 
+                      <QuickTool
+                        icon={Plus}
+                        label="Grade"
+                        sub="New Entry"
+                        color="bg-emerald-500"
                         onClick={() => router.push('/dashboard/teacher/exams&quizzes')}
                       />
-                      <QuickTool 
-                        icon={FileSpreadsheet} 
-                        label="Offline" 
-                        sub="Grades" 
-                        color="bg-teal-600" 
+                      <QuickTool
+                        icon={FileSpreadsheet}
+                        label="Offline"
+                        sub="Grades"
+                        color="bg-teal-600"
                         onClick={() => router.push('/dashboard/teacher/offline-grades')}
                       />
-                      <QuickTool 
-                        icon={FileCheck2} 
-                        label="Final Result" 
-                        sub="Scores" 
-                        color="bg-indigo-600" 
+                      <QuickTool
+                        icon={FileCheck2}
+                        label="Final Result"
+                        sub="Scores"
+                        color="bg-indigo-600"
                         onClick={() => router.push('/dashboard/teacher/records')}
                       />
-                      <QuickTool 
-                        icon={Share2} 
-                        label="Reports" 
-                        sub="Export Data" 
-                        color="bg-blue-500" 
+                      <QuickTool
+                        icon={Share2}
+                        label="Reports"
+                        sub="Export Data"
+                        color="bg-blue-500"
                         onClick={() => setIsWeeklyReportModalOpen(true)}
                       />
                     </div>
                   </div>
-                  
-                  <MessagesAnnouncements 
-                    messages={messages} 
+
+                  <MessagesAnnouncements
+                    messages={messages}
                     onViewAll={() => router.push('/dashboard/teacher/notifications')}
                     onCompose={() => setIsAnnounceModalOpen(true)}
                   />
@@ -487,13 +492,13 @@ function DashboardSkeleton() {
         {/* Stats Row Skeleton */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mb-8">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton 
-              key={i} 
+            <Skeleton
+              key={i}
               className={cn(
                 "h-28 sm:h-32 rounded-2xl sm:rounded-[2rem]",
                 i === 5 ? "col-span-2 md:col-span-2 lg:col-span-1" : "col-span-1",
                 skeletonClass
-              )} 
+              )}
             />
           ))}
         </div>
@@ -519,21 +524,21 @@ function DashboardSkeleton() {
 }
 
 
-function QuickTool({ 
-  icon: Icon, 
-  label, 
-  sub, 
-  color, 
-  onClick 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  sub: string; 
-  color: string; 
-  onClick?: () => void; 
+function QuickTool({
+  icon: Icon,
+  label,
+  sub,
+  color,
+  onClick
+}: {
+  icon: React.ElementType;
+  label: string;
+  sub: string;
+  color: string;
+  onClick?: () => void;
 }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className="flex flex-col items-center justify-center p-3 sm:p-4 bg-white dark:bg-slate-800/80 rounded-xl sm:rounded-[1.5rem] shadow-lg shadow-slate-200/50 dark:shadow-none hover:translate-y-[-4px] active:scale-95 transition-all duration-300 w-full"
     >

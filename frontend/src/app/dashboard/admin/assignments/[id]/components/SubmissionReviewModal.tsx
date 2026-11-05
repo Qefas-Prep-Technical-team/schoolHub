@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, XCircle, FileText, Check, X } from "lucide-react";
 import { useGradeSubmission } from "@/lib/api/hooks/useAssignments";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { computeGradePill } from "@/utils/gradingSystem";
 import { toast } from "react-toastify";
 
 interface Props {
@@ -13,10 +15,14 @@ interface Props {
   submission: any;
   assignment: any;
   schoolId: string;
+  gradingSystem?: any[] | null;
 }
 
-export default function SubmissionReviewModal({ isOpen, onClose, submission, assignment, schoolId }: Props) {
+export default function SubmissionReviewModal({ isOpen, onClose, submission, assignment, schoolId, gradingSystem }: Props) {
   const { mutate: gradeSubmission, isPending } = useGradeSubmission(schoolId);
+  const effectiveSchoolId = schoolId === "default-tenant-id" || schoolId === "personal" ? "" : schoolId;
+  const { data: schoolProfile } = useSchoolProfile(gradingSystem ? "" : effectiveSchoolId);
+  const activeGradingSystem = gradingSystem ?? schoolProfile?.gradingSystem;
   const [grades, setGrades] = useState<Record<string, { isCorrect: boolean; score: number; teacherComment: string }>>(() => {
     // Initialize state with existing answer grades
     const initial: Record<string, any> = {};
@@ -62,15 +68,18 @@ export default function SubmissionReviewModal({ isOpen, onClose, submission, ass
   };
 
   const totalCurrentScore = Object.values(grades).reduce((sum, g) => sum + (g.score || 0), 0);
+  const maxScoreVal = assignment.maxScore || 100;
+  const totalCurrentPct = maxScoreVal > 0 ? Math.round((totalCurrentScore / maxScoreVal) * 100) : 0;
+  const liveGradePill = computeGradePill(totalCurrentPct, activeGradingSystem);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-950 p-0 border-none rounded-2xl">
         <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 sm:gap-4">
-            <img 
-              src={submission.student?.profileImage || "/logo/favicon.svg"} 
-              alt={submission.student?.name || "Student"} 
+            <img
+              src={submission.student?.profileImage || "/logo/favicon.svg"}
+              alt={submission.student?.name || "Student"}
               className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100 object-cover shrink-0"
             />
             <div>
@@ -82,11 +91,20 @@ export default function SubmissionReviewModal({ isOpen, onClose, submission, ass
               </p>
             </div>
           </div>
-          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800 gap-1">
             <span className="text-xs sm:text-sm font-semibold text-slate-500">Score</span>
-            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              {totalCurrentScore} <span className="text-xs sm:text-sm text-slate-500 font-medium">/ {assignment.maxScore || 100}</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border ${liveGradePill.bg} ${liveGradePill.color}`}
+                title={`${totalCurrentPct}% — ${liveGradePill.remark || liveGradePill.label}`}
+              >
+                <span>{liveGradePill.label}</span>
+                {liveGradePill.remark && <span className="text-[10px] opacity-80 uppercase tracking-wider">({liveGradePill.remark})</span>}
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                {totalCurrentScore} <span className="text-xs sm:text-sm text-slate-500 font-medium">/ {maxScoreVal}</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -144,7 +162,7 @@ export default function SubmissionReviewModal({ isOpen, onClose, submission, ass
 
                     <div className="ml-auto flex items-center gap-2">
                       <span className="text-sm font-semibold text-slate-500">Score:</span>
-                      <input 
+                      <input
                         type="number"
                         min={0}
                         max={q.marks}

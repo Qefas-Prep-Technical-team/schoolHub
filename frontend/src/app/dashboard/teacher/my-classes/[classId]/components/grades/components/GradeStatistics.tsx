@@ -41,10 +41,16 @@ export function GradeStatistics({ grades, className, gradingSystem }: GradeStati
     }
   };
 
+  const avgPill = getGradeEvaluation(stats.averageScore, gradingSystem)
+  const highestPill = getGradeEvaluation(stats.highestScore, gradingSystem)
+  const lowestPill = getGradeEvaluation(stats.lowestScore, gradingSystem)
+
   const statCards = [
     {
       label: 'Class Average',
       value: `${stats.averageScore}%`,
+      gradeBadge: gradedGrades.length > 0 ? `${avgPill.grade} • ${avgPill.remark}` : undefined,
+      gradeBadgeStyle: `${avgPill.bg} ${avgPill.color}`,
       icon: 'bar_chart_3',
       color: 'text-indigo-600 dark:text-indigo-400',
       iconBg: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-500/20',
@@ -53,6 +59,8 @@ export function GradeStatistics({ grades, className, gradingSystem }: GradeStati
     {
       label: 'Highest Score',
       value: `${stats.highestScore}%`,
+      gradeBadge: gradedGrades.length > 0 ? `${highestPill.grade} • ${highestPill.remark}` : undefined,
+      gradeBadgeStyle: `${highestPill.bg} ${highestPill.color}`,
       icon: 'trending_up',
       color: 'text-emerald-600 dark:text-emerald-400',
       iconBg: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/20',
@@ -60,6 +68,8 @@ export function GradeStatistics({ grades, className, gradingSystem }: GradeStati
     {
       label: 'Lowest Score',
       value: `${stats.lowestScore}%`,
+      gradeBadge: gradedGrades.length > 0 ? `${lowestPill.grade} • ${lowestPill.remark}` : undefined,
+      gradeBadgeStyle: `${lowestPill.bg} ${lowestPill.color}`,
       icon: 'trending_down',
       color: 'text-rose-600 dark:text-rose-400',
       iconBg: 'bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-500/20',
@@ -82,9 +92,16 @@ export function GradeStatistics({ grades, className, gradingSystem }: GradeStati
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
-                {stat.value}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
+                  {stat.value}
+                </p>
+                {'gradeBadge' in stat && stat.gradeBadge && (
+                  <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider", stat.gradeBadgeStyle)}>
+                    {stat.gradeBadge}
+                  </span>
+                )}
+              </div>
               <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
                 {stat.label}
               </p>

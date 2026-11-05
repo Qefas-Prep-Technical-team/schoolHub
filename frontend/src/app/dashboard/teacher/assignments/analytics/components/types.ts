@@ -6,11 +6,13 @@ export interface Student {
   status: 'submitted' | 'pending';
   email?: string;
   lastActive?: Date;
+  submittedAt?: string | Date;
 }
 
 export interface StatsCard {
   title: string;
   value: string | number;
+  numericScore?: number;
   description?: string;
   icon?: string;
   trend?: number; // positive or negative percentage

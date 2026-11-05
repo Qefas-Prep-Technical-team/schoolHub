@@ -53,7 +53,9 @@ import {
   UserRoleCategory,
   INITIAL_TUTORIALS,
   getStoredTutorials,
-  saveStoredTutorials,
+  fetchTutorialsFromDatabase,
+  upsertSingleTutorialToDatabase,
+  deleteTutorialFromDatabase,
   resetStoredTutorials
 } from "@/lib/tutorials/tutorialData";
 
@@ -176,12 +178,15 @@ export default function ConsoleTutorialsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [previewModalTutorial, setPreviewModalTutorial] = useState<TutorialItem | null>(null);
   const [deleteConfirmTutorial, setDeleteConfirmTutorial] = useState<{ id: string; title: string; role: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Form Fields
   const [formTitle, setFormTitle] = useState("");
   const [formSummary, setFormSummary] = useState("");
-  const [formRole, setFormRole] = useState<"ADMIN" | "TEACHER" | "STUDENT" | "PARENT">("ADMIN");
+  const [formRole, setFormRole] = useState<"ALL" | "ADMIN" | "TEACHER" | "STUDENT" | "PARENT">("ADMIN");
   const [formCategory, setFormCategory] = useState<"Setup" | "Academics" | "Assessments" | "Billing" | "Communication" | "General">("Setup");
   const [formDuration, setFormDuration] = useState("5:00");
   const [formDifficulty, setFormDifficulty] = useState<"Beginner" | "Intermediate" | "Advanced">("Beginner");
@@ -196,10 +201,18 @@ export default function ConsoleTutorialsPage() {
       tips: "Ensure proper administrative privileges before changing school settings."
     }
   ]);
+  const [stepsInputMode, setStepsInputMode] = useState<"form" | "json">("form");
+  const [stepsJsonRaw, setStepsJsonRaw] = useState<string>("");
+  const [stepsJsonError, setStepsJsonError] = useState<string | null>(null);
   const [formTakeaways, setFormTakeaways] = useState<string[]>([
     "Mastering core portal navigation",
     "Understanding mathematical and grading formulas"
   ]);
+  const [takeawaysInputMode, setTakeawaysInputMode] = useState<"form" | "json">("form");
+  const [takeawaysJsonRaw, setTakeawaysJsonRaw] = useState<string>("");
+  const [takeawaysJsonError, setTakeawaysJsonError] = useState<string | null>(null);
+  const takeawaysFileInputRef = useRef<HTMLInputElement>(null);
+  const stepsFileInputRef = useRef<HTMLInputElement>(null);
 
   // Video upload handler state
   const [videoUploadName, setVideoUploadName] = useState<string | null>(null);
@@ -209,11 +222,22 @@ export default function ConsoleTutorialsPage() {
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load tutorials from storage on client mount
+  // Load real tutorials from database on client mount
   useEffect(() => {
-    const data = getStoredTutorials();
-    setTutorials(data);
+    const local = getStoredTutorials();
+    setTutorials(local);
     setIsLoaded(true);
+
+    // Fetch authoritative data from database
+    fetchTutorialsFromDatabase()
+      .then((dbData) => {
+        if (dbData && dbData.length > 0) {
+          setTutorials(dbData);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not sync tutorials from database, using cached catalog:", err);
+      });
 
     const handleUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<TutorialItem[]>;
@@ -228,7 +252,7 @@ export default function ConsoleTutorialsPage() {
   // Filtered tutorials list
   const filteredTutorials = useMemo(() => {
     return tutorials.filter((item) => {
-      const matchesRole = selectedRole === "ALL" || item.role === selectedRole;
+      const matchesRole = selectedRole === "ALL" || item.role === "ALL" || item.role === selectedRole;
       const matchesCategory = selectedCategory === "ALL" || item.category === selectedCategory;
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
@@ -393,8 +417,42 @@ export default function ConsoleTutorialsPage() {
   };
 
   // Save Tutorial
-  const handleSaveTutorial = (e: React.FormEvent) => {
+  const handleSaveTutorial = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // If currently editing steps in JSON mode, parse and validate before saving
+    let finalSteps = formSteps;
+    if (stepsInputMode === "json") {
+      try {
+        const parsed = JSON.parse(stepsJsonRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          finalSteps = parsed.map((s, idx) => ({
+            title: String(s.title || `Step ${idx + 1}`),
+            description: String(s.description || ""),
+            tips: s.tips ? String(s.tips) : undefined
+          }));
+          setFormSteps(finalSteps);
+        }
+      } catch (err: any) {
+        toast.error("Invalid Step JSON format: " + (err?.message || "Please fix errors before saving"));
+        return;
+      }
+    }
+
+    // If currently editing takeaways in JSON mode, parse and validate before saving
+    let finalTakeaways = formTakeaways;
+    if (takeawaysInputMode === "json") {
+      try {
+        const parsed = JSON.parse(takeawaysJsonRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          finalTakeaways = parsed.map((item) => (typeof item === "string" ? item : JSON.stringify(item)));
+          setFormTakeaways(finalTakeaways);
+        }
+      } catch (err: any) {
+        toast.error("Invalid Takeaways JSON format: " + (err?.message || "Please fix errors before saving"));
+        return;
+      }
+    }
 
     if (!formTitle.trim()) {
       toast.error("Please enter a title for the tutorial");
@@ -421,24 +479,24 @@ export default function ConsoleTutorialsPage() {
       featured: formFeatured,
       videoUrl: formVideoUrl.trim(),
       thumbnail: formThumbnail.trim() || "/image/backgroundSchool.jpg",
-      steps: formSteps.filter((s) => s.title.trim() && s.description.trim()),
-      keyTakeaways: formTakeaways.filter((k) => k.trim()),
+      steps: finalSteps.filter((s) => s.title.trim() && s.description.trim()),
+      keyTakeaways: finalTakeaways.filter((k) => k.trim()),
       richTextGuide: formRichText.trim()
     };
 
-    let updated: TutorialItem[];
-    if (editingId) {
-      updated = tutorials.map((t) => (t.id === editingId ? tutorialPayload : t));
-      toast.success("Tutorial updated successfully!");
-    } else {
-      updated = [tutorialPayload, ...tutorials];
-      toast.success("New tutorial created successfully!");
+    setIsSaving(true);
+    try {
+      const updated = await upsertSingleTutorialToDatabase(tutorialPayload);
+      setTutorials(updated);
+      toast.success(editingId ? "Tutorial updated in database!" : "New tutorial saved to database!");
+      setIsEditing(false);
+      setEditingId(null);
+    } catch (err: any) {
+      console.error("Save error:", err);
+      toast.error(err?.response?.data?.message || "Failed to persist tutorial to database.");
+    } finally {
+      setIsSaving(false);
     }
-
-    setTutorials(updated);
-    saveStoredTutorials(updated);
-    setIsEditing(false);
-    setEditingId(null);
   };
 
   // Open Delete Confirmation Modal
@@ -446,23 +504,39 @@ export default function ConsoleTutorialsPage() {
     setDeleteConfirmTutorial({ id, title, role });
   };
 
-  // Confirm Delete Tutorial
-  const handleConfirmDelete = () => {
-    if (!deleteConfirmTutorial) return;
+  // Confirm Delete Tutorial with live loading indicator
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmTutorial || isDeleting) return;
     const { id, title } = deleteConfirmTutorial;
-    const updated = tutorials.filter((t) => t.id !== id);
-    setTutorials(updated);
-    saveStoredTutorials(updated);
-    setDeleteConfirmTutorial(null);
-    toast.success(`Tutorial "${title}" deleted successfully`);
+    setIsDeleting(true);
+    try {
+      const updated = await deleteTutorialFromDatabase(id);
+      setTutorials(updated);
+      setDeleteConfirmTutorial(null);
+      toast.success(`Tutorial "${title}" deleted from database`);
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      toast.error(err?.response?.data?.message || "Failed to delete tutorial from database.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  // Confirm Reset to Defaults
-  const handleConfirmResetDefaults = () => {
-    const defaults = resetStoredTutorials();
-    setTutorials(defaults);
-    setShowResetConfirm(false);
-    toast.info("Tutorials reset to default institutional catalog");
+  // Confirm Reset to Defaults with live loading indicator
+  const handleConfirmResetDefaults = async () => {
+    if (isResetting) return;
+    setIsResetting(true);
+    try {
+      const defaults = await resetStoredTutorials();
+      setTutorials(defaults);
+      setShowResetConfirm(false);
+      toast.info("Tutorials reset to default institutional catalog in database");
+    } catch (err: any) {
+      console.error("Reset error:", err);
+      toast.error("Failed to reset tutorials in database.");
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   // Helper to insert markdown or LaTeX at cursor
@@ -486,6 +560,83 @@ export default function ConsoleTutorialsPage() {
   };
 
   // Step item handlers
+  const handleSwitchStepsMode = (mode: "form" | "json") => {
+    if (mode === "json") {
+      setStepsJsonRaw(JSON.stringify(formSteps, null, 2));
+      setStepsJsonError(null);
+    } else {
+      // Parse JSON back to form
+      try {
+        const parsed = JSON.parse(stepsJsonRaw);
+        if (!Array.isArray(parsed)) {
+          setStepsJsonError("JSON must be an array of step objects: [{ title, description, tips }]");
+          return;
+        }
+        const validatedSteps: TutorialStep[] = parsed.map((s, idx) => ({
+          title: String(s.title || `Step ${idx + 1}`),
+          description: String(s.description || ""),
+          tips: s.tips ? String(s.tips) : undefined
+        }));
+        setFormSteps(validatedSteps);
+        setStepsJsonError(null);
+      } catch (err: any) {
+        setStepsJsonError("Invalid JSON syntax: " + (err?.message || "Check brackets and quotes"));
+        return;
+      }
+    }
+    setStepsInputMode(mode);
+  };
+
+  const handleApplyStepsJson = () => {
+    try {
+      const parsed = JSON.parse(stepsJsonRaw);
+      if (!Array.isArray(parsed)) {
+        setStepsJsonError("JSON must be an array of step objects");
+        return;
+      }
+      const validatedSteps: TutorialStep[] = parsed.map((s, idx) => ({
+        title: String(s.title || `Step ${idx + 1}`),
+        description: String(s.description || ""),
+        tips: s.tips ? String(s.tips) : undefined
+      }));
+      setFormSteps(validatedSteps);
+      setStepsJsonError(null);
+      setStepsInputMode("form");
+      toast.success(`Loaded ${validatedSteps.length} action steps from JSON!`);
+    } catch (err: any) {
+      setStepsJsonError("Invalid JSON syntax: " + (err?.message || "Check format"));
+    }
+  };
+
+  const handleLoadSampleStepsJson = () => {
+    const sample = [
+      {
+        "title": "Access School Profile & Settings",
+        "description": "Log into your portal, navigate to Settings from the sidebar, and confirm institutional details.",
+        "tips": "Double check all contact details and accreditation registration numbers."
+      },
+      {
+        "title": "Review Class & Roster Allocations",
+        "description": "Open Classes and verify form tutors and enrolled students for the current term.",
+        "tips": "Each class has a unique joining token or QR code for easy student linking."
+      },
+      {
+        "title": "Verify Assessment & Continuous Assessment Marks",
+        "description": "Ensure teachers have submitted all test, assignment, and quiz marks before closing the term.",
+        "tips": "Download offline Excel marksheets if working without stable internet access."
+      },
+      {
+        "title": "Publish & Export Terminal Broadsheet",
+        "description": "Review final cumulative rankings and export certified PDF report cards with QR seals.",
+        "tips": "Principal or exam officer digital signature is cryptographically embedded."
+      }
+    ];
+    const raw = JSON.stringify(sample, null, 2);
+    setStepsJsonRaw(raw);
+    setStepsJsonError(null);
+    toast.info("Sample step-by-step checklist JSON loaded!");
+  };
+
   const handleAddStep = () => {
     setFormSteps([
       ...formSteps,
@@ -511,7 +662,7 @@ export default function ConsoleTutorialsPage() {
     setFormSteps(formSteps.filter((_, idx) => idx !== index));
   };
 
-  // Takeaway handlers
+  // Takeaway handlers (Visual Form + JSON Mode + JSON File Upload)
   const handleAddTakeaway = () => {
     setFormTakeaways([...formTakeaways, ""]);
   };
@@ -526,8 +677,121 @@ export default function ConsoleTutorialsPage() {
     setFormTakeaways(formTakeaways.filter((_, idx) => idx !== index));
   };
 
+  const handleSwitchTakeawaysMode = (mode: "form" | "json") => {
+    if (mode === "json") {
+      setTakeawaysJsonRaw(JSON.stringify(formTakeaways, null, 2));
+      setTakeawaysJsonError(null);
+    } else {
+      try {
+        const parsed = JSON.parse(takeawaysJsonRaw);
+        if (!Array.isArray(parsed)) {
+          setTakeawaysJsonError("JSON must be an array of strings: [\"takeaway 1\", \"takeaway 2\"]");
+          return;
+        }
+        const validated = parsed.map((item) => (typeof item === "string" ? item : JSON.stringify(item)));
+        setFormTakeaways(validated);
+        setTakeawaysJsonError(null);
+      } catch (err: any) {
+        setTakeawaysJsonError("Invalid JSON syntax: " + (err?.message || "Check format"));
+        return;
+      }
+    }
+    setTakeawaysInputMode(mode);
+  };
+
+  const handleApplyTakeawaysJson = () => {
+    try {
+      const parsed = JSON.parse(takeawaysJsonRaw);
+      if (!Array.isArray(parsed)) {
+        setTakeawaysJsonError("JSON must be an array of strings");
+        return;
+      }
+      const validated = parsed.map((item) => (typeof item === "string" ? item : JSON.stringify(item)));
+      setFormTakeaways(validated);
+      setTakeawaysJsonError(null);
+      setTakeawaysInputMode("form");
+      toast.success(`Loaded ${validated.length} learning takeaways from JSON!`);
+    } catch (err: any) {
+      setTakeawaysJsonError("Invalid JSON syntax: " + (err?.message || "Check format"));
+    }
+  };
+
+  const handleLoadSampleTakeawaysJson = () => {
+    const sample = [
+      "Overview of role-based dashboards for admins, teachers, students, and parents",
+      "Real-time continuous assessment scoring and attendance roll call",
+      "Instant tuition fee payments with official digital PDF receipts",
+      "Self-service official transcript ordering with cryptographic QR verification"
+    ];
+    setTakeawaysJsonRaw(JSON.stringify(sample, null, 2));
+    setTakeawaysJsonError(null);
+    toast.info("Sample learning takeaways JSON loaded!");
+  };
+
+  // Upload JSON file handler for steps
+  const handleUploadStepsJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) {
+          toast.error("File JSON must be an array of step objects");
+          return;
+        }
+        const validatedSteps: TutorialStep[] = parsed.map((s, idx) => ({
+          title: String(s.title || `Step ${idx + 1}`),
+          description: String(s.description || ""),
+          tips: s.tips ? String(s.tips) : undefined
+        }));
+        setFormSteps(validatedSteps);
+        setStepsJsonRaw(JSON.stringify(validatedSteps, null, 2));
+        setStepsInputMode("form");
+        toast.success(`Imported ${validatedSteps.length} steps from ${file.name}!`);
+      } catch (err: any) {
+        toast.error("Failed to parse JSON file: " + (err?.message || "Invalid file format"));
+      } finally {
+        if (e.target) e.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Upload JSON file handler for takeaways
+  const handleUploadTakeawaysJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) {
+          toast.error("File JSON must be an array of strings");
+          return;
+        }
+        const validated = parsed.map((item) => (typeof item === "string" ? item : JSON.stringify(item)));
+        setFormTakeaways(validated);
+        setTakeawaysJsonRaw(JSON.stringify(validated, null, 2));
+        setTakeawaysInputMode("form");
+        toast.success(`Imported ${validated.length} takeaways from ${file.name}!`);
+      } catch (err: any) {
+        toast.error("Failed to parse JSON file: " + (err?.message || "Invalid file format"));
+      } finally {
+        if (e.target) e.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
+      case "ALL":
+        return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30";
       case "ADMIN":
         return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30";
       case "TEACHER":
@@ -656,10 +920,20 @@ export default function ConsoleTutorialsPage() {
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait"
               >
-                <Save size={14} />
-                <span>Save Tutorial</span>
+                {isSaving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    <span>{editingId ? "Update Tutorial" : "Save Tutorial"}</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -709,6 +983,7 @@ export default function ConsoleTutorialsPage() {
                   onChange={(e) => setFormRole(e.target.value as any)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
+                  <option value="ALL">All Roles (Universal / Everyone)</option>
                   <option value="ADMIN">School Admin</option>
                   <option value="TEACHER">Teacher</option>
                   <option value="STUDENT">Student</option>
@@ -1167,9 +1442,9 @@ export default function ConsoleTutorialsPage() {
             </div>
           </div>
 
-          {/* Section 4: Step-by-Step Action Items */}
+          {/* Section 4: Quick Action Steps (Interactive Form + JSON Editor) */}
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h4 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
                   <ListOrdered size={16} className="text-indigo-500" />
@@ -1180,67 +1455,177 @@ export default function ConsoleTutorialsPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddStep}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-              >
-                <Plus size={14} />
-                <span>Add Step</span>
-              </button>
-            </div>
+              {/* Mode Toggle & Action Buttons */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchStepsMode("form")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                      stepsInputMode === "form"
+                        ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Visual Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchStepsMode("json")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                      stepsInputMode === "json"
+                        ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Code size={13} />
+                    <span>JSON Mode</span>
+                  </button>
+                </div>
 
-            <div className="space-y-4">
-              {formSteps.map((step, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 space-y-3 relative group"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                      Step #{idx + 1}
-                    </span>
+                {stepsInputMode === "form" ? (
+                  <button
+                    type="button"
+                    onClick={handleAddStep}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 transition-colors"
+                  >
+                    <Plus size={14} />
+                    <span>Add Step</span>
+                  </button>
+                ) : (
+                  <>
                     <button
                       type="button"
-                      onClick={() => handleRemoveStep(idx)}
-                      className="text-slate-400 hover:text-rose-600 transition-colors"
-                      title="Remove Step"
+                      onClick={handleLoadSampleStepsJson}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 transition-colors"
                     >
-                      <Trash2 size={15} />
+                      <Sparkles size={13} />
+                      <span>Load Sample JSON</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => stepsFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
+                    >
+                      <Upload size={13} />
+                      <span>Upload JSON File</span>
+                    </button>
+                    <input
+                      ref={stepsFileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleUploadStepsJsonFile}
+                      className="hidden"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* VISUAL FORM MODE */}
+            {stepsInputMode === "form" ? (
+              <div className="space-y-4">
+                {formSteps.map((step, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 space-y-3 relative group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                        Step #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStep(idx)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors"
+                        title="Remove Step"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={step.title}
+                      onChange={(e) => handleUpdateStep(idx, "title", e.target.value)}
+                      placeholder="Step Title (e.g. Access School Profile in Settings)"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
+                    <textarea
+                      rows={2}
+                      value={step.description}
+                      onChange={(e) => handleUpdateStep(idx, "description", e.target.value)}
+                      placeholder="Detailed explanation of what the user needs to do in this step..."
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
+                    <input
+                      type="text"
+                      value={step.tips || ""}
+                      onChange={(e) => handleUpdateStep(idx, "tips", e.target.value)}
+                      placeholder="Optional Pro Tip (e.g. Upload high-res PNG for crisp report cards)"
+                      className="w-full px-3.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* JSON CODE EDITOR MODE */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>Enter JSON array of objects with <code className="text-indigo-500 font-mono">title</code>, <code className="text-indigo-500 font-mono">description</code>, and optional <code className="text-amber-500 font-mono">tips</code>:</span>
+                  <button
+                    type="button"
+                    onClick={handleApplyStepsJson}
+                    className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Apply JSON to Form &rarr;
+                  </button>
+                </div>
+
+                <textarea
+                  rows={10}
+                  value={stepsJsonRaw}
+                  onChange={(e) => {
+                    setStepsJsonRaw(e.target.value);
+                    setStepsJsonError(null);
+                  }}
+                  placeholder='[
+  {
+    "title": "Step 1: Onboard School",
+    "description": "Configure academic calendar and grading scales.",
+    "tips": "Upload transparent logo for crisp report cards."
+  }
+]'
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-950 text-emerald-400 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                  spellCheck={false}
+                />
+
+                {stepsJsonError ? (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                    <AlertTriangle size={15} className="shrink-0" />
+                    <span>{stepsJsonError}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Valid JSON format supported. Changes are automatically validated when saving.</span>
+                    <button
+                      type="button"
+                      onClick={handleApplyStepsJson}
+                      className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-sm"
+                    >
+                      Validate & Apply
                     </button>
                   </div>
-
-                  <input
-                    type="text"
-                    value={step.title}
-                    onChange={(e) => handleUpdateStep(idx, "title", e.target.value)}
-                    placeholder="Step Title (e.g. Access School Profile in Settings)"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-
-                  <textarea
-                    rows={2}
-                    value={step.description}
-                    onChange={(e) => handleUpdateStep(idx, "description", e.target.value)}
-                    placeholder="Detailed explanation of what the user needs to do in this step..."
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-
-                  <input
-                    type="text"
-                    value={step.tips || ""}
-                    onChange={(e) => handleUpdateStep(idx, "tips", e.target.value)}
-                    placeholder="Optional Pro Tip (e.g. Upload high-res PNG for crisp report cards)"
-                    className="w-full px-3.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Section 5: Key Takeaways */}
+          {/* Section 5: Key Takeaways (Visual Form + JSON Mode + JSON File Upload) */}
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h4 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
                   <BookmarkCheck size={16} className="text-indigo-500" />
@@ -1251,37 +1636,144 @@ export default function ConsoleTutorialsPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddTakeaway}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-              >
-                <Plus size={14} />
-                <span>Add Takeaway</span>
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {formTakeaways.map((takeaway, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <input
-                    type="text"
-                    value={takeaway}
-                    onChange={(e) => handleUpdateTakeaway(idx, e.target.value)}
-                    placeholder="e.g. Automated GPA computation formulas"
-                    className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+              {/* Takeaways Mode Toggle & Action Buttons */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
-                    onClick={() => handleRemoveTakeaway(idx)}
-                    className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                    onClick={() => handleSwitchTakeawaysMode("form")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                      takeawaysInputMode === "form"
+                        ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
                   >
-                    <Trash2 size={15} />
+                    Visual Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTakeawaysMode("json")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                      takeawaysInputMode === "json"
+                        ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Code size={13} />
+                    <span>JSON Mode</span>
                   </button>
                 </div>
-              ))}
+
+                {takeawaysInputMode === "form" ? (
+                  <button
+                    type="button"
+                    onClick={handleAddTakeaway}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 transition-colors"
+                  >
+                    <Plus size={14} />
+                    <span>Add Takeaway</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleTakeawaysJson}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 transition-colors"
+                    >
+                      <Sparkles size={13} />
+                      <span>Load Sample JSON</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => takeawaysFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
+                    >
+                      <Upload size={13} />
+                      <span>Upload JSON File</span>
+                    </button>
+                    <input
+                      ref={takeawaysFileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleUploadTakeawaysJsonFile}
+                      className="hidden"
+                    />
+                  </>
+                )}
+              </div>
             </div>
+
+            {/* VISUAL FORM MODE */}
+            {takeawaysInputMode === "form" ? (
+              <div className="space-y-2">
+                {formTakeaways.map((takeaway, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                    <input
+                      type="text"
+                      value={takeaway}
+                      onChange={(e) => handleUpdateTakeaway(idx, e.target.value)}
+                      placeholder="e.g. Overview of role-based dashboards"
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTakeaway(idx)}
+                      className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* JSON CODE EDITOR MODE */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>Enter JSON array of strings:</span>
+                  <button
+                    type="button"
+                    onClick={handleApplyTakeawaysJson}
+                    className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Apply JSON to Form &rarr;
+                  </button>
+                </div>
+
+                <textarea
+                  rows={8}
+                  value={takeawaysJsonRaw}
+                  onChange={(e) => {
+                    setTakeawaysJsonRaw(e.target.value);
+                    setTakeawaysJsonError(null);
+                  }}
+                  placeholder='[
+  "Role-based overview for school admins, teachers, students, and parents",
+  "Real-time continuous assessment scoring and attendance roll call"
+]'
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-950 text-emerald-400 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                  spellCheck={false}
+                />
+
+                {takeawaysJsonError ? (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                    <AlertTriangle size={15} className="shrink-0" />
+                    <span>{takeawaysJsonError}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Valid JSON array format: <code className="text-indigo-400">[&quot;item 1&quot;, &quot;item 2&quot;]</code>. Changes are automatically validated when saving.</span>
+                    <button
+                      type="button"
+                      onClick={handleApplyTakeawaysJson}
+                      className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-sm"
+                    >
+                      Validate & Apply
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Form Action Footer */}
@@ -1295,10 +1787,20 @@ export default function ConsoleTutorialsPage() {
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait"
             >
-              <Save size={16} />
-              <span>Save & Publish Tutorial</span>
+              {isSaving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>{editingId ? "Updating Tutorial..." : "Publishing Tutorial..."}</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>{editingId ? "Update Tutorial" : "Save & Publish Tutorial"}</span>
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -1373,7 +1875,7 @@ export default function ConsoleTutorialsPage() {
                     {/* Role & Category Badges */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border backdrop-blur-md ${getRoleBadgeColor(item.role)}`}>
-                        {item.role}
+                        {item.role === "ALL" ? "ALL ROLES" : item.role}
                       </span>
                       {item.featured && (
                         <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 backdrop-blur-md">
@@ -1616,18 +2118,31 @@ export default function ConsoleTutorialsPage() {
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => setDeleteConfirmTutorial(null)}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                disabled={isDeleting}
+                onClick={() => {
+                  if (!isDeleting) setDeleteConfirmTutorial(null);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-75 disabled:cursor-wait"
               >
-                <Trash2 size={14} />
-                <span>Delete Tutorial</span>
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    <span>Delete Tutorial</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1668,18 +2183,31 @@ export default function ConsoleTutorialsPage() {
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => setShowResetConfirm(false)}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                disabled={isResetting}
+                onClick={() => {
+                  if (!isResetting) setShowResetConfirm(false);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={isResetting}
                 onClick={handleConfirmResetDefaults}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-75 disabled:cursor-wait"
               >
-                <RotateCcw size={14} />
-                <span>Confirm Reset</span>
+                {isResetting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={14} />
+                    <span>Confirm Reset</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

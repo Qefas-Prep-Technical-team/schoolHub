@@ -1,10 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { User, Award, BarChart3, TrendingUp, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { HeaderTooltip } from './HeaderTooltip';
+import { 
+  getGradeEvaluation, 
+  getEffectiveGradingSystem, 
+  GradingTier 
+} from '@/utils/gradingSystem';
 
 interface StudentPerformanceWidgetProps {
   performanceMetrics: {
@@ -23,9 +28,13 @@ interface StudentPerformanceWidgetProps {
       F: number;
     };
   };
+  gradingSystem?: any[] | null;
 }
 
-export default function StudentPerformanceWidget({ performanceMetrics }: StudentPerformanceWidgetProps) {
+export default function StudentPerformanceWidget({ 
+  performanceMetrics, 
+  gradingSystem 
+}: StudentPerformanceWidgetProps) {
   const { topStudents, distribution } = performanceMetrics;
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,6 +52,23 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
     if (totalStudents === 0) return '0%';
     return `${(count / totalStudents) * 100}%`;
   };
+
+  // Determine active grading tiers for distribution display
+  const effectiveTiers = useMemo(() => {
+    return getEffectiveGradingSystem(gradingSystem);
+  }, [gradingSystem]);
+
+  // Map distribution data dynamically or standard categories
+  const distributionItems = useMemo(() => {
+    // If standard 5 letter distribution exists, map directly or adapt
+    // When custom tiers exist with specific grades, match them or fallback cleanly
+    return [
+      { label: 'Grade A', count: distribution.A, color: 'bg-emerald-600', textClass: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Grade B', count: distribution.B, color: 'bg-teal-500', textClass: 'text-teal-600 dark:text-teal-400' },
+      { label: 'Grade C', count: distribution.C, color: 'bg-blue-500', textClass: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Grade D/F', count: distribution.D + distribution.F, color: 'bg-amber-500', textClass: 'text-amber-600 dark:text-amber-400' },
+    ];
+  }, [distribution]);
 
   return (
     <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4 sm:p-6 shadow-sm h-full transition-all duration-300">
@@ -72,6 +98,7 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
         {topStudents.length > 0 ? (
           currentStudents.map((student, index) => {
             const overallIndex = (currentPage - 1) * itemsPerPage + index;
+            const evalResult = getGradeEvaluation(student.average, gradingSystem);
             return (
               <motion.div 
                 key={student.id} 
@@ -106,8 +133,8 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
                   <span className="text-base font-black text-emerald-600">
                     {student.average}%
                   </span>
-                  <div className="flex items-center text-[7px] font-black text-emerald-500/70 border border-emerald-500/20 px-1.5 py-0.5 rounded-full mt-1.5 uppercase tracking-tighter">
-                     Elite
+                  <div className={`flex items-center text-[8px] font-black px-2 py-0.5 rounded-full mt-1.5 uppercase tracking-wider border shadow-2xs ${evalResult.bg} ${evalResult.color}`}>
+                     {evalResult.grade} • {evalResult.remark}
                   </div>
                 </div>
               </motion.div>
@@ -154,12 +181,7 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
         </div>
         
         <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-          {[
-            { label: 'Grade A', count: distribution.A, color: 'bg-emerald-600' },
-            { label: 'Grade B', count: distribution.B, color: 'bg-emerald-400/70' },
-            { label: 'Grade C', count: distribution.C, color: 'bg-teal-500/50' },
-            { label: 'Grade D/F', count: distribution.D + distribution.F, color: 'bg-slate-300' },
-          ].map((item) => (
+          {distributionItems.map((item) => (
             <div key={item.label} className="space-y-2.5">
               <div className="flex justify-between items-end">
                 <span className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter">{item.label}</span>

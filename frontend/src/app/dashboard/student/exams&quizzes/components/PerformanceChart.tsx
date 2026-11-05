@@ -3,6 +3,7 @@
 import ProgressCircle from '@/components/ui/ProgressCircle';
 import { Award } from 'lucide-react';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
+import { getGradeEvaluation, GradingRule } from '@/utils/gradingSystem';
 
 interface PerformanceChartProps {
   stats?: {
@@ -10,14 +11,16 @@ interface PerformanceChartProps {
     overallRank: number;
     totalStudentsInClass: number;
   };
+  gradingSystem?: GradingRule[] | null;
 }
 
-export default function PerformanceChart({ stats }: PerformanceChartProps) {
+export default function PerformanceChart({ stats, gradingSystem }: PerformanceChartProps) {
   const performanceScore = stats?.averageScore || 0;
   const rank = stats?.overallRank || 0;
   const total = stats?.totalStudentsInClass || 0;
 
   const percentile = total > 0 ? Math.round((1 - (rank - 1) / total) * 100) : 0;
+  const evaluation = performanceScore > 0 ? getGradeEvaluation(performanceScore, gradingSystem) : null;
 
   return (
     <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/80 h-full flex flex-col justify-between">
@@ -44,9 +47,16 @@ export default function PerformanceChart({ stats }: PerformanceChartProps) {
         </div>
         
         <div className="mt-4 sm:mt-6 text-center space-y-1.5">
-          <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-            {rank > 0 ? `${percentile}% Percentile` : 'Overall Performance'}
-          </p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+              {rank > 0 ? `${percentile}% Percentile` : 'Overall Performance'}
+            </p>
+            {evaluation && (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase border ${evaluation.color} ${evaluation.bg}`}>
+                Grade {evaluation.grade}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-[220px] leading-relaxed font-medium">
             {rank > 0 ? (
               <>You are ranked <span className="text-emerald-500 font-bold">#{rank}</span> out of {total} students in your cohort.</>

@@ -5,13 +5,15 @@ import Image from 'next/image';
 import { Class } from './type';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { getGradeEvaluation, type GradingTier } from '@/utils/gradingSystem';
 
 interface ClassCardProps {
     classData: Class;
     onClick: () => void;
+    gradingSystem?: GradingTier[];
 }
 
-export default function ClassCard({ classData, onClick }: ClassCardProps) {
+export default function ClassCard({ classData, onClick, gradingSystem }: ClassCardProps) {
     const getAttendanceColor = (attendance: number) => {
         if (attendance >= 95) return 'text-blue-500';
         if (attendance >= 85) return 'text-emerald-500';
@@ -19,12 +21,7 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
         return 'text-rose-500';
     };
 
-    const getGradeColor = (grade: number) => {
-        if (grade >= 90) return 'text-blue-500';
-        if (grade >= 75) return 'text-emerald-500';
-        if (grade >= 40) return 'text-amber-500';
-        return 'text-rose-500';
-    };
+    const gradeEval = getGradeEvaluation(classData.averageGrade || 0, gradingSystem);
 
     const getPendingColor = (pending: number) => {
         if (pending === 0) return 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700';
@@ -48,11 +45,11 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
             <div className="flex justify-between items-start mb-4 sm:mb-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                         <div className={`p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500`}>
+                        <div className={`p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500`}>
                             <GraduationCap size={14} strokeWidth={2.5} />
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                             {classData.subject}
+                            {classData.subject}
                         </span>
                     </div>
                     <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none pt-1">
@@ -68,8 +65,8 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
 
             {/* Middle: Sleek Wide-Pill Image */}
             <div className="relative h-28 sm:h-32 w-full rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-6 shadow-md border border-slate-100 dark:border-emerald-800/40">
-                <Image 
-                    src={classData.image || '/users/user 1.jpeg'} 
+                <Image
+                    src={classData.image || '/users/user 1.jpeg'}
                     alt={classData.name}
                     width={800}
                     height={320}
@@ -93,14 +90,14 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
                 <div className="flex flex-col gap-0.5">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Attendance</span>
                     <span className={`text-xs sm:text-sm font-black ${getAttendanceColor(classData.attendance)}`}>
-                         {classData.attendance}%
+                        {classData.attendance}%
                     </span>
                 </div>
                 <div className="w-px h-7 sm:h-8 bg-slate-200 dark:bg-slate-700/50"></div>
                 <div className="flex flex-col gap-0.5 items-end">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Class GPA</span>
-                    <span className={`text-xs sm:text-sm font-black ${getGradeColor(classData.averageGrade)}`}>
-                        {classData.averageGrade}%
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Class Avg</span>
+                    <span className={`text-xs sm:text-sm font-black ${gradeEval.color}`}>
+                        {classData.averageGrade}% ({gradeEval.grade})
                     </span>
                 </div>
             </div>
@@ -118,7 +115,7 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
                 </Link>
                 <div className="flex items-center justify-between px-2">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                       {classData.level || 'Academic Year'}
+                        {classData.level || 'Academic Year'}
                     </p>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3].map((i) => (

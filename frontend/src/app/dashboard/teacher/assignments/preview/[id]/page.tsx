@@ -138,7 +138,8 @@ export default function AssignmentDetailsPage() {
     const { selectedSchoolId } = useDashboardStore();
     const { user } = useAuthStore();
     const assignmentId = params.id as string;
-    const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+    const rawSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+    const effectiveSchoolId = rawSchoolId === "default-tenant-id" || rawSchoolId === "personal" ? "" : rawSchoolId;
     const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
     const { data: assignmentData, isLoading, isPending, isError, error } = useQuery({
@@ -317,6 +318,7 @@ export default function AssignmentDetailsPage() {
                                     overview={overview}
                                     onGradeSubmissions={isAuthorized ? handleGradeSubmissions : undefined}
                                     onExportSubmissions={isAuthorized ? handleExportSubmissions : undefined}
+                                    gradingSystem={schoolProfile?.gradingSystem}
                                 />
                             </div>
                         </div>

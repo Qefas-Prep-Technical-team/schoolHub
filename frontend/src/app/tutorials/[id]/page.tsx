@@ -33,7 +33,8 @@ import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import {
   TutorialItem,
   INITIAL_TUTORIALS,
-  getStoredTutorials
+  getStoredTutorials,
+  fetchTutorialsFromDatabase
 } from "@/lib/tutorials/tutorialData";
 
 export default function TutorialDetailPage() {
@@ -44,9 +45,20 @@ export default function TutorialDetailPage() {
   const [tutorials, setTutorials] = useState<TutorialItem[]>(INITIAL_TUTORIALS);
   const [copied, setCopied] = useState(false);
 
-  // Sync tutorials from stored catalog and console updates
+  // Sync tutorials from database and live updates
   useEffect(() => {
     setTutorials(getStoredTutorials());
+
+    // Fetch authoritative tutorial catalog from database
+    fetchTutorialsFromDatabase()
+      .then((dbData) => {
+        if (dbData && dbData.length > 0) {
+          setTutorials(dbData);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not sync tutorials from database:", err);
+      });
 
     const handleUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<TutorialItem[]>;

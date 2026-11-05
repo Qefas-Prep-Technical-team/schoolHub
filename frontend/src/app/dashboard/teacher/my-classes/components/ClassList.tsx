@@ -4,24 +4,19 @@ import { GraduationCap, ArrowRight, Users, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getGradeEvaluation, type GradingTier } from "@/utils/gradingSystem";
 
 interface ClassListProps {
   classes: Class[];
   onClassClick: (classId: string) => void;
+  gradingSystem?: GradingTier[];
 }
 
-const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
+const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick, gradingSystem }) => {
   const getAttendanceStyles = (attendance: number) => {
     if (attendance >= 95) return "text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-800/30";
     if (attendance >= 85) return "text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800/30";
     if (attendance >= 40) return "text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-800/30";
-    return "text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800/30";
-  };
-
-  const getGradeStyles = (grade: number) => {
-    if (grade >= 90) return "text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-800/30";
-    if (grade >= 75) return "text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800/30";
-    if (grade >= 40) return "text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-100 dark:border-amber-800/30";
     return "text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-800/30";
   };
 
@@ -51,9 +46,9 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
             <AnimatePresence>
               {classes.map((cls, idx) => {
                 const pendingCount = (cls.assignments || 0) + (cls.exams || 0);
-                
+
                 return (
-                  <motion.tr 
+                  <motion.tr
                     key={cls.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -82,15 +77,20 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                       <div className="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                         <span>{cls.level || 'N/A'}</span>
                         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                           <span className="flex items-center gap-1"><Users size={12}/> {cls.studentCount}</span>
-                           <span className="flex items-center gap-1"><Clock size={12}/> {cls.schedule?.[0] || 'Period 1'}</span>
+                          <span className="flex items-center gap-1"><Users size={12} /> {cls.studentCount}</span>
+                          <span className="flex items-center gap-1"><Clock size={12} /> {cls.schedule?.[0] || 'Period 1'}</span>
                         </div>
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
-                      <span className={cn("text-xs transition-transform duration-300 inline-block", getGradeStyles(cls.averageGrade))}>
-                        {cls.averageGrade}%
-                      </span>
+                      {(() => {
+                        const ev = getGradeEvaluation(cls.averageGrade || 0, gradingSystem);
+                        return (
+                          <span className={cn("text-xs font-bold px-2.5 py-0.5 rounded-md transition-transform duration-300 inline-block", ev.bg, ev.color)}>
+                            {cls.averageGrade}% • {ev.grade}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className={cn("text-xs transition-transform duration-300 inline-block", getAttendanceStyles(cls.attendance))}>
@@ -99,11 +99,11 @@ const ClassList: React.FC<ClassListProps> = ({ classes, onClassClick }) => {
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                       {pendingCount > 0 ? (
-                         <span className={cn("text-xs transition-transform duration-300 inline-block", getPendingStyles(pendingCount))}>
-                            {pendingCount} Tasks
-                         </span>
+                        <span className={cn("text-xs transition-transform duration-300 inline-block", getPendingStyles(pendingCount))}>
+                          {pendingCount} Tasks
+                        </span>
                       ) : (
-                         <span className="text-xs font-medium text-slate-400">None</span>
+                        <span className="text-xs font-medium text-slate-400">None</span>
                       )}
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">

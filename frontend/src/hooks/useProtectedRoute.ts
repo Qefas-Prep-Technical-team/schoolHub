@@ -45,7 +45,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
             return;
           }
         }
-        
+
         // If an explicit redirectTo was configured (e.g. from AuthLayout), use that
         if (redirectTo) {
           router.replace(redirectTo);
@@ -57,12 +57,14 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
         return;
       }
 
-      // Check if user is an ADMIN without a plan
+      // Check if user is an ADMIN without a plan (only SCHOOL_OWNER / ACCOUNTANT can select plans)
       if (requireAuth && isAuthenticated && user?.userType === 'ADMIN') {
+        const adminRole = user?.adminRole || user?.role;
+        const canManageBilling = !adminRole || ['SCHOOL_OWNER', 'ACCOUNTANT', 'ADMIN', 'SUPER_ADMIN'].includes(adminRole);
         const hasPlan = !!user.plan;
         const isExcludedPath = pathname.includes('/select-plan') || pathname.includes('/checkout');
-        
-        if (!hasPlan && !isExcludedPath) {
+
+        if (canManageBilling && !hasPlan && !isExcludedPath) {
           router.replace('/select-plan');
           return;
         }

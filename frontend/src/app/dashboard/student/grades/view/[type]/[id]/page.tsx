@@ -36,7 +36,9 @@ import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import IndividualStudentReport from '@/app/dashboard/admin/grades/components/IndividualStudentReport';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck';
 
@@ -79,6 +81,15 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
 
   const { user } = useAuthStore();
   const { data: profile } = useStudentProfile();
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    profile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
 
   const { type, id } = React.use(params);
 
@@ -188,62 +199,27 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
     return { strengths, growthAreas };
   }, [result?.subjects]);
 
-  // WAEC standard grade helper
+  // School-matrix synchronized grade helper
   const getSubjectGradeDetails = (score: number, totalMarks: number) => {
     const percent = Math.round((score / (totalMarks || 1)) * 100);
-    if (percent >= 75) {
-      return {
-        grade: "A1",
-        statusText: "Distinction",
-        colorClass: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-900/50",
-        barColor: "bg-emerald-500"
-      };
-    }
+    const evalResult = getGradeEvaluation(percent, customGradingSystem);
+
+    let barColor = "bg-rose-500";
     if (percent >= 70) {
-      return {
-        grade: "B2",
-        statusText: "Very Good",
-        colorClass: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-900/50",
-        barColor: "bg-emerald-500"
-      };
+      barColor = "bg-emerald-500";
+    } else if (percent >= 60) {
+      barColor = "bg-blue-500";
+    } else if (percent >= 50) {
+      barColor = "bg-pink-500";
+    } else if (percent >= 40) {
+      barColor = "bg-amber-500";
     }
-    if (percent >= 65) {
-      return {
-        grade: "B3",
-        statusText: "Good",
-        colorClass: "text-blue-600 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-900/50",
-        barColor: "bg-blue-500"
-      };
-    }
-    if (percent >= 50) {
-      return {
-        grade: "C6",
-        statusText: "Credit",
-        colorClass: "text-pink-600 bg-pink-50 dark:bg-pink-500/10 border-pink-200 dark:border-pink-900/50",
-        barColor: "bg-pink-500"
-      };
-    }
-    if (percent >= 45) {
-      return {
-        grade: "D7",
-        statusText: "Pass",
-        colorClass: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-900/50",
-        barColor: "bg-amber-500"
-      };
-    }
-    if (percent >= 40) {
-      return {
-        grade: "E8",
-        statusText: "Pass",
-        colorClass: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-900/50",
-        barColor: "bg-amber-500"
-      };
-    }
+
     return {
-      grade: "F9",
-      statusText: "Fail",
-      colorClass: "text-rose-600 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-900/50",
-      barColor: "bg-rose-500"
+      grade: evalResult.grade || "F9",
+      statusText: evalResult.remark || "Fail",
+      colorClass: cn(evalResult.color, evalResult.bg, "border"),
+      barColor
     };
   };
 
@@ -338,12 +314,11 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
   if (isLocked || scorePercentage === null) {
     overallGrade = "Locked";
     gColor = "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-900/30";
-  } else if (scorePercentage >= 75) { overallGrade = "A1"; gColor = "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30"; }
-  else if (scorePercentage >= 70) { overallGrade = "B2"; gColor = "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30"; }
-  else if (scorePercentage >= 65) { overallGrade = "B3"; gColor = "text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400 border-blue-100 dark:border-blue-900/30"; }
-  else if (scorePercentage >= 50) { overallGrade = "C6"; gColor = "text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-400 border-pink-100 dark:border-pink-900/30"; }
-  else if (scorePercentage >= 45) { overallGrade = "D7"; gColor = "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 border-amber-100 dark:border-amber-900/30"; }
-  else if (scorePercentage >= 40) { overallGrade = "E8"; gColor = "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 border-amber-100 dark:border-amber-900/30"; }
+  } else {
+    const overallEval = getGradeEvaluation(scorePercentage, customGradingSystem);
+    overallGrade = overallEval.grade || "F9";
+    gColor = cn(overallEval.color, overallEval.bg, "border");
+  }
 
   const studentName = result.student?.name || result.student?.user?.name || 'Student';
   const displayImage = result.student?.profileImage || result.student?.user?.profileImage || result.student?.avatar || result.student?.user?.avatar;
@@ -823,11 +798,11 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                       const percent = isSubLocked ? null : Math.round((sub.score / (sub.totalMarks || 1)) * 100);
                       const details = isSubLocked
                         ? {
-                            grade: "—",
-                            statusText: "Scheduled",
-                            colorClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40",
-                            barColor: "bg-amber-400"
-                          }
+                          grade: "—",
+                          statusText: "Scheduled",
+                          colorClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40",
+                          barColor: "bg-amber-400"
+                        }
                         : getSubjectGradeDetails(sub.score, sub.totalMarks || 100);
                       const subjectTitle = sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || 'Unknown Subject';
 
@@ -940,11 +915,11 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                           const percent = isSubLocked ? null : Math.round((sub.score / (sub.totalMarks || 1)) * 100);
                           const details = isSubLocked
                             ? {
-                                grade: "—",
-                                statusText: "Scheduled",
-                                colorClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40",
-                                barColor: "bg-amber-400"
-                              }
+                              grade: "—",
+                              statusText: "Scheduled",
+                              colorClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40",
+                              barColor: "bg-amber-400"
+                            }
                             : getSubjectGradeDetails(sub.score, sub.totalMarks || 100);
                           const subjectTitle = sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || 'Unknown Subject';
 

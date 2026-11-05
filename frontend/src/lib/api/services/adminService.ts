@@ -5,7 +5,7 @@ export const adminService = {
    * Get current admin full profile with school affiliations
    */
   getProfile: async () => {
-    const response = await apiClient.get<{ success: boolean; data: any }>("/admin/profile");
+    const response = await apiClient.get("/admin/profile");
     return response.data.data;
   },
 
@@ -22,10 +22,10 @@ export const adminService = {
    */
   getSchoolStudents: async (schoolId: string, page: number = 1, limit: number = 10, search?: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get("/admin/students", {
-      params: { 
-        schoolId, 
-        page, 
-        limit, 
+      params: {
+        schoolId,
+        page,
+        limit,
         search,
         ...filters
       },
@@ -99,7 +99,7 @@ export const adminService = {
   /**
    * Unassign teacher from subject
    */
-  unassignTeacherFromSubject: async (teacherId: string, subjectId: string) => {
+  removeTeacherFromSubject: async (teacherId: string, subjectId: string) => {
     const response = await apiClient.delete(`/admin/teachers/${teacherId}/remove-subject/${subjectId}`);
     return response.data;
   },
@@ -107,7 +107,7 @@ export const adminService = {
   /**
    * Unassign teacher from class
    */
-  unassignTeacherFromClass: async (teacherId: string, classId: string) => {
+  removeTeacherFromClass: async (teacherId: string, classId: string) => {
     const response = await apiClient.delete(`/admin/teachers/${teacherId}/remove-class/${classId}`);
     return response.data;
   },
@@ -123,15 +123,15 @@ export const adminService = {
   /**
    * Update teacher details
    */
-  updateTeacher: async (teacherId: string, data: Record<string, unknown>) => {
+  updateTeacher: async (teacherId: string, data: { name?: string; email?: string; phone?: string; department?: string; role?: string; gender?: string }) => {
     const response = await apiClient.patch(`/admin/teachers/${teacherId}`, data);
-    return response.data;
+    return response.data.data;
   },
 
   /**
-   * Get school teachers
+   * Get school teachers (for dropdowns, etc.)
    */
-  getSchoolTeachers: async (schoolId: string, params?: { page?: number; limit?: number; search?: string; isClaimed?: string }) => {
+  getSchoolTeachers: async (schoolId: string, params?: { page?: number; limit?: number; search?: string; isClaimed?: boolean }) => {
     const response = await apiClient.get("/admin/teachers", {
       params: { schoolId, ...params },
     });
@@ -139,7 +139,7 @@ export const adminService = {
   },
 
   /**
-   * Get teacher attendance
+   * Get teacher attendance history
    */
   getTeacherAttendance: async (teacherId: string, schoolId: string, month?: string) => {
     const response = await apiClient.get(`/admin/teachers/${teacherId}/attendance`, {
@@ -153,19 +153,19 @@ export const adminService = {
    */
   markTeacherAttendance: async (teacherId: string, data: { schoolId: string; date: string; status: string; note?: string }) => {
     const response = await apiClient.post(`/admin/teachers/${teacherId}/attendance`, data);
-    return response.data;
+    return response.data.data;
   },
 
   /**
-   * Bulk mark teacher attendance
+   * Mark bulk teacher attendance
    */
   markBulkTeacherAttendance: async (data: { schoolId: string; records: { teacherId: string; date: string; status: string; note?: string }[] }) => {
     const response = await apiClient.post(`/admin/teachers/attendance/bulk`, data);
-    return response.data;
+    return response.data.data;
   },
 
   /**
-   * Get school teacher attendance by date or date range
+   * Get all school teachers' attendance for a specific date or date range
    */
   getSchoolTeacherAttendanceByDate: async (schoolId: string, date?: string, startDate?: string, endDate?: string) => {
     const response = await apiClient.get(`/admin/teachers/attendance/by-date`, {
@@ -175,7 +175,7 @@ export const adminService = {
   },
 
   /**
-   * Get school teacher attendance trend
+   * Get school teacher attendance trend (present/absent/late counts per day)
    */
   getSchoolTeacherAttendanceTrend: async (schoolId: string, days?: number) => {
     const response = await apiClient.get(`/admin/teachers/attendance/trend`, {
@@ -196,10 +196,6 @@ export const adminService = {
    * Resend teacher claim email (acts as invite)
    */
   resendTeacherClaimEmail: async (teacherId: string, email: string) => {
-    // Some APIs expect email in body if we want to override, 
-    // let's pass it just in case, or we use inviteTeacher endpoint.
-    // admin.route.ts has router.post("/teachers/invite", inviteTeacher);
-    // Let's use the invite route if we're creating/inviting, but for existing it's usually resend-claim-email
     const response = await apiClient.post(`/admin/teachers/${teacherId}/resend-claim-email`, { email });
     return response.data;
   },
@@ -229,40 +225,42 @@ export const adminService = {
   /**
    * Approve a pending admin
    */
-  approveAdmin: async (adminId: string, role: string) => {
-    const response = await apiClient.put(`/admin/${adminId}/approve`, { role });
+  approveAdmin: async (adminId: string, role: string, schoolId?: string) => {
+    const response = await apiClient.put(`/admin/${adminId}/approve`, { role, schoolId });
     return response.data;
   },
 
   /**
    * Reject a pending admin
    */
-  rejectAdmin: async (adminId: string, reason?: string) => {
-    const response = await apiClient.put(`/admin/${adminId}/reject`, { reason });
+  rejectAdmin: async (adminId: string, reason?: string, schoolId?: string) => {
+    const response = await apiClient.put(`/admin/${adminId}/reject`, { reason, schoolId });
     return response.data;
   },
 
   /**
    * Update an admin's role
    */
-  updateAdminRole: async (adminId: string, role: string) => {
-    const response = await apiClient.patch(`/admin/team/${adminId}/role`, { role });
+  updateAdminRole: async (adminId: string, role: string, schoolId?: string) => {
+    const response = await apiClient.patch(`/admin/team/${adminId}/role`, { role, schoolId });
     return response.data;
   },
 
   /**
    * Transfer school ownership
    */
-  transferOwnership: async (newOwnerId: string) => {
-    const response = await apiClient.post(`/admin/team/${newOwnerId}/transfer-ownership`);
+  transferOwnership: async (newOwnerId: string, schoolId?: string) => {
+    const response = await apiClient.post(`/admin/team/${newOwnerId}/transfer-ownership`, { schoolId });
     return response.data;
   },
 
   /**
    * Remove an admin
    */
-  removeAdmin: async (adminId: string) => {
-    const response = await apiClient.delete(`/admin/team/${adminId}`);
+  removeAdmin: async (adminId: string, schoolId?: string) => {
+    const response = await apiClient.delete(`/admin/team/${adminId}`, {
+      params: { schoolId },
+    });
     return response.data;
   },
 };

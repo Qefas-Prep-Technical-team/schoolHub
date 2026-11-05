@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Assignment } from './types';
 import { Edit, GraduationCap as Grading, Trash2, Calendar, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface AssignmentListProps {
     assignments: Assignment[];
@@ -12,6 +13,8 @@ interface AssignmentListProps {
     onDelete?: (id: string) => void;
     onViewDetails?: (id: string) => void;
     currentUserId?: string;
+    gradingSystem?: any[] | null;
+    startIndex?: number;
 }
 
 export default function AssignmentList({
@@ -20,7 +23,9 @@ export default function AssignmentList({
     onGrade,
     onDelete,
     onViewDetails,
-    currentUserId
+    currentUserId,
+    gradingSystem,
+    startIndex = 0
 }: AssignmentListProps) {
     if (!assignments || assignments.length === 0) {
         return null;
@@ -68,7 +73,7 @@ export default function AssignmentList({
                             className="group transition-colors dark:hover:bg-emerald-900/20 cursor-pointer"
                         >
                             <td className="py-4 px-4 w-12 text-center text-sm font-bold text-slate-400 dark:text-slate-500">
-                                {index + 1}
+                                {startIndex + index + 1}
                             </td>
                             <td className="py-4 px-6">
                                 <div className="flex items-center gap-3">
@@ -113,12 +118,27 @@ export default function AssignmentList({
                                 </span>
                             </td>
                             <td className="py-4 px-6">
-                                <div className="flex flex-col gap-1.5 w-32">
-                                    <div className="flex justify-between items-center text-xs">
+                                <div className="flex flex-col gap-1.5 w-36">
+                                    <div className="flex justify-between items-center text-xs gap-1.5">
                                         <span className="font-bold text-slate-700 dark:text-slate-300">
                                             {assignment.submitted} / {assignment.totalStudents}
                                         </span>
-                                        {assignment.progress === 100 && <CheckCircle2 size={12} className="text-emerald-500" />}
+                                        <div className="flex items-center gap-1">
+                                            {typeof assignment.averageScorePct === 'number' && (
+                                                (() => {
+                                                    const pill = computeGradePill(assignment.averageScorePct, gradingSystem);
+                                                    return (
+                                                        <span
+                                                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}
+                                                            title={`Class Avg: ${assignment.averageScorePct}% — ${pill.remark || pill.label}`}
+                                                        >
+                                                            {assignment.averageScorePct}% ({pill.label})
+                                                        </span>
+                                                    );
+                                                })()
+                                            )}
+                                            {assignment.progress === 100 && <CheckCircle2 size={12} className="text-emerald-500" />}
+                                        </div>
                                     </div>
                                     <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                         <div 

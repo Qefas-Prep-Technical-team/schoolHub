@@ -1,5 +1,6 @@
 import { Award, ClipboardList, PenTool, Calendar, ShieldCheck, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getGradeEvaluation, type GradingTier } from '@/utils/gradingSystem';
 
 interface ClassStatsProps {
   stats: {
@@ -9,9 +10,11 @@ interface ClassStatsProps {
     upcomingDeadlines: number;
     participationRate: number;
   };
+  gradingSystem?: GradingTier[];
 }
 
-export default function ClassStats({ stats }: ClassStatsProps) {
+export default function ClassStats({ stats, gradingSystem }: ClassStatsProps) {
+  const avgEval = getGradeEvaluation(stats.averageGrade, gradingSystem);
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -22,7 +25,7 @@ export default function ClassStats({ stats }: ClassStatsProps) {
         <StatBlock 
           label="Class Average"
           value={`${stats.averageGrade}%`}
-          trend="Overall Average"
+          trend={`${avgEval.grade} • ${avgEval.remark}`}
           icon={Award}
           color="text-emerald-500"
           bg="bg-emerald-500/10"

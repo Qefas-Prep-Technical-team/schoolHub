@@ -31,7 +31,7 @@ export default function ClassDetails() {
   const params = useParams();
   const router = useRouter();
   const classId = params.classId as string;
-  
+
   const { data: classData, isLoading: loading, error } = useSingleClass(classId);
   const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(classId);
   const { data: teacherClassDetail } = useQuery({
@@ -44,7 +44,7 @@ export default function ClassDetails() {
 
   // Helper to detect if a string is a raw UUID
   const isUUID = (str: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
-  
+
   const displaySession = classData?.session && !isUUID(classData.session) ? classData.session : "Current Session";
 
   useEffect(() => {
@@ -61,6 +61,7 @@ export default function ClassDetails() {
     description: alert.description || "",
     student: alert.student?.name || "Unknown",
     reportedBy: alert.reporter?.name || "System",
+    createdAt: alert.createdAt,
   }));
 
   const breadcrumbItems = [
@@ -70,20 +71,20 @@ export default function ClassDetails() {
   ];
 
   const tabs = [
-    { 
-      id: "overview", 
-      label: "Overview", 
+    {
+      id: "overview",
+      label: "Overview",
       content: <Overview behaviourAlerts={behaviourAlerts} classData={classData} teacherClassDetail={teacherClassDetail} />
     },
-    { 
-      id: 'students', 
-      label: 'Students', 
-      content: <StudentsPage />  
+    {
+      id: 'students',
+      label: 'Students',
+      content: <StudentsPage />
     },
-    { 
-      id: 'assignments', 
-      label: 'Assignments' , 
-      content: <AssignmentsPage /> 
+    {
+      id: 'assignments',
+      label: 'Assignments',
+      content: <AssignmentsPage />
     },
     {
       id: 'exams&quizzes',
@@ -108,15 +109,15 @@ export default function ClassDetails() {
         </div>
       )
     },
-    { 
-      id: 'timetable', 
-      label: 'Timetable', 
-      content: <TimetablePage classData={classData} />  
+    {
+      id: 'timetable',
+      label: 'Timetable',
+      content: <TimetablePage classData={classData} />
     },
-    { 
-      id: 'attendance', 
-      label: 'Attendance' , 
-      content: <AttendancePage /> 
+    {
+      id: 'attendance',
+      label: 'Attendance',
+      content: <AttendancePage />
     },
   ];
 
@@ -131,7 +132,7 @@ export default function ClassDetails() {
           <p className="text-gray-500 dark:text-gray-400 mb-6 font-medium">
             The class you're looking for doesn't exist or you don't have permission to view it.
           </p>
-          <button 
+          <button
             onClick={() => router.push('/dashboard/teacher/my-classes')}
             className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95"
           >
@@ -236,7 +237,7 @@ export default function ClassDetails() {
                       const trimmed = sub.trim();
                       if (!trimmed) return null;
                       return (
-                        <span 
+                        <span
                           key={idx}
                           className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-200 font-semibold text-xs transition-colors"
                         >
@@ -253,8 +254,8 @@ export default function ClassDetails() {
       </div>
 
       {/* Full Width Tab Navigation and Content */}
-      <TabNavigation 
-        activeTab={activeTab as any} 
+      <TabNavigation
+        activeTab={activeTab as any}
         onTabChange={(tabId) => setActiveTab(tabId)}
       >
         <div className="mt-4 sm:mt-6 w-full max-w-full">

@@ -95,3 +95,27 @@ export const ROLE_NAV_PERMISSIONS: Partial<Record<AdminFeatureFlagKey, AdminRole
   // Linking hub: owner, principal
   linkingHub: ["SCHOOL_OWNER", "PRINCIPAL"],
 };
+
+/**
+ * Helper to check whether a given AdminRole is allowed to access a specific feature key.
+ * SCHOOL_OWNER, ADMIN, and SUPER_ADMIN have full access by default.
+ */
+export function canAdminRoleAccessFeature(
+  adminRole: AdminRole | string | undefined | null,
+  featureKey?: AdminFeatureFlagKey,
+): boolean {
+  if (!featureKey) return true;
+  if (
+    !adminRole ||
+    adminRole === "SCHOOL_OWNER" ||
+    adminRole === "ADMIN" ||
+    adminRole === "SUPER_ADMIN"
+  ) {
+    return true;
+  }
+
+  const allowedRoles = ROLE_NAV_PERMISSIONS[featureKey];
+  if (!allowedRoles) return true;
+
+  return allowedRoles.includes(adminRole as AdminRole);
+}

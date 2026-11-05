@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { groupByDate } from '../../../utils/dateSectioning';
 
 interface AlertItem {
   id: string;
@@ -8,6 +9,7 @@ interface AlertItem {
   description: string;
   student: string;
   reportedBy: string;
+  createdAt?: string;
 }
 
 interface BehaviourAlertProps {
@@ -55,25 +57,34 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
         Behaviour Alerts
       </h3>
       <div className="flex flex-col gap-4">
-        {paginatedAlerts.map((alert, index) => (
-          <React.Fragment key={alert.id}>
-            {index > 0 && (
-              <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
-            )}
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 mt-1">
-                {getIcon(alert.type)}
-              </div>
-              <div>
-                <p className="font-medium text-gray-800 dark:text-gray-200">
-                  {alert.title}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Student: {alert.student} - Reported by: {alert.reportedBy}
-                </p>
-              </div>
+        {groupByDate(paginatedAlerts, (a) => a.createdAt).map((group) => (
+          <div key={group.label} className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{group.label}</span>
+              <span className="h-px flex-1 bg-slate-100 dark:bg-emerald-900/40" />
+              <span className="text-[10px] font-bold text-slate-400">{group.items.length}</span>
             </div>
-          </React.Fragment>
+            {group.items.map((alert, index) => (
+              <React.Fragment key={alert.id}>
+                {index > 0 && (
+                  <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
+                )}
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 mt-1">
+                    {getIcon(alert.type)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800 dark:text-gray-200">
+                      {alert.title}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Student: {alert.student} - Reported by: {alert.reportedBy}
+                    </p>
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
         ))}
       </div>
 
@@ -132,11 +143,10 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page as number)}
-                        className={`relative inline-flex items-center px-3 py-1 text-sm font-semibold focus:z-20 transition-colors ${
-                          currentPage === page 
+                        className={`relative inline-flex items-center px-3 py-1 text-sm font-semibold focus:z-20 transition-colors ${currentPage === page
                             ? 'z-10 bg-emerald-600 dark:bg-emerald-500 text-white shadow-[0_4px_12px_rgba(5,150,105,0.4)] dark:shadow-[0_4px_12px_rgba(16,185,129,0.5)] ring-1 ring-emerald-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500'
                             : 'text-gray-900 dark:text-gray-100 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0'
-                        }`}
+                          }`}
                       >
                         {page}
                       </button>

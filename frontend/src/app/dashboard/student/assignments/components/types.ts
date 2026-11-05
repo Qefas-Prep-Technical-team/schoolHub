@@ -21,6 +21,9 @@ export interface Assignment {
   overdueDays?: number;
   description?: string;
   attachments?: number;
+  rawDate?: string | Date | null;
+  createdAt?: string;
+  totalMarks?: number;
 }
 
 export interface NavItem {

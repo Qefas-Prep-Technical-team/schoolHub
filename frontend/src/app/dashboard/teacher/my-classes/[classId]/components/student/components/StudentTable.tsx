@@ -5,6 +5,8 @@ import { Student } from './types';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
+import { groupByDate } from '@/app/dashboard/teacher/utils/dateSectioning';
+import { getGradeEvaluation, type GradingTier } from '@/utils/gradingSystem';
 
 interface StudentTableProps {
   students: Student[];
@@ -12,6 +14,7 @@ interface StudentTableProps {
   onCall: (student: Student) => void;
   viewMode?: 'list' | 'grid';
   startIndex?: number;
+  gradingSystem?: GradingTier[];
 }
 
 const statusColors: Record<string, string> = {
@@ -64,8 +67,23 @@ function Avatar({ student }: { student: Student }) {
   );
 }
 
-function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; onView: (s: Student) => void; idx: number, startIndex?: number }) {
-  const attendanceNum = typeof student.attendance === 'number' ? student.attendance : parseInt(student.attendance || '0', 10);
+function resolveStudentScorePercent(student: Student): number | null {
+  if (typeof student.scorePercent === 'number' && !isNaN(student.scorePercent)) {
+    return student.scorePercent;
+  }
+  if (student.lastExam && student.lastExam.includes('/')) {
+    const [num, den] = student.lastExam.split('/').map(Number);
+    if (!isNaN(num) && !isNaN(den) && den > 0) {
+      return Math.round((num / den) * 100);
+    }
+  }
+  return null;
+}
+
+function ListRow({ student, onView, idx, startIndex = 0, gradingSystem }: { student: Student; onView: (s: Student) => void; idx: number; startIndex?: number; gradingSystem?: GradingTier[] }) {
+  const attendanceNum = typeof student.attendance === 'number' ? student.attendance : parseInt(String(student.attendance || '0'), 10);
+  const scorePct = resolveStudentScorePercent(student);
+  const gradeEval = scorePct !== null ? getGradeEvaluation(scorePct, gradingSystem) : null;
 
   return (
     <motion.div
@@ -123,10 +141,19 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
         {/* Performance */}
         <div className="md:col-span-2 flex items-center gap-4">
           <div>
-            <div className={`flex items-center gap-1 font-black text-xs md:text-sm ${performanceColors[student.performance || 'Medium']}`}>
-              <Award size={13} className="shrink-0" />
-              {student.performance || 'Medium'}
-            </div>
+            {gradeEval ? (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${gradeEval.bg} ${gradeEval.color}`}>
+                  <Award size={11} className="shrink-0" />
+                  {gradeEval.grade} • {gradeEval.remark}
+                </span>
+              </div>
+            ) : (
+              <div className={`flex items-center gap-1 font-black text-xs md:text-sm ${performanceColors[student.performance || 'Medium']}`}>
+                <Award size={13} className="shrink-0" />
+                {student.performance || 'Medium'}
+              </div>
+            )}
             <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Performance</p>
           </div>
         </div>
@@ -163,8 +190,10 @@ function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; o
   );
 }
 
-function GridCard({ student, onView, idx }: { student: Student; onView: (s: Student) => void; idx: number }) {
-  const attendanceNum = typeof student.attendance === 'number' ? student.attendance : parseInt(student.attendance || '0', 10);
+function GridCard({ student, onView, idx, gradingSystem }: { student: Student; onView: (s: Student) => void; idx: number; gradingSystem?: GradingTier[] }) {
+  const attendanceNum = typeof student.attendance === 'number' ? student.attendance : parseInt(String(student.attendance || '0'), 10);
+  const scorePct = resolveStudentScorePercent(student);
+  const gradeEval = scorePct !== null ? getGradeEvaluation(scorePct, gradingSystem) : null;
 
   return (
     <motion.div
@@ -202,7 +231,13 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-slate-50 dark:bg-emerald-900/50 rounded-xl p-3">
-          <p className={`text-sm font-black ${performanceColors[student.performance || 'Medium']}`}>{student.performance || 'Medium'}</p>
+          {gradeEval ? (
+            <p className={`text-xs font-black uppercase tracking-wider truncate ${gradeEval.color}`} title={`${gradeEval.grade} • ${gradeEval.remark}`}>
+              {gradeEval.grade} • {gradeEval.remark}
+            </p>
+          ) : (
+            <p className={`text-sm font-black ${performanceColors[student.performance || 'Medium']}`}>{student.performance || 'Medium'}</p>
+          )}
           <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">Performance</p>
         </div>
         <div className="bg-slate-50 dark:bg-emerald-900/50 rounded-xl p-3">
@@ -215,7 +250,9 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
       {student.lastExam && student.lastExam !== 'N/A' && (
         <div className="flex items-center justify-between text-xs bg-emerald-600/5 rounded-xl px-3 py-2 border border-emerald-600/10">
           <span className="text-slate-500 font-semibold">Last Exam</span>
-          <span className="font-black text-emerald-600">{student.lastExam}</span>
+          <span className="font-black text-emerald-600">
+            {student.lastExam}{gradeEval ? ` (${gradeEval.grade})` : ''}
+          </span>
         </div>
       )}
 
@@ -230,7 +267,7 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
   );
 }
 
-export function StudentTable({ students, onView, onCall, viewMode = 'list', startIndex = 0 }: StudentTableProps) {
+export function StudentTable({ students, onView, onCall, viewMode = 'list', startIndex = 0, gradingSystem }: StudentTableProps) {
   if (students.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-dashed border-slate-200 dark:border-emerald-800/50">
@@ -243,20 +280,38 @@ export function StudentTable({ students, onView, onCall, viewMode = 'list', star
     );
   }
 
+  const dateSections = groupByDate(students, (s) => s.enrolledAt || s.createdAt);
+  let runningIdx = startIndex;
+
   if (viewMode === 'grid') {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {students.map((student, idx) => (
-          <GridCard key={student.id} student={student} onView={onView} idx={idx} />
+      <div className="space-y-6">
+        {dateSections.map((section) => (
+          <div key={section.label} className="space-y-3">
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="size-2 rounded-full bg-emerald-500" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                {section.label}
+              </h4>
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                {section.items.length} {section.items.length === 1 ? 'student' : 'students'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {section.items.map((student, idx) => (
+                <GridCard key={student.id} student={student} onView={onView} idx={idx} gradingSystem={gradingSystem} />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-emerald-950/40 rounded-2xl border border-slate-100 dark:border-emerald-800/40 mb-2">
+      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-emerald-950/40 rounded-2xl border border-slate-100 dark:border-emerald-800/40">
         <div className="col-span-4 flex items-center gap-4">
           <span className="w-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right shrink-0">#</span>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Student</span>
@@ -266,8 +321,31 @@ export function StudentTable({ students, onView, onCall, viewMode = 'list', star
         <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Attendance</div>
         <div className="col-span-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Status & Action</div>
       </div>
-      {students.map((student, idx) => (
-        <ListRow key={student.id} student={student} onView={onView} idx={idx} startIndex={startIndex} />
+      {dateSections.map((section) => (
+        <div key={section.label} className="space-y-2">
+          <div className="flex items-center gap-2.5 px-2 py-1">
+            <div className="size-2 rounded-full bg-emerald-500" />
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+              {section.label}
+            </h4>
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+              {section.items.length} {section.items.length === 1 ? 'student' : 'students'}
+            </span>
+          </div>
+          {section.items.map((student, idx) => {
+            const rowIndex = runningIdx++;
+            return (
+              <ListRow
+                key={student.id}
+                student={student}
+                onView={onView}
+                idx={idx}
+                startIndex={rowIndex - idx}
+                gradingSystem={gradingSystem}
+              />
+            );
+          })}
+        </div>
       ))}
     </div>
   );

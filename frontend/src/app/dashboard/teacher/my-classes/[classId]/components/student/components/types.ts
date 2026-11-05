@@ -11,8 +11,11 @@ export interface Student {
   status: StudentStatus
   avatar: string
   performance?: string
+  scorePercent?: number | null
   attendance?: string | number
   grade?: string
   lastExam?: string
+  enrolledAt?: string
+  createdAt?: string
 }
 

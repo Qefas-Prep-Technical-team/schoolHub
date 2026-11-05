@@ -403,7 +403,7 @@ export const examService = {
     return response.data.data;
   },
 
-  getSubjectPapers: async (params?: { unlinkedOnly?: boolean; subjectId?: string; [key: string]: any }) => {
+  getSubjectPapers: async (params?: { unlinkedOnly?: boolean; subjectId?: string;[key: string]: any }) => {
     const response = await apiClient.get<{ data: SubjectPaper[] }>(
       "/exams/papers/all",
       { params },
@@ -452,5 +452,13 @@ export const examService = {
   getMyStats: async () => {
     const response = await apiClient.get("/exams/my/stats");
     return response.data.data;
+  },
+
+  cleanupPassageWithAi: async (rawText: string, subjectName?: string): Promise<string> => {
+    const response = await apiClient.post<{ success: boolean; data: { cleanedText: string } }>(
+      "/exams/ai/cleanup-passage",
+      { rawText, subjectName }
+    );
+    return response.data.data.cleanedText;
   },
 };

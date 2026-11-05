@@ -13,7 +13,7 @@ export const useNotifications = (options?: { limit?: number; offset?: number; is
   return useQuery({
     queryKey: notificationKeys.list(options),
     queryFn: () => notificationService.getNotifications(options),
-    refetchInterval: 30000, // Poll every 30 seconds
+    staleTime: 1000 * 60 * 2,
   });
 };
 
@@ -21,7 +21,9 @@ export const useUnreadCount = () => {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: notificationService.getUnreadCount,
-    refetchInterval: 30000,
+    staleTime: 1000 * 60 * 2,
+    // Poll notification unread badge every 2 minutes per AGENTS.md Section 2.2
+    refetchInterval: 1000 * 60 * 2,
   });
 };
 

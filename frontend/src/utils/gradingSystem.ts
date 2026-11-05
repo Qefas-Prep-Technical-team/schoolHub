@@ -24,6 +24,8 @@ export interface GradingTier {
   bg?: string;
 }
 
+export type GradingRule = GradingTier;
+
 export const DEFAULT_GRADING_SYSTEM: GradingTier[] = [
   {
     grade: 'A+',

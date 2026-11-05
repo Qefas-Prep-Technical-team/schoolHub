@@ -1,7 +1,9 @@
 'use client';
 
+import { Fragment, useMemo } from 'react';
 import { StudentSubmission } from './types';
 import StudentGradingRow from './StudentGradingRow';
+import { groupByDate } from '@/app/dashboard/teacher/utils/dateSectioning';
 
 interface StudentGradingTableProps {
   submissions: StudentSubmission[];
@@ -18,11 +20,17 @@ export default function StudentGradingTable({
   onDownloadFile,
   gradingSystem 
 }: StudentGradingTableProps) {
-  const sortedSubmissions = [...submissions].sort((a, b) => {
-    // Sort by status priority
-    const statusOrder = { 'graded': 0, 'ungraded': 1, 'late': 2, 'not-submitted': 3 };
-    return statusOrder[a.status] - statusOrder[b.status] || a.name.localeCompare(b.name);
-  });
+  const sortedSubmissions = useMemo(() => {
+    return [...submissions].sort((a, b) => {
+      // Sort by status priority
+      const statusOrder = { 'graded': 0, 'ungraded': 1, 'late': 2, 'not-submitted': 3 };
+      return statusOrder[a.status] - statusOrder[b.status] || a.name.localeCompare(b.name);
+    });
+  }, [submissions]);
+
+  const groupedSubmissions = useMemo(() => {
+    return groupByDate(sortedSubmissions, (s) => s.submittedAt);
+  }, [sortedSubmissions]);
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -51,15 +59,32 @@ export default function StudentGradingTable({
         </thead>
         
         <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
-          {sortedSubmissions.map((submission) => (
-            <StudentGradingRow
-              key={submission.id}
-              submission={submission}
-              onScoreChange={onScoreChange}
-              onViewSubmission={onViewSubmission}
-              onDownloadFile={onDownloadFile}
-              gradingSystem={gradingSystem}
-            />
+          {groupedSubmissions.map((group) => (
+            <Fragment key={group.label}>
+              <tr className="bg-slate-50/90 dark:bg-slate-800/70 border-y border-slate-200/70 dark:border-slate-700/70">
+                <td colSpan={6} className="px-6 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="size-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                      {group.label}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700">
+                      {group.items.length} {group.items.length === 1 ? 'submission' : 'submissions'}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              {group.items.map((submission) => (
+                <StudentGradingRow
+                  key={submission.id}
+                  submission={submission}
+                  onScoreChange={onScoreChange}
+                  onViewSubmission={onViewSubmission}
+                  onDownloadFile={onDownloadFile}
+                  gradingSystem={gradingSystem}
+                />
+              ))}
+            </Fragment>
           ))}
         </tbody>
       </table>

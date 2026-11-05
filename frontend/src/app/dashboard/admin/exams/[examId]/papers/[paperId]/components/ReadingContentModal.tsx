@@ -15,12 +15,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
 import { Input } from "@/components/ui/input";
-import { Loader2, BookOpen, Save, Eye, Edit3, Image as ImageIcon, X, Upload, Copy } from "lucide-react";
+import { Loader2, BookOpen, Save, Eye, Edit3, Image as ImageIcon, X, Upload, Copy, Sparkles } from "lucide-react";
 import { examService } from "@/lib/api/services/examService";
 import { imageService } from "@/lib/api/services/imageService";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import { cn } from "@/lib/utils";
 import FormulaPalette from "./FormulaPalette";
+import { useFeatureAccess } from "@/lib/api/hooks/useFeatureAccess";
 
 interface ReadingContentModalProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ interface ReadingContentModalProps {
   initialContent?: string;
   initialImages?: string[];
   initialLabels?: string[];
+  schoolId?: string;
+  subjectName?: string;
 }
 
 export default function ReadingContentModal({
@@ -37,7 +40,9 @@ export default function ReadingContentModal({
   paperId,
   initialContent,
   initialImages,
-  initialLabels
+  initialLabels,
+  schoolId,
+  subjectName,
 }: ReadingContentModalProps) {
   const [content, setContent] = useState(initialContent || "");
   const [images, setImages] = useState<string[]>(initialImages || []);
@@ -46,8 +51,12 @@ export default function ReadingContentModal({
   const [editorMode, setEditorMode] = useState<"normal" | "math">("normal");
   const [hasEdited, setHasEdited] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [isCleaningWithAi, setIsCleaningWithAi] = useState(false);
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check AI feature access for school tier
+  const { data: hasAiAccess } = useFeatureAccess("aiInsights", schoolId);
 
   useEffect(() => {
     if (isOpen && !hasEdited) {
@@ -94,6 +103,28 @@ export default function ReadingContentModal({
 
   const handleSave = () => {
     updateMutation.mutate({ content, images, imageLabels });
+  };
+
+  const handleAiCleanup = async () => {
+    if (!content.trim()) {
+      toast.warning("Please paste or type content before running AI clean up.");
+      return;
+    }
+
+    try {
+      setIsCleaningWithAi(true);
+      const cleaned = await examService.cleanupPassageWithAi(content, subjectName);
+      if (cleaned) {
+        setContent(cleaned);
+        setHasEdited(true);
+        toast.success("Content cleaned and formatted with LaTeX successfully!");
+      }
+    } catch (error: any) {
+      console.error("AI cleanup failed:", error);
+      toast.error(error.response?.data?.message || "Failed to clean up content with AI");
+    } finally {
+      setIsCleaningWithAi(false);
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,64 +197,85 @@ export default function ReadingContentModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        "rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl focus:outline-none transition-all duration-300",
+        "rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl focus:outline-none transition-all duration-300 max-h-[90vh] flex flex-col",
         editorMode === "math" ? "max-w-5xl" : "sm:max-w-3xl"
       )}>
-        <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-8 pb-4">
+        <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-6 sm:p-8 pb-4 shrink-0">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <BookOpen size={20} />
               </div>
-              Reading Comprehension Content
+              Reading & Reference Content
             </DialogTitle>
-            <DialogDescription className="text-gray-500 font-medium ml-13">
-              Paste or write the comprehension passage that students will read before answering questions.
+            <DialogDescription className="text-gray-500 font-medium ml-13 text-xs sm:text-sm">
+              Paste or write the reading passage, case study, experiment setup, or reference material that students will review before answering questions across any subject.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <div className="p-8 pt-2">
+        <div className="p-6 sm:p-8 pt-2 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <Label className="text-xs font-black uppercase tracking-widest text-slate-400">
                 Content Editor
               </Label>
-              <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-800/60 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setEditorMode('normal')}
-                  className={`px-4 py-2 text-[11px] font-black tracking-wide transition-all ${
-                    editorMode === 'normal'
-                      ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                  }`}
-                >
-                  ✏️ Normal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditorMode('math')}
-                  className={`px-4 py-2 text-[11px] font-black tracking-wide transition-all border-l border-slate-200 dark:border-slate-700 ${
-                    editorMode === 'math'
-                      ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                  }`}
-                >
-                  𝑓(𝑥) Math
-                </button>
+              <div className="flex items-center gap-2">
+                {/* AI Clean Up Button (Available for schools with AI feature access) */}
+                {hasAiAccess && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAiCleanup}
+                    disabled={isCleaningWithAi || !content.trim()}
+                    className="h-8 px-3 rounded-xl border-purple-200 dark:border-purple-800 bg-purple-50/70 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 hover:text-purple-800 text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    title="Clean up messy text, fix punctuation, and automatically format math equations in LaTeX"
+                  >
+                    {isCleaningWithAi ? (
+                      <Loader2 className="animate-spin h-3.5 w-3.5" />
+                    ) : (
+                      <Sparkles size={13} className="text-purple-500" />
+                    )}
+                    <span>{isCleaningWithAi ? "Cleaning..." : "AI Clean Up"}</span>
+                  </Button>
+                )}
+
+                <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-800/60 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('normal')}
+                    className={`px-3 sm:px-4 py-1.5 text-[11px] font-black tracking-wide transition-all ${
+                      editorMode === 'normal'
+                        ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    ✏️ Normal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('math')}
+                    className={`px-3 sm:px-4 py-1.5 text-[11px] font-black tracking-wide transition-all border-l border-slate-200 dark:border-slate-700 ${
+                      editorMode === 'math'
+                        ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    𝑓(𝑥) Math
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className={`grid grid-cols-1 gap-6 ${editorMode === 'math' ? 'md:grid-cols-[1fr_300px]' : ''}`}>
+            <div className={`grid grid-cols-1 gap-6 ${editorMode === 'math' ? 'lg:grid-cols-[1fr_320px]' : ''}`}>
               
               {/* Left Column: Editor & Images */}
-              <div className="space-y-4">
+              <div className="space-y-4 min-w-0">
                 {editorMode === 'normal' ? (
                 <Textarea
                   id="readingContent"
-                  placeholder="Paste your comprehension passage here..."
-                  className="min-h-[300px] rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus:border-primary/40 focus:ring-0 resize-y font-medium leading-relaxed p-6 text-base bg-white dark:bg-slate-900"
+                  placeholder="Paste your reading passage, case study, problem context, or experiment setup here..."
+                  className="min-h-[280px] max-h-[460px] rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus:border-primary/40 focus:ring-0 resize-y font-medium leading-relaxed p-5 text-sm sm:text-base bg-white dark:bg-slate-900"
                   value={content}
                   onChange={(e) => {
                     setContent(e.target.value);
@@ -231,7 +283,7 @@ export default function ReadingContentModal({
                   }}
                 />
               ) : (
-                <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus-within:border-primary/40 transition-all overflow-hidden flex flex-col" style={{ minHeight: '400px' }}>
+                <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus-within:border-primary/40 transition-all overflow-hidden flex flex-col h-[460px]">
                   <Textarea
                     ref={textareaRef}
                     value={content}
@@ -239,21 +291,21 @@ export default function ReadingContentModal({
                       setContent(e.target.value);
                       setHasEdited(true);
                     }}
-                    placeholder="Type your reading passage. Use the formula builder or LaTeX syntax to add math..."
-                    className="w-full resize-y min-h-[200px] p-6 text-base font-mono leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none border-none focus-visible:ring-0 rounded-none block flex-shrink-0"
+                    placeholder="Type or paste your reading material. Use the formula palette to insert LaTeX math structures..."
+                    className="w-full resize-none h-[230px] p-4 sm:p-5 text-sm sm:text-base font-mono leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none border-none focus-visible:ring-0 rounded-none block flex-shrink-0 overflow-y-auto"
                   />
                   
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-50 dark:bg-slate-800 border-t border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-                    <Eye size={10} className="text-primary/70" />
-                    <span className="text-[9px] uppercase font-black tracking-widest text-primary/70">Live Preview</span>
+                    <Eye size={11} className="text-primary/70" />
+                    <span className="text-[10px] uppercase font-black tracking-widest text-primary/70">Live KaTeX & Markdown Preview</span>
                   </div>
                   
-                  <div className="flex-1 px-6 py-4 bg-white dark:bg-slate-900 overflow-y-auto">
+                  <div className="flex-1 p-4 sm:p-5 bg-white dark:bg-slate-900 overflow-y-auto">
                     {content ? (
-                      <LaTeXRenderer content={content} className="text-base leading-relaxed" />
+                      <LaTeXRenderer content={content} className="text-sm sm:text-base leading-relaxed break-words" />
                     ) : (
                       <p className="text-slate-300 dark:text-slate-600 text-xs font-medium italic py-2">
-                        Your rendered math appears here as you type...
+                        Your formatted text and rendered math appear here in real time...
                       </p>
                     )}
                   </div>
@@ -376,7 +428,7 @@ export default function ReadingContentModal({
 
               {/* Right Column: Formula Palette (Only in Math Mode) */}
               {editorMode === 'math' && (
-                <div className="p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-700 h-fit space-y-4">
+                <div className="p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[560px] overflow-y-auto">
                   <FormulaPalette
                     onInsert={(formula) => {
                       const textarea = textareaRef.current;
@@ -398,15 +450,15 @@ export default function ReadingContentModal({
                     }}
                   />
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden mt-4">
-                    <div className="px-4 py-2.5 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-[11px] font-black uppercase tracking-widest text-slate-400">
-                      Example
+                    <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      LaTeX Notation Example
                     </div>
-                    <div className="p-4 bg-white dark:bg-slate-900">
+                    <div className="p-3.5 bg-white dark:bg-slate-900">
                       <LaTeXRenderer
                         content="Solve for $x$: $$x^2 + 3x - 4 = 0$$"
-                        className="text-sm text-slate-700 dark:text-slate-300"
+                        className="text-xs text-slate-700 dark:text-slate-300"
                       />
-                      <div className="mt-2 text-[10px] text-slate-400 font-mono overflow-x-auto">
+                      <div className="mt-1.5 text-[9px] text-slate-400 font-mono overflow-x-auto">
                         {`Solve for $x$: $$x^2 + 3x - 4 = 0$$`}
                       </div>
                     </div>

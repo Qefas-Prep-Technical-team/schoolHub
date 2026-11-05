@@ -41,11 +41,11 @@ export const classService = {
   },
 
   submitAttendance: async (
-    classId: string, 
+    classId: string,
     records: Record<string, unknown>[],
     options?: { subjectId?: string; subjectName?: string }
   ) => {
-    const response = await apiClient.post(`/classes/${classId}/attendance`, { 
+    const response = await apiClient.post(`/classes/${classId}/attendance`, {
       records,
       subjectId: options?.subjectId,
       subjectName: options?.subjectName,
@@ -91,8 +91,28 @@ export const classService = {
     return response.data.data;
   },
 
-  updateClass: async (id: string, data: { name?: string; section?: string; teacherIds?: string[]; departmentIds?: string[] }) => {
+  updateClass: async (
+    id: string,
+    data: {
+      name?: string;
+      section?: string;
+      term?: string;
+      session?: string;
+      level?: string;
+      teacherIds?: string[];
+      departmentIds?: string[];
+      studentIds?: string[];
+    }
+  ) => {
     const response = await apiClient.patch(`/classes/${id}`, data);
+    return response.data.data;
+  },
+
+  changeClassStatus: async (
+    id: string,
+    status: "PENDING" | "ACTIVE" | "REJECTED" | "ARCHIVED"
+  ) => {
+    const response = await apiClient.patch(`/classes/${id}/status`, { status });
     return response.data.data;
   },
 
@@ -151,16 +171,16 @@ export interface ClassHistoryTimelineEvent {
   id: string;
   date: string;
   type:
-    | "CLASS_CREATED"
-    | "PROMOTION_IN"
-    | "PROMOTION_OUT"
-    | "ENROLLMENT"
-    | "GRADUATION"
-    | "WITHDRAWAL"
-    | "TEACHER_ASSIGNED"
-    | "SUBJECT_ATTACHED"
-    | "RESULT_PUBLISHED"
-    | "BEHAVIOUR_ALERT";
+  | "CLASS_CREATED"
+  | "PROMOTION_IN"
+  | "PROMOTION_OUT"
+  | "ENROLLMENT"
+  | "GRADUATION"
+  | "WITHDRAWAL"
+  | "TEACHER_ASSIGNED"
+  | "SUBJECT_ATTACHED"
+  | "RESULT_PUBLISHED"
+  | "BEHAVIOUR_ALERT";
   category: "lifecycle" | "students" | "academics" | "staff";
   title: string;
   description: string;

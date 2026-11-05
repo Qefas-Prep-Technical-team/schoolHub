@@ -5,9 +5,10 @@ import { StudentSubmission } from './types';
 import Image from 'next/image';
 import Link from 'next/link';
 import StatusBadge from './ui/StatusBadge';
-import { useState } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import Pagination from '../../components/Pagination';
 import { computeGradePill } from '@/utils/gradingSystem';
+import { groupByDate } from '@/app/dashboard/teacher/utils/dateSectioning';
 
 interface StudentSubmissionsTableProps {
     submissions: StudentSubmission[];
@@ -24,6 +25,14 @@ export default function StudentSubmissionsTable({
 }: StudentSubmissionsTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    const paginatedSubmissions = useMemo(() => {
+        return submissions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    }, [submissions, currentPage, itemsPerPage]);
+
+    const groupedSubmissions = useMemo(() => {
+        return groupByDate(paginatedSubmissions, (sub: any) => sub.submissionTime || sub.submittedAt || sub.createdAt);
+    }, [paginatedSubmissions]);
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return '—';
@@ -86,68 +95,90 @@ export default function StudentSubmissionsTable({
                     </thead>
 
                     <tbody>
-                        {submissions
-                            .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                            .map((submission, index) => (
-                            <tr
-                                key={submission.id}
-                                className="bg-transparent border-b border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100/50 dark:hover:bg-emerald-800/20"
-                            >
-                                <td className="px-6 py-4 text-center text-gray-500 dark:text-gray-400 font-medium">
-                                    {(currentPage - 1) * itemsPerPage + index + 1}
-                                </td>
-                                <th className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative w-8 h-8 flex-shrink-0">
-                                            {submission.student?.avatarUrl ? (
-                                                <Image
-                                                    src={submission.student.avatarUrl}
-                                                    alt={`${submission.student?.name || 'Student'}'s avatar`}
-                                                    fill
-                                                    className="rounded-full object-cover bg-gray-100"
-                                                    sizes="32px"
-                                                />
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">
-                                                    {(submission.student?.name || 'S').charAt(0)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <span className="font-medium">{submission.student?.name || 'Unknown Student'}</span>
-                                    </div>
-                                </th>
+                        {(() => {
+                            let runningIdx = (currentPage - 1) * itemsPerPage;
+                            return groupedSubmissions.map((group) => (
+                                <Fragment key={group.label}>
+                                    <tr className="bg-emerald-100/40 dark:bg-emerald-900/20 border-y border-emerald-200/70 dark:border-emerald-800/40">
+                                        <td colSpan={6} className="px-6 py-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="size-1.5 rounded-full bg-emerald-500" />
+                                                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-900 dark:text-emerald-200">
+                                                    {group.label}
+                                                </span>
+                                                <span className="text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-300/80 bg-white/80 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
+                                                    {group.items.length} {group.items.length === 1 ? 'submission' : 'submissions'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {group.items.map((submission) => {
+                                        runningIdx += 1;
+                                        const idx = runningIdx;
+                                        return (
+                                            <tr
+                                                key={submission.id}
+                                                className="bg-transparent border-b border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100/50 dark:hover:bg-emerald-800/20"
+                                            >
+                                                <td className="px-6 py-4 text-center text-gray-500 dark:text-gray-400 font-medium">
+                                                    {idx}
+                                                </td>
+                                                <th className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative w-8 h-8 flex-shrink-0">
+                                                            {submission.student?.avatarUrl ? (
+                                                                <Image
+                                                                    src={submission.student.avatarUrl}
+                                                                    alt={`${submission.student?.name || 'Student'}'s avatar`}
+                                                                    fill
+                                                                    className="rounded-full object-cover bg-gray-100"
+                                                                    sizes="32px"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">
+                                                                    {(submission.student?.name || 'S').charAt(0)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="font-medium">{submission.student?.name || 'Unknown Student'}</span>
+                                                    </div>
+                                                </th>
 
-                                <td className="px-6 py-4">
-                                    {formatDate(submission.submissionTime || '')}
-                                </td>
+                                                <td className="px-6 py-4">
+                                                    {formatDate(submission.submissionTime || '')}
+                                                </td>
 
-                                <td className="px-6 py-4">
-                                    <StatusBadge status={submission.status} />
-                                </td>
+                                                <td className="px-6 py-4">
+                                                    <StatusBadge status={submission.status} />
+                                                </td>
 
-                                <td className="px-6 py-4">
-                                    {formatScore(submission)}
-                                </td>
+                                                <td className="px-6 py-4">
+                                                    {formatScore(submission)}
+                                                </td>
 
-                                <td className="px-6 py-4 text-right">
-                                    {(submission.status === 'graded' || submission.graded) ? (
-                                        <button
-                                            onClick={() => onViewGrade?.(submission.id)}
-                                            className="font-medium text-primary hover:underline"
-                                        >
-                                            View Grade
-                                        </button>
-                                    ) : onGradeStudent ? (
-                                        <button
-                                            onClick={() => onGradeStudent(submission.id)}
-                                            className="font-medium text-primary hover:underline"
-                                        >
-                                            Grade
-                                        </button>
-                                    ) : null}
-                                </td>
-                            </tr>
-                        ))}
+                                                <td className="px-6 py-4 text-right">
+                                                    {(submission.status === 'graded' || submission.graded) ? (
+                                                        <button
+                                                            onClick={() => onViewGrade?.(submission.id)}
+                                                            className="font-medium text-primary hover:underline"
+                                                        >
+                                                            View Grade
+                                                        </button>
+                                                    ) : onGradeStudent ? (
+                                                        <button
+                                                            onClick={() => onGradeStudent(submission.id)}
+                                                            className="font-medium text-primary hover:underline"
+                                                        >
+                                                            Grade
+                                                        </button>
+                                                    ) : null}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </Fragment>
+                            ));
+                        })()}
                     </tbody>
                 </table>
             </div>

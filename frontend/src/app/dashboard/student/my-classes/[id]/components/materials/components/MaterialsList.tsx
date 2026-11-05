@@ -1,72 +1,91 @@
-// app/student/classes/[id]/materials/components/MaterialsList.tsx
-import MaterialItem from './MaterialItem'
-import { StudyMaterial } from './materialsData'
+'use client';
+
+import React from 'react';
+import MaterialItem from './MaterialItem';
+import { MaterialCard, RoleTheme, getThemeTokens } from './types';
+import { FileDown } from 'lucide-react';
+import { groupByDate } from '../utils/dateSectioning';
 
 interface MaterialsListProps {
-  materials: any[]
-  viewMode: 'list' | 'grid'
-  emptyMessage?: string
-  onPreview: (material: any) => void
+  materials: MaterialCard[];
+  viewMode: 'list' | 'grid';
+  emptyMessage?: string;
+  onPreview: (material: MaterialCard) => void;
+  accentRole?: RoleTheme;
 }
 
 export default function MaterialsList({ 
   materials, 
   viewMode, 
   onPreview,
-  emptyMessage = "No materials found" 
+  emptyMessage = "No study materials or files found",
+  accentRole = 'student'
 }: MaterialsListProps) {
+  const theme = getThemeTokens(accentRole);
+
   if (materials.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 dark:text-gray-600 text-5xl mb-4">📚</div>
-        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">
+      <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-3">
+          <FileDown className="w-7 h-7" />
+        </div>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-1">
           {emptyMessage}
         </h3>
-        <p className="text-gray-500 dark:text-gray-400">
-          Try adjusting your search or selecting a different folder
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          No uploaded documents, question papers, reading passages, or video links match the selected stream.
         </p>
       </div>
-    )
+    );
   }
 
-  if (viewMode === 'grid') {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {materials.map((material) => (
-          <MaterialItem 
-            key={material.id} 
-            material={material} 
-            viewMode="grid"
-            onPreview={onPreview}
-          />
-        ))}
-      </div>
-    )
-  }
+  // Apply canonical date sectioning display pattern
+  const dateGroups = groupByDate(materials, (m) => m.rawDate || m.uploadDate);
 
-  // List View
   return (
-    <div className="space-y-3">
-      {/* Table Headers (Desktop only) */}
-      <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-        <div className="col-span-1"></div>
-        <div className="col-span-5">File Name</div>
-        <div className="col-span-3">Teacher</div>
-        <div className="col-span-2">Date Added</div>
-        <div className="col-span-1"></div>
-      </div>
-      
-      {/* Materials List */}
-      <div className="space-y-2">
-        {materials.map((material) => (
-          <MaterialItem 
-            key={material.id} 
-            material={material} 
-            viewMode="list"
-            onPreview={onPreview}
-          />
-        ))}
-      </div>
+    <div className="space-y-6">
+      {dateGroups.map((group) => (
+        <section key={group.label} className="space-y-3">
+          {/* Section Header Pattern according to date_sectioning_display skill */}
+          <div className="flex items-center justify-between px-1 py-1">
+            <div className="flex items-center gap-2.5">
+              <div className={`size-2 rounded-full ${theme.accentDot}`} />
+              <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                {group.label}
+              </h3>
+            </div>
+            <span className="text-[11px] font-bold text-slate-400 font-mono">
+              {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+            </span>
+          </div>
+
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {group.items.map((material) => (
+                <MaterialItem 
+                  key={material.id} 
+                  material={material} 
+                  viewMode="grid"
+                  onPreview={onPreview}
+                  role={accentRole}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {group.items.map((material) => (
+                <MaterialItem 
+                  key={material.id} 
+                  material={material} 
+                  viewMode="list"
+                  onPreview={onPreview}
+                  role={accentRole}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      ))}
     </div>
-  )
+  );
 }

@@ -24,11 +24,14 @@ import {
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
+import { groupByDate } from './materials/utils/dateSectioning';
 
 export interface Assignment {
   id: number;
   title: string;
   dueDate: string;
+  rawDate?: string | Date | null;
   status: 'graded' | 'submitted' | 'upcoming' | 'overdue';
   grade?: string;
   maxPoints?: number;
@@ -40,6 +43,7 @@ interface AssignmentsTableProps {
   assignments: Assignment[];
   hasDepartment: boolean;
   pageSize?: number;
+  gradingSystem?: any[] | null;
 }
 
 // ─── Category sub-tab definitions ─────────────────────────────────────────────
@@ -75,6 +79,47 @@ function getStatusBadgeStyle(status: Assignment['status']) {
     default:
       return 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
   }
+}
+
+/** Parse a grade string (e.g. "85/100", "42/50", "78%") and evaluate against the school's grading system */
+function resolveAssessmentGradeBadge(gradeStr?: string, customGradingSystem?: any[] | null) {
+  if (!gradeStr) return null;
+  let percent: number | null = null;
+
+  if (gradeStr.includes('/')) {
+    const [scorePart, maxPart] = gradeStr.split('/');
+    const score = parseFloat(scorePart);
+    const max = parseFloat(maxPart);
+    if (!isNaN(score) && !isNaN(max) && max > 0) {
+      percent = Math.round((score / max) * 100);
+    }
+  } else if (gradeStr.includes('%')) {
+    const val = parseFloat(gradeStr.replace('%', ''));
+    if (!isNaN(val)) percent = Math.round(val);
+  } else {
+    const val = parseFloat(gradeStr.replace(/[^0-9.]/g, ''));
+    if (!isNaN(val)) percent = Math.round(val);
+  }
+
+  if (percent == null) {
+    return {
+      raw: gradeStr,
+      grade: null,
+      remark: null,
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
+    };
+  }
+
+  const evalResult = getGradeEvaluation(percent, customGradingSystem);
+  return {
+    raw: gradeStr,
+    percentage: percent,
+    grade: evalResult.grade,
+    remark: evalResult.remark,
+    color: evalResult.color,
+    bg: evalResult.bg,
+  };
 }
 
 // ─── Category icon + colour ───────────────────────────────────────────────────
@@ -182,6 +227,7 @@ export default function AssignmentsTable({
   assignments,
   hasDepartment,
   pageSize = 9,
+  gradingSystem,
 }: AssignmentsTableProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -224,6 +270,11 @@ export default function AssignmentsTable({
   const startIdx = (safePage - 1) * pageSize;
   const paginated = filtered.slice(startIdx, startIdx + pageSize);
 
+  // Group paginated items by date
+  const groupedSections = useMemo(() => {
+    return groupByDate(paginated, (item) => item.rawDate || item.dueDate);
+  }, [paginated]);
+
   return (
     <Card className="border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 overflow-hidden">
       <CardContent className="p-0">
@@ -259,11 +310,10 @@ export default function AssignmentsTable({
                 <button
                   onClick={() => setViewMode('grid')}
                   type="button"
-                  className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${
-                    viewMode === 'grid'
-                      ? 'bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid'
+                    ? 'bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
                   title="Grid View"
                   aria-label="Grid View"
                 >
@@ -272,11 +322,10 @@ export default function AssignmentsTable({
                 <button
                   onClick={() => setViewMode('table')}
                   type="button"
-                  className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${
-                    viewMode === 'table'
-                      ? 'bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'table'
+                    ? 'bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
                   title="Table View"
                   aria-label="Table View"
                 >
@@ -352,173 +401,244 @@ export default function AssignmentsTable({
           <>
             {viewMode === 'grid' ? (
               /* ── Grid View ──────────────────────────────────────────────── */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 p-4 sm:p-6">
-                {paginated.map((assignment, idx) => {
-                  const { icon: CatIcon, colour, bg } = getCategoryStyle(assignment.type);
-                  const displayIndex = String(startIdx + idx + 1).padStart(2, '0');
+              <div className="p-4 sm:p-6 space-y-6">
+                {groupedSections.map((section) => (
+                  <div key={section.label} className="space-y-3">
+                    {/* Section Header */}
+                    <div className="flex items-center gap-2.5 px-1 py-1">
+                      <div className="size-2 rounded-full bg-pink-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {section.label}
+                      </h4>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
+                      </span>
+                    </div>
 
-                  return (
-                    <div
-                      key={assignment.id}
-                      className="bg-slate-50/60 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 transition-all rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/30 group active:scale-[0.99]"
-                    >
-                      <div>
-                        {/* Title row */}
-                        <div className="flex items-start justify-between gap-2.5 mb-3">
-                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                            {/* Category icon badge */}
-                            <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5', bg)}>
-                              <CatIcon className={cn('w-4.5 h-4.5', colour)} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className="text-[10px] font-black text-slate-400 font-mono">#{displayIndex}</span>
-                                <span className={cn('text-[9px] uppercase font-bold tracking-wider', colour)}>
-                                  {assignment.type || 'Assessment'}
+                    {/* Cards Grid for this date group */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+                      {section.items.map((assignment) => {
+                        const { icon: CatIcon, colour, bg } = getCategoryStyle(assignment.type);
+                        const displayIndex = String(assignment.id).padStart(2, '0');
+
+                        return (
+                          <div
+                            key={assignment.id}
+                            className="bg-slate-50/60 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 transition-all rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md hover:border-pink-500/30 group active:scale-[0.99]"
+                          >
+                            <div>
+                              {/* Title row */}
+                              <div className="flex items-start justify-between gap-2.5 mb-3">
+                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                  {/* Category icon badge */}
+                                  <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5', bg)}>
+                                    <CatIcon className={cn('w-4.5 h-4.5', colour)} />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                      <span className="text-[10px] font-black text-slate-400 font-mono">#{displayIndex}</span>
+                                      <span className={cn('text-[9px] uppercase font-bold tracking-wider', colour)}>
+                                        {assignment.type || 'Assessment'}
+                                      </span>
+                                    </div>
+                                    <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-[15px] group-hover:text-pink-600 transition-colors line-clamp-2">
+                                      {assignment.title}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <span className={cn('text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border shrink-0', getStatusBadgeStyle(assignment.status))}>
+                                  {assignment.status}
                                 </span>
                               </div>
-                              <h4 className="font-bold text-slate-800 dark:text-white text-sm sm:text-[15px] group-hover:text-pink-600 transition-colors line-clamp-2">
-                                {assignment.title}
-                              </h4>
+
+                              {/* Score / Status row */}
+                              <div className="flex items-center justify-between py-2 px-3 my-2 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                                <span className="text-xs font-semibold text-slate-400">
+                                  {assignment.status === 'graded' ? 'Score' : assignment.status === 'submitted' ? 'Status' : 'Deadline'}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {assignment.status === 'graded' && assignment.grade ? (() => {
+                                    const badge = resolveAssessmentGradeBadge(assignment.grade, gradingSystem);
+                                    return (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-white">
+                                          {assignment.grade}
+                                        </span>
+                                        {badge?.grade && (
+                                          <span className={cn(
+                                            'px-1.5 py-0.5 rounded text-[10px] font-black border uppercase',
+                                            badge.bg,
+                                            badge.color
+                                          )}>
+                                            {badge.grade}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })() : assignment.status === 'submitted' ? (
+                                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Under Review</span>
+                                  ) : assignment.status === 'overdue' ? (
+                                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1"><AlertCircle size={11} /> Past Due</span>
+                                  ) : (
+                                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1"><Clock size={11} /> {assignment.dueDate}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action footer */}
+                            <div className="pt-2.5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80">
+                              <span className="text-[11px] font-medium text-slate-400 truncate max-w-[130px] flex items-center gap-1">
+                                <Calendar size={11} className="shrink-0" />
+                                {assignment.dueDate}
+                              </span>
+                              <ActionButton assignment={assignment} />
                             </div>
                           </div>
-                          <span className={cn('text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border shrink-0', getStatusBadgeStyle(assignment.status))}>
-                            {assignment.status}
-                          </span>
-                        </div>
-
-                        {/* Score / Status row */}
-                        <div className="flex items-center justify-between py-2 px-3 my-2 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700/60">
-                          <span className="text-xs font-semibold text-slate-400">
-                            {assignment.status === 'graded' ? 'Score' : assignment.status === 'submitted' ? 'Status' : 'Deadline'}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            {assignment.status === 'graded' && assignment.grade ? (
-                              <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400">{assignment.grade}</span>
-                            ) : assignment.status === 'submitted' ? (
-                              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Under Review</span>
-                            ) : assignment.status === 'overdue' ? (
-                              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1"><AlertCircle size={11} /> Past Due</span>
-                            ) : (
-                              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1"><Clock size={11} /> {assignment.dueDate}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action footer */}
-                      <div className="pt-2.5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80">
-                        <span className="text-[11px] font-medium text-slate-400 truncate max-w-[130px] flex items-center gap-1">
-                          <Calendar size={11} className="shrink-0" />
-                          {assignment.dueDate}
-                        </span>
-                        <ActionButton assignment={assignment} />
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             ) : (
               /* ── Table View ─────────────────────────────────────────────── */
-              <div>
-                {/* Mobile list */}
-                <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-                  {paginated.map((assignment, idx) => {
-                    const { icon: CatIcon, colour, bg } = getCategoryStyle(assignment.type);
-                    const displayIndex = String(startIdx + idx + 1).padStart(2, '0');
-                    return (
-                      <div key={assignment.id} className="p-3.5 space-y-2 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                        <div className="flex items-start justify-between gap-2.5">
-                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                            <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0', bg)}>
-                              <CatIcon className={cn('w-4 h-4', colour)} />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-[10px] font-black text-slate-400 font-mono">#{displayIndex}</span>
-                              <h4 className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 line-clamp-2">{assignment.title}</h4>
-                              <p className={cn('text-[10px] font-bold uppercase tracking-wide mt-0.5', colour)}>{assignment.type}</p>
-                            </div>
-                          </div>
-                          <span className={cn('text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border shrink-0', getStatusBadgeStyle(assignment.status))}>
-                            {assignment.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between pl-10 text-[11px] text-slate-500 dark:text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 shrink-0" />
-                            {assignment.dueDate}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {assignment.grade && <span className="font-bold text-emerald-600 dark:text-emerald-400">{assignment.grade}</span>}
-                            <ActionButton assignment={assignment} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="p-4 sm:p-6 space-y-6">
+                {groupedSections.map((section) => (
+                  <div key={section.label} className="space-y-3">
+                    {/* Section Header */}
+                    <div className="flex items-center gap-2.5 px-1 py-1">
+                      <div className="size-2 rounded-full bg-pink-500" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {section.label}
+                      </h4>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                        {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                      </span>
+                    </div>
 
-                {/* Desktop table */}
-                <div className="hidden md:block overflow-x-auto no-scrollbar">
-                  <table className="w-full text-sm text-left whitespace-nowrap">
-                    <thead className="bg-slate-50/50 dark:bg-slate-800/20 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                      <tr>
-                        <th className="px-4 py-3.5 w-12">#</th>
-                        <th className="px-4 py-3.5">Assessment</th>
-                        <th className="px-4 py-3.5">Type</th>
-                        <th className="px-4 py-3.5">Due Date</th>
-                        <th className="px-4 py-3.5">Status</th>
-                        <th className="px-4 py-3.5 text-center">Score</th>
-                        <th className="px-4 py-3.5 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                      {paginated.map((assignment, idx) => {
+                    {/* Mobile list for this date group */}
+                    <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/50 overflow-hidden">
+                      {section.items.map((assignment) => {
                         const { icon: CatIcon, colour, bg } = getCategoryStyle(assignment.type);
-                        const displayIndex = String(startIdx + idx + 1).padStart(2, '0');
+                        const displayIndex = String(assignment.id).padStart(2, '0');
                         return (
-                          <tr key={assignment.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
-                            <td className="px-4 py-3.5">
-                              <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-1.5 rounded-md font-mono text-[10px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
-                                #{displayIndex}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-200 max-w-[260px]">
-                              <span className="line-clamp-2">{assignment.title}</span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <div className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold', bg)}>
-                                <CatIcon className={cn('w-3.5 h-3.5 shrink-0', colour)} />
-                                <span className={colour}>{assignment.type || 'Assessment'}</span>
+                          <div key={assignment.id} className="p-3.5 space-y-2 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                            <div className="flex items-start justify-between gap-2.5">
+                              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0', bg)}>
+                                  <CatIcon className={cn('w-4 h-4', colour)} />
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="text-[10px] font-black text-slate-400 font-mono">#{displayIndex}</span>
+                                  <h4 className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 line-clamp-2">{assignment.title}</h4>
+                                  <p className={cn('text-[10px] font-bold uppercase tracking-wide mt-0.5', colour)}>{assignment.type}</p>
+                                </div>
                               </div>
-                            </td>
-                            <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-medium text-xs">
-                              <span className="flex items-center gap-1.5">
-                                <Calendar size={13} className="text-slate-400 shrink-0" />
-                                {assignment.dueDate}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className={cn('text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border', getStatusBadgeStyle(assignment.status))}>
+                              <span className={cn('text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border shrink-0', getStatusBadgeStyle(assignment.status))}>
                                 {assignment.status}
                               </span>
-                            </td>
-                            <td className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-200 text-center text-sm">
-                              {assignment.grade ? (
-                                <span className="text-emerald-600 dark:text-emerald-400 font-black">{assignment.grade}</span>
-                              ) : (
-                                <span className="text-slate-300 dark:text-slate-600">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3.5 text-right">
-                              <ActionButton assignment={assignment} />
-                            </td>
-                          </tr>
+                            </div>
+                            <div className="flex items-center justify-between pl-10 text-[11px] text-slate-500 dark:text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 shrink-0" />
+                                {assignment.dueDate}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {assignment.grade && (() => {
+                                  const badge = resolveAssessmentGradeBadge(assignment.grade, gradingSystem);
+                                  return (
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-bold text-slate-800 dark:text-white">{assignment.grade}</span>
+                                      {badge?.grade && (
+                                        <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-black border uppercase', badge.bg, badge.color)}>
+                                          {badge.grade}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                                <ActionButton assignment={assignment} />
+                              </div>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+
+                    {/* Desktop table for this date group */}
+                    <div className="hidden md:block overflow-x-auto no-scrollbar rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/50">
+                      <table className="w-full text-sm text-left whitespace-nowrap">
+                        <thead className="bg-slate-50/50 dark:bg-slate-800/20 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="px-4 py-3.5 w-12">#</th>
+                            <th className="px-4 py-3.5">Assessment</th>
+                            <th className="px-4 py-3.5">Type</th>
+                            <th className="px-4 py-3.5">Due Date</th>
+                            <th className="px-4 py-3.5">Status</th>
+                            <th className="px-4 py-3.5 text-center">Score</th>
+                            <th className="px-4 py-3.5 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                          {section.items.map((assignment) => {
+                            const { icon: CatIcon, colour, bg } = getCategoryStyle(assignment.type);
+                            const displayIndex = String(assignment.id).padStart(2, '0');
+                            return (
+                              <tr key={assignment.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                <td className="px-4 py-3.5">
+                                  <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-1.5 rounded-md font-mono text-[10px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+                                    #{displayIndex}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-200 max-w-[260px]">
+                                  <span className="line-clamp-2">{assignment.title}</span>
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  <div className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold', bg)}>
+                                    <CatIcon className={cn('w-3.5 h-3.5 shrink-0', colour)} />
+                                    <span className={colour}>{assignment.type || 'Assessment'}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 font-medium text-xs">
+                                  <span className="flex items-center gap-1.5">
+                                    <Calendar size={13} className="text-slate-400 shrink-0" />
+                                    {assignment.dueDate}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  <span className={cn('text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border', getStatusBadgeStyle(assignment.status))}>
+                                    {assignment.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-200 text-center text-sm">
+                                  {assignment.grade ? (() => {
+                                    const badge = resolveAssessmentGradeBadge(assignment.grade, gradingSystem);
+                                    return (
+                                      <div className="inline-flex items-center justify-center gap-1.5">
+                                        <span className="font-black text-slate-800 dark:text-white">{assignment.grade}</span>
+                                        {badge?.grade && (
+                                          <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-black border uppercase shadow-2xs', badge.bg, badge.color)}>
+                                            {badge.grade}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })() : (
+                                    <span className="text-slate-300 dark:text-slate-600">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3.5 text-right">
+                                  <ActionButton assignment={assignment} />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

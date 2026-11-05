@@ -1,6 +1,8 @@
 import { FileText, ArrowRight, CheckCircle2, AlertCircle, FileBox } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { groupByDate } from '../../../utils/dateSectioning';
+import { getGradeEvaluation, type GradingTier } from '@/utils/gradingSystem';
 
 interface Submission {
   id: string;
@@ -16,9 +18,10 @@ interface RecentSubmissionsProps {
   submissions: Submission[];
   onGradeSubmission: (submissionId: string) => void;
   onViewAll: () => void;
+  gradingSystem?: GradingTier[];
 }
 
-export default function RecentSubmissions({ submissions, onGradeSubmission, onViewAll }: RecentSubmissionsProps) {
+export default function RecentSubmissions({ submissions, onGradeSubmission, onViewAll, gradingSystem }: RecentSubmissionsProps) {
   const getStatusStyles = (status: Submission['status']) => {
     switch (status) {
       case 'pending':
@@ -62,69 +65,80 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
         </button>
       </div>
 
-      <div className="space-y-3">
-        {submissions.map((submission, idx) => (
-          <motion.div
-            key={submission.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="group flex items-center justify-between p-5 bg-white/40 dark:bg-emerald-900/30 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all border border-slate-200/50 dark:border-emerald-700/40 hover:border-emerald-600/30 hover:shadow-xl hover:shadow-emerald-600/5 cursor-pointer relative overflow-hidden"
-          >
-            {/* Hover Indicator */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            
-            <div className="flex items-center gap-5 relative z-10">
-              <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden shadow-inner transition-transform group-hover:scale-110 group-hover:-rotate-3 border border-slate-200/50 dark:border-emerald-700/50">
-                <Image
-                  src={submission.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
-                  alt={submission.studentName}
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 transition-colors">
-                  {submission.studentName}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                    {submission.assignment}
-                  </span>
-                  <span className="text-slate-300 dark:text-slate-600">•</span>
-                  <span className="text-[9px] font-bold tracking-widest text-slate-400">
-                    {submission.submittedDate}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                   <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${getStatusStyles(submission.status)}`}>
-                      {getStatusIcon(submission.status)}
-                      {submission.status}
-                   </span>
-                   {submission.grade && (
-                     <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-600/10 px-2 py-0.5 rounded-md">
-                       Grade: {submission.grade}%
-                     </span>
-                   )}
-                </div>
-              </div>
+      <div className="space-y-5">
+        {groupByDate(submissions, (s) => s.submittedDate).map((section) => (
+          <div key={section.label} className="space-y-3">
+            <div className="flex items-center gap-2.5 px-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{section.label}</span>
+              <span className="h-px flex-1 bg-slate-100 dark:bg-emerald-900/40" />
             </div>
+            {section.items.map((submission, idx) => (
+              <motion.div
+                key={submission.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="group flex items-center justify-between p-5 bg-white/40 dark:bg-emerald-900/30 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all border border-slate-200/50 dark:border-emerald-700/40 hover:border-emerald-600/30 hover:shadow-xl hover:shadow-emerald-600/5 cursor-pointer relative overflow-hidden"
+              >
+                {/* Hover Indicator */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-            <button
-              onClick={() => onGradeSubmission(submission.id)}
-              className="relative z-10 flex items-center justify-center h-10 px-5 bg-white/50 dark:bg-emerald-950/50 text-slate-500 dark:text-slate-400 rounded-xl hover:bg-emerald-600 hover:text-white hover:border-transparent transition-all border border-slate-200/50 dark:border-emerald-800/50 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md active:scale-95 group-hover:border-emerald-600/30"
-            >
-              {submission.status === 'graded' ? 'Review' : 'Grade'}
-            </button>
-          </motion.div>
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden shadow-inner transition-transform group-hover:scale-110 group-hover:-rotate-3 border border-slate-200/50 dark:border-emerald-700/50">
+                    <Image
+                      src={submission.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
+                      alt={submission.studentName}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 transition-colors">
+                      {submission.studentName}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                        {submission.assignment}
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-600">•</span>
+                      <span className="text-[9px] font-bold tracking-widest text-slate-400">
+                        {submission.submittedDate}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${getStatusStyles(submission.status)}`}>
+                        {getStatusIcon(submission.status)}
+                        {submission.status}
+                      </span>
+                      {submission.grade !== undefined && (() => {
+                        const ev = getGradeEvaluation(submission.grade, gradingSystem);
+                        return (
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${ev.bg} ${ev.color}`}>
+                            {submission.grade}% • {ev.grade}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => onGradeSubmission(submission.id)}
+                  className="relative z-10 flex items-center justify-center h-10 px-5 bg-white/50 dark:bg-emerald-950/50 text-slate-500 dark:text-slate-400 rounded-xl hover:bg-emerald-600 hover:text-white hover:border-transparent transition-all border border-slate-200/50 dark:border-emerald-800/50 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md active:scale-95 group-hover:border-emerald-600/30"
+                >
+                  {submission.status === 'graded' ? 'Review' : 'Grade'}
+                </button>
+              </motion.div>
+            ))}
+          </div>
         ))}
       </div>
 
       {submissions.length === 0 && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-slate-50 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-emerald-700/50">
-             <FileBox className="text-slate-300" size={24} />
+            <FileBox className="text-slate-300" size={24} />
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No recent submissions</p>
         </div>

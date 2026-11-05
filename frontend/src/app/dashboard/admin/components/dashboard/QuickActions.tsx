@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
-import { AdminFeatureFlagKey } from "../adminFeatureFlags";
+import { AdminFeatureFlagKey, AdminRole, canAdminRoleAccessFeature } from "../adminFeatureFlags";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 interface Action {
@@ -24,7 +24,7 @@ interface Action {
 
 export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const router = useRouter();
-  
+
   const { user } = useAuthStore();
   const { data: globalFeatures } = useGlobalFeatures('admin');
 
@@ -120,10 +120,12 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
   ]);
 
   const [showMore, setShowMore] = useState(false);
-  
+  const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
+
   const allowedActions = actions.filter((action) => {
     if (!action.featureKey) return true;
-    return globalFeatures?.[action.featureKey] !== false;
+    if (globalFeatures?.[action.featureKey] === false) return false;
+    return canAdminRoleAccessFeature(adminRole, action.featureKey);
   });
 
   const visibleActions = showMore ? allowedActions : allowedActions.slice(0, 4);
@@ -132,8 +134,8 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div>
-            <h3 className="text-base font-semibold text-slate-800 dark:text-white">Quick Actions</h3>
-            <p className="text-xs text-slate-500">Shortcuts to common tasks</p>
+          <h3 className="text-base font-semibold text-slate-800 dark:text-white">Quick Actions</h3>
+          <p className="text-xs text-slate-500">Shortcuts to common tasks</p>
         </div>
         {allowedActions.length > 4 && (
           <button

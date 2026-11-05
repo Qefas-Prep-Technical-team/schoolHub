@@ -1,12 +1,14 @@
 'use client';
 
 import { AssignmentStats } from './types';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface GradingStatsProps {
   stats: AssignmentStats;
+  gradingSystem?: any[] | null;
 }
 
-export default function GradingStats({ stats }: GradingStatsProps) {
+export default function GradingStats({ stats, gradingSystem }: GradingStatsProps) {
   const percentageGraded = stats.totalStudents > 0 
     ? ((stats.graded / stats.totalStudents) * 100).toFixed(0) 
     : '0';
@@ -52,9 +54,24 @@ export default function GradingStats({ stats }: GradingStatsProps) {
         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
           Class Average
         </p>
-        <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {stats.averageScore?.toFixed(1) || '--'}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            {stats.averageScore?.toFixed(1) || '--'}
+          </p>
+          {typeof stats.averageScore === 'number' && (
+            (() => {
+              const pill = computeGradePill(stats.averageScore, gradingSystem);
+              return (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${pill.bg} ${pill.color}`}
+                  title={pill.remark || pill.label}
+                >
+                  {pill.label}
+                </span>
+              );
+            })()
+          )}
+        </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Out of 100 points
         </p>

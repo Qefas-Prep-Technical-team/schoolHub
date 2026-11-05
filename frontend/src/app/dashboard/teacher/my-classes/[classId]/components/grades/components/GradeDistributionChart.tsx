@@ -1,5 +1,6 @@
 'use client'
 import { cn } from '@/lib/utils'
+import { getGradeColorAndBg } from '@/utils/gradingSystem'
 
 interface GradeDistributionChartProps {
   distribution: Record<string, number>
@@ -9,13 +10,15 @@ interface GradeDistributionChartProps {
 export function GradeDistributionChart({ distribution, className }: GradeDistributionChartProps) {
   const total = Object.values(distribution).reduce((a, b) => a + b, 0)
   const maxCount = Math.max(...Object.values(distribution))
-  
-  const colors = {
-    A: 'bg-green-500',
-    B: 'bg-emerald-500',
-    C: 'bg-yellow-500',
-    D: 'bg-orange-500',
-    F: 'bg-red-500',
+
+  const getBarColor = (grade: string) => {
+    const { color } = getGradeColorAndBg(grade)
+    if (color.includes('emerald')) return 'bg-emerald-500'
+    if (color.includes('blue')) return 'bg-blue-500'
+    if (color.includes('amber')) return 'bg-amber-500'
+    if (color.includes('orange')) return 'bg-orange-500'
+    if (color.includes('rose') || color.includes('red')) return 'bg-rose-500'
+    return 'bg-emerald-500'
   }
 
   return (
@@ -44,7 +47,7 @@ export function GradeDistributionChart({ distribution, className }: GradeDistrib
                 </div>
                 <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full rounded-full transition-all duration-300", colors[grade as keyof typeof colors])}
+                    className={cn("h-full rounded-full transition-all duration-300", getBarColor(grade))}
                     style={{ width: `${barWidth}%` }}
                   />
                 </div>

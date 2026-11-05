@@ -1,11 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { X, Send, Megaphone, Users, AlertCircle, Check, Sparkles, Building2 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { classService } from '@/lib/api/services/classService';
-import { toast } from 'react-toastify';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from "react";
+import { X, Send, Megaphone, Sparkles } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { classService } from "@/lib/api/services/classService";
+import { toast } from "react-toastify";
+import { motion } from "framer-motion";
+import {
+  AnnouncementAudienceFields,
+  AnnouncementPriority,
+} from "./announcement/AnnouncementAudienceFields";
 
 export interface ClassItem {
   id: string;
@@ -28,11 +32,15 @@ export default function AdminAnnouncementModal({
   classes = [],
   schoolName,
 }: AdminAnnouncementModalProps) {
-  const [selectedClassId, setSelectedClassId] = useState<string>('ALL');
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [targets, setTargets] = useState<string[]>(['STUDENT', 'TEACHER', 'PARENT']);
-  const [priority, setPriority] = useState<'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
+  const [selectedClassId, setSelectedClassId] = useState<string>("ALL");
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [targets, setTargets] = useState<string[]>([
+    "STUDENT",
+    "TEACHER",
+    "PARENT",
+  ]);
+  const [priority, setPriority] = useState<AnnouncementPriority>("NORMAL");
 
   const queryClient = useQueryClient();
 
@@ -42,58 +50,64 @@ export default function AdminAnnouncementModal({
         ? prev.length > 1
           ? prev.filter((t) => t !== target)
           : prev
-        : [...prev, target]
+        : [...prev, target],
     );
   };
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      if (!title.trim()) throw new Error('Announcement title is required.');
-      if (!message.trim()) throw new Error('Announcement message body is required.');
-      if (targets.length === 0) throw new Error('Please select at least one recipient audience.');
+      if (!title.trim()) throw new Error("Announcement title is required.");
+      if (!message.trim())
+        throw new Error("Announcement message body is required.");
+      if (targets.length === 0)
+        throw new Error("Please select at least one recipient audience.");
 
       const targetClassIds =
-        selectedClassId === 'ALL'
+        selectedClassId === "ALL"
           ? classes.map((c) => c.id)
           : [selectedClassId];
 
       if (targetClassIds.length === 0) {
-        throw new Error('Please ensure there is at least one active class in your school to broadcast to.');
+        throw new Error(
+          "Please ensure there is at least one active class in your school to broadcast to.",
+        );
       }
 
-      // Dispatch announcement to selected classes
-      const results = await Promise.all(
+      return Promise.all(
         targetClassIds.map((cId) =>
           classService.sendAnnouncement(cId, {
             title: title.trim(),
             message: message.trim(),
             targets,
             priority,
-          })
-        )
+          }),
+        ),
       );
-
-      return results;
     },
     onSuccess: () => {
       const cohortText =
-        selectedClassId === 'ALL'
+        selectedClassId === "ALL"
           ? `the entire school across ${classes.length} class cohorts`
-          : classes.find((c) => c.id === selectedClassId)?.name || 'the selected class';
+          : classes.find((c) => c.id === selectedClassId)?.name ||
+          "the selected class";
 
       toast.success(`Announcement broadcasted to ${cohortText}!`);
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      setTitle('');
-      setMessage('');
-      setPriority('NORMAL');
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      setTitle("");
+      setMessage("");
+      setPriority("NORMAL");
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
       const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to broadcast announcement. Please try again.';
-      toast.error(typeof msg === 'string' ? msg : 'Broadcast error');
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to broadcast announcement. Please try again.";
+      toast.error(typeof msg === "string" ? msg : "Broadcast error");
     },
   });
 
@@ -122,7 +136,9 @@ export default function AdminAnnouncementModal({
                   <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/20 text-white">
                     Official Notice
                   </span>
-                  <span className="text-xs text-white/80 font-medium truncate max-w-[200px]">{schoolName}</span>
+                  <span className="text-xs text-white/80 font-medium truncate max-w-[200px]">
+                    {schoolName}
+                  </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
                   School-Wide Announcement
@@ -142,105 +158,15 @@ export default function AdminAnnouncementModal({
 
         {/* Modal Form Body */}
         <div className="p-6 sm:p-8 space-y-5 overflow-y-auto flex-1">
-          {/* Target Audience Selector */}
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-              Recipient Audience
-            </label>
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-              {[
-                { id: 'STUDENT', label: 'Students', desc: 'All enrolled learners' },
-                { id: 'TEACHER', label: 'Teachers', desc: 'Teaching staff' },
-                { id: 'PARENT', label: 'Parents', desc: 'Guardians' },
-              ].map((grp) => {
-                const isSelected = targets.includes(grp.id);
-                return (
-                  <button
-                    key={grp.id}
-                    type="button"
-                    onClick={() => toggleTarget(grp.id)}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs sm:text-sm font-bold">{grp.label}</span>
-                      <div
-                        className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
-                          isSelected
-                            ? 'bg-blue-600 text-white'
-                            : 'border border-slate-300 dark:border-slate-700'
-                        }`}
-                      >
-                        {isSelected && <Check size={11} strokeWidth={3} />}
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1">{grp.desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Class Cohort Selector */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Target Class Cohort
-              </label>
-              <span className="text-[10px] font-bold text-slate-400">
-                {classes.length} Available Classes
-              </span>
-            </div>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
-            >
-              <option value="ALL">All Classes (Entire School Broadcast)</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} {c.section ? `(${c.section})` : ''} {c.studentCount ? `— ${c.studentCount} students` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Priority Pill Radios */}
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-              Notice Urgency Level
-            </label>
-            <div className="flex items-center gap-2">
-              {[
-                { id: 'NORMAL', label: 'Standard', color: 'blue' },
-                { id: 'HIGH', label: 'Important', color: 'amber' },
-                { id: 'URGENT', label: 'Urgent', color: 'rose' },
-              ].map((p) => {
-                const isSelected = priority === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setPriority(p.id as any)}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer text-center ${
-                      isSelected
-                        ? p.color === 'rose'
-                          ? 'bg-rose-50 border-rose-400 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-                          : p.color === 'amber'
-                          ? 'bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                          : 'bg-blue-50 border-blue-400 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AnnouncementAudienceFields
+            targets={targets}
+            onToggleTarget={toggleTarget}
+            classes={classes}
+            selectedClassId={selectedClassId}
+            onSelectClassId={setSelectedClassId}
+            priority={priority}
+            onSelectPriority={setPriority}
+          />
 
           {/* Title Input */}
           <div>
@@ -290,7 +216,9 @@ export default function AdminAnnouncementModal({
             <button
               type="button"
               onClick={() => sendMutation.mutate()}
-              disabled={sendMutation.isPending || !title.trim() || !message.trim()}
+              disabled={
+                sendMutation.isPending || !title.trim() || !message.trim()
+              }
               className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all cursor-pointer"
             >
               {sendMutation.isPending ? (

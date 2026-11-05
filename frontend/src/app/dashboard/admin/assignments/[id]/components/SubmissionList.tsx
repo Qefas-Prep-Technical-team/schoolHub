@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { format } from "date-fns";
 import { Users, Eye, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import {
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { generatePDF } from "@/utils/pdfGenerator";
-import { computeGradePill } from "@/utils/gradingSystem";
+import { computeGradePill, getGradeEvaluation } from "@/utils/gradingSystem";
+import { groupByDate } from "@/app/dashboard/teacher/utils/dateSectioning";
 import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -30,7 +31,9 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
 
   const [isExporting, setIsExporting] = useState(false);
-  const { data: schoolProfile } = useSchoolProfile(schoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "");
+  const rawSchoolId = schoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const effectiveSchoolId = rawSchoolId === "default-tenant-id" || rawSchoolId === "personal" ? "" : rawSchoolId;
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   const handleExport = async (targetFormat: 'csv' | 'pdf') => {
     setIsExporting(true);
@@ -39,9 +42,13 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
         toast.info("No submissions to export.");
         return;
       }
-      
-      const headers = ["#", "Student Name", "Student Email", "Submitted At", "Status", "Score", "Max Score"];
+
+      const maxScoreVal = assignment.maxScore || 100;
+      const headers = ["#", "Student Name", "Student Email", "Submitted At", "Status", "Score", "Max Score", "Grade", "Remark"];
       const rows = submissions.map((sub: any, index: number) => {
+        const hasScore = sub.score !== null && sub.score !== undefined;
+        const pct = hasScore && maxScoreVal > 0 ? (sub.score / maxScoreVal) * 100 : 0;
+        const evalRes = hasScore ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
         return [
           (index + 1).toString(),
           sub.student?.name || "Unknown Student",
@@ -49,7 +56,9 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
           sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, yyyy h:mm a") : "Unknown",
           sub.status || "Unknown",
           (sub.score ?? 0).toString(),
-          (assignment.maxScore || 100).toString()
+          maxScoreVal.toString(),
+          evalRes ? evalRes.grade : "N/A",
+          evalRes ? evalRes.remark : "N/A"
         ];
       });
 
@@ -66,11 +75,11 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
         csvContent.push(`"Assignment: ${(assignment.title || '').replace(/"/g, '""')}"`);
         csvContent.push(`"Generated on: ${dateStr}"`);
         csvContent.push("");
-        
+
         csvContent.push(headers.join(","));
         rows.forEach((r: any[]) => {
-            const safeRow = r.map((item: any) => `"${String(item).replace(/"/g, '""')}"`);
-            csvContent.push(safeRow.join(","));
+          const safeRow = r.map((item: any) => `"${String(item).replace(/"/g, '""')}"`);
+          csvContent.push(safeRow.join(","));
         });
 
         const csv = csvContent.join("\n");
@@ -107,6 +116,22 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
 
   const submissions = assignment.submissions || [];
 
+  const groupedSubmissions = useMemo(() => {
+    return groupByDate(submissions, (sub: any) => sub.submittedAt || sub.createdAt);
+  }, [submissions]);
+
+  const classAverageSummary = useMemo(() => {
+    const graded = submissions.filter((s: any) => s.status === "GRADED" || (s.score !== null && s.score !== undefined));
+    if (graded.length === 0) return null;
+    const maxScoreVal = assignment.maxScore || 100;
+    const avgScore = graded.reduce((sum: number, s: any) => sum + (s.score ?? 0), 0) / graded.length;
+    const avgPct = maxScoreVal > 0 ? Math.round((avgScore / maxScoreVal) * 100) : 0;
+    return {
+      avgPct,
+      pill: computeGradePill(avgPct, schoolProfile?.gradingSystem),
+    };
+  }, [submissions, assignment.maxScore, schoolProfile?.gradingSystem]);
+
   if (submissions.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 text-center shadow-sm flex flex-col items-center justify-center min-h-[300px]">
@@ -121,20 +146,28 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
           <Users className="w-5 h-5 text-primary" />
           Submissions Tracker
-          <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full ml-2">
+          <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full ml-1">
             {submissions.length} Total
           </span>
+          {classAverageSummary && (
+            <span
+              className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${classAverageSummary.pill.bg} ${classAverageSummary.pill.color}`}
+              title={`Class Average: ${classAverageSummary.avgPct}% — ${classAverageSummary.pill.remark || classAverageSummary.pill.label}`}
+            >
+              Avg: {classAverageSummary.avgPct}% ({classAverageSummary.pill.label})
+            </span>
+          )}
         </h3>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               disabled={isExporting}
               className="h-9 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700"
             >
@@ -147,13 +180,13 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => handleExport('csv')}
               className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
             >
               Export as CSV
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => handleExport('pdf')}
               className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
             >
@@ -176,151 +209,189 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
             </tr>
           </thead>
           <tbody>
-            {submissions.map((sub: any, index: number) => (
-              <tr key={sub.id} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                <td className="py-4 text-center font-medium text-slate-500 dark:text-slate-400">
-                  {index + 1}
-                </td>
-                <td className="py-4">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={sub.student?.profileImage || "/logo/favicon.svg"} 
-                      alt={sub.student?.name || "Student"} 
-                      className="w-10 h-10 rounded-full bg-slate-100 object-cover"
-                    />
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{sub.student?.name || "Unknown Student"}</p>
-                      <p className="text-xs text-slate-500">{sub.student?.email || "No email"}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-4 text-sm text-slate-600 dark:text-slate-300">
-                  {sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, yyyy h:mm a") : "Unknown"}
-                </td>
-                <td className="py-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                    sub.status === "GRADED" 
-                      ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-                      : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
-                  }`}>
-                    {sub.status === "GRADED" ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-                    {sub.status}
-                  </span>
-                </td>
-                <td className="py-4 text-right">
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{sub.score ?? 0} / {assignment.maxScore || 100}</span>
-                    {sub.score !== null && sub.score !== undefined && (
-                      (() => {
-                        const max = assignment.maxScore || 100;
-                        const pct = max > 0 ? (sub.score / max) * 100 : 0;
-                        const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
-                        return (
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}>
-                            <span>{pill.label}</span>
-                            {pill.remark && <span className="opacity-75 uppercase tracking-wider text-[9px]">({pill.remark})</span>}
+            {(() => {
+              let runningIdx = 0;
+              return groupedSubmissions.map((group) => (
+                <Fragment key={group.label}>
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/60 border-y border-slate-100 dark:border-slate-800">
+                    <td colSpan={6} className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="size-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                          {group.label}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700">
+                          {group.items.length} {group.items.length === 1 ? "submission" : "submissions"}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  {group.items.map((sub: any) => {
+                    runningIdx += 1;
+                    const idx = runningIdx;
+                    return (
+                      <tr key={sub.id} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td className="py-4 text-center font-medium text-slate-500 dark:text-slate-400">
+                          {idx}
+                        </td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={sub.student?.profileImage || "/logo/favicon.svg"}
+                              alt={sub.student?.name || "Student"}
+                              className="w-10 h-10 rounded-full bg-slate-100 object-cover"
+                            />
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{sub.student?.name || "Unknown Student"}</p>
+                              <p className="text-xs text-slate-500">{sub.student?.email || "No email"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 text-sm text-slate-600 dark:text-slate-300">
+                          {sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, yyyy h:mm a") : "Unknown"}
+                        </td>
+                        <td className="py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${sub.status === "GRADED"
+                              ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                              : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                            }`}>
+                            {sub.status === "GRADED" ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                            {sub.status}
                           </span>
-                        );
-                      })()
-                    )}
-                  </div>
-                </td>
-                <td className="py-4 text-right">
-                  {!readOnly && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="h-8 rounded-lg text-xs font-semibold"
-                      onClick={() => setSelectedSubmission(sub)}
-                    >
-                      <Eye className="w-4 h-4 mr-1.5" />
-                      Review
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                        </td>
+                        <td className="py-4 text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{sub.score ?? 0} / {assignment.maxScore || 100}</span>
+                            {sub.score !== null && sub.score !== undefined && (
+                              (() => {
+                                const max = assignment.maxScore || 100;
+                                const pct = max > 0 ? (sub.score / max) * 100 : 0;
+                                const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                                return (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}>
+                                    <span>{pill.label}</span>
+                                    {pill.remark && <span className="opacity-75 uppercase tracking-wider text-[9px]">({pill.remark})</span>}
+                                  </span>
+                                );
+                              })()
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 text-right">
+                          {!readOnly && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 rounded-lg text-xs font-semibold"
+                              onClick={() => setSelectedSubmission(sub)}
+                            >
+                              <Eye className="w-4 h-4 mr-1.5" />
+                              Review
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </Fragment>
+              ));
+            })()}
           </tbody>
         </table>
       </div>
 
       {/* Mobile Card List (Visible on phones & small tablets) */}
-      <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 -mx-1">
-        {submissions.map((sub: any) => (
-          <div key={sub.id} className="py-3.5 px-2 flex flex-col gap-2.5">
-            {/* Top row: Avatar, Student Info, Review CTA */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <img 
-                  src={sub.student?.profileImage || "/logo/favicon.svg"} 
-                  alt={sub.student?.name || "Student"} 
-                  className="w-9 h-9 rounded-full bg-slate-100 object-cover shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{sub.student?.name || "Unknown Student"}</p>
-                  <p className="text-[11px] text-slate-400 truncate">{sub.student?.email || "No email"}</p>
-                </div>
-              </div>
-              {!readOnly && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-8 rounded-lg text-xs font-semibold shrink-0"
-                  onClick={() => setSelectedSubmission(sub)}
-                >
-                  <Eye className="w-3.5 h-3.5 mr-1 text-primary" />
-                  Review
-                </Button>
-              )}
+      <div className="md:hidden space-y-5 -mx-1">
+        {groupedSubmissions.map((group) => (
+          <div key={group.label} className="space-y-2">
+            <div className="flex items-center gap-2 px-2 py-1">
+              <div className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                {group.label}
+              </span>
+              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                {group.items.length} {group.items.length === 1 ? "submission" : "submissions"}
+              </span>
             </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {group.items.map((sub: any) => (
+                <div key={sub.id} className="py-3.5 px-2 flex flex-col gap-2.5">
+                  {/* Top row: Avatar, Student Info, Review CTA */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img
+                        src={sub.student?.profileImage || "/logo/favicon.svg"}
+                        alt={sub.student?.name || "Student"}
+                        className="w-9 h-9 rounded-full bg-slate-100 object-cover shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{sub.student?.name || "Unknown Student"}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{sub.student?.email || "No email"}</p>
+                      </div>
+                    </div>
+                    {!readOnly && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-lg text-xs font-semibold shrink-0"
+                        onClick={() => setSelectedSubmission(sub)}
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1 text-primary" />
+                        Review
+                      </Button>
+                    )}
+                  </div>
 
-            {/* Bottom row: Status badge, Date, Score */}
-            <div className="flex items-center justify-between pt-1 border-t border-slate-50 dark:border-slate-800/40 text-xs">
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                  sub.status === "GRADED" 
-                    ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-                    : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
-                }`}>
-                  {sub.status === "GRADED" ? <CheckCircle2 size={11} /> : <Clock size={11} />}
-                  {sub.status}
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  {sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, h:mm a") : "Unknown"}
-                </span>
-              </div>
-              <div className="text-right flex items-center gap-1.5">
-                {sub.score !== null && sub.score !== undefined && (
-                  (() => {
-                    const max = assignment.maxScore || 100;
-                    const pct = max > 0 ? (sub.score / max) * 100 : 0;
-                    const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
-                    return (
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}>
-                        {pill.label}
+                  {/* Bottom row: Status badge, Date, Score */}
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-50 dark:border-slate-800/40 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${sub.status === "GRADED"
+                          ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                          : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                        }`}>
+                        {sub.status === "GRADED" ? <CheckCircle2 size={11} /> : <Clock size={11} />}
+                        {sub.status}
                       </span>
-                    );
-                  })()
-                )}
-                <span className="text-sm font-black text-slate-900 dark:text-white">
-                  {sub.score ?? 0}
-                </span>
-                <span className="text-[11px] text-slate-400 font-bold ml-0.5">
-                  / {assignment.maxScore || 100}
-                </span>
-              </div>
+                      <span className="text-[11px] text-slate-400">
+                        {sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, h:mm a") : "Unknown"}
+                      </span>
+                    </div>
+                    <div className="text-right flex items-center gap-1.5">
+                      {sub.score !== null && sub.score !== undefined && (
+                        (() => {
+                          const max = assignment.maxScore || 100;
+                          const pct = max > 0 ? (sub.score / max) * 100 : 0;
+                          const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                          return (
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`}>
+                              {pill.label}
+                            </span>
+                          );
+                        })()
+                      )}
+                      <span className="text-sm font-black text-slate-900 dark:text-white">
+                        {sub.score ?? 0}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-bold ml-0.5">
+                        / {assignment.maxScore || 100}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
 
       {selectedSubmission && (
-        <SubmissionReviewModal 
+        <SubmissionReviewModal
           isOpen={!!selectedSubmission}
           onClose={() => setSelectedSubmission(null)}
           submission={selectedSubmission}
           assignment={assignment}
-          schoolId={schoolId}
+          schoolId={effectiveSchoolId}
+          gradingSystem={schoolProfile?.gradingSystem}
         />
       )}
     </div>

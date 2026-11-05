@@ -158,7 +158,7 @@ export default function ManageTeachersPage() {
         const motto = schoolProfile?.motto || '';
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
-        
+
         // Add decorative background elements
         doc.setFillColor(241, 245, 249); // slate-100
         doc.circle(pageWidth, 0, 40, 'F');
@@ -166,7 +166,7 @@ export default function ManageTeachersPage() {
         doc.circle(pageWidth, 0, 25, 'F');
         doc.setFillColor(248, 250, 252); // slate-50
         doc.circle(0, pageHeight, 60, 'F');
-        
+
         // Header
         if (schoolProfile?.logo) {
             try {
@@ -175,16 +175,16 @@ export default function ManageTeachersPage() {
                 img.src = schoolProfile.logo;
                 await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
                 doc.addImage(img, 'PNG', pageWidth - 45, 10, 30, 30);
-            } catch(e) {}
+            } catch (e) { }
         }
-        
+
         let yPos = 22;
         doc.setFontSize(24);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42); // slate-900
         doc.text(schoolName, 14, yPos);
         yPos += 7;
-        
+
         if (motto) {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'italic');
@@ -192,24 +192,24 @@ export default function ManageTeachersPage() {
             doc.text(`"${motto}"`, 14, yPos);
             yPos += 6;
         }
-        
+
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 116, 139); // slate-500
         doc.text(address, 14, yPos);
         yPos += 8;
-        
+
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(100, 116, 139); // slate-500
         doc.text(title.toUpperCase(), 14, yPos);
         yPos += 7;
-        
+
         // Horizontal line
         doc.setDrawColor(15, 23, 42);
         doc.setLineWidth(0.8);
         doc.line(14, yPos, pageWidth - 14, yPos);
-        
+
         return yPos + 10; // startY for table
     }
 
@@ -217,11 +217,11 @@ export default function ManageTeachersPage() {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
-        
+
         const yPos = finalY + 30;
         doc.text('_________________________________', 14, yPos);
         doc.text('Authorized Signature', 14, yPos + 6);
-        
+
         const dateStr = new Date().toLocaleDateString();
         doc.text(`Date Generated: ${dateStr}`, doc.internal.pageSize.width - 14, yPos + 6, { align: 'right' });
     }
@@ -229,7 +229,7 @@ export default function ManageTeachersPage() {
     const exportTeacherProfiles = (format: 'csv' | 'pdf') => {
         const headers = ['#', 'Name', 'Email', 'Faculty ID', 'Subjects', 'Classes', 'Status']
         const rows = filteredTeachers.map((t, i) => [i + 1, t.name, t.email, t.teacherCode || 'UNASSIGNED', t.subjects.join(', '), t.classes.join(', '), t.status])
-        
+
         if (format === 'csv') {
             const csvContent = [headers.join(','), ...rows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(','))].join('\n')
             downloadCsv(csvContent, `teachers_profiles_${new Date().toISOString().split('T')[0]}.csv`)
@@ -251,7 +251,7 @@ export default function ManageTeachersPage() {
         setExportingFormat(format);
         try {
             const { adminService } = await import('@/lib/api/services/adminService');
-            
+
             // Determine actual start/end dates
             let start = exportStartDate;
             let end = exportEndDate;
@@ -263,10 +263,10 @@ export default function ManageTeachersPage() {
                 end = tsEnd;
                 dateTitle = termName;
             }
-            
+
             const result = await adminService.getSchoolTeacherAttendanceByDate(schoolId, undefined, start, end);
             const rawRecords = Array.isArray(result) ? result : (result?.data || []);
-            
+
             let headers: string[] = [];
             let rows: any[] = [];
 
@@ -385,7 +385,7 @@ export default function ManageTeachersPage() {
                                 <Skeleton className="h-9 w-32 rounded-lg" />
                             </div>
                         </div>
-                        
+
                         {/* Table Header */}
                         <div className="border-b border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-slate-800/30 p-3 flex gap-4">
                             <Skeleton className="h-4 w-10" />
@@ -495,7 +495,7 @@ export default function ManageTeachersPage() {
                                         Visualizes the aggregate weekly attendance pattern of all teachers. Identify recurring days of high absenteeism or tardiness to optimize scheduling and substitute coverage.
                                     </TooltipContent>
                                 </UITooltip>
-                        </TooltipProvider>
+                            </TooltipProvider>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">Weekly teacher presence</p>
                     </div>
@@ -586,111 +586,111 @@ export default function ManageTeachersPage() {
                     />
                 ) : (
                     <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse">
-                            <thead>
-                                <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-slate-800/30">
-                                    <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-10">#</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-40">Faculty ID</th>
-                                    <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Full Name</th>
-                                    <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Subjects</th>
-                                    <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Classes</th>
-                                    <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-white/[0.03]">
-                                {isLoading ? [...Array(10)].map((_, i) => (
-                                    <tr key={i} className="border-b border-gray-50 dark:border-white/[0.03]">
-                                        <td className="px-3 py-4"><Skeleton className="h-3 w-6" /></td>
-                                        <td className="px-4 py-4"><Skeleton className="h-3 w-20" /></td>
-                                        <td className="px-3 py-4">
-                                            <div className="flex items-center gap-2.5">
-                                                <Skeleton className="size-8 rounded-full shrink-0" />
-                                                <div className="space-y-2">
-                                                    <Skeleton className="h-3.5 w-32" />
-                                                    <Skeleton className="h-2.5 w-24" />
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4">
-                                            <div className="flex flex-wrap gap-1">
-                                                <Skeleton className="h-5 w-16 rounded-full" />
-                                                <Skeleton className="h-5 w-12 rounded-full" />
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4"><Skeleton className="h-3 w-16" /></td>
-                                        <td className="px-3 py-4">
-                                            <div className="flex items-center gap-1.5">
-                                                <Skeleton className="size-1.5 rounded-full" />
-                                                <Skeleton className="h-3 w-12" />
-                                            </div>
-                                        </td>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm border-collapse">
+                                <thead>
+                                    <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-slate-800/30">
+                                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-10">#</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-40">Faculty ID</th>
+                                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Full Name</th>
+                                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Subjects</th>
+                                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Classes</th>
+                                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Status</th>
                                     </tr>
-                                )) : paginatedTeachers.length === 0 ? (
-                                    <tr><td colSpan={6} className="py-16 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="size-14 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-400"><Users size={28} /></div>
-                                            <p className="text-sm font-semibold text-gray-700 dark:text-white">No Teachers Found</p>
-                                            <p className="text-xs text-gray-400">Try adjusting your search criteria.</p>
-                                        </div>
-                                    </td></tr>
-                                ) : paginatedTeachers.map((teacher, index) => {
-                                    const rowNumber = currentPage * itemsPerPage + index + 1
-                                    const facultyCode = teacher.teacherCode ? String(teacher.teacherCode).padStart(8, '0') : '—'
-                                    return (
-                                        <tr key={teacher.id} className="group hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => router.push(`/dashboard/admin/teachers/${teacher.id}`)}>
-                                            <td className="px-3 py-3"><span className="text-xs font-semibold text-gray-400 dark:text-gray-500 tabular-nums">{rowNumber}</span></td>
-                                            <td className="px-4 py-3"><span className="text-xs text-gray-700 dark:text-gray-300 tabular-nums font-medium tracking-wide">{facultyCode}</span></td>
-                                            <td className="px-3 py-3">
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 dark:divide-white/[0.03]">
+                                    {isLoading ? [...Array(10)].map((_, i) => (
+                                        <tr key={i} className="border-b border-gray-50 dark:border-white/[0.03]">
+                                            <td className="px-3 py-4"><Skeleton className="h-3 w-6" /></td>
+                                            <td className="px-4 py-4"><Skeleton className="h-3 w-20" /></td>
+                                            <td className="px-3 py-4">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="size-8 rounded-full overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 shrink-0">
-                                                        <img src={teacher.profileImage} alt={teacher.name} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-gray-800 dark:text-white truncate group-hover:text-indigo-600 transition-colors capitalize">{teacher.name}</p>
-                                                        <p className="text-[11px] text-gray-400 truncate">{teacher.email}</p>
+                                                    <Skeleton className="size-8 rounded-full shrink-0" />
+                                                    <div className="space-y-2">
+                                                        <Skeleton className="h-3.5 w-32" />
+                                                        <Skeleton className="h-2.5 w-24" />
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-3">
+                                            <td className="px-3 py-4">
                                                 <div className="flex flex-wrap gap-1">
-                                                    {teacher.subjects.slice(0, 2).map((s: string, i: number) => (
-                                                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">{s}</span>
-                                                    ))}
-                                                    {teacher.subjects.length > 2 && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-white/5 text-gray-500">+{teacher.subjects.length - 2}</span>}
-                                                    {teacher.subjects.length === 0 && <span className="text-xs text-gray-400">—</span>}
+                                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                                    <Skeleton className="h-5 w-12 rounded-full" />
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-3"><span className="text-xs text-gray-600 dark:text-gray-400">{teacher.classes.length > 0 ? teacher.classes.slice(0, 2).join(', ') + (teacher.classes.length > 2 ? ` +${teacher.classes.length - 2}` : '') : '—'}</span></td>
-                                            <td className="px-3 py-3">
-                                                <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', teacher.status === 'active' ? 'text-emerald-600' : 'text-amber-500')}>
-                                                    <span className={cn('size-1.5 rounded-full', teacher.status === 'active' ? 'bg-emerald-500' : 'bg-amber-400')} />
-                                                    {teacher.status === 'active' ? 'Active' : 'Pending'}
-                                                </span>
+                                            <td className="px-3 py-4"><Skeleton className="h-3 w-16" /></td>
+                                            <td className="px-3 py-4">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Skeleton className="size-1.5 rounded-full" />
+                                                    <Skeleton className="h-3 w-12" />
+                                                </div>
                                             </td>
                                         </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-                    {!isLoading && filteredTeachers.length > 0 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm text-xs text-gray-500">
-                            <span>Showing <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage * itemsPerPage + 1}–{Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)}</span> of <span className="font-semibold text-gray-700 dark:text-gray-200">{filteredTeachers.length}</span></span>
-                            <div className="flex items-center gap-1">
-                                <span className="hidden sm:inline mr-2 text-gray-400">Rows per page: {itemsPerPage}</span>
-                                <Button variant="outline" size="icon" className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40" onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}><ChevronLeft size={14} /></Button>
-                                {getPageNumbers().map((p, i) => p === '...' ? <span key={`e${i}`} className="px-1 text-gray-400">…</span> : (
-                                    <Button key={p} variant={p === currentPage + 1 ? 'default' : 'ghost'} className={cn('size-7 rounded-lg text-xs font-medium p-0', p === currentPage + 1 ? 'text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')} style={p === currentPage + 1 ? { backgroundColor: primaryColor } : {}} onClick={() => setCurrentPage((p as number) - 1)}>{p}</Button>
-                                ))}
-                                <Button variant="outline" size="icon" className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40" onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1}><ChevronRight size={14} /></Button>
-                            </div>
+                                    )) : paginatedTeachers.length === 0 ? (
+                                        <tr><td colSpan={6} className="py-16 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="size-14 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-400"><Users size={28} /></div>
+                                                <p className="text-sm font-semibold text-gray-700 dark:text-white">No Teachers Found</p>
+                                                <p className="text-xs text-gray-400">Try adjusting your search criteria.</p>
+                                            </div>
+                                        </td></tr>
+                                    ) : paginatedTeachers.map((teacher, index) => {
+                                        const rowNumber = currentPage * itemsPerPage + index + 1
+                                        const facultyCode = teacher.teacherCode ? String(teacher.teacherCode).padStart(8, '0') : '—'
+                                        return (
+                                            <tr key={teacher.id} className="group hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => router.push(`/dashboard/admin/teachers/${teacher.id}`)}>
+                                                <td className="px-3 py-3"><span className="text-xs font-semibold text-gray-400 dark:text-gray-500 tabular-nums">{rowNumber}</span></td>
+                                                <td className="px-4 py-3"><span className="text-xs text-gray-700 dark:text-gray-300 tabular-nums font-medium tracking-wide">{facultyCode}</span></td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="size-8 rounded-full overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 shrink-0">
+                                                            <img src={teacher.profileImage} alt={teacher.name} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-semibold text-gray-800 dark:text-white truncate group-hover:text-indigo-600 transition-colors capitalize">{teacher.name}</p>
+                                                            <p className="text-[11px] text-gray-400 truncate">{teacher.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {teacher.subjects.slice(0, 2).map((s: string, i: number) => (
+                                                            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">{s}</span>
+                                                        ))}
+                                                        {teacher.subjects.length > 2 && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-white/5 text-gray-500">+{teacher.subjects.length - 2}</span>}
+                                                        {teacher.subjects.length === 0 && <span className="text-xs text-gray-400">—</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3"><span className="text-xs text-gray-600 dark:text-gray-400">{teacher.classes.length > 0 ? teacher.classes.slice(0, 2).join(', ') + (teacher.classes.length > 2 ? ` +${teacher.classes.length - 2}` : '') : '—'}</span></td>
+                                                <td className="px-3 py-3">
+                                                    <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', teacher.status === 'active' ? 'text-emerald-600' : 'text-amber-500')}>
+                                                        <span className={cn('size-1.5 rounded-full', teacher.status === 'active' ? 'bg-emerald-500' : 'bg-amber-400')} />
+                                                        {teacher.status === 'active' ? 'Active' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
-            {/* pagination end */}
+                    </div>
+                )}
+
+                {!isLoading && filteredTeachers.length > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm text-xs text-gray-500">
+                        <span>Showing <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage * itemsPerPage + 1}–{Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)}</span> of <span className="font-semibold text-gray-700 dark:text-gray-200">{filteredTeachers.length}</span></span>
+                        <div className="flex items-center gap-1">
+                            <span className="hidden sm:inline mr-2 text-gray-400">Rows per page: {itemsPerPage}</span>
+                            <Button variant="outline" size="icon" className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40" onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}><ChevronLeft size={14} /></Button>
+                            {getPageNumbers().map((p, i) => p === '...' ? <span key={`e${i}`} className="px-1 text-gray-400">…</span> : (
+                                <Button key={p} variant={p === currentPage + 1 ? 'default' : 'ghost'} className={cn('size-7 rounded-lg text-xs font-medium p-0', p === currentPage + 1 ? 'text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5')} style={p === currentPage + 1 ? { backgroundColor: primaryColor } : {}} onClick={() => setCurrentPage((p as number) - 1)}>{p}</Button>
+                            ))}
+                            <Button variant="outline" size="icon" className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40" onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1}><ChevronRight size={14} /></Button>
+                        </div>
+                    </div>
+                )}
+                {/* pagination end */}
             </div>
 
             <AddTeacherModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} primaryColor={primaryColor} onSuccess={() => refetchTeachers()} schoolId={schoolId} />
@@ -720,13 +720,13 @@ export default function ManageTeachersPage() {
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800">
                                     <div className="mb-4">
                                         <p className="font-semibold text-gray-900 dark:text-white text-sm">Attendance</p>
                                         <p className="text-xs text-gray-400 mt-0.5">Export detailed daily logs or summary counts</p>
                                     </div>
-                                    
+
                                     <div className="space-y-3 mb-4">
                                         <div>
                                             <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Format</label>

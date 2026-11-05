@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useTeacherDetails, useUnassignTeacherFromSubject, useUnassignTeacherFromClass } from '@/lib/api/hooks/useAdmin'
+import { useTeacherDetails, useRemoveTeacherFromSubject, useRemoveTeacherFromClass } from '@/lib/api/hooks/useAdmin'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool'
 import SchedulePage from './schedule/SchedulePage'
@@ -74,8 +74,8 @@ export default function TeacherProfilePage() {
     const [unassignSubjectData, setUnassignSubjectData] = useState<{ id: string, name: string } | null>(null)
     const [unassignClassData, setUnassignClassData] = useState<{ id: string, name: string } | null>(null)
 
-    const unassignSubjectMutation = useUnassignTeacherFromSubject(teacherId)
-    const unassignClassMutation = useUnassignTeacherFromClass(teacherId)
+    const unassignSubjectMutation = useRemoveTeacherFromSubject(teacherId)
+    const unassignClassMutation = useRemoveTeacherFromClass(teacherId)
 
     const handleConfirmUnassignSubject = () => {
         if (!unassignSubjectData) return;
@@ -97,7 +97,7 @@ export default function TeacherProfilePage() {
             <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
                 {/* Banner Skeleton */}
                 <Skeleton className="h-40 md:h-64 w-full rounded-none" />
-                
+
                 {/* Header Skeleton */}
                 <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative">
                     <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20 px-0 sm:px-0">
@@ -105,7 +105,7 @@ export default function TeacherProfilePage() {
                         <div className="size-28 md:size-44 rounded-3xl md:rounded-[2rem] bg-white dark:bg-slate-900 p-1.5 shadow-2xl border-[4px] border-slate-100 dark:border-slate-950 flex items-center justify-center shrink-0 overflow-hidden">
                             <Skeleton className="w-full h-full rounded-2xl md:rounded-[1.5rem]" />
                         </div>
-                        
+
                         {/* Info Skeleton */}
                         <div className="flex-1 pt-2 md:pt-20 space-y-4">
                             <div className="space-y-3">
@@ -171,18 +171,18 @@ export default function TeacherProfilePage() {
     const teacherCode = teacher.teacherCode || 'UNASSIGNED'
     const subjects: any[] = teacher.professionalInfo?.subjects || []
     const classes: any[] = teacher.professionalInfo?.assignedClasses || []
-    
+
     const subjectNames = subjects.map((s: any) => typeof s === 'string' ? s : (s?.name || s?.subject?.name || '')).filter(Boolean);
     const classNames = classes.map((c: any) => typeof c === 'string' ? c : (c?.name || c?.class?.name || '')).filter(Boolean);
     const formatter = typeof Intl !== 'undefined' && Intl.ListFormat ? new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }) : { format: (arr: string[]) => arr.join(', ') };
     const formattedSubjects = subjectNames.length > 0 ? formatter.format(subjectNames) : 'multiple subjects';
     const formattedClasses = classNames.length > 0 ? formatter.format(classNames) : '';
-    
+
     const subjectDepartments = Array.from(new Set(
         subjects.flatMap((s: any) => typeof s !== 'string' && s.departments ? s.departments : [])
     )).filter(Boolean) as string[];
     const displayDepartment = subjectDepartments.length > 0 ? formatter.format(subjectDepartments) : 'General';
-    
+
     const avatar = teacher.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
 
     return (
@@ -361,7 +361,7 @@ export default function TeacherProfilePage() {
                                                     <span key={i} className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800">
                                                         {subjectName}
                                                         {canManageAssignments && subjectId && (
-                                                            <button 
+                                                            <button
                                                                 onClick={() => setUnassignSubjectData({ id: subjectId, name: subjectName })}
                                                                 disabled={unassignSubjectMutation.isPending}
                                                                 className="hover:text-red-500 hover:bg-slate-200 dark:hover:bg-slate-700 p-0.5 rounded-full transition-colors disabled:opacity-50"
@@ -403,7 +403,7 @@ export default function TeacherProfilePage() {
                                             {classes.map((c, i) => {
                                                 const classId = typeof c === 'string' ? '' : c.id;
                                                 const classNameStr = typeof c === 'string' ? c : c.name;
-                                                
+
                                                 if (classId) {
                                                     return (
                                                         <div key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-100 dark:border-slate-700 transition-colors group cursor-pointer">
@@ -426,7 +426,7 @@ export default function TeacherProfilePage() {
                                                         </div>
                                                     );
                                                 }
-                                                
+
                                                 return (
                                                     <div key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                                                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{classNameStr}</span>
@@ -501,9 +501,9 @@ export default function TeacherProfilePage() {
                             <div className="absolute -top-6 -right-6 p-6 opacity-10 group-hover:opacity-20 group-hover:rotate-12 transition-all duration-700 pointer-events-none">
                                 <Star size={120} style={{ color: primaryColor }} className="fill-current" />
                             </div>
-                            <div 
-                                className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full blur-[3rem] opacity-20 pointer-events-none transition-all duration-500 group-hover:opacity-40 group-hover:scale-150" 
-                                style={{ backgroundColor: primaryColor }} 
+                            <div
+                                className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full blur-[3rem] opacity-20 pointer-events-none transition-all duration-500 group-hover:opacity-40 group-hover:scale-150"
+                                style={{ backgroundColor: primaryColor }}
                             />
 
                             {/* Content */}
@@ -519,7 +519,7 @@ export default function TeacherProfilePage() {
                                     </span>
                                 </h3>
                             </div>
-                            
+
                             {/* Status Badge */}
                             <div className="relative z-10 inline-flex items-center gap-3 p-3 px-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 shadow-inner">
                                 <div className="relative flex items-center justify-center">
@@ -538,10 +538,10 @@ export default function TeacherProfilePage() {
             {/* ── Schedule Tab ─────────────────────────────────────────────── */}
             {activeTab === 'schedule' && (
                 <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-6 pb-16">
-                    <SchedulePage 
-                        teacher={teacher} 
-                        teacherId={teacherId} 
-                        primaryColor={primaryColor} 
+                    <SchedulePage
+                        teacher={teacher}
+                        teacherId={teacherId}
+                        primaryColor={primaryColor}
                         schoolId={teacher?.resolvedSchoolId || schoolId}
                     />
                 </div>

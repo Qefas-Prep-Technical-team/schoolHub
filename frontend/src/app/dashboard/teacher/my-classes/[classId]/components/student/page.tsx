@@ -9,6 +9,8 @@ import { Pagination } from './components/Pagination';
 import { Student } from './components/types';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { motion } from 'framer-motion';
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabSkeleton } from '../TabSkeleton';
@@ -37,7 +39,13 @@ export default function StudentsPage() {
   });
 
   const classInfo = classDetailData?.classInfo;
-  const schoolInfo = (user as any)?.school;
+  const { selectedSchoolId } = useDashboardStore();
+  const currentTeacherId = (user as any)?.id as string | undefined;
+  const effectiveSchoolId = (selectedSchoolId && selectedSchoolId !== currentTeacherId && selectedSchoolId !== 'personal')
+    ? selectedSchoolId
+    : (classInfo?.schoolId || (user as any)?.schools?.[0]?.schoolId || (user as any)?.schoolId || (user as any)?.school?.id || '');
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+  const schoolInfo = schoolProfile || (user as any)?.school;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['class-students', classId],
@@ -49,7 +57,8 @@ export default function StudentsPage() {
   const allStudents: Student[] = useMemo(() => (data?.students ?? []).map((s: {
     id: string; name: string; studentCode?: string; email?: string;
     gender?: string; status?: string; avatarUrl?: string;
-    performance?: string; attendance?: number; grade?: string; lastExam?: string;
+    performance?: string; scorePercent?: number | null; attendance?: number; grade?: string; lastExam?: string;
+    enrolledAt?: string; createdAt?: string;
   }) => {
     const rawStatus = (s.status || '').toLowerCase();
     let normalizedStatus: Student['status'] = 'enrolled';
@@ -69,9 +78,12 @@ export default function StudentsPage() {
       status: normalizedStatus,
       avatar: s.avatarUrl || '',
       performance: s.performance || 'Medium',
+      scorePercent: s.scorePercent ?? null,
       attendance: s.attendance ?? 100,
       grade: s.grade,
       lastExam: s.lastExam,
+      enrolledAt: s.enrolledAt,
+      createdAt: s.createdAt,
     };
   }), [data]);
 
@@ -401,7 +413,8 @@ export default function StudentsPage() {
           onView={(student) => router.push(`/dashboard/teacher/students/${student.id}`)} 
           onCall={() => {}} 
           viewMode={viewMode} 
-          startIndex={(currentPage - 1) * itemsPerPage} 
+          startIndex={(currentPage - 1) * itemsPerPage}
+          gradingSystem={schoolProfile?.gradingSystem}
         />
       )}
 

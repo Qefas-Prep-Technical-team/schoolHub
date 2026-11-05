@@ -87,7 +87,8 @@ export default function BulkGradingPage() {
   const router = useRouter();
   const { selectedSchoolId } = useDashboardStore();
   const { user } = useAuthStore();
-  const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const rawSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const effectiveSchoolId = rawSchoolId === 'default-tenant-id' || rawSchoolId === 'personal' ? '' : rawSchoolId;
   const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
@@ -292,7 +293,7 @@ export default function BulkGradingPage() {
         </div>
 
         {/* Stats */}
-        <GradingStats stats={stats} />
+        <GradingStats stats={stats} gradingSystem={schoolProfile?.gradingSystem} />
 
         {/* Main Grading Interface */}
         <div className="mt-6">

@@ -14,41 +14,17 @@ import { useRouter } from 'next/navigation';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useTeacherAssignments, useDeleteAssignment } from '@/lib/api/hooks/useAssignments';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { AssignmentsSkeleton } from './components/AssignmentsSkeleton';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
+import { groupByDate } from '@/app/dashboard/teacher/utils/dateSectioning';
 import { PlusCircle, SearchX, BookOpen, AlertTriangle, GraduationCap, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-interface DateGroup<T> {
-    label: string;
-    items: T[];
-}
-
-function getDateGroupLabel(dateVal?: string | Date | null): string {
-    if (!dateVal) return 'Undated & Previous Records';
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return 'Undated & Previous Records';
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-    const diffTime = today.getTime() - itemDate.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays > 1 && diffDays <= 7) {
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
-    }
-
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
 
 const getNormalizedStatus = (assignment: any): 'published' | 'overdue' | 'due-soon' | 'draft' => {
     const rawStatus = (assignment.status || 'DRAFT').toLowerCase();
     if (rawStatus === 'draft') return 'draft';
-    
+
     // If it's published, check if it's overdue or due soon
     if (rawStatus === 'published' && assignment.dueDate) {
         const dueDate = new Date(assignment.dueDate);
@@ -72,12 +48,12 @@ export default function AssignmentsPage() {
     const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({ status: '', subject: '', classId: '' });
-    const [view, setView] = useState<'list' | 'grid'>('grid');
+    const [view, setView] = useState<'list' | 'grid'>('list');
     const [currentPage, setCurrentPage] = useState(1);
     const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
     const itemsPerPage = 8;
 
-    // Default to Grid View on mobile screens
+    // Default to Grid View on mobile screens, List View on desktop
     useEffect(() => {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
             setView('grid');
@@ -85,7 +61,9 @@ export default function AssignmentsPage() {
     }, []);
 
     const isPersonal = selectedSchoolId === user?.id;
-    const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+    const rawSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
+    const effectiveSchoolId = rawSchoolId === 'default-tenant-id' || rawSchoolId === 'personal' ? '' : rawSchoolId;
+    const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
     const { data: assignmentsData, isLoading } = useTeacherAssignments(
         effectiveSchoolId,
@@ -165,7 +143,7 @@ export default function AssignmentsPage() {
 
             const normalizedStatus = getNormalizedStatus(assignment);
             const matchesStatus = !filters.status || normalizedStatus === filters.status;
-            
+
             // Handle subject matching if nested
             const subjectName = assignment.subject?.name || "";
             const matchesSubject = !filters.subject || subjectName.toLowerCase() === filters.subject.toLowerCase();
@@ -185,23 +163,7 @@ export default function AssignmentsPage() {
 
     // Group paginated assignments by date (createdAt || updatedAt || dueDate)
     const groupedAssignments = useMemo(() => {
-        const groupsMap = new Map<string, any[]>();
-        const groupOrder: string[] = [];
-
-        paginatedAssignments.forEach((assignment: any) => {
-            const rawDate = assignment.createdAt || assignment.updatedAt || assignment.dueDate;
-            const label = getDateGroupLabel(rawDate);
-            if (!groupsMap.has(label)) {
-                groupsMap.set(label, []);
-                groupOrder.push(label);
-            }
-            groupsMap.get(label)!.push(assignment);
-        });
-
-        return groupOrder.map((label) => ({
-            label,
-            items: groupsMap.get(label)!,
-        }));
+        return groupByDate(paginatedAssignments, (assignment: any) => assignment.createdAt || assignment.updatedAt || assignment.dueDate);
     }, [paginatedAssignments]);
 
     const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage);
@@ -233,7 +195,7 @@ export default function AssignmentsPage() {
     return (
         <main className="min-h-screen w-full p-3.5 sm:p-6 md:p-8 space-y-6 sm:space-y-8 bg-slate-50/50 dark:bg-transparent transition-colors duration-500 font-display">
             <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8">
-                
+
                 {/* Page Header */}
                 <PageHeader
                     title="Course Assignments"
@@ -255,48 +217,48 @@ export default function AssignmentsPage() {
 
                 {/* Top Stat Cards — 2 Columns on Mobile, 4 Columns on Desktop */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-                    <StatCard 
-                        label="Active Deliverables" 
-                        value={activeAssignmentsCount} 
-                        icon={BookOpen} 
-                        color="text-emerald-500" 
-                        bgColor="bg-emerald-500/10" 
-                        tooltip="Total count of published assignments currently open for student submission across all your cohorts. Use this to track your active teaching payload and curriculum delivery." 
+                    <StatCard
+                        label="Active Deliverables"
+                        value={activeAssignmentsCount}
+                        icon={BookOpen}
+                        color="text-emerald-500"
+                        bgColor="bg-emerald-500/10"
+                        tooltip="Total count of published assignments currently open for student submission across all your cohorts. Use this to track your active teaching payload and curriculum delivery."
                     />
-                    <StatCard 
-                        label="Submissions Received" 
-                        value={totalSubmissions} 
-                        icon={GraduationCap} 
-                        color="text-blue-500" 
-                        bgColor="bg-blue-500/10" 
-                        tooltip="Aggregates student response papers and coursework turned in across all assignments. Use this to gauge your grading queue and evaluate student submission momentum." 
+                    <StatCard
+                        label="Submissions Received"
+                        value={totalSubmissions}
+                        icon={GraduationCap}
+                        color="text-blue-500"
+                        bgColor="bg-blue-500/10"
+                        tooltip="Aggregates student response papers and coursework turned in across all assignments. Use this to gauge your grading queue and evaluate student submission momentum."
                     />
-                    <StatCard 
-                        label="Action Required" 
-                        value={actionRequiredCount} 
-                        icon={Clock} 
-                        color="text-amber-500" 
-                        bgColor="bg-amber-500/10" 
-                        tooltip="Tallies assignments that are either overdue or due within the next 24 hours. Use this to trigger reminder announcements or begin immediate grading for expired deadlines." 
+                    <StatCard
+                        label="Action Required"
+                        value={actionRequiredCount}
+                        icon={Clock}
+                        color="text-amber-500"
+                        bgColor="bg-amber-500/10"
+                        tooltip="Tallies assignments that are either overdue or due within the next 24 hours. Use this to trigger reminder announcements or begin immediate grading for expired deadlines."
                     />
-                    <StatCard 
-                        label="Turn-in Rate" 
-                        value={`${averageTurnInRate}%`} 
-                        icon={CheckCircle2} 
-                        color="text-purple-500" 
-                        bgColor="bg-purple-500/10" 
-                        tooltip="Percentage of enrolled students who have submitted their required coursework. Use this benchmark to spot cohorts with submission drop-offs early." 
+                    <StatCard
+                        label="Turn-in Rate"
+                        value={`${averageTurnInRate}%`}
+                        icon={CheckCircle2}
+                        color="text-purple-500"
+                        bgColor="bg-purple-500/10"
+                        tooltip="Percentage of enrolled students who have submitted their required coursework. Use this benchmark to spot cohorts with submission drop-offs early."
                     />
                 </div>
 
                 {/* Filters & Search Container */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3.5 sm:p-5 md:p-6 bg-white dark:bg-emerald-950/40 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm"
                 >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                         <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             <div className="p-2.5 sm:p-3 bg-emerald-500/10 rounded-xl text-emerald-500 shrink-0">
                                 <BookOpen size={20} strokeWidth={2.5} />
                             </div>
@@ -307,7 +269,7 @@ export default function AssignmentsPage() {
                                 </div>
                                 <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">Filter & Grade Deliverables</p>
                             </div>
-                         </div>
+                        </div>
                     </div>
 
                     <AssignmentFilters
@@ -342,39 +304,48 @@ export default function AssignmentsPage() {
                                     exit={{ opacity: 0, scale: 0.98 }}
                                     className="pt-2 space-y-6"
                                 >
-                                    {groupedAssignments.map((section) => (
-                                        <div key={section.label} className="space-y-3">
-                                            <div className="flex items-center gap-2.5 px-1 py-1">
-                                                <div className="size-2 rounded-full bg-emerald-500" />
-                                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                                                    {section.label}
-                                                </h4>
-                                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
-                                                    {section.items.length} {section.items.length === 1 ? 'assignment' : 'assignments'}
-                                                </span>
-                                            </div>
+                                    {(() => {
+                                        let runningIdx = (currentPage - 1) * itemsPerPage;
+                                        return groupedAssignments.map((section) => {
+                                            const sectionStartIdx = runningIdx;
+                                            runningIdx += section.items.length;
+                                            return (
+                                                <div key={section.label} className="space-y-3">
+                                                    <div className="flex items-center gap-2.5 px-1 py-1">
+                                                        <div className="size-2 rounded-full bg-emerald-500" />
+                                                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                                                            {section.label}
+                                                        </h4>
+                                                        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                                            {section.items.length} {section.items.length === 1 ? 'assignment' : 'assignments'}
+                                                        </span>
+                                                    </div>
 
-                                            <AssignmentList 
-                                                assignments={section.items.map((assignment: any) => ({
-                                                    ...assignment,
-                                                    status: getNormalizedStatus(assignment),
-                                                    subject: assignment.subject?.name || "General",
-                                                    className: assignment.class?.name || "All Classes",
-                                                    dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
-                                                    submitted: assignment._count?.submissions || 0,
-                                                    totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
-                                                    progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
-                                                        ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
-                                                        : 0
-                                                }))}
-                                                onEdit={(id) => router.push(`/dashboard/teacher/assignments/${id}?edit=true`)}
-                                                onGrade={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
-                                                onDelete={(id) => setAssignmentToDelete(id)}
-                                                onViewDetails={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
-                                                currentUserId={user?.id}
-                                            />
-                                        </div>
-                                    ))}
+                                                    <AssignmentList
+                                                        assignments={section.items.map((assignment: any) => ({
+                                                            ...assignment,
+                                                            status: getNormalizedStatus(assignment),
+                                                            subject: assignment.subject?.name || "General",
+                                                            className: assignment.class?.name || "All Classes",
+                                                            dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
+                                                            submitted: assignment._count?.submissions || 0,
+                                                            totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
+                                                            progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0
+                                                                ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100)
+                                                                : 0
+                                                        }))}
+                                                        onEdit={(id) => router.push(`/dashboard/teacher/assignments/${id}?edit=true`)}
+                                                        onGrade={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
+                                                        onDelete={(id) => setAssignmentToDelete(id)}
+                                                        onViewDetails={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
+                                                        currentUserId={user?.id}
+                                                        gradingSystem={schoolProfile?.gradingSystem}
+                                                        startIndex={sectionStartIdx}
+                                                    />
+                                                </div>
+                                            );
+                                        });
+                                    })()}
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -408,8 +379,8 @@ export default function AssignmentsPage() {
                                                             dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
                                                             submitted: assignment._count?.submissions || 0,
                                                             totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
-                                                            progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
-                                                                ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
+                                                            progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0
+                                                                ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100)
                                                                 : 0
                                                         }}
                                                         onEdit={() => router.push(`/dashboard/teacher/assignments/${assignment.id}?edit=true`)}
@@ -417,6 +388,7 @@ export default function AssignmentsPage() {
                                                         onDelete={() => setAssignmentToDelete(assignment.id)}
                                                         onViewDetails={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
                                                         currentUserId={user?.id}
+                                                        gradingSystem={schoolProfile?.gradingSystem}
                                                     />
                                                 ))}
                                             </div>
@@ -513,36 +485,36 @@ export default function AssignmentsPage() {
     );
 }
 
-function StatCard({ 
-  label, 
-  value, 
-  icon: Icon, 
-  color, 
-  bgColor, 
-  tooltip 
-}: { 
-  label: string; 
-  value: string | number; 
-  icon: React.ElementType; 
-  color: string; 
-  bgColor: string; 
-  tooltip: string; 
+function StatCard({
+    label,
+    value,
+    icon: Icon,
+    color,
+    bgColor,
+    tooltip
+}: {
+    label: string;
+    value: string | number;
+    icon: React.ElementType;
+    color: string;
+    bgColor: string;
+    tooltip: string;
 }) {
-  return (
-    <motion.div 
-      whileHover={{ y: -2, scale: 1.01 }}
-      className="p-3 sm:p-5 md:p-6 bg-white dark:bg-emerald-950/40 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
-    >
-      <div className="flex items-center justify-between mb-2 sm:mb-3">
-        <div className={`p-2 sm:p-3 md:p-3.5 rounded-lg sm:rounded-xl ${bgColor} ${color} transition-transform group-hover:scale-105 shrink-0`}>
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" strokeWidth={2.5} />
-        </div>
-        <HeaderTooltip content={tooltip} />
-      </div>
-      <div>
-        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-500 transition-colors line-clamp-1">{label}</p>
-        <p className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5 sm:mt-1">{value}</p>
-      </div>
-    </motion.div>
-  );
+    return (
+        <motion.div
+            whileHover={{ y: -2, scale: 1.01 }}
+            className="p-3 sm:p-5 md:p-6 bg-white dark:bg-emerald-950/40 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
+        >
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div className={`p-2 sm:p-3 md:p-3.5 rounded-lg sm:rounded-xl ${bgColor} ${color} transition-transform group-hover:scale-105 shrink-0`}>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" strokeWidth={2.5} />
+                </div>
+                <HeaderTooltip content={tooltip} />
+            </div>
+            <div>
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-500 transition-colors line-clamp-1">{label}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5 sm:mt-1">{value}</p>
+            </div>
+        </motion.div>
+    );
 }

@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  CheckCircle2, 
-  UserPlus, 
-  MessageSquare, 
+import {
+  CheckCircle2,
+  UserPlus,
+  MessageSquare,
   AlertTriangle,
   History,
   ChevronLeft,
   ChevronRight,
-  Activity
+  Activity,
+  Calendar
 } from 'lucide-react';
 import { HeaderTooltip } from './HeaderTooltip';
+import { groupByDate } from '../../utils/dateSectioning';
 
 interface ActivityItem {
   id: string;
@@ -20,6 +22,7 @@ interface ActivityItem {
   title: string;
   description: string;
   time: string;
+  dateObj?: Date;
   color: string;
   icon?: any;
 }
@@ -30,13 +33,19 @@ interface RecentPersonalActivityProps {
 
 const RecentPersonalActivity: React.FC<RecentPersonalActivityProps> = ({ activities = [] }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
   const totalPages = Math.max(1, Math.ceil(activities.length / itemsPerPage));
-  
-  const currentItems = activities.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+
+  const currentItems = useMemo(() => {
+    return activities.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [activities, currentPage, itemsPerPage]);
+
+  const dateGroups = useMemo(() => {
+    return groupByDate(currentItems, (item) => item.dateObj || item.time);
+  }, [currentItems]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -54,52 +63,70 @@ const RecentPersonalActivity: React.FC<RecentPersonalActivityProps> = ({ activit
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Recent Activity</h3>
-            <HeaderTooltip 
-              content="Maintains an audit trail of critical classroom events, newly submitted assignments, grade updates, and student milestones. Use this live stream to quickly catch up on what happened since your last login and verify that automated notifications were dispatched." 
-              size={14} 
+            <HeaderTooltip
+              content="Maintains an audit trail of critical classroom events, newly submitted assignments, grade updates, and student milestones. Use this live stream to quickly catch up on what happened since your last login and verify that automated notifications were dispatched."
+              size={14}
             />
           </div>
           <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">Latest Events</p>
         </div>
         <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 shrink-0">
-           <History size={15} className="sm:w-4 sm:h-4 text-slate-400" />
+          <History size={15} className="sm:w-4 sm:h-4 text-slate-400" />
         </div>
       </div>
 
-      <div className="space-y-2.5 sm:space-y-3 flex-1">
+      <div className="space-y-4 flex-1">
         {activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 h-full">
             <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2 opacity-50" />
             <p className="text-sm font-medium text-slate-500">No Recent Activity</p>
           </div>
         ) : (
-          currentItems.map((item, idx) => {
-            const IconComponent = item.icon || getIcon(item.type);
-            return (
-              <motion.div 
-                key={item.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300"
-              >
-                <div className={`h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg flex items-center justify-center ${
-                  item.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
-                }`}>
-                  <IconComponent size={15} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate">{item.title}</h4>
-                    <span className="text-[10px] font-medium text-slate-500">{item.time}</span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {item.description}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })
+          dateGroups.map((group, groupIdx) => (
+            <div key={group.label} className="space-y-2">
+              {/* Date Section Header */}
+              <div className="flex items-center gap-2 pt-1 pb-0.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-xs">
+                  <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  {group.label}
+                </span>
+                <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
+                <span className="text-[10px] font-semibold text-slate-400">
+                  {group.items.length} {group.items.length === 1 ? 'event' : 'events'}
+                </span>
+              </div>
+
+              {/* Items in this date group */}
+              <div className="space-y-2 sm:space-y-2.5">
+                {group.items.map((item, idx) => {
+                  const IconComponent = item.icon || getIcon(item.type);
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (groupIdx * 2 + idx) * 0.04 }}
+                      className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-xs"
+                    >
+                      <div className={`h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg flex items-center justify-center ${item.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+                        }`}>
+                        <IconComponent size={15} className="sm:w-[18px] sm:h-[18px]" />
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate">{item.title}</h4>
+                          <span className="text-[10px] font-medium text-slate-500 shrink-0 ml-2">{item.time}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {item.description}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )}
       </div>
 
@@ -126,7 +153,7 @@ const RecentPersonalActivity: React.FC<RecentPersonalActivityProps> = ({ activit
           </div>
         </div>
       )}
-      
+
       <button className="mt-5 w-full py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
         View All Activity
       </button>

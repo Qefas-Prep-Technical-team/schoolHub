@@ -54,10 +54,9 @@ export const useSchoolTeacherAttendanceTrend = (schoolId: string, days?: number)
 export const useMarkTeacherAttendance = (teacherId: string, schoolId: string, month?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { schoolId: string; date: string; status: string; note?: string }) => 
+    mutationFn: (data: { schoolId: string; date: string; status: string; note?: string }) =>
       adminService.markTeacherAttendance(teacherId, data),
     onSuccess: () => {
-      // Invalidate both specific month and all attendance for this teacher/school
       queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(teacherId, schoolId, month) });
       queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(teacherId, schoolId) });
       toast.success("Attendance marked successfully");
@@ -71,10 +70,9 @@ export const useMarkTeacherAttendance = (teacherId: string, schoolId: string, mo
 export const useMarkBulkTeacherAttendance = (schoolId: string, month?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { schoolId: string; records: { teacherId: string; date: string; status: string; note?: string }[] }) => 
+    mutationFn: (data: { schoolId: string; records: { teacherId: string; date: string; status: string; note?: string }[] }) =>
       adminService.markBulkTeacherAttendance(data),
     onSuccess: (data, variables) => {
-      // Invalidate attendance queries for all affected teachers
       variables.records.forEach(record => {
         queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(record.teacherId, schoolId, month) });
         queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(record.teacherId, schoolId) });
@@ -107,10 +105,10 @@ export const useDeleteTimetablePeriod = (teacherId: string) => {
     mutationFn: (periodId: string) => adminService.deleteTimetablePeriod(teacherId, periodId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.timetable(teacherId) });
-      toast.success("Period removed successfully");
+      toast.success("Period deleted successfully");
     },
     onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to remove period");
+      toast.error(error.response?.data?.message || "Failed to delete period");
     },
   });
 };
@@ -118,14 +116,14 @@ export const useDeleteTimetablePeriod = (teacherId: string) => {
 export const useUpdateTeacher = (teacherId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) => adminService.updateTeacher(teacherId, data),
+    mutationFn: (data: { name?: string; email?: string; phone?: string; department?: string; role?: string; gender?: string }) =>
+      adminService.updateTeacher(teacherId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
-      queryClient.invalidateQueries({ queryKey: adminKeys.teachers() });
-      toast.success("Teacher updated successfully");
+      toast.success("Teacher details updated successfully");
     },
     onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to update teacher");
+      toast.error(error.response?.data?.message || "Failed to update teacher details");
     },
   });
 };
@@ -144,6 +142,20 @@ export const useAssignTeacherToClass = (teacherId: string) => {
   });
 };
 
+export const useRemoveTeacherFromClass = (teacherId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (classId: string) => adminService.removeTeacherFromClass(teacherId, classId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
+      toast.success("Teacher removed from class successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to remove teacher from class");
+    },
+  });
+};
+
 export const useAssignTeacherToSubject = (teacherId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -158,24 +170,10 @@ export const useAssignTeacherToSubject = (teacherId: string) => {
   });
 };
 
-export const useUnassignTeacherFromClass = (teacherId: string) => {
+export const useRemoveTeacherFromSubject = (teacherId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (classId: string) => adminService.unassignTeacherFromClass(teacherId, classId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
-      toast.success("Teacher unassigned from class successfully");
-    },
-    onError: (error: AxiosError<{ message?: string }>) => {
-      toast.error(error.response?.data?.message || "Failed to unassign teacher from class");
-    },
-  });
-};
-
-export const useUnassignTeacherFromSubject = (teacherId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (subjectId: string) => adminService.unassignTeacherFromSubject(teacherId, subjectId),
+    mutationFn: (subjectId: string) => adminService.removeTeacherFromSubject(teacherId, subjectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
       toast.success("Teacher removed from subject successfully");
@@ -209,8 +207,8 @@ export const usePendingAdmins = (schoolId: string) => {
 export const useApproveAdmin = (schoolId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ adminId, role }: { adminId: string; role: string }) => 
-      adminService.approveAdmin(adminId, role),
+    mutationFn: ({ adminId, role }: { adminId: string; role: string }) =>
+      adminService.approveAdmin(adminId, role, schoolId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'pending', schoolId] });
@@ -225,8 +223,8 @@ export const useApproveAdmin = (schoolId: string) => {
 export const useRejectAdmin = (schoolId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ adminId, reason }: { adminId: string; reason?: string }) => 
-      adminService.rejectAdmin(adminId, reason),
+    mutationFn: ({ adminId, reason }: { adminId: string; reason?: string }) =>
+      adminService.rejectAdmin(adminId, reason, schoolId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pending', schoolId] });
       toast.success("Admin request rejected");
@@ -240,8 +238,8 @@ export const useRejectAdmin = (schoolId: string) => {
 export const useUpdateAdminRole = (schoolId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ adminId, role }: { adminId: string; role: string }) => 
-      adminService.updateAdminRole(adminId, role),
+    mutationFn: ({ adminId, role }: { adminId: string; role: string }) =>
+      adminService.updateAdminRole(adminId, role, schoolId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
       toast.success("Admin role updated successfully");
@@ -255,7 +253,7 @@ export const useUpdateAdminRole = (schoolId: string) => {
 export const useTransferOwnership = (schoolId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (newOwnerId: string) => adminService.transferOwnership(newOwnerId),
+    mutationFn: (newOwnerId: string) => adminService.transferOwnership(newOwnerId, schoolId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
       toast.success("School ownership transferred successfully");
@@ -269,7 +267,7 @@ export const useTransferOwnership = (schoolId: string) => {
 export const useRemoveAdmin = (schoolId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (adminId: string) => adminService.removeAdmin(adminId),
+    mutationFn: (adminId: string) => adminService.removeAdmin(adminId, schoolId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'team', schoolId] });
       toast.success("Admin removed successfully");
@@ -287,4 +285,3 @@ export const useAdminProfile = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
-

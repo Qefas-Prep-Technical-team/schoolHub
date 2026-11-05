@@ -20,7 +20,8 @@ import {
   Calendar,
   AlertCircle,
   Download,
-  Loader2
+  Loader2,
+  Search
 } from "lucide-react";
 import { HeaderTooltip } from "@/app/dashboard/student/components/dashboard/HeaderTooltip";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,9 @@ import { cn } from "@/lib/utils";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { assertSchoolPayingPlan } from "@/utils/subscriptionPlanCheck";
 import { useStudentProfile } from "@/lib/api/hooks/useStudent";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { getGradeEvaluation } from "@/utils/gradingSystem";
 import { toast } from "react-toastify";
 
 interface SubjectResultRecord {
@@ -74,32 +77,23 @@ function getTermLabel(term: string): string {
 
 function getTermGradient(term: string): string {
   const map: Record<string, string> = {
-    FIRST:  "from-violet-600 via-indigo-600 to-indigo-700",
+    FIRST: "from-violet-600 via-indigo-600 to-indigo-700",
     SECOND: "from-pink-500 via-rose-500 to-pink-600",
-    THIRD:  "from-amber-500 via-orange-500 to-amber-600",
+    THIRD: "from-amber-500 via-orange-500 to-amber-600",
   };
   return map[term] || "from-zinc-700 to-zinc-800";
 }
 
-function getScoreColor(total: number | null): string {
-  if (total == null) return "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500";
-  if (total >= 70) return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50";
-  if (total >= 60) return "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50";
-  if (total >= 50) return "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50";
-  return "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50";
+function getScoreColor(total: number | null, customGradingSystem?: any[] | null): string {
+  if (total == null) return "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 border border-slate-200 dark:border-zinc-800";
+  const evalResult = getGradeEvaluation(total, customGradingSystem);
+  return cn(evalResult.bg, evalResult.color, "border");
 }
 
-function getGradeLetter(total: number | null): string {
+function getGradeLetter(total: number | null, customGradingSystem?: any[] | null): string {
   if (total == null) return "—";
-  if (total >= 75) return "A1";
-  if (total >= 70) return "B2";
-  if (total >= 65) return "B3";
-  if (total >= 60) return "C4";
-  if (total >= 55) return "C5";
-  if (total >= 50) return "C6";
-  if (total >= 45) return "D7";
-  if (total >= 40) return "E8";
-  return "F9";
+  const evalResult = getGradeEvaluation(total, customGradingSystem);
+  return evalResult.grade || "F9";
 }
 
 function NACell() {
@@ -114,21 +108,25 @@ function ResultViewInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("sessionId") ?? "";
-  const term      = searchParams.get("term") ?? "";
+  const term = searchParams.get("term") ?? "";
 
   const { data: rawResults = [], isLoading } = useMyPublishedResults();
   const results = rawResults as TermResultGroup[];
   const { data: profile } = useStudentProfile();
   const { user } = useAuthStore();
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    profile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
   const [isExporting, setIsExporting] = useState(false);
 
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setViewMode("grid");
-    }
-  }, []);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const group = results.find(
     (g) => g.sessionId === sessionId && g.term === term
@@ -151,24 +149,27 @@ function ResultViewInner() {
       const studentCode = profile?.studentCode || user?.studentCode || "N/A";
 
       const tableHeaders = [
-        ["#", "Course Code", "Subject Title", "Assignment", "C.A. / Quiz", "Exam", "Total Score", "Grade", "Status"]
+        ["#", "Course Code", "Subject Title", "Assignment", "Quiz/Test", "CA", "Exam", "Total Score", "Grade", "Status"]
       ];
 
       const tableData = (group?.subjectResults || []).map((subject, index) => {
         const released = Boolean(subject.scoresRevealed);
         const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-        const grade = released && total != null ? getGradeLetter(total) : "—";
+        const grade = released && total != null ? getGradeLetter(total, customGradingSystem) : "—";
         const assignment = released ? (subject.assignmentScore != null ? String(subject.assignmentScore) : "—") : "N/A";
-        const ca = released ? ((subject.caScore ?? subject.quizScore) != null ? String(subject.caScore ?? subject.quizScore) : "—") : "N/A";
+        const quiz = released ? (subject.quizScore != null ? String(subject.quizScore) : "—") : "N/A";
+        const ca = released ? (subject.caScore != null ? String(subject.caScore) : "—") : "N/A";
         const exam = released ? (subject.examScore != null ? String(subject.examScore) : "—") : "N/A";
         const totalStr = released && total != null ? String(total) : "N/A";
-        const status = released ? (total != null && total >= 50 ? "PASS" : "CREDIT/FAIL") : "PENDING";
+        const evalResult = total != null ? getGradeEvaluation(total, customGradingSystem) : null;
+        const status = released ? (evalResult?.remark || (evalResult?.grade !== "F9" && evalResult?.grade !== "F" ? "PASS" : "FAIL")) : "PENDING";
 
         return [
           (index + 1).toString(),
           subject.subject?.code || "—",
           subject.subject?.name || "Untitled Subject",
           assignment,
+          quiz,
           ca,
           exam,
           totalStr,
@@ -255,6 +256,14 @@ function ResultViewInner() {
 
   const { subjectCount, revealedCount } = group;
   const subjectResults: SubjectResultRecord[] = group.subjectResults ?? [];
+  const filteredSubjectResults = searchQuery.trim()
+    ? subjectResults.filter((s) => {
+      const query = searchQuery.toLowerCase();
+      const name = (s.subject?.name || "").toLowerCase();
+      const code = (s.subject?.code || "").toLowerCase();
+      return name.includes(query) || code.includes(query);
+    })
+    : subjectResults;
   const gradient = getTermGradient(group.term);
 
   // Stats only from subjects with released scores
@@ -262,9 +271,9 @@ function ResultViewInner() {
   const totals = releasedSubjects
     .map((s) => Number(s.totalScore ?? 0))
     .filter((n) => !isNaN(n));
-  const avg     = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / totals.length : null;
+  const avg = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / totals.length : null;
   const highest = totals.length > 0 ? Math.max(...totals) : null;
-  const lowest  = totals.length > 0 ? Math.min(...totals) : null;
+  const lowest = totals.length > 0 ? Math.min(...totals) : null;
 
   // Status badge for the hero
   const allReleased = revealedCount === subjectCount && subjectCount > 0;
@@ -273,7 +282,7 @@ function ResultViewInner() {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
-      
+
       {/* Top Back Navigation & Export PDF Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
@@ -389,210 +398,349 @@ function ResultViewInner() {
 
       {/* Subject Results Section */}
       <div className="space-y-4">
-        {/* Section Header with View Toggle */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center text-pink-600 dark:text-pink-400">
+        {/* Section Header with View Toggle & Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-950 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center text-pink-600 dark:text-pink-400 shrink-0">
               <BarChart3 className="w-4 h-4" />
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Subject Score Sheet
-            </h2>
-            <HeaderTooltip 
-              content="Detailed grade registry showing component breakdown for each subject: homework assignments, continuous assessments, and final exam papers."
-            />
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                  Subject Score Sheet
+                </h2>
+                <HeaderTooltip
+                  content="Detailed grade registry showing component breakdown for each subject: homework assignments, continuous assessments, and final exam papers."
+                />
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Official marks breakdown and evaluation for {getTermLabel(group.term)}
+              </p>
+            </div>
           </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0">
-            <button
-              onClick={() => setViewMode("grid")}
-              aria-label="Grid perspective"
-              className={cn(
-                "p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all",
-                viewMode === "grid"
-                  ? "bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-              )}
-            >
-              <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">Grid</span>
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              aria-label="Table perspective"
-              className={cn(
-                "p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all",
-                viewMode === "table"
-                  ? "bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-              )}
-            >
-              <List className="w-4 h-4" />
-              <span className="hidden sm:inline">Table</span>
-            </button>
+          <div className="flex items-center gap-2.5 self-stretch sm:self-auto">
+            {/* Search filter input */}
+            <div className="relative flex-1 sm:w-60">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Search subject or code..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-pink-500/30 transition-all"
+              />
+            </div>
+
+            {/* View Toggle (Table is default) */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/60 dark:border-zinc-800 shrink-0">
+              <button
+                onClick={() => setViewMode("table")}
+                aria-label="Table perspective"
+                className={cn(
+                  "p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all",
+                  viewMode === "table"
+                    ? "bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                )}
+              >
+                <List className="w-4 h-4" />
+                <span className="hidden sm:inline">List</span>
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid perspective"
+                className={cn(
+                  "p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all",
+                  viewMode === "grid"
+                    ? "bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                )}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="hidden sm:inline">Grid</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content Mode: Cards Grid vs Table */}
         {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-            {subjectResults.map((subject) => {
-              const released = Boolean(subject.scoresRevealed);
-              const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-              const grade = getGradeLetter(total);
+          filteredSubjectResults.length === 0 ? (
+            <div className="py-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-500 text-sm">
+              No subjects matched your search.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+              {filteredSubjectResults.map((subject) => {
+                const released = Boolean(subject.scoresRevealed);
+                const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
+                const grade = getGradeLetter(total, customGradingSystem);
 
-              return (
-                <div 
-                  key={subject.id}
-                  className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Subject header */}
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${released ? "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
-                          <BookOpen className="w-4 h-4" />
+                return (
+                  <div
+                    key={subject.id}
+                    className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Subject header */}
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${released ? "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
+                            <BookOpen className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm sm:text-base leading-snug truncate">
+                              {subject.subject?.name || "Subject"}
+                            </h3>
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                              {subject.subject?.code || "COURSE"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm sm:text-base leading-snug truncate">
-                            {subject.subject?.name || "Subject"}
-                          </h3>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                            {subject.subject?.code || "COURSE"}
+
+                        {/* Grade Badge */}
+                        {released && total != null ? (
+                          <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center font-black text-sm shrink-0 shadow-sm ${getScoreColor(total, customGradingSystem)}`}>
+                            <span>{grade}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 px-2 py-0.5 rounded-full shrink-0">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Breakdown metrics 4-col */}
+                      <div className="grid grid-cols-4 gap-1.5 py-2.5 px-2 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/80 text-center my-2 text-xs">
+                        <div>
+                          <p className="text-[9px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Assign</p>
+                          <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
+                            {released ? (subject.assignmentScore != null ? subject.assignmentScore : "—") : <NACell />}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Quiz</p>
+                          <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
+                            {released ? (subject.quizScore != null ? subject.quizScore : "—") : <NACell />}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">CA</p>
+                          <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
+                            {released ? (subject.caScore != null ? subject.caScore : "—") : <NACell />}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Exam</p>
+                          <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
+                            {released ? (subject.examScore != null ? subject.examScore : "—") : <NACell />}
                           </p>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Grade Badge */}
+                    {/* Total score footer */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-xs">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-medium">Cumulative Total</span>
                       {released && total != null ? (
-                        <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center font-black text-sm shrink-0 shadow-sm ${getScoreColor(total)}`}>
-                          <span>{grade}</span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 px-2 py-0.5 rounded-full shrink-0">
-                          Pending
+                        <span className="font-black text-sm text-zinc-900 dark:text-zinc-100">
+                          {total} <span className="text-[10px] text-zinc-400 font-normal">/ 100</span>
                         </span>
+                      ) : (
+                        <NACell />
                       )}
                     </div>
-
-                    {/* Breakdown metrics 3-col */}
-                    <div className="grid grid-cols-3 gap-2 py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/80 text-center my-2 text-xs">
-                      <div>
-                        <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Assign</p>
-                        <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
-                          {released ? (subject.assignmentScore != null ? subject.assignmentScore : "—") : <NACell />}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">CA / Quiz</p>
-                        <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
-                          {released ? ((subject.caScore ?? subject.quizScore) != null ? (subject.caScore ?? subject.quizScore) : "—") : <NACell />}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Exam</p>
-                        <p className="font-bold text-zinc-800 dark:text-zinc-200 mt-0.5">
-                          {released ? (subject.examScore != null ? subject.examScore : "—") : <NACell />}
-                        </p>
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Total score footer */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500 dark:text-zinc-400 font-medium">Cumulative Total</span>
-                    {released && total != null ? (
-                      <span className="font-black text-sm text-zinc-900 dark:text-zinc-100">
-                        {total} <span className="text-[10px] text-zinc-400 font-normal">/ 100</span>
-                      </span>
-                    ) : (
-                      <NACell />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )
         ) : (
-          <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs sm:text-sm text-left">
-                <thead className="bg-slate-50 dark:bg-zinc-900/60 border-b border-slate-200/80 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
-                  <tr>
-                    <th className="px-5 py-4">Subject Course</th>
-                    <th className="px-5 py-4 text-center">Assignment</th>
-                    <th className="px-5 py-4 text-center">CA / Quiz</th>
-                    <th className="px-5 py-4 text-center">Exam Paper</th>
-                    <th className="px-5 py-4 text-center">Total Score</th>
-                    <th className="px-5 py-4 text-center">Official Grade</th>
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead>
+                  <tr className="bg-slate-50/50 dark:bg-zinc-900/30 border-b border-slate-100 dark:border-zinc-800/80">
+                    <th className="px-5 py-4 w-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      #
+                    </th>
+                    <th className="px-5 py-4 min-w-[220px] text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Subject & Code
+                    </th>
+                    <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Assignment
+                    </th>
+                    <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Quiz/Test
+                    </th>
+                    <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      CA
+                    </th>
+                    <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Exam
+                    </th>
+                    <th className="px-5 py-4 w-32 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Total Score
+                    </th>
+                    <th className="px-4 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Grade
+                    </th>
+                    <th className="px-5 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500">
+                      Standing
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80 font-medium">
-                  {subjectResults.map((subject) => {
-                    const released = Boolean(subject.scoresRevealed);
-                    const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-                    const grade = getGradeLetter(total);
+                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50 text-slate-600 dark:text-slate-300 font-medium">
+                  {filteredSubjectResults.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-slate-400 dark:text-zinc-500">
+                        No subject records found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSubjectResults.map((subject, idx) => {
+                      const released = Boolean(subject.scoresRevealed);
+                      const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
+                      const grade = getGradeLetter(total, customGradingSystem);
+                      const evalResult = total != null ? getGradeEvaluation(total, customGradingSystem) : null;
 
-                    return (
-                      <tr
-                        key={subject.id}
-                        className="hover:bg-slate-50/70 dark:hover:bg-zinc-900/40 transition-colors"
-                      >
-                        <td className="px-5 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${released ? "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
-                              <BookOpen className="w-4 h-4" />
+                      return (
+                        <tr
+                          key={subject.id}
+                          className="group hover:bg-slate-50/70 dark:hover:bg-zinc-900/40 transition-colors"
+                        >
+                          <td className="px-5 py-4 text-center text-slate-400 dark:text-zinc-500 font-mono text-xs">
+                            {String(idx + 1).padStart(2, "0")}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${released
+                                  ? "bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400"
+                                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"
+                                  }`}
+                              >
+                                <BookOpen className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm truncate">
+                                  {subject.subject?.name || "Subject"}
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                                    {subject.subject?.code || "COURSE"}
+                                  </span>
+                                  {!released && (
+                                    <span className="text-[9px] uppercase font-bold tracking-wider text-amber-500 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-800/40">
+                                      Pending
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-zinc-900 dark:text-zinc-100">
-                                {subject.subject?.name || "Subject"}
-                              </p>
-                              {!released && (
-                                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500">
-                                  Score pending release
+                          </td>
+
+                          <td className="px-4 py-4 text-center whitespace-nowrap">
+                            {released ? (
+                              subject.assignmentScore != null ? (
+                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {subject.assignmentScore}
                                 </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
+                              ) : (
+                                <span className="text-slate-300 dark:text-zinc-600">—</span>
+                              )
+                            ) : (
+                              <NACell />
+                            )}
+                          </td>
 
-                        <td className="px-5 py-4 text-center text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                          {released ? (subject.assignmentScore != null ? subject.assignmentScore : "—") : <NACell />}
-                        </td>
+                          <td className="px-4 py-4 text-center whitespace-nowrap">
+                            {released ? (
+                              subject.quizScore != null ? (
+                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {subject.quizScore}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 dark:text-zinc-600">—</span>
+                              )
+                            ) : (
+                              <NACell />
+                            )}
+                          </td>
 
-                        <td className="px-5 py-4 text-center text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                          {released
-                            ? ((subject.caScore ?? subject.quizScore) != null ? (subject.caScore ?? subject.quizScore) : "—")
-                            : <NACell />}
-                        </td>
+                          <td className="px-4 py-4 text-center whitespace-nowrap">
+                            {released ? (
+                              subject.caScore != null ? (
+                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {subject.caScore}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 dark:text-zinc-600">—</span>
+                              )
+                            ) : (
+                              <NACell />
+                            )}
+                          </td>
 
-                        <td className="px-5 py-4 text-center text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                          {released ? (subject.examScore != null ? subject.examScore : "—") : <NACell />}
-                        </td>
+                          <td className="px-4 py-4 text-center whitespace-nowrap">
+                            {released ? (
+                              subject.examScore != null ? (
+                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {subject.examScore}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 dark:text-zinc-600">—</span>
+                              )
+                            ) : (
+                              <NACell />
+                            )}
+                          </td>
 
-                        <td className="px-5 py-4 text-center whitespace-nowrap">
-                          {released && total != null ? (
-                            <span className={`inline-flex items-center justify-center min-w-[3.5rem] px-2.5 py-1 rounded-lg text-xs font-bold ${getScoreColor(total)}`}>
-                              {total}
-                            </span>
-                          ) : (
-                            <NACell />
-                          )}
-                        </td>
+                          <td className="px-5 py-4 text-center whitespace-nowrap">
+                            {released && total != null ? (
+                              <span
+                                className={`inline-flex items-center justify-center min-w-[3.5rem] px-2.5 py-1 rounded-lg text-xs font-bold ${getScoreColor(
+                                  total,
+                                  customGradingSystem
+                                )}`}
+                              >
+                                {total}
+                              </span>
+                            ) : (
+                              <NACell />
+                            )}
+                          </td>
 
-                        <td className="px-5 py-4 text-center whitespace-nowrap">
-                          {released && total != null ? (
-                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-black ${getScoreColor(total)}`}>
-                              {grade}
-                            </span>
-                          ) : (
-                            <span className="text-zinc-400 font-bold">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="px-4 py-4 text-center whitespace-nowrap">
+                            {released && total != null ? (
+                              <span
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-black shadow-xs ${getScoreColor(
+                                  total,
+                                  customGradingSystem
+                                )}`}
+                              >
+                                {grade}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 font-bold">—</span>
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4 text-center whitespace-nowrap">
+                            {released && total != null && evalResult ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
+                                {evalResult.remark || (evalResult.grade !== "F9" && evalResult.grade !== "F" ? "PASS" : "FAIL")}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 text-xs">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

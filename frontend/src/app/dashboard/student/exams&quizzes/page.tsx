@@ -10,6 +10,8 @@ import AssessmentList from './components/AssessmentList';
 import { useExams, useStudentStats } from '@/lib/api/hooks/useExams';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Assessment, StatCard } from './components/types';
 import { timeFilters } from './components/data';
 import { Loader2, Search, X, LayoutGrid, List, GraduationCap, ChevronDown } from 'lucide-react';
@@ -18,53 +20,53 @@ import { Input } from '@/components/ui/input';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
 interface RawSubjectPaper {
-  durationMinutes?: number;
-  questions?: unknown[];
-  totalQuestions?: number;
-  _count?: {
-    questions?: number;
-  };
-  subject?: {
-    name?: string;
-  };
+    durationMinutes?: number;
+    questions?: unknown[];
+    totalQuestions?: number;
+    _count?: {
+        questions?: number;
+    };
+    subject?: {
+        name?: string;
+    };
 }
 
 interface RawAttempt {
-  status?: string;
-  totalScore?: number;
-  totalMarks?: number;
+    status?: string;
+    totalScore?: number;
+    totalMarks?: number;
 }
 
 interface RawExamItem {
-  id: string;
-  title: string;
-  category?: string;
-  startDate?: string;
-  endDate?: string;
-  durationMinutes?: number;
-  totalQuestions?: number;
-  resultReleaseAt?: string;
-  allowImmediateResult?: boolean;
-  classId?: string;
-  class?: { id: string; name: string; section?: string };
-  subjectId?: string;
-  subject?: { id: string; name: string };
-  subjectPapers?: RawSubjectPaper[];
-  subjectExamPapers?: (RawSubjectPaper | { subjectPaper?: RawSubjectPaper })[];
-  attempts?: RawAttempt[];
-  examAttempts?: RawAttempt[];
+    id: string;
+    title: string;
+    category?: string;
+    startDate?: string;
+    endDate?: string;
+    durationMinutes?: number;
+    totalQuestions?: number;
+    resultReleaseAt?: string;
+    allowImmediateResult?: boolean;
+    classId?: string;
+    class?: { id: string; name: string; section?: string };
+    subjectId?: string;
+    subject?: { id: string; name: string };
+    subjectPapers?: RawSubjectPaper[];
+    subjectExamPapers?: (RawSubjectPaper | { subjectPaper?: RawSubjectPaper })[];
+    attempts?: RawAttempt[];
+    examAttempts?: RawAttempt[];
 }
 
 interface RawAssignmentItem {
-  id: string;
-  title: string;
-  subject?: string;
-  classId?: string;
-  dueDate?: string;
-  createdAt?: string;
-  grade?: string;
-  status?: string;
-  questionCount?: number;
+    id: string;
+    title: string;
+    subject?: string;
+    classId?: string;
+    dueDate?: string;
+    createdAt?: string;
+    grade?: string;
+    status?: string;
+    questionCount?: number;
 }
 
 export default function StudentAssessmentsPage() {
@@ -85,6 +87,16 @@ export default function StudentAssessmentsPage() {
 
     // Fetch student profile to get connected classes
     const { data: studentProfile, isLoading: isProfileLoading } = useStudentProfile();
+    const { user } = useAuthStore();
+    const userRecord = user as Record<string, unknown> | null | undefined;
+    const schoolId =
+        studentProfile?.schoolId ||
+        user?.schools?.[0]?.schoolId ||
+        (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+        user?.tenantId ||
+        '';
+    const { data: schoolProfile } = useSchoolProfile(schoolId);
+    const customGradingSystem = schoolProfile?.gradingSystem;
     const studentClasses = useMemo(() => {
         return (studentProfile?.classes || [])
             .map((c) => c.class)
@@ -104,10 +116,10 @@ export default function StudentAssessmentsPage() {
     const { data: statsData, isLoading: isStatsLoading } = useStudentStats();
     const { data: examsData = [], isLoading: isExamsLoading, isError: isExamsError } = useExams(examsQueryFilters);
     const { data: assignmentsResponse, isLoading: isAssignmentsLoading, isError: isAssignmentsError } = useStudentAssignments({ limit: 100 });
-    
+
     const isError = isExamsError || isAssignmentsError;
     const isLoading = isExamsLoading || isAssignmentsLoading || isStatsLoading || isProfileLoading;
-    
+
     // Normalize and combine assessments and assignments
     const assessments = useMemo(() => {
         const assignmentsData = (assignmentsResponse?.assignments as unknown as RawAssignmentItem[]) || [];
@@ -126,7 +138,7 @@ export default function StudentAssessmentsPage() {
                 const assignment = item as RawAssignmentItem;
                 const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
                 const matchedClass = studentClasses.find(c => c.id === assignment.classId);
-                
+
                 let status: Assessment['status'] = 'open';
                 if (assignment.status === 'overdue') status = 'missing';
                 else if (assignment.status === 'submitted' || assignment.status === 'graded') status = 'submitted';
@@ -135,6 +147,7 @@ export default function StudentAssessmentsPage() {
                 else if (dueDate && now > dueDate) status = 'closed';
                 else status = 'open';
 
+                const parsedScoreNum = assignment.grade ? parseInt(String(assignment.grade).replace('%', ''), 10) : null;
                 return {
                     id: assignment.id,
                     title: assignment.title,
@@ -146,7 +159,9 @@ export default function StudentAssessmentsPage() {
                     }) : 'TBD',
                     startDate: assignment.createdAt ? new Date(assignment.createdAt) : undefined,
                     endDate: dueDate || undefined,
+                    createdAt: assignment.createdAt ? new Date(assignment.createdAt) : undefined,
                     score: assignment.grade || null,
+                    scorePercentage: parsedScoreNum != null && !isNaN(parsedScoreNum) ? parsedScoreNum : null,
                     status,
                     type: 'assignment',
                     durationMinutes: 0,
@@ -161,7 +176,7 @@ export default function StudentAssessmentsPage() {
             const startDate = exam.startDate ? new Date(exam.startDate) : null;
             const endDate = exam.endDate ? new Date(exam.endDate) : null;
             const attempt = exam.examAttempts?.[0] || exam.attempts?.[0];
-            
+
             // Normalize papers from subjectPapers or subjectExamPapers
             const normalizedPapers: RawSubjectPaper[] = (exam.subjectPapers || exam.subjectExamPapers || []).map((p: any) => {
                 if (p && typeof p === 'object' && 'subjectPaper' in p) {
@@ -179,10 +194,10 @@ export default function StudentAssessmentsPage() {
                 ? exam.totalQuestions
                 : calculatedFromPapers;
 
-            const durationMinutes = (exam.durationMinutes ?? 0) > 0 
-                ? (exam.durationMinutes ?? 0) 
+            const durationMinutes = (exam.durationMinutes ?? 0) > 0
+                ? (exam.durationMinutes ?? 0)
                 : normalizedPapers.reduce((acc: number, paper) => acc + (paper.durationMinutes || 0), 0);
-            
+
             const matchedClass = exam.class?.name || (exam.classId ? studentClasses.find(c => c.id === exam.classId)?.name : undefined);
 
             let status: Assessment['status'] = 'open';
@@ -201,6 +216,13 @@ export default function StudentAssessmentsPage() {
 
             const examSubjectName = exam.subject?.name || normalizedPapers[0]?.subject?.name || (normalizedPapers.length > 1 ? 'Multiple Subjects' : 'General');
 
+            const isScoreReleased = Boolean(
+                exam.allowImmediateResult || (exam.resultReleaseAt && now >= new Date(exam.resultReleaseAt))
+            );
+            const scorePercent = isScoreReleased && attempt?.totalScore != null
+                ? Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100)
+                : null;
+
             return {
                 id: exam.id,
                 title: exam.title,
@@ -212,9 +234,9 @@ export default function StudentAssessmentsPage() {
                 }) : 'TBD',
                 startDate: startDate || undefined,
                 endDate: endDate || undefined,
-                score: (exam.allowImmediateResult || (exam.resultReleaseAt && now >= new Date(exam.resultReleaseAt))) 
-                    ? (attempt?.totalScore != null ? `${Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100)}%` : null) 
-                    : null,
+                createdAt: startDate || undefined,
+                score: scorePercent != null ? `${scorePercent}%` : null,
+                scorePercentage: scorePercent,
                 status,
                 type: exam.category?.toLowerCase() === 'quiz' ? 'quiz' : exam.category?.toLowerCase() === 'ca' ? 'ca' : 'exam',
                 durationMinutes,
@@ -332,24 +354,24 @@ export default function StudentAssessmentsPage() {
                 return false;
             }
 
-            const matchesType = assessmentType === 'all' 
+            const matchesType = assessmentType === 'all'
                 ? true
-                : assessmentType === 'exams' ? assessment.type === 'exam' 
-                : assessmentType === 'quizzes' ? assessment.type === 'quiz'
-                : assessmentType === 'ca' ? assessment.type === 'ca'
-                : assessment.type === 'assignment';
+                : assessmentType === 'exams' ? assessment.type === 'exam'
+                    : assessmentType === 'quizzes' ? assessment.type === 'quiz'
+                        : assessmentType === 'ca' ? assessment.type === 'ca'
+                            : assessment.type === 'assignment';
 
             if (!matchesType) return false;
-            
+
             // If a specific class cohort is selected, filter assessments connected to classes
             if (selectedClassId !== 'all' && assessment.classId && assessment.classId !== selectedClassId) {
                 return false;
             }
 
             if (!q) return true;
-            return assessment.title.toLowerCase().includes(q) || 
-                   assessment.subject.toLowerCase().includes(q) ||
-                   (assessment.className && assessment.className.toLowerCase().includes(q));
+            return assessment.title.toLowerCase().includes(q) ||
+                assessment.subject.toLowerCase().includes(q) ||
+                (assessment.className && assessment.className.toLowerCase().includes(q));
         });
     }, [allAssessments, assessmentType, searchQuery, selectedClassId, studentProfile]);
 
@@ -386,7 +408,7 @@ export default function StudentAssessmentsPage() {
                     <div className="xl:col-span-2">
                         <StatsCards cards={dynamicStatCards} />
                     </div>
-                    <PerformanceChart stats={statsData} />
+                    <PerformanceChart stats={statsData} gradingSystem={customGradingSystem} />
                 </div>
 
                 {/* Assessment Type, Search, Class Filter, and Time Filter Toolbar */}
@@ -403,7 +425,7 @@ export default function StudentAssessmentsPage() {
                             setAssessmentType(type);
                             setCurrentPage(1);
                         }} />
-                        
+
                         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 flex-1 md:flex-none justify-between md:justify-end">
                             {/* Class Cohort Filter */}
                             {studentClasses.length > 0 && (
@@ -464,11 +486,10 @@ export default function StudentAssessmentsPage() {
                                 <button
                                     onClick={() => setViewMode('grid')}
                                     type="button"
-                                    className={`p-2 rounded-lg text-xs font-semibold transition-all ${
-                                        viewMode === 'grid'
+                                    className={`p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid'
                                             ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
                                             : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
-                                    }`}
+                                        }`}
                                     title="Grid View"
                                     aria-label="Grid View"
                                 >
@@ -477,11 +498,10 @@ export default function StudentAssessmentsPage() {
                                 <button
                                     onClick={() => setViewMode('table')}
                                     type="button"
-                                    className={`p-2 rounded-lg text-xs font-semibold transition-all ${
-                                        viewMode === 'table'
+                                    className={`p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'table'
                                             ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
                                             : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
-                                    }`}
+                                        }`}
                                     title="Table View"
                                     aria-label="Table View"
                                 >
@@ -493,11 +513,12 @@ export default function StudentAssessmentsPage() {
                 </div>
 
                 {/* Assessment List (Grid or Table View) */}
-                <AssessmentList 
-                    assessments={filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} 
+                <AssessmentList
+                    assessments={filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
                     viewMode={viewMode}
+                    gradingSystem={customGradingSystem}
                 />
-                
+
                 {filteredAssessments.length > itemsPerPage && (
                     <div className="mt-8 flex justify-center">
                         <Pagination

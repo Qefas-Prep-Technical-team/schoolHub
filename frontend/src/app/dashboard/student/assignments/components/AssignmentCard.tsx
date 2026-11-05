@@ -2,32 +2,67 @@
 
 import Link from 'next/link';
 import { Assignment } from './types';
-import { 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  ArrowRight, 
-  BookOpen, 
-  User as UserIcon, 
-  Paperclip, 
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  BookOpen,
+  User as UserIcon,
+  Paperclip,
   Award,
   Hourglass
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 interface Props {
   assignment: Assignment;
   viewMode: 'grid' | 'list';
   onClick?: () => void;
   index?: number;
+  customGradingSystem?: any[] | null;
 }
 
-export default function AssignmentCard({ assignment, viewMode, onClick, index }: Props) {
+export default function AssignmentCard({ assignment, viewMode, onClick, index, customGradingSystem }: Props) {
   const isGraded = assignment.status === 'graded';
   const isSubmitted = assignment.status === 'submitted';
   const isOverdue = assignment.status === 'overdue';
   const isPending = assignment.status === 'pending';
+
+  // Compute school-synced grade pill
+  const gradeEvaluation = (() => {
+    if (!isGraded || !assignment.grade) return null;
+    let percent: number | null = null;
+    if (assignment.grade.includes('/')) {
+      const [scorePart, totalPart] = assignment.grade.split('/');
+      const s = parseFloat(scorePart);
+      const t = parseFloat(totalPart);
+      if (!isNaN(s) && !isNaN(t) && t > 0) {
+        percent = Math.round((s / t) * 100);
+      }
+    } else if (assignment.grade.includes('%')) {
+      const val = parseFloat(assignment.grade.replace('%', ''));
+      if (!isNaN(val)) percent = Math.round(val);
+    } else {
+      const val = parseFloat(assignment.grade.replace(/[^0-9.]/g, ''));
+      if (!isNaN(val)) {
+        if (assignment.totalMarks && assignment.totalMarks > 0) {
+          percent = Math.round((val / assignment.totalMarks) * 100);
+        } else {
+          percent = Math.round(val);
+        }
+      }
+    }
+
+    if (percent === null) return null;
+    const evalResult = getGradeEvaluation(percent, customGradingSystem);
+    return {
+      percentage: percent,
+      ...evalResult,
+    };
+  })();
 
   const getStatusBadge = () => {
     if (isGraded) {
@@ -138,9 +173,20 @@ export default function AssignmentCard({ assignment, viewMode, onClick, index }:
         <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
             {isGraded && assignment.grade ? (
-              <div className="text-right">
-                <p className="text-[10px] uppercase font-bold text-slate-400">Score</p>
-                <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{assignment.grade}</p>
+              <div className="text-right flex items-center gap-2">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Score</p>
+                  <p className="text-sm font-black text-slate-900 dark:text-white">{assignment.grade}</p>
+                </div>
+                {gradeEvaluation?.grade && (
+                  <span className={cn(
+                    'px-2 py-0.5 rounded-lg text-xs font-black border uppercase shadow-2xs',
+                    gradeEvaluation.bg,
+                    gradeEvaluation.color
+                  )}>
+                    {gradeEvaluation.grade}
+                  </span>
+                )}
               </div>
             ) : null}
             {getStatusBadge()}
@@ -219,9 +265,20 @@ export default function AssignmentCard({ assignment, viewMode, onClick, index }:
           {isGraded && assignment.grade ? (
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Grade Achieved</span>
-              <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                {assignment.grade}
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                  {assignment.grade}
+                </span>
+                {gradeEvaluation?.grade && (
+                  <span className={cn(
+                    'px-1.5 py-0.5 rounded text-[10px] font-black border uppercase shadow-2xs',
+                    gradeEvaluation.bg,
+                    gradeEvaluation.color
+                  )}>
+                    {gradeEvaluation.grade}
+                  </span>
+                )}
+              </div>
             </div>
           ) : isSubmitted ? (
             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
