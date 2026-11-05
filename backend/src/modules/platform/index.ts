@@ -12,6 +12,7 @@ import platformPricingRoutes from "./billing/pricing.routes";
 import platformConfigRoutes from "./support/public.route";
 import platformEmailRoutes from "./email/email.route";
 import platformNotificationRoutes from "./notifications/recipient.route";
+import platformTutorialRoutes from "./tutorials/tutorials.route";
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use("/pricing", platformPricingRoutes);
 router.use("/config", platformConfigRoutes);
 router.use("/email", platformEmailRoutes);
 router.use("/notifications", platformNotificationRoutes);
+router.use("/tutorials", platformTutorialRoutes);
 
 export default router;

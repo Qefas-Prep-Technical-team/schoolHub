@@ -1,99 +1,144 @@
 import { Request, Response } from "express";
 import { handleError } from "../../utils/error-handler";
-import { uploadBufferToBunnyService, getS3PresignedUrlService, confirmS3UploadService, deleteS3FileService, deleteBunnyFileService, getUploadHistoryService, cleanupUnusedImagesService, deleteFileByUrlService } from "./upload.service";
+import {
+  resolveSchoolId,
+  validateSchoolAccess,
+} from "../school/services/school-access.service";
+import {
+  uploadBufferToBunnyService,
+  getS3PresignedUrlService,
+  confirmS3UploadService,
+  deleteS3FileService,
+  deleteBunnyFileService,
+  getUploadHistoryService,
+  cleanupUnusedImagesService,
+  deleteFileByUrlService,
+} from "./upload.service";
 
-/**
- * Legacy - No longer supported. Use /upload/proxy instead.
- */
-export const getCloudflareUploadUrl = async (req: Request, res: Response) => {
+export const getCloudflareUploadUrl = async (_req: Request, res: Response) => {
   return res.status(410).json({
     success: false,
     message: "This endpoint is deprecated. Use POST /upload/proxy instead.",
   });
 };
 
-/**
- * Handle direct binary upload from frontend via multer
- * Proxies the file to Bunny.net to avoid CORS/DNS issues
- */
+const resolveAuthorizedUploadSchoolId = async (
+  req: Request,
+  requestedSchoolId?: string,
+): Promise<string | null> => {
+  const user = req.user;
+  const candidate = requestedSchoolId || user?.schoolId || user?.tenantId;
+  if (!candidate) return null;
+
+  if (!validateSchoolAccess(req, candidate)) {
+    throw new Error("Access denied: You do not belong to the target school.");
+  }
+
+  return resolveSchoolId(candidate);
+};
+
 export const proxyUpload = async (req: Request, res: Response) => {
   try {
-    const file = (req as any).file as Express.Multer.File;
-
+    const file = (req as Request & { file?: Express.Multer.File }).file;
     if (!file) {
-      console.error("[Proxy Upload] Multer did not find 'file' in request");
       return res.status(400).json({
         success: false,
         message: "No file received. Please check the field name is 'file'.",
       });
     }
-
     if (!file.buffer || file.buffer.length === 0) {
-      console.error("[Proxy Upload] File received but buffer is empty");
-      return res.status(400).json({
+      return res.status(400).json({ success: false, message: "File is empty" });
+    }
+
+    let resolvedSchoolId: string | null = null;
+    try {
+      resolvedSchoolId = await resolveAuthorizedUploadSchoolId(req, req.body.schoolId);
+    } catch {
+      return res.status(403).json({
         success: false,
-        message: "File is empty",
+        message: "Access denied: Unauthorized schoolId.",
       });
     }
 
-    console.log(`[Proxy Upload] Received file: ${file.originalname} (${file.size} bytes, ${file.mimetype})`);
-
-    const user = (req as any).user;
+    const user = req.user;
     const data = await uploadBufferToBunnyService(file.buffer, file.mimetype, {
       userId: user.id,
       userType: user.userType,
-      schoolId: req.body.schoolId || user.schoolId,
-      fileName: req.body.fileName || file.originalname
+      schoolId: resolvedSchoolId || undefined,
+      fileName: req.body.fileName || file.originalname,
     });
-    
-    return res.status(200).json({
-      success: true,
-      url: data.publicUrl,
-      data,
-    });
-  } catch (error: any) {
+
+    return res.status(200).json({ success: true, url: data.publicUrl, data });
+  } catch (error: unknown) {
     return handleError(res, error, "upload.proxyUpload");
   }
 };
 
 export const getS3PresignedUrl = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const { fileName, fileType, fileSize } = req.body;
-
+    const { fileName, fileType, fileSize, schoolId } = req.body;
     if (!fileName || !fileType || !fileSize) {
-      return res.status(400).json({ success: false, message: "fileName, fileType, and fileSize are required" });
+      return res.status(400).json({
+        success: false,
+        message: "fileName, fileType, and fileSize are required",
+      });
+    }
+
+    let resolvedSchoolId: string | null = null;
+    try {
+      resolvedSchoolId = await resolveAuthorizedUploadSchoolId(req, schoolId);
+    } catch {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: Unauthorized schoolId.",
+      });
+    }
+
+    if (!resolvedSchoolId) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid schoolId is required for S3 presigned upload.",
+      });
     }
 
     const data = await getS3PresignedUrlService({
-      schoolId: user.schoolId,
+      schoolId: resolvedSchoolId,
       fileName,
       fileType,
       fileSize: Number(fileSize),
     });
 
     return res.status(200).json({ success: true, data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleError(res, error, "upload.getS3PresignedUrl");
   }
 };
 
 export const confirmS3Upload = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { fileName, fileUrl, fileSize, mimeType, schoolId } = req.body;
-
     if (!fileName || !fileUrl || !fileSize) {
-      return res.status(400).json({ success: false, message: "fileName, fileUrl, and fileSize are required" });
+      return res.status(400).json({
+        success: false,
+        message: "fileName, fileUrl, and fileSize are required",
+      });
     }
 
-    const finalSchoolId = schoolId || user.schoolId;
+    let finalSchoolId: string | null = null;
+    try {
+      finalSchoolId = await resolveAuthorizedUploadSchoolId(req, schoolId);
+    } catch {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: Unauthorized schoolId.",
+      });
+    }
 
     if (!finalSchoolId) {
-      // Bypass quota tracking if no schoolId is found (e.g., system admin uploading global asset)
-      return res.status(200).json({ 
-        success: true, 
-        data: { fileUrl, note: "Quota tracking bypassed (no schoolId)" } 
+      return res.status(200).json({
+        success: true,
+        data: { fileUrl, note: "Quota tracking bypassed (no schoolId)" },
       });
     }
 
@@ -108,84 +153,93 @@ export const confirmS3Upload = async (req: Request, res: Response) => {
     });
 
     return res.status(200).json({ success: true, data: record });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleError(res, error, "upload.confirmS3Upload");
   }
 };
 
 export const deleteS3File = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
     const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, message: "File ID is required" });
 
-    if (!id) {
-      return res.status(400).json({ success: false, message: "File ID is required" });
-    }
+    const resolvedSchoolId = await resolveSchoolId(req.user.schoolId || req.user.tenantId || "");
+    if (!resolvedSchoolId) return res.status(403).json({ success: false, message: "Access denied" });
 
-    await deleteS3FileService(id as string, user.schoolId);
-
+    await deleteS3FileService(id as string, resolvedSchoolId);
     return res.status(200).json({ success: true, message: "File deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleError(res, error, "upload.deleteS3File");
   }
 };
 
 export const deleteBunnyFile = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
     const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, message: "File ID is required" });
 
-    if (!id) {
-      return res.status(400).json({ success: false, message: "File ID is required" });
-    }
+    const resolvedSchoolId = await resolveSchoolId(req.user.schoolId || req.user.tenantId || "");
+    if (!resolvedSchoolId) return res.status(403).json({ success: false, message: "Access denied" });
 
-    await deleteBunnyFileService(id as string, user.schoolId);
-
-    return res.status(200).json({ success: true, message: "File deleted successfully from Bunny.net" });
-  } catch (error: any) {
+    await deleteBunnyFileService(id as string, resolvedSchoolId);
+    return res.status(200).json({
+      success: true,
+      message: "File deleted successfully from Bunny.net",
+    });
+  } catch (error: unknown) {
     return handleError(res, error, "upload.deleteBunnyFile");
   }
 };
 
 export const deleteFileByUrl = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
     const { url } = req.body;
+    if (!url) return res.status(400).json({ success: false, message: "File URL is required" });
 
-    if (!url) {
-      return res.status(400).json({ success: false, message: "File URL is required" });
-    }
+    const resolvedSchoolId = await resolveSchoolId(req.user.schoolId || req.user.tenantId || "");
+    if (!resolvedSchoolId) return res.status(403).json({ success: false, message: "Access denied" });
 
-    await deleteFileByUrlService(url, user.schoolId);
-
+    await deleteFileByUrlService(url, resolvedSchoolId);
     return res.status(200).json({ success: true, message: "File deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleError(res, error, "upload.deleteFileByUrl");
   }
 };
 
 export const getUploadHistory = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 50;
 
-    const history = await getUploadHistoryService(user.schoolId, user.id, page, limit);
+    const resolvedSchoolId = await resolveSchoolId(req.user.schoolId || req.user.tenantId || "");
+    if (!resolvedSchoolId) {
+      return res.status(200).json({
+        success: true,
+        data: { records: [], total: 0, page, limit },
+      });
+    }
 
+    const history = await getUploadHistoryService(resolvedSchoolId, req.user.id, page, limit);
     return res.status(200).json({ success: true, data: history });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return handleError(res, error, "upload.getUploadHistory");
   }
 };
 
 export const cleanupUnusedImages = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    
-    const result = await cleanupUnusedImagesService(user.schoolId, user.id);
+    const resolvedSchoolId = await resolveSchoolId(req.user.schoolId || req.user.tenantId || "");
+    if (!resolvedSchoolId) {
+      return res.status(200).json({ success: true, data: { deletedCount: 0, deletedUrls: [] } });
+    }
 
-    return res.status(200).json({ success: true, data: result, message: `Cleaned up ${result.deletedCount} unused images.` });
-  } catch (error: any) {
+    const result = await cleanupUnusedImagesService(resolvedSchoolId, req.user.id);
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: `Cleaned up ${result.deletedCount} unused images.`,
+    });
+  } catch (error: unknown) {
     return handleError(res, error, "upload.cleanupUnusedImages");
   }
 };

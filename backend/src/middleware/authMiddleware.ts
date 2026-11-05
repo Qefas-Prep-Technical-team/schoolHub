@@ -5,7 +5,7 @@ import prisma, { withRetry } from "../config/database";
 // ─── In-memory session cache ──────────────────────────────────────────────────
 // Short-lived cache to avoid hitting the DB on every request.
 // This is the primary fix for random logouts caused by pgBouncer connection drops.
-const sessionCache = new Map<string, { valid: boolean; schoolId?: string; tenantId?: string; name?: string; email?: string; role?: string; expiresAt: number }>();
+const sessionCache = new Map<string, { valid: boolean; schoolId?: string; tenantId?: string; name?: string; email?: string; role?: string; adminRole?: string; expiresAt: number }>();
 const SESSION_CACHE_TTL_MS = 30_000; // 30 seconds
 
 function getCachedSession(userId: string, userType: string) {
@@ -16,7 +16,7 @@ function getCachedSession(userId: string, userType: string) {
   return null;
 }
 
-function setCachedSession(userId: string, userType: string, data: { valid: boolean; schoolId?: string; tenantId?: string; name?: string; email?: string; role?: string }) {
+function setCachedSession(userId: string, userType: string, data: { valid: boolean; schoolId?: string; tenantId?: string; name?: string; email?: string; role?: string; adminRole?: string }) {
   sessionCache.set(`${userId}:${userType}`, { ...data, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
 }
 
@@ -54,6 +54,7 @@ export const authenticateToken = async (
     let userName: string | undefined;
     let userEmail: string | undefined;
     let userRole: string | undefined;
+    let adminRole: string | undefined;
     let userExists = false;
 
     // ── Cache check: skip DB on hot path ──────────────────────────────────
@@ -73,6 +74,7 @@ export const authenticateToken = async (
       userName = cached.name;
       userEmail = cached.email;
       userRole = cached.role;
+      adminRole = cached.adminRole;
     } else {
       // ── DB lookup wrapped in withRetry ──────────────────────────────────
       if (decoded.userType === "ADMIN") {
@@ -87,6 +89,7 @@ export const authenticateToken = async (
         if (admin && admin.isActive !== false) {
           userExists = true;
           schoolId = admin.schoolAdmins[0]?.schoolId;
+          adminRole = admin.schoolAdmins[0]?.role;
           tenantId = admin.tenantId;
           userName = admin.name;
           userEmail = admin.email;
@@ -200,7 +203,7 @@ export const authenticateToken = async (
         }
       }
 
-      setCachedSession(decoded.userId, decoded.userType, { valid: userExists, schoolId, tenantId, name: userName, email: userEmail, role: userRole });
+      setCachedSession(decoded.userId, decoded.userType, { valid: userExists, schoolId, tenantId, name: userName, email: userEmail, role: userRole, adminRole });
     }
 
     if (!userExists) {
@@ -314,6 +317,7 @@ export const authenticateToken = async (
       name: userName || undefined,
       email: userEmail || undefined,
       role: userRole || decoded.userType,
+      adminRole: adminRole || undefined,
     };
 
     next();

@@ -291,6 +291,39 @@ export const rejectClassService = async (classId: string, adminId: string) => {
   });
 };
 
+const SAFE_TEACHER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  teacherCode: true,
+  role: true,
+  gender: true,
+  profileImage: true,
+  bannerImage: true,
+  verified: true,
+  isClaimed: true,
+  schoolId: true,
+  primarySchoolId: true,
+  activeSchoolId: true,
+  currentSchoolId: true,
+} as const;
+
+const SAFE_STUDENT_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  studentCode: true,
+  role: true,
+  gender: true,
+  status: true,
+  profileImage: true,
+  bannerImage: true,
+  verified: true,
+  isClaimed: true,
+  schoolId: true,
+  departmentId: true,
+} as const;
+
 export const getClassesService = async ({
   currentUserId,
   currentUserType,
@@ -305,10 +338,18 @@ export const getClassesService = async ({
       throw new Error("schoolId is required for admin class listing");
     }
 
+    const schoolRecord = await prisma.school.findFirst({
+      where: {
+        OR: [{ id: schoolId }, { tenantId: schoolId }],
+      },
+      select: { id: true },
+    });
+    const resolvedSchoolId = schoolRecord?.id || schoolId;
+
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: {
         adminId: currentUserId,
-        schoolId,
+        schoolId: resolvedSchoolId,
         active: true,
       },
     });
@@ -318,14 +359,44 @@ export const getClassesService = async ({
     }
 
     return prisma.class.findMany({
-      where: { schoolId },
+      where: { schoolId: resolvedSchoolId },
       include: {
         school: true,
-        teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
-        subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
+        teachers: {
+          include: {
+            teacher: {
+              select: {
+                ...SAFE_TEACHER_SELECT,
+                subjects: true,
+                teacherSubjects: true,
+              },
+            },
+          },
+        },
+        subjects: {
+          include: {
+            subject: {
+              include: {
+                teacher: { select: SAFE_TEACHER_SELECT },
+                teacherSubjects: {
+                  include: { teacher: { select: SAFE_TEACHER_SELECT } },
+                },
+              },
+            },
+          },
+        },
         departments: { include: { department: true } },
-        enrollments: { include: { student: true } },
-        timetablePeriods: { select: { day: true, startTime: true, endTime: true, subject: { select: { name: true } } } },
+        enrollments: {
+          include: { student: { select: SAFE_STUDENT_SELECT } },
+        },
+        timetablePeriods: {
+          select: {
+            day: true,
+            startTime: true,
+            endTime: true,
+            subject: { select: { name: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -336,11 +407,41 @@ export const getClassesService = async ({
       where: { teachers: { some: { teacherId: currentUserId } } },
       include: {
         school: true,
-        teachers: { include: { teacher: { include: { subjects: true, teacherSubjects: true } } } },
-        subjects: { include: { subject: { include: { teacher: true, teacherSubjects: { include: { teacher: true } } } } } },
+        teachers: {
+          include: {
+            teacher: {
+              select: {
+                ...SAFE_TEACHER_SELECT,
+                subjects: true,
+                teacherSubjects: true,
+              },
+            },
+          },
+        },
+        subjects: {
+          include: {
+            subject: {
+              include: {
+                teacher: { select: SAFE_TEACHER_SELECT },
+                teacherSubjects: {
+                  include: { teacher: { select: SAFE_TEACHER_SELECT } },
+                },
+              },
+            },
+          },
+        },
         departments: { include: { department: true } },
-        enrollments: { include: { student: true } },
-        timetablePeriods: { select: { day: true, startTime: true, endTime: true, subject: { select: { name: true } } } },
+        enrollments: {
+          include: { student: { select: SAFE_STUDENT_SELECT } },
+        },
+        timetablePeriods: {
+          select: {
+            day: true,
+            startTime: true,
+            endTime: true,
+            subject: { select: { name: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -445,8 +546,8 @@ export const getSingleClassService = async (classId: string) => {
           }
         }
       },
-      departments: { 
-        include: { 
+      departments: {
+        include: {
           department: {
             include: {
               subjects: {
@@ -456,16 +557,16 @@ export const getSingleClassService = async (classId: string) => {
               }
             }
           }
-        } 
+        }
       },
-      enrollments: { 
-        include: { 
+      enrollments: {
+        include: {
           student: {
             include: {
               department: true
             }
-          } 
-        } 
+          }
+        }
       },
       exams: {
         select: {
@@ -729,13 +830,40 @@ export const requestToJoinClassService = async ({
     throw new Error("This class is not open for joining");
   }
 
+  // 1. Check if class is locked against new enrollments
+  const classStatusUpper = String(foundClass.status || "").toUpperCase();
+  if (classStatusUpper === "ARCHIVED" || classStatusUpper === "REJECTED") {
+    throw new Error("This class is not active. Enrollment requests are not permitted");
+  }
+
+  // 2. Check if student has graduated from this school
+  const studentStatus = String(student.status || "").toUpperCase();
+  const isStudentGraduated = Boolean(
+    studentStatus === "GRADUATED" ||
+    studentStatus === "ALUMNI"
+  );
+
+  if (isStudentGraduated && foundClass.schoolId && student.schoolId === foundClass.schoolId) {
+    throw new Error("You have graduated from this school. Graduated alumni cannot request to join active classrooms");
+  }
+
+  // 3. Check if student level matches class level (if both are specified)
+  const studentLevelVal = (student as unknown as { level?: string | null })?.level;
+  if (foundClass.level && studentLevelVal) {
+    const studentLvl = studentLevelVal.trim().toLowerCase();
+    const classLvl = foundClass.level.trim().toLowerCase();
+    if (studentLvl !== classLvl) {
+      throw new Error(`Level mismatch: Your profile level (${studentLevelVal}) does not match this classroom's level (${foundClass.level})`);
+    }
+  }
+
   if (foundClass.scope === ClassScope.SCHOOL && foundClass.schoolId) {
-    const isLinked = 
-      student.schoolId === foundClass.schoolId || 
-      await hasActiveSchoolLink({ 
-        userId: student.id, 
-        userType: LinkEntityType.STUDENT, 
-        schoolId: foundClass.schoolId 
+    const isLinked =
+      student.schoolId === foundClass.schoolId ||
+      await hasActiveSchoolLink({
+        userId: student.id,
+        userType: LinkEntityType.STUDENT,
+        schoolId: foundClass.schoolId
       });
 
     if (!isLinked) {
@@ -873,12 +1001,12 @@ export const addStudentToClassService = async ({
   }
 
   if (foundClass.scope === ClassScope.SCHOOL && foundClass.schoolId) {
-    const isLinked = 
-      student.schoolId === foundClass.schoolId || 
-      await hasActiveSchoolLink({ 
-        userId: student.id, 
-        userType: LinkEntityType.STUDENT, 
-        schoolId: foundClass.schoolId 
+    const isLinked =
+      student.schoolId === foundClass.schoolId ||
+      await hasActiveSchoolLink({
+        userId: student.id,
+        userType: LinkEntityType.STUDENT,
+        schoolId: foundClass.schoolId
       });
 
     if (!isLinked) {
@@ -1206,7 +1334,7 @@ export const removeSubjectFromClassService = async ({
 export const getClassStatsService = async (classId: string) => {
   const today = new Date();
   today.setHours(23, 59, 59, 999);
-  
+
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
   fourteenDaysAgo.setHours(0, 0, 0, 0);
@@ -1259,10 +1387,10 @@ export const getClassStatsService = async (classId: string) => {
     const avgScore =
       validAttempts.length > 0
         ? Math.round(
-            (validAttempts.reduce((acc: number, curr: any) => acc + (curr.totalScore / curr.totalMarks), 0) /
-              validAttempts.length) *
-              100
-          )
+          (validAttempts.reduce((acc: number, curr: any) => acc + (curr.totalScore / curr.totalMarks), 0) /
+            validAttempts.length) *
+          100
+        )
         : 0;
 
     return {
@@ -1301,7 +1429,7 @@ export const promoteStudentsService = async ({
     where: { id: classId },
     include: { teachers: true }
   });
-  
+
   const toClass = await prisma.class.findUnique({
     where: { id: toClassId },
     include: { teachers: true }
@@ -1377,7 +1505,7 @@ export const sendClassAnnouncementService = async (
   payload: { title: string; message: string; targets: string[], priority?: string }
 ) => {
   const { title, message, targets, priority = 'NORMAL' } = payload;
-  
+
   if (!targets || targets.length === 0) {
     throw new Error("At least one target audience (STUDENT, PARENT) must be selected.");
   }
@@ -1407,9 +1535,9 @@ export const sendClassAnnouncementService = async (
   });
   const adminSender = !teacherSender
     ? await prisma.admin.findUnique({
-        where: { id: senderId },
-        select: { id: true, name: true },
-      })
+      where: { id: senderId },
+      select: { id: true, name: true },
+    })
     : null;
 
   const senderName = teacherSender?.name || adminSender?.name || "Teacher";
@@ -1494,9 +1622,9 @@ export const sendClassAnnouncementService = async (
     });
   }
 
-  return { 
-    success: true, 
-    message: `Announcement sent to ${notificationsToCreate.length} recipients.` 
+  return {
+    success: true,
+    message: `Announcement sent to ${notificationsToCreate.length} recipients.`
   };
 };
 
@@ -1563,9 +1691,9 @@ export const getClassHistoryService = async (classId: string, currentUser: any) 
   // 1. Fetch all classes in this school to translate class IDs into readable names
   const schoolClasses = schoolId
     ? await prisma.class.findMany({
-        where: { schoolId },
-        select: { id: true, name: true, section: true },
-      })
+      where: { schoolId },
+      select: { id: true, name: true, section: true },
+    })
     : [];
   const classNameMap = new Map(
     schoolClasses.map((c) => [c.id, `${c.name}${c.section ? ` (${c.section})` : ""}`])
@@ -1609,16 +1737,16 @@ export const getClassHistoryService = async (classId: string, currentUser: any) 
     id: string;
     date: string;
     type:
-      | "CLASS_CREATED"
-      | "PROMOTION_IN"
-      | "PROMOTION_OUT"
-      | "ENROLLMENT"
-      | "GRADUATION"
-      | "WITHDRAWAL"
-      | "TEACHER_ASSIGNED"
-      | "SUBJECT_ATTACHED"
-      | "RESULT_PUBLISHED"
-      | "BEHAVIOUR_ALERT";
+    | "CLASS_CREATED"
+    | "PROMOTION_IN"
+    | "PROMOTION_OUT"
+    | "ENROLLMENT"
+    | "GRADUATION"
+    | "WITHDRAWAL"
+    | "TEACHER_ASSIGNED"
+    | "SUBJECT_ATTACHED"
+    | "RESULT_PUBLISHED"
+    | "BEHAVIOUR_ALERT";
     category: "lifecycle" | "students" | "academics" | "staff";
     title: string;
     description: string;

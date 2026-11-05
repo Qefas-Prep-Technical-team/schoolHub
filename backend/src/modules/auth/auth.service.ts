@@ -2037,5 +2037,592 @@ export const sendAccountDeactivationConfirmationEmail = async (params: {
   });
 };
 
+export const sendTranscriptDeliveryEmail = async (params: {
+  email: string;
+  studentName: string;
+  schoolName: string;
+  docketNumber: string;
+  accessUrl: string;
+  verificationUrl?: string;
+  expiryDate?: string;
+  session?: string;
+  term?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.email;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
 
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Official Certified Academic Transcript Ready — ${params.schoolName}${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Your Official Academic Transcript is Ready!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hi ${params.studentName || 'Scholar'},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">The Office of the Registrar at <strong>${params.schoolName}</strong> has finalized, digitally signed, and stamped your certified academic transcript.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Certificate Verification Metadata</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Document Docket', params.docketNumber || 'TRANS-DOC-AUTHENTICATED')}
+            ${receiptRow('Student Name', params.studentName || 'Scholar')}
+            ${receiptRow('Issuing Authority', `${params.schoolName} Registrar`)}
+            ${receiptRow('Scope', `${params.session || 'All Sessions'} • ${params.term || 'All Terms'}`)}
+            ${receiptRow('Validity Period', params.expiryDate || '30-Day Guaranteed Direct Pass', true)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Cryptographic Verification:</strong> This certified transcript includes an embedded digital security seal recognized and verified globally by academic institutions and evaluation boards.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Preview & Download Transcript (PDF) 📄', params.accessUrl, '#2563eb')}
+        </div>
+
+        ${params.verificationUrl ? `
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Direct Verification URL:</strong> You can provide third-party institutions with this link to verify your transcript authenticity directly:
+          <br/>
+          <a href="${params.verificationUrl}" style="color:#2563eb;word-break:break-all;font-size:13px;font-weight:600;">${params.verificationUrl}</a>
+        </p>
+        ` : ''}
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For certified embassy copies or hardcopy courier delivery, contact your school administration or records office directly.</p>
+      `
+    })
+  });
+};
+
+export const sendTranscriptPaymentSuccessEmail = async (params: {
+  email: string;
+  studentName: string;
+  schoolName: string;
+  reference: string;
+  amount: number | string;
+  paymentMethod?: string;
+  session?: string;
+  term?: string;
+  destination?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.email;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const formattedAmount = typeof params.amount === 'number' 
+    ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(params.amount)
+    : params.amount;
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const trackUrl = params.loginUrl || `${appUrl}/dashboard/student/transcript`;
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Payment Received: Academic Transcript Order — ${params.schoolName}${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: 'payment',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Payment Received: Academic Transcript Order</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hello ${params.studentName || 'Scholar'},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Thank you for your payment. We have successfully processed your clearance transaction for an official certified academic transcript from <strong>${params.schoolName}</strong>.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Payment Receipt & Order Docket</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Transaction Reference', params.reference || 'TRX-CONFIRMED')}
+            ${receiptRow('Order Type', 'Certified Transcript Clearance (Digital + Verification Seal)')}
+            ${receiptRow('Amount Paid', formattedAmount, true)}
+            ${receiptRow('Payment Method', params.paymentMethod || 'Online Gateway')}
+            ${receiptRow('Academic Scope', `${params.session || 'All Sessions'} • ${params.term || 'All Terms'}`)}
+            ${params.destination ? receiptRow('Destination / Intended Use', params.destination) : ''}
+            ${receiptRow('Current Status', 'Processing (Official Clearance Granted)')}
+            ${receiptRow('Transaction Date', new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }))}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Order in Progress:</strong> The Registry and Records Office has been dispatched your file. Your certified transcript with digital verification seal is readily available.', 'info')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Track Order & View Transcript ➔', trackUrl, '#059669')}
+        </div>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">A downloadable tax invoice and transaction receipt is available anytime in your student billing and transcript records.</p>
+      `
+    })
+  });
+};
+
+export const sendSchoolTranscriptPaymentReceivedEmail = async (params: {
+  schoolEmail: string;
+  schoolName: string;
+  studentName: string;
+  studentCode: string;
+  amount: number | string;
+  reference: string;
+  session?: string;
+  term?: string;
+  paymentMethod?: string;
+  dashboardUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.schoolEmail;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const formattedAmount = typeof params.amount === 'number' 
+    ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(params.amount)
+    : params.amount;
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const adminUrl = params.dashboardUrl || `${appUrl}/dashboard/admin/finance?tab=transcripts`;
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Transcript Clearance Payment Received: ${params.studentName} (${params.studentCode}) — ${params.schoolName}${isTest ? ` (Original: ${params.schoolEmail})` : ''}`,
+    html: buildEmail({
+      illustration: 'payment',
+      testMode: isTest,
+      originalRecipient: params.schoolEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Transcript Clearance Fee Confirmed</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear Administration & Records Office,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">A student has successfully completed their transcript clearance payment. The transaction has settled into your configured school disbursement ledger.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Institutional Clearance Record</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Name', params.studentName)}
+            ${receiptRow('Student Code / Matric', params.studentCode)}
+            ${receiptRow('Fee Paid', formattedAmount, true)}
+            ${receiptRow('Transaction Ref', params.reference)}
+            ${receiptRow('Academic Scope', `${params.session || 'All Sessions'} • ${params.term || 'All Terms'}`)}
+            ${receiptRow('Settlement Channel', params.paymentMethod || 'Online Gateway (Split Settlement)')}
+            ${receiptRow('Confirmed At', new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }))}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Automatic Clearance:</strong> The student has received their authenticated 30-Day Transcript Access Pass. Their academic records docket has been unlocked for preview and download.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Open Finance & Transcript Console ➔', adminUrl, '#4f46e5')}
+        </div>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">You can view and audit all incoming transcript clearance fees under the <strong>Finance & Billing</strong> section of the Admin Console.</p>
+      `
+    })
+  });
+};
+
+export const sendStudentGraduationEmail = async (params: {
+  email: string;
+  studentName: string;
+  studentCode?: string;
+  schoolName: string;
+  cohort?: string;
+  academicStanding?: string;
+  gpa?: string | number;
+  valedictoryDocket?: string;
+  ceremonyDate?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.email;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const vaultUrl = params.loginUrl || `${appUrl}/login`;
+  const ceremonyDateStr = params.ceremonyDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const cohortYear = params.cohort || `Class of ${new Date().getFullYear()}`;
+  const gpaStr = params.gpa ? String(params.gpa) : 'First Class Standing';
+  const standingStr = params.academicStanding || 'Distinction & Good Standing';
+  const docketStr = params.valedictoryDocket || `CERT-QEF-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Congratulations on Your Graduation! — ${params.schoolName}${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: params.email,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Congratulations on Your Graduation!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear ${params.studentName} & Family,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">On behalf of the Board of Trustees, Principal, and Faculty of <strong>${params.schoolName}</strong>, we warmly congratulate you on fulfilling all statutory requirements for secondary graduation.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Graduation Honours Roll</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Graduate Name', params.studentName)}
+            ${params.studentCode ? receiptRow('Student Reg No', params.studentCode) : ''}
+            ${receiptRow('Graduating Class', cohortYear)}
+            ${receiptRow('Academic Standing', standingStr, true)}
+            ${receiptRow('Cumulative GPA / Standing', gpaStr, true)}
+            ${receiptRow('Valedictory Certificate ID', docketStr)}
+            ${receiptRow('Ceremony / Exit Date', ceremonyDateStr)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Lifelong Alumni Vault:</strong> Your certified terminal broadsheets and signed digital diploma have been cryptographically sealed and archived on Qefas Hub for perpetual university and employer verification.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Claim Digital Alumni Vault ➔', vaultUrl, '#7c3aed')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          As an alumnus of ${params.schoolName}, you retain permanent access to verify transcripts, request recommendation letters, and connect with fellow alumni.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">Once a scholar, always a scholar. We celebrate your distinguished success and wish you the very best in your future endeavors!</p>
+      `
+    })
+  });
+};
+
+export const sendSchoolAcceptTeacherEmail = async (params: {
+  teacherEmail: string;
+  teacherName: string;
+  teacherCode?: string;
+  schoolName: string;
+  department?: string;
+  subject?: string;
+  classes?: string;
+  effectiveDate?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.teacherEmail;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const portalUrl = params.loginUrl || `${appUrl}/login`;
+  const effectiveDateStr = params.effectiveDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Faculty Appointment Approved: Welcome to ${params.schoolName}!${isTest ? ` (Original: ${params.teacherEmail})` : ''}`,
+    html: buildEmail({
+      illustration: 'invite',
+      testMode: isTest,
+      originalRecipient: params.teacherEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Welcome to the Faculty, ${params.teacherName}!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear ${params.teacherName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">The Governing Board and Principal of <strong>${params.schoolName}</strong> are delighted to officially approve your faculty appointment and welcome you to the academic instructional staff.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Faculty Appointment Details</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Staff Full Name', params.teacherName)}
+            ${params.teacherCode ? receiptRow('Staff ID / Teacher Code', params.teacherCode) : ''}
+            ${params.department ? receiptRow('Academic Department', params.department) : ''}
+            ${params.subject ? receiptRow('Assigned Subject', params.subject) : ''}
+            ${params.classes ? receiptRow('Allocated Classes', params.classes) : ''}
+            ${receiptRow('Employment Status', 'Verified Academic Staff', true)}
+            ${receiptRow('Effective Date', effectiveDateStr)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Faculty Privileges Active:</strong> Your Teacher Portal on Qefas Hub has been unlocked with broadsheet gradebook management, class attendance registers, and CBT exam authoring tools.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Access Teacher Console ➔', portalUrl, '#059669')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          Please review the curriculum guidelines and continuous assessment weighting matrices in the teacher resource center prior to term commencement.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For staff assistance, reach out to the school administration or Vice Principal (Academics) at ${params.schoolName}.</p>
+      `
+    })
+  });
+};
+
+
+export const sendParentGraduationEmail = async (params: {
+  parentEmail: string;
+  parentName: string;
+  studentName: string;
+  studentCode?: string;
+  schoolName: string;
+  cohort?: string;
+  academicStanding?: string;
+  gpa?: string | number;
+  valedictoryDocket?: string;
+  ceremonyDate?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.parentEmail;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const portalUrl = params.loginUrl || `${appUrl}/login`;
+  const ceremonyDateStr = params.ceremonyDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const cohortYear = params.cohort || `Class of ${new Date().getFullYear()}`;
+  const gpaStr = params.gpa ? String(params.gpa) : 'First Class Standing';
+  const standingStr = params.academicStanding || 'Distinction & Good Standing';
+  const docketStr = params.valedictoryDocket || `CERT-QEF-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Congratulations on ${params.studentName}'s Graduation! — ${params.schoolName}${isTest ? ` (Original: ${params.parentEmail})` : ''}`,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: params.parentEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Congratulations on ${params.studentName}'s Graduation!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear ${params.parentName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">The Board of Trustees, Principal, and Faculty of <strong>${params.schoolName}</strong> extend our heartfelt congratulations to you and your family on <strong>${params.studentName}</strong>'s distinguished secondary graduation.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Graduate Honours Dossier</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Graduate Scholar', params.studentName)}
+            ${receiptRow('Parent / Guardian', params.parentName)}
+            ${params.studentCode ? receiptRow('Student Matric / Reg No', params.studentCode) : ''}
+            ${receiptRow('Graduating Class', cohortYear)}
+            ${receiptRow('Academic Standing', standingStr, true)}
+            ${receiptRow('Cumulative GPA / Standing', gpaStr, true)}
+            ${receiptRow('Valedictory Certificate ID', docketStr)}
+            ${receiptRow('Graduation Date', ceremonyDateStr)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Permanent Digital Records:</strong> Your child\'s complete academic dossier, verified transcripts, and certificates are securely sealed in the Qefas Hub Vault for direct verification by universities and scholarship boards.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Access Parent Portal ➔', portalUrl, '#7c3aed')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          We celebrate your partnership and dedication in supporting ${params.studentName} throughout their academic journey. We wish them continuous success in all future pursuits!
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">With warmest regards and best wishes from the faculty and administration of ${params.schoolName}.</p>
+      `
+    })
+  });
+};
+
+export const sendSchoolAcceptStudentEmail = async (params: {
+  studentEmail: string;
+  studentName: string;
+  studentCode?: string;
+  schoolName: string;
+  className?: string;
+  session?: string;
+  formMaster?: string;
+  houseOrDivision?: string;
+  resumptionDate?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.studentEmail;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const portalUrl = params.loginUrl || `${appUrl}/login`;
+  const sessionStr = params.session || `${new Date().getFullYear()}/${new Date().getFullYear() + 1} Academic Session`;
+  const classStr = params.className || 'Official School Enrollment';
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Welcome to ${params.schoolName}, ${params.studentName}! — Admission Confirmed${isTest ? ` (Original: ${params.studentEmail})` : ''}`,
+    html: buildEmail({
+      illustration: 'success',
+      testMode: isTest,
+      originalRecipient: params.studentEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Welcome to ${params.schoolName}, ${params.studentName}!</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear ${params.studentName} & Guardians,</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">We are thrilled to inform you that your formal application for admission to <strong>${params.schoolName}</strong> has been officially accepted and ratified by the Admissions Board.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Enrollment Record</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Name', params.studentName)}
+            ${params.studentCode ? receiptRow('Admission / Reg Number', params.studentCode) : ''}
+            ${receiptRow('Class Placement', classStr)}
+            ${receiptRow('Academic Session', sessionStr)}
+            ${params.formMaster ? receiptRow('Form Master', params.formMaster) : ''}
+            ${params.houseOrDivision ? receiptRow('House / Division', params.houseOrDivision) : ''}
+            ${params.resumptionDate ? receiptRow('Term Resumption', params.resumptionDate) : ''}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Admission Confirmed:</strong> Your student profile has been provisioned on Qefas Hub. Access your student portal to review your timetable, syllabus, and orientation documents.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Access Student Portal ➔', portalUrl, '#2563eb')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Next Steps:</strong> Please present your digital enrollment docket at the school registry on resumption day to complete verification and collect required physical learning materials.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">Have questions regarding your enrollment? Contact our admissions registry or school administration at ${params.schoolName}.</p>
+      `
+    })
+  });
+};
+
+export const sendParentStudentLinkAcceptedEmail = async (params: {
+  recipientEmail: string;
+  recipientName: string;
+  recipientRole: "PARENT" | "STUDENT";
+  parentName: string;
+  studentName: string;
+  studentCode?: string;
+  schoolName: string;
+  className?: string;
+  relationship?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.recipientEmail;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const portalUrl = params.loginUrl || `${appUrl}/login`;
+  const relationshipStr = params.relationship || 'Parent / Primary Guardian';
+  const classStr = params.className || 'Academic Profile Linked';
+
+  const heading = params.recipientRole === 'PARENT' 
+    ? `Parent & Student Link Approved!` 
+    : `Parent Connection Confirmed!`;
+
+  const intro = params.recipientRole === 'PARENT'
+    ? `Great news! The connection linking your parent account with <strong>${params.studentName}</strong> at <strong>${params.schoolName}</strong> has been confirmed and verified.`
+    : `Great news! Your student profile at <strong>${params.schoolName}</strong> has been successfully linked with your parent/guardian <strong>${params.parentName}</strong>.`;
+
+  const ctaTitle = params.recipientRole === 'PARENT' ? 'Open Parent Portal ➔' : 'Go to Student Dashboard ➔';
+  const ctaColor = params.recipientRole === 'PARENT' ? '#0d9488' : '#2563eb';
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Parent-Student Connection Confirmed: ${params.studentName} & ${params.parentName} — ${params.schoolName}${isTest ? ` (Original: ${params.recipientEmail})` : ''}`,
+    html: buildEmail({
+      illustration: 'invite',
+      testMode: isTest,
+      originalRecipient: params.recipientEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">${heading}</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Hello ${params.recipientName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">${intro}</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Linked Account Roster</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Parent / Guardian', params.parentName)}
+            ${receiptRow('Linked Student', params.studentName)}
+            ${receiptRow('Institution', params.schoolName)}
+            ${receiptRow('Class & Arm', classStr)}
+            ${params.studentCode ? receiptRow('Student Matric / Reg No', params.studentCode) : ''}
+            ${receiptRow('Relationship', relationshipStr)}
+            ${receiptRow('Link Status', 'Active & Certified', true)}
+            ${receiptRow('Delegated Permissions', 'Grades, Attendance, Billing, Messages')}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Real-Time Synchronization Active:</strong> Both student and parent dashboards now synchronize attendance records, continuous assessment scores, and terminal broadsheets.', 'success')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton(ctaTitle, portalUrl, ctaColor)}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          To manage connection preferences or link additional wards, visit the Account Settings & Linked Profiles section in your portal.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">If you did not authorize this account linkage, please report immediately to <a href="mailto:security@qefashub.com" style="color:#2563eb;text-decoration:none;font-weight:600;">security@qefashub.com</a>.</p>
+      `
+    })
+  });
+};
+
+export const sendStudentSuspensionEmail = async (params: {
+  recipientEmail: string;
+  recipientName: string;
+  recipientRole: "STUDENT" | "PARENT";
+  studentName: string;
+  studentCode?: string;
+  schoolName: string;
+  className?: string;
+  sanction?: string;
+  duration?: string;
+  effectivePeriod?: string;
+  reason?: string;
+  hearingDocket?: string;
+  reinstatementDate?: string;
+  loginUrl?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? (process.env.TEST_EMAIL as string) : params.recipientEmail;
+  const sender = typeof isTest !== 'undefined' && isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim();
+
+  const appUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const portalUrl = params.loginUrl || `${appUrl}/login`;
+  const classStr = params.className || 'Academic Class';
+  const sanctionStr = params.sanction || 'Temporary Academic Suspension';
+  const durationStr = params.duration || 'Temporary Suspension';
+  const effectivePeriodStr = params.effectivePeriod || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const docketStr = params.hearingDocket || `DISC-BRD-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+  const reinstatementStr = params.reinstatementDate || 'Pending Disciplinary Review Conference';
+
+  return await sendMail({
+    from: sender,
+    to: recipient,
+    subject: `Notice of Disciplinary Suspension: ${params.studentName} — ${params.schoolName}${isTest ? ` (Original: ${params.recipientEmail})` : ''}`,
+    html: buildEmail({
+      illustration: 'security',
+      testMode: isTest,
+      originalRecipient: params.recipientEmail,
+      body: `
+        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#991b1b;letter-spacing:-0.5px;">Confidential: Notice of Disciplinary Suspension</h1>
+        <p style="margin:0 0 16px 0;color:#475569;font-size:15px;line-height:1.7;">Dear ${params.recipientName},</p>
+        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">This letter serves as an official statutory communication from the Office of the Vice Principal (Administration) and the Disciplinary Board of <strong>${params.schoolName}</strong>.</p>
+
+        <div style="background:#f8fafc;border-radius:16px;padding:20px;margin-bottom:24px;border:1px solid #e2e8f0;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Disciplinary Docket Summary</div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${receiptRow('Student Name', params.studentName)}
+            ${params.studentCode ? receiptRow('Admission / Reg Number', params.studentCode) : ''}
+            ${receiptRow('Class & Arm', classStr)}
+            ${receiptRow('Sanction Imposed', sanctionStr, true)}
+            ${receiptRow('Duration / Effective Period', durationStr)}
+            ${receiptRow('Effective Date', effectivePeriodStr)}
+            ${params.reason ? receiptRow('Grounds / Reason', params.reason) : ''}
+            ${receiptRow('Hearing Ref Docket', docketStr)}
+            ${receiptRow('Reinstatement Review', reinstatementStr)}
+          </table>
+        </div>
+
+        ${infoCard('<strong>Restricted Access:</strong> During the term of this suspension, student online examination privileges, classroom attendance rosters, and campus premises are restricted. Continued study should occur from home using offline syllabus materials.', 'danger')}
+
+        <div style="margin:24px 0;text-align:center;">
+          ${ctaButton('Review Disciplinary Policy & Appeal Guidelines ➔', portalUrl, '#b91c1c')}
+        </div>
+
+        <p style="margin:0 0 16px 0;color:#475569;font-size:14px;line-height:1.7;">
+          <strong>Reinstatement Conference:</strong> The presence of at least one parent or registered legal guardian is mandatory at the reinstatement hearing with the School Disciplinary Board before classroom readmission can be authorized.
+        </p>
+
+        <p style="margin:24px 0 0 0;color:#64748b;font-size:13px;line-height:1.6;">For queries or written appeals, contact the Disciplinary Secretary or school administration at ${params.schoolName}.</p>
+      `
+    })
+  });
+};
 

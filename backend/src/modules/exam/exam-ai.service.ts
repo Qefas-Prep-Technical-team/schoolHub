@@ -184,6 +184,66 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
   return JSON.parse(content);
 };
 
+export const cleanupAndFormatPassageText = async ({
+  rawText,
+  subjectName,
+}: {
+  rawText: string;
+  subjectName?: string;
+}): Promise<string> => {
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert academic curriculum editor and LaTeX typography specialist for Nigerian and international schools.
+Your task is to strictly format and clean up academic text (reading passages, case studies, fill-in-the-gap texts, comprehension passages, or science/math problems) WITHOUT solving or answering them.
+
+CRITICAL RULES:
+1. NEVER ANSWER OR SOLVE ANY QUESTION:
+   - Do NOT fill in blanks or answer questions.
+   - Do NOT solve equations, calculate results, or complete exercises.
+   - If the text has questions, numbered problems, or exercises, preserve them as unanswered questions for students.
+2. PRESERVE FILL-IN-THE-GAP BLANKS AND DASHES:
+   - All fill-in-the-gap blanks must remain as clear blanks/dashes (e.g. "_______", "____ [1] ____", "_____", or "[ ___ ]").
+   - If an OCR or copy-paste lost a blank or shows a gap/bracket, format it as a visible blank line (e.g. "________"). NEVER replace blanks with answers!
+3. FORMAT MATHEMATICS & SCIENTIFIC NOTATION:
+   - Convert mathematical equations, variables, chemical formulas, fractions, powers, roots, and units into standard KaTeX/LaTeX formatting.
+   - Use single dollar signs ($...$) for inline math (e.g. $x^2 + 5x - 6 = 0$, $v = 20\\text{ m/s}$, $H_2SO_4$).
+   - Use double dollar signs ($$...$$) on their own line for standalone formulas or display equations.
+4. CLEANUP TYPOGRAPHY & STRUCTURE:
+   - Fix broken line breaks, hyphenated line wraps, OCR errors, and messy whitespace while preserving standard paragraph structure and dialogue.
+   - Use markdown for structure (bolding, italics, section headings, bulleted lists, numbered paragraphs/lines where appropriate).
+5. DO NOT ADD INTRODUCTIONS OR METADATA:
+   - Return ONLY the cleaned-up, formatted text.
+   - Do NOT wrap in markdown code fences like \`\`\`markdown ... \`\`\`.
+   - Do NOT include conversational filler like "Here is the cleaned passage:". Output the raw formatted text directly.`
+        },
+        {
+          role: "user",
+          content: `${subjectName ? `Subject: ${subjectName}\n\n` : ""}Content to format and clean up:\n\n${rawText}`
+        }
+      ],
+      temperature: 0.1,
+    });
+
+    let cleaned = response.choices[0]?.message?.content?.trim() || rawText;
+
+    // Remove any accidental markdown code fences if outputted by the model
+    if (cleaned.startsWith("```markdown")) {
+      cleaned = cleaned.replace(/^```markdown\r?\n/, "").replace(/\r?\n```$/, "");
+    } else if (cleaned.startsWith("```")) {
+      cleaned = cleaned.replace(/^```[a-z]*\r?\n/, "").replace(/\r?\n```$/, "");
+    }
+
+    return cleaned.trim() || rawText;
+  } catch (error) {
+    console.error("AI Passage Cleanup Error:", error);
+    throw error;
+  }
+};
+
 export const generateStudentPerformanceInsight = async ({
   studentName,
   totalScore,

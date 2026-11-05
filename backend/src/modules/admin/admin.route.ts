@@ -49,7 +49,7 @@ import rateLimit from "express-rate-limit";
 const resendClaimEmailLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 5,
-  keyGenerator: (req) => (req as any).user?.id || req.ip,
+  keyGenerator: (req) => (req as unknown as { user?: { id?: string } }).user?.id || req.ip || "unknown",
   validate: { default: false },
   message: {
     success: false,
@@ -79,7 +79,7 @@ router.get("/admin-status/:email", checkAdminStatus);                      // Pe
 router.use(authenticateToken);
 
 // ─── Team management: SCHOOL_OWNER + PRINCIPAL ───────────────────────────────
-router.get("/team", requireAdmin, getSchoolAdmins);                                            // List all school admins
+router.get("/team", requireAdmin, requireSchoolOwnerOrPrincipal, getSchoolAdmins);             // List all school admins
 router.get("/pending", requireAdmin, requireSchoolOwnerOrPrincipal, getPendingAdmins);         // List pending requests
 router.put("/:adminId/approve", requireAdmin, requireSchoolOwnerOrPrincipal, approveAdmin);    // FIXED — was unsecured
 router.put("/:adminId/reject", requireAdmin, requireSchoolOwnerOrPrincipal, rejectAdmin);      // FIXED — was unsecured
@@ -120,4 +120,3 @@ router.post("/students/:id/invite", requireAdmin, inviteStudent);
 router.patch("/students/:id/verify", requireAdmin, verifyStudent);
 
 export default router;
-

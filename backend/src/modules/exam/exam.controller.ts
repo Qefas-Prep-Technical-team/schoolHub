@@ -31,58 +31,7 @@ import { canManageExam, canManageSubjectPaper } from "./exam.permissions";
 import { canTeacherManageSubject } from "../academic/teacher-subject.permissions";
 import { handleError } from "../../utils/error-handler";
 import { createNotification } from "../notification/notification.service";
-
-export const getExams = async (req: Request, res: Response) => {
-  console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
-  try {
-    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category, page, limit, availableForStudentId, search } = req.query;
-
-    const isPersonal = (schoolId as string) === req.user?.id;
-    const effectiveSchoolId = isPersonal ? undefined : ((schoolId as string) || req.user?.schoolId);
-
-    const filters: any = { isPersonal };
-    if (effectiveSchoolId) filters.schoolId = effectiveSchoolId;
-    if (sessionId) filters.sessionId = sessionId as string;
-    if (classId) filters.classId = classId as string;
-    
-    if (departmentIds) {
-      filters.departmentIds = Array.isArray(departmentIds) ? departmentIds : [departmentIds as string];
-    } else if (departmentId) {
-      filters.departmentIds = [departmentId as string];
-    }
-
-    if (status) filters.status = status as any;
-    if (term) filters.term = term as any;
-    if (category) filters.category = category as any;
-    if (search) filters.search = search as string;
-    
-    if (page) filters.page = Number(page);
-    if (limit) filters.limit = Number(limit);
-
-    if (req.user?.userType === UserRole.STUDENT) {
-      filters.availableForStudentId = req.user.id;
-    } else if (req.user?.userType === UserRole.TEACHER) {
-      filters.teacherId = req.user.id;
-      filters.currentTeacherId = req.user.id;
-    } else if (req.user?.userType === UserRole.PARENT && availableForStudentId) {
-      // Parents can fetch exams for their linked children by passing availableForStudentId.
-      // The student filter enforces class/department scoping server-side, same as student login.
-      filters.availableForStudentId = availableForStudentId as string;
-    }
-
-    console.log("LOG: [getExams] Calling getExamsService with filters:", filters);
-    const result = await getExamsService(filters);
-    console.log("LOG: [getExams] Success");
-
-    return res.status(200).json({
-      success: true,
-      data: (result as any).data || result, // Handle both paginated and non-paginated return formats safely
-      pagination: (result as any).pagination,
-    });
-  } catch (error: any) {
-    return handleError(res, error, "exam.getExams");
-  }
-};
+export { getExams } from "./controllers/exam-list.controller";
 
 export const getExamById = async (req: Request, res: Response) => {
   try {
@@ -96,7 +45,7 @@ export const getExamById = async (req: Request, res: Response) => {
     }
 
     const data = await getExamByIdService(
-      req.params.id as string, 
+      req.params.id as string,
       req.user?.userType === UserRole.STUDENT
     );
 
@@ -222,14 +171,14 @@ export const createExam = async (req: Request, res: Response) => {
 export const createSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { subjectId, teacherId: bodyTeacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId, creationMode, category } = req.body;
-    
+
     const isPersonal = (bodySchoolId as string) === req.user?.id;
     const schoolId = isPersonal ? null : (bodySchoolId || req.user?.schoolId);
     // Security: If teacher, always use their own id as teacherId
     const teacherId = req.user?.userType === UserRole.TEACHER ? req.user.id : bodyTeacherId;
 
     if (!req.params.id && !schoolId && !isPersonal) {
-       throw new Error("schoolId is required for standalone papers");
+      throw new Error("schoolId is required for standalone papers");
     }
 
     if (!req.user || ![UserRole.ADMIN, UserRole.TEACHER].includes(req.user.userType)) {
@@ -299,15 +248,15 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
 export const updateSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { paperId } = req.params;
-    const { 
-      title, 
-      instructions, 
-      durationMinutes, 
-      readingContent, 
-      subjectId, 
-      teacherId, 
-      images, 
-      imageLabels, 
+    const {
+      title,
+      instructions,
+      durationMinutes,
+      readingContent,
+      subjectId,
+      teacherId,
+      images,
+      imageLabels,
       category,
       startDate,
       endDate,
@@ -469,7 +418,7 @@ export const validateSubjectPaper = async (req: Request, res: Response) => {
     // but we could add more strict school-matching here if needed.
 
     const data = await validateSubjectPaperService(paperId as string);
-    
+
     return res.status(200).json({
       success: true,
       message: "Subject paper validated successfully",
@@ -740,16 +689,16 @@ export const deleteExam = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Exam not found" });
     }
 
-    const deletePapers = req.body?.deletePapers !== undefined 
-      ? Boolean(req.body.deletePapers) 
-      : req.query?.deletePapers !== undefined 
-      ? req.query.deletePapers === "true" 
-      : true;
-    const paperIds = Array.isArray(req.body?.paperIds) 
-      ? req.body.paperIds 
-      : typeof req.query?.paperIds === "string" 
-      ? (req.query.paperIds as string).split(",") 
-      : undefined;
+    const deletePapers = req.body?.deletePapers !== undefined
+      ? Boolean(req.body.deletePapers)
+      : req.query?.deletePapers !== undefined
+        ? req.query.deletePapers === "true"
+        : true;
+    const paperIds = Array.isArray(req.body?.paperIds)
+      ? req.body.paperIds
+      : typeof req.query?.paperIds === "string"
+        ? (req.query.paperIds as string).split(",")
+        : undefined;
 
     if (user.userType === UserRole.ADMIN) {
       // Admins can delete any exam
@@ -795,7 +744,7 @@ export const deleteExam = async (req: Request, res: Response) => {
 export const getSubjectPapers = async (req: Request, res: Response) => {
   try {
     const { unlinkedOnly, schoolId, sessionId, term, classId, departmentId, departmentIds, status, page, limit, subjectId, search } = req.query;
-    
+
     const isPersonal = schoolId === req.user?.id;
     const filters: any = {
       unlinkedOnly: unlinkedOnly === 'true',
@@ -825,10 +774,10 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
 
     console.log("LOG: [getSubjectPapers] Fetching with filters:", filters);
     const result = await getSubjectPapersService(filters);
-    res.status(200).json({ 
-      success: true, 
-      data: (result as any).data || result, 
-      pagination: (result as any).pagination 
+    res.status(200).json({
+      success: true,
+      data: (result as any).data || result,
+      pagination: (result as any).pagination
     });
   } catch (error: any) {
     return handleError(res, error, "exam.getSubjectPapers");

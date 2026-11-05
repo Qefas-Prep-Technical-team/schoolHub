@@ -42,6 +42,7 @@ import {
 import {
   generateExamQuestions,
   parseRawExamText,
+  cleanupReadingPassage,
 } from "./exam-ai.controller";
 import {
   getManualReviewQueue,
@@ -58,6 +59,7 @@ import {
 const router = Router();
 
 router.post("/ai/parse-text", authenticateToken, requireFeatureAccess("aiInsights"), parseRawExamText);
+router.post("/ai/cleanup-passage", authenticateToken, requireFeatureAccess("aiInsights"), cleanupReadingPassage);
 router.post("/ai/generate", authenticateToken, requireFeatureAccess("aiInsights"), generateExamQuestions);
 
 router.get("/review/queue", authenticateToken, getManualReviewQueue);

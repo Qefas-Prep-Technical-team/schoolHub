@@ -9,6 +9,7 @@ import {
 import { createNotification } from "../notification/notification.service";
 import { checkLinkCapacity, canSchoolAcceptTeacher } from "../payment/subscription.utils";
 import { StudentLifecycleService } from "../student/student.lifecycle.service";
+import { sendSchoolAcceptTeacherEmail, sendSchoolAcceptStudentEmail, sendParentStudentLinkAcceptedEmail } from "../auth/auth.service";
 
 type RespondToLinkRequestInput = {
   requestId: string;
@@ -617,6 +618,171 @@ export const respondToLinkRequestService = async ({
   } catch (notifyError) {
     // The link is already committed — never fail the accept because of a notification.
     console.error("[link.respond] Failed to send LINK_ACCEPTED notification:", notifyError);
+  }
+
+  // If this is a SCHOOL_TEACHER link acceptance, dispatch the official School Accepts Teacher Email
+  if (request.linkType === "SCHOOL_TEACHER") {
+    (async () => {
+      try {
+        const teacherId = request.requesterType === "TEACHER" ? request.requesterId : request.targetId;
+        const schoolId = request.targetType === "SCHOOL" ? request.targetId : (request.requesterType === "SCHOOL" ? request.requesterId : request.schoolId);
+
+        if (teacherId && schoolId) {
+          const [teacher, school, classes] = await Promise.all([
+            prisma.teacher.findUnique({
+              where: { id: teacherId },
+              include: {
+                teacherSubjects: {
+                  include: { subject: true },
+                },
+              },
+            }),
+            prisma.school.findUnique({
+              where: { id: schoolId },
+            }),
+            prisma.classTeacher.findMany({
+              where: { teacherId },
+              include: { class: true },
+              take: 3,
+            }),
+          ]);
+
+          if (teacher?.email && school?.name) {
+            const assignedSubject = teacher.subject || teacher.teacherSubjects?.[0]?.subject?.name || undefined;
+            const allocatedClasses = classes.length > 0 ? classes.map(c => c.class.name).join(", ") : undefined;
+            const appUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+
+            await sendSchoolAcceptTeacherEmail({
+              teacherEmail: teacher.email,
+              teacherName: teacher.name,
+              teacherCode: teacher.teacherCode,
+              schoolName: school.name,
+              department: teacher.department || undefined,
+              subject: assignedSubject,
+              classes: allocatedClasses,
+              effectiveDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+              loginUrl: `${appUrl}/login`,
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.error("[link.respond] Failed to dispatch sendSchoolAcceptTeacherEmail:", emailErr);
+      }
+    })();
+  }
+
+  // If this is a SCHOOL_STUDENT link acceptance, dispatch the official School Accepts Student Email
+  if (request.linkType === "SCHOOL_STUDENT") {
+    (async () => {
+      try {
+        const studentId = request.requesterType === "STUDENT" ? request.requesterId : request.targetId;
+        const schoolId = request.targetType === "SCHOOL" ? request.targetId : (request.requesterType === "SCHOOL" ? request.requesterId : request.schoolId);
+
+        if (studentId && schoolId) {
+          const [student, school] = await Promise.all([
+            prisma.student.findUnique({
+              where: { id: studentId },
+              include: {
+                classes: {
+                  include: { class: true },
+                  take: 1,
+                },
+              },
+            }),
+            prisma.school.findUnique({
+              where: { id: schoolId },
+            }),
+          ]);
+
+          if (student?.email && school?.name) {
+            const placedClass = student.classes?.[0]?.class;
+            const appUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+
+            await sendSchoolAcceptStudentEmail({
+              studentEmail: student.email,
+              studentName: student.name,
+              studentCode: student.studentCode,
+              schoolName: school.name,
+              className: placedClass ? placedClass.name : (student.gradeLevel || undefined),
+              session: placedClass?.session || undefined,
+              resumptionDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+              loginUrl: `${appUrl}/login`,
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.error("[link.respond] Failed to dispatch sendSchoolAcceptStudentEmail:", emailErr);
+      }
+    })();
+  }
+
+  // If this is a PARENT_STUDENT link acceptance, dispatch the official Parent-Child Link Accepted Email to BOTH Parent and Student
+  if (request.linkType === "PARENT_STUDENT") {
+    (async () => {
+      try {
+        const parentId = request.requesterType === "PARENT" ? request.requesterId : request.targetId;
+        const studentId = request.requesterType === "STUDENT" ? request.requesterId : request.targetId;
+
+        if (parentId && studentId) {
+          const [parent, student] = await Promise.all([
+            prisma.parent.findUnique({
+              where: { id: parentId },
+            }),
+            prisma.student.findUnique({
+              where: { id: studentId },
+              include: {
+                school: true,
+                originalSchool: true,
+                classes: {
+                  include: { class: true },
+                  take: 1,
+                },
+              },
+            }),
+          ]);
+
+          if (parent && student) {
+            const schoolName = student.school?.name || student.originalSchool?.name || "School";
+            const className = student.classes?.[0]?.class?.name || student.gradeLevel || "Active Class";
+            const appUrl = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+
+            // 1. Dispatch to Parent
+            if (parent.email) {
+              await sendParentStudentLinkAcceptedEmail({
+                recipientEmail: parent.email,
+                recipientName: parent.fullName,
+                recipientRole: "PARENT",
+                parentName: parent.fullName,
+                studentName: student.name,
+                studentCode: student.studentCode,
+                schoolName,
+                className,
+                relationship: "Parent / Guardian",
+                loginUrl: `${appUrl}/login`,
+              });
+            }
+
+            // 2. Dispatch to Student
+            if (student.email) {
+              await sendParentStudentLinkAcceptedEmail({
+                recipientEmail: student.email,
+                recipientName: student.name,
+                recipientRole: "STUDENT",
+                parentName: parent.fullName,
+                studentName: student.name,
+                studentCode: student.studentCode,
+                schoolName,
+                className,
+                relationship: "Parent / Guardian",
+                loginUrl: `${appUrl}/login`,
+              });
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error("[link.respond] Failed to dispatch sendParentStudentLinkAcceptedEmail:", emailErr);
+      }
+    })();
   }
 
   return result;

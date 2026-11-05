@@ -107,8 +107,8 @@ export const startExamAttemptService = async ({
   if (existing) {
     // If the attempt is finished or expired, allow retake by deleting the old one
     if (
-      existing.status === ExamAttemptStatus.SUBMITTED || 
-      existing.status === ExamAttemptStatus.SCORED || 
+      existing.status === ExamAttemptStatus.SUBMITTED ||
+      existing.status === ExamAttemptStatus.SCORED ||
       existing.status === ExamAttemptStatus.EXPIRED
     ) {
       await prisma.examAttempt.delete({
@@ -119,7 +119,7 @@ export const startExamAttemptService = async ({
       if (existing.deviceId && deviceId && existing.deviceId !== deviceId) {
         // Multi-device violation!
         await submitExamAttemptService({ examId, studentId });
-        
+
         // Notify admin
         const adminUsers = await prisma.admin.findMany({ where: { role: 'SUPER_ADMIN' as UserRole } });
         const studentInfo = await prisma.student.findUnique({ where: { id: studentId } });
@@ -130,7 +130,7 @@ export const startExamAttemptService = async ({
             message: `Student ${studentInfo?.name || studentId} attempted to resume exam "${exam.title}" from a different device. The exam attempt was automatically submitted.`,
           } as any);
         }
-        
+
         throw new Error("Exam violation detected: You cannot resume this exam on a different device. Your exam has been automatically submitted.");
       }
       return {
@@ -326,10 +326,10 @@ export const getExamAttemptService = async ({
   };
 
   // Check if results should be visible
-  const isResultsReleased = attempt.exam?.allowImmediateResult 
-    ? true 
-    : attempt.exam?.resultReleaseAt 
-      ? new Date() >= new Date(attempt.exam.resultReleaseAt) 
+  const isResultsReleased = attempt.exam?.allowImmediateResult
+    ? true
+    : attempt.exam?.resultReleaseAt
+      ? new Date() >= new Date(attempt.exam.resultReleaseAt)
       : false;
 
   // Scrub correct answers if exam is still in progress OR if results are not released yet
@@ -541,7 +541,7 @@ export const scoreExamAttemptService = async ({
 
   let totalScore = 0;
   const transactionQueue: any[] = [];
-  
+
   for (const subjectAttempt of attempt.subjectExamAttempts) {
     let subjectScore = 0;
 
@@ -633,7 +633,7 @@ export const scoreExamAttemptService = async ({
   try {
     const gradeTransactions: any[] = [];
     const gradeStatus = updated.exam.allowImmediateResult ? GradeStatus.PUBLISHED : GradeStatus.DRAFT;
-    
+
     for (const sa of updated.subjectExamAttempts) {
       const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
       gradeTransactions.push(
@@ -696,7 +696,7 @@ export const scoreExamAttemptService = async ({
         })
       );
     }
-    
+
     // Execute all upserts instantly holding a single lock
     await prisma.$transaction(gradeTransactions);
   } catch (gradeError) {
@@ -781,10 +781,10 @@ export const getExamResultService = async ({
     throw new Error("Result not found");
   }
 
-  const isReleased = attempt.exam.allowImmediateResult 
-    ? true 
-    : attempt.exam.resultReleaseAt 
-      ? new Date() >= new Date(attempt.exam.resultReleaseAt) 
+  const isReleased = attempt.exam.allowImmediateResult
+    ? true
+    : attempt.exam.resultReleaseAt
+      ? new Date() >= new Date(attempt.exam.resultReleaseAt)
       : false;
 
   if (requestingUserRole === UserRole.STUDENT && !isReleased) {
@@ -814,7 +814,7 @@ export const getExamResultService = async ({
     durationMinutes: attempt.exam.durationMinutes,
     totalScore: isReleased ? attempt.totalScore : null,
     totalMarks: attempt.totalMarks,
-    overallPassMark: attempt.exam.mode === 'SINGLE_SUBJECT' 
+    overallPassMark: attempt.exam.mode === 'SINGLE_SUBJECT'
       ? (attempt.subjectExamAttempts[0]?.subjectPaper?.passMark || 40)
       : 40, // Default 40% for combined exams if not specified
     submittedAt: attempt.submittedAt,
@@ -826,18 +826,18 @@ export const getExamResultService = async ({
   // Fetch class-wide statistics & All participants for ranking
   const [stats, totalParticipants, allAttempts] = await Promise.all([
     prisma.examAttempt.aggregate({
-      where: { 
+      where: {
         examId,
-        isSubmitted: true 
+        isSubmitted: true
       },
       _avg: {
         totalScore: true,
       },
     }),
     prisma.examAttempt.count({
-      where: { 
+      where: {
         examId,
-        isSubmitted: true 
+        isSubmitted: true
       },
     }),
     prisma.examAttempt.findMany({
@@ -854,15 +854,15 @@ export const getExamResultService = async ({
   if (totalParticipants > 0) {
     const studentPercentage = (attempt.totalScore / attempt.totalMarks) * 100;
     const outperformed = allAttempts.filter(a => {
-        const p = (a.totalScore / a.totalMarks) * 100;
-        return studentPercentage > p;
+      const p = (a.totalScore / a.totalMarks) * 100;
+      return studentPercentage > p;
     }).length;
-    
+
     // If it's the top score, give them a high percentile like 99.9
     if (outperformed === totalParticipants - 1 && totalParticipants > 1) {
-        globalStanding = 99.9;
+      globalStanding = 99.9;
     } else {
-        globalStanding = Number(((outperformed / totalParticipants) * 100).toFixed(1));
+      globalStanding = Number(((outperformed / totalParticipants) * 100).toFixed(1));
     }
   }
 
@@ -891,7 +891,7 @@ export const getExamResultService = async ({
   // 3. Performance Insight (Suggestion) & Nigerian Grading
   let performanceInsight = "Great effort! Keep practicing to improve your score.";
   const percentage = (attempt.totalScore / attempt.totalMarks) * 100;
-  
+
   let grade = "F9";
   let proficiency = "Fail";
 
@@ -1080,12 +1080,12 @@ export const getExamReviewDataService = async ({
   }
 
   // Same restriction as getExamResultService
-  const isStudentRequest = studentId === attempt.studentId; 
+  const isStudentRequest = studentId === attempt.studentId;
   // Assuming studentId filter corresponds to the logged in user if they are a student, enforced by controller
   if (isStudentRequest) {
-    const isReleased = 
-      attempt.exam.allowImmediateResult || 
-      !attempt.exam.resultReleaseAt || 
+    const isReleased =
+      attempt.exam.allowImmediateResult ||
+      !attempt.exam.resultReleaseAt ||
       new Date() >= new Date(attempt.exam.resultReleaseAt);
 
     if (!isReleased) {
@@ -1142,6 +1142,37 @@ export const getExamAttemptsService = async ({
   examId: string;
   schoolId?: string;
 }) => {
+  // Proactively sweep any expired attempts that are still marked IN_PROGRESS for this exam
+  // so admins and teachers always see auto-submitted / scored attempts without waiting for a student heartbeat
+  try {
+    const expiredInProgress = await prisma.examAttempt.findMany({
+      where: {
+        examId,
+        status: "IN_PROGRESS",
+        expiresAt: {
+          lte: new Date(),
+        },
+      },
+      select: {
+        examId: true,
+        studentId: true,
+      },
+    });
+
+    for (const exp of expiredInProgress) {
+      try {
+        await autoSubmitExpiredAttemptService({
+          examId: exp.examId,
+          studentId: exp.studentId,
+        });
+      } catch (err) {
+        console.warn(`[getExamAttemptsService] Failed to auto-submit expired attempt for student ${exp.studentId}:`, err);
+      }
+    }
+  } catch (sweepError) {
+    console.error("[getExamAttemptsService] Error sweeping expired attempts:", sweepError);
+  }
+
   const attempts = await prisma.examAttempt.findMany({
     where: {
       examId,
@@ -1168,13 +1199,13 @@ export const getExamAttemptsService = async ({
   const gradeIds = attempts.flatMap(a => a.grades.map((g: any) => g.id));
   if (gradeIds.length > 0) {
     const logs = await prisma.gradeAuditLog.findMany({
-       where: { gradeId: { in: gradeIds }, newStatus: 'PUBLISHED' },
-       orderBy: { createdAt: 'desc' }
+      where: { gradeId: { in: gradeIds }, newStatus: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' }
     });
-    
+
     const logMap = new Map();
     for (const log of logs) {
-       if (!logMap.has(log.gradeId)) logMap.set(log.gradeId, log);
+      if (!logMap.has(log.gradeId)) logMap.set(log.gradeId, log);
     }
 
     const adminIds = [...new Set(logs.filter((l: any) => l.changedByType === 'ADMIN' || l.changedByType === 'SUPER_ADMIN').map((l: any) => l.changedById))];

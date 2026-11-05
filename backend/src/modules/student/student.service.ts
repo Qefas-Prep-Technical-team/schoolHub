@@ -474,6 +474,7 @@ export const updateStudentAttendanceService = async (
 };
 
 import { StudentLifecycleService } from "./student.lifecycle.service";
+import { sendStudentGraduationEmail, sendParentGraduationEmail, sendStudentSuspensionEmail } from "../auth/auth.service";
 import { EnrollmentStatus } from "@prisma/client";
 
 export const exitStudentService = async (
@@ -496,7 +497,17 @@ export const exitStudentService = async (
         { enrollments: { some: { schoolId } } },
       ],
     },
-    include: { parentLinks: true },
+    include: {
+      parentLinks: {
+        include: { parent: true },
+      },
+      school: true,
+      originalSchool: true,
+      classes: {
+        include: { class: true },
+        take: 1,
+      },
+    },
   });
 
   if (!student) {
@@ -543,6 +554,89 @@ export const exitStudentService = async (
       message: `${student.name}'s school enrollment has been marked as ${exitData.exitType.toLowerCase()}.`,
       meta: { studentId: student.id, exitType: exitData.exitType },
     }).catch(err => console.error(`Failed to notify parent ${link.parentId} of exit:`, err));
+  }
+
+  // Email notifications for official lifecycle exit actions
+  try {
+    const schoolName = student.school?.name || student.originalSchool?.name || "School";
+    const className = student.classes?.[0]?.class?.name || student.gradeLevel || "Active Class";
+    const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+    const formattedDate = new Date(exitData.exitDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    if (exitData.exitType === EnrollmentStatus.GRADUATED) {
+      if (student.email) {
+        sendStudentGraduationEmail({
+          email: student.email,
+          studentName: student.name,
+          studentCode: student.studentCode,
+          schoolName,
+          cohort: `Class of ${new Date(exitData.exitDate).getFullYear()}`,
+          academicStanding: "Graduated in Good Standing",
+          gpa: student.termAverage ? String(student.termAverage) : undefined,
+          ceremonyDate: formattedDate,
+          loginUrl: `${appUrl}/login`,
+        }).catch(err => console.error("Failed to send graduation email to student:", err));
+      }
+
+      for (const link of student.parentLinks) {
+        if (link.parent?.email) {
+          sendParentGraduationEmail({
+            parentEmail: link.parent.email,
+            parentName: link.parent.fullName || "Parent / Guardian",
+            studentName: student.name,
+            studentCode: student.studentCode,
+            schoolName,
+            cohort: `Class of ${new Date(exitData.exitDate).getFullYear()}`,
+            academicStanding: "Graduated in Good Standing",
+            gpa: student.termAverage ? String(student.termAverage) : undefined,
+            ceremonyDate: formattedDate,
+            loginUrl: `${appUrl}/login`,
+          }).catch(err => console.error(`Failed to send graduation email to parent ${link.parentId}:`, err));
+        }
+      }
+    } else if (exitData.exitType === EnrollmentStatus.SUSPENDED) {
+      if (student.email) {
+        sendStudentSuspensionEmail({
+          recipientEmail: student.email,
+          recipientName: student.name,
+          recipientRole: "STUDENT",
+          studentName: student.name,
+          studentCode: student.studentCode,
+          schoolName,
+          className,
+          sanction: "Temporary Academic Suspension",
+          duration: exitData.exitNotes || "Disciplinary Suspension",
+          effectivePeriod: formattedDate,
+          reason: exitData.exitReason || "Administrative and Disciplinary Action",
+          hearingDocket: `DISC-BRD-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+          reinstatementDate: "Pending Disciplinary Hearing Conference",
+          loginUrl: `${appUrl}/login`,
+        }).catch(err => console.error("Failed to send suspension email to student:", err));
+      }
+
+      for (const link of student.parentLinks) {
+        if (link.parent?.email) {
+          sendStudentSuspensionEmail({
+            recipientEmail: link.parent.email,
+            recipientName: link.parent.fullName || "Parent / Guardian",
+            recipientRole: "PARENT",
+            studentName: student.name,
+            studentCode: student.studentCode,
+            schoolName,
+            className,
+            sanction: "Temporary Academic Suspension",
+            duration: exitData.exitNotes || "Disciplinary Suspension",
+            effectivePeriod: formattedDate,
+            reason: exitData.exitReason || "Administrative and Disciplinary Action",
+            hearingDocket: `DISC-BRD-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+            reinstatementDate: "Pending Disciplinary Hearing Conference",
+            loginUrl: `${appUrl}/login`,
+          }).catch(err => console.error(`Failed to send suspension email to parent ${link.parentId}:`, err));
+        }
+      }
+    }
+  } catch (emailErr) {
+    console.error("Failed to process exit email notifications:", emailErr);
   }
 
   return result;

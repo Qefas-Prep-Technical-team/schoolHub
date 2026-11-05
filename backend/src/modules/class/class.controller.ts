@@ -203,30 +203,7 @@ export const rejectClass = async (req: Request, res: Response) => {
   }
 };
 
-export const getClasses = async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      console.error("LOG ERROR: [getClasses] req.user missing");
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-    console.log(`LOG DEBUG: [getClasses] called by ${req.user.id} with schoolId: ${req.query.schoolId}`);
-
-    const data = await getClassesService({
-      currentUserId: req.user.id,
-      currentUserType: req.user.userType,
-      schoolId: req.query.schoolId as string | undefined,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Classes fetched successfully",
-      count: data.length,
-      data,
-    });
-  } catch (error: any) {
-    return handleError(res, error, "class.getClasses");
-  }
-};
+export { getClasses, sendClassAnnouncement } from "./controllers/class-dashboard.controller";
 
 export const getSingleClass = async (req: Request, res: Response) => {
   try {
@@ -907,30 +884,6 @@ export const promoteStudents = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "class.promoteStudents");
-  }
-};
-
-export const sendClassAnnouncement = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const classId = id as string;
-    const { title, message, targets, priority } = req.body;
-
-    if (!req.user || !req.user.id) {
-      console.error("LOG ERROR: [sendClassAnnouncement] req.user missing");
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const result = await sendClassAnnouncementService(classId, req.user.id, {
-      title,
-      message,
-      targets,
-      priority
-    });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    return handleError(res, error, "class.sendClassAnnouncement");
   }
 };
 

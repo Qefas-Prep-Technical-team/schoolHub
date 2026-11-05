@@ -9,10 +9,10 @@ export const startCronJobs = () => {
   // Run every night at exactly midnight (00:00)
   cron.schedule('0 0 * * *', async () => {
     console.log('[CRON] Running daily subscription sweeper...');
-    
+
     try {
       const now = new Date();
-      
+
       // 1. Process Expired Schools
       const expiredSchools = await prisma.school.findMany({
         where: {
@@ -72,7 +72,7 @@ export const startCronJobs = () => {
 
       // 2. Process Expired Individual Users
       const models = ['teacher', 'student', 'parent'] as const;
-      
+
       for (const model of models) {
         const expiredUsers = await (prisma as any)[model].findMany({
           where: {
@@ -102,7 +102,7 @@ export const startCronJobs = () => {
                 status: 'EXPIRED'
               }
             });
-          } catch (e) {}
+          } catch (e) { }
 
           // Send notification to user
           await createNotification({
@@ -128,6 +128,46 @@ export const startCronJobs = () => {
       console.log('[CRON] Daily subscription sweeper completed successfully.');
     } catch (error) {
       console.error('[CRON] Error running subscription sweeper:', error);
+    }
+  });
+
+  // ─── Automated Expired Quiz / Exam Attempt Auto-Submit Sweeper ─────────────
+  // Runs every 2 minutes to find any attempts where the student logged out or closed
+  // the tab while the timer was running, and whose expiresAt has elapsed.
+  // Automatically submits and scores the attempt so it transitions to SCORED/SUBMITTED.
+  cron.schedule('*/2 * * * *', async () => {
+    try {
+      const now = new Date();
+      const expiredAttempts = await prisma.examAttempt.findMany({
+        where: {
+          status: 'IN_PROGRESS',
+          expiresAt: {
+            lte: now,
+          },
+        },
+        select: {
+          examId: true,
+          studentId: true,
+        },
+        take: 50, // Batch process 50 per cycle
+      });
+
+      if (expiredAttempts.length > 0) {
+        console.log(`[CRON] Auto-submitting ${expiredAttempts.length} expired in-progress exam attempt(s)...`);
+        const { autoSubmitExpiredAttemptService } = await import('../modules/exam/exam-attempt.service.js');
+        for (const item of expiredAttempts) {
+          try {
+            await autoSubmitExpiredAttemptService({
+              examId: item.examId,
+              studentId: item.studentId,
+            });
+          } catch (err) {
+            console.warn(`[CRON] Failed to auto-submit attempt for student ${item.studentId}:`, err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[CRON] Error during expired exam attempt auto-submit sweep:', err);
     }
   });
 
