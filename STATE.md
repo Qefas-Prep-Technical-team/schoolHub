@@ -7017,3 +7017,89 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
   - **Assignment Details & Submissions Tracker (rontend/src/app/dashboard/admin/assignments/[id]/components/SubmissionList.tsx, SubmissionReviewModal.tsx)**: Sectioned submissions by submittedAt || createdAt using groupByDate across both desktop table and mobile card views (date_sectioning_display), added a class average score + computeGradePill badge to the tracker header, included Grade and Remark columns in CSV/PDF exports, and added a live computeGradePill badge next to the score display in SubmissionReviewModal.\r
   - **Preview, Bulk Grading, Analytics & Grading Form (preview/[id]/page.tsx, StudentSubmissionsTable.tsx, SubmissionsOverview.tsx, ulk-grading/[id]/page.tsx, StudentGradingTable.tsx, GradingStats.tsx, nalytics/page.tsx, StatsCards.tsx, StudentList.tsx, preview-assignment/components/GradingForm.tsx)**: Applied groupByDate to StudentSubmissionsTable, StudentGradingTable, and StudentList, and synced SubmissionsOverview, GradingStats, StatsCards, StudentList, and GradingForm with the connected school's gradingSystem via computeGradePill.\r
 
+
+
+### Friday, November 6, 2026 — Admin Dashboard Student Attendance Overview & Local OAuth Fix
+- [x] **Admin Dashboard — Student Attendance Overview (`Week` / `Month` / `Term` + Subject-to-Overall + By Grade)**:
+  - **Backend**:
+    - Added `getSchoolAttendanceOverviewService` in `backend/src/modules/school/services/school-dashboard.service.ts` (re-exported via `school.service.ts`), `getSchoolAttendanceOverview` in `backend/src/modules/school/controllers/school-dashboard.controller.ts` (re-exported via `controllers/index.ts`), and `GET /api/schools/:schoolId/attendance-overview` in `backend/src/modules/school/school.route.ts` with Zod query validation (`range`, `subjectId`, `classId`).
+    - Aggregates real `prisma.attendance` logs across `week` (Mon–Fri/Sun), `month` (4 weekly buckets), and `term` (4 monthly buckets), parsing per-subject attendance from `attendance.note` JSON alongside overall daily `attendance.status`.
+    - Returns `summary`, `chartData`, `subjectBreakdown` (from **Overall Daily Arrival** down to every school **Subject**), `classBreakdown` (across all grades/classes), `availableSubjects`, and `availableClasses`.
+  - **Frontend**:
+    - Added `getAttendanceOverview` and typed interfaces (`SchoolAttendanceOverview`, `AttendanceChartPoint`, `SubjectAttendanceBreakdownItem`, `ClassAttendanceBreakdownItem`) in `frontend/src/lib/api/services/schoolService.ts`.
+    - Added `useSchoolAttendanceOverview` hook in `frontend/src/lib/api/hooks/useSchool.ts` (`staleTime: 5 min`).
+    - Extracted modular `StudentAttendanceOverviewCard.tsx` (`frontend/src/app/dashboard/admin/components/dashboard/StudentAttendanceOverviewCard.tsx`) and integrated it into `DashboardCharts.tsx` and `frontend/src/app/dashboard/admin/page.tsx`.
+    - Replaced hardcoded mock attendance multipliers with real backend data across `Week`, `Month`, and `Term` tabs, added interactive **Daily Trend**, **Subject vs Overall**, and **By Grade** view modes, Subject & Grade filter selectors, a KPI summary strip (`Attendance Rate`, `Present`, `Absent`, `Late / Excused`), and a quick Subject-to-Overall insight pill strip.
+- [x] **Local Google OAuth Callback Fix (`/api/auth/google/callback`)**:
+  - Updated `frontend/package.json` (`"dev": "next dev"`) and `frontend/src/lib/google.ts` (`getGoogleRedirectUri` preserves local `origin`) so `http://localhost:3000/api/auth/google/callback` resolves properly during local development.
+
+- [x] **Teacher Grades (`/dashboard/teacher/grades` & Sub-pages / Modals)**:
+  - Verified and completed **`date_sectioning_display`** and **`school_grading_system_sync`** across `/dashboard/teacher/grades` and all lower-level sub-pages/modals:
+    - **Main Overview (`GradesOverview.tsx`, `GradesTable.tsx`, `GradeStatsCards.tsx`, `EditGradeModal.tsx`, `GradeDetailsModal.tsx`, `GradeEntryModal.tsx`)**:
+      - `GradesTable.tsx` sections both Grid View and Table View by `createdAt || updatedAt` (`Today`, `Yesterday`, `<day> <month>`, `<day> <month> <year>`, `Undated & Previous Records`) while preserving continuous global row numbering.
+      - `GradeStatsCards.tsx` displays a live `computeGradePill` badge next to the **Class Average %** and dynamically counts **Top Students** from the school's top grading tiers (`min >= 70` or `A*`).
+      - `EditGradeModal.tsx` and `GradeEntryModal.tsx` display live `computeGradePill` letter grade & remark badges as the teacher enters or updates student scores.
+      - `GradeDetailsModal.tsx` displays the school-synced grade pill and institutional remark (`EXCELLENT`, `VERY GOOD`, etc.).
+    - **Sub-page `/dashboard/teacher/grades/grade-edit` (`page.tsx`, `AssessmentBreakdown.tsx`, `GradeBadge.tsx`, `ScoreHistory.tsx`)**:
+      - Replaced hardcoded `>= 90 / 80 / 70 / 60` boundaries with `useSchoolProfile(effectiveSchoolId)` and `getGradeEvaluation` / `getGradeColorAndBg`.
+      - Sectioned `ScoreHistory.tsx` chronologically using `groupByDate`.
+    - **Sub-page `/dashboard/teacher/grades/record-grades` (`page.tsx`, `GradeTable.tsx`, `GradeBadge.tsx`)**:
+      - Synced `RecordGradesPage` and `GradeTable` with `useSchoolProfile(effectiveSchoolId)` and `getEffectiveGradingSystem(schoolProfile?.gradingSystem)`, and updated `GradeBadge.tsx` to use `getGradeColorAndBg`.
+      - Sectioned `GradeTable.tsx` rows by `recordedAt` using `groupByDate`.
+
+- [x] **Batch Select & Batch Clearing on Grades Tab (Toggleable Selection Mode)**:
+  - **Teacher Grades Overview (`/dashboard/teacher/grades`)**:
+    - Added toggleable selection mode (`isSelectionMode`, `selectedGradeIds`, `isBatchClearDialogOpen`) in `frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx` with `batchClearMutation` (`Promise.all(ids.map(id => gradeService.deleteGrade(id)))`) and a confirmation modal (`Clear Selected Grades`).
+    - Updated `TableToolbar.tsx` to display a **"Select"** button that activates selection mode; once active, it reveals **"Select All / Deselect All"**, **"Clear Selected (N)"**, and **"Cancel"** controls.
+    - Updated `GradesTable.tsx`, `TableHeader.tsx`, `TableRow.tsx`, and `GradeCard.tsx` so selection checkboxes (section-level and row/card-level) are strictly hidden until **"Select"** is clicked.
+  - **Teacher Class Details — Grades Tab (`/dashboard/teacher/my-classes/[classId]` -> Grades Tab)**:
+    - Updated `frontend/src/app/dashboard/teacher/my-classes/[classId]/components/grades/page.tsx`, `GradeToolbar.tsx`, and `GradeTable.tsx` with the same toggleable **"Select"** mode, section/row/card checkboxes (restricted to grades the teacher is authorized to manage), **"Select All / Deselect All"**, and **"Clear Selected (N)"** batch deletion via `teacherService.deleteClassGrade`.
+  - **Admin GradeHub (`/dashboard/admin/grades`)**:
+    - Updated `frontend/src/app/dashboard/admin/grades/components/GradeHub.tsx` so selection checkboxes in both List and Grid views are only shown when **"Select"** is active, and added the **"Clear Selected Grades"** confirmation dialog.
+
+- [x] **Encrypted Browser Auto-Save Drafts for Subject Paper Question Editing & Adding (`/dashboard/teacher/exams&quizzes/papers/[id]` & `/dashboard/admin/exams/[examId]/papers/[paperId]`)**:
+  - Created `frontend/src/utils/secureDraftStorage.ts` using the Web Crypto API (`AES-GCM` 256-bit encryption + `PBKDF2` key derivation) so unsaved question drafts (including sensitive `correctAnswer`, options, explanations, images, and AI-generated preview questions) are encrypted at rest in `localStorage`, scoped per `userId + paperId`, and automatically expire after 24 hours.
+  - Updated `QuestionManager.tsx`, `ManualAddForm.tsx`, and `AITools.tsx` (`frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/`) — which power both the Teacher and Admin paper detail pages — to automatically persist and restore active tabs (`add`, `edit`, `ai`), in-progress new question drafts, in-progress edited question drafts, and AI-generated question previews across page refreshes, with an **"Encrypted draft saved"** badge, a **"Reset Draft"** button, and automatic cleanup on save or cancel.
+
+
+### Update — Batch Select & Clear Moved Exclusively to Admin Paper Graded Tab
+- [x] **Reverted Teacher Grades Batch Selection**: Restored `GradesOverview.tsx`, `GradesTable.tsx`, `TableToolbar.tsx`, `TableHeader.tsx`, `TableRow.tsx`, `GradeCard.tsx` (`/dashboard/teacher/grades`), and `page.tsx`, `GradeToolbar.tsx`, `GradeTable.tsx` (`/dashboard/teacher/my-classes/[classId]/components/grades`) to their original state without batch selection.
+- [x] **Implemented Toggleable Batch Select & Clear on Admin Subject Paper Graded Tab**: Updated `frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/page.tsx` (`<TabsContent value="graded">`) so checkboxes and batch actions ("Select All", "Clear Selected (N)", "Cancel") appear only when the user clicks the **Select** button in the Paper Attempts & Results header.
+
+
+### Update — Date Sectioning & School Grading System Sync on `/dashboard/teacher/offline-grades` and Lower Levels
+- [x] **School Grading System Synchronization (`school_grading_system_sync`)**:
+  - Updated `OfflineGradesDashboard.tsx` to guard `selectedSchoolId` against `currentTeacherId` when resolving `effectiveSchoolId`, and added computed letter grade & remark columns to single-record and directory PDF/CSV exports via `computeGradePill`.
+  - Updated `RecordScoreEntryModal.tsx` to evaluate passing rate dynamically against `getGradeEvaluation(pct, activeGradingSystem)` (`grade !== 'F' && grade !== 'F9'`) instead of a hardcoded 50% threshold, and passed `activeGradingSystem` into `OfflineGradesStats`.
+  - Updated `OfflineGradesStats.tsx` to render the letter grade badge (`computeGradePill`) next to the Class Average metric card.
+  - Updated `RosterSpreadsheetView.tsx`, `MobileRosterCardView.tsx`, and `OfflineGradesHistoryTable.tsx` to display grade pills with both `bg` and `color` classes from `computeGradePill(percentage, gradingSystem)`.
+- [x] **Date Sectioning Display (`date_sectioning_display`)**:
+  - Standardized `OfflineRecordsGrid.tsx` and `OfflineRecordsTable.tsx` (across all tabs: All Records, Terminal Exams, CA, Assignments, Quizzes / Tests, Pending Drafts) to use the canonical `groupByDate` helper and `record` / `records` section count pills.
+  - Sectioned the lower-level student roster views (`RosterSpreadsheetView.tsx` and `MobileRosterCardView.tsx`), `OfflineGradesHistoryTable.tsx`, and `OfflineGradesClassSelector.tsx` by date using `groupByDate`.
+
+
+### Friday, November 6, 2026 (Exam Auto-Submission, Submission Speed & Student Session Stability)
+- [x] **Fixed Automatic Exam Submission Failure on Timer Expiry**:
+  - Updated `ensureAttemptStillActive`, `saveExamAnswerService`, and `submitSubjectPaperAttemptService` in `backend/src/modules/exam/exam-attempt.service.ts` so expiring timers no longer mark the attempt as `EXPIRED` and throw `"Exam time has expired"` during auto-submission.
+  - Added a 10-minute grace window for answer flushes and made paper/exam submission idempotent when time runs out.
+  - Updated `startExamAttemptService` to fall back to the sum of `subjectPapers.durationMinutes` when `exam.durationMinutes` is `0` or `null`.
+- [x] **Accelerated Exam Submission & Eliminated N+1 Scoring Queries**:
+  - Updated `POST /exams/:id/submit` (`submitExamAttempt` in `exam-attempt.controller.ts` & `scoreExamAttemptService` in `exam-attempt.service.ts`) to accept an optional bulk `answers` array so any unsaved answers are persisted and scored in a single atomic request.
+  - Optimized `scoreExamAttemptService` to batch `subjectExamAnswer` scoring updates by `(isCorrect, scoreAwarded, requiresManualReview)` using `updateMany` instead of N individual `update` queries, and wrapped all Prisma operations in `withRetry`.
+  - Simplified `handleSequentialSubmit` in `frontend/src/app/Exams&Quizzes/exam/[examId]/page.tsx` to submit all answers and score the attempt in one fast round-trip, and added a **Retry Submission Now** button to `SubmissionProgressModal.tsx`.
+- [x] **Prevented Student Logouts & Answer Loss During Active Exams**:
+  - Fixed the countdown timer `useEffect` in `frontend/src/app/Exams&Quizzes/exam/[examId]/page.tsx` by removing `remainingSeconds` from the dependency array and anchoring the countdown to `attempt.remainingSeconds` / `targetEndTimeMs`.
+  - Added automatic `localStorage` answer backup (`qefas_exam_answers_${examId}_${userId}`) on every option selection and restored it on page load/refresh.
+  - Added a proactive 10-minute token refresh keep-alive while an exam is `IN_PROGRESS`, disabled `refetchOnWindowFocus` on `useExam` / `useExamAttempt`, aligned `refreshToken` cookie `sameSite: "lax"` in `auth.controller.ts`, and added `localStorage` token fallback in `client.ts` and `auth-store.ts`.
+
+
+### Friday, November 6, 2026 (Exam Continuation UX, Pre-Submit Confirmation Modal & Session-Expiry Resume)
+- [x] **"Continue Exam" Button for Ongoing Assessments**:
+  - Updated [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/page.tsx) (`UnifiedExamPage`), [AssessmentList.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/components/AssessmentList.tsx), and [[examId]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/%5BexamId%5D/page.tsx) so any ongoing/resumed assessment displays **"Continue Exam"** (instead of **"Start Exam"** / **"Start Examination"**) along with accurate session status and helper text.
+- [x] **Pre-Submission Confirmation Popup Modal**:
+  - Created modular [ConfirmSubmitModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/components/ConfirmSubmitModal.tsx) displaying total answered vs. total questions, per-paper breakdown, unanswered question warnings, and remaining time before manual submission, while keeping automatic timer-expiry submission immediate.
+- [x] **Seamless Exam Continuation After Session Expiry / Re-Login**:
+  - Updated `handleSessionExpiry()` in [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) to preserve the exact exam URL in `redirect` query param and `sessionStorage` (`pendingJoinRedirect`), routing students directly to `/login/student?session=expired&redirect=...`.
+  - Replaced `localStorage.clear()` in [use-auth-mutations.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/use-auth-mutations.ts) with `clearStaleAuthStorage()` so `flexiti_device_id` and `qefas_exam_*` local backups are preserved across re-login.
+  - Persisted and restored exact `activeSubjectId` and `activeQuestionIndex` (`qefas_exam_progress_${examId}`) and unsynced answers (`qefas_exam_answers_${examId}`) in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/page.tsx), with automatic background answer syncing and fallback to the first unanswered question.
+  - Updated `startExamAttemptService` and `getExamAttemptService` in [exam-attempt.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-attempt.service.ts) to allow seamless continuation of `IN_PROGRESS` attempts after session expiry without false multi-device violation lockouts.

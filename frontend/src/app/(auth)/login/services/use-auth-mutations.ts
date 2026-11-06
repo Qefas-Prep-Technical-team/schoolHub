@@ -8,6 +8,37 @@ import { useAuthToast, useErrorToast, useToast } from "@/lib/hooks/useToast";
 import { authAPI } from "./auth-api";
 import { requestDeviceLocationPermission } from "@/lib/utils/deviceDetector";
 
+/**
+ * Clears stale auth keys from localStorage on login while preserving critical
+ * device fingerprint (`flexiti_device_id`), in-progress exam answers/position
+ * (`qefas_exam_*`), question paper drafts (`qefas_paper_draft_*`), and device
+ * location state so students resuming an exam after session expiry continue
+ * seamlessly from where they stopped.
+ */
+function clearStaleAuthStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const shouldPreserve =
+        key === "flexiti_device_id" ||
+        key.startsWith("qefas_exam_") ||
+        key.startsWith("qefas_paper_draft_") ||
+        key === "qefas_device_location" ||
+        key === "qefas_location_granted" ||
+        key === "theme";
+      if (!shouldPreserve) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
   const authToast = useAuthToast();
@@ -41,8 +72,8 @@ export const useLoginMutation = () => {
       try {
         console.log("DEBUG: Login onSuccess received response:", response);
 
-        // Clear previous session data from storage and cache
-        localStorage.clear();
+        // Clear previous session data from storage and cache while preserving exam progress & deviceId
+        clearStaleAuthStorage();
         queryClient.clear();
 
         if (response.require2FA || (response.data && response.data.require2FA)) {
@@ -212,7 +243,7 @@ export const useLogin2FAMutation = () => {
     mutationFn: (data: { tempToken: string; code: string }) => authAPI.login2FA(data),
     onSuccess: (response: any) => {
       try {
-        localStorage.clear();
+        clearStaleAuthStorage();
         queryClient.clear();
         Cookies.remove("token", { path: "/" });
         Cookies.remove("refreshToken", { path: "/" });
@@ -234,6 +265,20 @@ export const useLogin2FAMutation = () => {
         setHasCompletedOnboarding(true);
 
         authToast.loginSuccess(userWithType.name);
+
+        const redirectUrl =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("redirect") ||
+              sessionStorage.getItem("pendingJoinRedirect")
+            : null;
+
+        if (redirectUrl) {
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("pendingJoinRedirect");
+          }
+          router.replace(redirectUrl);
+          return;
+        }
 
         const userDash = String(actualRole).toLowerCase().replace('_', '-');
         setTransitioning(true, String(actualRole), userWithType.name);

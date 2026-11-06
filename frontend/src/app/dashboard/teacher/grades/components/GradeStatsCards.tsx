@@ -10,12 +10,17 @@ import {
 } from 'lucide-react';
 import { StudentGrade } from './types';
 import { HeaderTooltip } from "@/app/dashboard/teacher/components/dashboard/HeaderTooltip";
+import { computeGradePill, getEffectiveGradingSystem, type GradingTier } from "@/utils/gradingSystem";
 
 interface GradeStatsCardsProps {
   grades: StudentGrade[];
+  gradingSystem?: GradingTier[] | null;
 }
 
-const GradeStatsCards: React.FC<GradeStatsCardsProps> = ({ grades }) => {
+const GradeStatsCards: React.FC<GradeStatsCardsProps> = ({ grades, gradingSystem }) => {
+  const effectiveScale = getEffectiveGradingSystem(gradingSystem);
+  const topTierGrades = effectiveScale.filter(t => t.min >= 70).map(t => t.grade);
+
   // Simple stats calculation
   const totalStudents = grades.length;
   const gradedCount = grades.filter(g => g.status === 'Graded').length;
@@ -28,13 +33,16 @@ const GradeStatsCards: React.FC<GradeStatsCardsProps> = ({ grades }) => {
       }, 0) / totalStudents)
     : 0;
 
-  const topPerformers = grades.filter(g => g.grade === 'A').length;
+  const avgPill = totalStudents > 0 ? computeGradePill(avgPercentage, gradingSystem) : null;
+
+  const topPerformers = grades.filter(g => topTierGrades.includes(g.grade) || g.grade.startsWith('A')).length;
   const pendingCount = grades.filter(g => g.status === 'Pending' || g.status === 'Missing').length;
 
   const stats = [
     {
       label: 'Class Average',
       value: `${avgPercentage}%`,
+      pill: avgPill,
       icon: TrendingUp,
       color: 'blue',
       badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -110,10 +118,18 @@ const GradeStatsCards: React.FC<GradeStatsCardsProps> = ({ grades }) => {
             <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
               {stat.label}
             </p>
-            <div className="flex items-baseline gap-2 mt-0.5 sm:mt-1">
+            <div className="flex items-center gap-2 mt-0.5 sm:mt-1 flex-wrap">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100">
                 {stat.value}
               </h3>
+              {stat.pill && (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${stat.pill.bg} ${stat.pill.color}`}
+                  title={stat.pill.remark || stat.pill.label}
+                >
+                  {stat.pill.label}
+                </span>
+              )}
             </div>
             <p className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 mt-1 truncate">
               {stat.description}

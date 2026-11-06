@@ -36,37 +36,37 @@ export default function AnalyticsPage() {
   ];
 
   const distributionData = [
-    { range: '0-59', percentage: 10, count: 2 },
-    { range: '60-69', percentage: 40, count: 8 },
-    { range: '70-79', percentage: 90, count: 18 },
-    { range: '80-89', percentage: 75, count: 15 },
-    { range: '90-100', percentage: 25, count: 5 },
+    { range: '0-49%', grade: 'D/F', percentage: 10, count: 2, averageScore: 45 },
+    { range: '50-59%', grade: 'C/C+', percentage: 25, count: 5, averageScore: 55 },
+    { range: '60-69%', grade: 'B/B+', percentage: 40, count: 8, averageScore: 65 },
+    { range: '70-89%', grade: 'A', percentage: 90, count: 18, averageScore: 80 },
+    { range: '90-100%', grade: 'A+', percentage: 35, count: 7, averageScore: 95 },
   ];
 
   return (
     <div className="flex min-h-screen w-full">
-   
+
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 md:p-8 lg:p-10">
           <Topbar />
           <StatsCards stats={stats} gradingSystem={schoolProfile?.gradingSystem} />
-          
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 mb-8">
             <SubmissionTimeline />
-            <ScoreDistribution data={distributionData} />
+            <ScoreDistribution data={distributionData} gradingSystem={schoolProfile?.gradingSystem} />
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <StudentList 
-              title="Top Performers" 
-              students={topPerformers} 
+            <StudentList
+              title="Top Performers"
+              students={topPerformers}
               showScore
               gradingSystem={schoolProfile?.gradingSystem}
             />
-            <StudentList 
-              title="Students Who Didn't Submit" 
-              students={pendingStudents} 
-              showReminderButton 
+            <StudentList
+              title="Students Who Didn't Submit"
+              students={pendingStudents}
+              showReminderButton
             />
           </div>
         </div>

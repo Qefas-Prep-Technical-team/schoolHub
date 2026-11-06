@@ -3,6 +3,7 @@
 import React from 'react';
 import { Users, CheckCircle2, TrendingUp, Award, Info } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface OfflineGradesStatsProps {
   totalStudents: number;
@@ -11,6 +12,7 @@ interface OfflineGradesStatsProps {
   maxMarks: number;
   passCount: number;
   isTeacher?: boolean;
+  gradingSystem?: any[];
 }
 
 export default function OfflineGradesStats({
@@ -20,10 +22,11 @@ export default function OfflineGradesStats({
   maxMarks,
   passCount,
   isTeacher = false,
+  gradingSystem,
 }: OfflineGradesStatsProps) {
   const percentage = maxMarks > 0 ? Math.round((averageScore / maxMarks) * 100) : 0;
   const passRate = gradedCount > 0 ? Math.round((passCount / gradedCount) * 100) : 0;
-  const pendingCount = Math.max(0, totalStudents - gradedCount);
+  const avgPill = gradedCount > 0 ? computeGradePill(percentage, gradingSystem) : null;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 mb-6">
@@ -67,7 +70,7 @@ export default function OfflineGradesStats({
           </span>
         </div>
         <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-          <div 
+          <div
             className="bg-emerald-500 h-full rounded-full transition-all duration-300"
             style={{ width: `${totalStudents > 0 ? (gradedCount / totalStudents) * 100 : 0}%` }}
           />
@@ -84,16 +87,21 @@ export default function OfflineGradesStats({
             <TrendingUp size={18} />
           </div>
         </div>
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
           <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tabular-nums">
             {gradedCount > 0 ? averageScore.toFixed(1) : '—'}
           </span>
           <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
             / {maxMarks} ({percentage}%)
           </span>
+          {avgPill && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black border ${avgPill.bg} ${avgPill.color}`}>
+              {avgPill.label}
+            </span>
+          )}
         </div>
         <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-          <div 
+          <div
             className="bg-blue-500 h-full rounded-full transition-all duration-300"
             style={{ width: `${Math.min(100, percentage)}%` }}
           />
@@ -115,7 +123,7 @@ export default function OfflineGradesStats({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs bg-slate-900 text-white max-w-xs p-2">
-                  Percentage of graded students who attained 50% or higher of the maximum marks.
+                  Percentage of graded students who achieved a passing grade based on the school&apos;s configured grading scale.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -133,7 +141,7 @@ export default function OfflineGradesStats({
           </span>
         </div>
         <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-          <div 
+          <div
             className="bg-purple-500 h-full rounded-full transition-all duration-300"
             style={{ width: `${passRate}%` }}
           />

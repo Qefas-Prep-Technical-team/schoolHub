@@ -9,15 +9,20 @@ import { StudentGrade } from './types';
 import { Button } from '@/components/ui/button';
 import { X, User, BookOpen, Clock, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { computeGradePill, type GradingTier } from '@/utils/gradingSystem';
 
 interface GradeDetailsModalProps {
   grade: StudentGrade | null;
   isOpen: boolean;
   onClose: () => void;
+  gradingSystem?: GradingTier[] | null;
 }
 
-const GradeDetailsModal: React.FC<GradeDetailsModalProps> = ({ grade, isOpen, onClose }) => {
+const GradeDetailsModal: React.FC<GradeDetailsModalProps> = ({ grade, isOpen, onClose, gradingSystem }) => {
   if (!grade) return null;
+
+  const pct = grade.maxMarks > 0 ? Math.round((grade.rawScore / grade.maxMarks) * 100) : 0;
+  const pill = computeGradePill(pct, gradingSystem);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -123,15 +128,20 @@ const GradeDetailsModal: React.FC<GradeDetailsModalProps> = ({ grade, isOpen, on
               <div className="flex flex-col items-end text-right">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Grade</p>
                 <div className={cn(
-                  "px-3 py-1 rounded-xl text-lg font-black shadow-sm flex items-center justify-center min-w-[3rem]",
+                  "px-3 py-1 rounded-xl text-lg font-black shadow-sm flex flex-col items-center justify-center min-w-[3rem]",
                   grade.grade.startsWith('A') ? "bg-emerald-500 text-white shadow-emerald-500/20" :
                   grade.grade.startsWith('B') ? "bg-teal-500 text-white shadow-teal-500/20" :
                   grade.grade.startsWith('C') ? "bg-blue-500 text-white shadow-blue-500/20" :
                   grade.grade.startsWith('D') ? "bg-amber-500 text-white shadow-amber-500/20" :
                   "bg-rose-500 text-white shadow-rose-500/20"
                 )}>
-                  {grade.grade}
+                  <span>{pill.label || grade.grade}</span>
                 </div>
+                {pill.remark && (
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 mt-1">
+                    {pill.remark}
+                  </span>
+                )}
               </div>
 
               <div className="col-span-2 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">

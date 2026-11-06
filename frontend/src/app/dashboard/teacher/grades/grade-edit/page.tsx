@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AssessmentScore, GradeSummary, ScoreHistoryT, Student } from './components/types';
 import BackButton from './components/BackButton';
@@ -10,10 +10,14 @@ import TeacherFeedback from './components/TeacherFeedback';
 import ScoreHistory from './components/ScoreHistory';
 import FormActions from './components/FormActions';
 import SuccessModal from './components/SuccessModal';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 
 // Mock data
-const student: Student = {
+const studentBase: Student = {
   id: '1',
   name: 'Olivia Chen',
   admissionNumber: 'S-2041',
@@ -21,7 +25,7 @@ const student: Student = {
   subject: 'Mathematics',
   avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDoJIFEsNHzQKhSvENfE4AC-3X5e-j0jqOi-NWuNBZB7RsgJOjigaK77c0IGNViB2gbHRBJBkEz7nHbHiZ3iZxvd_UMgzq9C10PL9OlnTufPhw51V69aIds63D_tGwTCT__I9kJfeXSgsjNWrfw9G-NNKhYv5b2Rr3SRYBBiKx4jnnMwCpG_wfi_Wi_3wlTxzF0btxr_HK358mDLdpd-DEQfYbRU1Jt1DA5lD8kO0wAgTDz-XlQAY6syQrfvDlQMJZUnkrH5qv6C3g',
   overallGrade: 'A',
-  overallPerformance: 'Excellent',
+  overallPerformance: 'VERY GOOD',
 };
 
 const initialScores: AssessmentScore[] = [
@@ -52,13 +56,19 @@ const initialScores: AssessmentScore[] = [
 ];
 
 const scoreHistory: ScoreHistoryT[] = [
-  { component: 'Classwork', oldScore: '16/20', newScore: '18/20' },
-  { component: 'Assignment', oldScore: '40/50', newScore: '45/50' },
-  { component: 'Exam', oldScore: '85/100', newScore: '88/100' },
+  { component: 'Classwork', oldScore: '16/20', newScore: '18/20', updatedAt: new Date().toISOString() },
+  { component: 'Assignment', oldScore: '40/50', newScore: '45/50', updatedAt: new Date().toISOString() },
+  { component: 'Exam', oldScore: '85/100', newScore: '88/100', updatedAt: new Date(Date.now() - 86400000).toISOString() },
 ];
 
 export default function EditStudentGradePage() {
   const router = useRouter();
+  const { selectedSchoolId } = useDashboardStore();
+  const { user } = useAuthStore();
+  const rawSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const effectiveSchoolId = rawSchoolId === 'default-tenant-id' || rawSchoolId === 'personal' ? '' : rawSchoolId;
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+
   const [scores, setScores] = useState<AssessmentScore[]>(initialScores);
   const [comment, setComment] = useState('');
   const [notifyParent, setNotifyParent] = useState(false);
@@ -66,47 +76,38 @@ export default function EditStudentGradePage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
-  const calculateGradeSummary = (): GradeSummary => {
+  const gradeSummary: GradeSummary = useMemo(() => {
     const totalScore = scores.reduce((sum, score) => sum + score.score, 0);
     const totalMaxScore = scores.reduce((sum, score) => sum + score.maxScore, 0);
-    const percentage = (totalScore / totalMaxScore) * 100;
+    const percentage = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
 
-    let finalGrade = 'F';
-    let performance = 'Needs Improvement';
-
-    if (percentage >= 90) {
-      finalGrade = 'A';
-      performance = 'Excellent';
-    } else if (percentage >= 80) {
-      finalGrade = 'B';
-      performance = 'Good';
-    } else if (percentage >= 70) {
-      finalGrade = 'C';
-      performance = 'Average';
-    } else if (percentage >= 60) {
-      finalGrade = 'D';
-      performance = 'Below Average';
-    }
+    const evaluation = getGradeEvaluation(percentage, schoolProfile?.gradingSystem);
 
     return {
       totalScore,
       totalMaxScore,
-      finalGrade,
-      performance,
+      finalGrade: evaluation.grade,
+      performance: evaluation.remark || evaluation.grade,
+      color: evaluation.color,
+      bg: evaluation.bg,
     };
-  };
+  }, [scores, schoolProfile?.gradingSystem]);
 
-  const gradeSummary = calculateGradeSummary();
+  const student: Student = useMemo(() => ({
+    ...studentBase,
+    overallGrade: gradeSummary.finalGrade,
+    overallPerformance: gradeSummary.performance,
+  }), [gradeSummary.finalGrade, gradeSummary.performance]);
 
   const handleScoreChange = (component: AssessmentScore['component'], value: number) => {
     setScores(prev =>
       prev.map(score =>
         score.component === component
           ? {
-              ...score,
-              score: value,
-              percentage: (value / score.maxScore) * 100,
-            }
+            ...score,
+            score: value,
+            percentage: (value / score.maxScore) * 100,
+          }
           : score
       )
     );
@@ -116,16 +117,7 @@ export default function EditStudentGradePage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // console.log('Saving grade data:', {
-      //   scores,
-      //   comment,
-      //   notifyParent,
-      //   gradeSummary,
-      // });
-
       setShowSuccessModal(true);
       setIsDirty(false);
     } catch (error) {
@@ -151,9 +143,8 @@ export default function EditStudentGradePage() {
   };
 
   return (
-  
-     <>
-     <main className="px-6 lg:px-10 py-8 pb-28">
+    <>
+      <main className="px-6 lg:px-10 py-8 pb-28">
         <div className="layout-content-container flex flex-col max-w-7xl mx-auto flex-1">
           {/* Page Header */}
           <div className="mb-6">
@@ -186,7 +177,7 @@ export default function EditStudentGradePage() {
                 onScoreChange={handleScoreChange}
                 gradeSummary={gradeSummary}
               />
-              
+
               <TeacherFeedback
                 comment={comment}
                 onCommentChange={setComment}
@@ -219,6 +210,6 @@ export default function EditStudentGradePage() {
         gradeSummary={gradeSummary}
         parentNotified={notifyParent}
       />
-</>
+    </>
   );
 }

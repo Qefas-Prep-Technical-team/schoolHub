@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft, FileText, Settings, Loader2, Check, Globe, Layers, ChevronDown,
-  Users, Trash2, Clock, CheckCircle2, XCircle, Search, GraduationCap
+  Users, Trash2, Clock, CheckCircle2, XCircle, Search, GraduationCap, CheckSquare, Square, X
 } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "./components/QuestionManager";
@@ -228,6 +228,8 @@ export default function PaperDetailPage() {
   const [attemptsSearch, setAttemptsSearch] = useState("");
   const [attemptsPage, setAttemptsPage] = useState(1);
   const ATTEMPTS_PER_PAGE = 10;
+  const [isAttemptsSelectionMode, setIsAttemptsSelectionMode] = useState(false);
+  const [selectedAttemptStudentIds, setSelectedAttemptStudentIds] = useState<string[]>([]);
 
   const filteredAttempts = useMemo(() => {
     if (!attemptsSearch.trim()) return attempts;
@@ -249,17 +251,73 @@ export default function PaperDetailPage() {
     return groupByDate(paginatedAttempts, (attempt: any) => attempt.submittedAt || attempt.createdAt);
   }, [paginatedAttempts]);
 
+  const handleToggleAttemptsSelectionMode = () => {
+    setIsAttemptsSelectionMode((prev) => {
+      if (prev) setSelectedAttemptStudentIds([]);
+      return !prev;
+    });
+  };
+
+  const handleToggleSelectAttempt = (studentId: string) => {
+    setSelectedAttemptStudentIds((prev) =>
+      prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
+    );
+  };
+
+  const handleSelectSectionAttempts = (studentIds: string[], checked: boolean) => {
+    if (checked) {
+      setSelectedAttemptStudentIds((prev) => Array.from(new Set([...prev, ...studentIds])));
+    } else {
+      setSelectedAttemptStudentIds((prev) => prev.filter((id) => !studentIds.includes(id)));
+    }
+  };
+
+  const allFilteredStudentIds = useMemo(() => {
+    return Array.from(new Set(filteredAttempts.map((a: any) => a.studentId).filter(Boolean))) as string[];
+  }, [filteredAttempts]);
+
+  const isAllFilteredSelected =
+    allFilteredStudentIds.length > 0 &&
+    allFilteredStudentIds.every((id) => selectedAttemptStudentIds.includes(id));
+
+  const handleSelectAllFilteredAttempts = () => {
+    if (isAllFilteredSelected) {
+      setSelectedAttemptStudentIds((prev) => prev.filter((id) => !allFilteredStudentIds.includes(id)));
+    } else {
+      setSelectedAttemptStudentIds((prev) => Array.from(new Set([...prev, ...allFilteredStudentIds])));
+    }
+  };
+
   // Mutation to clear an attempt so the student can retake the exam/paper
   const deleteAttemptMutation = useMutation({
     mutationFn: (studentId: string) => examService.deleteExamAttempt(examId, studentId),
-    onSuccess: () => {
+    onSuccess: (_data, studentId) => {
       queryClient.invalidateQueries({ queryKey: ["exam-attempts", examId] });
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      setSelectedAttemptStudentIds((prev) => prev.filter((id) => id !== studentId));
       toast.success("Student record cleared. They can now retake the exam.");
       setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to clear student record");
+    }
+  });
+
+  // Batch mutation to clear multiple attempts at once
+  const batchDeleteAttemptsMutation = useMutation({
+    mutationFn: async (studentIds: string[]) => {
+      await Promise.all(studentIds.map((studentId) => examService.deleteExamAttempt(examId, studentId)));
+    },
+    onSuccess: (_data, studentIds) => {
+      queryClient.invalidateQueries({ queryKey: ["exam-attempts", examId] });
+      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      setSelectedAttemptStudentIds([]);
+      setIsAttemptsSelectionMode(false);
+      toast.success(`Cleared ${studentIds.length} student ${studentIds.length === 1 ? "record" : "records"}. They can now retake the exam.`);
+      setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to clear selected student records");
     }
   });
 
@@ -647,20 +705,89 @@ export default function PaperDetailPage() {
                   </div>
                 </div>
 
-                {/* Search Bar */}
+                {/* Search Bar & Batch Selection Controls */}
                 {attempts.length > 0 && (
-                  <div className="relative w-full sm:w-64">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search candidate..."
-                      value={attemptsSearch}
-                      onChange={(e) => {
-                        setAttemptsSearch(e.target.value);
-                        setAttemptsPage(1);
-                      }}
-                      className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
+                  <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search candidate..."
+                        value={attemptsSearch}
+                        onChange={(e) => {
+                          setAttemptsSearch(e.target.value);
+                          setAttemptsPage(1);
+                        }}
+                        className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      />
+                    </div>
+
+                    {!isAttemptsSelectionMode ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleToggleAttemptsSelectionMode}
+                        className="h-9 rounded-xl px-3.5 text-xs font-bold gap-1.5 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      >
+                        <CheckSquare size={14} className="text-primary" />
+                        <span>Select</span>
+                      </Button>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSelectAllFilteredAttempts}
+                          className="h-9 rounded-xl px-3 text-xs font-bold gap-1.5 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        >
+                          {isAllFilteredSelected ? (
+                            <>
+                              <CheckSquare size={14} className="text-primary" />
+                              <span>Deselect All</span>
+                            </>
+                          ) : (
+                            <>
+                              <Square size={14} className="text-slate-400" />
+                              <span>Select All ({allFilteredStudentIds.length})</span>
+                            </>
+                          )}
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={selectedAttemptStudentIds.length === 0 || batchDeleteAttemptsMutation.isPending}
+                          onClick={() =>
+                            openConfirmDialog({
+                              title: `Clear ${selectedAttemptStudentIds.length} Student ${selectedAttemptStudentIds.length === 1 ? "Record" : "Records"}`,
+                              description: `Delete the selected ${selectedAttemptStudentIds.length} student ${selectedAttemptStudentIds.length === 1 ? "attempt" : "attempts"} for "${paper.title}"? This clears their recorded answers and grades and allows them to take the exam again.`,
+                              variant: "danger",
+                              confirmText: `Clear ${selectedAttemptStudentIds.length} ${selectedAttemptStudentIds.length === 1 ? "Record" : "Records"}`,
+                              onConfirm: () => batchDeleteAttemptsMutation.mutate(selectedAttemptStudentIds),
+                            })
+                          }
+                          className="h-9 rounded-xl px-3.5 text-xs font-bold gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/60 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 cursor-pointer"
+                        >
+                          {batchDeleteAttemptsMutation.isPending ? (
+                            <Loader2 className="animate-spin h-3.5 w-3.5" />
+                          ) : (
+                            <Trash2 size={13} />
+                          )}
+                          <span>Clear Selected ({selectedAttemptStudentIds.length})</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleToggleAttemptsSelectionMode}
+                          className="h-9 rounded-xl px-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                          title="Exit selection mode"
+                        >
+                          <X size={14} />
+                          <span className="ml-1">Cancel</span>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -706,7 +833,26 @@ export default function PaperDetailPage() {
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
-                              <th className="px-6 sm:px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
+                              {isAttemptsSelectionMode && (
+                                <th className="pl-6 sm:pl-8 pr-2 py-3.5 w-10">
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      section.items.length > 0 &&
+                                      section.items.every((a: any) => selectedAttemptStudentIds.includes(a.studentId))
+                                    }
+                                    onChange={(e) =>
+                                      handleSelectSectionAttempts(
+                                        section.items.map((a: any) => a.studentId).filter(Boolean),
+                                        e.target.checked
+                                      )
+                                    }
+                                    className="size-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20 cursor-pointer accent-primary"
+                                    aria-label={`Select all in ${section.label}`}
+                                  />
+                                </th>
+                              )}
+                              <th className={cn(isAttemptsSelectionMode ? "px-3" : "px-6 sm:px-8", "py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400")}>Student</th>
                               <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
                               <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Time Recorded</th>
                               <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Paper Score</th>
@@ -735,11 +881,41 @@ export default function PaperDetailPage() {
                                 IN_PROGRESS: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800",
                               };
                               const statusCls = statusMap[attempt.status] || statusMap.IN_PROGRESS;
+                              const isSelected = selectedAttemptStudentIds.includes(attempt.studentId);
 
                               return (
-                                <tr key={attempt.id || attempt.studentId} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                <tr
+                                  key={attempt.id || attempt.studentId}
+                                  onClick={() => {
+                                    if (isAttemptsSelectionMode && attempt.studentId) {
+                                      handleToggleSelectAttempt(attempt.studentId);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "group transition-colors",
+                                    isAttemptsSelectionMode && "cursor-pointer",
+                                    isAttemptsSelectionMode && isSelected
+                                      ? "bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/15"
+                                      : "hover:bg-slate-50/60 dark:hover:bg-slate-800/30"
+                                  )}
+                                >
+                                  {isAttemptsSelectionMode && (
+                                    <td
+                                      className="pl-6 sm:pl-8 pr-2 py-4 w-10"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => handleToggleSelectAttempt(attempt.studentId)}
+                                        className="size-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20 cursor-pointer accent-primary"
+                                        aria-label={`Select ${attempt.student?.name || "student"}`}
+                                      />
+                                    </td>
+                                  )}
+
                                   {/* Student Column */}
-                                  <td className="px-6 sm:px-8 py-4">
+                                  <td className={cn(isAttemptsSelectionMode ? "px-3" : "px-6 sm:px-8", "py-4")}>
                                     <div className="flex items-center gap-3">
                                       <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs shrink-0">
                                         {initials}
@@ -789,7 +965,10 @@ export default function PaperDetailPage() {
                                   </td>
 
                                   {/* Action: Clear Record */}
-                                  <td className="px-6 sm:px-8 py-4 text-right">
+                                  <td
+                                    className="px-6 sm:px-8 py-4 text-right"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     <div className="flex items-center justify-end">
                                       <Button
                                         variant="ghost"
@@ -870,7 +1049,8 @@ export default function PaperDetailPage() {
           unpublishPaperMutation.isPending ||
           deletePaperMutation.isPending ||
           deleteExamMutation.isPending ||
-          deleteAttemptMutation.isPending
+          deleteAttemptMutation.isPending ||
+          batchDeleteAttemptsMutation.isPending
         }
       />
 

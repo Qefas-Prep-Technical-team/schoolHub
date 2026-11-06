@@ -17,6 +17,7 @@ export interface SubmissionProgressModalProps {
   papers: PaperSubmitState[];
   finaliseStatus: "idle" | "finalising" | "done" | "error";
   finaliseError?: string;
+  onRetry?: () => void;
 }
 
 type AnyStatus = PaperSubmitStatus | "finalising" | "done" | "error";
@@ -55,6 +56,7 @@ export default function SubmissionProgressModal({
   papers,
   finaliseStatus,
   finaliseError,
+  onRetry,
 }: SubmissionProgressModalProps) {
   if (!isOpen) return null;
 
@@ -88,15 +90,15 @@ export default function SubmissionProgressModal({
               {hasError
                 ? "Submission Interrupted"
                 : finaliseStatus === "done"
-                ? "Submission Complete!"
-                : "Submitting Examination"}
+                  ? "Submission Complete!"
+                  : "Submitting Examination"}
             </h2>
             <p className="text-slate-400 text-xs font-medium">
               {hasError
                 ? "An error occurred. Please check below."
                 : finaliseStatus === "done"
-                ? "All papers have been securely recorded."
-                : `Submitting ${submittedCount} of ${papers.length} subject paper${papers.length !== 1 ? "s" : ""}...`}
+                  ? "All papers have been securely recorded."
+                  : `Submitting ${submittedCount} of ${papers.length} subject paper${papers.length !== 1 ? "s" : ""}...`}
             </p>
           </div>
 
@@ -115,15 +117,14 @@ export default function SubmissionProgressModal({
             {papers.map((paper) => (
               <div
                 key={paper.paperId}
-                className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${
-                  paper.status === "submitting"
+                className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${paper.status === "submitting"
                     ? "border-indigo-400/30 bg-indigo-500/5"
                     : paper.status === "done"
-                    ? "border-emerald-400/20 bg-emerald-500/5"
-                    : paper.status === "error"
-                    ? "border-red-400/20 bg-red-500/5"
-                    : "border-slate-700/50 bg-slate-800/30"
-                }`}
+                      ? "border-emerald-400/20 bg-emerald-500/5"
+                      : paper.status === "error"
+                        ? "border-red-400/20 bg-red-500/5"
+                        : "border-slate-700/50 bg-slate-800/30"
+                  }`}
               >
                 <StepIcon status={paper.status} />
 
@@ -131,15 +132,14 @@ export default function SubmissionProgressModal({
                   <div className="flex items-center gap-2">
                     <FileText size={12} className="shrink-0 text-slate-500" />
                     <p
-                      className={`text-sm font-bold truncate ${
-                        paper.status === "done"
+                      className={`text-sm font-bold truncate ${paper.status === "done"
                           ? "text-emerald-300"
                           : paper.status === "error"
-                          ? "text-red-300"
-                          : paper.status === "submitting"
-                          ? "text-indigo-200"
-                          : "text-slate-400"
-                      }`}
+                            ? "text-red-300"
+                            : paper.status === "submitting"
+                              ? "text-indigo-200"
+                              : "text-slate-400"
+                        }`}
                     >
                       {paper.paperName}
                     </p>
@@ -166,24 +166,22 @@ export default function SubmissionProgressModal({
             {/* Finalising step */}
             {finaliseStatus !== "idle" && (
               <div
-                className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${
-                  finaliseStatus === "finalising"
+                className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${finaliseStatus === "finalising"
                     ? "border-violet-400/30 bg-violet-500/5"
                     : finaliseStatus === "done"
-                    ? "border-emerald-400/20 bg-emerald-500/5"
-                    : "border-red-400/20 bg-red-500/5"
-                }`}
+                      ? "border-emerald-400/20 bg-emerald-500/5"
+                      : "border-red-400/20 bg-red-500/5"
+                  }`}
               >
                 <StepIcon status={finaliseStatus} />
                 <div className="flex-1">
                   <p
-                    className={`text-sm font-bold ${
-                      finaliseStatus === "done"
+                    className={`text-sm font-bold ${finaliseStatus === "done"
                         ? "text-emerald-300"
                         : finaliseStatus === "error"
-                        ? "text-red-300"
-                        : "text-violet-200"
-                    }`}
+                          ? "text-red-300"
+                          : "text-violet-200"
+                      }`}
                   >
                     Finalising &amp; Scoring
                   </p>
@@ -203,6 +201,17 @@ export default function SubmissionProgressModal({
           </div>
 
           {/* Footer */}
+          {hasError && onRetry && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onRetry}
+                className="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25 cursor-pointer active:scale-98"
+              >
+                Retry Submission Now
+              </button>
+            </div>
+          )}
           {!hasError && finaliseStatus !== "done" && (
             <p className="text-center text-[10px] text-slate-600 font-medium">
               Do not close or navigate away from this page.

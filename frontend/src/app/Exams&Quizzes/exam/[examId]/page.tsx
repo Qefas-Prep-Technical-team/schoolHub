@@ -1,13 +1,12 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { 
-  useExam, 
-  useExamAttempt, 
+import {
+  useExam,
+  useExamAttempt,
   useStartExamAttempt,
-  useSaveAnswer, 
+  useSaveAnswer,
   useSubmitAttempt,
-  useSubmitSubjectPaper,
 } from "@/lib/api/hooks/useExams";
 import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, BookOpen, Lock as LockIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -18,6 +17,7 @@ import StudentReadingModal from "./components/StudentReadingModal";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import ImageLightbox from "@/components/ui/ImageLightbox";
 import SubmissionProgressModal, { PaperSubmitState } from "./components/SubmissionProgressModal";
+import ConfirmSubmitModal, { PaperAnswerSummary } from "./components/ConfirmSubmitModal";
 
 // UI Components from the "start" directory
 import PageHeader from './start/components/PageHeader';
@@ -25,6 +25,8 @@ import ExamDetails from './start/components/ExamDetails';
 import QuestionCard from './start/components/QuestionCard';
 import QuestionNavigation from './start/components/QuestionNavigation';
 import { SubjectPaper, SubjectAttempt } from "@/lib/api/services/examService";
+import { executeRefreshToken } from "@/lib/api/client";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AxiosError } from "axios";
 
 
@@ -35,24 +37,32 @@ import { AxiosError } from "axios";
 export default function UnifiedExamPage() {
   const { examId } = useParams();
   const router = useRouter();
-  
+  const currentUser = useAuthStore((s) => s.user);
+
   const { data: exam, isLoading: isLoadingExam } = useExam(examId as string);
   const { data: attempt, isLoading: isLoadingAttempt } = useExamAttempt(examId as string);
-  
+
   const startAttemptMutation = useStartExamAttempt();
   const saveAnswerMutation = useSaveAnswer();
   const submitAttemptMutation = useSubmitAttempt();
-  const submitSubjectPaperMutation = useSubmitSubjectPaper();
+
+  const localBackupKey = useMemo(
+    () => `qefas_exam_answers_${examId}_${currentUser?.id || attempt?.studentId || "anon"}`,
+    [examId, currentUser?.id, attempt?.studentId],
+  );
+  const sharedBackupKey = useMemo(() => `qefas_exam_answers_${examId}`, [examId]);
+  const progressBackupKey = useMemo(() => `qefas_exam_progress_${examId}`, [examId]);
 
   // Mode State
   const [showDetails, setShowDetails] = useState(false);
   const [showReadingModal, setShowReadingModal] = useState(false);
-  
+  const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false);
+
   // Navigation State
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
-  
+
   // Timer State
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
@@ -64,6 +74,7 @@ export default function UnifiedExamPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const isSubmittingRef = useRef(false);
   const initialAnswersRestoredRef = useRef(false);
+  const initialPositionRestoredRef = useRef(false);
   // Track questions whose answers have not yet been successfully saved to the backend
   const dirtyAnswerQuestionIdsRef = useRef<Set<string>>(new Set());
 
@@ -121,11 +132,11 @@ export default function UnifiedExamPage() {
           ...sa.subjectPaper,
           id: sa.subjectPaperId || sa.subjectPaper?.id,
           readingContent: sa.subjectPaper?.readingContent || fallbackPaper?.readingContent || "",
-          images: (sa.subjectPaper?.images && sa.subjectPaper.images.length > 0) 
-            ? sa.subjectPaper.images 
+          images: (sa.subjectPaper?.images && sa.subjectPaper.images.length > 0)
+            ? sa.subjectPaper.images
             : (fallbackPaper?.images || []),
-          imageLabels: (sa.subjectPaper?.imageLabels && sa.subjectPaper.imageLabels.length > 0) 
-            ? sa.subjectPaper.imageLabels 
+          imageLabels: (sa.subjectPaper?.imageLabels && sa.subjectPaper.imageLabels.length > 0)
+            ? sa.subjectPaper.imageLabels
             : (fallbackPaper?.imageLabels || []),
         };
       });
@@ -133,13 +144,13 @@ export default function UnifiedExamPage() {
     return (exam?.subjectPapers || []) as SubjectPaper[];
   }, [exam?.subjectPapers, attempt]);
 
-  const activeSubject = useMemo(() => 
-    currentSubjectPapers.find((p: SubjectPaper) => p.id === activeSubjectId), 
+  const activeSubject = useMemo(() =>
+    currentSubjectPapers.find((p: SubjectPaper) => p.id === activeSubjectId),
     [currentSubjectPapers, activeSubjectId]
   );
 
-  const activeQuestion = useMemo(() => 
-    activeSubject?.questions?.[activeQuestionIndex], 
+  const activeQuestion = useMemo(() =>
+    activeSubject?.questions?.[activeQuestionIndex],
     [activeSubject, activeQuestionIndex]
   );
 
@@ -149,6 +160,28 @@ export default function UnifiedExamPage() {
   const activeSubjectLabels = useMemo(() => activeSubject?.imageLabels || [], [activeSubject?.imageLabels]);
   const activeQuestionImages = useMemo(() => activeQuestion?.images || [], [activeQuestion?.images]);
   const activeQuestionLabels = useMemo(() => activeQuestion?.imageLabels || [], [activeQuestion?.imageLabels]);
+
+  const isContinuingExam = useMemo(() => {
+    if (attempt?.status === "SUBMITTED" || attempt?.status === "SCORED") return false;
+    if (attempt) return true;
+    return Object.keys(localAnswers).length > 0;
+  }, [attempt, localAnswers]);
+
+  const paperSummaries = useMemo((): PaperAnswerSummary[] => {
+    return currentSubjectPapers.map((p: SubjectPaper) => {
+      const questions = p.questions || [];
+      const answeredCount = questions.filter((q) => {
+        const ans = localAnswers[q.id];
+        return ans !== undefined && ans !== "";
+      }).length;
+      return {
+        paperId: p.id,
+        paperName: p.title || (p as { subject?: { name?: string } }).subject?.name || "Unnamed Paper",
+        answeredCount,
+        totalCount: questions.length,
+      };
+    });
+  }, [currentSubjectPapers, localAnswers]);
 
   // Handlers
   const handleConfirmStart = () => {
@@ -184,12 +217,30 @@ export default function UnifiedExamPage() {
       return;
     }
 
-    // Update local state immediately for responsive UI
+    // Update local state immediately for responsive UI and persist to localStorage backup
     const qId = activeQuestion.id;
-    setLocalAnswers(prev => ({
-      ...prev,
-      [qId]: optionId
-    }));
+    setLocalAnswers(prev => {
+      const next = {
+        ...prev,
+        [qId]: optionId,
+      };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(localBackupKey, JSON.stringify(next));
+          localStorage.setItem(
+            sharedBackupKey,
+            JSON.stringify({
+              studentId: currentUser?.id || attempt?.studentId || null,
+              answers: next,
+              updatedAt: Date.now(),
+            }),
+          );
+        } catch {
+          // Ignore storage quota errors
+        }
+      }
+      return next;
+    });
     dirtyAnswerQuestionIdsRef.current.add(qId);
 
     try {
@@ -205,8 +256,7 @@ export default function UnifiedExamPage() {
     } catch (error: unknown) {
       const axiosError = error as AxiosError<{ message?: string }>;
       console.error("Failed to auto-save answer:", axiosError.response?.data || axiosError.message);
-      const serverMsg = axiosError.response?.data?.message || axiosError.message;
-      toast.error(`Auto-save failed: ${serverMsg}`);
+      // Answer remains in localAnswers + localStorage + dirtyAnswerQuestionIdsRef and will be submitted automatically in the final submit payload
     }
   };
 
@@ -227,45 +277,11 @@ export default function UnifiedExamPage() {
   };
 
   /**
-   * Flushes any unpersisted (dirty) answers for a given subject paper to the backend.
-   * If all answers were already successfully autosaved via handleSelectOption,
-   * this operation executes instantaneously without redundant network roundtrips.
-   * Any pending dirty answers are saved concurrently in parallel.
-   */
-  const flushAnswersForPaper = useCallback(async (
-    paperId: string,
-    questionIds: string[]
-  ) => {
-    // Only flush answers that are dirty/unpersisted
-    const dirtyAnswers = questionIds
-      .filter((qId) => dirtyAnswerQuestionIdsRef.current.has(qId) && localAnswers[qId] !== undefined)
-      .map((qId) => ({ questionId: qId, answer: localAnswers[qId] }));
-
-    if (dirtyAnswers.length === 0) return;
-
-    // Save pending dirty answers concurrently in parallel batches
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < dirtyAnswers.length; i += BATCH_SIZE) {
-      const batch = dirtyAnswers.slice(i, i + BATCH_SIZE);
-      await Promise.all(
-        batch.map(async ({ questionId, answer }) => {
-          await saveAnswerMutation.mutateAsync({
-            examId: examId as string,
-            data: { subjectPaperId: paperId, questionId, answer },
-          });
-          dirtyAnswerQuestionIdsRef.current.delete(questionId);
-        })
-      );
-    }
-  }, [examId, localAnswers, saveAnswerMutation]);
-
-  /**
-   * Core sequential submission flow:
-   * 1. For each subject paper:
-   *    a. Flush all local answers in batches of 100 (sequentially)
-   *    b. Mark the paper as submitted on the backend (idempotent)
-   * 2. Finalise the entire exam attempt (scoring)
-   * 3. Redirect to result page
+   * Fast & resilient submission flow:
+   * 1. Collects all selected local answers across all papers.
+   * 2. Shows each paper in the progress modal and submits everything atomically in a single fast call
+   *    (plus background paper-level submit calls that never block finalisation on expiry).
+   * 3. Redirects to the result page.
    *
    * Guards against double-execution via isSubmittingRef.
    */
@@ -279,82 +295,104 @@ export default function UnifiedExamPage() {
       return;
     }
 
-    // Initialise all papers as pending in the progress modal
+    // Collect all local answers mapped to their subjectPaperId so the backend can persist any unsaved answers in a single round-trip
+    const allPendingAnswers: Array<{ subjectPaperId: string; questionId: string; answer: string }> = [];
+    for (const paper of papers) {
+      const questions = paper.questions || [];
+      for (const q of questions) {
+        const ans = localAnswers[q.id];
+        if (ans !== undefined && ans !== "") {
+          allPendingAnswers.push({
+            subjectPaperId: paper.id,
+            questionId: q.id,
+            answer: ans,
+          });
+        }
+      }
+    }
+
+    // Initialise all papers as submitting in the progress modal
     setPaperSubmitStates(
       papers.map((p: SubjectPaper) => ({
         paperId: p.id,
         paperName: p.title || (p as { subject?: { name?: string } }).subject?.name || "Unnamed Paper",
         questionCount: p.questions?.length || 0,
-        status: "pending",
+        status: "submitting",
       }))
     );
-    setFinaliseStatus("idle");
+    setFinaliseStatus("finalising");
     setFinaliseError(undefined);
 
-    // Process each paper sequentially
-    for (let i = 0; i < papers.length; i++) {
-      const paper = papers[i];
-      const questionIds = (paper.questions || []).map((q: { id: string }) => q.id);
-
-      // Mark this paper as submitting
-      setPaperSubmitStates((prev) =>
-        prev.map((s) => (s.paperId === paper.id ? { ...s, status: "submitting" } : s))
-      );
-
-      try {
-        // Step 1: Flush all local answers for this paper in chunks of 100
-        await flushAnswersForPaper(paper.id, questionIds);
-
-        // Step 2: Mark this subject paper as submitted on the backend (idempotent)
-        await submitSubjectPaperMutation.mutateAsync({
-          examId: examId as string,
-          paperId: paper.id,
-        });
-
-        // Mark done
-        setPaperSubmitStates((prev) =>
-          prev.map((s) => (s.paperId === paper.id ? { ...s, status: "done" } : s))
-        );
-      } catch (err) {
-        const axiosErr = err as AxiosError<{ message?: string }>;
-        const msg = axiosErr.response?.data?.message || axiosErr.message || "Unknown error";
-        setPaperSubmitStates((prev) =>
-          prev.map((s) =>
-            s.paperId === paper.id ? { ...s, status: "error", errorMessage: msg } : s
-          )
-        );
-        // Stop — don't proceed to the next paper or finalise
-        isSubmittingRef.current = false;
-        toast.error(`Failed to submit "${paper.title || "paper"}": ${msg}`, { toastId: "paper-submit-fail" });
-        return;
-      }
-    }
-
-    // All papers done — now finalise the entire attempt
-    setFinaliseStatus("finalising");
     try {
-      await submitAttemptMutation.mutateAsync(examId as string);
+      // Submit and score the entire exam attempt (along with any unsaved answers) in one atomic request
+      await submitAttemptMutation.mutateAsync({
+        examId: examId as string,
+        answers: allPendingAnswers,
+      });
+
+      dirtyAnswerQuestionIdsRef.current.clear();
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(localBackupKey);
+          localStorage.removeItem(sharedBackupKey);
+          localStorage.removeItem(progressBackupKey);
+        } catch {
+          // Ignore storage errors
+        }
+      }
+
+      setPaperSubmitStates((prev) =>
+        prev.map((s) => ({ ...s, status: "done", errorMessage: undefined }))
+      );
       setFinaliseStatus("done");
+
       // Brief delay so user sees the "done" state before redirect
       setTimeout(() => {
         router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
-      }, 1200);
+      }, 800);
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>;
       const msg = axiosErr.response?.data?.message || axiosErr.message || "Finalisation failed";
+
+      // If the backend indicates the exam was already submitted, treat as success and redirect
+      if (msg.toLowerCase().includes("already submitted")) {
+        setPaperSubmitStates((prev) =>
+          prev.map((s) => ({ ...s, status: "done", errorMessage: undefined }))
+        );
+        setFinaliseStatus("done");
+        setTimeout(() => {
+          router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
+        }, 600);
+        return;
+      }
+
+      setPaperSubmitStates((prev) =>
+        prev.map((s) => ({ ...s, status: "done" }))
+      );
       setFinaliseStatus("error");
       setFinaliseError(msg);
       isSubmittingRef.current = false;
-      toast.error(`Finalisation failed: ${msg}`, { toastId: "finalise-fail" });
+      toast.error(`Submission failed: ${msg}. Please click Retry.`, { toastId: "finalise-fail" });
     }
-  }, [currentSubjectPapers, examId, flushAnswersForPaper, submitSubjectPaperMutation, submitAttemptMutation, router]);
+  }, [currentSubjectPapers, examId, localAnswers, localBackupKey, sharedBackupKey, progressBackupKey, submitAttemptMutation, router]);
 
 
   const handleTimerExpire = useCallback(async () => {
     if (isSubmittingRef.current) return;
+    setShowConfirmSubmitModal(false);
     setIsAutoSubmitting(true);
     toast.warning("Time is up! Submitting your exam automatically...", { toastId: "timer-expire" });
     // Delegate to the sequential flow for reliability
+    await handleSequentialSubmit();
+  }, [handleSequentialSubmit]);
+
+  const handleRequestSubmit = useCallback(() => {
+    if (isSubmittingRef.current) return;
+    setShowConfirmSubmitModal(true);
+  }, []);
+
+  const handleConfirmManualSubmit = useCallback(async () => {
+    setShowConfirmSubmitModal(false);
     await handleSequentialSubmit();
   }, [handleSequentialSubmit]);
 
@@ -366,64 +404,290 @@ export default function UnifiedExamPage() {
 
   // --- Effects (Moved after memos and callbacks to avoid ReferenceError) ---
 
-  // Initialize Exam State
+  // Initialize Exam State, Restore Local Backup & Exact Question Position
   useEffect(() => {
-    if (currentSubjectPapers.length && !activeSubjectId) {
-      setActiveSubjectId(currentSubjectPapers[0].id);
+    // 1. Read any locally backed-up answers immediately (even before server attempt resolves)
+    const localBackupAnswers: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      try {
+        const rawShared = localStorage.getItem(sharedBackupKey);
+        if (rawShared) {
+          const parsedShared = JSON.parse(rawShared) as {
+            studentId?: string | null;
+            answers?: Record<string, string>;
+          };
+          const activeStudentId = currentUser?.id || attempt?.studentId;
+          if (
+            !parsedShared.studentId ||
+            !activeStudentId ||
+            parsedShared.studentId === activeStudentId
+          ) {
+            for (const [qId, ans] of Object.entries(parsedShared.answers || {})) {
+              if (ans !== undefined && ans !== "") {
+                localBackupAnswers[qId] = ans;
+              }
+            }
+          }
+        }
+
+        const rawBackup = localStorage.getItem(localBackupKey);
+        if (rawBackup) {
+          const parsedBackup = JSON.parse(rawBackup) as Record<string, string>;
+          for (const [qId, ans] of Object.entries(parsedBackup)) {
+            if (ans !== undefined && ans !== "") {
+              localBackupAnswers[qId] = ans;
+            }
+          }
+        }
+      } catch {
+        // Ignore malformed localStorage backup
+      }
     }
 
-    // Initialize local answers from attempt ONLY once
+    if (
+      !initialAnswersRestoredRef.current &&
+      !attempt?.subjectAttempts &&
+      Object.keys(localBackupAnswers).length > 0
+    ) {
+      setLocalAnswers((prev) =>
+        Object.keys(prev).length > 0 ? prev : localBackupAnswers,
+      );
+    }
+
+    // 2. Initialize local answers from server attempt + localStorage backup once attempt is available
     if (attempt?.subjectAttempts && !initialAnswersRestoredRef.current) {
       const restoredAnswers: Record<string, string> = {};
-      let hasAnswers = false;
-      attempt.subjectAttempts.forEach((sa: { answers?: { questionId: string, answer: string }[] }) => {
+      attempt.subjectAttempts.forEach((sa: { answers?: { questionId: string; answer: string }[] }) => {
         sa.answers?.forEach((a) => {
           restoredAnswers[a.questionId] = a.answer;
-          hasAnswers = true;
         });
       });
-      
-      if (hasAnswers) {
-        // console.log("Restored saved answers:", Object.keys(restoredAnswers).length);
+
+      for (const [qId, ans] of Object.entries(localBackupAnswers)) {
+        if (ans !== undefined && ans !== "") {
+          if (restoredAnswers[qId] !== ans) {
+            dirtyAnswerQuestionIdsRef.current.add(qId);
+          }
+          restoredAnswers[qId] = ans;
+        }
+      }
+
+      if (Object.keys(restoredAnswers).length > 0) {
         setLocalAnswers(restoredAnswers);
       }
       initialAnswersRestoredRef.current = true;
     }
-  }, [exam, attempt, activeSubjectId, initialAnswersRestoredRef, currentSubjectPapers]);
 
-  // Sync Timer and Progress
-  useEffect(() => {
-    if (attempt?.startedAt && totalDuration > 0 && attempt.status === "IN_PROGRESS") {
-      const calculateInitial = () => {
-        const startedAt = new Date(attempt.startedAt).getTime();
-        const now = new Date().getTime();
-        const totalDurationSeconds = totalDuration * 60;
-        const elapsedSeconds = Math.floor((now - startedAt) / 1000);
-        return Math.max(0, totalDurationSeconds - elapsedSeconds);
-      };
+    // 3. Restore exact activeSubjectId and activeQuestionIndex where the student stopped
+    if (currentSubjectPapers.length > 0 && !initialPositionRestoredRef.current) {
+      let restoredSubjId: string | null = null;
+      let restoredQIdx: number | null = null;
 
-      setRemainingSeconds(calculateInitial());
-
-      const interval = setInterval(() => {
-        setRemainingSeconds(prev => {
-          if (prev === null || prev <= 0) {
-            if (prev === 0 && attempt.status === "IN_PROGRESS") {
-              handleTimerExpire();
+      if (typeof window !== "undefined") {
+        try {
+          const rawProgress = localStorage.getItem(progressBackupKey);
+          if (rawProgress) {
+            const parsedProgress = JSON.parse(rawProgress) as {
+              studentId?: string | null;
+              activeSubjectId?: string | null;
+              activeQuestionIndex?: number;
+            };
+            const activeStudentId = currentUser?.id || attempt?.studentId;
+            if (
+              !parsedProgress.studentId ||
+              !activeStudentId ||
+              parsedProgress.studentId === activeStudentId
+            ) {
+              const matchedPaper = currentSubjectPapers.find(
+                (p: SubjectPaper) => p.id === parsedProgress.activeSubjectId,
+              );
+              if (matchedPaper) {
+                restoredSubjId = matchedPaper.id;
+                const maxIdx = Math.max(0, (matchedPaper.questions?.length || 1) - 1);
+                const candidateIdx =
+                  typeof parsedProgress.activeQuestionIndex === "number"
+                    ? parsedProgress.activeQuestionIndex
+                    : 0;
+                restoredQIdx = Math.min(Math.max(0, candidateIdx), maxIdx);
+              }
             }
-            return 0;
           }
-          const nextValue = prev - 1;
-          // Silent log to verify it's ticking without spamming
-          if (nextValue % 10 === 0) console.log("Timer tick:", nextValue);
-          return nextValue;
-        });
-      }, 1000);
+        } catch {
+          // Ignore malformed progress backup
+        }
+      }
 
-      return () => clearInterval(interval);
-    } else if (attempt?.remainingSeconds !== undefined && remainingSeconds === null) {
-      setRemainingSeconds(attempt.remainingSeconds);
+      // If no explicit progress key was stored in localStorage, infer resume position from answered questions
+      if (!restoredSubjId && attempt?.subjectAttempts) {
+        const mergedAnswers: Record<string, string> = { ...localBackupAnswers };
+        attempt.subjectAttempts.forEach((sa: { answers?: { questionId: string; answer: string }[] }) => {
+          sa.answers?.forEach((a) => {
+            if (!mergedAnswers[a.questionId]) {
+              mergedAnswers[a.questionId] = a.answer;
+            }
+          });
+        });
+
+        if (Object.keys(mergedAnswers).length > 0) {
+          for (const paper of currentSubjectPapers) {
+            const questions = paper.questions || [];
+            const firstUnansweredIdx = questions.findIndex((q) => !mergedAnswers[q.id]);
+            if (firstUnansweredIdx !== -1) {
+              restoredSubjId = paper.id;
+              restoredQIdx = firstUnansweredIdx;
+              break;
+            }
+          }
+          // If all questions in all papers are answered, land on the last question of the last paper
+          if (!restoredSubjId) {
+            const lastPaper = currentSubjectPapers[currentSubjectPapers.length - 1];
+            if (lastPaper) {
+              restoredSubjId = lastPaper.id;
+              restoredQIdx = Math.max(0, (lastPaper.questions?.length || 1) - 1);
+            }
+          }
+        }
+      }
+
+      if (restoredSubjId) {
+        setActiveSubjectId(restoredSubjId);
+        if (restoredQIdx !== null) {
+          setActiveQuestionIndex(restoredQIdx);
+        }
+        initialPositionRestoredRef.current = true;
+      } else if (!activeSubjectId) {
+        setActiveSubjectId(currentSubjectPapers[0].id);
+        if (attempt !== undefined) {
+          initialPositionRestoredRef.current = true;
+        }
+      }
     }
-  }, [attempt?.startedAt, attempt?.status, attempt?.remainingSeconds, remainingSeconds, totalDuration, handleTimerExpire]);
+  }, [
+    exam,
+    attempt,
+    activeSubjectId,
+    currentSubjectPapers,
+    localBackupKey,
+    sharedBackupKey,
+    progressBackupKey,
+    currentUser?.id,
+  ]);
+
+  // Persist active subject paper and question index so a student can resume from the exact question after refresh or re-login
+  useEffect(() => {
+    if (!activeSubjectId || !initialPositionRestoredRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          progressBackupKey,
+          JSON.stringify({
+            studentId: currentUser?.id || attempt?.studentId || null,
+            activeSubjectId,
+            activeQuestionIndex,
+            updatedAt: Date.now(),
+          }),
+        );
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }, [activeSubjectId, activeQuestionIndex, progressBackupKey, currentUser?.id, attempt?.studentId]);
+
+  // Automatically flush any dirty answers restored from localStorage after a session expiry / re-login
+  useEffect(() => {
+    if (
+      attempt?.status !== "IN_PROGRESS" ||
+      !initialAnswersRestoredRef.current ||
+      dirtyAnswerQuestionIdsRef.current.size === 0 ||
+      currentSubjectPapers.length === 0
+    ) {
+      return;
+    }
+
+    const dirtyIds = Array.from(dirtyAnswerQuestionIdsRef.current);
+    const syncDirtyAnswers = async () => {
+      for (const qId of dirtyIds) {
+        const answerVal = localAnswers[qId];
+        if (!answerVal) continue;
+        const ownerPaper = currentSubjectPapers.find((p: SubjectPaper) =>
+          p.questions?.some((q) => q.id === qId),
+        );
+        if (!ownerPaper) continue;
+        try {
+          await saveAnswerMutation.mutateAsync({
+            examId: examId as string,
+            data: {
+              subjectPaperId: ownerPaper.id,
+              questionId: qId,
+              answer: answerVal,
+            },
+          });
+          dirtyAnswerQuestionIdsRef.current.delete(qId);
+        } catch {
+          // Keep in dirty set; will be sent in bulk on submit
+        }
+      }
+    };
+
+    void syncDirtyAnswers();
+  }, [attempt?.status, currentSubjectPapers, examId, localAnswers, saveAnswerMutation]);
+
+  // Proactive Session Keep-Alive while taking an exam (prevents token expiry & logout mid-exam)
+  useEffect(() => {
+    if (attempt?.status !== "IN_PROGRESS" || showDetails) return;
+
+    // Refresh immediately if token is close to expiry, and every 10 minutes during the exam
+    const keepAlive = () => {
+      executeRefreshToken().catch(() => {
+        // Silent catch: if offline transiently, next heartbeat or interceptor will retry
+      });
+    };
+
+    const interval = setInterval(keepAlive, 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [attempt?.status, showDetails]);
+
+  // Sync Timer and Progress (without remainingSeconds in dependency array so interval never resets)
+  useEffect(() => {
+    if (attempt?.status !== "IN_PROGRESS") return;
+
+    const computeInitialSeconds = (): number | null => {
+      if (typeof attempt.remainingSeconds === "number" && attempt.remainingSeconds >= 0) {
+        return attempt.remainingSeconds;
+      }
+      if (attempt.startedAt && totalDuration > 0) {
+        const startedAtMs = new Date(attempt.startedAt).getTime();
+        const nowMs = Date.now();
+        const totalDurationSeconds = totalDuration * 60;
+        const elapsedSeconds = Math.floor((nowMs - startedAtMs) / 1000);
+        return Math.max(0, totalDurationSeconds - elapsedSeconds);
+      }
+      return null;
+    };
+
+    const initial = computeInitialSeconds();
+    if (initial === null) return;
+
+    setRemainingSeconds(initial);
+
+    if (initial <= 0) {
+      handleTimerExpire();
+      return;
+    }
+
+    const targetEndTimeMs = Date.now() + initial * 1000;
+
+    const interval = setInterval(() => {
+      const secondsLeft = Math.max(0, Math.round((targetEndTimeMs - Date.now()) / 1000));
+      setRemainingSeconds(secondsLeft);
+      if (secondsLeft <= 0) {
+        clearInterval(interval);
+        handleTimerExpire();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [attempt?.id, attempt?.startedAt, attempt?.status, attempt?.remainingSeconds, totalDuration, handleTimerExpire]);
 
   // PROTECTION: Hide taker view if already submitted
   useEffect(() => {
@@ -438,7 +702,7 @@ export default function UnifiedExamPage() {
   // PROTECTION: Hide taker view if no active attempt is in progress
   useEffect(() => {
     if (isLoadingAttempt) return;
-    
+
     if (!attempt || attempt.status !== "IN_PROGRESS") {
       if (!showDetails) {
         // console.log("Blocking taker view: No active session found.");
@@ -471,16 +735,16 @@ export default function UnifiedExamPage() {
       <div className="min-h-screen bg-background-light dark:bg-background-dark px-4 sm:px-6 lg:px-12 pt-8 sm:pt-12 pb-16 animate-in fade-in duration-500">
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="flex items-center gap-4">
-             <ShcnButton variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
-                <ChevronLeft size={24} />
-             </ShcnButton>
-             <div>
-                <h1 className="text-3xl font-bold text-[#111827] dark:text-white">{exam.title}</h1>
-                <p className="text-slate-500">{exam.description || "Review the details before starting."}</p>
-             </div>
+            <ShcnButton variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+              <ChevronLeft size={24} />
+            </ShcnButton>
+            <div>
+              <h1 className="text-3xl font-bold text-[#111827] dark:text-white">{exam.title}</h1>
+              <p className="text-slate-500">{exam.description || "Review the details before starting."}</p>
+            </div>
           </div>
 
-          <ExamDetails 
+          <ExamDetails
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
             durationMinutes={totalDuration}
             subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
@@ -490,142 +754,145 @@ export default function UnifiedExamPage() {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className="space-y-6">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                   <FileText size={20} className="text-primary" />
-                   Exam Structure
-                </h2>
-                <div className="grid grid-cols-1 gap-4">
-                   {exam.subjectPapers?.map((paper: SubjectPaper) => (
-                    <div key={paper.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
-                       <div className="flex flex-col">
-                          <span className="font-bold">
-                             {paper.title || paper.subject?.name || "Unnamed Paper"}
-                          </span>
-                          <span className="text-xs text-slate-500">{paper.durationMinutes} Minutes</span>
-                       </div>
-                       <span className="text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-lg">
-                          {paper.questions?.length || 0} Questions
-                       </span>
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <FileText size={20} className="text-primary" />
+                Exam Structure
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                {exam.subjectPapers?.map((paper: SubjectPaper) => (
+                  <div key={paper.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
+                    <div className="flex flex-col">
+                      <span className="font-bold">
+                        {paper.title || paper.subject?.name || "Unnamed Paper"}
+                      </span>
+                      <span className="text-xs text-slate-500">{paper.durationMinutes} Minutes</span>
                     </div>
-                  ))}
-                </div>
-             </div>
+                    <span className="text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-lg">
+                      {paper.questions?.length || 0} Questions
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-             <div className="space-y-6">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                   <Info size={20} className="text-primary" />
-                   Quick Info
-                </h2>
-                <div className="space-y-4">
-                   <div className="flex items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30">
-                      <Calendar size={20} />
-                      <div>
-                         <p className="text-[10px] font-black uppercase">Start Date</p>
-                         <p className="font-bold">{startDate ? format(startDate, "PPP p") : "Immediate"}</p>
-                      </div>
-                   </div>
-                   <div className={`flex items-center gap-4 p-4 rounded-xl border ${
-                      (attempt?.status === "SUBMITTED" || attempt?.status === "SCORED")
-                        ? "bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300 border-green-100 dark:border-green-900/30"
-                        : attempt?.status === "IN_PROGRESS"
-                        ? "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:amber-300 border-amber-100 dark:border-amber-900/30"
-                        : "bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border-blue-100 dark:border-blue-900/30"
-                   }`}>
-                      <Clock size={20} />
-                      <div>
-                         <p className="text-[10px] font-black uppercase">Current Session</p>
-                         <p className="font-bold">
-                            {(attempt?.status === "SUBMITTED" || attempt?.status === "SCORED")
-                               ? "Exam Submitted"
-                               : attempt?.status === "IN_PROGRESS"
-                               ? "Session Ongoing"
-                               : "New Attempt"}
-                         </p>
-                      </div>
-                   </div>
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Info size={20} className="text-primary" />
+                Quick Info
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30">
+                  <Calendar size={20} />
+                  <div>
+                    <p className="text-[10px] font-black uppercase">Start Date</p>
+                    <p className="font-bold">{startDate ? format(startDate, "PPP p") : "Immediate"}</p>
+                  </div>
                 </div>
-             </div>
+                <div className={`flex items-center gap-4 p-4 rounded-xl border ${(attempt?.status === "SUBMITTED" || attempt?.status === "SCORED")
+                    ? "bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300 border-green-100 dark:border-green-900/30"
+                    : isContinuingExam
+                      ? "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:amber-300 border-amber-100 dark:border-amber-900/30"
+                      : "bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border-blue-100 dark:border-blue-900/30"
+                  }`}>
+                  <Clock size={20} />
+                  <div>
+                    <p className="text-[10px] font-black uppercase">Current Session</p>
+                    <p className="font-bold">
+                      {(attempt?.status === "SUBMITTED" || attempt?.status === "SCORED")
+                        ? "Exam Submitted"
+                        : isContinuingExam
+                          ? "Session Ongoing"
+                          : "New Attempt"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {exam.instructions && (
             <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-3">
-               <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                  <Info size={16} /> Instructions
-               </h3>
-               <LaTeXRenderer 
-                  content={exam.instructions}
-                  className="text-slate-700 dark:text-slate-300"
-               />
+              <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <Info size={16} /> Instructions
+              </h3>
+              <LaTeXRenderer
+                content={exam.instructions}
+                className="text-slate-700 dark:text-slate-300"
+              />
             </div>
           )}
 
           {!(attempt?.status === "SUBMITTED" || attempt?.status === "SCORED") ? (
             <div className="pt-12 flex flex-col items-center space-y-6">
-               <ShcnButton 
-                 size="lg" 
-                 className="h-16 px-16 text-xl font-bold rounded-2xl gap-3 shadow-xl shadow-primary/20 transform transition-all active:scale-95"
-                 disabled={!isStarted || startAttemptMutation.isPending || isTransitioning}
-                 onClick={handleConfirmStart}
-               >
-                  {startAttemptMutation.isPending || isTransitioning ? (
-                    <><Loader2 className="animate-spin" /> Loading Exam Environment...</>
-                  ) : !isStarted ? (
-                    <><Clock /> Exam Starting Soon</>
-                  ) : (
-                    <><PlayCircle /> {attempt?.status === "IN_PROGRESS" ? "Continue Exam" : "Start Examination"}</>
-                  )}
-               </ShcnButton>
-               <div className="text-center space-y-2">
-                 <p className="text-slate-500 text-sm italic">Clicking start will begin your official attempt.</p>
-                 <div className="flex items-start gap-2 max-w-sm mx-auto text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50">
-                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                   <p className="text-xs font-medium leading-relaxed">
-                     <strong>Important:</strong> You must start and end this exam on the <strong>same device</strong>. 
-                     If the system detects you attempting to resume this exam on a different device, your session will be automatically submitted.
-                   </p>
-                 </div>
-               </div>
+              <ShcnButton
+                size="lg"
+                className="h-16 px-16 text-xl font-bold rounded-2xl gap-3 shadow-xl shadow-primary/20 transform transition-all active:scale-95"
+                disabled={!isStarted || startAttemptMutation.isPending || isTransitioning}
+                onClick={handleConfirmStart}
+              >
+                {startAttemptMutation.isPending || isTransitioning ? (
+                  <><Loader2 className="animate-spin" /> Loading Exam Environment...</>
+                ) : !isStarted ? (
+                  <><Clock /> Exam Starting Soon</>
+                ) : (
+                  <><PlayCircle /> {isContinuingExam ? "Continue Exam" : "Start Exam"}</>
+                )}
+              </ShcnButton>
+              <div className="text-center space-y-2">
+                <p className="text-slate-500 text-sm italic">
+                  {isContinuingExam
+                    ? "Click Continue Exam to resume your assessment from where you stopped."
+                    : "Clicking start will begin your official attempt."}
+                </p>
+                <div className="flex items-start gap-2 max-w-sm mx-auto text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <p className="text-xs font-medium leading-relaxed">
+                    <strong>Important:</strong> You must start and end this exam on the <strong>same device</strong>.
+                    If the system detects you attempting to resume this exam on a different device, your session will be automatically submitted.
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="pt-12 text-center space-y-6">
-               <div className="inline-flex items-center gap-3 px-8 py-4 rounded-[2rem] bg-emerald-500/5 text-emerald-600 font-black border border-emerald-500/10 shadow-sm animate-in zoom-in duration-500">
-                  <span className="material-symbols-outlined">check_circle</span>
-                  SUBMISSION CONFIRMED
-               </div>
-               
-               <div className="max-w-md mx-auto p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl">
-                 <p className="text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                   Great job! Your examination attempt has been securely recorded. 
-                 </p>
-                 
-                 {!isReleased ? (
-                   <div className="mt-8 p-6 rounded-3xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
-                     <p className="text-[10px] font-black uppercase text-amber-600 tracking-widest mb-2 flex items-center justify-center gap-2">
-                       <LockIcon size={12} /> Results Embargoed
-                     </p>
-                     <p className="text-sm font-bold text-amber-900 dark:text-amber-100 italic">
-                       Official results will be released on:
-                     </p>
-                     <p className="mt-2 font-mono text-lg font-black text-amber-900 dark:text-amber-50">
-                       {exam.resultReleaseAt ? format(new Date(exam.resultReleaseAt), "PPP p") : "TBD"}
-                     </p>
-                   </div>
-                 ) : (
-                   <div className="mt-8">
-                     <ShcnButton 
-                        onClick={() => router.push(`/dashboard/student/exams&quizzes/${examId}/result`)}
-                        className="w-full h-14 rounded-2xl font-black gap-2 shadow-lg shadow-primary/20"
-                     >
-                        View Performance Analysis <ChevronRightIcon size={18} />
-                     </ShcnButton>
-                   </div>
-                 )}
-               </div>
-               
-               <ShcnButton variant="ghost" onClick={() => router.push('/dashboard/student/exams&quizzes')} className="text-slate-400 font-bold hover:text-primary">
-                  Return to Performance Center
-               </ShcnButton>
+              <div className="inline-flex items-center gap-3 px-8 py-4 rounded-[2rem] bg-emerald-500/5 text-emerald-600 font-black border border-emerald-500/10 shadow-sm animate-in zoom-in duration-500">
+                <span className="material-symbols-outlined">check_circle</span>
+                SUBMISSION CONFIRMED
+              </div>
+
+              <div className="max-w-md mx-auto p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl">
+                <p className="text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                  Great job! Your examination attempt has been securely recorded.
+                </p>
+
+                {!isReleased ? (
+                  <div className="mt-8 p-6 rounded-3xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
+                    <p className="text-[10px] font-black uppercase text-amber-600 tracking-widest mb-2 flex items-center justify-center gap-2">
+                      <LockIcon size={12} /> Results Embargoed
+                    </p>
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100 italic">
+                      Official results will be released on:
+                    </p>
+                    <p className="mt-2 font-mono text-lg font-black text-amber-900 dark:text-amber-50">
+                      {exam.resultReleaseAt ? format(new Date(exam.resultReleaseAt), "PPP p") : "TBD"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-8">
+                    <ShcnButton
+                      onClick={() => router.push(`/dashboard/student/exams&quizzes/${examId}/result`)}
+                      className="w-full h-14 rounded-2xl font-black gap-2 shadow-lg shadow-primary/20"
+                    >
+                      View Performance Analysis <ChevronRightIcon size={18} />
+                    </ShcnButton>
+                  </div>
+                )}
+              </div>
+
+              <ShcnButton variant="ghost" onClick={() => router.push('/dashboard/student/exams&quizzes')} className="text-slate-400 font-bold hover:text-primary">
+                Return to Performance Center
+              </ShcnButton>
             </div>
           )}
         </div>
@@ -634,7 +901,7 @@ export default function UnifiedExamPage() {
   }
 
   const hasReadingContent = Boolean(
-    activeSubject?.readingContent || 
+    activeSubject?.readingContent ||
     (activeSubject?.images && activeSubject.images.length > 0)
   );
 
@@ -645,26 +912,26 @@ export default function UnifiedExamPage() {
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-               <PageHeader 
-                 title={exam.title} 
-                 subtitle={exam.class?.name ? `${exam.class.name} ${exam.class.section || ""}` : undefined} 
-                 subject={activeSubject?.title || activeSubject?.subject?.name}
-               />
-                <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-                   {hasReadingContent && (
-                     <ShcnButton 
-                        variant="outline" 
-                        className="rounded-xl font-black flex items-center gap-2 px-5 py-2.5 transition-all bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 shadow-sm active:scale-95 cursor-pointer ring-1 ring-emerald-500/20"
-                        onClick={() => setShowReadingModal(true)}
-                     >
-                        <BookOpen size={18} className="text-emerald-600 dark:text-emerald-400" />
-                        <span>Read Passage & Reference</span>
-                     </ShcnButton>
-                   )}
-                   <ShcnButton variant="ghost" className="rounded-xl font-bold" onClick={() => setShowDetails(true)}>
-                      <Info size={18} className="mr-2" /> View Details
-                   </ShcnButton>
-                </div>
+              <PageHeader
+                title={exam.title}
+                subtitle={exam.class?.name ? `${exam.class.name} ${exam.class.section || ""}` : undefined}
+                subject={activeSubject?.title || activeSubject?.subject?.name}
+              />
+              <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                {hasReadingContent && (
+                  <ShcnButton
+                    variant="outline"
+                    className="rounded-xl font-black flex items-center gap-2 px-5 py-2.5 transition-all bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 shadow-sm active:scale-95 cursor-pointer ring-1 ring-emerald-500/20"
+                    onClick={() => setShowReadingModal(true)}
+                  >
+                    <BookOpen size={18} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Read Passage & Reference</span>
+                  </ShcnButton>
+                )}
+                <ShcnButton variant="ghost" className="rounded-xl font-bold" onClick={() => setShowDetails(true)}>
+                  <Info size={18} className="mr-2" /> View Details
+                </ShcnButton>
+              </div>
             </div>
 
             {/* High-Visibility Reading Passage Banner */}
@@ -693,27 +960,27 @@ export default function UnifiedExamPage() {
                 </button>
               </div>
             )}
-            
-          <ExamDetails 
-            classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
-            durationMinutes={totalDuration}
-            subjectName={currentSubjectPapers[0]?.subject?.name || currentSubjectPapers[0]?.title || exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
-            totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
-            status={examStatus}
-            statusLabel={examStatusLabel}
-          />
 
-          {(exam.instructions || currentSubjectPapers[0]?.instructions) && (
-            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-3">
-               <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <ExamDetails
+              classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
+              durationMinutes={totalDuration}
+              subjectName={currentSubjectPapers[0]?.subject?.name || currentSubjectPapers[0]?.title || exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
+              totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
+              status={examStatus}
+              statusLabel={examStatusLabel}
+            />
+
+            {(exam.instructions || currentSubjectPapers[0]?.instructions) && (
+              <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-3">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
                   <Info size={16} /> Instructions
-               </h3>
-               <LaTeXRenderer 
+                </h3>
+                <LaTeXRenderer
                   content={exam.instructions || currentSubjectPapers[0]?.instructions || ""}
                   className="text-slate-700 dark:text-slate-300"
-               />
-            </div>
-          )}
+                />
+              </div>
+            )}
 
             <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
@@ -726,17 +993,17 @@ export default function UnifiedExamPage() {
                   images={activeQuestionImages}
                   imageLabels={activeQuestionLabels}
                   options={
-                    activeQuestion?.type === "TRUE_FALSE" 
+                    activeQuestion?.type === "TRUE_FALSE"
                       ? [
-                          { id: "TRUE", text: "True" },
-                          { id: "FALSE", text: "False" }
-                        ]
+                        { id: "TRUE", text: "True" },
+                        { id: "FALSE", text: "False" }
+                      ]
                       : [
-                          ...(activeQuestion?.optionA ? [{ id: 'A', text: activeQuestion.optionA }] : []),
-                          ...(activeQuestion?.optionB ? [{ id: 'B', text: activeQuestion.optionB }] : []),
-                          ...(activeQuestion?.optionC ? [{ id: 'C', text: activeQuestion.optionC }] : []),
-                          ...(activeQuestion?.optionD ? [{ id: 'D', text: activeQuestion.optionD }] : []),
-                        ]
+                        ...(activeQuestion?.optionA ? [{ id: 'A', text: activeQuestion.optionA }] : []),
+                        ...(activeQuestion?.optionB ? [{ id: 'B', text: activeQuestion.optionB }] : []),
+                        ...(activeQuestion?.optionC ? [{ id: 'C', text: activeQuestion.optionC }] : []),
+                        ...(activeQuestion?.optionD ? [{ id: 'D', text: activeQuestion.optionD }] : []),
+                      ]
                   }
                   selectedOptionId={localAnswers[activeQuestion?.id || ""]}
                   onSelectOption={handleSelectOption}
@@ -753,39 +1020,38 @@ export default function UnifiedExamPage() {
                   totalQuestions={totalQuestionsInActiveSubject}
                   currentQuestion={activeQuestionIndex + 1}
                   remainingSeconds={remainingSeconds || 0}
-                  answeredQuestionIds={activeSubject?.questions?.map((q: { id: string }, idx: number) => 
+                  answeredQuestionIds={activeSubject?.questions?.map((q: { id: string }, idx: number) =>
                     localAnswers[q.id] ? idx.toString() : ""
                   ).filter(Boolean) || []}
                   onQuestionSelect={setActiveQuestionIndex}
                   onNextQuestion={handleNextQuestion}
-                  onSubmit={handleSequentialSubmit}
+                  onSubmit={handleRequestSubmit}
                   onTimerExpire={handleTimerExpire}
                   hasReadingContent={hasReadingContent}
                   onOpenReadingModal={() => setShowReadingModal(true)}
                 />
-                
-                 {currentSubjectPapers && currentSubjectPapers.length > 1 && (
-                   <div className="mt-6 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm shadow-sm">
-                      <h3 className="text-xs font-bold mb-3 uppercase tracking-wider text-slate-500 dark:text-slate-400">Switch Subject</h3>
-                      <div className="space-y-2">
-                         {currentSubjectPapers.map((paper: SubjectPaper) => (
-                           <button
-                             key={paper.id}
-                             onClick={() => {
-                               setActiveSubjectId(paper.id);
-                               setActiveQuestionIndex(0);
-                             }}
-                             className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                               activeSubjectId === paper.id 
-                                 ? "bg-indigo-600 dark:bg-indigo-600 text-white shadow-md shadow-indigo-500/25" 
-                                 : "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                             }`}
-                           >
-                             {paper.title || (paper as { subject?: { name?: string } }).subject?.name || "Unnamed Paper"}
-                           </button>
-                         ))}
-                      </div>
-                   </div>
+
+                {currentSubjectPapers && currentSubjectPapers.length > 1 && (
+                  <div className="mt-6 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm shadow-sm">
+                    <h3 className="text-xs font-bold mb-3 uppercase tracking-wider text-slate-500 dark:text-slate-400">Switch Subject</h3>
+                    <div className="space-y-2">
+                      {currentSubjectPapers.map((paper: SubjectPaper) => (
+                        <button
+                          key={paper.id}
+                          onClick={() => {
+                            setActiveSubjectId(paper.id);
+                            setActiveQuestionIndex(0);
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeSubjectId === paper.id
+                              ? "bg-indigo-600 dark:bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                              : "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            }`}
+                        >
+                          {paper.title || (paper as { subject?: { name?: string } }).subject?.name || "Unnamed Paper"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -793,11 +1059,21 @@ export default function UnifiedExamPage() {
         </main>
       </div>
 
+      <ConfirmSubmitModal
+        isOpen={showConfirmSubmitModal}
+        onClose={() => setShowConfirmSubmitModal(false)}
+        onConfirm={handleConfirmManualSubmit}
+        paperSummaries={paperSummaries}
+        remainingSeconds={remainingSeconds}
+        isSubmitting={isSubmissionModalOpen}
+      />
+
       <SubmissionProgressModal
         isOpen={isSubmissionModalOpen}
         papers={paperSubmitStates}
         finaliseStatus={finaliseStatus}
         finaliseError={finaliseError}
+        onRetry={handleSequentialSubmit}
       />
 
       <StudentReadingModal
@@ -810,7 +1086,7 @@ export default function UnifiedExamPage() {
         onZoom={handleZoom}
       />
 
-      <ImageLightbox 
+      <ImageLightbox
         isOpen={!!lightboxImage}
         onClose={() => setLightboxImage(null)}
         src={lightboxImage?.src || ""}

@@ -22,6 +22,8 @@ export interface OfflineStudentGradeEntry {
   remarks?: string;
   existingGradeId?: string;
   status?: 'DRAFT' | 'PUBLISHED';
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface OfflineGradesBatchConfig {

@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeaderTooltip } from "@/app/dashboard/teacher/components/dashboard/HeaderTooltip";
-import { 
-  AlertCircle, 
+import {
+  AlertCircle,
   Settings2,
   Lock,
   Sparkles,
@@ -55,7 +55,7 @@ const GradesOverview: React.FC = () => {
   const [gradeToDelete, setGradeToDelete] = useState<StudentGrade | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [isExporting, setIsExporting] = useState(false);
-  
+
   // Standalone Grade options modal states
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -79,7 +79,7 @@ const GradesOverview: React.FC = () => {
       setViewMode('grid');
     }
   }, []);
-  
+
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const { gradingScale } = useGradeSettingsStore();
@@ -167,7 +167,7 @@ const GradesOverview: React.FC = () => {
   });
 
   const updateGradeMutation = useMutation({
-    mutationFn: ({ id, score, remarks }: { id: string, score: number, remarks: string }) => 
+    mutationFn: ({ id, score, remarks }: { id: string, score: number, remarks: string }) =>
       gradeService.updateGradeScore(id, { score, remarks }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
@@ -250,7 +250,7 @@ const GradesOverview: React.FC = () => {
 
   const mappedGrades: StudentGrade[] = useMemo(() => {
     if (!rawData || !Array.isArray(rawData)) return [];
-    
+
     const grades = rawData.map((item: {
       id?: string | number;
       score?: number;
@@ -267,7 +267,7 @@ const GradesOverview: React.FC = () => {
       const score = item.score || 0;
       const maxMarks = item.maxMarks || 100;
       const percentage = (score / maxMarks) * 100;
-      
+
       return {
         id: String(item.id || Math.random()),
         studentId: item.studentId || (item.student as any)?.id || '',
@@ -293,14 +293,14 @@ const GradesOverview: React.FC = () => {
           return sortConfig.order === 'asc' ? a.rawScore - b.rawScore : b.rawScore - a.rawScore;
         }
         if (sortConfig.field === 'name') {
-          return sortConfig.order === 'asc' 
-            ? a.name.localeCompare(b.name) 
+          return sortConfig.order === 'asc'
+            ? a.name.localeCompare(b.name)
             : b.name.localeCompare(a.name);
         }
         return 0;
       });
     }
-    
+
     return grades;
   }, [rawData, activeGradingScale, sortConfig]);
 
@@ -339,7 +339,7 @@ const GradesOverview: React.FC = () => {
         ...categories.map(cat => ({ label: cat.charAt(0) + cat.slice(1).toLowerCase(), value: cat }))
       ]
     });
-    
+
     return activeFilters;
   }, [classesData, sessionsData, selectedClassId, selectedSessionId, selectedCategory]);
 
@@ -472,14 +472,14 @@ const GradesOverview: React.FC = () => {
     <div className="relative flex h-auto w-full flex-col">
       <main className="w-full space-y-6 py-2">
         <div className="flex flex-col flex-1 w-full">
-          
+
           {/* Header Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4"
           >
-            <PageHeader 
+            <PageHeader
               onAddGrade={() => setIsEntryModalOpen(true)}
               onOCRClick={handleOpenOCR}
               onUploadClick={handleOpenUploadModal}
@@ -505,13 +505,14 @@ const GradesOverview: React.FC = () => {
             onSave={(id, score, remarks) => updateGradeMutation.mutate({ id, score, remarks })}
             grade={editingGrade}
             isSaving={updateGradeMutation.isPending}
+            gradingSystem={activeGradingScale}
           />
-          
+
           {/* Stats Section */}
-          <GradeStatsCards grades={mappedGrades} />
+          <GradeStatsCards grades={mappedGrades} gradingSystem={activeGradingScale} />
 
           {/* Table Container */}
-          <motion.div 
+          <motion.div
             {...fadeInUp}
             transition={{ delay: 0.2 }}
             className="flex flex-col flex-1"
@@ -529,7 +530,7 @@ const GradesOverview: React.FC = () => {
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                   className="overflow-hidden"
                 >
-                  <Filters 
+                  <Filters
                     filters={filters}
                     onFilterSelect={(type, value) => {
                       setCurrentPage(1);
@@ -544,7 +545,7 @@ const GradesOverview: React.FC = () => {
 
             <AnimatePresence mode="wait">
               {error ? (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -555,8 +556,8 @@ const GradesOverview: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">Sync Failure</h3>
                   <p className="text-slate-700 dark:text-slate-300 mt-2 text-sm font-bold">&quot;The connection to the academic grid was interrupted.&quot;</p>
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-grades'] })}
                     className="mt-4 text-primary font-black"
                   >
@@ -761,6 +762,7 @@ const GradesOverview: React.FC = () => {
         isOpen={!!selectedGradeForDetails}
         onClose={() => setSelectedGradeForDetails(null)}
         grade={selectedGradeForDetails}
+        gradingSystem={activeGradingScale}
       />
     </div>
   );

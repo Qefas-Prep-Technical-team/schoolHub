@@ -4,6 +4,7 @@ import React from 'react';
 import { BookCheck, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { computeGradePill } from '@/utils/gradingSystem';
+import { groupByDate } from '@/app/dashboard/student/my-classes/[id]/components/materials/utils/dateSectioning';
 import { GradeBatchSummary } from '../types';
 
 interface OfflineRecordsTableProps {
@@ -15,27 +16,6 @@ interface OfflineRecordsTableProps {
   onDeleteRecord: (recordId: string, record?: GradeBatchSummary) => void;
 }
 
-function getDateGroupLabel(dateVal?: string | Date): string {
-  if (!dateVal) return 'Undated & Previous Records';
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return 'Undated & Previous Records';
-
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-  const diffTime = today.getTime() - itemDate.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays > 1 && diffDays <= 7) {
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
-  }
-
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
 export default function OfflineRecordsTable({
   records,
   categoryColors,
@@ -45,17 +25,7 @@ export default function OfflineRecordsTable({
   onDeleteRecord,
 }: OfflineRecordsTableProps) {
   const groupsMap = React.useMemo(() => {
-    const map = new Map<string, GradeBatchSummary[]>();
-    const order: string[] = [];
-    records.forEach((rec) => {
-      const label = getDateGroupLabel(rec.createdAt || rec.updatedAt);
-      if (!map.has(label)) {
-        map.set(label, []);
-        order.push(label);
-      }
-      map.get(label)!.push(rec);
-    });
-    return order.map((label) => ({ label, items: map.get(label)! }));
+    return groupByDate(records, (rec) => rec.createdAt || rec.updatedAt);
   }, [records]);
 
   return (
@@ -68,7 +38,7 @@ export default function OfflineRecordsTable({
               {section.label}
             </h4>
             <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
-              {section.items.length} {section.items.length === 1 ? 'assessment' : 'assessments'}
+              {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
             </span>
           </div>
 

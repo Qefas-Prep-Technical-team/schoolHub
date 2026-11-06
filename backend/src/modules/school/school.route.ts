@@ -17,6 +17,7 @@ import {
   getSchoolLandingPageBySubdomain,
   updateSchoolLandingPage,
   getSchoolTodayAttendance,
+  getSchoolAttendanceOverview,
   submitInquiry,
   getInquiries,
 } from "./school.controller";
@@ -125,6 +126,13 @@ router.patch("/:schoolId/landing-page", updateSchoolLandingPage);
  * @access  Private-Admin
  */
 router.get("/:schoolId/today-attendance", getSchoolTodayAttendance);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/attendance-overview
+ * @desc    Get comprehensive student attendance overview (Week/Month/Term, Subject & Class breakdown)
+ * @access  Private
+ */
+router.get("/:schoolId/attendance-overview", getSchoolAttendanceOverview);
 
 /**
  * @route   GET /api/v1/schools/:schoolId/inquiries

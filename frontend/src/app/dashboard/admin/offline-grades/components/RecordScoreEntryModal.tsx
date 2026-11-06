@@ -40,7 +40,7 @@ import OfflineGradesCSVModal from './OfflineGradesCSVModal';
 import OfflineGradesOCRModal from './OfflineGradesOCRModal';
 import * as XLSX from 'xlsx';
 import { generatePDF } from '@/utils/pdfGenerator';
-import { computeGradePill, getEffectiveGradingSystem, DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
+import { computeGradePill, getEffectiveGradingSystem, getGradeEvaluation, DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
 import {
   OfflineGradesBatchConfig,
   OfflineStudentGradeEntry,
@@ -665,7 +665,7 @@ export default function RecordScoreEntryModal({
         ? (existingGradesData as any).grades
         : (Array.isArray(existingGradesData) ? existingGradesData : []));
 
-    const existingMap = new Map<string, { id?: string; score: number; remarks?: string; status?: string }>();
+    const existingMap = new Map<string, { id?: string; score: number; remarks?: string; status?: string; createdAt?: string; updatedAt?: string }>();
     if (rawGradesList.length > 0) {
       const targetAssessmentTitle = (originalAssessmentTypeRef.current || config.assessmentType || '').trim().toLowerCase();
       rawGradesList.forEach((g: unknown) => {
@@ -676,6 +676,8 @@ export default function RecordScoreEntryModal({
           score: number;
           remarks?: string;
           status?: string;
+          createdAt?: string;
+          updatedAt?: string;
         };
         const gradeTitle = (grade.assessmentType || '').trim().toLowerCase();
         const titleMatch = !targetAssessmentTitle || gradeTitle === targetAssessmentTitle;
@@ -685,6 +687,8 @@ export default function RecordScoreEntryModal({
             score: grade.score,
             remarks: grade.remarks,
             status: grade.status,
+            createdAt: grade.createdAt,
+            updatedAt: grade.updatedAt,
           });
         }
       });
@@ -763,6 +767,8 @@ export default function RecordScoreEntryModal({
         remarks: remarksVal,
         existingGradeId: existing?.id,
         status: (existing?.status as 'DRAFT' | 'PUBLISHED') || 'DRAFT',
+        createdAt: shouldCheckExistingDb ? (existing?.createdAt || initialRecord?.createdAt) : new Date().toISOString(),
+        updatedAt: shouldCheckExistingDb ? (existing?.updatedAt || initialRecord?.updatedAt) : new Date().toISOString(),
       });
     });
 
@@ -958,15 +964,18 @@ export default function RecordScoreEntryModal({
   const isSavingDraft = saveMutation.isPending && saveMutation.variables === 'DRAFT';
   const isPublishing = saveMutation.isPending && saveMutation.variables === 'PUBLISHED';
 
-  // Calculate live statistics
+  // Calculate live statistics synchronized with the school's configured grading system
   const stats = useMemo(() => {
     const totalStudents = roster.length;
     const graded = roster.filter((r) => r.score !== '' && r.score !== null && r.score !== undefined);
     const gradedCount = graded.length;
     const totalScore = graded.reduce((sum, r) => sum + Number(r.score || 0), 0);
     const averageScore = gradedCount > 0 ? Number((totalScore / gradedCount).toFixed(1)) : 0;
-    const passThreshold = config.maxMarks * 0.5;
-    const passCount = graded.filter((r) => Number(r.score) >= passThreshold).length;
+    const passCount = graded.filter((r) => {
+      const pct = config.maxMarks > 0 ? Math.round((Number(r.score) / config.maxMarks) * 100) : 0;
+      const evaluation = getGradeEvaluation(pct, activeGradingSystem);
+      return evaluation.grade !== 'F' && evaluation.grade !== 'F9';
+    }).length;
 
     return {
       totalStudents,
@@ -974,7 +983,7 @@ export default function RecordScoreEntryModal({
       averageScore,
       passCount,
     };
-  }, [roster, config.maxMarks]);
+  }, [roster, config.maxMarks, activeGradingSystem]);
 
   // CSV Import Modal State
   const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
@@ -1256,6 +1265,7 @@ export default function RecordScoreEntryModal({
                 maxMarks={config.maxMarks}
                 passCount={stats.passCount}
                 isTeacher={isTeacher}
+                gradingSystem={activeGradingSystem}
               />
             )
           )}

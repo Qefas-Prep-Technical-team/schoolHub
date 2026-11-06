@@ -21,9 +21,17 @@ import {
   Image as ImageIcon,
   Eye,
   Pencil,
+  ShieldCheck,
+  RotateCcw,
 } from "lucide-react";
 import FormulaPalette from "./FormulaPalette";
 import MediaLibraryModal from "./MediaLibraryModal";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import {
+  saveEncryptedDraft,
+  loadEncryptedDraft,
+  clearEncryptedDraft,
+} from "@/utils/secureDraftStorage";
 
 // ─── Question Editor — Normal/Math tab switcher ───────────────────────────────
 function QuestionEditorPane({
@@ -66,22 +74,20 @@ function QuestionEditorPane({
           <button
             type="button"
             onClick={() => onEditorModeChange('normal')}
-            className={`px-3 py-1.5 text-[11px] font-black tracking-wide transition-all ${
-              editorMode === 'normal'
+            className={`px-3 py-1.5 text-[11px] font-black tracking-wide transition-all ${editorMode === 'normal'
                 ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900'
                 : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
+              }`}
           >
             ✏️ Normal
           </button>
           <button
             type="button"
             onClick={() => onEditorModeChange('math')}
-            className={`px-3 py-1.5 text-[11px] font-black tracking-wide transition-all border-l border-slate-200 dark:border-slate-700 ${
-              editorMode === 'math'
+            className={`px-3 py-1.5 text-[11px] font-black tracking-wide transition-all border-l border-slate-200 dark:border-slate-700 ${editorMode === 'math'
                 ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900'
                 : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
+              }`}
           >
             𝑓(𝑥) Math
           </button>
@@ -171,11 +177,10 @@ function OptionRow({
 
   return (
     <div
-      className={`rounded-2xl border-2 transition-all ${
-        isCorrect
+      className={`rounded-2xl border-2 transition-all ${isCorrect
           ? "border-emerald-400 dark:border-emerald-500 bg-emerald-50/40 dark:bg-emerald-900/10"
           : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-      }`}
+        }`}
     >
       <div className="flex items-center gap-3 px-3 py-2.5">
         {/* Correct answer toggle */}
@@ -183,11 +188,10 @@ function OptionRow({
           type="button"
           onClick={onSelect}
           title={isCorrect ? "Correct answer" : "Mark as correct"}
-          className={`h-9 w-9 rounded-xl flex-shrink-0 flex items-center justify-center border-2 font-black text-sm transition-all ${
-            isCorrect
+          className={`h-9 w-9 rounded-xl flex-shrink-0 flex items-center justify-center border-2 font-black text-sm transition-all ${isCorrect
               ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-200/60 dark:shadow-emerald-900/40"
               : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-400 hover:border-emerald-300 hover:text-emerald-600"
-          }`}
+            }`}
         >
           {isCorrect ? <Check size={15} /> : letter}
         </button>
@@ -246,6 +250,7 @@ export default function ManualAddForm({
   initialData?: any;
 }) {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [type, setType] = useState(initialData?.type || "MULTIPLE_CHOICE");
   const [question, setQuestion] = useState(initialData?.question || "");
   const [marks, setMarks] = useState(initialData?.marks || 1);
@@ -268,9 +273,154 @@ export default function ManualAddForm({
   const questionRef = useRef<HTMLTextAreaElement>(null);
   const isEditing = !!initialData;
 
+  // Encrypted Browser Draft State
+  const draftContextKey = isEditing && initialData?.id ? `edit-question-${initialData.id}` : "add-question";
+  const [isDraftHydrated, setIsDraftHydrated] = useState(false);
+  const [lastDraftSavedAt, setLastDraftSavedAt] = useState<number | null>(null);
+  const [wasRestoredFromDraft, setWasRestoredFromDraft] = useState(false);
+
+  // 1. Hydrate from encrypted browser draft on mount
+  useEffect(() => {
+    let isMounted = true;
+    loadEncryptedDraft<{
+      type: string;
+      question: string;
+      marks: number;
+      correctAnswer: string;
+      options: { A: string; B: string; C: string; D: string };
+      images: string[];
+      imageLabels: string[];
+      explanation: string;
+      editorMode: 'normal' | 'math';
+    }>(user?.id, paperId, draftContextKey).then((restored) => {
+      if (!isMounted) return;
+      if (restored?.data) {
+        const d = restored.data;
+        const hasContent =
+          Boolean(d.question?.trim()) ||
+          Boolean(d.options?.A?.trim()) ||
+          Boolean(d.options?.B?.trim()) ||
+          Boolean(d.explanation?.trim()) ||
+          (Array.isArray(d.images) && d.images.length > 0);
+
+        if (hasContent) {
+          setType(d.type || initialData?.type || "MULTIPLE_CHOICE");
+          setQuestion(d.question ?? initialData?.question ?? "");
+          setMarks(d.marks ?? initialData?.marks ?? 1);
+          setCorrectAnswer(d.correctAnswer || initialData?.correctAnswer || "A");
+          setOptions({
+            A: d.options?.A ?? initialData?.optionA ?? "",
+            B: d.options?.B ?? initialData?.optionB ?? "",
+            C: d.options?.C ?? initialData?.optionC ?? "",
+            D: d.options?.D ?? initialData?.optionD ?? "",
+          });
+          setImages(Array.isArray(d.images) ? d.images : (initialData?.images || []));
+          setImageLabels(Array.isArray(d.imageLabels) ? d.imageLabels : (initialData?.imageLabels || []));
+          setExplanation(d.explanation ?? initialData?.explanation ?? "");
+          if (d.editorMode === "math" || d.editorMode === "normal") {
+            setEditorMode(d.editorMode);
+          }
+          setLastDraftSavedAt(restored.savedAt);
+          setWasRestoredFromDraft(true);
+        }
+      }
+      setIsDraftHydrated(true);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, paperId, draftContextKey]);
+
+  // 2. Debounced auto-save to encrypted browser storage whenever fields change
+  useEffect(() => {
+    if (!isDraftHydrated) return;
+
+    const hasMeaningfulChanges = isEditing
+      ? question !== (initialData?.question || "") ||
+      type !== (initialData?.type || "MULTIPLE_CHOICE") ||
+      marks !== (initialData?.marks || 1) ||
+      correctAnswer !== (initialData?.correctAnswer || "A") ||
+      options.A !== (initialData?.optionA || "") ||
+      options.B !== (initialData?.optionB || "") ||
+      options.C !== (initialData?.optionC || "") ||
+      options.D !== (initialData?.optionD || "") ||
+      explanation !== (initialData?.explanation || "") ||
+      JSON.stringify(images) !== JSON.stringify(initialData?.images || [])
+      : Boolean(question.trim()) ||
+      Boolean(options.A.trim()) ||
+      Boolean(options.B.trim()) ||
+      Boolean(options.C.trim()) ||
+      Boolean(options.D.trim()) ||
+      Boolean(explanation.trim()) ||
+      images.length > 0;
+
+    if (!hasMeaningfulChanges) {
+      if (!wasRestoredFromDraft) {
+        clearEncryptedDraft(user?.id, paperId, draftContextKey);
+        setLastDraftSavedAt(null);
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      saveEncryptedDraft(user?.id, paperId, draftContextKey, {
+        type,
+        question,
+        marks,
+        correctAnswer,
+        options,
+        images,
+        imageLabels,
+        explanation,
+        editorMode,
+      }).then((ok) => {
+        if (ok) setLastDraftSavedAt(Date.now());
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [
+    isDraftHydrated,
+    isEditing,
+    wasRestoredFromDraft,
+    initialData,
+    user?.id,
+    paperId,
+    draftContextKey,
+    type,
+    question,
+    marks,
+    correctAnswer,
+    options,
+    images,
+    imageLabels,
+    explanation,
+    editorMode,
+  ]);
+
+  const handleDiscardDraft = () => {
+    clearEncryptedDraft(user?.id, paperId, draftContextKey);
+    setLastDraftSavedAt(null);
+    setWasRestoredFromDraft(false);
+    setType(initialData?.type || "MULTIPLE_CHOICE");
+    setQuestion(initialData?.question || "");
+    setMarks(initialData?.marks || 1);
+    setCorrectAnswer(initialData?.correctAnswer || "A");
+    setOptions({
+      A: initialData?.optionA || "",
+      B: initialData?.optionB || "",
+      C: initialData?.optionC || "",
+      D: initialData?.optionD || "",
+    });
+    setImages(initialData?.images || []);
+    setImageLabels(initialData?.imageLabels || []);
+    setExplanation(initialData?.explanation || "");
+    toast.info("Local question draft cleared");
+  };
+
   useEffect(() => {
     if (pendingUploads.length === 0) return;
-    
+
     const interval = setInterval(() => {
       setUploadProgress(prev => {
         const next = { ...prev };
@@ -300,6 +450,8 @@ export default function ManualAddForm({
       return response.data;
     },
     onSuccess: () => {
+      clearEncryptedDraft(user?.id, paperId, draftContextKey);
+      clearEncryptedDraft(user?.id, paperId, "workspace-session");
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success(isEditing ? "Question updated!" : "Question added!");
       onCancel();
@@ -310,6 +462,8 @@ export default function ManualAddForm({
   });
 
   const handleCancel = () => {
+    clearEncryptedDraft(user?.id, paperId, draftContextKey);
+    clearEncryptedDraft(user?.id, paperId, "workspace-session");
     if (sessionUploads.length > 0) {
       Promise.all(sessionUploads.map(url => imageService.deleteByUrl(url)))
         .catch(err => console.error("Failed to cleanup session uploads on cancel:", err));
@@ -353,45 +507,68 @@ export default function ManualAddForm({
   // ── QUESTION TYPE CHIPS ───────────────────────────────────────────────────
   const TYPES = [
     { value: "MULTIPLE_CHOICE", label: "Multiple Choice" },
-    { value: "TRUE_FALSE",      label: "True / False" },
-    { value: "SHORT_ANSWER",    label: "Short Answer" },
-    { value: "ESSAY",           label: "Essay / Theory" },
+    { value: "TRUE_FALSE", label: "True / False" },
+    { value: "SHORT_ANSWER", label: "Short Answer" },
+    { value: "ESSAY", label: "Essay / Theory" },
   ];
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-0">
       {/* ── Top Bar ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
             {isEditing ? <Pencil size={16} /> : <Plus size={16} />}
           </div>
           <div>
-            <h3 className="font-black text-slate-900 dark:text-white text-base leading-none">
-              {isEditing ? "Edit Question" : "Add New Question"}
-            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-black text-slate-900 dark:text-white text-base leading-none">
+                {isEditing ? "Edit Question" : "Add New Question"}
+              </h3>
+              {lastDraftSavedAt && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60"
+                  title="Your progress is encrypted with AES-GCM and saved locally in this browser in case of accidental page refresh."
+                >
+                  <ShieldCheck size={11} className="shrink-0" />
+                  <span>{wasRestoredFromDraft ? "Restored encrypted draft" : "Encrypted draft saved"}</span>
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-slate-400 mt-0.5">
               {editorMode === 'math' ? 'Supports plain text and LaTeX math formulas' : 'Plain text editor — switch to Math mode for formulas'}
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-        >
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          {lastDraftSavedAt && (
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all"
+              title="Reset form and clear saved browser draft"
+            >
+              <RotateCcw size={12} />
+              <span>Reset Draft</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
-      <div className={`grid grid-cols-1 divide-y divide-slate-200 dark:divide-slate-800 ${
-        editorMode === 'math' ? 'xl:grid-cols-[1fr_320px] xl:divide-y-0 xl:divide-x' : ''
-      }`}>
-        
+      <div className={`grid grid-cols-1 divide-y divide-slate-200 dark:divide-slate-800 ${editorMode === 'math' ? 'xl:grid-cols-[1fr_320px] xl:divide-y-0 xl:divide-x' : ''
+        }`}>
+
         {/* Left: Question editor */}
         <div className="p-6 space-y-6">
-          
+
           {/* Type + Marks row — all in one flex row */}
           <div className="space-y-2">
             <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
@@ -405,11 +582,10 @@ export default function ManualAddForm({
                     key={t.value}
                     type="button"
                     onClick={() => setType(t.value)}
-                    className={`flex-1 py-2 px-2 text-[11px] font-bold transition-all whitespace-nowrap ${
-                      type === t.value
+                    className={`flex-1 py-2 px-2 text-[11px] font-bold transition-all whitespace-nowrap ${type === t.value
                         ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900"
                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     {t.label}
                   </button>
@@ -451,7 +627,7 @@ export default function ManualAddForm({
               <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">
                 Question Images <span className="normal-case font-medium text-slate-400">(optional)</span>
               </Label>
-              
+
               {/* ALWAYS render the hidden input so other buttons can click it */}
               <input
                 type="file"
@@ -462,11 +638,11 @@ export default function ManualAddForm({
                 onChange={async (e) => {
                   const files = e.target.files;
                   if (!files || files.length === 0) return;
-                  
+
                   let filesToUpload = Array.from(files);
                   const totalActive = images.length + pendingUploads.length;
                   const totalAfter = totalActive + filesToUpload.length;
-                  
+
                   if (totalAfter > 3) {
                     const allowed = 3 - totalActive;
                     if (allowed <= 0) {
@@ -477,7 +653,7 @@ export default function ManualAddForm({
                     toast.warning(`Only ${allowed} more image${allowed > 1 ? 's' : ''} allowed. Limiting selection.`);
                     filesToUpload = filesToUpload.slice(0, allowed);
                   }
-                  
+
                   // Generate unique IDs for this batch of placeholders
                   const batchIds = filesToUpload.map(() => Math.random().toString(36).substring(7));
                   setPendingUploads(prev => [...prev, ...batchIds]);
@@ -501,73 +677,73 @@ export default function ManualAddForm({
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {images.map((url, i) => (
-                  <div key={i} className="flex flex-col gap-2">
-                    <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                      <img src={url} alt="" className="w-full h-28 object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImages((prev) => prev.filter((_, idx) => idx !== i));
-                          setImageLabels((prev) => prev.filter((_, idx) => idx !== i));
-                        }}
-                        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Remove image"
-                      >
-                        <X size={11} />
-                      </button>
-                    </div>
-                    {/* Explicit Label Input */}
-                    <div className="flex items-center gap-2 px-1">
-                      <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 shrink-0">
-                        Label
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="e.g. Figure 1"
-                        value={imageLabels[i] || ""}
-                        onChange={(e) => {
-                          const next = [...imageLabels];
-                          next[i] = e.target.value;
-                          setImageLabels(next);
-                        }}
-                        className="h-7 text-xs flex-1 rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-2"
-                      />
-                    </div>
+              {images.map((url, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                    <img src={url} alt="" className="w-full h-28 object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImages((prev) => prev.filter((_, idx) => idx !== i));
+                        setImageLabels((prev) => prev.filter((_, idx) => idx !== i));
+                      }}
+                      className="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove image"
+                    >
+                      <X size={11} />
+                    </button>
                   </div>
-                ))}
-                
-                {/* Uploading Placeholders */}
-                {pendingUploads.map((id) => (
-                  <div key={`uploading-${id}`} className="flex flex-col gap-2">
-                    <div className="flex flex-col items-center justify-center h-28 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                      <Loader2 className="h-6 w-6 animate-spin text-slate-400 mb-2" />
-                      <span className="text-[10px] uppercase font-bold text-slate-400">Uploading</span>
-                    </div>
-                    {/* Progress Bar under the box */}
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-0 relative">
-                      <div 
-                        className="bg-primary h-full rounded-full transition-all duration-200 ease-out absolute left-0 top-0"
-                        style={{ width: `${Math.min(uploadProgress[id] || 0, 100)}%` }}
-                      ></div>
-                    </div>
+                  {/* Explicit Label Input */}
+                  <div className="flex items-center gap-2 px-1">
+                    <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 shrink-0">
+                      Label
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="e.g. Figure 1"
+                      value={imageLabels[i] || ""}
+                      onChange={(e) => {
+                        const next = [...imageLabels];
+                        next[i] = e.target.value;
+                        setImageLabels(next);
+                      }}
+                      className="h-7 text-xs flex-1 rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 px-2"
+                    />
                   </div>
-                ))}
-                
-                {/* Add Image Button in Grid (Always available if under limit) */}
-                {(images.length + pendingUploads.length) < 3 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsMediaLibraryOpen(true)}
-                    className="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all gap-2 mt-0"
-                  >
-                    <Plus size={20} />
-                    <span className="text-xs font-bold">
-                      {(images.length + pendingUploads.length) === 0 ? "Add image" : "Add another image"}
-                    </span>
-                  </button>
-                )}
-              </div>
+                </div>
+              ))}
+
+              {/* Uploading Placeholders */}
+              {pendingUploads.map((id) => (
+                <div key={`uploading-${id}`} className="flex flex-col gap-2">
+                  <div className="flex flex-col items-center justify-center h-28 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-400 mb-2" />
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Uploading</span>
+                  </div>
+                  {/* Progress Bar under the box */}
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-0 relative">
+                    <div
+                      className="bg-primary h-full rounded-full transition-all duration-200 ease-out absolute left-0 top-0"
+                      style={{ width: `${Math.min(uploadProgress[id] || 0, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add Image Button in Grid (Always available if under limit) */}
+              {(images.length + pendingUploads.length) < 3 && (
+                <button
+                  type="button"
+                  onClick={() => setIsMediaLibraryOpen(true)}
+                  className="flex flex-col items-center justify-center h-28 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all gap-2 mt-0"
+                >
+                  <Plus size={20} />
+                  <span className="text-xs font-bold">
+                    {(images.length + pendingUploads.length) === 0 ? "Add image" : "Add another image"}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* ── Options section ─────────────────────────────────────── */}
@@ -602,13 +778,12 @@ export default function ManualAddForm({
                     key={val}
                     type="button"
                     onClick={() => setCorrectAnswer(val)}
-                    className={`py-4 rounded-2xl border-2 font-black text-lg transition-all ${
-                      correctAnswer === val
+                    className={`py-4 rounded-2xl border-2 font-black text-lg transition-all ${correctAnswer === val
                         ? val === "TRUE"
                           ? "bg-emerald-50 border-emerald-400 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-500 dark:text-emerald-400"
                           : "bg-red-50 border-red-400 text-red-700 dark:bg-red-900/20 dark:border-red-500 dark:text-red-400"
                         : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-slate-300"
-                    }`}
+                      }`}
                   >
                     {val === "TRUE" ? "✓ True" : "✗ False"}
                   </button>
@@ -715,9 +890,9 @@ export default function ManualAddForm({
           )}
         </Button>
       </div>
-      
+
       {/* Media Library Modal */}
-      <MediaLibraryModal 
+      <MediaLibraryModal
         isOpen={isMediaLibraryOpen}
         onClose={() => setIsMediaLibraryOpen(false)}
         currentImages={images}

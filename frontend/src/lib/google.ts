@@ -6,15 +6,15 @@ const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
 export function getGoogleRedirectUri(origin?: string): string {
   // 1. Explicit app URL from environment (if configured to non-localhost, use it)
   const envUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (envUrl && !envUrl.includes("localhost")) {
+  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
     return `${envUrl.replace(/\/$/, "")}/api/auth/google/callback`;
   }
   // 2. Vercel deployment URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}/api/auth/google/callback`;
   }
-  // 3. Dynamic origin from the incoming HTTP request
-  if (origin && !origin.includes("localhost")) {
+  // 3. Dynamic origin from the incoming HTTP request (preserves localhost:<port> or subdomain.localhost:<port>)
+  if (origin) {
     return `${origin.replace(/\/$/, "")}/api/auth/google/callback`;
   }
   // 4. Default configured URL or localhost fallback

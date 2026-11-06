@@ -22,6 +22,7 @@ export interface ScoreHistoryT {
   component: string;
   oldScore: string;
   newScore: string;
+  updatedAt?: string | Date;
 }
 
 export interface GradeSummary {
@@ -29,6 +30,8 @@ export interface GradeSummary {
   totalMaxScore: number;
   finalGrade: string;
   performance: string;
+  color?: string;
+  bg?: string;
 }
 
 export interface Teacher {

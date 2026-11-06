@@ -16,8 +16,8 @@ interface AssessmentListProps {
     gradingSystem?: GradingRule[] | null;
 }
 
-export default function AssessmentList({ 
-    assessments, 
+export default function AssessmentList({
+    assessments,
     title = 'Assessments',
     viewMode = 'grid',
     gradingSystem,
@@ -104,9 +104,9 @@ export default function AssessmentList({
                                                     </div>
                                                 </div>
                                                 <Badge variant={assessment.status} size="sm">
-                                                    {assessment.status === 'open' ? 'Live' : 
-                                                    assessment.status === 'coming soon' ? 'Soon' :
-                                                    assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                                                    {assessment.status === 'open' ? 'Live' :
+                                                        assessment.status === 'coming soon' ? 'Soon' :
+                                                            assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
                                                 </Badge>
                                             </div>
 
@@ -148,7 +148,7 @@ export default function AssessmentList({
                                                 {assessment.date}
                                             </span>
                                             <span className="inline-flex items-center gap-1.5 font-bold text-pink-600 dark:text-pink-400 text-xs group-hover:translate-x-0.5 transition-transform">
-                                                {isLive ? 'Start Exam' : 'View Details'}
+                                                {assessment.status === 'ongoing' ? 'Continue Exam' : isLive ? 'Start Exam' : 'View Details'}
                                                 <ArrowRight className="w-3.5 h-3.5" />
                                             </span>
                                         </div>
@@ -199,10 +199,10 @@ export default function AssessmentList({
                                     {group.items.map((assessment) => {
                                         globalCounter += 1;
                                         return (
-                                            <AssessmentItem 
-                                                key={assessment.id} 
-                                                assessment={assessment} 
-                                                index={globalCounter} 
+                                            <AssessmentItem
+                                                key={assessment.id}
+                                                assessment={assessment}
+                                                index={globalCounter}
                                                 gradingSystem={gradingSystem}
                                             />
                                         );

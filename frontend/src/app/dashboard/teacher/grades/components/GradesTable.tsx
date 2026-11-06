@@ -56,11 +56,6 @@ function getDateGroupLabel(dateVal?: string | Date | null): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-interface DateGroup<T> {
-  label: string;
-  items: { item: T; globalIndex: number }[];
-}
-
 const GradesTable: React.FC<GradesTableProps> = ({
   grades,
   searchQuery,

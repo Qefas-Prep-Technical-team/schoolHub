@@ -18,13 +18,32 @@ const TERMINAL_AUTH_CODES = new Set([
   "NO_SESSION_ROW",
 ]);
 
-/** Clears auth state and redirects to the login page with a session-expired notice. */
+/** Clears auth state and redirects to the login page with a session-expired notice and return URL. */
 const handleSessionExpiry = () => {
+  const prevState = useAuthStore.getState();
+  const prevRole = prevState.userType || prevState.user?.userType;
   useAuthStore.getState().clearAuth();
   if (typeof window !== "undefined") {
     // Only redirect if not already on a login/public page to prevent redirect loops.
     if (!window.location.pathname.startsWith("/login")) {
-      window.location.href = "/login?session=expired";
+      const currentPath = window.location.pathname + window.location.search;
+      try {
+        sessionStorage.setItem("pendingJoinRedirect", currentPath);
+      } catch {
+        // Ignore sessionStorage quota errors
+      }
+      const isExamRoute = window.location.pathname.startsWith("/Exams&Quizzes/exam/");
+      const targetLoginBase =
+        isExamRoute || prevRole === "STUDENT"
+          ? "/login/student"
+          : prevRole === "TEACHER"
+            ? "/login/teacher"
+            : prevRole === "PARENT"
+              ? "/login/parent"
+              : prevRole === "ADMIN"
+                ? "/login/school-admin"
+                : "/login";
+      window.location.href = `${targetLoginBase}?session=expired&redirect=${encodeURIComponent(currentPath)}`;
     }
   }
 };
@@ -61,6 +80,9 @@ export async function executeRefreshToken(): Promise<string> {
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
       });
+      if (typeof window !== "undefined") {
+        localStorage.setItem("qefas_access_token", newToken);
+      }
 
       const { user } = useAuthStore.getState();
       if (user) {
@@ -82,7 +104,8 @@ apiClient.interceptors.request.use(
   async (config) => {
     const storeToken = useAuthStore.getState().accessToken;
     const cookieToken = Cookies.get("token");
-    const token = storeToken || cookieToken;
+    const localToken = typeof window !== "undefined" ? localStorage.getItem("qefas_access_token") : null;
+    const token = storeToken || cookieToken || localToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -139,7 +162,7 @@ apiClient.interceptors.response.use(
     if (status === 401 && !originalRequest._retried) {
       const isLoginRequest = originalRequest.url?.includes("/auth/login");
       const isCallbackPage = typeof window !== "undefined" && window.location.pathname.includes("/login/callback");
-      const isAuthPage = typeof window !== "undefined" && !isCallbackPage && 
+      const isAuthPage = typeof window !== "undefined" && !isCallbackPage &&
         ["/login", "/signup", "/verification", "/onboarding", "/reset-password", "/forgot-password"].some(
           path => window.location.pathname === path || window.location.pathname.startsWith(`${path}/`)
         );
@@ -211,7 +234,7 @@ if (typeof window !== "undefined") {
     }
 
     if (shouldRefresh) {
-      executeRefreshToken().catch(() => {});
+      executeRefreshToken().catch(() => { });
     }
   });
 }

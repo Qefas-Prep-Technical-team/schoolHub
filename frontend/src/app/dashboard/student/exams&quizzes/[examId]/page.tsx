@@ -336,7 +336,7 @@ export default function ExamDetailsPage() {
                     ) : !isStarted ? (
                       <><Clock /> Exam Starting Soon</>
                     ) : (
-                      <><PlayCircle /> {attempt?.status === "IN_PROGRESS" ? "Continue Exam" : "Start Examination"}</>
+                      <><PlayCircle /> {attempt?.status === "IN_PROGRESS" ? "Continue Exam" : "Start Exam"}</>
                     )}
                  </ShcnButton>
 

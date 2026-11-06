@@ -19,7 +19,13 @@ export const useExamAttempt = (examId: string) => {
       }
     },
     enabled: !!examId,
-    retry: false,
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error) => {
+      const err = error as AxiosError;
+      if (err.response?.status === 404) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -71,10 +77,23 @@ export const useSaveAnswer = () => {
 export const useSubmitAttempt = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (examId: string) => examService.submitAttempt(examId),
-    onSuccess: (_, examId) => {
+    mutationFn: (
+      params:
+        | string
+        | {
+          examId: string;
+          answers?: Array<{ subjectPaperId: string; questionId: string; answer: string }>;
+        },
+    ) => {
+      if (typeof params === "string") {
+        return examService.submitAttempt(params);
+      }
+      return examService.submitAttempt(params.examId, { answers: params.answers });
+    },
+    onSuccess: (_, params) => {
+      const targetExamId = typeof params === "string" ? params : params.examId;
       queryClient.invalidateQueries({
-        queryKey: [...examKeys.detail(examId), "attempt"],
+        queryKey: [...examKeys.detail(targetExamId), "attempt"],
       });
       toast.success("Exam submitted successfully!", {
         toastId: "exam-submit-success",

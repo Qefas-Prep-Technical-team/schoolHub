@@ -123,7 +123,7 @@ export default function AdminDashboard() {
         <AdminStatsGrid stats={stats} />
 
         {/* Charts Section */}
-        <DashboardCharts stats={stats} analysis={analysis} hasPerformanceAccess={hasPerformanceAccess} primaryColor={primaryColor} />
+        <DashboardCharts schoolId={schoolId} stats={stats} analysis={analysis} hasPerformanceAccess={hasPerformanceAccess} primaryColor={primaryColor} />
 
         {/* Dashboard Operational Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4">

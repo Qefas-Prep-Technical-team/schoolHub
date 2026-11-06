@@ -15,6 +15,7 @@ export {
 export {
   getSchoolStatsService,
   getSchoolTodayAttendanceService,
+  getSchoolAttendanceOverviewService,
   getSchoolPerformanceAnalysisService,
   getDashboardRecentActivityService,
 } from "./services/school-dashboard.service";

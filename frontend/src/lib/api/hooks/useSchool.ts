@@ -257,6 +257,25 @@ export const useSchoolTodayAttendance = (schoolId: string, date?: string) => {
   });
 };
 
+export const useSchoolAttendanceOverview = (
+  schoolId: string,
+  params?: { range?: "week" | "month" | "term"; subjectId?: string; classId?: string },
+) => {
+  return useQuery({
+    queryKey: [
+      ...schoolQueryKeys.all,
+      "attendance-overview",
+      schoolId,
+      params?.range || "week",
+      params?.subjectId || "overall",
+      params?.classId || "all",
+    ],
+    queryFn: () => schoolService.getAttendanceOverview(schoolId, params),
+    enabled: !!schoolId && schoolId !== "default-tenant-id" && schoolId !== "personal",
+    staleTime: 1000 * 60 * 5, // 5 minutes per AGENTS.md Section 2.1
+  });
+};
+
 export const useSubmitInquiry = () => {
   return useMutation({
     mutationFn: ({

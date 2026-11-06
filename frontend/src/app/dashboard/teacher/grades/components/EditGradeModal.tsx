@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, User, BookOpen } from 'lucide-react';
+import { computeGradePill, type GradingTier } from '@/utils/gradingSystem';
 
 interface EditGradeModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ interface EditGradeModalProps {
     profilePicture?: string;
   } | null;
   isSaving?: boolean;
+  gradingSystem?: GradingTier[] | null;
 }
 
 const EditGradeModal: React.FC<EditGradeModalProps> = ({ 
@@ -37,7 +39,8 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
   onClose, 
   onSave, 
   grade,
-  isSaving = false 
+  isSaving = false,
+  gradingSystem
 }) => {
   const [score, setScore] = useState<string>('');
   const [remarks, setRemarks] = useState<string>('');
@@ -52,6 +55,17 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
       setError(null);
     }
   }, [grade, isOpen]);
+
+  const liveEval = useMemo(() => {
+    const numScore = parseFloat(score);
+    const maxMarks = grade?.maxMarks || 100;
+    if (isNaN(numScore) || maxMarks <= 0) return null;
+    const pct = Math.round((numScore / maxMarks) * 100);
+    return {
+      pct,
+      pill: computeGradePill(pct, gradingSystem)
+    };
+  }, [score, grade?.maxMarks, gradingSystem]);
 
   const handleSave = () => {
     const numericScore = parseFloat(score);
@@ -91,18 +105,29 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
-          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-emerald-100 dark:border-slate-800">
-            <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 overflow-hidden">
-              {grade.profilePicture ? (
-                <img src={grade.profilePicture} alt={grade.name} className="h-full w-full object-cover" />
-              ) : (
-                <User size={24} />
-              )}
+          <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-emerald-100 dark:border-slate-800">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 overflow-hidden shrink-0">
+                {grade.profilePicture ? (
+                  <img src={grade.profilePicture} alt={grade.name} className="h-full w-full object-cover" />
+                ) : (
+                  <User size={24} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 truncate">{grade.name}</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{grade.studentCode} • {grade.assessmentType}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-slate-100">{grade.name}</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{grade.studentCode} • {grade.assessmentType}</p>
-            </div>
+            {liveEval && (
+              <div className="flex flex-col items-end shrink-0">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${liveEval.pill.bg} ${liveEval.pill.color}`}>
+                  <span>{liveEval.pill.label}</span>
+                  {liveEval.pill.remark && <span className="text-[10px] opacity-80 uppercase">({liveEval.pill.remark})</span>}
+                </span>
+                <span className="text-[11px] font-bold text-slate-400 mt-1">{liveEval.pct}%</span>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-2">

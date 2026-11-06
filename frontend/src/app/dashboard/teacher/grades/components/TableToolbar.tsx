@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  Search, 
-  Filter, 
-  ArrowUpDown, 
-  Download, 
+import {
+  Search,
+  Filter,
+  ArrowUpDown,
+  Download,
   X,
   Send,
   Loader2,
@@ -64,7 +64,7 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => onSearchChange('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
               title="Clear search"
@@ -73,7 +73,7 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
             </button>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2 justify-between sm:justify-start">
           <div className="flex items-center gap-2">
             <button
@@ -100,11 +100,10 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
                 <button
                   type="button"
                   onClick={() => onViewModeChange('table')}
-                  className={`p-1.5 sm:p-2 rounded-lg cursor-pointer transition-all duration-200 focus:outline-none ${
-                    viewMode === 'table' 
-                      ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-white shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-lg cursor-pointer transition-all duration-200 focus:outline-none ${viewMode === 'table'
+                    ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
                   title="Table View"
                 >
                   <List size={15} strokeWidth={2.5} />
@@ -112,11 +111,10 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
                 <button
                   type="button"
                   onClick={() => onViewModeChange('grid')}
-                  className={`p-1.5 sm:p-2 rounded-lg cursor-pointer transition-all duration-200 focus:outline-none ${
-                    viewMode === 'grid' 
-                      ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-white shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-lg cursor-pointer transition-all duration-200 focus:outline-none ${viewMode === 'grid'
+                    ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
                   title="Grid View"
                 >
                   <LayoutGrid size={15} strokeWidth={2.5} />

@@ -234,7 +234,6 @@ export function GradeTable({
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                              {/* Show Edit/Delete if this teacher recorded this grade OR is authorized for the subject */}
                               {((currentTeacherId && row.item.teacherId === currentTeacherId) || 
                                 (authorizedSubjects && row.item.subject && authorizedSubjects.has(row.item.subject.toLowerCase()))) && (
                                 <>
@@ -251,33 +250,33 @@ export function GradeTable({
                                   {onDeleteGrade && (
                                     <button
                                       onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (confirm('Are you sure you want to delete this grade? This action cannot be undone.')) {
-                                        onDeleteGrade(row.item);
-                                      }
-                                    }}
-                                    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-red-600 hover:bg-red-600/10 dark:hover:bg-red-600/20 transition-all"
-                                  >
-                                    <Icon name="delete" className="text-base" />
-                                    Delete
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                                        e.stopPropagation();
+                                        if (confirm('Are you sure you want to delete this grade? This action cannot be undone.')) {
+                                          onDeleteGrade(row.item);
+                                        }
+                                      }}
+                                      className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-red-600 hover:bg-red-600/10 dark:hover:bg-red-600/20 transition-all"
+                                    >
+                                      <Icon name="delete" className="text-base" />
+                                      Delete
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  )
-}
+        ))}
+      </div>
+    )
+  }
 
   if (viewMode === 'list') {
     return renderListTable(listRows, false)

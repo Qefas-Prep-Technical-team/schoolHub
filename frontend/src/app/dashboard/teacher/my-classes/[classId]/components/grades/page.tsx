@@ -222,7 +222,6 @@ export default function GradesPage() {
       return items.map(item => ({ grade, item }));
     });
 
-    // Sort: teacher's own grades or authorized subjects first (editable), then the rest — each group sorted by date desc
     rows.sort((a, b) => {
       const aIsEditable = (a.item.teacherId === currentTeacherId) || (a.item.subject && authorizedSubjects.has(a.item.subject.toLowerCase())) ? 0 : 1
       const bIsEditable = (b.item.teacherId === currentTeacherId) || (b.item.subject && authorizedSubjects.has(b.item.subject.toLowerCase())) ? 0 : 1

@@ -21,10 +21,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { groupByDate } from '@/app/dashboard/student/my-classes/[id]/components/materials/utils/dateSectioning';
 
 interface OfflineGradesClassSelectorProps {
   classes: any[];
   isLoading: boolean;
+  isTeacher?: boolean;
   onSelectClass: (classId: string, className: string, defaultSubject?: string) => void;
   onOpenHistory: () => void;
   totalBatchesCount: number;
@@ -33,6 +35,7 @@ interface OfflineGradesClassSelectorProps {
 export default function OfflineGradesClassSelector({
   classes,
   isLoading,
+  isTeacher = false,
   onSelectClass,
   onOpenHistory,
   totalBatchesCount,
@@ -51,6 +54,10 @@ export default function OfflineGradesClassSelector({
       return name.includes(q) || section.includes(q) || code.includes(q);
     });
   }, [classes, searchTerm]);
+
+  const groupedClasses = useMemo(() => {
+    return groupByDate(filteredClasses, (cls) => cls.createdAt || cls.updatedAt);
+  }, [filteredClasses]);
 
   // Aggregate stats
   const totalStudents = useMemo(() => {
@@ -172,11 +179,10 @@ export default function OfflineGradesClassSelector({
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === 'grid'
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'grid'
                   ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-white'
                   : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-              }`}
+                }`}
               title="Grid View"
             >
               <LayoutGrid size={16} />
@@ -184,11 +190,10 @@ export default function OfflineGradesClassSelector({
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === 'list'
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'list'
                   ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-white'
                   : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-              }`}
+                }`}
               title="List View"
             >
               <List size={16} />
@@ -225,118 +230,150 @@ export default function OfflineGradesClassSelector({
         </div>
       ) : viewMode === 'grid' ? (
         /* GRID VIEW */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {filteredClasses.map((cls) => {
-            const studentCount = cls._count?.enrollments ?? cls.enrollments?.length ?? 0;
-            const subjectsCount = cls.subjects?.length || 0;
-            const defaultSubject = cls.subjects?.[0]?.name || cls.subjects?.[0] || 'General';
-            const displayName = `${cls.name} ${cls.section ? `(${cls.section})` : ''}`.trim();
+        <div className="space-y-6">
+          {groupedClasses.map((section) => (
+            <div key={section.label} className="space-y-3">
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className={`size-2 rounded-full ${isTeacher ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                </span>
+              </div>
 
-            return (
-              <div
-                key={cls.id}
-                onClick={() => onSelectClass(cls.id, displayName, defaultSubject)}
-                className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-600 transition-all cursor-pointer group flex flex-col justify-between"
-              >
-                <div>
-                  {/* Top Header */}
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="size-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold text-lg border border-indigo-200/80 dark:border-indigo-800/60 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                        {cls.name.charAt(0).toUpperCase()}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {section.items.map((cls) => {
+                  const studentCount = cls._count?.enrollments ?? cls.enrollments?.length ?? 0;
+                  const subjectsCount = cls.subjects?.length || 0;
+                  const defaultSubject = cls.subjects?.[0]?.name || cls.subjects?.[0] || 'General';
+                  const displayName = `${cls.name} ${cls.section ? `(${cls.section})` : ''}`.trim();
+
+                  return (
+                    <div
+                      key={cls.id}
+                      onClick={() => onSelectClass(cls.id, displayName, defaultSubject)}
+                      className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-600 transition-all cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Top Header */}
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="size-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold text-lg border border-indigo-200/80 dark:border-indigo-800/60 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                              {cls.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                {cls.name}
+                              </h3>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {cls.section && (
+                                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                                    Section {cls.section}
+                                  </span>
+                                )}
+                                <span className="font-mono text-[11px] text-slate-400">
+                                  {cls.classCode || 'NO CODE'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Attributes Pills */}
+                        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 mb-4">
+                          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                            <Users size={14} className="text-slate-400 shrink-0" />
+                            <span className="font-bold tabular-nums">{studentCount} Students</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                            <BookOpen size={14} className="text-slate-400 shrink-0" />
+                            <span className="font-medium truncate">{subjectsCount} Subjects</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {cls.name}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {cls.section && (
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
-                              Section {cls.section}
-                            </span>
-                          )}
-                          <span className="font-mono text-[11px] text-slate-400">
-                            {cls.classCode || 'NO CODE'}
-                          </span>
+
+                      {/* Footer Action Button */}
+                      <div className="pt-2">
+                        <div className="w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-between group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                          <span>Enter Offline Grades</span>
+                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Attributes Pills */}
-                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 mb-4">
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                      <Users size={14} className="text-slate-400 shrink-0" />
-                      <span className="font-bold tabular-nums">{studentCount} Students</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                      <BookOpen size={14} className="text-slate-400 shrink-0" />
-                      <span className="font-medium truncate">{subjectsCount} Subjects</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Action Button */}
-                <div className="pt-2">
-                  <div className="w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-between group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                    <span>Enter Offline Grades</span>
-                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       ) : (
         /* LIST VIEW */
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-            {filteredClasses.map((cls) => {
-              const studentCount = cls._count?.enrollments ?? cls.enrollments?.length ?? 0;
-              const subjectsCount = cls.subjects?.length || 0;
-              const defaultSubject = cls.subjects?.[0]?.name || cls.subjects?.[0] || 'General';
-              const displayName = `${cls.name} ${cls.section ? `(${cls.section})` : ''}`.trim();
+        <div className="space-y-6">
+          {groupedClasses.map((section) => (
+            <div key={section.label} className="space-y-2">
+              <div className="flex items-center gap-2.5 px-1 py-1">
+                <div className={`size-2 rounded-full ${isTeacher ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  {section.label}
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                  {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                </span>
+              </div>
 
-              return (
-                <div
-                  key={cls.id}
-                  onClick={() => onSelectClass(cls.id, displayName, defaultSubject)}
-                  className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="size-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold text-base flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                      {cls.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-slate-900 dark:text-white text-sm truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {cls.name}
-                        </h3>
-                        {cls.section && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                            {cls.section}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {section.items.map((cls) => {
+                    const studentCount = cls._count?.enrollments ?? cls.enrollments?.length ?? 0;
+                    const subjectsCount = cls.subjects?.length || 0;
+                    const defaultSubject = cls.subjects?.[0]?.name || cls.subjects?.[0] || 'General';
+                    const displayName = `${cls.name} ${cls.section ? `(${cls.section})` : ''}`.trim();
+
+                    return (
+                      <div
+                        key={cls.id}
+                        onClick={() => onSelectClass(cls.id, displayName, defaultSubject)}
+                        className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="size-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold text-base flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            {cls.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-slate-900 dark:text-white text-sm truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                {cls.name}
+                              </h3>
+                              {cls.section && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                  {cls.section}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Code: {cls.classCode || 'N/A'} • {studentCount} Students • {subjectsCount} Subjects
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="hidden sm:inline-block text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                            Record Grades
                           </span>
-                        )}
+                          <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white text-slate-400 transition-all">
+                            <ArrowRight size={14} />
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Code: {cls.classCode || 'N/A'} • {studentCount} Students • {subjectsCount} Subjects
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="hidden sm:inline-block text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                      Record Grades
-                    </span>
-                    <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white text-slate-400 transition-all">
-                      <ArrowRight size={14} />
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

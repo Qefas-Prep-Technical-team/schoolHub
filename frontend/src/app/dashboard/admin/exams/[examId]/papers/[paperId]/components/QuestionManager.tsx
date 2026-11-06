@@ -11,6 +11,12 @@ import { apiClient } from "@/lib/api/client";
 import { examService } from "@/lib/api/services/examService";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import {
+  saveEncryptedDraft,
+  loadEncryptedDraft,
+  clearEncryptedDraft,
+} from "@/utils/secureDraftStorage";
 
 import { 
   DndContext, 
@@ -58,6 +64,7 @@ export default function QuestionManager({
   paper: any;
 }) {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState(() => {
     if (paper?.questions?.length === 0) {
       if (paper?.creationMode === "AI") return "ai";
@@ -66,6 +73,54 @@ export default function QuestionManager({
     return "list";
   });
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
+  const [hasRestoredSession, setHasRestoredSession] = useState(false);
+
+  // Restore active workspace tab & editing question from encrypted browser draft on page reload
+  useEffect(() => {
+    if (hasRestoredSession || !paperId || paper?.status === "PUBLISHED") return;
+    let isMounted = true;
+
+    loadEncryptedDraft<{
+      activeTab: string;
+      editingQuestionId?: string | null;
+      editingQuestionSnapshot?: any;
+    }>(user?.id, paperId, "workspace-session").then((restored) => {
+      if (!isMounted) return;
+      if (restored?.data) {
+        const { activeTab: savedTab, editingQuestionId, editingQuestionSnapshot } = restored.data;
+        if (savedTab === "edit" && (editingQuestionId || editingQuestionSnapshot)) {
+          const matchedQuestion =
+            (paper?.questions || []).find((q: any) => q.id === editingQuestionId) ||
+            editingQuestionSnapshot;
+          if (matchedQuestion) {
+            setEditingQuestion(matchedQuestion);
+            setActiveTab("edit");
+          }
+        } else if (savedTab === "add" || savedTab === "ai") {
+          setActiveTab(savedTab);
+        }
+      }
+      setHasRestoredSession(true);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hasRestoredSession, paperId, paper?.status, paper?.questions, user?.id]);
+
+  // Persist workspace tab & editing question state when changed
+  useEffect(() => {
+    if (!hasRestoredSession || !paperId) return;
+    if (activeTab === "list") {
+      clearEncryptedDraft(user?.id, paperId, "workspace-session");
+      return;
+    }
+    saveEncryptedDraft(user?.id, paperId, "workspace-session", {
+      activeTab,
+      editingQuestionId: editingQuestion?.id || null,
+      editingQuestionSnapshot: editingQuestion || null,
+    });
+  }, [activeTab, editingQuestion, hasRestoredSession, paperId, user?.id]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);

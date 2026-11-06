@@ -9,6 +9,7 @@ export interface StudentGrade {
   grade: string;
   isSelected: boolean;
   hasError?: boolean;
+  recordedAt?: string | Date;
 }
 
 export interface Term {

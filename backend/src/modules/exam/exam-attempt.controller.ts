@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
+import { z } from "zod";
 import {
   deleteExamAttemptService,
   getExamAttemptService,
@@ -13,6 +14,20 @@ import {
   submitSubjectPaperAttemptService,
 } from "./exam-attempt.service";
 import { handleError } from "../../utils/error-handler";
+
+const submitAttemptBodySchema = z
+  .object({
+    answers: z
+      .array(
+        z.object({
+          subjectPaperId: z.string(),
+          questionId: z.string(),
+          answer: z.string(),
+        }),
+      )
+      .optional(),
+  })
+  .optional();
 
 export const startExamAttempt = async (req: Request, res: Response) => {
   try {
@@ -112,9 +127,13 @@ export const submitExamAttempt = async (req: Request, res: Response) => {
       });
     }
 
+    const parsedBody = submitAttemptBodySchema.safeParse(req.body);
+    const answers = parsedBody.success ? parsedBody.data?.answers : undefined;
+
     const data = await submitExamAttemptService({
       examId: req.params.id as string,
       studentId: req.user.id,
+      answers,
     });
 
     return res.status(200).json({

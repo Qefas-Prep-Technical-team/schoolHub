@@ -1,17 +1,12 @@
 import React from 'react';
 
 import ScoreInput from './ScoreInput';
-import { AssessmentScore } from './types';
+import { AssessmentScore, GradeSummary } from './types';
 
 interface AssessmentBreakdownProps {
   scores: AssessmentScore[];
   onScoreChange: (component: AssessmentScore['component'], value: number) => void;
-  gradeSummary: {
-    totalScore: number;
-    totalMaxScore: number;
-    finalGrade: string;
-    performance: string;
-  };
+  gradeSummary: GradeSummary;
 }
 
 const AssessmentBreakdown: React.FC<AssessmentBreakdownProps> = ({
@@ -57,7 +52,7 @@ const AssessmentBreakdown: React.FC<AssessmentBreakdownProps> = ({
             <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
               Final Grade
             </p>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+            <p className={`text-3xl font-bold ${gradeSummary.color || 'text-emerald-600 dark:text-emerald-400'}`}>
               {gradeSummary.finalGrade}
             </p>
           </div>
@@ -65,7 +60,7 @@ const AssessmentBreakdown: React.FC<AssessmentBreakdownProps> = ({
             <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
               Performance
             </p>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 w-fit">
+            <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold w-fit ${gradeSummary.bg || 'bg-emerald-100 dark:bg-emerald-900/50'} ${gradeSummary.color || 'text-emerald-700 dark:text-emerald-300'}`}>
               {gradeSummary.performance}
             </div>
           </div>

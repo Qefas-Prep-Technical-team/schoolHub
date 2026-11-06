@@ -96,11 +96,12 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user: User, token: string) => {
         if (token && typeof document !== "undefined") {
           Cookies.set("token", token, {
-            expires: 1,
+            expires: 7,
             path: "/",
             sameSite: "lax",
             secure: process.env.NODE_ENV === "production",
           });
+          localStorage.setItem("qefas_access_token", token);
         }
 
         set({
@@ -160,6 +161,9 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         Cookies.remove("token", { path: "/" });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("qefas_access_token");
+        }
         set({
           user: null,
           accessToken: null,
@@ -180,14 +184,18 @@ export const useAuthStore = create<AuthState>()(
           });
         }
 
-        // Keep client-side cookie synchronized if present in storage but missing in cookies
-        if (state.accessToken && typeof document !== "undefined" && !Cookies.get("token")) {
-          Cookies.set("token", state.accessToken, {
-            expires: 1,
-            path: "/",
-            sameSite: "lax",
-            secure: process.env.NODE_ENV === "production",
-          });
+        // Keep client-side cookie synchronized if present in storage/localStorage but missing in cookies
+        const fallbackToken = state.accessToken || (typeof window !== "undefined" ? localStorage.getItem("qefas_access_token") : null);
+        if (fallbackToken && typeof document !== "undefined") {
+          if (!Cookies.get("token")) {
+            Cookies.set("token", fallbackToken, {
+              expires: 7,
+              path: "/",
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+            });
+          }
+          localStorage.setItem("qefas_access_token", fallbackToken);
         }
 
         set({ isInitialized: true });

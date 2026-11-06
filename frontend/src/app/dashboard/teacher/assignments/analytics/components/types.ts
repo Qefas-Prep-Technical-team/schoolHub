@@ -27,6 +27,8 @@ export interface NavItem {
 
 export interface DistributionData {
   range: string;
+  grade?: string;
+  remark?: string;
   percentage: number;
   count: number;
   averageScore?: number;

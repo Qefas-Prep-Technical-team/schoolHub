@@ -1,4 +1,4 @@
-import prisma from "../../config/database";
+import prisma, { withRetry } from "../../config/database";
 import { generateStudentPerformanceInsight } from "./exam-ai.service";
 import { AssessmentStatus, ExamAttemptStatus, UserRole, GradeStatus } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
@@ -7,6 +7,12 @@ import {
   getRemainingSeconds,
   isAttemptExpired,
 } from "./exam-timer.util";
+
+export interface BulkAnswerPayloadItem {
+  subjectPaperId: string;
+  questionId: string;
+  answer: string;
+}
 
 export const startExamAttemptService = async ({
   examId,
@@ -105,33 +111,50 @@ export const startExamAttemptService = async ({
   });
 
   if (existing) {
-    // If the attempt is finished or expired, allow retake by deleting the old one
-    if (
+    if (existing.status === ExamAttemptStatus.EXPIRED) {
+      // If an older attempt was marked EXPIRED, check if time still remains; otherwise score it properly
+      if (!isAttemptExpired({ expiresAt: existing.expiresAt })) {
+        const reopened = await prisma.examAttempt.update({
+          where: { id: existing.id },
+          data: {
+            status: ExamAttemptStatus.IN_PROGRESS,
+            ...(deviceId ? { deviceId } : {}),
+          },
+          include: {
+            subjectExamAttempts: {
+              include: {
+                subjectPaper: {
+                  include: {
+                    subject: true,
+                    questions: true,
+                  },
+                },
+                answers: true,
+              },
+            },
+          },
+        });
+        return {
+          ...reopened,
+          subjectAttempts: reopened.subjectExamAttempts,
+        };
+      }
+      await autoSubmitExpiredAttemptService({ examId, studentId });
+      throw new Error("This examination attempt has already expired and been submitted.");
+    } else if (
       existing.status === ExamAttemptStatus.SUBMITTED ||
-      existing.status === ExamAttemptStatus.SCORED ||
-      existing.status === ExamAttemptStatus.EXPIRED
+      existing.status === ExamAttemptStatus.SCORED
     ) {
       await prisma.examAttempt.delete({
         where: { id: existing.id },
       });
     } else {
-      // Still in progress, check deviceId
-      if (existing.deviceId && deviceId && existing.deviceId !== deviceId) {
-        // Multi-device violation!
-        await submitExamAttemptService({ examId, studentId });
-
-        // Notify admin
-        const adminUsers = await prisma.admin.findMany({ where: { role: 'SUPER_ADMIN' as UserRole } });
-        const studentInfo = await prisma.student.findUnique({ where: { id: studentId } });
-        for (const admin of adminUsers) {
-          await createNotification({
-            userId: admin.id,
-            title: "Exam Violation Detected",
-            message: `Student ${studentInfo?.name || studentId} attempted to resume exam "${exam.title}" from a different device. The exam attempt was automatically submitted.`,
-          } as any);
-        }
-
-        throw new Error("Exam violation detected: You cannot resume this exam on a different device. Your exam has been automatically submitted.");
+      // Still in progress: allow seamless continuation even if browser rotated deviceId after a session expiry
+      if (deviceId && existing.deviceId !== deviceId) {
+        await prisma.examAttempt.update({
+          where: { id: existing.id },
+          data: { deviceId },
+        });
       }
       return {
         ...existing,
@@ -147,10 +170,18 @@ export const startExamAttemptService = async ({
     0,
   );
 
+  const effectiveDurationMinutes =
+    exam.durationMinutes && exam.durationMinutes > 0
+      ? exam.durationMinutes
+      : papers.reduce(
+          (sum: number, paper: any) => sum + Number(paper?.durationMinutes || 0),
+          0,
+        );
+
   const startedAt = new Date();
   const expiresAt = computeExpiryTime({
     startedAt,
-    durationMinutes: exam.durationMinutes,
+    durationMinutes: effectiveDurationMinutes > 0 ? effectiveDurationMinutes : null,
   });
 
   const createdAttempt = await prisma.examAttempt.create({
@@ -190,10 +221,16 @@ export const startExamAttemptService = async ({
   };
 };
 
-const ensureAttemptStillActive = async (attemptId: string) => {
-  const attempt = await prisma.examAttempt.findUnique({
-    where: { id: attemptId },
-  });
+const AUTO_SUBMIT_GRACE_MS = 10 * 60 * 1000; // 10 minutes grace window for auto-submission & network recovery
+
+const ensureAttemptStillActive = async (attemptId: string, allowAutoSubmitGrace: boolean = false) => {
+  const attempt = await withRetry(
+    () =>
+      prisma.examAttempt.findUnique({
+        where: { id: attemptId },
+      }),
+    "ensureAttemptStillActive_findUnique",
+  );
 
   if (!attempt) {
     throw new Error("Exam attempt not found");
@@ -203,18 +240,21 @@ const ensureAttemptStillActive = async (attemptId: string) => {
     throw new Error("This exam attempt is already submitted");
   }
 
+  // If allowAutoSubmitGrace is enabled (e.g., saving answers during timer expiry flush),
+  // allow saving as long as we are within the grace window or the attempt hasn't been scored yet.
+  if (allowAutoSubmitGrace) {
+    if (!attempt.expiresAt) return attempt;
+    const msSinceExpiry = Date.now() - new Date(attempt.expiresAt).getTime();
+    if (msSinceExpiry <= AUTO_SUBMIT_GRACE_MS) {
+      return attempt;
+    }
+  }
+
   if (attempt.status === "EXPIRED") {
     throw new Error("This exam attempt has expired");
   }
 
   if (isAttemptExpired({ expiresAt: attempt.expiresAt })) {
-    await prisma.examAttempt.update({
-      where: { id: attempt.id },
-      data: {
-        status: "EXPIRED",
-      },
-    });
-
     throw new Error("Exam time has expired");
   }
 
@@ -287,7 +327,7 @@ export const getExamAttemptService = async ({
   }
 
   if (
-    attempt.status === "IN_PROGRESS" &&
+    (attempt.status === "IN_PROGRESS" || attempt.status === "EXPIRED") &&
     isAttemptExpired({ expiresAt: attempt.expiresAt })
   ) {
     await autoSubmitExpiredAttemptService({ examId, studentId });
@@ -398,37 +438,47 @@ export const saveExamAnswerService = async ({
   questionId: string;
   answer: string;
 }) => {
-  const attempt = await prisma.examAttempt.findUnique({
-    where: {
-      examId_studentId: {
-        examId,
-        studentId,
-      },
-    },
-  });
+  const attempt = await withRetry(
+    () =>
+      prisma.examAttempt.findUnique({
+        where: {
+          examId_studentId: {
+            examId,
+            studentId,
+          },
+        },
+      }),
+    "saveExamAnswer_attempt_findUnique",
+  );
 
   if (!attempt) {
     console.error("Exam attempt not found for save:", { examId, studentId });
     throw new Error("Exam attempt not found. Start the exam first.");
   }
 
-  await ensureAttemptStillActive(attempt.id);
+  await ensureAttemptStillActive(attempt.id, true);
 
-  const subjectAttempt = await prisma.subjectExamAttempt.findFirst({
-    where: {
-      examAttemptId: attempt.id,
-      subjectPaperId,
-    },
-    include: { subjectPaper: true },
-  });
+  const [subjectAttempt, question] = await withRetry(
+    () =>
+      Promise.all([
+        prisma.subjectExamAttempt.findFirst({
+          where: {
+            examAttemptId: attempt.id,
+            subjectPaperId,
+          },
+          select: { id: true, subjectPaperId: true },
+        }),
+        prisma.subjectExamQuestion.findUnique({
+          where: { id: questionId },
+          select: { id: true, subjectPaperId: true },
+        }),
+      ]),
+    "saveExamAnswer_lookup",
+  );
 
   if (!subjectAttempt) {
     throw new Error("Subject exam attempt not found");
   }
-
-  const question = await prisma.subjectExamQuestion.findUnique({
-    where: { id: questionId },
-  });
 
   if (!question) {
     throw new Error("Question not found");
@@ -438,22 +488,26 @@ export const saveExamAnswerService = async ({
     throw new Error("Question does not belong to this subject paper");
   }
 
-  return prisma.subjectExamAnswer.upsert({
-    where: {
-      subjectExamAttemptId_questionId: {
-        subjectExamAttemptId: subjectAttempt.id,
-        questionId,
-      },
-    },
-    update: {
-      answer,
-    },
-    create: {
-      subjectExamAttemptId: subjectAttempt.id,
-      questionId,
-      answer,
-    },
-  });
+  return withRetry(
+    () =>
+      prisma.subjectExamAnswer.upsert({
+        where: {
+          subjectExamAttemptId_questionId: {
+            subjectExamAttemptId: subjectAttempt.id,
+            questionId,
+          },
+        },
+        update: {
+          answer,
+        },
+        create: {
+          subjectExamAttemptId: subjectAttempt.id,
+          questionId,
+          answer,
+        },
+      }),
+    "saveExamAnswer_upsert",
+  );
 };
 
 export const submitSubjectPaperAttemptService = async ({
@@ -465,112 +519,225 @@ export const submitSubjectPaperAttemptService = async ({
   studentId: string;
   subjectPaperId: string;
 }) => {
-  const attempt = await prisma.examAttempt.findUnique({
-    where: {
-      examId_studentId: {
-        examId,
-        studentId,
-      },
-    },
-  });
+  const attempt = await withRetry(
+    () =>
+      prisma.examAttempt.findUnique({
+        where: {
+          examId_studentId: {
+            examId,
+            studentId,
+          },
+        },
+      }),
+    "submitSubjectPaperAttempt_attempt_findUnique",
+  );
 
   if (!attempt) {
     throw new Error("Exam attempt not found. Start the exam first.");
   }
 
-  await ensureAttemptStillActive(attempt.id);
-
-  const subjectAttempt = await prisma.subjectExamAttempt.findFirst({
-    where: {
-      examAttemptId: attempt.id,
-      subjectPaperId,
-    },
-  });
+  const subjectAttempt = await withRetry(
+    () =>
+      prisma.subjectExamAttempt.findFirst({
+        where: {
+          examAttemptId: attempt.id,
+          subjectPaperId,
+        },
+      }),
+    "submitSubjectPaperAttempt_subjectAttempt_findFirst",
+  );
 
   if (!subjectAttempt) {
     throw new Error("Subject exam attempt not found for the given paper.");
   }
 
-  // Idempotent — if already marked as submitted, return early without error
-  if (subjectAttempt.submittedAt) {
+  // Idempotent — if already marked as submitted or parent attempt is already submitted/scored, return early without error
+  if (subjectAttempt.submittedAt || attempt.status === "SUBMITTED" || attempt.status === "SCORED") {
     return subjectAttempt;
   }
 
-  return prisma.subjectExamAttempt.update({
-    where: { id: subjectAttempt.id },
-    data: { submittedAt: new Date() },
-  });
+  return withRetry(
+    () =>
+      prisma.subjectExamAttempt.update({
+        where: { id: subjectAttempt.id },
+        data: { submittedAt: new Date() },
+      }),
+    "submitSubjectPaperAttempt_update",
+  );
 };
 
 export const scoreExamAttemptService = async ({
   examId,
   studentId,
+  answers: pendingAnswers,
 }: {
   examId: string;
   studentId: string;
+  answers?: BulkAnswerPayloadItem[];
 }) => {
-  const attempt = await prisma.examAttempt.findUnique({
-    where: {
-      examId_studentId: {
-        examId,
-        studentId,
-      },
-    },
-    include: {
-      subjectExamAttempts: {
-        include: {
-          subjectPaper: {
-            include: {
-              subject: true,
-              questions: true,
-            },
+  const attempt = await withRetry(
+    () =>
+      prisma.examAttempt.findUnique({
+        where: {
+          examId_studentId: {
+            examId,
+            studentId,
           },
-          answers: {
+        },
+        include: {
+          subjectExamAttempts: {
             include: {
-              question: true,
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  questions: {
+                    select: {
+                      id: true,
+                      type: true,
+                      correctAnswer: true,
+                      marks: true,
+                      optionA: true,
+                      optionB: true,
+                      optionC: true,
+                      optionD: true,
+                    },
+                  },
+                },
+              },
+              answers: true,
             },
           },
         },
-      },
-    },
-  });
+      }),
+    "scoreExamAttempt_attempt_findUnique",
+  );
 
   if (!attempt) {
     throw new Error("Exam attempt not found");
   }
 
+  // Merge any pending answers sent directly in the submit payload
+  if (pendingAnswers && Array.isArray(pendingAnswers) && pendingAnswers.length > 0) {
+    const upsertQueue: any[] = [];
+    for (const item of pendingAnswers) {
+      if (!item || !item.questionId || item.answer === undefined) continue;
+      const targetSa = attempt.subjectExamAttempts.find(
+        (sa) => sa.subjectPaperId === item.subjectPaperId || sa.subjectPaper?.questions?.some((q) => q.id === item.questionId),
+      );
+      if (!targetSa) continue;
+
+      const existingAns = targetSa.answers.find((a) => a.questionId === item.questionId);
+      if (existingAns) {
+        if (existingAns.answer !== item.answer) {
+          existingAns.answer = item.answer;
+          upsertQueue.push(
+            prisma.subjectExamAnswer.update({
+              where: { id: existingAns.id },
+              data: { answer: item.answer },
+            }),
+          );
+        }
+      } else {
+        upsertQueue.push(
+          prisma.subjectExamAnswer.upsert({
+            where: {
+              subjectExamAttemptId_questionId: {
+                subjectExamAttemptId: targetSa.id,
+                questionId: item.questionId,
+              },
+            },
+            update: { answer: item.answer },
+            create: {
+              subjectExamAttemptId: targetSa.id,
+              questionId: item.questionId,
+              answer: item.answer,
+            },
+          }),
+        );
+      }
+    }
+
+    if (upsertQueue.length > 0) {
+      await withRetry(() => prisma.$transaction(upsertQueue), "scoreExamAttempt_flushPendingAnswers");
+      // Re-fetch answers if new rows were created so we have their IDs
+      const refreshedSubjectAttempts = await withRetry(
+        () =>
+          prisma.subjectExamAttempt.findMany({
+            where: { examAttemptId: attempt.id },
+            include: { answers: true },
+          }),
+        "scoreExamAttempt_refreshAnswers",
+      );
+      for (const sa of attempt.subjectExamAttempts) {
+        const refreshed = refreshedSubjectAttempts.find((r) => r.id === sa.id);
+        if (refreshed) {
+          sa.answers = refreshed.answers;
+        }
+      }
+    }
+  }
+
   let totalScore = 0;
   const transactionQueue: any[] = [];
 
+  // Group answer IDs by (isCorrect, scoreAwarded, requiresManualReview) so we issue a handful of updateMany queries instead of 100+ individual updates
+  const answerUpdateGroups = new Map<
+    string,
+    {
+      isCorrect: boolean | null;
+      scoreAwarded: number;
+      requiresManualReview: boolean;
+      ids: string[];
+    }
+  >();
+
   for (const subjectAttempt of attempt.subjectExamAttempts) {
     let subjectScore = 0;
+    const questionMap = new Map(
+      (subjectAttempt.subjectPaper?.questions || []).map((q) => [q.id, q]),
+    );
 
-    // Process answers by batching into a single transaction
     for (const answer of subjectAttempt.answers) {
+      const question = questionMap.get(answer.questionId);
+      if (!question) continue;
+
       let isCorrect: boolean | null = null;
       let scoreAwarded = 0;
       let requiresManualReview = false;
 
-      if (answer.question.type === "SHORT_ANSWER") {
+      if (question.type === "SHORT_ANSWER") {
         requiresManualReview = true;
       } else {
-        const expected = (answer.question.correctAnswer || "").trim().toLowerCase();
+        const expected = (question.correctAnswer || "").trim().toLowerCase();
         const actual = (answer.answer || "").trim().toLowerCase();
 
         isCorrect = expected !== "" && expected === actual;
-        scoreAwarded = isCorrect ? Number(answer.question.marks || 0) : 0;
+        if (!isCorrect && question.type === "MULTIPLE_CHOICE" && ["a", "b", "c", "d"].includes(expected)) {
+          const optionKey = `option${expected.toUpperCase()}` as "optionA" | "optionB" | "optionC" | "optionD";
+          const optionText = String(question[optionKey] || "").trim().toLowerCase();
+          if (optionText && optionText === actual) {
+            isCorrect = true;
+          }
+        } else if (!isCorrect && question.type === "MULTIPLE_CHOICE" && ["a", "b", "c", "d"].includes(actual)) {
+          const optionKey = `option${actual.toUpperCase()}` as "optionA" | "optionB" | "optionC" | "optionD";
+          const optionText = String(question[optionKey] || "").trim().toLowerCase();
+          if (optionText && optionText === expected) {
+            isCorrect = true;
+          }
+        }
+
+        scoreAwarded = isCorrect ? Number(question.marks || 0) : 0;
       }
 
-      transactionQueue.push(
-        prisma.subjectExamAnswer.update({
-          where: { id: answer.id },
-          data: {
-            isCorrect,
-            scoreAwarded,
-            requiresManualReview,
-          },
-        })
-      );
+      const groupKey = `${String(isCorrect)}:${scoreAwarded}:${requiresManualReview}`;
+      const group = answerUpdateGroups.get(groupKey) || {
+        isCorrect,
+        scoreAwarded,
+        requiresManualReview,
+        ids: [],
+      };
+      group.ids.push(answer.id);
+      answerUpdateGroups.set(groupKey, group);
 
       subjectScore += scoreAwarded;
     }
@@ -580,44 +747,63 @@ export const scoreExamAttemptService = async ({
         where: { id: subjectAttempt.id },
         data: {
           score: subjectScore,
-          submittedAt: new Date(),
+          submittedAt: subjectAttempt.submittedAt || new Date(),
         },
-      })
+      }),
     );
 
     totalScore += subjectScore;
   }
 
-  // Execute all batched updates safely in a single DB connection and single round-trip
-  await prisma.$transaction(transactionQueue);
+  for (const group of answerUpdateGroups.values()) {
+    transactionQueue.push(
+      prisma.subjectExamAnswer.updateMany({
+        where: { id: { in: group.ids } },
+        data: {
+          isCorrect: group.isCorrect,
+          scoreAwarded: group.scoreAwarded,
+          requiresManualReview: group.requiresManualReview,
+        },
+      }),
+    );
+  }
 
-  const updated = await prisma.examAttempt.update({
-    where: { id: attempt.id },
-    data: {
-      totalScore,
-      submittedAt: new Date(),
-      isSubmitted: true,
-      status: ExamAttemptStatus.SCORED,
-    },
-    include: {
-      student: true,
-      exam: true,
-      subjectExamAttempts: {
+  // Execute all batched updates safely in a single DB connection and single round-trip
+  if (transactionQueue.length > 0) {
+    await withRetry(() => prisma.$transaction(transactionQueue), "scoreExamAttempt_batchTransaction");
+  }
+
+  const updated = await withRetry(
+    () =>
+      prisma.examAttempt.update({
+        where: { id: attempt.id },
+        data: {
+          totalScore,
+          submittedAt: new Date(),
+          isSubmitted: true,
+          status: ExamAttemptStatus.SCORED,
+        },
         include: {
-          subjectPaper: {
+          student: true,
+          exam: true,
+          subjectExamAttempts: {
             include: {
-              subject: true,
-            },
-          },
-          answers: {
-            include: {
-              question: true,
+              subjectPaper: {
+                include: {
+                  subject: true,
+                },
+              },
+              answers: {
+                include: {
+                  question: true,
+                },
+              },
             },
           },
         },
-      },
-    },
-  });
+      }),
+    "scoreExamAttempt_updateExamAttempt",
+  );
 
   createNotification({
     recipientType: "STUDENT",
@@ -698,7 +884,9 @@ export const scoreExamAttemptService = async ({
     }
 
     // Execute all upserts instantly holding a single lock
-    await prisma.$transaction(gradeTransactions);
+    if (gradeTransactions.length > 0) {
+      await withRetry(() => prisma.$transaction(gradeTransactions), "scoreExamAttempt_gradeUpsertTransaction");
+    }
   } catch (gradeError) {
     console.error("Failed to sync detailed exam results to grades:", gradeError);
   }
@@ -730,11 +918,13 @@ export const scoreExamAttemptService = async ({
 export const submitExamAttemptService = async ({
   examId,
   studentId,
+  answers,
 }: {
   examId: string;
   studentId: string;
+  answers?: BulkAnswerPayloadItem[];
 }) => {
-  return scoreExamAttemptService({ examId, studentId });
+  return scoreExamAttemptService({ examId, studentId, answers });
 };
 
 export const getExamResultService = async ({

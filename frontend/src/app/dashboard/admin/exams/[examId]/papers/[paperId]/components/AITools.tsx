@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Sparkles, FileText, Loader2, Check, RefreshCw, AlertCircle, Lock, ArrowRight, Clock, School } from "lucide-react";
+import { Sparkles, FileText, Loader2, Check, RefreshCw, AlertCircle, Lock, ArrowRight, Clock, School, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import QuestionViewer from "@/app/dashboard/teacher/exams&quizzes/preview/components/QuestionViewer";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import {
+  saveEncryptedDraft,
+  loadEncryptedDraft,
+  clearEncryptedDraft,
+} from "@/utils/secureDraftStorage";
 
 interface AIQuestion {
   type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
@@ -54,6 +59,69 @@ export default function AITools({
   const [selectedPreviewAnswers, setSelectedPreviewAnswers] = useState<Record<number, number>>({});
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [isAiDraftHydrated, setIsAiDraftHydrated] = useState(false);
+  const [hasAiDraftSaved, setHasAiDraftSaved] = useState(false);
+
+  // Restore AI tools draft (prompt, rawText, and previewQuestions) from encrypted browser storage
+  useEffect(() => {
+    let isMounted = true;
+    loadEncryptedDraft<{
+      mode: "generate" | "parse";
+      prompt: string;
+      rawText: string;
+      questionCount: number;
+      questionType: string;
+      previewQuestions: AIQuestion[];
+    }>(user?.id, paperId, "ai-tools").then((restored) => {
+      if (!isMounted) return;
+      if (restored?.data) {
+        const d = restored.data;
+        if (d.mode === "generate" || d.mode === "parse") setMode(d.mode);
+        if (typeof d.prompt === "string") setPrompt(d.prompt);
+        if (typeof d.rawText === "string") setRawText(d.rawText);
+        if (typeof d.questionCount === "number") setQuestionCount(d.questionCount);
+        if (typeof d.questionType === "string") setQuestionType(d.questionType);
+        if (Array.isArray(d.previewQuestions) && d.previewQuestions.length > 0) {
+          setPreviewQuestions(d.previewQuestions);
+        }
+        setHasAiDraftSaved(true);
+      }
+      setIsAiDraftHydrated(true);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, paperId]);
+
+  // Debounced auto-save AI tools draft to encrypted browser storage
+  useEffect(() => {
+    if (!isAiDraftHydrated) return;
+    const hasContent =
+      Boolean(prompt.trim()) ||
+      Boolean(rawText.trim()) ||
+      previewQuestions.length > 0;
+
+    if (!hasContent) {
+      clearEncryptedDraft(user?.id, paperId, "ai-tools");
+      setHasAiDraftSaved(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      saveEncryptedDraft(user?.id, paperId, "ai-tools", {
+        mode,
+        prompt,
+        rawText,
+        questionCount,
+        questionType,
+        previewQuestions,
+      }).then((ok) => {
+        if (ok) setHasAiDraftSaved(true);
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [isAiDraftHydrated, user?.id, paperId, mode, prompt, rawText, questionCount, questionType, previewQuestions]);
 
   // 1. Check feature access for aiInsights
   const { data: hasAiAccess, isLoading: checkingAccess } = useFeatureAccess("aiInsights");
@@ -147,6 +215,8 @@ export default function AITools({
       return response.data;
     },
     onSuccess: () => {
+      clearEncryptedDraft(user?.id, paperId, "ai-tools");
+      clearEncryptedDraft(user?.id, paperId, "workspace-session");
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success(`${previewQuestions.length} questions added to paper!`);
       onCancel();
@@ -315,10 +385,25 @@ export default function AITools({
   if (previewQuestions.length > 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Review Generated Questions ({previewQuestions.length})</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg font-bold">Review Generated Questions ({previewQuestions.length})</h3>
+            {hasAiDraftSaved && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60">
+                <ShieldCheck size={11} /> Encrypted draft saved
+              </span>
+            )}
+          </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPreviewQuestions([])} className="rounded-xl">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setPreviewQuestions([]);
+                clearEncryptedDraft(user?.id, paperId, "ai-tools");
+              }}
+              className="rounded-xl"
+            >
               <RefreshCw size={14} className="mr-2" /> Start Over
             </Button>
             <Button
@@ -515,7 +600,17 @@ export default function AITools({
           )}
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={onCancel} className="rounded-xl">Cancel</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              clearEncryptedDraft(user?.id, paperId, "ai-tools");
+              clearEncryptedDraft(user?.id, paperId, "workspace-session");
+              onCancel();
+            }}
+            className="rounded-xl"
+          >
+            Cancel
+          </Button>
           <Button
             disabled={isGenerating}
             onClick={handleAction}

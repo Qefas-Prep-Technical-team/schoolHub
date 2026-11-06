@@ -17,6 +17,7 @@ import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useTeacherProfile, useTeacherLinkedSchools } from '@/lib/api/hooks/useTeacher';
 import { GradeBatchSummary, OfflineAssessmentCategory } from '../types';
 import { generatePDF } from '@/utils/pdfGenerator';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 export function normalizeOfflineCategory(rawCategory?: string, assessmentType?: string): OfflineAssessmentCategory {
   const cat = (rawCategory || '').toUpperCase().trim();
@@ -106,9 +107,13 @@ export default function OfflineGradesDashboard({
 
   const isTeacher = user?.userType === 'TEACHER';
 
+  const currentTeacherId = (user as any)?.id as string | undefined;
+  const effectiveSelectedSchoolId =
+    selectedSchoolId && selectedSchoolId !== currentTeacherId ? selectedSchoolId : '';
+
   const baseSchoolId =
     propSchoolId ||
-    selectedSchoolId ||
+    effectiveSelectedSchoolId ||
     userSchoolId ||
     linkedSchoolsData?.[0]?.id ||
     '';
@@ -276,7 +281,7 @@ export default function OfflineGradesDashboard({
           (sId && teacherScopeSubjectIds?.has(sId)) ||
           (sName && (
             teacherScopeSubjectNames?.has(sName) ||
-            Array.from(teacherScopeSubjectNames || []).some(assignedName => 
+            Array.from(teacherScopeSubjectNames || []).some(assignedName =>
               sName.includes(assignedName) || assignedName.includes(sName)
             )
           ))
@@ -441,7 +446,10 @@ export default function OfflineGradesDashboard({
 
   // Export handlers
   const handleExportPDF = (record?: GradeBatchSummary) => {
+    const activeGradingSystem = schoolProfile?.gradingSystem;
     if (record) {
+      const pct = record.maxMarks > 0 ? Math.round((record.averageScore / record.maxMarks) * 100) : 0;
+      const gradePill = computeGradePill(pct, activeGradingSystem);
       // Export single record summary
       generatePDF({
         title: `Offline Assessment Marksheet — ${record.assessmentType}`,
@@ -454,16 +462,17 @@ export default function OfflineGradesDashboard({
           { label: 'Assessment Category', value: record.category },
           { label: 'Max Score Marks', value: String(record.maxMarks) },
           { label: 'Graded Students', value: `${record.gradedStudents} students` },
-          { label: 'Class Average', value: `${record.averageScore.toFixed(1)} / ${record.maxMarks}` },
+          { label: 'Class Average', value: `${record.averageScore.toFixed(1)} / ${record.maxMarks} (${pct}% - ${gradePill.label})` },
           { label: 'Status', value: record.status || 'DRAFT' },
         ],
-        tableHeaders: [['Item', 'Subject', 'Class', 'Category', 'Average Score', 'Status']],
+        tableHeaders: [['Item', 'Subject', 'Class', 'Category', 'Average Score', 'Grade', 'Status']],
         tableData: [[
           record.assessmentType,
           record.subject,
           record.className,
           record.category,
-          `${record.averageScore.toFixed(1)} / ${record.maxMarks}`,
+          `${record.averageScore.toFixed(1)} / ${record.maxMarks} (${pct}%)`,
+          `${gradePill.label} (${gradePill.remark})`,
           record.status || 'DRAFT'
         ]],
       });
@@ -478,35 +487,48 @@ export default function OfflineGradesDashboard({
           { label: 'Total Records', value: `${records.length} assessments` },
           { label: 'Export Date', value: new Date().toLocaleDateString() },
         ],
-        tableHeaders: [['#', 'Assessment Title', 'Subject', 'Class', 'Category', 'Graded Students', 'Average Score', 'Status']],
-        tableData: records.map((r, idx) => [
-          String(idx + 1),
-          r.assessmentType,
-          r.subject,
-          r.className,
-          r.category,
-          String(r.gradedStudents),
-          `${r.averageScore.toFixed(1)} / ${r.maxMarks}`,
-          r.status
-        ]),
+        tableHeaders: [['#', 'Assessment Title', 'Subject', 'Class', 'Category', 'Graded Students', 'Average Score', 'Grade', 'Status']],
+        tableData: records.map((r, idx) => {
+          const pct = r.maxMarks > 0 ? Math.round((r.averageScore / r.maxMarks) * 100) : 0;
+          const gradePill = computeGradePill(pct, activeGradingSystem);
+          return [
+            String(idx + 1),
+            r.assessmentType,
+            r.subject,
+            r.className,
+            r.category,
+            String(r.gradedStudents),
+            `${r.averageScore.toFixed(1)} / ${r.maxMarks} (${pct}%)`,
+            gradePill.label,
+            r.status
+          ];
+        }),
       });
     }
   };
 
   const handleExportCSV = (record?: GradeBatchSummary) => {
+    const activeGradingSystem = schoolProfile?.gradingSystem;
     const list = record ? [record] : records;
-    const headers = ['#', 'Assessment Title', 'Subject', 'Class', 'Category', 'Graded Students', 'Average Score', 'Max Marks', 'Status'];
-    const rows = list.map((r, idx) => [
-      idx + 1,
-      `"${r.assessmentType.replace(/"/g, '""')}"`,
-      `"${r.subject.replace(/"/g, '""')}"`,
-      `"${r.className.replace(/"/g, '""')}"`,
-      r.category,
-      r.gradedStudents,
-      r.averageScore.toFixed(1),
-      r.maxMarks,
-      r.status
-    ]);
+    const headers = ['#', 'Assessment Title', 'Subject', 'Class', 'Category', 'Graded Students', 'Average Score', 'Max Marks', 'Percentage', 'Letter Grade', 'Remark', 'Status'];
+    const rows = list.map((r, idx) => {
+      const pct = r.maxMarks > 0 ? Math.round((r.averageScore / r.maxMarks) * 100) : 0;
+      const gradePill = computeGradePill(pct, activeGradingSystem);
+      return [
+        idx + 1,
+        `"${r.assessmentType.replace(/"/g, '""')}"`,
+        `"${r.subject.replace(/"/g, '""')}"`,
+        `"${r.className.replace(/"/g, '""')}"`,
+        r.category,
+        r.gradedStudents,
+        r.averageScore.toFixed(1),
+        r.maxMarks,
+        `${pct}%`,
+        gradePill.label,
+        `"${(gradePill.remark || '').replace(/"/g, '""')}"`,
+        r.status
+      ];
+    });
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

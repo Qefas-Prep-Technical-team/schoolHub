@@ -40,8 +40,9 @@ export const useExam = (id: string) => {
     queryKey: examKeys.detail(id),
     queryFn: () => examService.getExamById(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 2,
-    retry: false,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };
 

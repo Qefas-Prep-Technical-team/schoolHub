@@ -77,6 +77,60 @@ export interface ClassTodayAttendance {
   rate: number;
 }
 
+export interface AttendanceChartPoint {
+  day: string;
+  fullDate: string;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  rate: number;
+}
+
+export interface SubjectAttendanceBreakdownItem {
+  subjectId: string;
+  subjectName: string;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  rate: number;
+}
+
+export interface ClassAttendanceBreakdownItem {
+  classId: string;
+  className: string;
+  enrolledStudents: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  rate: number;
+}
+
+export interface SchoolAttendanceOverview {
+  range: "week" | "month" | "term";
+  subjectId: string;
+  classId: string;
+  totalStudents: number;
+  summary: {
+    totalRecords: number;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    attendanceRate: number;
+  };
+  chartData: AttendanceChartPoint[];
+  subjectBreakdown: SubjectAttendanceBreakdownItem[];
+  classBreakdown: ClassAttendanceBreakdownItem[];
+  availableSubjects: { id: string; name: string }[];
+  availableClasses: { id: string; name: string; enrolledStudents: number }[];
+}
+
 export const schoolService = {
   getStats: async (schoolId: string): Promise<SchoolStats> => {
     const response = await apiClient.get(`/schools/${schoolId}/stats`);
@@ -202,6 +256,17 @@ export const schoolService = {
       { params },
     );
     return response.data.data ?? [];
+  },
+
+  getAttendanceOverview: async (
+    schoolId: string,
+    params?: { range?: "week" | "month" | "term"; subjectId?: string; classId?: string },
+  ): Promise<SchoolAttendanceOverview> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: SchoolAttendanceOverview;
+    }>(`/schools/${schoolId}/attendance-overview`, { params });
+    return response.data.data;
   },
 
   getSubjects: async (schoolId?: string) => {

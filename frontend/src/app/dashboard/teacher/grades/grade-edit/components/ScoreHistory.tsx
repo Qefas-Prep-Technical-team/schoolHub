@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useMemo, Fragment } from 'react';
 import { ScoreHistoryT } from './types';
-
+import { groupByDate } from '@/app/dashboard/teacher/utils/dateSectioning';
 
 interface ScoreHistoryProps {
   history: ScoreHistoryT[];
 }
 
 const ScoreHistory: React.FC<ScoreHistoryProps> = ({ history }) => {
+  const groupedHistory = useMemo(() => {
+    return groupByDate(history, (item) => item.updatedAt);
+  }, [history]);
+
   return (
     <div className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 lg:sticky lg:top-28">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800">
@@ -33,24 +37,42 @@ const ScoreHistory: React.FC<ScoreHistoryProps> = ({ history }) => {
             </tr>
           </thead>
           <tbody>
-            {history.map((item, index) => (
-              <tr
-                key={index}
-                className={index < history.length - 1 
-                  ? 'border-b border-slate-200 dark:border-slate-700' 
-                  : ''
-                }
-              >
-                <td className="py-3 pr-2 text-slate-700 dark:text-slate-300">
-                  {item.component}
-                </td>
-                <td className="py-3 px-2 text-slate-500 dark:text-slate-400 text-right">
-                  {item.oldScore}
-                </td>
-                <td className="py-3 pl-2 text-primary dark:text-primary-400 font-bold text-right">
-                  {item.newScore}
-                </td>
-              </tr>
+            {groupedHistory.map((group) => (
+              <Fragment key={group.label}>
+                <tr className="bg-slate-50/90 dark:bg-slate-800/60 border-y border-slate-200/70 dark:border-slate-700/70">
+                  <td colSpan={3} className="px-2 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="size-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                        {group.label}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                        {group.items.length}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                {group.items.map((item, index) => (
+                  <tr
+                    key={`${group.label}-${index}`}
+                    className={
+                      index < group.items.length - 1
+                        ? 'border-b border-slate-200 dark:border-slate-700'
+                        : ''
+                    }
+                  >
+                    <td className="py-3 pr-2 text-slate-700 dark:text-slate-300">
+                      {item.component}
+                    </td>
+                    <td className="py-3 px-2 text-slate-500 dark:text-slate-400 text-right">
+                      {item.oldScore}
+                    </td>
+                    <td className="py-3 pl-2 text-primary dark:text-primary-400 font-bold text-right">
+                      {item.newScore}
+                    </td>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
           </tbody>
         </table>

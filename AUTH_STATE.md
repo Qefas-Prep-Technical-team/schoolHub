@@ -99,4 +99,21 @@
     3. In Web [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) and Mobile [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/Mobile/lib/api/client.ts), converted refresh logic to a shared `refreshPromise` single-flight function. Decoupled logout from string matching to strict terminal codes (`NO_REFRESH_TOKEN`, `REFRESH_INVALID`, `REFRESH_EXPIRED`, `REFRESH_REUSED`, `USER_INACTIVE`, `DEVICE_UNAUTHORIZED`, `NO_SESSION_ROW`). Retries network/5xx errors without clearing tokens.
     4. Added proactive token refresh on window focus (Web) and `AppState` active foreground (Mobile).
 
+### Friday, November 6, 2026
+- **Cross-Subdomain Refresh Cookie Alignment & Active Exam Session Keep-Alive**:
+  - *Context*: Students taking assessments on `/Exams&Quizzes/exam/[examId]` (or across `www.qefashub.com` vs `api.qefashub.com`) experienced unexpected logouts when their 1-hour access token expired during an active exam.
+  - *Root Causes*:
+    1. `auth.controller.ts` set `sameSite: "strict"` on the `refreshToken` cookie during initial login, verifyCode, and 2FA login, whereas `/auth/refresh` set `sameSite: "lax"`. Under `sameSite: "strict"`, cross-subdomain XHR requests to `/auth/refresh` could omit the `refreshToken` cookie, resulting in `NO_REFRESH_TOKEN` and immediate logout.
+    2. Students staying on the exam tab continuously without blurring/focusing the window never triggered the window `focus` refresh listener in `client.ts`.
+  - *Fixes*:
+    1. Standardized `refreshToken` cookie `sameSite` to `"lax"` across all login/verification endpoints in [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts).
+    2. Added `localStorage` fallback (`qefas_access_token`) in [auth-store.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/auth-store.ts) and [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) so the `Authorization: Bearer` header is always populated even if browser cookies are cleared or delayed.
+    3. Added a proactive 10-minute session keep-alive `executeRefreshToken()` interval in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/page.tsx) while an exam attempt is `IN_PROGRESS`.
+- **Session Expiry Redirect Preservation & Safe Storage Cleanup During Login**:
+  - *Context*: If a student's session expired while taking an exam, logging back in routed them to `/dashboard/student` instead of returning to `/Exams&Quizzes/exam/[examId]`, and `localStorage.clear()` wiped their device fingerprint (`flexiti_device_id`) and locally backed-up answers/question position.
+  - *Fixes*:
+    1. Updated `handleSessionExpiry()` in [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) to capture `window.location.pathname + window.location.search`, persist it to `sessionStorage.setItem("pendingJoinRedirect", currentPath)`, and redirect to the appropriate role login portal with `?session=expired&redirect=...`.
+    2. Replaced `localStorage.clear()` in `useLoginMutation` and `useLogin2FAMutation` ([use-auth-mutations.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/use-auth-mutations.ts)) with `clearStaleAuthStorage()`, preserving `flexiti_device_id`, `qefas_exam_*`, `qefas_paper_draft_*`, `qefas_device_location`, and `qefas_location_granted`, and added `redirectUrl` handling to `useLogin2FAMutation`.
+
+
 

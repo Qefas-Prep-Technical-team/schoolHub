@@ -6,6 +6,7 @@ export {
   getSchoolPerformanceAnalysis,
   getDashboardSummary,
   getSchoolTodayAttendance,
+  getSchoolAttendanceOverview,
 } from "./school-dashboard.controller";
 
 export {

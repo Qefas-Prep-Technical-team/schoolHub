@@ -69133,3 +69133,23 @@ Error: School record not found for ID: "default-tenant-id".
     at getSchoolSettingsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\services\school-profile.service.ts:193:11)
     at processTicksAndRejections (node:internal/process/task_queues:103:5)
     at getSchoolSettings (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\school\controllers\school-profile-billing.controller.ts:100:18)
+Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:63:18)
+Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:309:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:78:18)
+Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:309:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:78:18)
+Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:309:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:78:18)
+Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:309:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at getExamAttempt (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:78:18)

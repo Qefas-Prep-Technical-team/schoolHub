@@ -20,6 +20,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gradeKeys } from '@/lib/api/hooks/useGrades';
 import { apiClient } from '@/lib/api/client';
 import { useStudents } from '@/lib/api/hooks/useStudent';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { computeGradePill } from '@/utils/gradingSystem';
 import AddStudentDialog from '../../students/components/AddStudentDialog';
 import { toast } from 'react-toastify';
 
@@ -31,6 +33,8 @@ interface GradeEntryModalProps {
 
 export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntryModalProps) {
   const queryClient = useQueryClient();
+  const effectiveSchoolId = schoolId === 'default-tenant-id' || schoolId === 'personal' ? '' : schoolId;
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
   // Selection state
   const [selectedExamId, setSelectedExamId] = useState('');
@@ -413,6 +417,24 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
+                                {(() => {
+                                  const rawVal = scores[student.id];
+                                  const numScore = rawVal !== undefined && rawVal !== '' ? parseFloat(rawVal) : NaN;
+                                  const numMax = parseFloat(maxMarks) || 100;
+                                  if (!isNaN(numScore) && numMax > 0) {
+                                    const pct = Math.round((numScore / numMax) * 100);
+                                    const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                                    return (
+                                      <span
+                                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border ${pill.bg} ${pill.color}`}
+                                        title={`${pct}% — ${pill.remark || pill.label}`}
+                                      >
+                                        {pill.label}
+                                      </span>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                                 <Input
                                   type="number"
                                   placeholder="Score"

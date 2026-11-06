@@ -28,7 +28,10 @@ import {
   Loader2,
   Lock,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  CheckSquare,
+  Square,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,6 +100,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   const [gradeToDelete, setGradeToDelete] = useState<any | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
@@ -172,30 +176,60 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
     setIsUploadModalOpen(true);
   };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-        setSelectedIds(safeGrades.map((g: any) => g.id));
-    } else {
+  const handleToggleSelectionMode = () => {
+    setIsSelectionMode((prev) => {
+      if (prev) {
         setSelectedIds([]);
+      }
+      return !prev;
+    });
+  };
+
+  const handleSelectAll = (e?: React.ChangeEvent<HTMLInputElement>) => {
+    const allFilteredIds = filteredGrades.map((g: any) => g.id);
+    if (e) {
+      if (e.target.checked) {
+        setSelectedIds(allFilteredIds);
+      } else {
+        setSelectedIds([]);
+      }
+      return;
+    }
+    if (selectedIds.length === allFilteredIds.length && allFilteredIds.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(allFilteredIds);
     }
   };
 
-  const handleSelectOne = (id: string, checked: boolean) => {
+  const handleSelectSection = (sectionIds: string[], checked: boolean) => {
     if (checked) {
-        setSelectedIds(prev => [...prev, id]);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...sectionIds])));
     } else {
-        setSelectedIds(prev => prev.filter(item => item !== id));
+      setSelectedIds((prev) => prev.filter((id) => !sectionIds.includes(id)));
     }
+  };
+
+  const handleSelectOne = (id: string, checked?: boolean) => {
+    setSelectedIds((prev) => {
+      const isCurrentlySelected = prev.includes(id);
+      const shouldSelect = checked !== undefined ? checked : !isCurrentlySelected;
+      if (shouldSelect) {
+        return isCurrentlySelected ? prev : [...prev, id];
+      }
+      return prev.filter((item) => item !== id);
+    });
   };
 
   const handleBulkDelete = async () => {
     try {
-        await Promise.all(selectedIds.map(id => deleteMutation.mutateAsync(id)));
-        setSelectedIds([]);
-        setIsBulkDeleteOpen(false);
-        toast.success("Selected records deleted successfully.");
-    } catch (error: any) {
-        toast.error("Some records could not be deleted.");
+      await Promise.all(selectedIds.map((id) => deleteMutation.mutateAsync(id)));
+      setSelectedIds([]);
+      setIsSelectionMode(false);
+      setIsBulkDeleteOpen(false);
+      toast.success("Selected grade records cleared successfully.");
+    } catch (error: unknown) {
+      toast.error("Some records could not be cleared.");
     }
   };
 
@@ -351,7 +385,58 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
           </div>
 
           {/* Actions & View Switcher */}
-          <div className="flex items-center gap-2 self-end lg:self-center">
+          <div className="flex flex-wrap items-center gap-2 self-end lg:self-center">
+            {!isSelectionMode ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleToggleSelectionMode}
+                disabled={filteredGrades.length === 0}
+                className="rounded-xl h-10 px-3.5 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs gap-1.5 shadow-xs hover:bg-slate-50 cursor-pointer"
+              >
+                <CheckSquare size={15} className="text-indigo-600 dark:text-indigo-400" />
+                <span>Select</span>
+              </Button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSelectAll()}
+                  className="rounded-xl h-10 px-3 font-bold border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 text-xs gap-1.5 cursor-pointer"
+                >
+                  {filteredGrades.length > 0 && selectedIds.length === filteredGrades.length ? (
+                    <CheckSquare size={15} />
+                  ) : (
+                    <Square size={15} />
+                  )}
+                  <span>
+                    {filteredGrades.length > 0 && selectedIds.length === filteredGrades.length
+                      ? 'Deselect All'
+                      : 'Select All'}
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  disabled={selectedIds.length === 0 || deleteMutation.isPending}
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                  className="rounded-xl h-10 px-3.5 font-bold bg-rose-600 hover:bg-rose-700 text-white text-xs gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {deleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  <span>Clear Selected {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleToggleSelectionMode}
+                  className="rounded-xl h-10 px-3 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs gap-1 cursor-pointer"
+                >
+                  <X size={14} />
+                  <span>Cancel</span>
+                </Button>
+              </div>
+            )}
+
             <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
               <button 
                 onClick={() => setViewMode('grid')}
@@ -440,7 +525,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
       </div>
 
       {/* Main Content Rendering (Grid vs List) */}
-      {selectedIds.length > 0 && viewMode === 'list' && (
+      {isSelectionMode && selectedIds.length > 0 && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                   {selectedIds.length} record{selectedIds.length !== 1 ? 's' : ''} selected
@@ -451,7 +536,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                   className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-lg text-sm font-bold transition-colors"
               >
                   <Trash2 className="w-4 h-4" />
-                  Delete Selected
+                  Clear Selected
               </Button>
           </div>
       )}
@@ -508,35 +593,68 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
       ) : viewMode === 'grid' ? (
         /* Grid Layout Mode */
         <div className="space-y-8">
-          {gradeGroups.map((section) => (
-            <div key={section.label} className="space-y-4">
-              <div className="flex items-center gap-2.5 px-1 py-1">
-                <div className="size-2 rounded-full bg-indigo-500" />
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                  {section.label}
-                </h4>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
-                  {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
-                </span>
-              </div>
+          {gradeGroups.map((section) => {
+            const sectionIds = section.items.map(({ grade }) => grade.id);
+            const isSectionAllSelected = sectionIds.length > 0 && sectionIds.every((id) => selectedIds.includes(id));
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                {section.items.map(({ grade }) => {
-                  const percent = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : 0;
-                  const isPublished = grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId;
+            return (
+              <div key={section.label} className="space-y-4">
+                <div className="flex items-center gap-2.5 px-1 py-1">
+                  {isSelectionMode && (
+                    <input
+                      type="checkbox"
+                      checked={isSectionAllSelected}
+                      onChange={(e) => handleSelectSection(sectionIds, e.target.checked)}
+                      className="rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600"
+                    />
+                  )}
+                  <div className="size-2 rounded-full bg-indigo-500" />
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                    {section.label}
+                  </h4>
+                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                    {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                  </span>
+                </div>
 
-                  return (
-                    <div 
-                      key={grade.id} 
-                      onClick={() => handleGradeClick(grade)}
-                      className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex flex-col justify-between group cursor-pointer"
-                    >
-                      <div>
-                        {/* Card Header: Type Pill & Status Badge */}
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/80">
-                            {(grade.assessmentType && grade.assessmentType !== 'NULL' ? grade.assessmentType : grade.category) || 'Assessment'}
-                          </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                  {section.items.map(({ grade }) => {
+                    const percent = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : 0;
+                    const isPublished = grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId;
+                    const isSelected = selectedIds.includes(grade.id);
+
+                    return (
+                      <div 
+                        key={grade.id} 
+                        onClick={() => {
+                          if (isSelectionMode) {
+                            handleSelectOne(grade.id);
+                          } else {
+                            handleGradeClick(grade);
+                          }
+                        }}
+                        className={cn(
+                          "bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex flex-col justify-between group cursor-pointer",
+                          isSelectionMode && isSelected && "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/30"
+                        )}
+                      >
+                        <div>
+                          {/* Card Header: Type Pill & Status Badge */}
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <div className="flex items-center gap-2">
+                              {isSelectionMode && (
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => handleSelectOne(grade.id, e.target.checked)}
+                                  className="rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600"
+                                />
+                              )}
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/80">
+                                {(grade.assessmentType && grade.assessmentType !== 'NULL' ? grade.assessmentType : grade.category) || 'Assessment'}
+                              </span>
+                            </div>
 
                           <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             <span
@@ -672,63 +790,81 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* Unified List View (matches SubjectPapersView) */
         <div className="space-y-6">
-          {gradeGroups.map((section) => (
-            <div key={section.label} className="space-y-3">
-              <div className="flex items-center gap-2.5 px-1 py-1">
-                <div className="size-2 rounded-full bg-indigo-500" />
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                  {section.label}
-                </h4>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
-                  {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
-                </span>
-              </div>
+          {gradeGroups.map((section) => {
+            const sectionIds = section.items.map(({ grade }) => grade.id);
+            const isSectionAllSelected = sectionIds.length > 0 && sectionIds.every((id) => selectedIds.includes(id));
 
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
-                                <input 
-                                    type="checkbox" 
-                                    className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
-                                    checked={safeGrades.length > 0 && selectedIds.length === safeGrades.length}
-                                    onChange={handleSelectAll}
-                                />
-                            </th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-40">Code</th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject / Type</th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                        {section.items.map(({ grade, globalIndex }) => {
-                            const percent = Math.round((grade.score / grade.maxMarks) * 100);
-                            const isSelected = selectedIds.includes(grade.id);
-                            
-                            return (
-                                <tr 
-                                    key={grade.id}
-                                    onClick={() => handleGradeClick(grade)}
-                                    className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all relative cursor-pointer"
-                                >
-                                    <td className="p-4 text-center relative z-10" onClick={(e) => e.stopPropagation()}>
-                                        <input 
-                                            type="checkbox" 
-                                            className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
-                                            checked={isSelected}
-                                            onChange={(e) => handleSelectOne(grade.id, e.target.checked)}
-                                        />
-                                    </td>
+            return (
+              <div key={section.label} className="space-y-3">
+                <div className="flex items-center gap-2.5 px-1 py-1">
+                  <div className="size-2 rounded-full bg-indigo-500" />
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                    {section.label}
+                  </h4>
+                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                    {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                  </span>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                      <thead>
+                          <tr className="border-b border-slate-200/80 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/20">
+                              {isSelectionMode && (
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center w-14">
+                                    <input 
+                                        type="checkbox" 
+                                        className="rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600" 
+                                        checked={isSectionAllSelected}
+                                        onChange={(e) => handleSelectSection(sectionIds, e.target.checked)}
+                                    />
+                                </th>
+                              )}
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-12 text-center">#</th>
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-40">Code</th>
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</th>
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject / Type</th>
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Score</th>
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                              <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Actions</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                          {section.items.map(({ grade, globalIndex }) => {
+                              const percent = Math.round((grade.score / grade.maxMarks) * 100);
+                              const isSelected = selectedIds.includes(grade.id);
+                              
+                              return (
+                                  <tr 
+                                      key={grade.id}
+                                      onClick={() => {
+                                        if (isSelectionMode) {
+                                          handleSelectOne(grade.id);
+                                        } else {
+                                          handleGradeClick(grade);
+                                        }
+                                      }}
+                                      className={cn(
+                                        "group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all relative cursor-pointer",
+                                        isSelectionMode && isSelected && "bg-indigo-50/50 dark:bg-indigo-950/30"
+                                      )}
+                                  >
+                                      {isSelectionMode && (
+                                        <td className="p-4 text-center relative z-10" onClick={(e) => e.stopPropagation()}>
+                                            <input 
+                                                type="checkbox" 
+                                                className="rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600" 
+                                                checked={isSelected}
+                                                onChange={(e) => handleSelectOne(grade.id, e.target.checked)}
+                                            />
+                                        </td>
+                                      )}
                                     <td className="p-4 text-center text-xs font-bold text-slate-400 relative z-10">
                                         #{globalIndex}
                                     </td>
@@ -813,7 +949,8 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                 </table>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -851,6 +988,43 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         onClose={() => setIsOCRModalOpen(false)} 
         schoolId={schoolId}
       />
+
+        {/* Bulk Clear Confirmation Dialog */}
+        <Dialog open={isBulkDeleteOpen} onOpenChange={(open) => !deleteMutation.isPending && setIsBulkDeleteOpen(open)}>
+          <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-slate-200 dark:border-slate-800 shadow-2xl">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-rose-50/50 dark:bg-rose-900/10">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-2xl">
+                  <AlertTriangle size={24} />
+                </div>
+                <DialogTitle className="text-xl font-black tracking-tighter uppercase text-slate-900 dark:text-white">
+                  Clear Selected Grades
+                </DialogTitle>
+              </div>
+            </div>
+            <div className="p-8 space-y-4">
+              <DialogDescription className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to clear <span className="font-black text-slate-900 dark:text-white">{selectedIds.length}</span> selected grade {selectedIds.length === 1 ? 'record' : 'records'}? This action cannot be undone.
+              </DialogDescription>
+            </div>
+            <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+              <Button variant="outline" disabled={deleteMutation.isPending} onClick={() => setIsBulkDeleteOpen(false)} className="h-11 px-6 rounded-xl font-medium">
+                Cancel
+              </Button>
+              <Button
+                disabled={selectedIds.length === 0 || deleteMutation.isPending}
+                onClick={handleBulkDelete}
+                className="h-11 px-6 rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20"
+              >
+                {deleteMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Clearing...</>
+                ) : (
+                  `Clear ${selectedIds.length} ${selectedIds.length === 1 ? 'Grade' : 'Grades'}`
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={!!gradeToDelete} onOpenChange={(open) => !open && setGradeToDelete(null)}>

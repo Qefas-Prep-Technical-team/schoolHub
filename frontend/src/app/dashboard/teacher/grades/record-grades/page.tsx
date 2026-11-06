@@ -6,6 +6,9 @@ import GradeFilters from './components/GradeFilters';
 import GradeTable from './components/GradeTable';
 import FormActions from './components/FormActions';
 import { Class, StudentGrade, Subject, Term } from './components/types';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 
 
 const initialStudents: StudentGrade[] = [
@@ -15,10 +18,11 @@ const initialStudents: StudentGrade[] = [
     studentCode: 'S001',
     subjectPaper: 'Mathematics',
     assessmentType: 'Assignment',
-    score: 18,
-    total: 18,
-    grade: 'A-',
+    score: 88,
+    total: 88,
+    grade: 'A',
     isSelected: false,
+    recordedAt: new Date().toISOString(),
   },
   {
     id: '2',
@@ -26,10 +30,11 @@ const initialStudents: StudentGrade[] = [
     studentCode: 'S002',
     subjectPaper: 'Mathematics',
     assessmentType: 'Assignment',
-    score: 15,
-    total: 15,
+    score: 64,
+    total: 64,
     grade: 'B',
     isSelected: false,
+    recordedAt: new Date().toISOString(),
   },
   {
     id: '3',
@@ -37,10 +42,11 @@ const initialStudents: StudentGrade[] = [
     studentCode: 'S003',
     subjectPaper: 'Mathematics',
     assessmentType: 'Exam',
-    score: 20,
-    total: 20,
-    grade: 'A',
+    score: 92,
+    total: 92,
+    grade: 'A+',
     isSelected: false,
+    recordedAt: new Date().toISOString(),
   },
   {
     id: '4',
@@ -53,6 +59,7 @@ const initialStudents: StudentGrade[] = [
     grade: 'Invalid',
     isSelected: false,
     hasError: true,
+    recordedAt: new Date(Date.now() - 86400000).toISOString(),
   },
   {
     id: '5',
@@ -60,10 +67,11 @@ const initialStudents: StudentGrade[] = [
     studentCode: 'S005',
     subjectPaper: 'Mathematics',
     assessmentType: 'Assignment',
-    score: 19,
-    total: 19,
-    grade: 'A-',
+    score: 76,
+    total: 76,
+    grade: 'A',
     isSelected: false,
+    recordedAt: new Date(Date.now() - 86400000).toISOString(),
   },
 ];
 
@@ -84,6 +92,12 @@ const subjects: Subject[] = [
 ];
 
 export default function RecordGradesPage() {
+  const { selectedSchoolId } = useDashboardStore();
+  const { user } = useAuthStore();
+  const rawSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const effectiveSchoolId = rawSchoolId === 'default-tenant-id' || rawSchoolId === 'personal' ? '' : rawSchoolId;
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+
   const [students, setStudents] = useState<StudentGrade[]>(initialStudents);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,13 +106,11 @@ export default function RecordGradesPage() {
     class: string;
     subject: string;
   }) => {
-    // console.log('Filters changed:', filters);
-    // Implement filter logic here
+    void filters;
   };
 
   const handleSaveDraft = () => {
-    // console.log('Saving draft...', students);
-    // Implement save draft logic
+    // Save draft logic
   };
 
   const handleSubmitFinal = async () => {
@@ -116,12 +128,7 @@ export default function RecordGradesPage() {
         return;
       }
 
-      // console.log('Submitting final grades...', students);
-      // Implement submission logic
-      
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       alert('Grades submitted successfully!');
     } catch (error) {
       console.error('Submission failed:', error);
@@ -145,6 +152,7 @@ export default function RecordGradesPage() {
       <GradeTable
         students={students}
         onStudentsUpdate={setStudents}
+        gradingSystem={schoolProfile?.gradingSystem}
       />
       
       <FormActions

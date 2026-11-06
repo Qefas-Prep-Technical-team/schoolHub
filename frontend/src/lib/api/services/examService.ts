@@ -370,8 +370,13 @@ export const examService = {
     return response.data;
   },
 
-  submitAttempt: async (examId: string) => {
-    const response = await apiClient.post(`/exams/${examId}/submit`);
+  submitAttempt: async (
+    examId: string,
+    options?: {
+      answers?: Array<{ subjectPaperId: string; questionId: string; answer: string }>;
+    },
+  ) => {
+    const response = await apiClient.post(`/exams/${examId}/submit`, options || {});
     return response.data.data;
   },
 

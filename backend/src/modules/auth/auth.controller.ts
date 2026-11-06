@@ -135,12 +135,12 @@ export const registerSchool = async (req: Request, res: Response) => {
         const freePlan = envPlanId
           ? await tx.subscriptionPlan.findUnique({ where: { id: envPlanId } })
           : await tx.subscriptionPlan.findFirst({
-              where: {
-                planScope: PlanScope.SCHOOL,
-                type: "free",
-                category: "schools",
-              },
-            });
+            where: {
+              planScope: PlanScope.SCHOOL,
+              type: "free",
+              category: "schools",
+            },
+          });
 
         if (!freePlan) {
           throw new Error(
@@ -1321,15 +1321,15 @@ export const login = async (req: Request, res: Response) => {
     // Check admin plan limit to block non-owners if limit reached/expired
     if (actualRole === UserRole.ADMIN) {
       const schoolAdmin = user.schoolAdmins?.[0]; // Usually an admin belongs to one school
-      
+
       if (schoolAdmin) {
         const isAdminOwner = schoolAdmin.role === 'SCHOOL_OWNER';
-  
+
         if (!isAdminOwner) {
           try {
             const schoolUsage = await getSchoolUsageService(schoolAdmin.schoolId);
             const linkingFeature = schoolUsage.planFeatures.find((f: any) => f.tag === 'linkingHub');
-  
+
             if (!linkingFeature || !linkingFeature.enabled || linkingFeature.limit === 0) {
               return res.status(403).json({
                 success: false,
@@ -1463,7 +1463,7 @@ export const login = async (req: Request, res: Response) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
@@ -1942,7 +1942,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
       if (isWithinGrace) {
         console.log(`[auth.refreshToken] Benign replay within ${graceSeconds}s grace window for userId=${payload.userId}. Returning fresh access token.`);
-        
+
         let successorRefreshToken = token;
         if (dbToken.replacedByTokenId) {
           const successorRow = await withRetry(
@@ -2831,7 +2831,7 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
@@ -3088,8 +3088,8 @@ export const getUserSessions = async (req: Request, res: Response) => {
     const currentToken = req.cookies.refreshToken;
     const currentSession = currentToken
       ? await prisma.refreshToken.findFirst({
-          where: { token: currentToken, userId },
-        })
+        where: { token: currentToken, userId },
+      })
       : null;
 
     const geoip = require('geoip-lite');
@@ -3099,21 +3099,21 @@ export const getUserSessions = async (req: Request, res: Response) => {
     const data = sessions.map((session) => {
       let location = "Unknown Location";
       if (session.ipAddress && session.ipAddress !== "Unknown IP") {
-          try {
-              const geo = geoip.lookup(session.ipAddress);
-              if (geo) {
-                  const cityPart = geo.city || geo.region;
-                  if (cityPart && geo.country) {
-                      location = `${cityPart}, ${geo.country}`;
-                  } else if (geo.country) {
-                      location = geo.country;
-                  } else if (cityPart) {
-                      location = cityPart;
-                  }
-              }
-          } catch (e) {
-              console.error("GeoIP lookup failed", e);
+        try {
+          const geo = geoip.lookup(session.ipAddress);
+          if (geo) {
+            const cityPart = geo.city || geo.region;
+            if (cityPart && geo.country) {
+              location = `${cityPart}, ${geo.country}`;
+            } else if (geo.country) {
+              location = geo.country;
+            } else if (cityPart) {
+              location = cityPart;
+            }
           }
+        } catch (e) {
+          console.error("GeoIP lookup failed", e);
+        }
       }
 
       const isCurrentDevice = currentSession?.id === session.id;
@@ -3722,7 +3722,7 @@ export const login2FA = async (req: Request, res: Response) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
@@ -4168,7 +4168,7 @@ export const requestDataDeletion = async (req: Request, res: Response) => {
 
     if (existingUser) {
       userName = existingUser.name || existingUser.fullName || "User";
-      
+
       // Invalidate active refresh tokens
       await prisma.refreshToken.updateMany({
         where: { userId: existingUser.id },

@@ -14,6 +14,7 @@ import {
   getSchoolPerformanceAnalysisService,
   getDashboardRecentActivityService,
   getSchoolTodayAttendanceService,
+  getSchoolAttendanceOverviewService,
 } from "../services/school-dashboard.service";
 
 /**
@@ -215,6 +216,37 @@ export const getSchoolTodayAttendance = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, data });
   } catch (error: unknown) {
     return handleError(res, error, "school.getSchoolTodayAttendance");
+  }
+};
+
+/**
+ * Handle fetching comprehensive attendance overview (Week / Month / Term + Subject & Class breakdown)
+ */
+export const getSchoolAttendanceOverview = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const { schoolId } = req.params;
+    const { range, subjectId, classId } = req.query;
+    if (!schoolId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
+    }
+    if (!validateSchoolAccess(req, schoolId as string)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+    const validRange =
+      range === "month" || range === "term" ? range : "week";
+    const data = await getSchoolAttendanceOverviewService(schoolId as string, {
+      range: validRange,
+      subjectId: typeof subjectId === "string" ? subjectId : undefined,
+      classId: typeof classId === "string" ? classId : undefined,
+    });
+    return res.status(200).json({ success: true, data });
+  } catch (error: unknown) {
+    return handleError(res, error, "school.getSchoolAttendanceOverview");
   }
 };
 
