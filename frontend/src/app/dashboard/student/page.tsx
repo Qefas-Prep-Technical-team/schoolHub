@@ -185,6 +185,43 @@ export default function StudentHomeDashboard() {
     (studentProfile as unknown as Record<string, unknown>)?.graduationStatus?.toString().toUpperCase() === "GRADUATED"
   );
 
+  // Graduated recognition banner: only show for 1 week (7 days) after graduation event
+  const hasRecentGraduation = useMemo(() => {
+    if (!isGraduated) return false;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    // Check profile graduation timestamp or updated timestamp
+    const gradDate = (studentProfile as any)?.graduatedAt || (studentProfile as any)?.graduationDate || (studentProfile as any)?.updatedAt;
+    if (gradDate) {
+      const gradTime = new Date(gradDate).getTime();
+      if (!isNaN(gradTime)) {
+        const diff = now - gradTime;
+        // If within 7 days, show the banner
+        if (diff >= 0 && diff <= SEVEN_DAYS_MS) {
+          return true;
+        }
+      }
+    }
+
+    // Fallback: If user first viewed graduation in browser, track first seen timestamp
+    if (typeof window !== 'undefined') {
+      const storageKey = `qefas_alumni_banner_seen_${studentProfile?.id || (user as any)?.id || 'current'}`;
+      const firstSeen = localStorage.getItem(storageKey);
+      if (!firstSeen) {
+        localStorage.setItem(storageKey, String(now));
+        return true;
+      }
+      const seenTime = parseInt(firstSeen, 10);
+      if (!isNaN(seenTime) && now - seenTime <= SEVEN_DAYS_MS) {
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }, [isGraduated, studentProfile, user]);
+
   // Only display if a new final result was published in the last 7 days
   const hasRecentFinalResults = useMemo(() => {
     if (!Array.isArray(publishedResultsData) || publishedResultsData.length === 0) {
@@ -425,7 +462,7 @@ export default function StudentHomeDashboard() {
   return (
     <div className="w-full space-y-6 sm:space-y-8 font-sans pb-12 md:pb-6">
       <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8">
-        
+
         <PrefectRoleBanner roleName={prefectRole || ''} />
 
         {/* Top Hero Banner */}
@@ -433,7 +470,7 @@ export default function StudentHomeDashboard() {
           {/* Decorative background blobs */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-40 h-40 bg-pink-400/20 rounded-full blur-3xl translate-y-1/3 pointer-events-none" />
-          
+
           <div className="relative z-10 max-w-2xl">
             <h1 className="text-2xl sm:text-3xl md:text-5xl font-black mb-3 sm:mb-4 tracking-tight leading-tight">
               Ready to keep learning, {username || 'Scholar'}?
@@ -441,7 +478,7 @@ export default function StudentHomeDashboard() {
             <p className="text-pink-100 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 font-medium leading-relaxed">
               Let&apos;s keep your academic momentum going. You are one step closer to achieving your educational goals.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Link href={latestAttempt ? "/dashboard/student/result" : "/dashboard/student/exams&quizzes"} className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto bg-white text-pink-600 hover:bg-slate-50 dark:hover:bg-zinc-100 rounded-xl h-11 sm:h-12 px-6 sm:px-8 font-bold text-sm sm:text-base shadow-sm">
@@ -455,7 +492,7 @@ export default function StudentHomeDashboard() {
               </Link>
             </div>
           </div>
-          
+
           {/* Right side floating badges */}
           <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 flex-col gap-6 pointer-events-none">
             <div className="w-16 h-16 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg">
@@ -475,9 +512,9 @@ export default function StudentHomeDashboard() {
               <p className="text-emerald-100 text-xs sm:text-sm font-medium">Your published academic report card and term summaries are ready for review.</p>
             </div>
             <Link href="/dashboard/student/result/termly" className="w-full sm:w-auto shrink-0">
-               <Button className="w-full sm:w-auto bg-white text-emerald-600 hover:bg-slate-50 dark:hover:bg-zinc-100 font-bold rounded-xl h-11 sm:h-12 px-6 sm:px-8 shadow-sm text-sm sm:text-base">
-                 View Final Result
-               </Button>
+              <Button className="w-full sm:w-auto bg-white text-emerald-600 hover:bg-slate-50 dark:hover:bg-zinc-100 font-bold rounded-xl h-11 sm:h-12 px-6 sm:px-8 shadow-sm text-sm sm:text-base">
+                View Final Result
+              </Button>
             </Link>
           </div>
         )}
@@ -495,7 +532,7 @@ export default function StudentHomeDashboard() {
                   Connected School: {connectedSchool.name}
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  Join Your School Class Cohort
+                  Join Your School Class
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
                   You are linked to {connectedSchool.name}, but have not yet joined a classroom. Select an available class to see enrolled classmates, active subjects, and course timetables.
@@ -512,8 +549,8 @@ export default function StudentHomeDashboard() {
           </div>
         )}
 
-        {/* Graduated / Alumni Scholar Recognition Banner */}
-        {isGraduated && (
+        {/* Graduated / Alumni Scholar Recognition Banner (Only displayed for 7 days after graduation) */}
+        {isGraduated && hasRecentGraduation && (
           <div className="bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-indigo-500/10 border border-amber-300/40 dark:border-amber-700/40 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm relative overflow-hidden">
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/25">
@@ -543,7 +580,7 @@ export default function StudentHomeDashboard() {
                 onClick={() => setIsClassSelectionModalOpen(true)}
                 className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-bold rounded-xl h-11 px-5 text-xs sm:text-sm gap-2"
               >
-                <span>View Cohorts</span>
+                <span>View Classes</span>
                 <ArrowRight size={15} />
               </Button>
             </div>
@@ -552,28 +589,28 @@ export default function StudentHomeDashboard() {
 
         {/* Stat Cards Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-          <StatCard 
-            icon={<BookMarked className="w-5 h-5 text-pink-600 dark:text-pink-400" />} 
-            label="Exams Taken" 
-            value={attempts.length} 
+          <StatCard
+            icon={<BookMarked className="w-5 h-5 text-pink-600 dark:text-pink-400" />}
+            label="Exams Taken"
+            value={attempts.length}
             tooltip="Total completed examinations and graded quizzes logged on Qefas Hub."
           />
-          <StatCard 
-            icon={<Award className="w-5 h-5 text-amber-500" />} 
-            label="Active Subjects" 
-            value={enrolledSubjectsCount} 
+          <StatCard
+            icon={<Award className="w-5 h-5 text-amber-500" />}
+            label="Active Subjects"
+            value={enrolledSubjectsCount}
             tooltip="Number of registered course subjects currently configured in your class curriculum."
           />
-          <StatCard 
-            icon={<Clock className="w-5 h-5 text-emerald-500" />} 
-            label="Current GPA" 
-            value={gpa} 
+          <StatCard
+            icon={<Clock className="w-5 h-5 text-emerald-500" />}
+            label="Current GPA"
+            value={gpa}
             tooltip="Cumulative Grade Point Average calculated on a standard 5.0 scale across all evaluated exams and assignments."
           />
-          <StatCard 
-            icon={<Flame className="w-5 h-5 text-pink-500" />} 
-            label="Overall Mastery" 
-            value={analysis ? `${analysis.overallMastery}%` : "0%"} 
+          <StatCard
+            icon={<Flame className="w-5 h-5 text-pink-500" />}
+            label="Overall Mastery"
+            value={analysis ? `${analysis.overallMastery}%` : "0%"}
             tooltip="Aggregated syllabus proficiency percentage computed from your scores across all examined subjects."
           />
         </div>
@@ -581,7 +618,7 @@ export default function StudentHomeDashboard() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
           <div className="xl:col-span-2 space-y-6 sm:space-y-8">
-            
+
             {/* Recent Activity Section */}
             <section className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2">
@@ -595,7 +632,7 @@ export default function StudentHomeDashboard() {
                     <div className="absolute inset-0 bg-pink-500/10 group-hover:bg-pink-500/20 transition-colors" />
                     <BookOpen className="w-12 h-12 text-pink-500 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-md" strokeWidth={1.5} />
                   </div>
-                  
+
                   <div className="flex-1 space-y-3 sm:space-y-4 w-full">
                     <div>
                       <span className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 bg-pink-100 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 text-[10px] sm:text-xs font-bold rounded-lg uppercase tracking-wider mb-2">
@@ -617,14 +654,14 @@ export default function StudentHomeDashboard() {
                         </span>
                       </div>
                       <div className="h-2 w-full bg-slate-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-pink-600 dark:bg-pink-500 rounded-full transition-all duration-1000"
                           style={{ width: `${Math.round((latestAttempt.totalScore / (latestAttempt.totalMarks || 1)) * 100)}%` }}
                         />
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex w-full md:w-auto shrink-0 justify-center md:justify-start pt-2 md:pt-0">
                     <Link href="/dashboard/student/result" className="w-full md:w-auto">
                       <Button className="w-full md:w-auto bg-pink-600 hover:bg-pink-700 text-white rounded-xl h-11 sm:h-12 px-6 shadow-sm font-bold text-sm">
@@ -639,7 +676,7 @@ export default function StudentHomeDashboard() {
                     <Sparkles className="w-10 h-10 text-pink-500 mb-2 drop-shadow-sm" strokeWidth={1.8} />
                     <span className="text-[11px] font-semibold text-pink-600 dark:text-pink-400">Ready to Start</span>
                   </div>
-                  
+
                   <div className="flex-1 space-y-2 text-center md:text-left">
                     <span className="inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 text-[10px] sm:text-xs font-bold rounded-lg uppercase tracking-wider">
                       No Assessments Yet
@@ -651,7 +688,7 @@ export default function StudentHomeDashboard() {
                       You haven&apos;t taken any exams or quizzes yet. Once you complete an assessment, your scores, percentage breakdown, and progress tracking will show up here.
                     </p>
                   </div>
-                  
+
                   <div className="flex w-full md:w-auto shrink-0 justify-center md:justify-start">
                     <Link href="/dashboard/student/exams&quizzes" className="w-full md:w-auto">
                       <Button className="w-full md:w-auto bg-pink-600 hover:bg-pink-700 text-white rounded-xl h-11 sm:h-12 px-6 shadow-sm font-bold text-sm gap-2">
@@ -694,8 +731,8 @@ export default function StudentHomeDashboard() {
                           <span className={cn(
                             "inline-block px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold rounded-lg uppercase tracking-wider mb-2 sm:mb-3 self-start",
                             sub.category === "SCIENCE" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" :
-                            sub.category === "ARTS" ? "bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-400" :
-                            "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
+                              sub.category === "ARTS" ? "bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-400" :
+                                "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
                           )}>
                             {sub.category}
                           </span>
@@ -742,18 +779,18 @@ export default function StudentHomeDashboard() {
                 <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Performance Overview</h2>
                 <HeaderTooltip content="Longitudinal trajectory of your academic performance showing historical trendlines and verified examination papers." />
               </div>
-              <PerformanceTrend 
-                attempts={attempts as PerformanceAttempt[]} 
-                standaloneGrades={standaloneGrades as PerformanceGrade[]} 
+              <PerformanceTrend
+                attempts={attempts as PerformanceAttempt[]}
+                standaloneGrades={standaloneGrades as PerformanceGrade[]}
               />
-              <AcademicHistory 
-                attempts={attempts as unknown as HistoryAttempt[]} 
-                isLoading={isLoadingExams} 
+              <AcademicHistory
+                attempts={attempts as unknown as HistoryAttempt[]}
+                isLoading={isLoadingExams}
               />
             </section>
 
           </div>
-          
+
           {/* Right Sidebar (Radar Chart & Latest Assignments) */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-sm">
@@ -763,7 +800,7 @@ export default function StudentHomeDashboard() {
                   <HeaderTooltip content="Multi-dimensional radar chart measuring your competency across all evaluated subject domains. Helps prioritize study topics." />
                 </div>
               </div>
-              
+
               <div className="w-full h-60 sm:h-64 shrink-0 relative">
                 {analysis ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -786,7 +823,7 @@ export default function StudentHomeDashboard() {
                   </div>
                 )}
               </div>
-              
+
               {analysis && (
                 <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                   <div className="p-3.5 sm:p-4 rounded-2xl bg-pink-50 dark:bg-pink-500/10 border border-pink-100 dark:border-pink-500/20">
@@ -807,12 +844,12 @@ export default function StudentHomeDashboard() {
                 </div>
               )}
             </div>
-            
+
             <div className="h-[380px] sm:h-[400px]">
               <LatestAssignmentsCard />
             </div>
           </div>
-          
+
         </div>
 
       </div>
@@ -842,7 +879,7 @@ export default function StudentHomeDashboard() {
         studentName={studentProfile?.name || username || 'Scholar'}
         roleName={prefectRole || ''}
         hasSeenCelebration={hasSeenCelebration}
-        onAcknowledge={() => {}}
+        onAcknowledge={() => { }}
       />
 
       <StudentAcademicLockModal
@@ -854,16 +891,16 @@ export default function StudentHomeDashboard() {
   );
 }
 
-function StatCard({ 
-  icon, 
-  label, 
-  value, 
-  tooltip 
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
-  value: string | number; 
-  tooltip: string; 
+function StatCard({
+  icon,
+  label,
+  value,
+  tooltip
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  tooltip: string;
 }) {
   return (
     <div className="bg-white dark:bg-zinc-950/80 border border-slate-200/80 dark:border-zinc-800 rounded-3xl p-4 sm:p-5 md:p-6 shadow-sm flex flex-col justify-between">

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { CheckCircle2, XCircle, Loader2, FileText, ShieldCheck } from "lucide-react";
 
 export type PaperSubmitStatus = "pending" | "submitting" | "done" | "error";
@@ -15,12 +16,12 @@ export interface PaperSubmitState {
 export interface SubmissionProgressModalProps {
   isOpen: boolean;
   papers: PaperSubmitState[];
-  finaliseStatus: "idle" | "finalising" | "done" | "error";
+  finaliseStatus: "idle" | "pending" | "finalising" | "done" | "error";
   finaliseError?: string;
   onRetry?: () => void;
 }
 
-type AnyStatus = PaperSubmitStatus | "finalising" | "done" | "error";
+type AnyStatus = PaperSubmitStatus | "idle" | "finalising" | "done" | "error";
 
 function StepIcon({ status }: { status: AnyStatus }) {
   if (status === "submitting" || status === "finalising") {
@@ -58,13 +59,38 @@ export default function SubmissionProgressModal({
   finaliseError,
   onRetry,
 }: SubmissionProgressModalProps) {
-  if (!isOpen) return null;
+  const [shouldRender, setShouldRender] = React.useState(isOpen);
+  const [isVisible, setIsVisible] = React.useState(isOpen);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      const frame = requestAnimationFrame(() => setIsVisible(true));
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setIsVisible(false);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!shouldRender) return null;
 
   const submittedCount = papers.filter((p) => p.status === "done").length;
+  const totalSteps = papers.length + 1;
+  const completedSteps = submittedCount + (finaliseStatus === "done" ? 1 : 0);
   const hasError = papers.some((p) => p.status === "error") || finaliseStatus === "error";
+  const isFinalisePending = finaliseStatus === "idle" || finaliseStatus === "pending";
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in duration-400">
+    <div
+      className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300 ${isVisible
+          ? "bg-black/75 backdrop-blur-md opacity-100"
+          : "bg-black/0 backdrop-blur-none opacity-0 pointer-events-none"
+        }`}
+    >
       {/* Ambient glow blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-indigo-600/15 blur-[120px]" />
@@ -73,7 +99,10 @@ export default function SubmissionProgressModal({
 
       {/* Modal card */}
       <div
-        className="relative w-full max-w-md mx-4 rounded-3xl border border-white/10 shadow-2xl shadow-black/50 backdrop-blur-2xl overflow-hidden animate-in zoom-in-95 duration-400"
+        className={`relative w-full max-w-md mx-4 rounded-3xl border border-white/10 shadow-2xl shadow-black/50 backdrop-blur-2xl overflow-hidden transition-all duration-300 transform ${isVisible
+            ? "scale-100 opacity-100 translate-y-0"
+            : "scale-95 opacity-0 translate-y-2 pointer-events-none"
+          }`}
         style={{ background: "linear-gradient(145deg, rgba(15,20,40,0.97) 0%, rgba(20,15,50,0.97) 100%)" }}
       >
         {/* Top accent bar */}
@@ -91,39 +120,43 @@ export default function SubmissionProgressModal({
                 ? "Submission Interrupted"
                 : finaliseStatus === "done"
                   ? "Submission Complete!"
-                  : "Submitting Examination"}
+                  : finaliseStatus === "finalising"
+                    ? "Finalising & Scoring Grade"
+                    : "Submitting Examination"}
             </h2>
             <p className="text-slate-400 text-xs font-medium">
               {hasError
                 ? "An error occurred. Please check below."
                 : finaliseStatus === "done"
-                  ? "All papers have been securely recorded."
-                  : `Submitting ${submittedCount} of ${papers.length} subject paper${papers.length !== 1 ? "s" : ""}...`}
+                  ? "All papers and grades have been securely recorded."
+                  : finaliseStatus === "finalising"
+                    ? "All papers submitted. Calculating and recording your final grade..."
+                    : `Submitting ${Math.min(submittedCount + 1, papers.length)} of ${papers.length} subject paper${papers.length !== 1 ? "s" : ""}...`}
             </p>
           </div>
 
           {/* Progress bar */}
-          {!hasError && papers.length > 0 && (
+          {!hasError && totalSteps > 0 && (
             <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-700 ease-out"
-                style={{ width: `${(submittedCount / papers.length) * 100}%` }}
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 ease-out"
+                style={{ width: `${Math.round((completedSteps / totalSteps) * 100)}%` }}
               />
             </div>
           )}
 
           {/* Paper list */}
           <div className="space-y-3">
-            {papers.map((paper) => (
+            {papers.map((paper, pIdx) => (
               <div
-                key={paper.paperId}
+                key={paper.paperId ? `${paper.paperId}-${pIdx}` : `sub-paper-${pIdx}`}
                 className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${paper.status === "submitting"
-                    ? "border-indigo-400/30 bg-indigo-500/5"
-                    : paper.status === "done"
-                      ? "border-emerald-400/20 bg-emerald-500/5"
-                      : paper.status === "error"
-                        ? "border-red-400/20 bg-red-500/5"
-                        : "border-slate-700/50 bg-slate-800/30"
+                  ? "border-indigo-400/30 bg-indigo-500/5"
+                  : paper.status === "done"
+                    ? "border-emerald-400/20 bg-emerald-500/5"
+                    : paper.status === "error"
+                      ? "border-red-400/20 bg-red-500/5"
+                      : "border-slate-700/50 bg-slate-800/30 opacity-75"
                   }`}
               >
                 <StepIcon status={paper.status} />
@@ -133,12 +166,12 @@ export default function SubmissionProgressModal({
                     <FileText size={12} className="shrink-0 text-slate-500" />
                     <p
                       className={`text-sm font-bold truncate ${paper.status === "done"
-                          ? "text-emerald-300"
-                          : paper.status === "error"
-                            ? "text-red-300"
-                            : paper.status === "submitting"
-                              ? "text-indigo-200"
-                              : "text-slate-400"
+                        ? "text-emerald-300"
+                        : paper.status === "error"
+                          ? "text-red-300"
+                          : paper.status === "submitting"
+                            ? "text-indigo-200"
+                            : "text-slate-400"
                         }`}
                     >
                       {paper.paperName}
@@ -146,12 +179,18 @@ export default function SubmissionProgressModal({
                   </div>
                   <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
                     {paper.questionCount} question{paper.questionCount !== 1 ? "s" : ""}
+                    {paper.status === "pending" && " \u2014 pending..."}
                     {paper.status === "submitting" && " \u2014 submitting..."}
                     {paper.status === "done" && " \u2014 submitted"}
                     {paper.status === "error" && ` \u2014 ${paper.errorMessage ?? "failed"}`}
                   </p>
                 </div>
 
+                {paper.status === "pending" && (
+                  <span className="shrink-0 text-[10px] font-black uppercase text-slate-500">
+                    PENDING
+                  </span>
+                )}
                 {paper.status === "submitting" && (
                   <span className="shrink-0 text-[10px] font-black uppercase text-indigo-400 animate-pulse">
                     ACTIVE
@@ -163,41 +202,54 @@ export default function SubmissionProgressModal({
               </div>
             ))}
 
-            {/* Finalising step */}
-            {finaliseStatus !== "idle" && (
-              <div
-                className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${finaliseStatus === "finalising"
-                    ? "border-violet-400/30 bg-violet-500/5"
-                    : finaliseStatus === "done"
-                      ? "border-emerald-400/20 bg-emerald-500/5"
-                      : "border-red-400/20 bg-red-500/5"
-                  }`}
-              >
-                <StepIcon status={finaliseStatus} />
-                <div className="flex-1">
-                  <p
-                    className={`text-sm font-bold ${finaliseStatus === "done"
-                        ? "text-emerald-300"
-                        : finaliseStatus === "error"
-                          ? "text-red-300"
-                          : "text-violet-200"
-                      }`}
-                  >
-                    Finalising &amp; Scoring
-                  </p>
-                  <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                    {finaliseStatus === "finalising" && "Recording all results..."}
-                    {finaliseStatus === "done" && "All results recorded"}
-                    {finaliseStatus === "error" && (finaliseError ?? "Finalisation failed")}
-                  </p>
-                </div>
-                {finaliseStatus === "finalising" && (
-                  <span className="shrink-0 text-[10px] font-black uppercase text-violet-400 animate-pulse">
-                    ACTIVE
-                  </span>
-                )}
+            {/* Finalising & Scoring step (Always visible: stays PENDING while papers submit, becomes ACTIVE only after papers finish) */}
+            <div
+              className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-300 ${finaliseStatus === "finalising"
+                ? "border-violet-400/30 bg-violet-500/5"
+                : finaliseStatus === "done"
+                  ? "border-emerald-400/20 bg-emerald-500/5"
+                  : finaliseStatus === "error"
+                    ? "border-red-400/20 bg-red-500/5"
+                    : "border-slate-700/50 bg-slate-800/30 opacity-75"
+                }`}
+            >
+              <StepIcon status={isFinalisePending ? "pending" : finaliseStatus} />
+              <div className="flex-1 min-w-0">
+                <p
+                  className={`text-sm font-bold ${finaliseStatus === "done"
+                    ? "text-emerald-300"
+                    : finaliseStatus === "error"
+                      ? "text-red-300"
+                      : finaliseStatus === "finalising"
+                        ? "text-violet-200"
+                        : "text-slate-400"
+                    }`}
+                >
+                  Finalising &amp; Scoring Grade
+                </p>
+                <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                  {isFinalisePending && "Waiting for assessment submission..."}
+                  {finaliseStatus === "finalising" && "Calculating score & recording grade..."}
+                  {finaliseStatus === "done" && "All results & grades recorded"}
+                  {finaliseStatus === "error" && (finaliseError ?? "Finalisation failed")}
+                </p>
               </div>
-            )}
+              {isFinalisePending && (
+                <span className="shrink-0 text-[10px] font-black uppercase text-slate-500">
+                  PENDING
+                </span>
+              )}
+              {finaliseStatus === "finalising" && (
+                <span className="shrink-0 text-[10px] font-black uppercase text-violet-400 animate-pulse">
+                  ACTIVE
+                </span>
+              )}
+              {finaliseStatus === "done" && (
+                <span className="shrink-0 text-[10px] font-black uppercase text-emerald-400">
+                  DONE
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Footer */}

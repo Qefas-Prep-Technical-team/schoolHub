@@ -31,7 +31,7 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
     onOpenReadingModal
 }) => {
     return (
-        <div className="sticky top-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm p-6 shadow-sm">
+        <div className="sticky top-28 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm p-6 shadow-sm">
             <div className="flex flex-col items-center">
                 <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <span className="material-symbols-outlined text-lg">timer</span>
@@ -68,7 +68,7 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
 
             <div className="mt-4 grid grid-cols-5 gap-2">
                 {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((num) => {
-                    const isAnswered = answeredQuestionIds.includes((num - 1).toString()); 
+                    const isAnswered = answeredQuestionIds.includes((num - 1).toString());
                     return (
                         <QuestionButton
                             key={num}

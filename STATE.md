@@ -1,3 +1,39 @@
+### Friday, November 6, 2026
+- [x] Redesigned Class Analytics tab (AnalyticsTab.tsx) for full-width responsive fit and mobile optimization:
+  - Decomposed 557-line monolith into dedicated subcomponents under components/ (SectionCard, TrendChart, OverallPerformanceChart, ChartTooltips, AnalyticsSkeleton).
+  - Converted the 4 metric trend cards to a fluid responsive CSS grid (grid-cols-1 sm:grid-cols-2 xl:grid-cols-4) that maximizes space on widescreen displays and stacks gracefully on mobile devices.
+  - Streamlined header controls with mobile-friendly flex wrapping and compact touch-friendly filters.
+  - Verified zero errors with npx tsc --noEmit.
+- [x] Refined network pill behavior (NetworkStatusBanner.tsx):
+  - Suppressed the Online pill completely on page load and reload.
+  - Online pill only appears for 3 seconds when connection is restored after a confirmed offline event.
+  - Offline pill continues to show persistently whenever disconnected.
+  - Verified zero errors with npx tsc --noEmit.
+- [x] Enhanced transition between exam submit confirmation modal and progress modal:
+  - Added controlled enter/exit animation states (shouldRender + isVisible with backdrop and scale/translate transitions) to ConfirmSubmitModal and SubmissionProgressModal.
+  - Added a 200ms choreographed cross-fade in handleConfirmManualSubmit so the confirmation modal exits smoothly as the submission progress modal fades in, preventing any visual jump or jarring layout shift.
+  - Verified zero errors with npx tsc --noEmit.
+- [x] Converted network indicator to compact floating pill (NetworkStatusBanner.tsx):
+  - Displays a small rounded pill (Online / Offline) centered at the top of the screen.
+  - Slides in on mount or network change; stays persistent when Offline (with pulsing indicator).
+  - Displays for 3 seconds when Online and then automatically slides out/disappears.
+  - Verified clean TypeScript compilation (npx tsc --noEmit exited 0).
+- [x] Enabled diagnostic AI feedback on exam results (/dashboard/student/exams&quizzes/[examId]/result):
+  - Updated getExamResultService in exam-attempt.service.ts to extract the student's incorrect answers across all papers.
+  - Updated generateStudentPerformanceInsight in exam-ai.service.ts to receive the missed questions (including question snippets, student selections, and correct answers).
+  - Instructed the AI model to diagnose knowledge gaps and advise the student specifically on what concepts, topics, and domains to focus on studying.
+  - Verified zero errors with backend TypeScript check.
+- [x] Resolved root-cause for PHYSICS TEST key collision in exam portal (/Exams and Quizzes/exam/[examId]):
+  - In Breadcrumbs.tsx, when exam title and active subject share the same name (PHYSICS TEST), breadcrumbs created duplicate siblings mapped with key={item.label}.
+  - Changed key to key={${item.label}-} in Breadcrumbs components.
+  - Hardened paper and exam structure mappings in page.tsx, ConfirmSubmitModal.tsx, SubmissionProgressModal.tsx, and ExamDetails.tsx.
+  - Verified zero errors with npx tsc --noEmit.
+- [x] Restricted NetworkStatusBanner display exclusively to user dashboards and active assessment areas (/dashboard/*, /console/*, /Exams&Quizzes/*).
+- [x] Fixed React duplicate key warning (Encountered two children with the same key, PHYSICS TEST):
+  - Updated mapping loops across student average score (SubjectTable.tsx), class position breakdown (SubjectBreakdown.tsx), strengths & weaknesses (StrengthsWeaknesses.tsx), class comparison (ClassComparison.tsx), student history (StudentHistoryView.tsx), parent subject performance (SubjectPerformanceList.tsx), class analytics subject filter (AnalyticsTab.tsx), and offline grade sheet pickers (OfflineGradeSheetSyncCard.tsx, OfflineGradeSheetSyncModal.tsx, student/offline-grades, parent/offline-grades).
+  - Formatted keys to ensure uniqueness using composite index/subject identifiers.
+  - Verified clean TypeScript compilation (npx tsc --noEmit exited 0).
+
 # Project State: Qefas Hub
 
 ## Current Focus
@@ -57,7 +93,8 @@
 - [x] **Student Join Class Modal & Admin Class Lock Features (<300 Line Decomposition & Strict Level/Alumni Safeguards)**:
   - **1. Student Graduated & Alumni Tagging**: Classes from which a student has graduated are tagged with a purple Graduated (Alumni) badge, disabling re-enrollment and displaying graduation context.
   - **2. Class Lock & Status Safeguards**: Locked classes (status: 'ARCHIVED' | 'LOCKED' | isLocked) display with an amber lock badge, explaining that new enrollments are closed by school administration.
-  - **3. Student Level vs. Class Level Mismatch Locking**: Students whose current academic level does not match a class's level will see the class locked (Level Mismatch), preventing cross-level join requests on both the UI and backend service (equestToJoinClassService).
+  - **3. Student Level vs. Class Level Mismatch Locking**: Students whose current academic level does not match a class's level will see the class locked (Level Mismatch), preventing cross-level join requests on both the UI and backend service (
+equestToJoinClassService).
   - **4. Admin Class Lock / Unlock Toggle (/dashboard/admin/classes/[id])**: Added an interactive Lock / Unlock Class toggle button to ClassDetailsHeader, wired to useChangeClassStatus(id) which safely transitions the class between ACTIVE and ARCHIVED, immediately locking/unlocking student join requests.
   - **5. Clean Modularization (<300 Lines)**: Decomposed StudentClassSelectionModal.tsx (previously 1090 lines) into ClassSelectionHeader, ClassCardItem, ClassSelectionSuccessView, and 	ypes.ts. Decomposed classes/[id]/page.tsx (previously 630 lines) into ClassDetailsHeader, AssignedTeachersModal, and TabSkeleton. All files are strictly typed and verified with 0 TypeScript errors.
 
@@ -72,11 +109,15 @@
 - [x] **School Profile & Edit Page (/dashboard/admin/school-profile, /dashboard/admin/school-profile/edit) — Sub-Role RBAC, Multi-Tenant & Financial Data Leak Fixes, and <300-Line Modular Decomposition**:
   - **1. Sub-Role Access Control (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, ACCOUNTANT, SUPPORT)**:
     - Enforced sub-role route protection in rontend/src/components/auth/FeatureGuard.tsx using canAdminRoleAccessFeature(adminRole, featureKey) so restricted sub-roles (REGISTRAR, ACCOUNTANT, SUPPORT) cannot bypass the sidebar by typing /dashboard/admin/school-profile or /dashboard/admin/school-profile/edit directly in the URL.
-    - Enforced backend sub-role authorization on PATCH /schools/:schoolId/profile in school-profile-billing.controller.ts via alidateAdminSubRoleAccess(req, schoolId, ["SCHOOL_OWNER", "PRINCIPAL"]) and enriched eq.user.adminRole in uthMiddleware.ts.
+    - Enforced backend sub-role authorization on PATCH /schools/:schoolId/profile in school-profile-billing.controller.ts via alidateAdminSubRoleAccess(req, schoolId, ["SCHOOL_OWNER", "PRINCIPAL"]) and enriched 
+eq.user.adminRole in uthMiddleware.ts.
   - **2. Multi-Tenant & Sensitive Data Leak Fixes**:
     - **School Financial & Internal Quota Leak (school-profile.service.ts)**: getSchoolProfileService previously returned all columns of School (exposing ccountName, ccountNumber, ankName, paystackCustomerCode, paystackSubaccountCode, percentageCharge, and internal quota overrides to any caller). Replaced with SAFE_SCHOOL_PROFILE_SELECT and redacted admin emails/images when called by non-admin roles (TEACHER/STUDENT).
-    - **School Profile Mass-Assignment Vulnerability (school-profile.service.ts)**: updateSchoolProfileService previously passed raw eq.body directly into prisma.school.update({ data }), allowing a caller to overwrite plan, subscriptionStatus, maxStudentsOverride, storageUsedBytes, or Paystack subaccount codes. Whitelisted only the editable profile fields (UpdateSchoolProfileInput).
-    - **Cross-Tenant Upload Quota & File Deletion Fix (upload.controller.ts)**: Validated eq.body.schoolId against alidateSchoolAccess(req, candidate) and resolved 	enantId -> canonical school UUID via esolveSchoolId across proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, deleteFileByUrl, getUploadHistory, and cleanupUnusedImages.
+    - **School Profile Mass-Assignment Vulnerability (school-profile.service.ts)**: updateSchoolProfileService previously passed raw 
+eq.body directly into prisma.school.update({ data }), allowing a caller to overwrite plan, subscriptionStatus, maxStudentsOverride, storageUsedBytes, or Paystack subaccount codes. Whitelisted only the editable profile fields (UpdateSchoolProfileInput).
+    - **Cross-Tenant Upload Quota & File Deletion Fix (upload.controller.ts)**: Validated 
+eq.body.schoolId against alidateSchoolAccess(req, candidate) and resolved 	enantId -> canonical school UUID via 
+esolveSchoolId across proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, deleteFileByUrl, getUploadHistory, and cleanupUnusedImages.
   - **3. <300-Line Modular File Decompositions**:
     - Decomposed rontend/src/app/dashboard/admin/school-profile/page.tsx (675 -> 130 lines) into SchoolProfileHero.tsx (231), SchoolProfileOverviewColumn.tsx (241), SchoolProfileAcademicColumn.tsx (162), and SchoolProfileSidebar.tsx (266).
     - Decomposed rontend/src/app/dashboard/admin/school-profile/edit/page.tsx (530 -> 211 lines) into EditIdentityConnectivitySection.tsx (208) and EditGovernanceAcademicSection.tsx (262).
@@ -717,11 +758,15 @@ otification-enrich.service.ts (230).
 - [x] **School Profile & Edit Page (/dashboard/admin/school-profile, /dashboard/admin/school-profile/edit) — Sub-Role RBAC, Multi-Tenant & Financial Data Leak Fixes, and <300-Line Modular Decomposition**:
   - **1. Sub-Role Access Control (SCHOOL_OWNER, PRINCIPAL, REGISTRAR, ACCOUNTANT, SUPPORT)**:
     - Enforced sub-role route protection in rontend/src/components/auth/FeatureGuard.tsx using canAdminRoleAccessFeature(adminRole, featureKey) so restricted sub-roles (REGISTRAR, ACCOUNTANT, SUPPORT) cannot bypass the sidebar by typing /dashboard/admin/school-profile or /dashboard/admin/school-profile/edit directly in the URL.
-    - Enforced backend sub-role authorization on PATCH /schools/:schoolId/profile in school-profile-billing.controller.ts via alidateAdminSubRoleAccess(req, schoolId, ["SCHOOL_OWNER", "PRINCIPAL"]) and enriched eq.user.adminRole in uthMiddleware.ts.
+    - Enforced backend sub-role authorization on PATCH /schools/:schoolId/profile in school-profile-billing.controller.ts via alidateAdminSubRoleAccess(req, schoolId, ["SCHOOL_OWNER", "PRINCIPAL"]) and enriched 
+eq.user.adminRole in uthMiddleware.ts.
   - **2. Multi-Tenant & Sensitive Data Leak Fixes**:
     - **School Financial & Internal Quota Leak (school-profile.service.ts)**: getSchoolProfileService previously returned all columns of School (exposing ccountName, ccountNumber, ankName, paystackCustomerCode, paystackSubaccountCode, percentageCharge, and internal quota overrides to any caller). Replaced with SAFE_SCHOOL_PROFILE_SELECT and redacted admin emails/images when called by non-admin roles (TEACHER/STUDENT).
-    - **School Profile Mass-Assignment Vulnerability (school-profile.service.ts)**: updateSchoolProfileService previously passed raw eq.body directly into prisma.school.update({ data }), allowing a caller to overwrite plan, subscriptionStatus, maxStudentsOverride, storageUsedBytes, or Paystack subaccount codes. Whitelisted only the editable profile fields (UpdateSchoolProfileInput).
-    - **Cross-Tenant Upload Quota & File Deletion Fix (upload.controller.ts)**: Validated eq.body.schoolId against alidateSchoolAccess(req, candidate) and resolved 	enantId -> canonical school UUID via esolveSchoolId across proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, deleteFileByUrl, getUploadHistory, and cleanupUnusedImages.
+    - **School Profile Mass-Assignment Vulnerability (school-profile.service.ts)**: updateSchoolProfileService previously passed raw 
+eq.body directly into prisma.school.update({ data }), allowing a caller to overwrite plan, subscriptionStatus, maxStudentsOverride, storageUsedBytes, or Paystack subaccount codes. Whitelisted only the editable profile fields (UpdateSchoolProfileInput).
+    - **Cross-Tenant Upload Quota & File Deletion Fix (upload.controller.ts)**: Validated 
+eq.body.schoolId against alidateSchoolAccess(req, candidate) and resolved 	enantId -> canonical school UUID via 
+esolveSchoolId across proxyUpload, getS3PresignedUrl, confirmS3Upload, deleteS3File, deleteBunnyFile, deleteFileByUrl, getUploadHistory, and cleanupUnusedImages.
   - **3. <300-Line Modular File Decompositions**:
     - Decomposed rontend/src/app/dashboard/admin/school-profile/page.tsx (675 -> 130 lines) into SchoolProfileHero.tsx (231), SchoolProfileOverviewColumn.tsx (241), SchoolProfileAcademicColumn.tsx (162), and SchoolProfileSidebar.tsx (266).
     - Decomposed rontend/src/app/dashboard/admin/school-profile/edit/page.tsx (530 -> 211 lines) into EditIdentityConnectivitySection.tsx (208) and EditGovernanceAcademicSection.tsx (262).
@@ -6710,19 +6755,32 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
  # # #   S a t u r d a y ,   S e p t e m b e r   1 9 ,   2 0 2 6 
  -   [ x ]   F i x e d   a u t h M i d d l e w a r e   b u g   i n c o r r e c t l y   l o o k i n g   f o r   ' a c t i v e S c h o o l I d '   a n d   ' p r i m a r y S c h o o l I d '   o n   t h e   T e a c h e r   m o d e l   i n s t e a d   o f   ' c u r r e n t S c h o o l I d '   a n d   ' s c h o o l I d ' 
  -   [ x ]   F i x e d   v a l i d a t i o n   e r r o r   i n   v a l i d a t e Z o d R e q u e s t . t s 
- -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   s c h o o l I d   r e s o l u t i o n   i n   u s e A u t h S t o r e   d a t a   b y   e x p a n d i n g   f a l l b a c k   t a r g e t s .  
- -   [ x ]   A d d e d   e x c e p t i o n   t o   a u t h M i d d l e w a r e . t s   t o   a l l o w   i n d e p e n d e n t / u n l i n k e d   t e a c h e r s   t o   a c c e s s   t h e i r   s e s s i o n s ,   s e t t i n g s ,   a n d   p r o f i l e   r o u t e s   w i t h o u t   a   4 0 3   e r r o r  
- -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   A d m i n   S c h o o l   P r o f i l e   v i e w   p a g e ,   m a t c h i n g   t h e   e d i t   p a g e   l a y o u t .  
- -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   t o   s t r i c t l y   u s e   t h e   t e a c h e r   t h e m e   c o l o r   ( e m e r a l d )   i n s t e a d   o f   t h e   s c h o o l   s e t t i n g s   c o l o r  
- -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   T e a c h e r   S c h o o l   P r o f i l e   v i e w   p a g e  
- -   [ x ]   H o o k e d   u p   ' V i e w   I n s t i t u t i o n '   b u t t o n   o n   T e a c h e r   s e t t i n g s   p a g e   t o   r e d i r e c t   t o   t h e   s c h o o l   p r o f i l e   r o u t e  
- -   [ x ]   F i x e d   R e f e r e n c e E r r o r   f o r   ' r o u t e r   i s   n o t   d e f i n e d '   o n   T e a c h e r   s e t t i n g s   p a g e  
- -   [ x ]   U p d a t e d   A d m i n   C l a s s e s   p a g e   t o   f i t   9 5 %   o f   t h e   s c r e e n   w i d t h  
- -   [ x ]   A d d e d   t h e m e   s u p p o r t   t o   P a g i n a t i o n   c o m p o n e n t   a n d   s e t   i t   t o   b l u e   f o r   t h e   A d m i n   C l a s s e s   p a g e  
- -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   A s s e s s m e n t I t e m . t s x   r e l a t e d   t o   p o s s i b l y   u n d e f i n e d   d u r a t i o n M i n u t e s  
- -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   m y - c l a s s e s / . . . / s u b j e c t s / p a g e . t s x   f o r   ' c o d e '   m i s s i n g   o n   s u b j e c t   t y p e  
- -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   s t u d e n t   s e t t i n g s   p a g e   f o r   ' i s T w o F a c t o r E n a b l e d '   m i s s i n g   o n   S t u d e n t P r o f i l e  
- -   [ x ]   F r o n t e n d   s u c c e s s f u l l y   b u i l t   w i t h   z e r o   T y p e S c r i p t   o r   c o m p i l a t i o n   e r r o r s  
+ -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   s c h o o l I d   r e s o l u t i o n   i n   u s e A u t h S t o r e   d a t a   b y   e x p a n d i n g   f a l l b a c k   t a r g e t s . 
+ 
+ -   [ x ]   A d d e d   e x c e p t i o n   t o   a u t h M i d d l e w a r e . t s   t o   a l l o w   i n d e p e n d e n t / u n l i n k e d   t e a c h e r s   t o   a c c e s s   t h e i r   s e s s i o n s ,   s e t t i n g s ,   a n d   p r o f i l e   r o u t e s   w i t h o u t   a   4 0 3   e r r o r 
+ 
+ -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   A d m i n   S c h o o l   P r o f i l e   v i e w   p a g e ,   m a t c h i n g   t h e   e d i t   p a g e   l a y o u t . 
+ 
+ -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   t o   s t r i c t l y   u s e   t h e   t e a c h e r   t h e m e   c o l o r   ( e m e r a l d )   i n s t e a d   o f   t h e   s c h o o l   s e t t i n g s   c o l o r 
+ 
+ -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   T e a c h e r   S c h o o l   P r o f i l e   v i e w   p a g e 
+ 
+ -   [ x ]   H o o k e d   u p   ' V i e w   I n s t i t u t i o n '   b u t t o n   o n   T e a c h e r   s e t t i n g s   p a g e   t o   r e d i r e c t   t o   t h e   s c h o o l   p r o f i l e   r o u t e 
+ 
+ -   [ x ]   F i x e d   R e f e r e n c e E r r o r   f o r   ' r o u t e r   i s   n o t   d e f i n e d '   o n   T e a c h e r   s e t t i n g s   p a g e 
+ 
+ -   [ x ]   U p d a t e d   A d m i n   C l a s s e s   p a g e   t o   f i t   9 5 %   o f   t h e   s c r e e n   w i d t h 
+ 
+ -   [ x ]   A d d e d   t h e m e   s u p p o r t   t o   P a g i n a t i o n   c o m p o n e n t   a n d   s e t   i t   t o   b l u e   f o r   t h e   A d m i n   C l a s s e s   p a g e 
+ 
+ -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   A s s e s s m e n t I t e m . t s x   r e l a t e d   t o   p o s s i b l y   u n d e f i n e d   d u r a t i o n M i n u t e s 
+ 
+ -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   m y - c l a s s e s / . . . / s u b j e c t s / p a g e . t s x   f o r   ' c o d e '   m i s s i n g   o n   s u b j e c t   t y p e 
+ 
+ -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   s t u d e n t   s e t t i n g s   p a g e   f o r   ' i s T w o F a c t o r E n a b l e d '   m i s s i n g   o n   S t u d e n t P r o f i l e 
+ 
+ -   [ x ]   F r o n t e n d   s u c c e s s f u l l y   b u i l t   w i t h   z e r o   T y p e S c r i p t   o r   c o m p i l a t i o n   e r r o r s 
+ 
  
 ### Tuesday, October 6, 2026
 - [x] Fixed class attendance save timeout (admin + teacher): parent notifications in attendance.service.ts were awaited sequentially per student (>60s). Now fire-and-forget with 2 batched queries.
@@ -7103,3 +7161,208 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
   - Replaced `localStorage.clear()` in [use-auth-mutations.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/use-auth-mutations.ts) with `clearStaleAuthStorage()` so `flexiti_device_id` and `qefas_exam_*` local backups are preserved across re-login.
   - Persisted and restored exact `activeSubjectId` and `activeQuestionIndex` (`qefas_exam_progress_${examId}`) and unsynced answers (`qefas_exam_answers_${examId}`) in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/page.tsx), with automatic background answer syncing and fallback to the first unanswered question.
   - Updated `startExamAttemptService` and `getExamAttemptService` in [exam-attempt.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/exam/exam-attempt.service.ts) to allow seamless continuation of `IN_PROGRESS` attempts after session expiry without false multi-device violation lockouts.
+- [x] **Top Padding for Unified Exam Page (`/Exams&Quizzes/exam/[examId]`)**:
+  - Updated top padding in both the Details view and Taker view in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/page.tsx) (`pt-24 sm:pt-28 lg:pt-32`) and adjusted sticky offset in [QuestionNavigation.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/start/components/QuestionNavigation.tsx) (`top-28`) so content clears the fixed top navigation bar cleanly.
+- [x] **Exam Timer Freeze / Glitch Fix When Opening Confirmation Modal**:
+  - Root Cause: `submitAttemptMutation` (`useMutation()` result) creates a new object reference on every render, which caused `handleSequentialSubmit` -> `handleTimerExpire` -> the timer `useEffect` in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/Exams&Quizzes/exam/%5BexamId%5D/page.tsx) to tear down its `setInterval` and reset `remainingSeconds` back to the initial `attempt.remainingSeconds` snapshot whenever `ConfirmSubmitModal` opened or state updated.
+  - Fix: Stored `submitAttemptMutationRef`, `saveAnswerMutationRef`, `handleTimerExpireRef`, and anchored the countdown to a persistent `targetEndTimeMsRef` (derived from `attempt.expiresAt` / `attempt.remainingSeconds` once per `attempt.id`), decoupling the timer interval from UI re-renders and modal state changes.
+- [x] **Admin Exams Dot-Menu "Edit" Route Fix**:
+  - Updated `menuItems` in [AssessmentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/exams/components/AssessmentCard.tsx) so the **Edit** action routes to `/dashboard/admin/exams/:examId/papers/:paperId` for single-paper exams and `/dashboard/admin/exams/:examId/papers` for multi-paper exams instead of the non-existent `/dashboard/admin/exams/:examId/edit` route.
+- [x] **Poor-Network / High-Latency Token Refresh & Session Resilience (Nigeria / 3G Hardening)**:
+  - Extended access token TTL from `1h` to `6h` in [authService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/services/authService.ts).
+  - Increased refresh token rotation grace window from `30s` to `300s` (5 minutes) with multi-hop successor resolution in [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) so dropped HTTP responses on slow networks never trigger `REFRESH_REUSED` logouts.
+  - Added 3-attempt exponential-backoff retry, 45s timeout, offline `online`-event waiting, pre-request JWT `exp` check (eliminating wasted `401` round-trips), and `window` `online` event refresh to [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts).
+
+### Friday, November 6, 2026 - Exam Submission Performance & Modal Sequencing Fixes
+- [x] **Submission Loader Sequencing in `SubmissionProgressModal.tsx`**:
+  - Configured `SubmissionProgressModal` so each subject paper and the grade finalisation stage run strictly one at a time.
+  - Active steps display a spinning loader with an `ACTIVE` badge; queued steps display a muted dot with a `PENDING` badge; completed steps display a green checkmark with `DONE`.
+  - Added the **"Finalising & Scoring Grade"** row permanently to the modal, remaining in `pending` status while papers are submitted, transitioning to `finalising` (active spinner) only after all papers finish, and marking `done` upon completion.
+  - Dynamically adjusted total steps in the progress bar to include the final scoring stage.
+- [x] **Frontend Sequential Step-by-Step Submission**:
+  - In `frontend/src/app/Exams&Quizzes/exam/[examId]/page.tsx`, updated `handleSequentialSubmit` to step through papers sequentially with clean visual pacing, then transition cleanly into final exam scoring.
+  - Ensured idempotent handling for paper submits so non-critical 400s or already-submitted papers never abort or stall the student's submission.
+- [x] **Backend Submission Optimization**:
+  - In `backend/src/modules/exam/exam-attempt.service.ts` (`scoreExamAttemptService`), removed redundant heavy nested answer/question includes from `prisma.examAttempt.update`.
+  - Shifted institutional `Grade` table upserts into an asynchronous non-blocking task (`syncExamGradesAsync`), cutting `POST /exams/:id/submit` latency substantially so students get immediate redirect confirmations.
+- [x] **Verification**:
+  - `backend` compiles cleanly with zero TypeScript errors (`npx tsc --noEmit` exited 0).
+  - `frontend` compiles cleanly with zero TypeScript errors (`npx tsc --noEmit` exited 0).
+
+- [x] **Global Online/Offline Status Banner**:
+  - Created [`NetworkStatusBanner.tsx`](frontend/src/components/ui/NetworkStatusBanner.tsx) and embedded it globally inside [`layout.tsx`](frontend/src/app/layout.tsx).
+  - Displays a clean floating status pill at the top of the viewport when connection drops (`No internet connection — You are working offline. Do not reload or close.`) with an amber warning style and animated pulsing icon.
+  - Automatically transitions to an emerald success banner (`You are back online — Changes and answers will sync automatically.`) upon reconnection before auto-dismissing after 4 seconds (with manual dismiss option).
+  - Tested and verified with `cd frontend; npx tsc --noEmit` (exit code 0).
+
+- [x] **Grades Assessment PDF Export Scope Modal & Student Class Display (Admin Dashboard)**:
+  - Created [ExportResultScopeModal.tsx](frontend/src/app/dashboard/admin/grades/components/ExportResultScopeModal.tsx) presenting a responsive dialog allowing admins to export:
+    1. **Individual student report** (single active student PDF),
+    2. **All students** (complete cohort PDF ZIP bundle),
+    3. **Certain / selected students** (searchable checkbox selector with real-time selection counts).
+  - Enhanced [IndividualStudentReport.tsx](frontend/src/app/dashboard/admin/grades/components/IndividualStudentReport.tsx) and [atchPDFDownloader.tsx](frontend/src/app/dashboard/admin/grades/utils/batchPDFDownloader.tsx) to reliably resolve and display the student's class and section (with multi-tier fallbacks across esult.className, esult.class.name, esult.exam.class.name, and esult.student.classes).
+  - Integrated the modal across:
+    - /dashboard/admin/grades (Exam student cohort list level 2 via "Export Results" action button),
+    - /dashboard/admin/grades (Detailed individual student result level 3 via "Export PDF" action button),
+    - /dashboard/admin/grades/[gradeId] (Assessment details page via new "Export PDF" action button alongside Print).
+  - Verified with cd frontend; npx tsc --noEmit which passed with **zero TypeScript errors** (exit code 0).
+
+- [x] **Student Exam Result Page Redesign & Responsive Layout Fit**:
+  - Redesigned [rontend/src/app/dashboard/student/exams&quizzes/[examId]/result/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/exams&quizzes/%5BexamId%5D/result/page.tsx) to fit all available viewport width (max-w-7xl with fluid mobile padding px-3.5 sm:px-6 lg:px-8).
+  - Added dynamic responsiveness to ProgressCircle (scaling smoothly from 180px on small phones to 260px on large desktop monitors without vertical or horizontal overflows).
+  - Converted the metrics grid into an adaptive layout (grid-cols-2 on mobile/tablet, cleanly wrapping without awkward line heights).
+  - Integrated direct "Export PDF" via [downloadSingleStudentPdf](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/batchPDFDownloader.tsx) with student class resolution.
+  - Verified with cd frontend; npx tsc --noEmit which completed with **zero TypeScript errors** (exit code 0).
+
+### Friday, November 6, 2026 - Dedicated Assessment Grades Route & Archive Export Overhaul
+- [x] **Dedicated Assessment Results Route (/dashboard/admin/grades/assessments/[examId])**:
+  - Created a dedicated page at `frontend/src/app/dashboard/admin/grades/assessments/[examId]/page.tsx` with deep-linking, direct URL bookmarking, cohort analytics, paper filtering tabs, examinee cohort lists, and student result views.
+  - Linked all cards and table rows on `/dashboard/admin/grades` to directly route to `/dashboard/admin/grades/assessments/`.
+  - Enriched assessment cards on `/dashboard/admin/grades` with detailed metadata (Scope/Class, Total Papers, Total Questions, Submissions/Students examined, and Total Points).
+- [x] **Export Result Scope Modal & Single-PDF vs Compressed Archive Overhaul**:
+  - Streamlined ExportResultScopeModal.tsx by eliminating the redundant "individual" tab and leaving two clean options: **"All Students"** and **"Certain Students"**.
+  - Dynamic packaging logic:
+    - When **1 student** is selected: exports a direct, single PDF file (<StudentName> - <ExamTitle>.pdf).
+    - When **multiple students** (or All Students) are selected: packages individual result PDFs for each student into a compressed archive (.zip) so each student receives their own clean, separate report rather than one giant merged PDF.
+  - Updated all call sites across grades/page.tsx, grades/[gradeId]/page.tsx, and ssessments/[examId]/page.tsx.
+- [x] **Verification**:
+  - Ran cd frontend; npx tsc --noEmit which completed with **zero TypeScript errors** (exit code 0).
+
+### Friday, November 6, 2026 - Modular Component Decomposition of Grades Hub & Assessment Routes
+- [x] **Monolithic File Decomposition**:
+  - Refactored the monolithic 2,296-line `frontend/src/app/dashboard/admin/grades/page.tsx` down to **492 lines** by extracting its internal subcomponents into dedicated, reusable component files:
+    - [ExamGradesFlow.tsx](frontend/src/app/dashboard/admin/grades/components/ExamGradesFlow.tsx) (Handles Level 1 grid/list flow with date-sectioning and filters)
+    - [ExamStudentList.tsx](frontend/src/app/dashboard/admin/grades/components/ExamStudentList.tsx) (Level 2 candidate attempts list with paper filtering and pagination)
+    - [DetailedStudentResult.tsx](frontend/src/app/dashboard/admin/grades/components/DetailedStudentResult.tsx) (Level 3 in-depth candidate performance view with progress circle and AI insights)
+    - [SubjectPapersView.tsx](frontend/src/app/dashboard/admin/grades/components/SubjectPapersView.tsx) (Subject papers directory view with subject and class filters)
+  - Decomposed the dedicated assessment route [ssessments/[examId]/page.tsx](frontend/src/app/dashboard/admin/grades/assessments/[examId]/page.tsx) from 885 lines down to **202 lines**:
+    - [AssessmentCohortView.tsx](frontend/src/app/dashboard/admin/grades/assessments/components/AssessmentCohortView.tsx) (Cohort metrics, paper tabs, examinee table & mobile cards)
+    - [DedicatedDetailedStudentResult.tsx](frontend/src/app/dashboard/admin/grades/assessments/components/DedicatedDetailedStudentResult.tsx) (Student mastery breakdown, AI diagnostics, and export controls)
+- [x] **Strict Verification**:
+  - Executed cd frontend; npx tsc --noEmit: 0 errors (exit code 0).
+
+### Saturday, November 7, 2026
+- [x] Standardized assessment and grade PDF exports to strictly follow pdf_export_design with digital signatures:
+  - Integrated digital signature resolution (primary signature & active system signature) across single assessment grade exports and combined cohort exports.
+  - Upgraded individual assessment view (dashboard/admin/grades/[gradeId]) to provide official PDF export via generatePDF utility featuring formal double borders, structured metadata, candidate info, and digital endorsement lines.
+  - Decomposed GradeDetailsPage monolith into modular subcomponents (< 300 lines) under components/ (GradeScoreAndDetails, GradeSidebar).
+  - Upgraded cohort combined export (downloadCombinedAssessmentPdf) to use the formal institutional table standard via generatePDF with examination board & principal signatures.
+  - Bound verified digital signatures and school stamps into React-PDF individual student reports (IndividualStudentReport.tsx) and exam master reports (ExamGradeReport.tsx).
+  - Verified zero TypeScript compilation errors with npx tsc --noEmit.
+
+- [x] Updated engineering protocols in .agents/AGENTS.md, docs/README.md, and GEMINI.md:
+  - Mandated the Universal Modularization Rule: every file touched or encountered across web frontend, backend, or mobile that exceeds 300 lines must be decomposed into modular pieces (< 300 lines).
+  - Mandated Continuous Categorized Documentation: every aspect of work done must always be documented and categorized into its corresponding specification file in docs/ (registered in docs/README.md).
+  - Updated docs/ASSESSMENT_SYSTEM.md with recent digital signature and pdf_export_design implementations.
+
+- [x] Standardized Nigerian educational terminology & institutional signatures on PDF exports:
+  - Replaced all 'cohort' labels in PDF exports, metadata, and filenames with standard Nigerian educational terminology ('Class', 'Class Average', 'Results Sheet').
+  - Added dedicated 'Class' column in master PDF export tables and single grade report metadata tables.
+  - Built useGradeEndorsementSignatures hook and enhanced resolveDigitalSignatures to resolve stored digital signatures for Principal, Proprietor/School Director, or Registrar.
+  - Documented changes in docs/ASSESSMENT_SYSTEM.md and confirmed zero errors with npx tsc --noEmit.
+
+
+- [x] **Connected School Signature Fetcher Component & Hook**:
+  - Created reusable hook [useConnectedSchoolSignature.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/useConnectedSchoolSignature.ts) to resolve official leadership signatures strictly for connected schools following institutional hierarchy (Principal -> Owner/Proprietor -> Registrar -> Vice Principal).
+  - Built [ConnectedSchoolSignatureFetcher.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/signature/ConnectedSchoolSignatureFetcher.tsx) providing multiple UI variants (adge, card, endorsement-strip) with status indicators for verified vs pending digital signature setups.
+
+- [x] **Skill 1: connected_school_signature_fetcher**:
+  - Created skill documentation at [.agents/skills/connected_school_signature_fetcher/SKILL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/connected_school_signature_fetcher/SKILL.md) outlining tenant isolation rules, signatory hierarchy, secondary teacher/registrar resolution, and PDF integration.
+
+- [x] **Skill 2: institutional_export_and_notification**:
+  - Created skill documentation at [.agents/skills/institutional_export_and_notification/SKILL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/institutional_export_and_notification/SKILL.md) defining requirements for multi-format exports (PDF, Excel .xlsx, and CSV .csv), Nigerian educational naming standards, and leadership audit notifications.
+
+- [x] **Multi-Format Export Flow & Modularization (< 300 Lines Rule)**:
+  - Decomposed ExportResultScopeModal.tsx from 473 lines down to **258 lines** by extracting subcomponents into dedicated modules under export/:
+    - [ExportFormatSelector.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/ExportFormatSelector.tsx) (PDF, Excel, and CSV selector)
+    - [ExportScopeSelector.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/ExportScopeSelector.tsx) (Master sheet vs compressed zip archive vs custom candidates)
+    - [ExportStudentPicker.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/ExportStudentPicker.tsx) (Student search, select all, and roster selection)
+  - Created [spreadsheetExporter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/spreadsheetExporter.ts) providing exportToExcel and exportToCSV with full candidate score, percentage, grade, and remark normalization.
+  - Extracted [signatureResolver.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/signatureResolver.ts) reducing atchPDFDownloader.tsx from 341 lines to **222 lines** (< 300 lines limit).
+
+- [x] **Automated School Leadership Audit Notification**:
+  - Created [exportNotificationService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/services/exportNotificationService.ts) to dispatch real-time academic audit notifications to the connected school's Principal, Proprietor/School Owner, and Registrar whenever assessment records are exported.
+
+- [x] **Verification**:
+  - Executed cd frontend; npx tsc --noEmit which completed with **zero TypeScript errors** (exit code 0).
+  - Updated [docs/ASSESSMENT_SYSTEM.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/ASSESSMENT_SYSTEM.md) and [docs/README.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/docs/README.md).
+
+
+- [x] **Academic Session Standard in PDF and Spreadsheet Exports**:
+  - Bound the official **Academic Session** metadata column and field into both single and cohort PDF exports:
+    - In atchPDFDownloader.tsx: Added { label: "Academic Session", value: resolvedSessionName } in the formal metadata grid of downloadCombinedAssessmentPdf, and propagated sessionName to individual student result document generation (downloadSingleStudentPdf and downloadIndividualResultsAsZip).
+    - In grades/[gradeId]/page.tsx: Explicitly separated and labeled { label: "Academic Session", value: grade.session?.name || "Current Session" } and { label: "Academic Term", value: grade.term || "Current Term" }.
+    - In spreadsheetExporter.ts: Added dedicated Academic Session column in both Excel (.xlsx) and CSV (.csv) output formats, resolving candidate or exam session names with intelligent academic calendar fallbacks.
+  - Verified with cd frontend; npx tsc --noEmit which completed with **zero TypeScript errors** (exit code 0).
+
+### Sunday, November 8, 2026
+- [x] **Authentication Flow Fixes**:
+  - **Onboarding Redirection**: Resolved the issue where existing users logging in were redirected to /onboarding before the dashboard. Updated setAuth in [frontend/src/app/(auth)/login/services/auth-store.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/auth-store.ts) to set hasCompletedOnboarding: true by default upon successful login. Only new registrations from EmailVerificationCard.tsx explicitly set hasCompletedOnboarding: false.
+  - **Strict Device Verification Gate**: In [backend/src/modules/auth/auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) (login), checked prisma.refreshToken.count({ where: { userId: user.id, isValid: true } }). If the user has prior recorded sessions, the incoming device must match a valid active session, possess a valid 365-day deviceVerified cookie, or carry a verified preAuthToken; otherwise, returns 403 with equiresVerification: true and preAuthToken to mandate OTP verification.
+- [x] **PDF Export Enhancements**:
+  - **Assessment Name & School Name**: Ensured both combined master assessment sheets and individual student reports prominently render the assessment title (exam.title / examTitle) and school name (school.name / school.schoolName).
+  - **Academic Term Normalization**: Created [termFormatter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/termFormatter.ts) and integrated it into [batchPDFDownloader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/batchPDFDownloader.tsx) and [IndividualStudentReport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/IndividualStudentReport.tsx) to resolve actual assessment terms (e.g. FIRST -> First Term) instead of generic/random terms.
+  - **Width Optimization on Web**:
+    - Widened [ExportResultScopeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/ExportResultScopeModal.tsx) from sm:max-w-xl to sm:max-w-3xl for a spacious web export dialogue.
+    - Reduced page padding in [IndividualStudentReport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/IndividualStudentReport.tsx) (from 30pt to 20pt) and in [ExamGradeReport.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/ExamGradeReport.tsx) (from 40pt to 24pt), maximizing readable printable width across A4 documents.
+- [x] **Verification**:
+  - cd backend; npx tsc --noEmit -> 0 errors.
+  - cd frontend; npx tsc --noEmit -> 0 errors.
+
+- [x] **Tier-Based Export Quota & Reusable Export Components Across Roles**:
+  - **Free Tier Policy Implementation**:
+    - Created [exportQuotaManager.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/exportQuotaManager.ts) enforcing a strict **10 downloads per calendar month** limit for non-paying users/schools with automatic calendar month keying (YYYY-MM).
+    - Configured [ExportFormatSelector.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/ExportFormatSelector.tsx) and [ExportScopeSelector.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/ExportScopeSelector.tsx) so non-paying customers only see the basic Master Result Sheet PDF option. Other formats (Excel .xlsx, CSV .csv, and zipped standalone archives) are locked and badged with a PRO indicator.
+    - Updated [signatureResolver.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/signatureResolver.ts) and [batchPDFDownloader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/utils/batchPDFDownloader.tsx) so unpaying customers receive PDFs without official signatures (rendered with formal dashes —).
+  - **Modular Architecture (< 300 Lines)**:
+    - Extracted [ExportQuotaBanner.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/ExportQuotaBanner.tsx) showing real-time usage (e.g., 4/10 used (6 remaining)) with plan upgrade prompts.
+    - Extracted [exportWorkflowHandler.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/export/exportWorkflowHandler.ts) separating export execution, quota incrementing, and leadership notifications.
+    - Maintained [ExportResultScopeModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/components/ExportResultScopeModal.tsx) under 270 lines.
+  - **Cross-Role Reusable Component**:
+    - Created [RoleResultExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/components/export/RoleResultExportModal.tsx) providing a clean, role-tailored modal for **Students**, **Parents**, and **Teachers** with quota tracking and tier awareness.
+    - Integrated RoleResultExportModal into student result viewing ([view/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/result/termly/view/page.tsx)).
+  - **Skill Documentation**:
+    - Created skill specification at [.agents/skills/reusable_academic_export_and_quota/SKILL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/reusable_academic_export_and_quota/SKILL.md).
+  - **Verification**:
+    - Both cd backend; npx tsc --noEmit and cd frontend; npx tsc --noEmit passed with 0 errors.
+
+### Sunday, November 8, 2026 - Student Dashboard Refinements
+- [x] **Event Banners 7-Day Window Gate**:
+  - In [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/page.tsx), updated the **Honored Alumni Scholar** graduation recognition banner to strictly display for one week (7 days) after graduation (hasRecentGraduation check against graduation timestamp or first-seen tracking).
+  - Maintained the 7-day limit on the **Final Results Available!** banner (hasRecentFinalResults).
+- [x] **Nigerian Academic Convention Terminology**:
+  - Replaced all non-standard terms ("Cohorts", "Cohort") on the student dashboard with Nigerian academic conventions ("Classes", "Class").
+  - Updated buttons ("View Cohorts" -> "View Classes", "Join Your School Class Cohort" -> "Join Your School Class").
+- [x] **Redesign of Recent Assessment Grades**:
+  - Completely redesigned [AcademicHistory.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/components/dashboard/AcademicHistory.tsx).
+  - Replaced the awkward layout with a sleek, modern card list adhering to Qefas Hub standards:
+    - Prominent WAEC letter grade badges (A1, B2, B3, C5, D7, E8, F9) with distinct color coding and classification labels (e.g. Excellent, Credit, Pass, Fail).
+    - Polished calendar date badges, total points comparison, assessment title, and animated score percentage progress bars.
+    - Quick-navigation link to full result review.
+- [x] **Verification**:
+  - Frontend TypeScript validation (./frontend/node_modules/.bin/tsc --project ./frontend/tsconfig.json --noEmit) passed with 0 errors.
+
+### Sunday, November 8, 2026 - Export Naming, Session Resolution & Offline Grades Mobile UX
+- [x] **Export File Naming Standard**:
+  - Implemented the user-requested format [School Name] - [Assessment Name] - [Candidate Name or Class Name] across all export paths:
+    - PDF single student report: ${safeSchool} -  - .pdf
+    - PDF combined master sheet: ${safeSchool} -  - .pdf
+    - ZIP archive of student results: ${safeSchool} -  - .zip
+    - Excel workbook: ${cleanSchool} -  - .xlsx
+    - CSV document: ${cleanSchool} -  - .csv
+- [x] **Accurate Academic Session Resolution**:
+  - Integrated useExam(examId) and useSessions(schoolId) in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/grades/assessments/[examId]/page.tsx) to reliably retrieve the specific exam's attached session name rather than defaulting to generic/incorrect years.
+  - Added multi-tier fallback checking exam.session.name, cademicSession.name, sessionsRes match by sessionId, and current active session before falling back.
+  - Passed sessionName to downloadCombinedAssessmentPdf, downloadSingleStudentPdf, and ExportResultScopeModal.
+- [x] **Mobile UX Optimization for Offline Grades**:
+  - In [RecordScoreEntryModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/RecordScoreEntryModal.tsx), made the modal full-screen on mobile (w-full h-full max-h-screen rounded-none inset-0) with optimized padding and responsive action buttons.
+  - Enhanced [OfflineGradesHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesHeader.tsx) and [MobileRosterCardView.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/offline-grades/components/MobileRosterCardView.tsx) with larger touch targets, sticky bottom action bar with safe-bottom padding, and teacher-specific green themes mirroring admin purple.
+- [x] **Verification**:
+  - ./frontend/node_modules/.bin/tsc --project ./frontend/tsconfig.json --noEmit passed with 0 errors.
+
+### Sunday, November 8, 2026 - Student Class Scoping, Live Status & Exam Access Fixes
+- [x] **Staging Top Nav Visibility**
+- [x] **Student Class Assessments Scoping**
+- [x] **Live Assessment Status Tagging**
+- [x] **Exam Taking Authorization for Unattached & School-wide Assessments**
+- [x] **Verification**: Frontend and Backend tsc passed with 0 errors.

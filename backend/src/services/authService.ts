@@ -26,7 +26,7 @@ export const comparePassword = async (password: string, hash: string | null) => 
 
 export const generateAccessToken = (userId: string, userType: UserType) => {
   console.log("DEBUG: jwt.sign access token for", userId);
-  return jwt.sign({ userId, userType }, getAccessSecret(), { expiresIn: "1h" });
+  return jwt.sign({ userId, userType }, getAccessSecret(), { expiresIn: "6h" });
 };
 
 interface DeviceTrackingInfo {

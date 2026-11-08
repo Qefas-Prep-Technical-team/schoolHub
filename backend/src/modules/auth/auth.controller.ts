@@ -1401,18 +1401,32 @@ export const login = async (req: Request, res: Response) => {
     // 1. If device is already verified via valid 365-day device cookie, mobile app client, or preAuthToken OTP
     let isDeviceVerified = isMobileClient || hasValidDeviceCookie || !!preAuthToken;
 
-    // 2. If cookie isn't present yet, check if this exact device model and OS has an existing valid session in the database
+    // 2. Strict Device Verification:
+    // Check if the user has any verified recorded sessions in the system
     if (!isDeviceVerified) {
-      const validDevice = await prisma.refreshToken.findFirst({
+      const userSessionsCount = await prisma.refreshToken.count({
         where: {
           userId: user.id,
-          deviceModel: deviceInfo.deviceModel,
-          osVersion: deviceInfo.osVersion,
           isValid: true,
         },
       });
 
-      if (validDevice) {
+      if (userSessionsCount > 0) {
+        // User has verified devices; check if current device strictly matches an existing valid session
+        const matchingDeviceSession = await prisma.refreshToken.findFirst({
+          where: {
+            userId: user.id,
+            deviceModel: deviceInfo.deviceModel,
+            osVersion: deviceInfo.osVersion,
+            isValid: true,
+          },
+        });
+
+        if (matchingDeviceSession) {
+          isDeviceVerified = true;
+        }
+      } else {
+        // First login after registration on this device: allow and register this initial device
         isDeviceVerified = true;
       }
     }
@@ -1932,7 +1946,8 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     }
 
-    const graceSeconds = parseInt(process.env.REFRESH_GRACE_SECONDS || "30", 10);
+    // Default 300s (5 minutes) grace window to tolerate slow/high-latency mobile networks (e.g. 3G packet drops where the client retries after a dropped response)
+    const graceSeconds = parseInt(process.env.REFRESH_GRACE_SECONDS || "300", 10);
 
     // ── Handle Token that was already rotated ─────────────────────────────────
     if (!dbToken.isValid) {
@@ -1944,14 +1959,17 @@ export const refreshToken = async (req: Request, res: Response) => {
         console.log(`[auth.refreshToken] Benign replay within ${graceSeconds}s grace window for userId=${payload.userId}. Returning fresh access token.`);
 
         let successorRefreshToken = token;
-        if (dbToken.replacedByTokenId) {
+        let nextId = dbToken.replacedByTokenId;
+        // Walk up to 3 hops in case multiple retries rotated the chain
+        for (let hop = 0; hop < 3 && nextId; hop++) {
+          const currentTargetId = nextId;
           const successorRow = await withRetry(
-            () => prisma.refreshToken.findUnique({ where: { id: dbToken.replacedByTokenId! } }),
+            () => prisma.refreshToken.findUnique({ where: { id: currentTargetId } }),
             "refreshToken_findSuccessor"
           );
-          if (successorRow) {
-            successorRefreshToken = successorRow.token;
-          }
+          if (!successorRow) break;
+          successorRefreshToken = successorRow.token;
+          nextId = successorRow.replacedByTokenId;
         }
 
         const newAccessToken = generateAccessToken(payload.userId, payload.userType);

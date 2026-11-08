@@ -29,8 +29,8 @@ export default function StrengthsWeaknesses({
         </h3>
       </div>
       <ul className="space-y-4">
-        {subjects.map((subject) => (
-          <li key={subject.subject} className="flex justify-between items-center">
+        {subjects.map((subject, index) => (
+          <li key={`${subject.subject}-${index}`} className="flex justify-between items-center">
             <p className="text-gray-700 dark:text-gray-300">{subject.subject}</p>
             <p className="font-bold text-gray-900 dark:text-white">{subject.score}%</p>
           </li>

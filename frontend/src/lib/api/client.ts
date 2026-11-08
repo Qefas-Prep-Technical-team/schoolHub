@@ -56,41 +56,112 @@ const apiClient = axios.create({
 });
 
 /**
- * Execute a single-flight token refresh.
- * Guaranteed to run only one network request at a time; callers share the promise.
+ * Helper: Decode JWT expiration timestamp (ms) locally without network calls.
+ */
+function getTokenExpirationMs(token: string | null | undefined): number | null {
+  if (!token) return null;
+  try {
+    const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) return null;
+    const decoded = JSON.parse(
+      atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { exp?: number };
+    return typeof decoded.exp === "number" ? decoded.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Helper: Wait briefly for browser network reconnection if currently offline.
+ */
+async function waitForOnlineConnection(maxWaitMs = 12000): Promise<void> {
+  if (typeof window === "undefined" || navigator.onLine !== false) return;
+  await new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => {
+      window.removeEventListener("online", onOnline);
+      resolve();
+    }, maxWaitMs);
+    const onOnline = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("online", onOnline);
+      resolve();
+    };
+    window.addEventListener("online", onOnline);
+  });
+}
+
+/**
+ * Execute a single-flight token refresh with automatic retry + exponential backoff
+ * for slow or high-packet-loss mobile networks.
+ * Guaranteed to run only one network request flow at a time; concurrent callers share the promise.
  */
 export async function executeRefreshToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     try {
-      // Use raw axios instance with credentials so we don't trigger the interceptor recursively
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/refresh`,
-        {},
-        { withCredentials: true }
-      );
+      const maxAttempts = 3;
+      let lastError: unknown = null;
 
-      const newToken = response.data?.accessToken;
-      if (!newToken) throw new Error("No access token returned from refresh");
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          if (attempt > 0) {
+            await waitForOnlineConnection(10000);
+          }
 
-      Cookies.set("token", newToken, {
-        expires: 7, // 7 days alignment
-        path: "/",
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      });
-      if (typeof window !== "undefined") {
-        localStorage.setItem("qefas_access_token", newToken);
+          // Use raw axios instance with credentials & generous 45s timeout for slow 3G/4G connections
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/refresh`,
+            {},
+            {
+              withCredentials: true,
+              timeout: 45000,
+            },
+          );
+
+          const newToken = response.data?.accessToken;
+          if (!newToken) throw new Error("No access token returned from refresh");
+
+          Cookies.set("token", newToken, {
+            expires: 7, // 7 days alignment
+            path: "/",
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+          });
+          if (typeof window !== "undefined") {
+            localStorage.setItem("qefas_access_token", newToken);
+          }
+
+          const { user } = useAuthStore.getState();
+          if (user) {
+            useAuthStore.getState().setAuth(user, newToken);
+          }
+
+          apiClient.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+          return newToken;
+        } catch (err: any) {
+          lastError = err;
+          const status = err?.response?.status;
+          const code = err?.response?.data?.code;
+
+          // If the server explicitly rejected the refresh token (401/403 terminal code), do not retry
+          if (
+            (status === 401 || status === 403) &&
+            (!code || TERMINAL_AUTH_CODES.has(code))
+          ) {
+            throw err;
+          }
+
+          // Otherwise it's a slow network timeout, packet drop, or temporary 502/503/504 — wait and retry
+          if (attempt < maxAttempts - 1) {
+            const backoffMs = 1000 * Math.pow(2, attempt); // 1000ms, 2000ms
+            await new Promise((res) => setTimeout(res, backoffMs));
+          }
+        }
       }
 
-      const { user } = useAuthStore.getState();
-      if (user) {
-        useAuthStore.getState().setAuth(user, newToken);
-      }
-
-      apiClient.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
-      return newToken;
+      throw lastError;
     } finally {
       refreshPromise = null;
     }
@@ -99,13 +170,37 @@ export async function executeRefreshToken(): Promise<string> {
   return refreshPromise;
 }
 
-// Request interceptor to add auth token and device tracking headers
+// Request interceptor to add auth token, proactively refresh expiring tokens, and attach device headers
 apiClient.interceptors.request.use(
   async (config) => {
     const storeToken = useAuthStore.getState().accessToken;
     const cookieToken = Cookies.get("token");
     const localToken = typeof window !== "undefined" ? localStorage.getItem("qefas_access_token") : null;
-    const token = storeToken || cookieToken || localToken;
+    let token = storeToken || cookieToken || localToken;
+
+    const isAuthEndpoint =
+      config.url?.includes("/auth/login") ||
+      config.url?.includes("/auth/refresh") ||
+      config.url?.includes("/auth/register");
+
+    if (token && !isAuthEndpoint) {
+      const expMs = getTokenExpirationMs(token);
+      if (expMs !== null) {
+        const msRemaining = expMs - Date.now();
+        if (msRemaining <= 0) {
+          // Token is already expired: refresh BEFORE sending the request to avoid a wasted 401 round-trip on slow networks
+          try {
+            token = await executeRefreshToken();
+          } catch {
+            // Fall through with existing token; response interceptor will handle terminal vs network error
+          }
+        } else if (msRemaining < 15 * 60 * 1000) {
+          // Within 15 minutes of expiry: refresh silently in the background without delaying the current request
+          void executeRefreshToken().catch(() => { });
+        }
+      }
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -209,34 +304,31 @@ apiClient.interceptors.response.use(
   },
 );
 
-// Tab Focus Check: Proactively refresh if token is near expiration or missing
+// Tab Focus & Network Reconnection Check: Proactively refresh if token is near expiration or missing
 if (typeof window !== "undefined") {
-  window.addEventListener("focus", () => {
+  const checkAndRefreshToken = () => {
     const { isAuthenticated, accessToken } = useAuthStore.getState();
     if (!isAuthenticated) return;
 
-    let shouldRefresh = false;
-    if (!accessToken) {
-      shouldRefresh = true;
-    } else {
-      try {
-        const payloadBase64 = accessToken.split(".")[1];
-        if (payloadBase64) {
-          const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
-          // If less than 2 minutes left on access token, refresh proactively
-          if (decoded.exp && decoded.exp * 1000 - Date.now() < 120000) {
-            shouldRefresh = true;
-          }
-        }
-      } catch {
-        shouldRefresh = true;
-      }
+    const currentToken =
+      accessToken ||
+      Cookies.get("token") ||
+      localStorage.getItem("qefas_access_token");
+
+    if (!currentToken) {
+      executeRefreshToken().catch(() => { });
+      return;
     }
 
-    if (shouldRefresh) {
+    const expMs = getTokenExpirationMs(currentToken);
+    // If token is expired or has less than 15 minutes left, refresh proactively
+    if (expMs === null || expMs - Date.now() < 15 * 60 * 1000) {
       executeRefreshToken().catch(() => { });
     }
-  });
+  };
+
+  window.addEventListener("focus", checkAndRefreshToken);
+  window.addEventListener("online", checkAndRefreshToken);
 }
 
 export { apiClient };

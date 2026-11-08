@@ -188,11 +188,11 @@ export default function OfflineGradeSheetSyncModal({
 
   const maxMarks = currentCategoryConfig.defaultMax;
 
-interface EnrolledStudentItem {
-  id: string;
-  name: string;
-  code: string;
-}
+  interface EnrolledStudentItem {
+    id: string;
+    name: string;
+    code: string;
+  }
 
   // Extract enrolled students
   const enrolledStudents: EnrolledStudentItem[] = useMemo(() => {
@@ -220,9 +220,9 @@ interface EnrolledStudentItem {
     const students: EnrolledStudentItem[] = enrolledStudents.length > 0
       ? enrolledStudents
       : [
-          { id: 'STU-001', name: 'Sample Student 1', code: 'SCH-01' },
-          { id: 'STU-002', name: 'Sample Student 2', code: 'SCH-02' },
-        ];
+        { id: 'STU-001', name: 'Sample Student 1', code: 'SCH-01' },
+        { id: 'STU-002', name: 'Sample Student 2', code: 'SCH-02' },
+      ];
 
     const safeClass = selectedClassName.replace(/[^a-zA-Z0-9_-]/g, '_');
     const safeSub = (selectedSubject || 'General').replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -334,7 +334,7 @@ interface EnrolledStudentItem {
         if (!codeVal && !idVal && !nameVal) continue;
 
         // Match priority: 1. Student Code, 2. Database ID, 3. Student Name
-        const matchedStudent = 
+        const matchedStudent =
           (codeVal ? enrolledStudents.find((s: EnrolledStudentItem) => s.code && s.code.toLowerCase().trim() === codeVal.toLowerCase()) : null) ||
           (idVal ? enrolledStudents.find((s: EnrolledStudentItem) => s.id && s.id.trim() === idVal) : null) ||
           (nameVal ? enrolledStudents.find((s: EnrolledStudentItem) => s.name.toLowerCase().trim() === nameVal.toLowerCase()) : null);
@@ -547,8 +547,8 @@ interface EnrolledStudentItem {
                     <SelectValue placeholder={isLoadingClassDetails ? 'Loading...' : availableSubjects.length === 0 ? 'No subjects' : 'Select Subject'} />
                   </SelectTrigger>
                   <SelectContent className="z-[90] max-h-56 rounded-xl dark:bg-slate-800 dark:border-slate-700">
-                    {availableSubjects.map((sub) => (
-                      <SelectItem key={sub} value={sub} className="text-xs font-semibold cursor-pointer">
+                    {availableSubjects.map((sub, sIdx) => (
+                      <SelectItem key={`${sub}-${sIdx}`} value={sub} className="text-xs font-semibold cursor-pointer">
                         {sub}
                       </SelectItem>
                     ))}
@@ -634,13 +634,12 @@ interface EnrolledStudentItem {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`lg:col-span-5 rounded-2xl border-2 border-dashed transition-all p-4 sm:p-5 flex flex-col items-center justify-center text-center relative ${
-              isDragging
+            className={`lg:col-span-5 rounded-2xl border-2 border-dashed transition-all p-4 sm:p-5 flex flex-col items-center justify-center text-center relative ${isDragging
                 ? isTeacher
                   ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
                   : 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
                 : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-400'
-            }`}
+              }`}
           >
             <input
               ref={fileInputRef}

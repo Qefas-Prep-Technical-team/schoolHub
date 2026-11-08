@@ -17,8 +17,8 @@ export default function ClassComparison({ subjects }: ClassComparisonProps) {
       </p>
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 md:grid-cols-4">
-        {subjects.map((subject) => (
-          <div key={subject.name} className="space-y-2">
+        {subjects.map((subject, index) => (
+          <div key={`${subject.name}-${index}`} className="space-y-2">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {subject.name}
             </p>

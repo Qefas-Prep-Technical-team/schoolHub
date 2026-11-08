@@ -75,6 +75,7 @@ export interface ExamAttempt {
   };
   status: "IN_PROGRESS" | "SUBMITTED" | "SCORED" | "EXPIRED";
   startedAt: string;
+  expiresAt?: string;
   submittedAt?: string;
   remainingSeconds?: number;
   subjectAttempts: SubjectAttempt[];

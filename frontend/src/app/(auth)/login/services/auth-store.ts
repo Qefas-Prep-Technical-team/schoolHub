@@ -108,6 +108,7 @@ export const useAuthStore = create<AuthState>()(
           user: normalizeUser(user),
           accessToken: token,
           isAuthenticated: true,
+          hasCompletedOnboarding: true,
           userType: user.userType,
           isLoggingOut: false, // Reset on login
         });

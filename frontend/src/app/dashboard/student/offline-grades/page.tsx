@@ -601,8 +601,8 @@ export default function StudentOfflineGradesPage() {
               className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[130px] truncate"
             >
               <option value="ALL" className="dark:bg-slate-900">All Subjects</option>
-              {subjectList.map((sub) => (
-                <option key={sub} value={sub} className="dark:bg-slate-900">{sub}</option>
+              {subjectList.map((sub, idx) => (
+                <option key={`${sub}-${idx}`} value={sub} className="dark:bg-slate-900">{sub}</option>
               ))}
             </select>
           </div>

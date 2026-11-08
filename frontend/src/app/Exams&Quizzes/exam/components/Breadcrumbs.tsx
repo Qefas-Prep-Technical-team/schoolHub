@@ -12,7 +12,7 @@ const Breadcrumbs: React.FC = () => {
     return (
         <div className="flex flex-wrap gap-2 text-sm">
             {breadcrumbs.map((item, index) => (
-                <React.Fragment key={item.label}>
+                <React.Fragment key={`${item.label}-${index}`}>
                     {index > 0 && (
                         <span className="text-[#506795] dark:text-gray-400 font-medium leading-normal">
                             /
@@ -27,8 +27,8 @@ const Breadcrumbs: React.FC = () => {
                         </a>
                     ) : (
                         <span className={`font-medium leading-normal ${item.isActive
-                                ? 'text-[#0e121b] dark:text-white'
-                                : 'text-[#506795] dark:text-gray-400'
+                            ? 'text-[#0e121b] dark:text-white'
+                            : 'text-[#506795] dark:text-gray-400'
                             }`}>
                             {item.label}
                         </span>

@@ -3,27 +3,27 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  FileSpreadsheet, 
-  Search, 
-  Filter, 
-  Download, 
-  Trophy, 
-  Award, 
-  TrendingUp, 
-  CheckCircle2, 
-  BookOpen, 
-  Calendar, 
-  Clock, 
-  LayoutGrid, 
-  List, 
-  ArrowUpDown, 
-  Sparkles, 
-  ChevronDown, 
-  Info, 
-  Lock, 
-  Eye, 
-  Users, 
+import {
+  FileSpreadsheet,
+  Search,
+  Filter,
+  Download,
+  Trophy,
+  Award,
+  TrendingUp,
+  CheckCircle2,
+  BookOpen,
+  Calendar,
+  Clock,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+  Sparkles,
+  ChevronDown,
+  Info,
+  Lock,
+  Eye,
+  Users,
   ArrowRight,
   AlertCircle
 } from 'lucide-react';
@@ -378,7 +378,7 @@ export default function ParentOfflineGradesPage() {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
-      
+
       {/* Multi-Child Switcher Pill Bar (if multiple children exist) */}
       {children.length > 1 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
@@ -524,7 +524,7 @@ export default function ParentOfflineGradesPage() {
       {/* Filter and Control Bar */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-          
+
           {/* Search bar */}
           <div className="relative flex-1 group">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
@@ -635,8 +635,8 @@ export default function ParentOfflineGradesPage() {
               className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-orange-500 cursor-pointer"
             >
               <option value="ALL">All Subjects</option>
-              {subjectList.map((sub) => (
-                <option key={sub} value={sub}>
+              {subjectList.map((sub, idx) => (
+                <option key={`${sub}-${idx}`} value={sub}>
                   {sub}
                 </option>
               ))}
@@ -688,7 +688,7 @@ export default function ParentOfflineGradesPage() {
             const teacherName = (g.teacher as Record<string, unknown>)?.name as string || '';
 
             return (
-              <div 
+              <div
                 key={String(g.id)}
                 className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between group"
               >
@@ -799,8 +799,8 @@ export default function ParentOfflineGradesPage() {
                   const dateStr = g.createdAt ? format(new Date(g.createdAt as string), 'dd/MM/yyyy') : '—';
 
                   return (
-                    <tr 
-                      key={String(g.id)} 
+                    <tr
+                      key={String(g.id)}
                       className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors"
                     >
                       <td className="px-5 py-4 whitespace-nowrap font-bold text-slate-900 dark:text-white">

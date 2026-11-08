@@ -46,7 +46,25 @@ export default function ConfirmSubmitModal({
   remainingSeconds,
   isSubmitting = false,
 }: ConfirmSubmitModalProps) {
-  if (!isOpen) return null;
+  const [shouldRender, setShouldRender] = React.useState(isOpen);
+  const [isVisible, setIsVisible] = React.useState(isOpen);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // Small timeout to trigger css transition on enter
+      const animFrame = requestAnimationFrame(() => setIsVisible(true));
+      return () => cancelAnimationFrame(animFrame);
+    } else {
+      setIsVisible(false);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!shouldRender) return null;
 
   const totalQuestions = paperSummaries.reduce(
     (sum, p) => sum + p.totalCount,
@@ -61,20 +79,27 @@ export default function ConfirmSubmitModal({
     totalQuestions > 0 ? Math.round((totalAnswered / totalQuestions) * 100) : 0;
 
   return (
-    <div className="fixed inset-0 z-[190] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+    <div
+      className={`fixed inset-0 z-[190] flex items-center justify-center p-4 transition-all duration-300 ${isVisible
+          ? "bg-black/75 backdrop-blur-md opacity-100"
+          : "bg-black/0 backdrop-blur-none opacity-0 pointer-events-none"
+        }`}
+    >
       <div
-        className="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className={`relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden transition-all duration-300 transform ${isVisible
+            ? "scale-100 opacity-100 translate-y-0"
+            : "scale-95 opacity-0 translate-y-2 pointer-events-none"
+          }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-submit-title"
       >
         {/* Top Accent Bar */}
         <div
-          className={`h-1.5 w-full ${
-            unansweredCount > 0
-              ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500"
-              : "bg-gradient-to-r from-indigo-500 via-emerald-500 to-indigo-500"
-          }`}
+          className={`h-1.5 w-full ${unansweredCount > 0
+            ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500"
+            : "bg-gradient-to-r from-indigo-500 via-emerald-500 to-indigo-500"
+            }`}
         />
 
         {/* Close Button */}
@@ -92,11 +117,10 @@ export default function ConfirmSubmitModal({
           {/* Header */}
           <div className="flex items-start gap-4">
             <div
-              className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                unansweredCount > 0
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              }`}
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${unansweredCount > 0
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                }`}
             >
               {unansweredCount > 0 ? (
                 <AlertTriangle className="w-6 h-6" />
@@ -134,9 +158,8 @@ export default function ConfirmSubmitModal({
               </div>
               <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 mt-2 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    unansweredCount > 0 ? "bg-amber-500" : "bg-emerald-500"
-                  }`}
+                  className={`h-full rounded-full transition-all duration-300 ${unansweredCount > 0 ? "bg-amber-500" : "bg-emerald-500"
+                    }`}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -164,14 +187,14 @@ export default function ConfirmSubmitModal({
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Paper Breakdown
               </p>
-              {paperSummaries.map((paper) => {
+              {paperSummaries.map((paper, pIdx) => {
                 const paperUnanswered = Math.max(
                   0,
                   paper.totalCount - paper.answeredCount,
                 );
                 return (
                   <div
-                    key={paper.paperId}
+                    key={paper.paperId ? `${paper.paperId}-${pIdx}` : `paper-summary-${pIdx}`}
                     className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 text-xs sm:text-sm"
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -182,11 +205,10 @@ export default function ConfirmSubmitModal({
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span
-                        className={`text-xs font-black px-2.5 py-0.5 rounded-lg ${
-                          paperUnanswered === 0
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                        }`}
+                        className={`text-xs font-black px-2.5 py-0.5 rounded-lg ${paperUnanswered === 0
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                          }`}
                       >
                         {paper.answeredCount} / {paper.totalCount} Answered
                       </span>

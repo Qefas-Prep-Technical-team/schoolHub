@@ -56,15 +56,54 @@ export const getExamById = async (req: Request, res: Response) => {
       });
     }
 
-    // For students: if the exam is connected to a class, verify student is enrolled in that class
-    if (userType === 'STUDENT' && data.classId) {
+    // For students: verify exam access permissions
+    if (userType === 'STUDENT') {
       const student = await prisma.student.findUnique({
         where: { id: req.user.id },
-        select: { classes: { select: { classId: true } } }
+        select: {
+          id: true,
+          schoolId: true,
+          departmentId: true,
+          classes: { select: { classId: true } }
+        }
       });
-      const isEnrolled = student?.classes?.some(c => c.classId === data.classId);
-      if (!isEnrolled) {
-        return res.status(403).json({ success: false, message: 'Forbidden: This exam is not designated for your class cohort' });
+
+      if (!student) {
+        return res.status(403).json({ success: false, message: 'Student record not found' });
+      }
+
+      // If exam is school-specific, student must belong to the school
+      if (data.schoolId && student.schoolId && data.schoolId !== student.schoolId) {
+        return res.status(403).json({ success: false, message: 'Forbidden: This exam belongs to another institution' });
+      }
+
+      // If exam has no class or department attached, check if it matches a subject assigned to the student's department
+      const hasNoClass = !data.classId;
+      const hasNoDepartments = !data.departments || data.departments.length === 0;
+
+      if (hasNoClass && hasNoDepartments && student.departmentId) {
+        // Find subjects belonging to student's department
+        const deptSubjects = await prisma.departmentSubject.findMany({
+          where: { departmentId: student.departmentId },
+          select: { subjectId: true },
+        });
+        const deptSubjectIds = deptSubjects.map((ds) => ds.subjectId);
+
+        // Check single subject or multi-paper subject matching
+        const examSubjId = data.subjectId;
+        const examPaperSubjIds = (data.subjectExamPapers || []).map((p: any) => p.subjectPaper?.subjectId).filter(Boolean);
+        const allExamSubjectIds = [examSubjId, ...examPaperSubjIds].filter(Boolean);
+
+        const matchesDeptSubject = allExamSubjectIds.some((sId: string) => deptSubjectIds.includes(sId));
+        if (!matchesDeptSubject && allExamSubjectIds.length > 0) {
+          return res.status(403).json({ success: false, message: 'Forbidden: This assessment is not in your department curriculum' });
+        }
+      } else if (data.classId) {
+        // If the exam is connected to a specific class, student must be enrolled in that class
+        const isEnrolled = student.classes?.some(c => c.classId === data.classId);
+        if (!isEnrolled) {
+          return res.status(403).json({ success: false, message: 'Forbidden: This exam is not designated for your class' });
+        }
       }
     }
 

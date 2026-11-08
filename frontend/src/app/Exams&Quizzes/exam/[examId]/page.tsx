@@ -24,7 +24,7 @@ import PageHeader from './start/components/PageHeader';
 import ExamDetails from './start/components/ExamDetails';
 import QuestionCard from './start/components/QuestionCard';
 import QuestionNavigation from './start/components/QuestionNavigation';
-import { SubjectPaper, SubjectAttempt } from "@/lib/api/services/examService";
+import { SubjectPaper, SubjectAttempt, examService } from "@/lib/api/services/examService";
 import { executeRefreshToken } from "@/lib/api/client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AxiosError } from "axios";
@@ -45,6 +45,10 @@ export default function UnifiedExamPage() {
   const startAttemptMutation = useStartExamAttempt();
   const saveAnswerMutation = useSaveAnswer();
   const submitAttemptMutation = useSubmitAttempt();
+  const saveAnswerMutationRef = useRef(saveAnswerMutation);
+  saveAnswerMutationRef.current = saveAnswerMutation;
+  const submitAttemptMutationRef = useRef(submitAttemptMutation);
+  submitAttemptMutationRef.current = submitAttemptMutation;
 
   const localBackupKey = useMemo(
     () => `qefas_exam_answers_${examId}_${currentUser?.id || attempt?.studentId || "anon"}`,
@@ -75,12 +79,13 @@ export default function UnifiedExamPage() {
   const isSubmittingRef = useRef(false);
   const initialAnswersRestoredRef = useRef(false);
   const initialPositionRestoredRef = useRef(false);
+  const targetEndTimeMsRef = useRef<{ attemptId: string; endTimeMs: number } | null>(null);
   // Track questions whose answers have not yet been successfully saved to the backend
   const dirtyAnswerQuestionIdsRef = useRef<Set<string>>(new Set());
 
   // Sequential submission progress state
   const [paperSubmitStates, setPaperSubmitStates] = useState<PaperSubmitState[]>([]);
-  const [finaliseStatus, setFinaliseStatus] = useState<"idle" | "finalising" | "done" | "error">("idle");
+  const [finaliseStatus, setFinaliseStatus] = useState<"idle" | "pending" | "finalising" | "done" | "error">("idle");
   const [finaliseError, setFinaliseError] = useState<string | undefined>(undefined);
   const isSubmissionModalOpen = paperSubmitStates.length > 0;
 
@@ -311,21 +316,54 @@ export default function UnifiedExamPage() {
       }
     }
 
-    // Initialise all papers as submitting in the progress modal
+    // 1. Initialise all papers: paper 0 is submitting, subsequent papers are pending, finaliseStatus is pending
     setPaperSubmitStates(
-      papers.map((p: SubjectPaper) => ({
+      papers.map((p: SubjectPaper, idx: number) => ({
         paperId: p.id,
         paperName: p.title || (p as { subject?: { name?: string } }).subject?.name || "Unnamed Paper",
         questionCount: p.questions?.length || 0,
-        status: "submitting",
+        status: idx === 0 ? "submitting" : "pending",
       }))
     );
-    setFinaliseStatus("finalising");
+    setFinaliseStatus("pending");
     setFinaliseError(undefined);
 
     try {
-      // Submit and score the entire exam attempt (along with any unsaved answers) in one atomic request
-      await submitAttemptMutation.mutateAsync({
+      // 2. Iterate papers sequentially: mark active paper submitting, submit paper endpoint, mark done
+      for (let i = 0; i < papers.length; i++) {
+        const currentPaper = papers[i];
+
+        // Update paper states: current paper is 'submitting', earlier papers 'done', later papers 'pending'
+        setPaperSubmitStates((prev) =>
+          prev.map((s, idx) => {
+            if (idx < i) return { ...s, status: "done" };
+            if (idx === i) return { ...s, status: "submitting" };
+            return { ...s, status: "pending" };
+          })
+        );
+
+        // Submit individual subject paper (idempotent; marks subjectAttempt submittedAt in backend)
+        try {
+          await examService.submitSubjectPaperAttempt(examId as string, currentPaper.id);
+        } catch (paperErr) {
+          // Non-blocking warning: even if paper submit returned 400 (e.g. already submitted), continue
+          console.warn(`Paper ${currentPaper.id} submit non-critical notification:`, paperErr);
+        }
+
+        // Mark this paper as done
+        setPaperSubmitStates((prev) =>
+          prev.map((s, idx) => (idx <= i ? { ...s, status: "done" } : s))
+        );
+
+        // Visual pacing: ensure user sees the step transition clearly
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+
+      // 3. All subject papers complete! Now transition Finalising & Scoring to ACTIVE
+      setFinaliseStatus("finalising");
+
+      // Submit and score the entire exam attempt (along with any unsaved answers)
+      await submitAttemptMutationRef.current.mutateAsync({
         examId: examId as string,
         answers: allPendingAnswers,
       });
@@ -341,15 +379,12 @@ export default function UnifiedExamPage() {
         }
       }
 
-      setPaperSubmitStates((prev) =>
-        prev.map((s) => ({ ...s, status: "done", errorMessage: undefined }))
-      );
       setFinaliseStatus("done");
 
       // Brief delay so user sees the "done" state before redirect
       setTimeout(() => {
         router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
-      }, 800);
+      }, 700);
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>;
       const msg = axiosErr.response?.data?.message || axiosErr.message || "Finalisation failed";
@@ -374,7 +409,7 @@ export default function UnifiedExamPage() {
       isSubmittingRef.current = false;
       toast.error(`Submission failed: ${msg}. Please click Retry.`, { toastId: "finalise-fail" });
     }
-  }, [currentSubjectPapers, examId, localAnswers, localBackupKey, sharedBackupKey, progressBackupKey, submitAttemptMutation, router]);
+  }, [currentSubjectPapers, examId, localAnswers, localBackupKey, sharedBackupKey, progressBackupKey, router]);
 
 
   const handleTimerExpire = useCallback(async () => {
@@ -386,13 +421,19 @@ export default function UnifiedExamPage() {
     await handleSequentialSubmit();
   }, [handleSequentialSubmit]);
 
+  const handleTimerExpireRef = useRef(handleTimerExpire);
+  handleTimerExpireRef.current = handleTimerExpire;
+
   const handleRequestSubmit = useCallback(() => {
     if (isSubmittingRef.current) return;
     setShowConfirmSubmitModal(true);
   }, []);
 
   const handleConfirmManualSubmit = useCallback(async () => {
+    // Gracefully dismiss confirmation modal before opening submission progress modal
     setShowConfirmSubmitModal(false);
+    // Allow the confirmation modal exit animation to finish smoothly
+    await new Promise((resolve) => setTimeout(resolve, 200));
     await handleSequentialSubmit();
   }, [handleSequentialSubmit]);
 
@@ -614,7 +655,7 @@ export default function UnifiedExamPage() {
         );
         if (!ownerPaper) continue;
         try {
-          await saveAnswerMutation.mutateAsync({
+          await saveAnswerMutationRef.current.mutateAsync({
             examId: examId as string,
             data: {
               subjectPaperId: ownerPaper.id,
@@ -630,7 +671,7 @@ export default function UnifiedExamPage() {
     };
 
     void syncDirtyAnswers();
-  }, [attempt?.status, currentSubjectPapers, examId, localAnswers, saveAnswerMutation]);
+  }, [attempt?.status, currentSubjectPapers, examId, localAnswers]);
 
   // Proactive Session Keep-Alive while taking an exam (prevents token expiry & logout mid-exam)
   useEffect(() => {
@@ -647,47 +688,75 @@ export default function UnifiedExamPage() {
     return () => clearInterval(interval);
   }, [attempt?.status, showDetails]);
 
-  // Sync Timer and Progress (without remainingSeconds in dependency array so interval never resets)
+  // Sync Timer and Progress (anchored to wall-clock targetEndTimeMs so opening modals or selecting answers never resets/glitches the clock)
   useEffect(() => {
-    if (attempt?.status !== "IN_PROGRESS") return;
+    if (attempt?.status !== "IN_PROGRESS" || !attempt?.id) return;
 
-    const computeInitialSeconds = (): number | null => {
-      if (typeof attempt.remainingSeconds === "number" && attempt.remainingSeconds >= 0) {
-        return attempt.remainingSeconds;
-      }
-      if (attempt.startedAt && totalDuration > 0) {
-        const startedAtMs = new Date(attempt.startedAt).getTime();
-        const nowMs = Date.now();
-        const totalDurationSeconds = totalDuration * 60;
-        const elapsedSeconds = Math.floor((nowMs - startedAtMs) / 1000);
-        return Math.max(0, totalDurationSeconds - elapsedSeconds);
-      }
-      return null;
-    };
+    let targetEndTimeMs: number | null = null;
 
-    const initial = computeInitialSeconds();
-    if (initial === null) return;
+    if (
+      targetEndTimeMsRef.current &&
+      targetEndTimeMsRef.current.attemptId === attempt.id
+    ) {
+      targetEndTimeMs = targetEndTimeMsRef.current.endTimeMs;
+    } else if (attempt.expiresAt) {
+      targetEndTimeMs = new Date(attempt.expiresAt).getTime();
+      targetEndTimeMsRef.current = {
+        attemptId: attempt.id,
+        endTimeMs: targetEndTimeMs,
+      };
+    } else if (
+      typeof attempt.remainingSeconds === "number" &&
+      attempt.remainingSeconds >= 0
+    ) {
+      targetEndTimeMs = Date.now() + attempt.remainingSeconds * 1000;
+      targetEndTimeMsRef.current = {
+        attemptId: attempt.id,
+        endTimeMs: targetEndTimeMs,
+      };
+    } else if (attempt.startedAt && totalDuration > 0) {
+      targetEndTimeMs =
+        new Date(attempt.startedAt).getTime() + totalDuration * 60 * 1000;
+      targetEndTimeMsRef.current = {
+        attemptId: attempt.id,
+        endTimeMs: targetEndTimeMs,
+      };
+    }
 
-    setRemainingSeconds(initial);
+    if (targetEndTimeMs === null) return;
 
-    if (initial <= 0) {
-      handleTimerExpire();
+    const initialSecondsLeft = Math.max(
+      0,
+      Math.round((targetEndTimeMs - Date.now()) / 1000),
+    );
+    setRemainingSeconds(initialSecondsLeft);
+
+    if (initialSecondsLeft <= 0) {
+      void handleTimerExpireRef.current();
       return;
     }
 
-    const targetEndTimeMs = Date.now() + initial * 1000;
-
     const interval = setInterval(() => {
-      const secondsLeft = Math.max(0, Math.round((targetEndTimeMs - Date.now()) / 1000));
-      setRemainingSeconds(secondsLeft);
+      const secondsLeft = Math.max(
+        0,
+        Math.round((targetEndTimeMs! - Date.now()) / 1000),
+      );
+      setRemainingSeconds((prev) => (prev === secondsLeft ? prev : secondsLeft));
       if (secondsLeft <= 0) {
         clearInterval(interval);
-        handleTimerExpire();
+        void handleTimerExpireRef.current();
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [attempt?.id, attempt?.startedAt, attempt?.status, attempt?.remainingSeconds, totalDuration, handleTimerExpire]);
+  }, [
+    attempt?.id,
+    attempt?.status,
+    attempt?.expiresAt,
+    attempt?.startedAt,
+    attempt?.remainingSeconds,
+    totalDuration,
+  ]);
 
   // PROTECTION: Hide taker view if already submitted
   useEffect(() => {
@@ -732,7 +801,7 @@ export default function UnifiedExamPage() {
   // DETAILS VIEW
   if (showDetails) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark px-4 sm:px-6 lg:px-12 pt-8 sm:pt-12 pb-16 animate-in fade-in duration-500">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark px-4 sm:px-6 lg:px-12 pt-24 sm:pt-28 lg:pt-32 pb-16 animate-in fade-in duration-500">
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="flex items-center gap-4">
             <ShcnButton variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -760,8 +829,8 @@ export default function UnifiedExamPage() {
                 Exam Structure
               </h2>
               <div className="grid grid-cols-1 gap-4">
-                {exam.subjectPapers?.map((paper: SubjectPaper) => (
-                  <div key={paper.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
+                {exam.subjectPapers?.map((paper: SubjectPaper, pIdx: number) => (
+                  <div key={paper.id ? `${paper.id}-${pIdx}` : `paper-${pIdx}`} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
                     <div className="flex flex-col">
                       <span className="font-bold">
                         {paper.title || paper.subject?.name || "Unnamed Paper"}
@@ -790,10 +859,10 @@ export default function UnifiedExamPage() {
                   </div>
                 </div>
                 <div className={`flex items-center gap-4 p-4 rounded-xl border ${(attempt?.status === "SUBMITTED" || attempt?.status === "SCORED")
-                    ? "bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300 border-green-100 dark:border-green-900/30"
-                    : isContinuingExam
-                      ? "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:amber-300 border-amber-100 dark:border-amber-900/30"
-                      : "bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border-blue-100 dark:border-blue-900/30"
+                  ? "bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300 border-green-100 dark:border-green-900/30"
+                  : isContinuingExam
+                    ? "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:amber-300 border-amber-100 dark:border-amber-900/30"
+                    : "bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border-blue-100 dark:border-blue-900/30"
                   }`}>
                   <Clock size={20} />
                   <div>
@@ -909,7 +978,7 @@ export default function UnifiedExamPage() {
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark text-[#111827] dark:text-[#D1D5DB]">
       <div className="flex min-h-screen w-full">
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12">
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-12">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <PageHeader
@@ -1035,16 +1104,16 @@ export default function UnifiedExamPage() {
                   <div className="mt-6 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur-sm shadow-sm">
                     <h3 className="text-xs font-bold mb-3 uppercase tracking-wider text-slate-500 dark:text-slate-400">Switch Subject</h3>
                     <div className="space-y-2">
-                      {currentSubjectPapers.map((paper: SubjectPaper) => (
+                      {currentSubjectPapers.map((paper: SubjectPaper, pIdx: number) => (
                         <button
-                          key={paper.id}
+                          key={paper.id ? `${paper.id}-${pIdx}` : `paper-btn-${pIdx}`}
                           onClick={() => {
                             setActiveSubjectId(paper.id);
                             setActiveQuestionIndex(0);
                           }}
                           className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeSubjectId === paper.id
-                              ? "bg-indigo-600 dark:bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-                              : "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            ? "bg-indigo-600 dark:bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                            : "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                             }`}
                         >
                           {paper.title || (paper as { subject?: { name?: string } }).subject?.name || "Unnamed Paper"}

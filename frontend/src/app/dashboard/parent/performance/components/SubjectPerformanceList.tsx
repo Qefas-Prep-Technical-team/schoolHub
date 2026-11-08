@@ -2,22 +2,22 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { 
-  Calculator, 
-  Beaker, 
-  BookOpen, 
-  Palette, 
-  History, 
-  Dumbbell, 
-  Globe, 
-  Music, 
-  Code, 
-  Compass, 
-  GraduationCap, 
-  Search, 
-  LayoutGrid, 
-  List, 
-  ChevronRight, 
+import {
+  Calculator,
+  Beaker,
+  BookOpen,
+  Palette,
+  History,
+  Dumbbell,
+  Globe,
+  Music,
+  Code,
+  Compass,
+  GraduationCap,
+  Search,
+  LayoutGrid,
+  List,
+  ChevronRight,
   ArrowUpRight,
   User,
   X,
@@ -211,17 +211,17 @@ export default function SubjectPerformanceList() {
 
     // Convert map to array and compute final averages
     return Array.from(subjectsMap.values()).map((s) => {
-      const average = s.totalMaxMarks > 0 
-        ? Math.round((s.totalScore / s.totalMaxMarks) * 100) 
+      const average = s.totalMaxMarks > 0
+        ? Math.round((s.totalScore / s.totalMaxMarks) * 100)
         : (s.assessmentCount > 0 ? Math.round(s.totalScore / s.assessmentCount) : 0);
       const grade = s.assessmentCount > 0 ? getGradeLetter(average) : 'N/A';
-      const tier = s.assessmentCount > 0 
-        ? getPerformanceTier(average) 
+      const tier = s.assessmentCount > 0
+        ? getPerformanceTier(average)
         : {
-            label: 'Pending Eval',
-            bg: 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700',
-            badgeBg: 'bg-slate-400',
-          };
+          label: 'Pending Eval',
+          bg: 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700',
+          badgeBg: 'bg-slate-400',
+        };
       const Icon = getSubjectIcon(s.name);
 
       return {
@@ -261,8 +261,8 @@ export default function SubjectPerformanceList() {
     );
   }
 
-  const deptTitle = student?.department?.name 
-    ? `${student.department.name} Department Curriculum` 
+  const deptTitle = student?.department?.name
+    ? `${student.department.name} Department Curriculum`
     : 'Curriculum Subjects';
 
   return (
@@ -383,7 +383,7 @@ export default function SubjectPerformanceList() {
             const Icon = subject.Icon;
             return (
               <div
-                key={subject.name}
+                key={`${subject.name}-${index}`}
                 className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs hover:shadow-md hover:border-orange-500/30 transition-all flex flex-col justify-between group relative overflow-hidden"
               >
                 <div>
@@ -479,7 +479,7 @@ export default function SubjectPerformanceList() {
                   const Icon = subject.Icon;
                   return (
                     <tr
-                      key={subject.name}
+                      key={`${subject.name}-${index}`}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
                     >
                       <td className="px-3 sm:px-4 py-3.5 text-center font-bold text-xs text-slate-400 dark:text-slate-500 w-10">

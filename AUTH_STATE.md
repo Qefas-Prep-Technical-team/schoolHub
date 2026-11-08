@@ -114,6 +114,25 @@
   - *Fixes*:
     1. Updated `handleSessionExpiry()` in [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts) to capture `window.location.pathname + window.location.search`, persist it to `sessionStorage.setItem("pendingJoinRedirect", currentPath)`, and redirect to the appropriate role login portal with `?session=expired&redirect=...`.
     2. Replaced `localStorage.clear()` in `useLoginMutation` and `useLogin2FAMutation` ([use-auth-mutations.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/use-auth-mutations.ts)) with `clearStaleAuthStorage()`, preserving `flexiti_device_id`, `qefas_exam_*`, `qefas_paper_draft_*`, `qefas_device_location`, and `qefas_location_granted`, and added `redirectUrl` handling to `useLogin2FAMutation`.
+- **Poor-Network / High-Latency Token Refresh Resilience (3G/Mobile Packet-Loss Hardening)**:
+  - *Context*: On slow or unstable mobile networks (such as in Nigeria), a single `/auth/refresh` attempt could time out or drop its HTTP response after the server already rotated the refresh token, causing subsequent retries after >30s to fail with `REFRESH_REUSED` and log the user out, or causing 3-round-trip `401 -> refresh -> retry` waterfalls when an access token expired mid-session.
+  - *Fixes*:
+    1. Extended access token lifespan from `1h` to `6h` in [authService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/services/authService.ts) so exams never experience mid-assessment token expiry.
+    2. Increased default refresh token rotation grace window (`REFRESH_GRACE_SECONDS`) from `30s` to `300s` (5 minutes) with up to 3-hop `replacedByTokenId` successor resolution in [auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts), preventing dropped refresh responses on slow 3G connections from triggering `REFRESH_REUSED` logouts.
+    3. Added automatic 3-attempt retry with exponential backoff (`1s`, `2s`), a 45s timeout, and offline reconnection waiting (`waitForOnlineConnection`) inside `executeRefreshToken()` in [client.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/client.ts).
+    4. Added pre-request local JWT `exp` inspection in `apiClient` request interceptor (proactively refreshing in the background when `<15m` remain, or refreshing prior to dispatch if already expired to eliminate a wasted `401` round-trip) plus a `window.addEventListener("online", ...)` listener.
+
+### Sunday, November 8, 2026
+- **Strict Device Verification Gate on Login**:
+  - *Context*: When a user logged in from an unrecognized device, device verification was being skipped because `auth.controller.ts` lacked a check against the user's total count of established sessions, or fell through when sessions weren't explicitly matched.
+  - *Fix*:
+    1. In [backend/src/modules/auth/auth.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.controller.ts) (`login`), queried `prisma.refreshToken.count({ where: { userId: user.id, isValid: true } })`.
+    2. If the user has prior recorded sessions (`userSessionsCount > 0`), the request is strictly required to match an active session with identical `deviceModel` and `osVersion`, possess a valid 365-day `deviceVerified` cookie, or carry a verified `preAuthToken`.
+    3. If not matched, the login responds with `403 requiresVerification: true` and a short-lived `preAuthToken`, redirecting to `/verification?reason=device` to enter an OTP code.
+- **Onboarding Route Guard Precision**:
+  - *Context*: Existing users logging in were briefly redirected to `/onboarding` before reaching their dashboard because `hasCompletedOnboarding` defaulted to `false` in `auth-store.ts`.
+  - *Fix*: Updated `setAuth` in [frontend/src/app/(auth)/login/services/auth-store.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/login/services/auth-store.ts) to set `hasCompletedOnboarding: true` by default upon successful login, ensuring only explicit registration flows flag `hasCompletedOnboarding: false`.
+
 
 
 

@@ -520,10 +520,10 @@ export default function StudentHistoryView({
                           cohort.termGrade === "A1" || cohort.termGrade === "B2"
                             ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
                             : cohort.termGrade.startsWith("C") || cohort.termGrade.startsWith("B")
-                            ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
-                            : cohort.termGrade.startsWith("D") || cohort.termGrade.startsWith("E")
-                            ? "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
-                            : "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400"
+                              ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
+                              : cohort.termGrade.startsWith("D") || cohort.termGrade.startsWith("E")
+                                ? "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
+                                : "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400"
                         )}
                       >
                         {cohort.termGrade} ({cohort.termGradeLabel})
@@ -535,13 +535,13 @@ export default function StudentHistoryView({
                 {/* Subjects Grid */}
                 <div className="p-5 sm:p-6 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {cohort.subjects.map((sub) => {
-                      const subjectKey = `${cohort.cohortId}_${sub.subjectName}`;
+                    {cohort.subjects.map((sub, sIdx) => {
+                      const subjectKey = `${cohort.cohortId}_${sub.subjectName}_${sIdx}`;
                       const isExpanded = !!expandedSubjects[subjectKey];
 
                       return (
                         <div
-                          key={sub.subjectName}
+                          key={`${cohort.cohortId}_${sub.subjectName}_${sIdx}`}
                           className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/40 p-4 sm:p-5 hover:border-indigo-500/40 transition-all shadow-2xs space-y-3"
                         >
                           {/* Subject Header */}
@@ -576,10 +576,10 @@ export default function StudentHistoryView({
                                   sub.gradeColor === "emerald"
                                     ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
                                     : sub.gradeColor === "indigo"
-                                    ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
-                                    : sub.gradeColor === "amber"
-                                    ? "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
-                                    : "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400"
+                                      ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
+                                      : sub.gradeColor === "amber"
+                                        ? "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
+                                        : "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400"
                                 )}
                               >
                                 {sub.grade} • {sub.gradeLabel}
@@ -595,10 +595,10 @@ export default function StudentHistoryView({
                                 sub.gradeColor === "emerald"
                                   ? "bg-emerald-500"
                                   : sub.gradeColor === "indigo"
-                                  ? "bg-indigo-500"
-                                  : sub.gradeColor === "amber"
-                                  ? "bg-amber-500"
-                                  : "bg-rose-500"
+                                    ? "bg-indigo-500"
+                                    : sub.gradeColor === "amber"
+                                      ? "bg-amber-500"
+                                      : "bg-rose-500"
                               )}
                               style={{ width: `${Math.min(100, Math.max(0, sub.percentage))}%` }}
                             />
@@ -713,153 +713,153 @@ export default function StudentHistoryView({
 
               const isAcademic = event.eventType === "ACADEMIC_RECORD";
               const isEnrollment = event.eventType === "ENROLLMENT" || event.eventType === "JOINED_SCHOOL";
-            const isPrefect = event.eventType.includes("PREFECT");
-            const isExit = event.eventType === "EXITED_SCHOOL" || event.eventType === "WITHDRAWAL";
+              const isPrefect = event.eventType.includes("PREFECT");
+              const isExit = event.eventType === "EXITED_SCHOOL" || event.eventType === "WITHDRAWAL";
 
-            const metaSession = (event.meta?.session as string) || null;
-            const metaTerm = (event.meta?.term as string) || null;
-            const metaClass = (event.meta?.className as string) || null;
-            const metaAverage = (event.meta?.termAverage as number) || null;
+              const metaSession = (event.meta?.session as string) || null;
+              const metaTerm = (event.meta?.term as string) || null;
+              const metaClass = (event.meta?.className as string) || null;
+              const metaAverage = (event.meta?.termAverage as number) || null;
 
-            return (
-              <div key={event.id} className="relative flex items-stretch gap-3 sm:gap-4.5 group">
-                {/* Spine Column: mathematically centered */}
-                <div className="w-10 sm:w-12 shrink-0 flex flex-col items-center relative">
-                  {/* Upper vertical stem */}
-                  <div
-                    className={cn(
-                      "w-1 rounded-full transition-all duration-300",
-                      isFirst
-                        ? "h-2.5 bg-gradient-to-b from-indigo-500/80 to-indigo-500"
-                        : "h-3.5 bg-gradient-to-b from-indigo-500 via-indigo-500 to-indigo-500 dark:from-indigo-500 dark:via-indigo-500/80 dark:to-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.2)]"
-                    )}
-                  />
-
-                  {/* Node Icon Badge */}
-                  <div className="relative my-0.5 flex items-center justify-center">
-                    {isFirst && (
-                      <div className="absolute -inset-1.5 rounded-2xl bg-indigo-500/25 dark:bg-indigo-500/35 blur-xs animate-pulse" />
-                    )}
-
+              return (
+                <div key={event.id} className="relative flex items-stretch gap-3 sm:gap-4.5 group">
+                  {/* Spine Column: mathematically centered */}
+                  <div className="w-10 sm:w-12 shrink-0 flex flex-col items-center relative">
+                    {/* Upper vertical stem */}
                     <div
                       className={cn(
-                        "relative size-10 sm:size-11 rounded-2xl flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-indigo-500/25 group-hover:shadow-lg z-10",
-                        isAcademic
-                          ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-600 border-indigo-200 dark:border-indigo-800"
-                          : isEnrollment
-                          ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-600 border-emerald-200 dark:border-emerald-800"
-                          : isPrefect
-                          ? "bg-amber-50 dark:bg-amber-950 text-amber-600 border-amber-200 dark:border-amber-800"
-                          : isExit
-                          ? "bg-rose-50 dark:bg-rose-950 text-rose-600 border-rose-200 dark:border-rose-800"
-                          : "bg-slate-50 dark:bg-slate-800 text-slate-600 border-slate-200 dark:border-slate-700",
+                        "w-1 rounded-full transition-all duration-300",
                         isFirst
-                          ? "ring-4 ring-indigo-500/30 dark:ring-indigo-500/40"
-                          : "ring-4 ring-slate-100 dark:ring-slate-800/90 group-hover:ring-indigo-100 dark:group-hover:ring-indigo-950/70"
+                          ? "h-2.5 bg-gradient-to-b from-indigo-500/80 to-indigo-500"
+                          : "h-3.5 bg-gradient-to-b from-indigo-500 via-indigo-500 to-indigo-500 dark:from-indigo-500 dark:via-indigo-500/80 dark:to-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.2)]"
+                      )}
+                    />
+
+                    {/* Node Icon Badge */}
+                    <div className="relative my-0.5 flex items-center justify-center">
+                      {isFirst && (
+                        <div className="absolute -inset-1.5 rounded-2xl bg-indigo-500/25 dark:bg-indigo-500/35 blur-xs animate-pulse" />
+                      )}
+
+                      <div
+                        className={cn(
+                          "relative size-10 sm:size-11 rounded-2xl flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-indigo-500/25 group-hover:shadow-lg z-10",
+                          isAcademic
+                            ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-600 border-indigo-200 dark:border-indigo-800"
+                            : isEnrollment
+                              ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-600 border-emerald-200 dark:border-emerald-800"
+                              : isPrefect
+                                ? "bg-amber-50 dark:bg-amber-950 text-amber-600 border-amber-200 dark:border-amber-800"
+                                : isExit
+                                  ? "bg-rose-50 dark:bg-rose-950 text-rose-600 border-rose-200 dark:border-rose-800"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-600 border-slate-200 dark:border-slate-700",
+                          isFirst
+                            ? "ring-4 ring-indigo-500/30 dark:ring-indigo-500/40"
+                            : "ring-4 ring-slate-100 dark:ring-slate-800/90 group-hover:ring-indigo-100 dark:group-hover:ring-indigo-950/70"
+                        )}
+                      >
+                        {isAcademic ? (
+                          <GraduationCap size={18} />
+                        ) : isEnrollment ? (
+                          <UserCheck size={18} />
+                        ) : isPrefect ? (
+                          <ShieldCheck size={18} />
+                        ) : isExit ? (
+                          <UserMinus size={18} />
+                        ) : (
+                          <BookOpen size={18} />
+                        )}
+                      </div>
+
+                      {/* Micro Chain Ringlet */}
+                      <div className="absolute -right-1.5 size-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-indigo-500 shadow-xs z-20 group-hover:scale-125 transition-transform" />
+                    </div>
+
+                    {/* Lower vertical chain stem */}
+                    <div
+                      className={cn(
+                        "flex-1 w-1 relative flex items-center justify-center rounded-full transition-all duration-300 min-h-[30px]",
+                        isLast
+                          ? "bg-gradient-to-b from-indigo-500 via-indigo-400 to-transparent dark:from-indigo-500 dark:via-indigo-500/40"
+                          : "bg-gradient-to-b from-indigo-500 via-indigo-400/80 to-indigo-500 dark:from-indigo-500 dark:via-indigo-500/60 dark:to-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.2)] group-hover:bg-indigo-500"
                       )}
                     >
-                      {isAcademic ? (
-                        <GraduationCap size={18} />
-                      ) : isEnrollment ? (
-                        <UserCheck size={18} />
-                      ) : isPrefect ? (
-                        <ShieldCheck size={18} />
-                      ) : isExit ? (
-                        <UserMinus size={18} />
-                      ) : (
-                        <BookOpen size={18} />
-                      )}
-                    </div>
-
-                    {/* Micro Chain Ringlet */}
-                    <div className="absolute -right-1.5 size-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-indigo-500 shadow-xs z-20 group-hover:scale-125 transition-transform" />
-                  </div>
-
-                  {/* Lower vertical chain stem */}
-                  <div
-                    className={cn(
-                      "flex-1 w-1 relative flex items-center justify-center rounded-full transition-all duration-300 min-h-[30px]",
-                      isLast
-                        ? "bg-gradient-to-b from-indigo-500 via-indigo-400 to-transparent dark:from-indigo-500 dark:via-indigo-500/40"
-                        : "bg-gradient-to-b from-indigo-500 via-indigo-400/80 to-indigo-500 dark:from-indigo-500 dark:via-indigo-500/60 dark:to-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.2)] group-hover:bg-indigo-500"
-                    )}
-                  >
-                    {!isLast && (
-                      <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center z-10 pointer-events-none">
-                        <span className="w-1.5 h-3.5 rounded-full border-2 border-indigo-400 dark:border-indigo-500 bg-white dark:bg-slate-900 shadow-xs group-hover:border-indigo-600 dark:group-hover:border-indigo-300 group-hover:scale-110 transition-all" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Horizontal Branch & Event Card */}
-                <div className="relative flex-1 pb-5 sm:pb-6 min-w-0 pt-0.5">
-                  {/* Branch Arm */}
-                  <div className="absolute -left-3 sm:-left-[1.125rem] top-[21px] sm:top-[23px] flex items-center pointer-events-none z-0">
-                    <div className="w-3 sm:w-[1.125rem] h-[2px] bg-gradient-to-r from-indigo-500 via-indigo-300 to-slate-200 dark:from-indigo-500 dark:via-indigo-600/70 dark:to-slate-700 group-hover:from-indigo-600 group-hover:to-indigo-400 transition-colors" />
-                    <div className="size-1.5 rounded-full bg-indigo-500 -ml-0.5 shadow-xs group-hover:scale-125 transition-transform" />
-                  </div>
-
-                  {/* Card Content */}
-                  <div
-                    onClick={() => handleOpenEventModal(event)}
-                    className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 hover:border-indigo-500/50 dark:hover:border-indigo-500/40 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group/card relative"
-                  >
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {/* Event Category Badge */}
-                        <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          {event.eventType}
-                        </span>
-
-                        {/* Session / Term Badge */}
-                        {(metaSession || metaTerm || metaClass) && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60">
-                            <Layers size={11} className="text-indigo-500" />
-                            <span>
-                              {[metaClass, metaSession, metaTerm].filter(Boolean).join(" • ")}
-                            </span>
-                          </span>
-                        )}
-
-                        <span className="text-xs font-semibold text-slate-400">
-                          {format(new Date(event.date), "MMMM d, yyyy")}
-                        </span>
-                      </div>
-
-                      <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {event.title}
-                      </h4>
-
-                      {event.description && (
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                          {event.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Right Action & Trajectory Indicator */}
-                    <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                      {metaAverage !== null && (
-                        <div className="flex flex-col items-end">
-                          <span className="text-[9px] font-black uppercase text-slate-400">
-                            Score
-                          </span>
-                          <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
-                            {metaAverage}%
-                          </span>
+                      {!isLast && (
+                        <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center z-10 pointer-events-none">
+                          <span className="w-1.5 h-3.5 rounded-full border-2 border-indigo-400 dark:border-indigo-500 bg-white dark:bg-slate-900 shadow-xs group-hover:border-indigo-600 dark:group-hover:border-indigo-300 group-hover:scale-110 transition-all" />
                         </div>
                       )}
-                      <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-600 group-hover:text-white text-slate-400 flex items-center justify-center transition-colors">
-                        <ChevronRight size={16} />
+                    </div>
+                  </div>
+
+                  {/* Horizontal Branch & Event Card */}
+                  <div className="relative flex-1 pb-5 sm:pb-6 min-w-0 pt-0.5">
+                    {/* Branch Arm */}
+                    <div className="absolute -left-3 sm:-left-[1.125rem] top-[21px] sm:top-[23px] flex items-center pointer-events-none z-0">
+                      <div className="w-3 sm:w-[1.125rem] h-[2px] bg-gradient-to-r from-indigo-500 via-indigo-300 to-slate-200 dark:from-indigo-500 dark:via-indigo-600/70 dark:to-slate-700 group-hover:from-indigo-600 group-hover:to-indigo-400 transition-colors" />
+                      <div className="size-1.5 rounded-full bg-indigo-500 -ml-0.5 shadow-xs group-hover:scale-125 transition-transform" />
+                    </div>
+
+                    {/* Card Content */}
+                    <div
+                      onClick={() => handleOpenEventModal(event)}
+                      className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 hover:border-indigo-500/50 dark:hover:border-indigo-500/40 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group/card relative"
+                    >
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Event Category Badge */}
+                          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            {event.eventType}
+                          </span>
+
+                          {/* Session / Term Badge */}
+                          {(metaSession || metaTerm || metaClass) && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60">
+                              <Layers size={11} className="text-indigo-500" />
+                              <span>
+                                {[metaClass, metaSession, metaTerm].filter(Boolean).join(" • ")}
+                              </span>
+                            </span>
+                          )}
+
+                          <span className="text-xs font-semibold text-slate-400">
+                            {format(new Date(event.date), "MMMM d, yyyy")}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {event.title}
+                        </h4>
+
+                        {event.description && (
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                            {event.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Right Action & Trajectory Indicator */}
+                      <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                        {metaAverage !== null && (
+                          <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black uppercase text-slate-400">
+                              Score
+                            </span>
+                            <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
+                              {metaAverage}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-600 group-hover:text-white text-slate-400 flex items-center justify-center transition-colors">
+                          <ChevronRight size={16} />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
 
           {/* Timeline Terminal Cap */}
           <div className="flex items-center gap-3 sm:gap-4.5 pt-1">

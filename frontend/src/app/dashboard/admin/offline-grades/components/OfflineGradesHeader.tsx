@@ -87,22 +87,22 @@ export default function OfflineGradesHeader({
   onResetScores,
 }: OfflineGradesHeaderProps) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm mb-6 relative overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 md:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm mb-4 sm:mb-6 relative overflow-hidden">
       {/* Background Glow */}
       <div className={`absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 ${isTeacher ? 'bg-emerald-500/5 dark:bg-emerald-500/10' : 'bg-indigo-500/5 dark:bg-indigo-500/10'} rounded-full blur-3xl pointer-events-none`} />
 
       {/* Top Banner Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800/80">
-        <div className="flex items-start sm:items-center gap-3.5">
-          <div className={`size-12 sm:size-14 rounded-2xl ${isTeacher ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400'} border flex items-center justify-center shrink-0 shadow-sm`}>
-            <FileSpreadsheet className="size-6 sm:size-7" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3.5">
+          <div className={`size-10 sm:size-14 rounded-xl sm:rounded-2xl ${isTeacher ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400'} border flex items-center justify-center shrink-0 shadow-sm`}>
+            <FileSpreadsheet className="size-5 sm:size-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+              <h1 className="text-base sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                 {config.assessmentType?.trim() ? config.assessmentType : 'Offline Grades & Assessment Pad'}
               </h1>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Physical Records
               </span>
@@ -199,14 +199,14 @@ export default function OfflineGradesHeader({
         {/* 1. Class Selector */}
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <Layers size={13} className={isTeacher ? 'text-emerald-500' : 'text-indigo-500'} /> Target Class Cohort
+            <Layers size={13} className={isTeacher ? 'text-emerald-500' : 'text-indigo-500'} /> Class
           </label>
           <Select
             value={config.classId || undefined}
             onValueChange={(val) => {
               const selected = classes.find(c => c.id === val);
-              onChangeConfig({ 
-                classId: val, 
+              onChangeConfig({
+                classId: val,
                 className: selected?.name ? `${selected.name} ${selected.section || ''}`.trim() : undefined,
                 departmentId: 'ALL',
                 departmentName: undefined,
@@ -215,7 +215,7 @@ export default function OfflineGradesHeader({
             }}
           >
             <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white">
-              <SelectValue placeholder="Select Class Cohort" />
+              <SelectValue placeholder="Select Class" />
             </SelectTrigger>
             <SelectContent className="z-[70] max-h-60 rounded-xl dark:bg-slate-800 dark:border-slate-700">
               {classes.map((cls) => (
@@ -241,7 +241,7 @@ export default function OfflineGradesHeader({
               value={config.departmentId || 'ALL'}
               onValueChange={(val) => {
                 const deptObj = departments.find(d => d.id === val);
-                onChangeConfig({ 
+                onChangeConfig({
                   departmentId: val,
                   departmentName: val === 'ALL' ? undefined : (deptObj?.name || undefined)
                 });
@@ -271,7 +271,7 @@ export default function OfflineGradesHeader({
           </label>
           {!config.classId ? (
             <div className="h-11 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 flex items-center px-3.5 text-xs text-slate-400 font-medium">
-              Select class cohort first
+              Select class first
             </div>
           ) : (isLoadingSubjects || isLoadingRoster) ? (
             <div className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between px-3.5 text-xs text-slate-500 dark:text-slate-400 font-semibold animate-pulse">
@@ -322,14 +322,14 @@ export default function OfflineGradesHeader({
               const defaultMax = val === 'CA' ? 20 : (val === 'QUIZ' ? 10 : (val === 'MIDTERM' ? 40 : 100));
               const prevDefaultTitles = ['Continuous Assessment 1', 'CA 1', 'Quiz 1', 'Mid-Term Test', 'Physical Assignment 1', 'Terminal Exam 1', `${config.category} 1`, `${config.category} Assessment`];
               const isDefaultTitle = !config.assessmentType || prevDefaultTitles.includes(config.assessmentType);
-              const newDefaultTitle = 
+              const newDefaultTitle =
                 val === 'EXAM' ? 'Terminal Exam 1' :
-                val === 'ASSIGNMENT' ? 'Physical Assignment 1' :
-                val === 'QUIZ' ? 'Quiz 1' :
-                val === 'MIDTERM' ? 'Mid-Term Test' :
-                'Continuous Assessment 1';
+                  val === 'ASSIGNMENT' ? 'Physical Assignment 1' :
+                    val === 'QUIZ' ? 'Quiz 1' :
+                      val === 'MIDTERM' ? 'Mid-Term Test' :
+                        'Continuous Assessment 1';
 
-              onChangeConfig({ 
+              onChangeConfig({
                 category: val,
                 maxMarks: defaultMax,
                 assessmentType: isDefaultTitle ? newDefaultTitle : config.assessmentType
@@ -424,10 +424,10 @@ export default function OfflineGradesHeader({
                 else if (t.includes('THIRD') || t === '3') derivedTerm = 'THIRD';
                 else derivedTerm = 'FIRST';
               }
-              onChangeConfig({ 
-                sessionId: val, 
+              onChangeConfig({
+                sessionId: val,
                 sessionName: selected?.name || undefined,
-                term: derivedTerm 
+                term: derivedTerm
               });
             }}
           >

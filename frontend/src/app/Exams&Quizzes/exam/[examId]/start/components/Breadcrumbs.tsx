@@ -16,7 +16,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ title, subject }) => {
     return (
         <div className="flex flex-wrap gap-2">
             {breadcrumbs.map((item, index) => (
-                <React.Fragment key={item.label}>
+                <React.Fragment key={`${item.label}-${index}`}>
                     {index > 0 && (
                         <span className="text-slate-400 dark:text-slate-600 text-sm font-medium leading-normal">
                             /
@@ -31,8 +31,8 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ title, subject }) => {
                         </a>
                     ) : (
                         <span className={`text-sm font-medium leading-normal ${item.isActive
-                                ? 'text-slate-900 dark:text-white font-semibold'
-                                : 'text-slate-500 dark:text-slate-400'
+                            ? 'text-slate-900 dark:text-white font-semibold'
+                            : 'text-slate-500 dark:text-slate-400'
                             }`}>
                             {item.label}
                         </span>

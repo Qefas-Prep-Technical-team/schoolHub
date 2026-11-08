@@ -47,12 +47,12 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
 
     // Connected Subject Papers list extraction:
     // Support subjectExamPapers array, subjectPapers array, papers array, or totalPapers count from backend
-    const rawPapers: any[] = (assessment as any)?.subjectExamPapers?.map((sep: any) => sep.subjectPaper || sep).filter(Boolean) 
-        || (assessment as any)?.subjectPapers 
-        || (assessment as any)?.papers 
+    const rawPapers: any[] = (assessment as any)?.subjectExamPapers?.map((sep: any) => sep.subjectPaper || sep).filter(Boolean)
+        || (assessment as any)?.subjectPapers
+        || (assessment as any)?.papers
         || [];
-    const papersCount = rawPapers.length > 0 
-        ? rawPapers.length 
+    const papersCount = rawPapers.length > 0
+        ? rawPapers.length
         : Number((assessment as any)?.totalPapers || (assessment as any)?._count?.subjectExamPapers || 0);
     const isMultiPaper = assessment.mode === 'MULTI_SUBJECT' || (assessment.mode as string) === 'COMBINED' || papersCount > 1;
     const singlePaper = rawPapers[0];
@@ -80,7 +80,7 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
     };
 
     const togglePaperSelection = (paperId: string) => {
-        setSelectedPaperIdsForDelete((prev: string[]) => 
+        setSelectedPaperIdsForDelete((prev: string[]) =>
             prev.includes(paperId) ? prev.filter((id: string) => id !== paperId) : [...prev, paperId]
         );
     };
@@ -112,18 +112,18 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
 
     const menuItems: any[] = [
         { label: 'View Papers', href: targetUrl },
-        { label: 'Edit', href: `/dashboard/admin/exams/${assessment.id}/edit` },
+        { label: 'Edit', href: targetUrl },
     ];
 
     if (assessment.status === 'PUBLISHED') {
-        menuItems.push({ 
-            label: 'Unpublish', 
+        menuItems.push({
+            label: 'Unpublish',
             onClick: () => setIsUnpublishDialogOpen(true)
         });
     }
 
-    menuItems.push({ 
-        label: 'Delete', 
+    menuItems.push({
+        label: 'Delete',
         destructive: true,
         onClick: handleOpenDeleteDialog
     });
@@ -223,11 +223,10 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                             </label>
 
                             <div className="space-y-2">
-                                <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                                    deleteMode === 'ALL'
+                                <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${deleteMode === 'ALL'
                                         ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 font-bold'
                                         : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
-                                }`}>
+                                    }`}>
                                     <input
                                         type="radio"
                                         name={`delete-mode-${assessment.id}`}
@@ -244,11 +243,10 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                                     </div>
                                 </label>
 
-                                <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                                    deleteMode === 'SELECTED_PAPERS'
+                                <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${deleteMode === 'SELECTED_PAPERS'
                                         ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 font-bold'
                                         : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
-                                }`}>
+                                    }`}>
                                     <input
                                         type="radio"
                                         name={`delete-mode-${assessment.id}`}
@@ -294,11 +292,10 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                                     </div>
                                 )}
 
-                                <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                                    deleteMode === 'EXAM_ONLY'
+                                <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${deleteMode === 'EXAM_ONLY'
                                         ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 font-bold'
                                         : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
-                                }`}>
+                                    }`}>
                                     <input
                                         type="radio"
                                         name={`delete-mode-${assessment.id}`}
@@ -327,9 +324,9 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
             <>
                 <tr className="group border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors relative">
                     <td className="p-4 text-center relative z-10">
-                        <input 
-                            type="checkbox" 
-                            className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+                        <input
+                            type="checkbox"
+                            className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                             checked={isSelected}
                             onChange={(e) => onSelect?.(e.target.checked)}
                         />
@@ -398,7 +395,7 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                                         </span>
 
                                         {singlePaper && (
-                                            <Link 
+                                            <Link
                                                 href={`/dashboard/admin/exams/${assessment.id}/papers/${singlePaper.id}`}
                                                 className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
                                                 onClick={(e) => e.stopPropagation()}
@@ -444,7 +441,7 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
     return (
         <div className={`relative rounded-3xl border ${theme.border} ${theme.bg} overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 group`}>
             <Link href={targetUrl} className="absolute inset-0 z-0" />
-            
+
             {/* Top decorative bar */}
             <div className={`h-1.5 w-full ${theme.iconBg} absolute top-0 left-0`} />
 
@@ -453,7 +450,7 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                     <div className={`p-3.5 rounded-2xl shadow-lg ${theme.iconBg} transition-transform duration-500 group-hover:rotate-6`}>
                         <Icon className="h-6 w-6" strokeWidth={2.5} />
                     </div>
-                    
+
                     <div className="flex items-center gap-2 pointer-events-auto">
                         <span className={`px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full ${theme.statusBg}`}>
                             {assessment.status}
@@ -617,7 +614,7 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
                             {format(new Date(assessment.createdAt), 'MMM d, yyyy')}
                         </div>
                     </div>
-                    
+
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 ${theme.accentHover} group-hover:text-white transition-all duration-300`}>
                         <ArrowRight className="h-5 w-5" />
                     </div>

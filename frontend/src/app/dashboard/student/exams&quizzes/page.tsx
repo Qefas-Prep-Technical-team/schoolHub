@@ -205,6 +205,9 @@ export default function StudentAssessmentsPage() {
                 status = 'coming soon';
             } else if (endDate && now > endDate) {
                 status = 'closed';
+            } else if (!startDate || now >= startDate) {
+                // When start date has arrived and within taking window, assessment is live for taking
+                status = 'open';
             }
             if (attempt) {
                 if (attempt.status === 'IN_PROGRESS') {

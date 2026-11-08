@@ -31,8 +31,8 @@ const SubjectBreakdown: React.FC = () => {
                 Subject Position Breakdown
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                {subjects.map((subject) => (
-                    <div key={subject.subject} className="flex items-center gap-4">
+                {subjects.map((subject, index) => (
+                    <div key={`${subject.subject}-${index}`} className="flex items-center gap-4">
                         <p className={`text-3xl font-bold w-12 text-center ${getPositionColor(subject.position)}`}>
                             {subject.position}
                         </p>

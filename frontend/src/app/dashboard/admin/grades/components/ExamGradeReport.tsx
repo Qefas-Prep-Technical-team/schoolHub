@@ -17,7 +17,7 @@ import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 24,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Helvetica',
   },
@@ -108,11 +108,13 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
   colNo: { width: '5%' },
-  colName: { width: '30%' },
+  colName: { width: '25%' },
+  colClass: { width: '15%' },
   colCode: { width: '15%' },
-  colScore: { width: '15%', textAlign: 'center' },
+  colScore: { width: '14%', textAlign: 'center' },
   colMax: { width: '10%', textAlign: 'center' },
-  colPercent: { width: '15%', textAlign: 'center' },
+  colPercent: { width: '13%', textAlign: 'center' },
+  colGrade: { width: '13%', textAlign: 'center' },
   statusBadge: {
     padding: '2 6',
     borderRadius: 4,
@@ -301,10 +303,11 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, styles.colNo]}>#</Text>
             <Text style={[styles.headerText, styles.colName]}>Student Name</Text>
-            <Text style={[styles.headerText, { width: '20%', color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' }]}>Registration No.</Text>
+            <Text style={[styles.headerText, styles.colClass]}>Class</Text>
+            <Text style={[styles.headerText, styles.colCode]}>Registration No.</Text>
             <Text style={[styles.headerText, styles.colScore]}>Score</Text>
             <Text style={[styles.headerText, styles.colPercent]}>%</Text>
-            <Text style={[styles.headerText, { width: '10%', textAlign: 'center', color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' }]}>Grade</Text>
+            <Text style={[styles.headerText, styles.colGrade]}>Grade</Text>
           </View>
 
           {attempts.map((attempt, index) => {
@@ -313,17 +316,26 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
             const grade = evalResult.grade;
             const isPass = percentage >= 40 && !['FAIL', 'FAIL9', 'F9'].includes(evalResult.grade);
 
+            const studentClass =
+              attempt.className ||
+              (attempt.class?.name ? `${attempt.class.name}${attempt.class.section ? ` (${attempt.class.section})` : ''}` : '') ||
+              exam?.class?.name ||
+              attempt.student?.class?.name ||
+              (attempt.student?.classes?.[0]?.class?.name ? `${attempt.student.classes[0].class.name}${attempt.student.classes[0].class.section ? ` (${attempt.student.classes[0].class.section})` : ''}` : '') ||
+              (attempt.student?.gradeLevel ? `Class ${attempt.student.gradeLevel}` : '—');
+
             return (
-              <View 
-                key={attempt.id} 
+              <View
+                key={attempt.id}
                 style={[styles.tableRow, index % 2 === 1 ? styles.evenRow : {}]}
               >
                 <Text style={[styles.rowText, styles.colNo]}>{index + 1}</Text>
                 <Text style={[styles.rowText, styles.colName]}>{attempt.student?.name}</Text>
-                <Text style={[styles.rowText, { width: '20%', fontSize: 9, color: '#334155' }]}>{attempt.student?.studentCode}</Text>
+                <Text style={[styles.rowText, styles.colClass]}>{studentClass}</Text>
+                <Text style={[styles.rowText, styles.colCode]}>{attempt.student?.studentCode}</Text>
                 <Text style={[styles.rowText, styles.colScore, { fontWeight: 'bold' }]}>{attempt.totalScore}</Text>
                 <Text style={[styles.rowText, styles.colPercent]}>{percentage}%</Text>
-                <Text style={[styles.rowText, { width: '10%', textAlign: 'center', fontWeight: 'bold', color: isPass ? '#10B981' : '#EF4444' }]}>
+                <Text style={[styles.rowText, styles.colGrade, { fontWeight: 'bold', color: isPass ? '#10B981' : '#EF4444' }]}>
                   {grade}
                 </Text>
               </View>
@@ -336,7 +348,7 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
           <Text style={styles.summaryTitle}>Institutional Aggregate Performance Summary</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Cohort Mean</Text>
+              <Text style={styles.summaryLabel}>Class Average</Text>
               <Text style={styles.summaryValue}>{avgScore}%</Text>
             </View>
             <View style={styles.summaryItem}>
@@ -356,25 +368,35 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
 
         {/* Grading Key & Verification */}
         <View style={styles.gradingKey}>
-          <Text style={styles.gradingTitle}>Official Institutional Grading Standards (WAEC Style)</Text>
+          <Text style={styles.gradingTitle}>Official Institutional Grading Standards (WAEC / National Standard)</Text>
           <Text style={styles.gradingText}>
             A1 (Distinction): 75-100% | B2 (Very Good): 70-74% | B3 (Good): 65-69% {"\n"}
             C4-C6 (Credit): 50-64% | D7-E8 (Pass): 40-49% | F9 (Fail): 0-39% {"\n"}
-            This report serves as a legal academic record for the specified examination cohort.
+            This report serves as an official academic record for the specified class examination.
           </Text>
         </View>
 
         {/* Signatures & Stamp */}
         <View style={styles.signatureSection}>
-           <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>Examination Officer</Text>
-           </View>
-           <View style={styles.stampBox}>
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureLabel}>Examination Officer</Text>
+          </View>
+          <View style={styles.stampBox}>
+            {school?.logo ? (
+              <Image src={school.logo} style={{ width: 45, height: 45, opacity: 0.7 }} />
+            ) : (
               <Text style={styles.stampLabel}>OFFICIAL{"\n"}SCHOOL STAMP</Text>
-           </View>
-           <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>Principal/Director</Text>
-           </View>
+            )}
+          </View>
+          <View style={styles.signatureBox}>
+            {(school?.primarySignature || school?.signatureUrl) ? (
+              <Image
+                src={school.primarySignature || school.signatureUrl}
+                style={{ width: 90, height: 28, objectFit: 'contain', marginBottom: 2 }}
+              />
+            ) : null}
+            <Text style={styles.signatureLabel}>Principal/Director</Text>
+          </View>
         </View>
 
         <View style={styles.footer}>

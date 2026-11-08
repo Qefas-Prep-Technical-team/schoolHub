@@ -17,12 +17,12 @@ function NavBar() {
         if (typeof window !== "undefined") {
             const host = window.location.hostname;
             let hasSub = false;
-            
+
             const rootDomains = ["schoolhub.flexitistudio.com", "qefashub.com", "staging.qefashub.com", "localhost", "127.0.0.1"];
-            const isRoot = rootDomains.some(domain => 
+            const isRoot = rootDomains.some(domain =>
                 host === domain || host === `www.${domain}`
             );
-            
+
             if (!isRoot) {
                 // Check if it's a multi-tenant school subdomain (e.g., school.qefashub.com)
                 // We avoid hiding the nav on Vercel preview URLs (.vercel.app)
@@ -36,17 +36,23 @@ function NavBar() {
                     }
                 }
             }
+            // Ensure staging.qefashub.com is NEVER flagged as a school tenant subdomain
+            if (host === "staging.qefashub.com" || host.endsWith(".staging.qefashub.com") || host.includes("staging.qefashub")) {
+                if (host === "staging.qefashub.com" || host === "www.staging.qefashub.com") {
+                    hasSub = false;
+                }
+            }
             setIsSubdomain(hasSub);
         }
     }, []);
 
-    const isDashboard = pathname.startsWith("/dashboard") || 
-                        pathname.startsWith("/console") || 
-                        pathname.startsWith("/platform");
+    const isDashboard = pathname.startsWith("/dashboard") ||
+        pathname.startsWith("/console") ||
+        pathname.startsWith("/platform");
 
-    const isSetupFlow = pathname.startsWith("/select-plan") || 
-                        pathname.startsWith("/checkout") || 
-                        pathname.startsWith("/onboarding");
+    const isSetupFlow = pathname.startsWith("/select-plan") ||
+        pathname.startsWith("/checkout") ||
+        pathname.startsWith("/onboarding");
 
     const shouldShow = !isDashboard && !isSetupFlow && !isSubdomain;
 

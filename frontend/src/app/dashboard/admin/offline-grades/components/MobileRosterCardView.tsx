@@ -102,8 +102,8 @@ export default function MobileRosterCardView({
                 {section.items.map((student, idx) => {
                   const scoreNum = student.score === '' ? null : Number(student.score);
                   const isOverMax = scoreNum !== null && scoreNum > maxMarks;
-                  const percentage = scoreNum !== null && maxMarks > 0 
-                    ? Math.round((scoreNum / maxMarks) * 100) 
+                  const percentage = scoreNum !== null && maxMarks > 0
+                    ? Math.round((scoreNum / maxMarks) * 100)
                     : null;
                   const gradeInfo = percentage !== null ? computeGradePill(percentage, gradingSystem) : null;
                   const hasRemarks = Boolean(student.remarks);
@@ -165,13 +165,12 @@ export default function MobileRosterCardView({
                             placeholder="0"
                             value={student.score}
                             onChange={(e) => onUpdateScore(student.studentId, e.target.value)}
-                            className={`h-11 font-black text-base tabular-nums rounded-xl bg-white dark:bg-slate-900 transition-all ${
-                              isOverMax
+                            className={`h-11 font-black text-base tabular-nums rounded-xl bg-white dark:bg-slate-900 transition-all ${isOverMax
                                 ? 'border-rose-500 text-rose-600'
                                 : student.score !== ''
-                                ? (isTeacher ? 'border-emerald-500 text-emerald-700 dark:text-emerald-300' : 'border-indigo-500 text-indigo-700 dark:text-indigo-300')
-                                : 'border-slate-200 dark:border-slate-700'
-                            }`}
+                                  ? (isTeacher ? 'border-emerald-500 text-emerald-700 dark:text-emerald-300' : 'border-indigo-500 text-indigo-700 dark:text-indigo-300')
+                                  : 'border-slate-200 dark:border-slate-700'
+                              }`}
                           />
                           <span className="text-xs font-bold text-slate-400 shrink-0">
                             / {maxMarks}
@@ -249,12 +248,12 @@ export default function MobileRosterCardView({
       </div>
 
       {/* Sticky Bottom Action Bar for Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800 p-3 sm:hidden shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800 p-3 sm:hidden shadow-lg safe-bottom">
         <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
           <span>{gradedCount} of {roster.length} Graded</span>
           <span className={isTeacher ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}>{progressPercent}% Completed</span>
         </div>
-        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mb-3">
+        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden mb-3">
           <div
             className={`${isTeacher ? 'bg-emerald-600' : 'bg-indigo-600'} h-full rounded-full transition-all duration-300`}
             style={{ width: `${progressPercent}%` }}
@@ -267,12 +266,12 @@ export default function MobileRosterCardView({
             disabled={isSaving || roster.length === 0}
             onClick={() => onSave('DRAFT')}
             variant="outline"
-            className="h-11 rounded-xl font-bold text-xs border-slate-300 dark:border-slate-700"
+            className="h-11 rounded-xl font-bold text-xs border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
           >
             {isSavingDraft ? (
-              <Loader2 size={14} className="animate-spin mr-1" />
+              <Loader2 size={15} className="animate-spin mr-1" />
             ) : (
-              <Save size={14} className="mr-1" />
+              <Save size={15} className="mr-1" />
             )}
             {isSavingDraft ? 'Saving Draft...' : 'Save Draft'}
           </Button>
@@ -280,14 +279,14 @@ export default function MobileRosterCardView({
             type="button"
             disabled={isSaving || roster.length === 0}
             onClick={() => onSave('PUBLISHED')}
-            className={`h-11 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'} text-white font-bold text-xs shadow-md`}
+            className={`h-11 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/25'} text-white font-bold text-xs shadow-md`}
           >
             {isPublishing ? (
-              <Loader2 size={14} className="animate-spin mr-1" />
+              <Loader2 size={15} className="animate-spin mr-1" />
             ) : (
-              <CheckCircle2 size={14} className="mr-1" />
+              <CheckCircle2 size={15} className="mr-1" />
             )}
-            {isPublishing ? 'Publishing...' : 'Publish All'}
+            {isPublishing ? 'Publishing...' : 'Publish Marks'}
           </Button>
         </div>
       </div>

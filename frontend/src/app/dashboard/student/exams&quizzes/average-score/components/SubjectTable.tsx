@@ -69,11 +69,10 @@ const SubjectTable: React.FC = () => {
           </thead>
           <tbody>
             {subjects.map((subject, index) => (
-              <tr 
-                key={subject.subject} 
-                className={`border-b border-slate-200 dark:border-slate-800 ${
-                  index === subjects.length - 1 ? 'last:border-b-0' : ''
-                }`}
+              <tr
+                key={`${subject.subject}-${index}`}
+                className={`border-b border-slate-200 dark:border-slate-800 ${index === subjects.length - 1 ? 'last:border-b-0' : ''
+                  }`}
               >
                 <td className="p-4 font-medium text-slate-800 dark:text-slate-200">
                   {subject.subject}

@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
-import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
+import { useStudentExamAttempts, useExams } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 import { useStudentProfile, useStudentAttendance } from '@/lib/api/hooks/useStudent';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
@@ -40,6 +40,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   const { data: studentProfile } = useStudentProfile();
   const { data: attendanceData } = useStudentAttendance((studentProfile as any)?.id || '');
   const { data: assignmentsData } = useStudentAssignments({ limit: 100 });
+  const { data: accessibleExamsData } = useExams({ status: 'PUBLISHED' });
 
   // Resolve connected school profile for customized institutional grading scale
   const userRecord = user as Record<string, unknown> | null | undefined;
@@ -138,9 +139,27 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
 
     // ─── Assessment filtering by department / scope ────────────────────────────
     const classExams: any[] = classData.exams || [];
+    const allStudentExams: any[] = Array.isArray(accessibleExamsData) ? accessibleExamsData : [];
+
+    // Combine class-attached exams with school-wide or unattached assessments matching department subjects
+    const mergedExamCandidatesMap = new Map<string, any>();
+    classExams.forEach((exam: any) => {
+      if (exam?.id) mergedExamCandidatesMap.set(exam.id, exam);
+    });
+
+    allStudentExams.forEach((exam: any) => {
+      if (!exam?.id || mergedExamCandidatesMap.has(exam.id)) return;
+      const isSchoolWide = exam.scope === 'SCHOOL';
+      const isUnattached = !exam.classId && (!exam.departments || exam.departments.length === 0);
+      if (isSchoolWide || isUnattached) {
+        mergedExamCandidatesMap.set(exam.id, exam);
+      }
+    });
+
+    const combinedCandidateExams = Array.from(mergedExamCandidatesMap.values());
     const classAttempts = attempts.filter((a: any) => a.classId === id || a.exam?.classId === id);
 
-    const filteredExams = classExams.filter((exam: any) => {
+    const filteredExams = combinedCandidateExams.filter((exam: any) => {
       // Students should only see published or ongoing assessments
       if (exam.status && !['PUBLISHED', 'ONGOING'].includes(exam.status)) return false;
 
@@ -392,7 +411,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
       },
       assessments: combinedAssessments,
     };
-  }, [classData, attempts, standaloneGrades, id, studentDepartmentId, studentDepartmentName, hasDepartment, attendanceData, assignmentsData, customGradingSystem]);
+  }, [classData, accessibleExamsData, attempts, standaloneGrades, id, studentDepartmentId, studentDepartmentName, hasDepartment, attendanceData, assignmentsData, customGradingSystem]);
 
   if (isLoading) return <LoadingState />;
   if (isError || (!isLoading && !classItem)) {

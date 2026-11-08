@@ -11,6 +11,7 @@ import AppInitializer from "@/utils/AppInitializer";
 import AuthModal from "@/components/reusable/AuthModal";
 import AIChatWidget from "@/components/Home/AIChatWidget";
 import { GlobalLogoutModal } from "@/components/ui/GlobalLogoutModal";
+import NetworkStatusBanner from "@/components/ui/NetworkStatusBanner";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://qefashub.com'),
@@ -99,6 +100,7 @@ export default function RootLayout({
           <ThemeClientProvider>
             <AppInitializer>
 
+              <NetworkStatusBanner />
               <NavBar />
               <AuthModal />
               <GlobalLogoutModal />

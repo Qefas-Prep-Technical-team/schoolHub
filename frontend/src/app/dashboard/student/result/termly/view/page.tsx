@@ -33,6 +33,7 @@ import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { getGradeEvaluation } from "@/utils/gradingSystem";
 import { toast } from "react-toastify";
+import { RoleResultExportModal } from "@/components/export/RoleResultExportModal";
 
 interface SubjectResultRecord {
   id: string;
@@ -124,6 +125,7 @@ function ResultViewInner() {
   const { data: schoolProfile } = useSchoolProfile(schoolId);
   const customGradingSystem = schoolProfile?.gradingSystem;
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,11 +134,8 @@ function ResultViewInner() {
     (g) => g.sessionId === sessionId && g.term === term
   );
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (isPaying: boolean = true) => {
     const school = profile?.school || user?.schools?.[0];
-    if (!assertSchoolPayingPlan(school)) {
-      return;
-    }
 
     setIsExporting(true);
     const toastId = toast.loading("Generating Official PDF Result Sheet...", { autoClose: false });
@@ -185,7 +184,7 @@ function ResultViewInner() {
         metaData: [
           { label: "Student Name", value: studentName },
           { label: "Student ID", value: studentCode },
-          { label: "Class Cohort", value: className },
+          { label: "Class", value: className },
           { label: "Academic Session", value: sessionLabel },
           { label: "Term", value: termLabel },
           { label: "Evaluated Subjects", value: `${group?.revealedCount || 0} of ${group?.subjectCount || 0} released` },
@@ -193,6 +192,15 @@ function ResultViewInner() {
         ],
         tableHeaders,
         tableData,
+        signatures: isPaying
+          ? {
+            left: { label: "Class Teacher", name: "Assigned Instructor", subLabel: "Academic Evaluation" },
+            right: { label: "Principal / Director", name: (school as any)?.principal || "Head of Institution", subLabel: "Institutional Endorsement" }
+          }
+          : {
+            left: { label: "Class Teacher", name: "—", subLabel: "Unendorsed Record" },
+            right: { label: "Principal / Director", name: "—", subLabel: "Unendorsed Record" }
+          }
       });
 
       toast.update(toastId, {
@@ -298,7 +306,7 @@ function ResultViewInner() {
             {group.session?.name || "Session"} • {getTermLabel(group.term)}
           </span>
           <Button
-            onClick={handleExportPDF}
+            onClick={() => setIsExportModalOpen(true)}
             disabled={isExporting}
             className="h-9 px-3.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs gap-1.5 shadow-sm active:scale-95 transition-all"
           >
@@ -783,7 +791,7 @@ function ResultViewInner() {
             </div>
 
             <Button
-              onClick={handleExportPDF}
+              onClick={() => setIsExportModalOpen(true)}
               disabled={isExporting}
               className="h-9 px-4 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs gap-1.5 shadow-sm active:scale-95 transition-all"
             >
@@ -792,6 +800,20 @@ function ResultViewInner() {
             </Button>
           </div>
         )}
+
+        <RoleResultExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          onExportPdf={handleExportPDF}
+          isExporting={isExporting}
+          resultTitle={`${getTermLabel(group?.term || term)} Term Result Sheet`}
+          studentName={profile?.name || user?.name || "Student"}
+          className={group?.class?.name || profile?.classes?.[0]?.class?.name}
+          sessionName={group?.session?.name}
+          term={getTermLabel(group?.term || term)}
+          school={profile?.school || user?.schools?.[0]}
+          role="STUDENT"
+        />
       </div>
     </div>
   );

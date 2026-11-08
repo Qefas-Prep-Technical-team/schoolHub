@@ -12,7 +12,7 @@ import {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 20,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Helvetica',
   },
@@ -192,15 +192,25 @@ interface IndividualStudentReportProps {
   hasPerformanceAccess?: boolean;
 }
 
-export const ReportPageContent: React.FC<{ result: any; school: any; isComprehensive?: boolean; hasPerformanceAccess?: boolean }> = ({ 
-  result, 
-  school, 
+export const ReportPageContent: React.FC<{ result: any; school: any; isComprehensive?: boolean; hasPerformanceAccess?: boolean }> = ({
+  result,
+  school,
   isComprehensive = false,
   hasPerformanceAccess = false
 }) => {
   const percent = Math.round((result.totalScore / result.totalMarks) * 100);
   const gradeLabel = percent >= 75 ? 'A' : percent >= 60 ? 'B' : percent >= 50 ? 'C' : percent >= 40 ? 'D' : 'F';
   const remark = percent >= 75 ? 'EXCELLENT' : percent >= 60 ? 'VERY GOOD' : percent >= 50 ? 'GOOD' : percent >= 40 ? 'PASS' : 'FAIL';
+
+  // Robust student class name resolution
+  const resolvedClassName =
+    result.className ||
+    (result.class?.name ? `${result.class.name}${result.class.section ? ` (${result.class.section})` : ''}` : '') ||
+    result.exam?.class?.name ||
+    result.student?.class?.name ||
+    (result.student?.classes?.[0]?.class?.name ? `${result.student.classes[0].class.name}${result.student.classes[0].class.section ? ` (${result.student.classes[0].class.section})` : ''}` : '') ||
+    result.student?.gradeLevel ||
+    'N/A';
 
   return (
     <Page size="A4" style={styles.page}>
@@ -217,13 +227,13 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
           <Text style={styles.schoolContact}>TEL: {school?.settings?.phone || 'N/A'}; Email: {school?.settings?.email || 'N/A'}</Text>
         </View>
         <View style={styles.photoBox}>
-            {result.student?.profileImage ? (
-              <Image src={result.student.profileImage} style={{ width: '100%', height: '100%' }} />
-            ) : (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
-                <Text style={{ fontSize: 6, color: '#9CA3AF', fontWeight: 'bold', textAlign: 'center' }}>NO PHOTO</Text>
-              </View>
-            )}
+          {result.student?.profileImage ? (
+            <Image src={result.student.profileImage} style={{ width: '100%', height: '100%' }} />
+          ) : (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
+              <Text style={{ fontSize: 6, color: '#9CA3AF', fontWeight: 'bold', textAlign: 'center' }}>NO PHOTO</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -240,8 +250,18 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
           <Text style={styles.bioValue}>{result.student?.gender || 'N/A'}</Text>
         </View>
         <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>ASSESSMENT:</Text>
+          <Text style={styles.bioValue}>{result.examTitle || result.assessmentTitle || result.exam?.title || 'Examination Assessment'}</Text>
+        </View>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>TERM:</Text>
+          <Text style={styles.bioValue}>
+            {result.term === 'FIRST' ? 'First Term' : result.term === 'SECOND' ? 'Second Term' : result.term === 'THIRD' ? 'Third Term' : (result.term || result.exam?.term || 'First Term')}
+          </Text>
+        </View>
+        <View style={styles.bioRow}>
           <Text style={styles.bioLabel}>CLASS:</Text>
-          <Text style={styles.bioValue}>{result.className}</Text>
+          <Text style={styles.bioValue}>{resolvedClassName}</Text>
         </View>
         <View style={styles.bioRow}>
           <Text style={styles.bioLabel}>SESSION:</Text>
@@ -285,25 +305,25 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
           <View style={[styles.table, { borderTopWidth: 0 }]}>
             {/* Table Header */}
             {isComprehensive ? (
-                <View style={styles.tableRow}>
-                  <Text style={[styles.tableHeader, styles.flex2]}>SUBJECTS</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>C.A</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>EXAM</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>TOTAL</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>GRADE</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>POS.</Text>
-                  <Text style={[styles.tableHeader, styles.flex2]}>REMARKS</Text>
-                  <Text style={[styles.tableHeader, styles.flex1, { borderRightWidth: 0 }]}>CLASS AVG</Text>
-                </View>
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableHeader, styles.flex2]}>SUBJECTS</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>C.A</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>EXAM</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>TOTAL</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>GRADE</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>POS.</Text>
+                <Text style={[styles.tableHeader, styles.flex2]}>REMARKS</Text>
+                <Text style={[styles.tableHeader, styles.flex1, { borderRightWidth: 0 }]}>CLASS AVG</Text>
+              </View>
             ) : (
-                <View style={styles.tableRow}>
-                  <Text style={[styles.tableHeader, styles.flex2]}>SUBJECTS</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>SCORE</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>MAX</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>PERCENT</Text>
-                  <Text style={[styles.tableHeader, styles.flex1]}>GRADE</Text>
-                  <Text style={[styles.tableHeader, styles.flex2, { borderRightWidth: 0 }]}>REMARKS</Text>
-                </View>
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableHeader, styles.flex2]}>SUBJECTS</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>SCORE</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>MAX</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>PERCENT</Text>
+                <Text style={[styles.tableHeader, styles.flex1]}>GRADE</Text>
+                <Text style={[styles.tableHeader, styles.flex2, { borderRightWidth: 0 }]}>REMARKS</Text>
+              </View>
             )}
 
             {/* Table Body */}
@@ -311,35 +331,35 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
               const subPercent = Math.round((sub.score / sub.totalMarks) * 100);
               const subGrade = subPercent >= 75 ? 'A' : subPercent >= 60 ? 'B' : subPercent >= 50 ? 'C' : subPercent >= 40 ? 'D' : 'F';
               const subRemark = subPercent >= 75 ? 'EXCELLENT' : subPercent >= 60 ? 'VERY GOOD' : subPercent >= 50 ? 'GOOD' : subPercent >= 40 ? 'PASS' : 'FAIL';
-              
-              if (isComprehensive) {
-                  // Mocking CA/Exam split until fully integrated
-                  const mockedCA = Math.round(sub.score * 0.3);
-                  const mockedExam = sub.score - mockedCA;
 
-                  return (
-                    <View key={i} style={styles.tableRow}>
-                      <Text style={[styles.tableCellSubject, styles.flex2]}>{sub.subjectName}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{sub.caScore ?? mockedCA}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{sub.examScore ?? mockedExam}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{sub.score}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{subGrade}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{sub.position || 'N/A'}</Text>
-                      <Text style={[styles.tableCell, styles.flex2]}>{subRemark}</Text>
-                      <Text style={[styles.tableCell, styles.flex1, { borderRightWidth: 0 }]}>{sub.classAverage || 'N/A'}</Text>
-                    </View>
-                  );
+              if (isComprehensive) {
+                // Mocking CA/Exam split until fully integrated
+                const mockedCA = Math.round(sub.score * 0.3);
+                const mockedExam = sub.score - mockedCA;
+
+                return (
+                  <View key={i} style={styles.tableRow}>
+                    <Text style={[styles.tableCellSubject, styles.flex2]}>{sub.subjectName}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{sub.caScore ?? mockedCA}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{sub.examScore ?? mockedExam}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{sub.score}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{subGrade}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{sub.position || 'N/A'}</Text>
+                    <Text style={[styles.tableCell, styles.flex2]}>{subRemark}</Text>
+                    <Text style={[styles.tableCell, styles.flex1, { borderRightWidth: 0 }]}>{sub.classAverage || 'N/A'}</Text>
+                  </View>
+                );
               } else {
-                  return (
-                    <View key={i} style={styles.tableRow}>
-                      <Text style={[styles.tableCellSubject, styles.flex2]}>{sub.subjectName}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{sub.score}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{sub.totalMarks}</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{subPercent}%</Text>
-                      <Text style={[styles.tableCell, styles.flex1]}>{subGrade}</Text>
-                      <Text style={[styles.tableCell, styles.flex2, { borderRightWidth: 0 }]}>{subRemark}</Text>
-                    </View>
-                  );
+                return (
+                  <View key={i} style={styles.tableRow}>
+                    <Text style={[styles.tableCellSubject, styles.flex2]}>{sub.subjectName}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{sub.score}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{sub.totalMarks}</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{subPercent}%</Text>
+                    <Text style={[styles.tableCell, styles.flex1]}>{subGrade}</Text>
+                    <Text style={[styles.tableCell, styles.flex2, { borderRightWidth: 0 }]}>{subRemark}</Text>
+                  </View>
+                );
               }
             })}
           </View>
@@ -348,27 +368,27 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
           <Text style={styles.sectionTitle}>PERFORMANCE SUMMARY</Text>
           <View style={[styles.table, { borderTopWidth: 0, flexDirection: 'row' }]}>
             <View style={{ flex: 1 }}>
-               <View style={styles.tableRow}>
-                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Total Obtained:</Text>
-                 <Text style={[styles.tableCell, { flex: 1 }]}>{result.totalScore}</Text>
-               </View>
-               <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
-                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Total Obtainable:</Text>
-                 <Text style={[styles.tableCell, { flex: 1 }]}>{result.totalMarks}</Text>
-               </View>
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Total Obtained:</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{result.totalScore}</Text>
+              </View>
+              <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+                <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Total Obtainable:</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{result.totalMarks}</Text>
+              </View>
             </View>
             <View style={{ flex: 1 }}>
-               <View style={styles.tableRow}>
-                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>%AGE:</Text>
-                 <Text style={[styles.tableCell, { flex: 1 }]}>{percent}%</Text>
-               </View>
-               <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
-                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>GRADE:</Text>
-                 <Text style={[styles.tableCell, { flex: 1 }]}>{gradeLabel}</Text>
-               </View>
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>%AGE:</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{percent}%</Text>
+              </View>
+              <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+                <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>GRADE:</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{gradeLabel}</Text>
+              </View>
             </View>
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderLeftWidth: 1, borderColor: '#000' }}>
-               <Text style={{ fontWeight: 'bold', fontSize: 10 }}>{remark}</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 10 }}>{remark}</Text>
             </View>
           </View>
 
@@ -378,12 +398,12 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
             {result.subjects?.map((sub: any, i: number) => {
               const subPercent = Math.round((sub.score / sub.totalMarks) * 100);
               const barColor = subPercent >= 75 ? '#10B981' : subPercent >= 60 ? '#3B82F6' : subPercent >= 50 ? '#F59E0B' : '#EF4444';
-              
+
               return (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                   <Text style={{ width: 80, fontSize: 8, fontWeight: 'bold' }} {...({ numberOfLines: 1 } as any)}>{sub.subjectName}</Text>
                   <View style={{ flex: 1, height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden', flexDirection: 'row', marginLeft: 5, marginRight: 5 }}>
-                     <View style={{ width: `${subPercent}%`, height: '100%', backgroundColor: barColor }} />
+                    <View style={{ width: `${subPercent}%`, height: '100%', backgroundColor: barColor }} />
                   </View>
                   <Text style={{ width: 25, fontSize: 8, textAlign: 'right', fontWeight: 'bold', color: barColor }}>{subPercent}%</Text>
                 </View>
@@ -394,110 +414,110 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
 
         {/* Right Column - Domains & Attendance */}
         {isComprehensive && (
-            <View style={styles.rightColumn}>
+          <View style={styles.rightColumn}>
             {/* Attendance */}
             <Text style={styles.sectionTitle}>ATTENDANCE SUMMARY</Text>
             <View style={[styles.table, { borderTopWidth: 0 }]}>
-                <View style={styles.tableRow}>
+              <View style={styles.tableRow}>
                 <Text style={[styles.tableCell, { flex: 3, textAlign: 'left' }]}>No of Times School Opened</Text>
                 <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.attendance?.total || 0}</Text>
-                </View>
-                <View style={styles.tableRow}>
+              </View>
+              <View style={styles.tableRow}>
                 <Text style={[styles.tableCell, { flex: 3, textAlign: 'left' }]}>No of Times Present</Text>
                 <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.attendance?.present || 0}</Text>
-                </View>
-                <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+              </View>
+              <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
                 <Text style={[styles.tableCell, { flex: 3, textAlign: 'left' }]}>No of Times Absent</Text>
                 <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.attendance?.absent || 0}</Text>
-                </View>
+              </View>
             </View>
 
             {/* Affective Domain */}
             <Text style={styles.sectionTitle}>AFFECTIVE DOMAIN</Text>
             <View style={[styles.table, { borderTopWidth: 0 }]}>
-                <View style={[styles.tableRow, { backgroundColor: '#E5E7EB' }]}>
+              <View style={[styles.tableRow, { backgroundColor: '#E5E7EB' }]}>
                 <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}></Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>5</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>4</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>3</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>2</Text>
                 <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>1</Text>
-                </View>
-                {['Attentiveness', 'Honesty', 'Neatness', 'Politeness', 'Punctuality', 'Self Control', 'Obedience'].map((trait, idx) => (
+              </View>
+              {['Attentiveness', 'Honesty', 'Neatness', 'Politeness', 'Punctuality', 'Self Control', 'Obedience'].map((trait, idx) => (
                 <View key={idx} style={[styles.tableRow, idx === 6 ? { borderBottomWidth: 0 } : {}]}>
-                    <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}>{trait}</Text>
-                    {[5,4,3,2,1].map(val => (
+                  <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}>{trait}</Text>
+                  {[5, 4, 3, 2, 1].map(val => (
                     <Text key={val} style={[styles.tableCell, { flex: 1, borderRightWidth: val === 1 ? 0 : 1 }]}>
-                        {result.termlyEvaluation?.affective?.[trait.toLowerCase()] === val ? '✓' : ''}
+                      {result.termlyEvaluation?.affective?.[trait.toLowerCase()] === val ? '✓' : ''}
                     </Text>
-                    ))}
+                  ))}
                 </View>
-                ))}
+              ))}
             </View>
 
             {/* Psychomotor Domain */}
             <Text style={styles.sectionTitle}>PSYCHOMOTOR DOMAIN</Text>
             <View style={[styles.table, { borderTopWidth: 0 }]}>
-                <View style={[styles.tableRow, { backgroundColor: '#E5E7EB' }]}>
+              <View style={[styles.tableRow, { backgroundColor: '#E5E7EB' }]}>
                 <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}></Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>5</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>4</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>3</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>2</Text>
                 <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>1</Text>
-                </View>
-                {['Handling Tools', 'Drawing/Painting', 'Handwriting', 'Public Speaking', 'Sports & Games'].map((trait, idx) => (
+              </View>
+              {['Handling Tools', 'Drawing/Painting', 'Handwriting', 'Public Speaking', 'Sports & Games'].map((trait, idx) => (
                 <View key={idx} style={[styles.tableRow, idx === 4 ? { borderBottomWidth: 0 } : {}]}>
-                    <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}>{trait}</Text>
-                    {[5,4,3,2,1].map(val => (
+                  <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}>{trait}</Text>
+                  {[5, 4, 3, 2, 1].map(val => (
                     <Text key={val} style={[styles.tableCell, { flex: 1, borderRightWidth: val === 1 ? 0 : 1 }]}>
-                        {result.termlyEvaluation?.psychomotor?.[trait.toLowerCase().replace('/', '')] === val ? '✓' : ''}
+                      {result.termlyEvaluation?.psychomotor?.[trait.toLowerCase().replace('/', '')] === val ? '✓' : ''}
                     </Text>
-                    ))}
+                  ))}
                 </View>
-                ))}
+              ))}
             </View>
 
             {/* Rating Indices */}
             <Text style={styles.sectionTitle}>Rating Indices</Text>
             <View style={[styles.table, { borderTopWidth: 0, padding: 4 }]}>
-                <Text style={{ fontSize: 7, marginBottom: 2 }}>5 - Maintains an Excellent degree of traits.</Text>
-                <Text style={{ fontSize: 7, marginBottom: 2 }}>4 - Maintains a High level of traits.</Text>
-                <Text style={{ fontSize: 7, marginBottom: 2 }}>3 - Acceptable level of traits.</Text>
-                <Text style={{ fontSize: 7, marginBottom: 2 }}>2 - Shows Minimal regard for traits.</Text>
-                <Text style={{ fontSize: 7 }}>1 - Has No regard for traits.</Text>
+              <Text style={{ fontSize: 7, marginBottom: 2 }}>5 - Maintains an Excellent degree of traits.</Text>
+              <Text style={{ fontSize: 7, marginBottom: 2 }}>4 - Maintains a High level of traits.</Text>
+              <Text style={{ fontSize: 7, marginBottom: 2 }}>3 - Acceptable level of traits.</Text>
+              <Text style={{ fontSize: 7, marginBottom: 2 }}>2 - Shows Minimal regard for traits.</Text>
+              <Text style={{ fontSize: 7 }}>1 - Has No regard for traits.</Text>
             </View>
-            </View>
+          </View>
         )}
       </View>
 
       {/* Grading Scale */}
       {isComprehensive && (
         <View style={[styles.table, { flexDirection: 'row' }]}>
-            <View style={{ flex: 1.5, borderRightWidth: 1, borderColor: '#000' }}>
-                <Text style={styles.sectionTitle}>GRADE SCALE</Text>
-                <View style={{ padding: 6 }}>
-                <Text style={{ fontSize: 8 }}>70-100% = A (EXCELLENT)   60-69.9% = B (VERY GOOD)</Text>
-                <Text style={{ fontSize: 8 }}>50-59.9% = C (GOOD)   40-49.9% = D (PASS)</Text>
-                <Text style={{ fontSize: 8 }}>0-39.9% = F (FAIL)</Text>
-                </View>
+          <View style={{ flex: 1.5, borderRightWidth: 1, borderColor: '#000' }}>
+            <Text style={styles.sectionTitle}>GRADE SCALE</Text>
+            <View style={{ padding: 6 }}>
+              <Text style={{ fontSize: 8 }}>70-100% = A (EXCELLENT)   60-69.9% = B (VERY GOOD)</Text>
+              <Text style={{ fontSize: 8 }}>50-59.9% = C (GOOD)   40-49.9% = D (PASS)</Text>
+              <Text style={{ fontSize: 8 }}>0-39.9% = F (FAIL)</Text>
             </View>
-            <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>GRADE ANALYSIS</Text>
-                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' }}>
-                {['GRADE','A','B','C','D','F'].map((g, i) => (
-                    <Text key={i} style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', borderRightWidth: i===5?0:1 }]}>{g}</Text>
-                ))}
-                </View>
-                <View style={{ flexDirection: 'row' }}>
-                <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB' }]}>NO</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 75).length || '-'}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 60 && (s.score/s.totalMarks)*100 < 75).length || '-'}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 50 && (s.score/s.totalMarks)*100 < 60).length || '-'}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 40 && (s.score/s.totalMarks)*100 < 50).length || '-'}</Text>
-                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 < 40).length || '-'}</Text>
-                </View>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionTitle}>GRADE ANALYSIS</Text>
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' }}>
+              {['GRADE', 'A', 'B', 'C', 'D', 'F'].map((g, i) => (
+                <Text key={i} style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', borderRightWidth: i === 5 ? 0 : 1 }]}>{g}</Text>
+              ))}
             </View>
+            <View style={{ flexDirection: 'row' }}>
+              <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB' }]}>NO</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s: any) => (s.score / s.totalMarks) * 100 >= 75).length || '-'}</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s: any) => (s.score / s.totalMarks) * 100 >= 60 && (s.score / s.totalMarks) * 100 < 75).length || '-'}</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s: any) => (s.score / s.totalMarks) * 100 >= 50 && (s.score / s.totalMarks) * 100 < 60).length || '-'}</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s: any) => (s.score / s.totalMarks) * 100 >= 40 && (s.score / s.totalMarks) * 100 < 50).length || '-'}</Text>
+              <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.subjects?.filter((s: any) => (s.score / s.totalMarks) * 100 < 40).length || '-'}</Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -510,10 +530,13 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
         <View style={[styles.signatureRow, { marginTop: 15 }]}>
           <View style={{ flex: 1, alignItems: 'flex-start' }}>
             <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Class Teacher's Signature</Text>
-            <View style={[styles.signatureLine, { width: 140 }]} />
+            {result.teacherSignatureUrl ? (
+              <Image src={result.teacherSignatureUrl} style={{ width: 80, height: 26, objectFit: 'contain', marginTop: 4, marginBottom: 2 }} />
+            ) : null}
+            <View style={[styles.signatureLine, { width: 140, marginTop: result.teacherSignatureUrl ? 2 : 15 }]} />
             <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
           </View>
-          
+
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <View style={styles.stampBox}>
               {school?.logo ? (
@@ -527,23 +550,26 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
 
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
             <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Principal's Signature</Text>
-            <View style={[styles.signatureLine, { width: 140 }]} />
+            {(school?.primarySignature || school?.signatureUrl) ? (
+              <Image src={school.primarySignature || school.signatureUrl} style={{ width: 80, height: 26, objectFit: 'contain', marginTop: 4, marginBottom: 2 }} />
+            ) : null}
+            <View style={[styles.signatureLine, { width: 140, marginTop: (school?.primarySignature || school?.signatureUrl) ? 2 : 15 }]} />
             <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
           </View>
         </View>
 
         {isComprehensive && (
-            <>
-                <Text style={{ fontStyle: 'italic', fontSize: 9, marginTop: 10 }}>Principal's Remark:</Text>
-                <View style={styles.remarkBox}>
-                <Text style={{ fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold' }}>{result.termlyEvaluation?.principalRemark || 'An outstanding result!! You should keep it up'}</Text>
-                </View>
+          <>
+            <Text style={{ fontStyle: 'italic', fontSize: 9, marginTop: 10 }}>Principal's Remark:</Text>
+            <View style={styles.remarkBox}>
+              <Text style={{ fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold' }}>{result.termlyEvaluation?.principalRemark || 'An outstanding result!! You should keep it up'}</Text>
+            </View>
 
-                <View style={[styles.signatureRow, { marginTop: 15, borderTopWidth: 0.5, borderTopColor: '#E5E7EB', paddingTop: 8 }]}>
-                <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Next Term Begins: .....................................................</Text>
-                <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Date: {new Date().toLocaleDateString()}</Text>
-                </View>
-            </>
+            <View style={[styles.signatureRow, { marginTop: 15, borderTopWidth: 0.5, borderTopColor: '#E5E7EB', paddingTop: 8 }]}>
+              <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Next Term Begins: .....................................................</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Date: {new Date().toLocaleDateString()}</Text>
+            </View>
+          </>
         )}
       </View>
     </Page>
@@ -558,11 +584,11 @@ const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
 }) => {
   return (
     <Document>
-      <ReportPageContent 
-        result={result} 
-        school={school} 
-        isComprehensive={isComprehensive} 
-        hasPerformanceAccess={hasPerformanceAccess} 
+      <ReportPageContent
+        result={result}
+        school={school}
+        isComprehensive={isComprehensive}
+        hasPerformanceAccess={hasPerformanceAccess}
       />
     </Document>
   );
@@ -572,6 +598,14 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
   if (!transcript) return null;
 
   const { student, school, className, sessionName, subjects, totalScore, totalMax, overallAverage, gpa, aiClassTeacherRemark, aiGeneralRemark } = transcript;
+
+  const resolvedClassName =
+    className ||
+    (transcript.class?.name ? `${transcript.class.name}${transcript.class.section ? ` (${transcript.class.section})` : ''}` : '') ||
+    student?.class?.name ||
+    (student?.classes?.[0]?.class?.name ? `${student.classes[0].class.name}${student.classes[0].class.section ? ` (${student.classes[0].class.section})` : ''}` : '') ||
+    student?.gradeLevel ||
+    'N/A';
 
   return (
     <Document>
@@ -613,7 +647,7 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
           </View>
           <View style={styles.bioRow}>
             <Text style={styles.bioLabel}>CLASS:</Text>
-            <Text style={styles.bioValue}>{className}</Text>
+            <Text style={styles.bioValue}>{resolvedClassName}</Text>
           </View>
           <View style={styles.bioRow}>
             <Text style={styles.bioLabel}>SESSION:</Text>
@@ -694,7 +728,7 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
           <View style={{ flex: 1.5, padding: 6, borderLeftWidth: 1, borderColor: '#000' }}>
             <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Class Teacher's Remark:</Text>
             <Text style={{ fontSize: 7, fontStyle: 'italic', marginBottom: 6 }}>{aiClassTeacherRemark}</Text>
-            
+
             <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Principal's Overall Verdict:</Text>
             <Text style={{ fontSize: 7, fontStyle: 'italic' }}>{aiGeneralRemark}</Text>
           </View>
@@ -705,10 +739,13 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
           <View style={styles.signatureRow}>
             <View style={{ flex: 1, alignItems: 'flex-start' }}>
               <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Class Teacher: System Assessed</Text>
-              <View style={[styles.signatureLine, { width: 140 }]} />
+              {transcript.teacherSignatureUrl ? (
+                <Image src={transcript.teacherSignatureUrl} style={{ width: 80, height: 26, objectFit: 'contain', marginTop: 4, marginBottom: 2 }} />
+              ) : null}
+              <View style={[styles.signatureLine, { width: 140, marginTop: transcript.teacherSignatureUrl ? 2 : 15 }]} />
               <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
             </View>
-            
+
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <View style={styles.stampBox}>
                 {school?.logo ? (
@@ -722,7 +759,10 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
 
             <View style={{ flex: 1, alignItems: 'flex-end' }}>
               <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Principal: Board Rep.</Text>
-              <View style={[styles.signatureLine, { width: 140 }]} />
+              {(school?.primarySignature || school?.signatureUrl) ? (
+                <Image src={school.primarySignature || school.signatureUrl} style={{ width: 80, height: 26, objectFit: 'contain', marginTop: 4, marginBottom: 2 }} />
+              ) : null}
+              <View style={[styles.signatureLine, { width: 140, marginTop: (school?.primarySignature || school?.signatureUrl) ? 2 : 15 }]} />
               <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
             </View>
           </View>

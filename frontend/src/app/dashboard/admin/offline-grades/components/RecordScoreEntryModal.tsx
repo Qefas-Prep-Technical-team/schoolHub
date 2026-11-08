@@ -182,12 +182,12 @@ export default function RecordScoreEntryModal({
     initialCat === 'EXAM'
       ? 'Terminal Exam 1'
       : initialCat === 'ASSIGNMENT'
-      ? 'Physical Assignment 1'
-      : initialCat === 'QUIZ'
-      ? 'Quiz 1'
-      : initialCat === 'MIDTERM'
-      ? 'Mid-Term Test'
-      : 'Continuous Assessment 1';
+        ? 'Physical Assignment 1'
+        : initialCat === 'QUIZ'
+          ? 'Quiz 1'
+          : initialCat === 'MIDTERM'
+            ? 'Mid-Term Test'
+            : 'Continuous Assessment 1';
 
   // Active configuration
   const [config, setConfig] = useState<OfflineGradesBatchConfig>({
@@ -327,12 +327,12 @@ export default function RecordScoreEntryModal({
               cat === 'EXAM'
                 ? 'Terminal Exam 1'
                 : cat === 'ASSIGNMENT'
-                ? 'Physical Assignment 1'
-                : cat === 'QUIZ'
-                ? 'Quiz 1'
-                : cat === 'MIDTERM'
-                ? 'Mid-Term Test'
-                : 'Continuous Assessment 1',
+                  ? 'Physical Assignment 1'
+                  : cat === 'QUIZ'
+                    ? 'Quiz 1'
+                    : cat === 'MIDTERM'
+                      ? 'Mid-Term Test'
+                      : 'Continuous Assessment 1',
             maxMarks: defaultMax,
             weight: 1.0,
             term: currentTerm,
@@ -742,19 +742,19 @@ export default function RecordScoreEntryModal({
         draftScore !== undefined && draftScore !== ''
           ? draftScore
           : passedInScore !== undefined
-          ? passedInScore.score
-          : shouldCheckExistingDb && existing !== undefined
-          ? existing.score
-          : '';
+            ? passedInScore.score
+            : shouldCheckExistingDb && existing !== undefined
+              ? existing.score
+              : '';
 
       const remarksVal =
         draftRemarks !== undefined
           ? draftRemarks
           : passedInScore?.remarks !== undefined
-          ? passedInScore.remarks
-          : shouldCheckExistingDb && existing?.remarks !== undefined
-          ? existing.remarks
-          : '';
+            ? passedInScore.remarks
+            : shouldCheckExistingDb && existing?.remarks !== undefined
+              ? existing.remarks
+              : '';
 
       list.push({
         studentId: student.id,
@@ -1111,7 +1111,7 @@ export default function RecordScoreEntryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent showCloseButton={false} className="w-[96vw] max-w-7xl 2xl:max-w-[1500px] h-[92vh] max-h-[95vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden">
+      <DialogContent showCloseButton={false} className="w-full sm:w-[96vw] max-w-7xl 2xl:max-w-[1500px] h-full sm:h-[92vh] max-h-screen sm:max-h-[95vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border-0 sm:border sm:border-slate-200 dark:sm:border-slate-800 shadow-2xl rounded-none sm:rounded-2xl overflow-hidden inset-0 sm:inset-auto">
         {/* Hidden Accessibility Header */}
         <DialogHeader className="sr-only">
           <DialogTitle>Record Offline Assessment Scores</DialogTitle>
@@ -1121,58 +1121,56 @@ export default function RecordScoreEntryModal({
         </DialogHeader>
 
         {/* 1. Modal Top Bar */}
-        <div className="px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="px-3.5 sm:px-6 py-3 sm:py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div
-              className={`size-10 rounded-xl flex items-center justify-center ${
-                isTeacher
+              className={`size-9 sm:size-10 rounded-xl flex items-center justify-center shrink-0 ${isTeacher
                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
                   : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400'
-              }`}
+                }`}
             >
-              <FileSpreadsheet size={20} />
+              <FileSpreadsheet className="size-4 sm:size-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                  {initialRecord ? 'Edit Offline Assessment Record' : 'Record Offline Assessment Marks'}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-lg font-black text-slate-900 dark:text-white tracking-tight truncate">
+                  {initialRecord ? 'Edit Offline Assessment' : 'Record Offline Marks'}
                 </h2>
                 {config.category && (
                   <span
-                    className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                      isTeacher
+                    className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${isTeacher
                         ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                         : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
-                    }`}
+                      }`}
                   >
                     {config.category}
                   </span>
                 )}
                 {hasLocalDraft && !initialRecord && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
                     <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
                     Auto-saved draft
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Seamless mark entry, optical scan import, and grade sheet publishing.
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+                {isTeacher ? 'Teacher marksheet entry pad' : 'Seamless mark entry and grade sheet publishing'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {hasLocalDraft && !initialRecord && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleClearDraft}
-                className="h-9 px-3 rounded-xl border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold text-xs gap-1.5 cursor-pointer shadow-xs transition-colors"
+                className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-bold text-[11px] sm:text-xs gap-1 sm:gap-1.5 cursor-pointer shadow-xs transition-colors"
                 title="Discard browser saved draft and load a fresh empty marksheet"
               >
-                <Trash2 size={13} />
-                <span>Clear Draft</span>
+                <Trash2 size={12} />
+                <span className="hidden sm:inline">Clear Draft</span>
               </Button>
             )}
 
@@ -1181,7 +1179,7 @@ export default function RecordScoreEntryModal({
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="h-9 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 font-bold text-xs sm:text-sm shadow-xs cursor-pointer transition-colors"
+              className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 font-bold text-xs sm:text-sm shadow-xs cursor-pointer transition-colors"
             >
               Cancel
             </Button>
@@ -1190,12 +1188,12 @@ export default function RecordScoreEntryModal({
               onClick={() => saveMutation.mutate('DRAFT')}
               disabled={saveMutation.isPending || !config.classId}
               variant="outline"
-              className="rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+              className="hidden sm:inline-flex rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
             >
               {isSavingDraft ? (
-                <Loader2 size={16} className="animate-spin mr-1.5" />
+                <Loader2 size={15} className="animate-spin mr-1.5" />
               ) : (
-                <Save size={16} className="mr-1.5" />
+                <Save size={15} className="mr-1.5" />
               )}
               {isSavingDraft ? 'Saving Draft...' : 'Save Draft'}
             </Button>
@@ -1203,24 +1201,23 @@ export default function RecordScoreEntryModal({
               size="sm"
               onClick={() => saveMutation.mutate('PUBLISHED')}
               disabled={saveMutation.isPending || !config.classId}
-              className={`rounded-xl font-bold shadow-md text-white ${
-                isTeacher
+              className={`h-8 sm:h-9 px-2.5 sm:px-4 rounded-xl font-bold shadow-md text-white text-xs sm:text-sm ${isTeacher
                   ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
                   : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
-              }`}
+                }`}
             >
               {isPublishing ? (
-                <Loader2 size={16} className="animate-spin mr-1.5" />
+                <Loader2 size={14} className="animate-spin mr-1 sm:mr-1.5" />
               ) : (
-                <CheckCircle2 size={16} className="mr-1.5" />
+                <CheckCircle2 size={14} className="mr-1 sm:mr-1.5" />
               )}
-              {isPublishing ? 'Publishing...' : 'Publish Marks'}
+              {isPublishing ? 'Publishing...' : <><span className="hidden sm:inline">Publish Marks</span><span className="inline sm:hidden">Publish</span></>}
             </Button>
           </div>
         </div>
 
         {/* 2. Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Header Controls (Class, Department, Subject, Category, Max Marks, Actions) */}
           <OfflineGradesHeader
             config={config}
@@ -1274,11 +1271,10 @@ export default function RecordScoreEntryModal({
           {!config.classId ? (
             <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-12 text-center">
               <div
-                className={`size-14 rounded-2xl mx-auto flex items-center justify-center mb-4 ${
-                  isTeacher
+                className={`size-14 rounded-2xl mx-auto flex items-center justify-center mb-4 ${isTeacher
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'
                     : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600'
-                }`}
+                  }`}
               >
                 <AlertCircle size={28} />
               </div>

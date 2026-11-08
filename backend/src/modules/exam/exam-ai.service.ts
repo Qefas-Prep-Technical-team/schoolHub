@@ -251,6 +251,7 @@ export const generateStudentPerformanceInsight = async ({
   grade,
   proficiency,
   subjects,
+  incorrectQuestions = [],
 }: {
   studentName: string;
   totalScore: number;
@@ -258,24 +259,43 @@ export const generateStudentPerformanceInsight = async ({
   grade: string;
   proficiency: string;
   subjects: any[];
+  incorrectQuestions?: Array<{
+    subjectName?: string;
+    questionText: string;
+    studentAnswer?: string;
+    correctAnswer?: string;
+  }>;
 }) => {
   try {
     const percentage = Math.round((totalScore / totalMarks) * 100);
     const subjectData = subjects.map(s => `${s.subjectName}: ${Math.round((s.score / s.totalMarks) * 100)}%`).join(", ");
+
+    // Prepare wrong answers summary (up to 5 most relevant missed questions)
+    let missedContext = "None recorded or 100% correct.";
+    if (incorrectQuestions.length > 0) {
+      missedContext = incorrectQuestions
+        .slice(0, 5)
+        .map((q, idx) => {
+          const subj = q.subjectName ? `[${q.subjectName}] ` : "";
+          const qSnippet = q.questionText.length > 90 ? q.questionText.slice(0, 87) + "..." : q.questionText;
+          return `${idx + 1}. ${subj}"${qSnippet}" (Student selected: ${q.studentAnswer || "unanswered"}, Correct was: ${q.correctAnswer || "correct option"})`;
+        })
+        .join("\n");
+    }
 
     const response = await client.chat.completions.create({
       model: "gpt-4o", // Using a standard chat model for insights
       messages: [
         {
           role: "system",
-          content: "You are the Registrar of a top Nigerian academic institution. Provide a professional, encouraging, and data-driven academic insight for a student's performance report. Your response should be a single paragraph (max 60 words), include specific suggestions for improvement, and reflect Nigerian academic excellence standards."
+          content: "You are the Academic Director and Dean of Studies at a top institution. Provide a personalized, encouraging, and highly actionable diagnostic academic review for a student's examination result. Analyze the student's missed/incorrect answers to pinpoint specific knowledge gaps and advise exactly which concepts, topics, or question domains they should focus on studying to overcome their weak areas. Keep your guidance concise, motivating, and directly relevant (around 2-3 brief sentences, max 80 words)."
         },
         {
           role: "user",
-          content: `Student Name: ${studentName}\nOverall Percentage: ${percentage}%\nWAEC Grade: ${grade}\nProficiency: ${proficiency}\nSubject Breakdown: ${subjectData}`
+          content: `Student Name: ${studentName}\nOverall Percentage: ${percentage}%\nGrade: ${grade} (${proficiency})\nSubject Breakdown: ${subjectData}\n\nMissed / Incorrect Questions & Student Choices:\n${missedContext}\n\nPlease diagnose their weak areas based on these missed questions and give them specific study recommendations on what to revise.`
         }
       ],
-      max_tokens: 150,
+      max_tokens: 180,
     });
 
     return response.choices[0]?.message?.content || "The student exhibits consistent engagement and has a solid path towards future academic excellence.";

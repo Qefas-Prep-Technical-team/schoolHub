@@ -68,8 +68,29 @@ export const startExamAttemptService = async ({
     }
   }
 
-  // Department check: if the exam is targeted to specific departments, verify student's department
-  if (exam.departments && exam.departments.length > 0 && student.departmentId) {
+  // Department check & Unattached / School-wide assessment subject matching:
+  const hasNoClass = !exam.classId;
+  const hasNoDepartments = !exam.departments || exam.departments.length === 0;
+
+  if (hasNoClass && hasNoDepartments && student.departmentId) {
+    // If assessment is not attached to a class or department, check if it matches a subject assigned to the student's department
+    const deptSubjects = await prisma.departmentSubject.findMany({
+      where: { departmentId: student.departmentId },
+      select: { subjectId: true },
+    });
+    const deptSubjectIds = deptSubjects.map((ds) => ds.subjectId);
+
+    const examSubjId = exam.subjectId;
+    const examPaperSubjIds = (exam.subjectExamPapers || []).map((p: any) => p.subjectPaper?.subjectId).filter(Boolean);
+    const allExamSubjectIds = [examSubjId, ...examPaperSubjIds].filter(Boolean);
+
+    if (allExamSubjectIds.length > 0) {
+      const matchesDeptSubject = allExamSubjectIds.some((sId: string) => deptSubjectIds.includes(sId));
+      if (!matchesDeptSubject) {
+        throw new Error("This exam is not available for your academic department curriculum");
+      }
+    }
+  } else if (exam.departments && exam.departments.length > 0 && student.departmentId) {
     const isDeptAllowed = exam.departments.some((d: { departmentId: string }) => d.departmentId === student.departmentId);
     if (!isDeptAllowed) {
       throw new Error("This exam is not available for your academic department");
@@ -174,9 +195,9 @@ export const startExamAttemptService = async ({
     exam.durationMinutes && exam.durationMinutes > 0
       ? exam.durationMinutes
       : papers.reduce(
-          (sum: number, paper: any) => sum + Number(paper?.durationMinutes || 0),
-          0,
-        );
+        (sum: number, paper: any) => sum + Number(paper?.durationMinutes || 0),
+        0,
+      );
 
   const startedAt = new Date();
   const expiresAt = computeExpiryTime({
@@ -793,11 +814,6 @@ export const scoreExamAttemptService = async ({
                   subject: true,
                 },
               },
-              answers: {
-                include: {
-                  question: true,
-                },
-              },
             },
           },
         },
@@ -815,81 +831,86 @@ export const scoreExamAttemptService = async ({
     meta: { examAttemptId: attempt.id, examId: attempt.examId },
   }).catch((err) => console.error("Submission alert error:", err));
 
-  // --- Grade Integration (Batched Transaction) ---
-  try {
-    const gradeTransactions: any[] = [];
-    const gradeStatus = updated.exam.allowImmediateResult ? GradeStatus.PUBLISHED : GradeStatus.DRAFT;
+  // --- Grade Integration (Executed Asynchronously in Background to minimize submission latency) ---
+  const syncExamGradesAsync = async () => {
+    try {
+      if (!updated.exam.schoolId) return; // Only sync to institutional Gradebook if linked to a school
+      const gradeTransactions: any[] = [];
+      const gradeStatus = updated.exam.allowImmediateResult ? GradeStatus.PUBLISHED : GradeStatus.DRAFT;
 
-    for (const sa of updated.subjectExamAttempts) {
-      const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
-      gradeTransactions.push(
-        prisma.grade.upsert({
-          where: { id: `grade-sa-${sa.id}` },
-          update: {
-            score: sa.score,
-            maxMarks: sa.totalMarks,
-            subjectPaperId: sa.subjectPaperId, // Link to paper
-            updatedAt: new Date(),
-            status: gradeStatus,
-          },
-          create: {
-            id: `grade-sa-${sa.id}`,
-            studentId: updated.studentId,
-            schoolId: updated.exam.schoolId || "",
-            teacherId: sa.subjectPaper.teacherId || updated.exam.teacherId,
-            classId: updated.exam.classId,
-            subject: subjectName,
-            assessmentType: updated.exam.category || "EXAM",
-            score: sa.score,
-            maxMarks: sa.totalMarks,
-            remarks: `Subject results for ${updated.exam.title}`,
-            examId: updated.examId,
-            subjectPaperId: sa.subjectPaperId, // Link to paper
-            examAttemptId: updated.id,
-            subjectExamAttemptId: sa.id,
-            status: gradeStatus,
-          },
-        })
-      );
-    }
+      for (const sa of updated.subjectExamAttempts) {
+        const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
+        gradeTransactions.push(
+          prisma.grade.upsert({
+            where: { id: `grade-sa-${sa.id}` },
+            update: {
+              score: sa.score,
+              maxMarks: sa.totalMarks,
+              subjectPaperId: sa.subjectPaperId,
+              updatedAt: new Date(),
+              status: gradeStatus,
+            },
+            create: {
+              id: `grade-sa-${sa.id}`,
+              studentId: updated.studentId,
+              schoolId: updated.exam.schoolId,
+              teacherId: sa.subjectPaper.teacherId || updated.exam.teacherId,
+              classId: updated.exam.classId,
+              subject: subjectName,
+              assessmentType: updated.exam.category || "EXAM",
+              score: sa.score,
+              maxMarks: sa.totalMarks,
+              remarks: `Subject results for ${updated.exam.title}`,
+              examId: updated.examId,
+              subjectPaperId: sa.subjectPaperId,
+              examAttemptId: updated.id,
+              subjectExamAttemptId: sa.id,
+              status: gradeStatus,
+            },
+          })
+        );
+      }
 
-    // If combined, also create/update a total summary entry
-    if (updated.subjectExamAttempts.length > 1) {
-      gradeTransactions.push(
-        prisma.grade.upsert({
-          where: { id: `grade-total-${updated.id}` },
-          update: {
-            score: updated.totalScore,
-            maxMarks: updated.totalMarks,
-            updatedAt: new Date(),
-            status: gradeStatus,
-          },
-          create: {
-            id: `grade-total-${updated.id}`,
-            studentId: updated.studentId,
-            schoolId: updated.exam.schoolId || "",
-            teacherId: updated.exam.teacherId,
-            classId: updated.exam.classId,
-            subject: `${updated.exam.title} (Total)`,
-            assessmentType: updated.exam.category || "EXAM",
-            score: updated.totalScore,
-            maxMarks: updated.totalMarks,
-            remarks: `Overall total for combined exam`,
-            examId: updated.examId,
-            examAttemptId: updated.id,
-            status: gradeStatus,
-          },
-        })
-      );
-    }
+      // If combined, also create/update a total summary entry
+      if (updated.subjectExamAttempts.length > 1) {
+        gradeTransactions.push(
+          prisma.grade.upsert({
+            where: { id: `grade-total-${updated.id}` },
+            update: {
+              score: updated.totalScore,
+              maxMarks: updated.totalMarks,
+              updatedAt: new Date(),
+              status: gradeStatus,
+            },
+            create: {
+              id: `grade-total-${updated.id}`,
+              studentId: updated.studentId,
+              schoolId: updated.exam.schoolId,
+              teacherId: updated.exam.teacherId,
+              classId: updated.exam.classId,
+              subject: `${updated.exam.title} (Total)`,
+              assessmentType: updated.exam.category || "EXAM",
+              score: updated.totalScore,
+              maxMarks: updated.totalMarks,
+              remarks: `Overall total for combined exam`,
+              examId: updated.examId,
+              examAttemptId: updated.id,
+              status: gradeStatus,
+            },
+          })
+        );
+      }
 
-    // Execute all upserts instantly holding a single lock
-    if (gradeTransactions.length > 0) {
-      await withRetry(() => prisma.$transaction(gradeTransactions), "scoreExamAttempt_gradeUpsertTransaction");
+      if (gradeTransactions.length > 0) {
+        await withRetry(() => prisma.$transaction(gradeTransactions), "scoreExamAttempt_gradeUpsertTransaction");
+      }
+    } catch (gradeError) {
+      console.error("Failed to sync detailed exam results to grades:", gradeError);
     }
-  } catch (gradeError) {
-    console.error("Failed to sync detailed exam results to grades:", gradeError);
-  }
+  };
+
+  // Launch grade sync non-blockingly so the student receives an instant submission response
+  syncExamGradesAsync().catch((e) => console.error("Async grade sync error:", e));
 
   // Notify admins
   prisma.admin.findMany({
@@ -1186,6 +1207,30 @@ export const getExamResultService = async ({
     }
   }
 
+  // Extract incorrect questions to provide targeted diagnostics for study focus
+  const incorrectQuestions: Array<{
+    subjectName?: string;
+    questionText: string;
+    studentAnswer?: string;
+    correctAnswer?: string;
+  }> = [];
+
+  attempt.subjectExamAttempts.forEach((sea) => {
+    const subjectName = sea.subjectPaper?.subject?.name || "General";
+    if (sea.answers && Array.isArray(sea.answers)) {
+      sea.answers.forEach((ans) => {
+        if (ans.isCorrect === false) {
+          incorrectQuestions.push({
+            subjectName,
+            questionText: ans.question?.question || "Question item",
+            studentAnswer: ans.answer,
+            correctAnswer: ans.question?.correctAnswer,
+          });
+        }
+      });
+    }
+  });
+
   // Attempt to generate AI insight if OpenAI key is present, otherwise fallback to heuristic
   // Only generate if they have access to avoid wasting tokens
   if (hasAiInsightAccess) {
@@ -1200,6 +1245,7 @@ export const getExamResultService = async ({
           grade,
           proficiency,
           subjects: subjectBreakdown,
+          incorrectQuestions,
         });
 
         // Cache the insight
@@ -1371,6 +1417,13 @@ export const getExamAttemptsService = async ({
     include: {
       student: true,
       grades: true,
+      exam: {
+        include: {
+          class: true,
+          session: true,
+          school: true,
+        },
+      },
       subjectExamAttempts: {
         include: {
           subjectPaper: {
